@@ -104,7 +104,8 @@ export async function parseDedPdf(
       if (options.withImages) {
         try {
           if (isNode) {
-            const canvasMod = await import(/* @vite-ignore */ '@napi-rs/canvas');
+            const canvasName = '@napi-rs/canvas';
+            const canvasMod = await import(/* @vite-ignore */ canvasName);
             const canvas = canvasMod.createCanvas(Math.floor(viewport.width), Math.floor(viewport.height));
             const ctx = canvas.getContext('2d');
             await (page.render({ canvasContext: ctx, viewport } as any) as any).promise;
