@@ -1,17 +1,14 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import { loadServerEnv } from './server/config/loadServerEnv';
-import { handleAiApiRequest } from './server/api/aiRoutes';
-import { handleProjectRabApiRequest } from './server/api/projectRabRoutes';
-import { handleWizardApiRequest } from './server/api/wizardRoutes';
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  // Populate process.env for server-side route handlers (vite's loadEnv does not).
-  loadServerEnv(process.cwd());
 
-  // Strictly expose ONLY public URL and Publishable/Anon key to client.
-  // NEVER expose SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY.
+  if (mode === 'development') {
+    const { loadServerEnv } = await import('./server/config/loadServerEnv');
+    loadServerEnv(process.cwd());
+  }
+
   const supabaseUrl = env.VITE_SUPABASE_URL || env.SUPABASE_URL || '';
   const supabasePublishableKey =
     env.VITE_SUPABASE_PUBLISHABLE_KEY ||
@@ -25,7 +22,11 @@ export default defineConfig(({ mode }) => {
       react(),
       {
         name: 'ezrab-ai-backend-plugin',
-        configureServer(server) {
+        configureServer: mode === 'development' ? async (server) => {
+          const { handleAiApiRequest } = await import('./server/api/aiRoutes');
+          const { handleProjectRabApiRequest } = await import('./server/api/projectRabRoutes');
+          const { handleWizardApiRequest } = await import('./server/api/wizardRoutes');
+
           server.middlewares.use((req, res, next) => {
             if (req.url && req.url.startsWith('/api/projects')) {
               void handleProjectRabApiRequest(req, res).then((handled) => { if (!handled && !res.writableEnded) next(); });
@@ -41,12 +42,23 @@ export default defineConfig(({ mode }) => {
               next();
             }
           });
-        },
+        } : undefined,
       },
     ],
     define: {
       'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
       'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(supabasePublishableKey),
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              return 'vendor';
+            }
+          },
+        },
+      },
     },
     server: {
       host: true,
