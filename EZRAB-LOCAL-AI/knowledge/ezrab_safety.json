@@ -1,0 +1,3 @@
+[
+  {"id":"safety.privacy","category":"SECURITY_PRIVACY","canonical_question":"Apakah data proyek saya aman?","aliases":["apakah website ini aman","ezrab aman"],"answer":"Pada tahap ini EZRAB AI masih untuk local development. Konteks dikirim read-only untuk proyek aktif dan sistem tidak mengklaim keamanan produksi 100%. Jangan kirim password, token, cookie, atau secret melalui chat.","response_mode":"static","requires_project_context":false,"requires_live_data":false,"required_tools":[],"version":1,"enabled":true}
+]

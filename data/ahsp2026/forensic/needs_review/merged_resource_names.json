@@ -1,0 +1,3870 @@
+{
+ "bucket": "MERGED_RESOURCE_NAMES",
+ "definition": "A component row carries two labour resources in one name — a two-column layout artefact (e.g. \"Mandor … Pekerja\"). The row is kept verbatim; the split is NOT guessed.",
+ "count": 196,
+ "records": [
+  {
+   "id": "AHSP-2026-SDA-000733",
+   "code": "A.3.05.2c.1.a",
+   "field": "SDA",
+   "unit": "m'",
+   "page": 609,
+   "attachment": "IV",
+   "description": "(VPD) Per-m' penetrasi tiang pancang Baja ø 15 cm atau persegi 15 cm, t=0,63 cm",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.04",
+    "name": "Tukang Batu dan Tukang Las Listrik Mandor",
+    "unit": "OJ",
+    "coefficient_raw": "0,0080",
+    "page": 609
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-000148",
+   "code": "1.6.24",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 227,
+   "attachment": "VI",
+   "description": "(Double) termasuk Insulasi dan Rangka Besi Hollow Pembongkaran 1 Buah Daun Pintu Single",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "",
+    "name": "Tukang Besi / Besi 0,0125 Beton Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,0013",
+    "page": 227
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-000168",
+   "code": "1.6.44",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 234,
+   "attachment": "VI",
+   "description": "Beton) Tebal 6 cm - 8 cm Secara Manual (Bongkaran Dipakai Kembali) Pembongkaran 1 m2 Paving Block (Block",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "",
+    "name": "Tukang Batu / 0,0333 Tembok Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,0033",
+    "page": 234
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-000169",
+   "code": "1.6.45",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 235,
+   "attachment": "VI",
+   "description": "Pembongkaran 1 m2 Paving Block (Block Beton) Tebal 6 cm - 8 cm Secara Manual (Bongkaran Tidak Dipakai Kembali)",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "",
+    "name": "Tukang Batu / 0,0222 Tembok Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,0022",
+    "page": 235
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-000173",
+   "code": "2.1.1.1",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 238,
+   "attachment": "VI",
+   "description": "Atap Baja Ringan (Canai Dingin) profil C75 Pemasangan 1 m2 Atap Jurai/Limasan",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang besi / besi 0,0169 L.02 beton Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,0017",
+    "page": 238
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-000337",
+   "code": "2.4.3.1",
+   "field": "CIPTA_KARYA",
+   "unit": "m3",
+   "page": 318,
+   "attachment": "VI",
+   "description": "Pelat Beton Pracetak Penuangan/Menebar Beton 1 m3 untuk",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Operator*) Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,034",
+    "page": 318
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-000338",
+   "code": "2.4.3.2",
+   "field": "CIPTA_KARYA",
+   "unit": "m3",
+   "page": 318,
+   "attachment": "VI",
+   "description": "Balok Beton Pracetak Penuangan/Menebar Beton 1 m3 untuk",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Operator*) Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,037",
+    "page": 318
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-000339",
+   "code": "2.4.3.3",
+   "field": "CIPTA_KARYA",
+   "unit": "m3",
+   "page": 319,
+   "attachment": "VI",
+   "description": "Kolom Beton Pracetak Pemindahan 1 buah Komponen untuk Pelat",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Operator*) Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,033",
+    "page": 319
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001167",
+   "code": "5.1.1.4.8",
+   "field": "CIPTA_KARYA",
+   "unit": "m'",
+   "page": 822,
+   "attachment": "VI",
+   "description": "mm² + Conduit PVC HI 20 mm Pemasangan 1 m' Kabel NYFGBY 2 x 1,5",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,040 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,004",
+    "page": 822
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001203",
+   "code": "5.1.1.6.8",
+   "field": "CIPTA_KARYA",
+   "unit": "m'",
+   "page": 836,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m' Kabel FRC 1 x 10 mm2 Perubahan Pemasangan 1 m' Kabel BCC 4 mm2 (0,04",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / L.02 Elektronik 0,040 Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,004",
+    "page": 836
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001342",
+   "code": "5.1.1.13.1",
+   "field": "CIPTA_KARYA",
+   "unit": "m'",
+   "page": 905,
+   "attachment": "VI",
+   "description": "mm² Pemasangan 1 Unit Panel Utama Tegangan",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,298 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,030",
+    "page": 905
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001375",
+   "code": "5.1.3.7",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 921,
+   "attachment": "VI",
+   "description": "Silent Type Perubahan Pemasangan 1 Unit Genset Kap : 700 kVA Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,928 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,093",
+    "page": 921
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001376",
+   "code": "5.1.3.8",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 922,
+   "attachment": "VI",
+   "description": "Silent Type Perubahan Pemasangan 1 Unit Genset Kap : 1.000 kVA Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 4,500 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,450",
+    "page": 922
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001377",
+   "code": "5.1.3.9",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 922,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Genset Kap : 1.000 kVA Silent Type",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 5,625 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,563",
+    "page": 922
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001378",
+   "code": "5.1.3.10",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 923,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Genset Kap : 80 kVA",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,750 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,175",
+    "page": 923
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001379",
+   "code": "5.1.3.11",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 923,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Genset Kap : 120 kVA",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,750 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,175",
+    "page": 923
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001382",
+   "code": "5.1.4.2",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 925,
+   "attachment": "VI",
+   "description": "Synthetic Oil Ester (Termasuk Terminasi Instalasi Trafo) PEMASANGAN SAKLAR DAN STOP 5.1.5 KONTAK Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 8,771 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,877",
+    "page": 925
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001399",
+   "code": "5.1.5.17",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 931,
+   "attachment": "VI",
+   "description": "Pemasangan 1 unit Stop Kontak Lantai Perubahan Pemasangan 1 Unit kWh Meter Token 1",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,342 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,034",
+    "page": 931
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001406",
+   "code": "5.1.9.1",
+   "field": "CIPTA_KARYA",
+   "unit": "m'",
+   "page": 936,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m' Busduct 1.000A",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,411 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,141",
+    "page": 936
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001407",
+   "code": "5.1.9.2",
+   "field": "CIPTA_KARYA",
+   "unit": "m'",
+   "page": 936,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m' Busduct 2.000A",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,411 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,141",
+    "page": 936
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001408",
+   "code": "5.1.9.3",
+   "field": "CIPTA_KARYA",
+   "unit": "m'",
+   "page": 936,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m' Plug in Busway 1.000A",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,411 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,141",
+    "page": 936
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001409",
+   "code": "5.1.9.4",
+   "field": "CIPTA_KARYA",
+   "unit": "m'",
+   "page": 937,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m' Plug in Busway 2.000A",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,411 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,141",
+    "page": 937
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001410",
+   "code": "5.1.9.5",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 937,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Flange End 1.000A",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,411 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,141",
+    "page": 937
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001411",
+   "code": "5.1.9.6",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 937,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Flange End 2.000A",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,411 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,141",
+    "page": 937
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001412",
+   "code": "5.1.9.7",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 938,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Edgewise Elbow 1.000A",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,411 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,141",
+    "page": 938
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001413",
+   "code": "5.1.9.8",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 938,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Edgewise Elbow 2.000A",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,411 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,141",
+    "page": 938
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001414",
+   "code": "5.1.9.9",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 938,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit End Closure 1.000A",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,411 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,141",
+    "page": 938
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001415",
+   "code": "5.1.9.10",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 939,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit End Closure 2.000A Pemasangan 1 Unit Plug in Box (with",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,411 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,141",
+    "page": 939
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001416",
+   "code": "5.1.9.11",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 939,
+   "attachment": "VI",
+   "description": "MCCB 800A/50KA) Pemasangan 1 Unit Plug in Box (with",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,861 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,186",
+    "page": 939
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001417",
+   "code": "5.1.9.12",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 939,
+   "attachment": "VI",
+   "description": "MCCB 400A/50KA) Pemasangan 1 Unit Plug in Box (with",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,288 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,129",
+    "page": 939
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001418",
+   "code": "5.1.9.13",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 940,
+   "attachment": "VI",
+   "description": "MCCB 150A/36KA) Pemasangan 1 Unit Plug in Box (with",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,288 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,129",
+    "page": 940
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001419",
+   "code": "5.1.9.14",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 940,
+   "attachment": "VI",
+   "description": "MCCB 100A/36KA) Pemasangan 1 Unit Plug in Box (with",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,716 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,072",
+    "page": 940
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001420",
+   "code": "5.1.9.15",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 940,
+   "attachment": "VI",
+   "description": "MCCB 80A/36KA) Pemasangan 1 Unit Plug in Box (with",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,716 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,072",
+    "page": 940
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001421",
+   "code": "5.1.9.16",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 941,
+   "attachment": "VI",
+   "description": "MCCB 50A/36KA) 5,2 PEKERJAAN SISTEM PROTEKSI PETIR Pemasangan 1 Unit Air Terminal @1000",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,716 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,072",
+    "page": 941
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001436",
+   "code": "5.2.15",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 946,
+   "attachment": "VI",
+   "description": "Alumunium Air Rod Pemasangan 1 Unit 15 x 500 mm Copper",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,318 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,032",
+    "page": 946
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001437",
+   "code": "5.2.16",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 947,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit 15 x 500 mm Copper Air Rod",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,318 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,032",
+    "page": 947
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001438",
+   "code": "5.2.17",
+   "field": "CIPTA_KARYA",
+   "unit": "m'",
+   "page": 947,
+   "attachment": "VI",
+   "description": "Alumunium Tape Pemasangan 1 buah 5/8\" x 1800 mm",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,072 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,007",
+    "page": 947
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001439",
+   "code": "5.2.18",
+   "field": "CIPTA_KARYA",
+   "unit": "buah",
+   "page": 947,
+   "attachment": "VI",
+   "description": "Pemasangan 1 buah 5/8\" x 1800 mm Extensible Copperbond Rod",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,318 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,032",
+    "page": 947
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001440",
+   "code": "5.2.19",
+   "field": "CIPTA_KARYA",
+   "unit": "buah",
+   "page": 948,
+   "attachment": "VI",
+   "description": "Pemasangan 1 buah 5/8\" Copperbond Rod Pemasangan 1 buah Grounding Rod Gip 1\"",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,318 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,032",
+    "page": 948
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001441",
+   "code": "5.2.20",
+   "field": "CIPTA_KARYA",
+   "unit": "buah",
+   "page": 948,
+   "attachment": "VI",
+   "description": "Panjang 1 m Pemasangan 1 buah Grounding Rod Gip 1\"",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,318 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,032",
+    "page": 948
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001442",
+   "code": "5.2.21",
+   "field": "CIPTA_KARYA",
+   "unit": "buah",
+   "page": 948,
+   "attachment": "VI",
+   "description": "Pemasangan 1 buah Grounding Rod Gip 1\" Panjang 2 m",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,318 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,032",
+    "page": 948
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001443",
+   "code": "5.2.22",
+   "field": "CIPTA_KARYA",
+   "unit": "buah",
+   "page": 949,
+   "attachment": "VI",
+   "description": "Pemasangan 1 buah 1\" Rod Coupling",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,318 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,032",
+    "page": 949
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001444",
+   "code": "5.2.23",
+   "field": "CIPTA_KARYA",
+   "unit": "buah",
+   "page": 949,
+   "attachment": "VI",
+   "description": "Pemasangan 1 buah Exothermic Welding Pemasangan 1 Unit Surge Arrester 1 Phase",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,223 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,022",
+    "page": 949
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001445",
+   "code": "5.2.24",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 949,
+   "attachment": "VI",
+   "description": "(15 KA) Pemasangan 1 Unit Surge Arrester 3 Phase",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,302 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,030",
+    "page": 949
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001446",
+   "code": "5.2.25",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 950,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Surge Arrester 3 Phase (15 KA)",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,429 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,043",
+    "page": 950
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001474",
+   "code": "5.3.1.28",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 964,
+   "attachment": "VI",
+   "description": "(Balk) Perubahan Pemasangan 1 Unit Lampu TLED 18 Watt Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,191 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,019",
+    "page": 964
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001475",
+   "code": "5.3.1.29",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 964,
+   "attachment": "VI",
+   "description": "(Balk) Perubahan Pemasangan 1 Unit Lampu TL 36 Watt Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,191 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,019",
+    "page": 964
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001476",
+   "code": "5.3.1.30",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 964,
+   "attachment": "VI",
+   "description": "(Balk) Perubahan Pemasangan 1 Unit Lampu TLED 36 Watt Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,191 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,019",
+    "page": 964
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001477",
+   "code": "5.3.1.31",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 965,
+   "attachment": "VI",
+   "description": "(Balk) Perubahan Pemasangan 1 titik Instalasi Lampu",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,191 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,019",
+    "page": 965
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001485",
+   "code": "5.3.1.39",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 969,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Lampu Sport Floodlight LED, min. 180000 Lumen, max. 1340 W, 5700K, min. CRI 80, min. IP 66 c/w DMX LED Driver & Customized Bracket (Field of Play)",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,002 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,100",
+    "page": 969
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001486",
+   "code": "5.3.1.40",
+   "field": "CIPTA_KARYA",
+   "unit": "buah",
+   "page": 969,
+   "attachment": "VI",
+   "description": "Pemasangan 1 buah Junction Box IP Rated Setting & Aiming 1 titik Lampu Field of Play",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,143 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,014",
+    "page": 969
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001488",
+   "code": "5.3.1.42",
+   "field": "CIPTA_KARYA",
+   "unit": "m'",
+   "page": 970,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m' Kabel Fiber Optic Dual Core Single Mode + Pipa HDPE Conduit 20 mm",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,040 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,004",
+    "page": 970
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001489",
+   "code": "5.3.1.43",
+   "field": "CIPTA_KARYA",
+   "unit": "buah",
+   "page": 970,
+   "attachment": "VI",
+   "description": "1 Universe Pemasangan 1 Unit Downlight LED-E27 9W Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,137 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,114",
+    "page": 970
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001490",
+   "code": "5.3.1.44",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 971,
+   "attachment": "VI",
+   "description": "3000K (Recessed) Perubahan Pemasangan 1 Unit Downlight LED-E27 9W Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 971
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001491",
+   "code": "5.3.1.45",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 971,
+   "attachment": "VI",
+   "description": "4000K (Recessed) Perubahan Pemasangan 1 Unit Downlight LED-E27 9W Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 971
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001492",
+   "code": "5.3.1.46",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 972,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Downlight LED-E27 9W 4000K (Recessed) + Battery",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 972
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001493",
+   "code": "5.3.1.47",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 972,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Downlight LED 9 Watt Perubahan Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 972
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001494",
+   "code": "5.3.1.48",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 973,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Downlight LED 17 Watt Perubahan Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 973
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001495",
+   "code": "5.3.1.49",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 973,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Downlight LED 24 Watt Perubahan Pemasangan 1 Unit Downlight 5 Inch 12 Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 973
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001496",
+   "code": "5.3.1.50",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 973,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Downlight 5 Inch 12 Watt LED",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 973
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001497",
+   "code": "5.3.1.51",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 974,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Downlight 13 Watt Perubahan Pemasangan 1 Unit Lampu Sorot LED 50",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 974
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001498",
+   "code": "5.3.1.52",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 974,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Lampu Sorot LED 50 Watt",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,215 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,021",
+    "page": 974
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001499",
+   "code": "5.3.1.53",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 974,
+   "attachment": "VI",
+   "description": "Watt Pemasangan 1 Unit Lampu TLED 1x18W Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 974
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001500",
+   "code": "5.3.1.54",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 975,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Lampu TLED 1x18W 4000K",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,191 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,019",
+    "page": 975
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001501",
+   "code": "5.3.1.55",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 975,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Lampu TL 2x18 Watt Perubahan Pemasangan 1 Unit Lampu Taman LED 50 Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,278 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,028",
+    "page": 975
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001502",
+   "code": "5.3.1.56",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 976,
+   "attachment": "VI",
+   "description": "watt + Tiang 3,8 m (single pool) Perubahan Pemasangan 1 Unit Lampu Taman LED 18 Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,851 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,085",
+    "page": 976
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001503",
+   "code": "5.3.1.57",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 976,
+   "attachment": "VI",
+   "description": "watt + Tiang 3 m (single pool) Perubahan Pemasangan 1 Unit Fitting + 20 Watt Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,851 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,085",
+    "page": 976
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001504",
+   "code": "5.3.1.58",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 977,
+   "attachment": "VI",
+   "description": "Lampu Baret Perubahan Pemasangan 1 Unit Fitting + 32 Watt Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 977
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001505",
+   "code": "5.3.1.59",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 977,
+   "attachment": "VI",
+   "description": "Lampu Baret Perubahan Pemasangan 1 Unit Tiang PJU Octagonal Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 977
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001506",
+   "code": "5.3.1.60",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 978,
+   "attachment": "VI",
+   "description": "Single Ornament Parabole Perubahan Pemasangan 1 Unit Tiang PJU Octagonal Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 2,330 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,233",
+    "page": 978
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001507",
+   "code": "5.3.1.61",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 978,
+   "attachment": "VI",
+   "description": "Double Ornament Parabole Perubahan Pemasangan 1 Unit Downlight Outbow LED Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 2,796 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,280",
+    "page": 978
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001508",
+   "code": "5.3.1.62",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 979,
+   "attachment": "VI",
+   "description": "9W 4000K Perubahan Pemasangan 1 Unit Downlight Outbow LED Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 979
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001509",
+   "code": "5.3.1.63",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 979,
+   "attachment": "VI",
+   "description": "9W 4000K + Battery Perubahan Pemasangan 1 Unit Lampu Sorot Washlight",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 979
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001510",
+   "code": "5.3.1.64",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 979,
+   "attachment": "VI",
+   "description": "LED 3 Watt Pemasangan 1 Unit Spotlight LED-E27 20W",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 979
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001511",
+   "code": "5.3.1.65",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 980,
+   "attachment": "VI",
+   "description": "4000K Pemasangan 1 Unit Lampu Bollard LED 20 Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 980
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001512",
+   "code": "5.3.1.66",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 980,
+   "attachment": "VI",
+   "description": "Watt Perubahan Pemasangan 1 Unit Lampu Outdoor Bollard Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,425 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,043",
+    "page": 980
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001513",
+   "code": "5.3.1.67",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 981,
+   "attachment": "VI",
+   "description": "H400xW110 10W 4000K, IP65 Perubahan Pemasangan 1 Unit Lampu TLED Panel 31 Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,425 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,043",
+    "page": 981
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001514",
+   "code": "5.3.1.68",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 981,
+   "attachment": "VI",
+   "description": "Watt Perubahan Pemasangan 1 Unit Lampu TLED Panel 31 Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,191 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,019",
+    "page": 981
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001515",
+   "code": "5.3.1.69",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 982,
+   "attachment": "VI",
+   "description": "Watt + Battery Perubahan Pemasangan 1 unit LED Panel 36 Watt Uk Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,191 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,019",
+    "page": 982
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001516",
+   "code": "5.3.1.70",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 982,
+   "attachment": "VI",
+   "description": "30 x 120 cm Perubahan Pemasangan 1 unit Downlight LED panel Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,191 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,019",
+    "page": 982
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001517",
+   "code": "5.3.1.71",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 982,
+   "attachment": "VI",
+   "description": "dia. 150 mm 15 Watt Perubahan Pemasangan 1 unit Downlight LED Slim Ada",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 982
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001518",
+   "code": "5.3.1.72",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 983,
+   "attachment": "VI",
+   "description": "Pemasangan 1 unit Downlight LED Slim panel dia. 127 mm 10 Watt",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 983
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001546",
+   "code": "5.4.1.26",
+   "field": "CIPTA_KARYA",
+   "unit": "buah",
+   "page": 995,
+   "attachment": "VI",
+   "description": "Pemasangan 1 buah Sirine Module",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,115 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,012",
+    "page": 995
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001547",
+   "code": "5.4.1.27",
+   "field": "CIPTA_KARYA",
+   "unit": "buah",
+   "page": 995,
+   "attachment": "VI",
+   "description": "Pemasangan 1 buah Control Module",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,115 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,012",
+    "page": 995
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001548",
+   "code": "5.4.1.28",
+   "field": "CIPTA_KARYA",
+   "unit": "buah",
+   "page": 995,
+   "attachment": "VI",
+   "description": "Pemasangan 1 buah Relay Module",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,115 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,012",
+    "page": 995
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001549",
+   "code": "5.4.1.29",
+   "field": "CIPTA_KARYA",
+   "unit": "buah",
+   "page": 996,
+   "attachment": "VI",
+   "description": "Pemasangan 1 buah Isolator Module",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,115 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,012",
+    "page": 996
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001550",
+   "code": "5.4.1.30",
+   "field": "CIPTA_KARYA",
+   "unit": "buah",
+   "page": 996,
+   "attachment": "VI",
+   "description": "Pemasangan 1 buah Monitor Module Pemasangan 1 Unit Terminal Box Fire",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,115 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,012",
+    "page": 996
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001551",
+   "code": "5.4.1.31",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 996,
+   "attachment": "VI",
+   "description": "Alarm (Tanpa Modul) Pemasangan 1 m' Kabel Power Fire Alarm",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,215 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,021",
+    "page": 996
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001552",
+   "code": "5.4.1.32",
+   "field": "CIPTA_KARYA",
+   "unit": "m'",
+   "page": 997,
+   "attachment": "VI",
+   "description": "NYA 20 x 1,5 mm2 Pemasangan 1 m' Kabel Power Fire Alarm",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,060 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,006",
+    "page": 997
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001553",
+   "code": "5.4.1.33",
+   "field": "CIPTA_KARYA",
+   "unit": "m'",
+   "page": 997,
+   "attachment": "VI",
+   "description": "NYA 3 x 2 x 2,5 mm2 Pemasangan 1 m' Kabel Power Fire Alarm",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,040 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,004",
+    "page": 997
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001554",
+   "code": "5.4.1.34",
+   "field": "CIPTA_KARYA",
+   "unit": "m'",
+   "page": 997,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m' Kabel Power Fire Alarm NYA 5 x 2 x 2,5 mm2",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,060 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,006",
+    "page": 997
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001555",
+   "code": "5.4.1.35",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 998,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Rectifier",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,143 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,014",
+    "page": 998
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001556",
+   "code": "5.4.1.36",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 998,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Power Surge Arrester Pemasangan 1 Unit UPS 2 KVA (Inverter,",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,302 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,030",
+    "page": 998
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001557",
+   "code": "5.4.1.37",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 999,
+   "attachment": "VI",
+   "description": "Rectifier, Battery Backup 15 menit) Pemasangan 1 Unit UPS 2 KVA (Inverter,",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,418 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,042",
+    "page": 999
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001558",
+   "code": "5.4.1.38",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 999,
+   "attachment": "VI",
+   "description": "Rectifier, Battery Backup 30 menit) Pemasangan 1 Unit UPS 2 KVA (Inverter,",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,418 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,042",
+    "page": 999
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001559",
+   "code": "5.4.1.39",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1000,
+   "attachment": "VI",
+   "description": "Rectifier, Battery Backup 1 jam) Pemasangan 1 Unit UPS 2 KVA (Inverter,",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,418 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,042",
+    "page": 1000
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001560",
+   "code": "5.4.1.40",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1000,
+   "attachment": "VI",
+   "description": "Rectifier, Battery Backup 2 jam) Pemasangan 1 Unit UPS 2 KVA (Inverter,",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,418 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,042",
+    "page": 1000
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001561",
+   "code": "5.4.1.41",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1001,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit UPS 2 KVA (Inverter, Rectifier, Battery Backup 4 jam)",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,418 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,042",
+    "page": 1001
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001562",
+   "code": "5.4.1.42",
+   "field": "CIPTA_KARYA",
+   "unit": "buah",
+   "page": 1001,
+   "attachment": "VI",
+   "description": "Pemasangan 1 buah End of Line Resistor Pemasangan 1 Unit Patch Panel UTP Cat 6",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,028 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,003",
+    "page": 1001
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001575",
+   "code": "5.4.2.13",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1007,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit LED Monitor 32\" Pemasangan 1 Unit Rak HUB 15U (Lengkap",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,534 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,053",
+    "page": 1007
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001576",
+   "code": "5.4.2.14",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1007,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Rak HUB 15U (Lengkap dengan Power Outlet)",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,636 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,064",
+    "page": 1007
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001577",
+   "code": "5.4.2.15",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1007,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Rack Mount 10 U Pemasangan 1 Unit Outdoor Smart Wifi",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,636 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,064",
+    "page": 1007
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001578",
+   "code": "5.4.2.16",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1008,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Outdoor Smart Wifi CCTV 360",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,318 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,032",
+    "page": 1008
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001625",
+   "code": "5.4.5.11",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1028,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Switch HUB 8 Port, Unmanaged c/w OTB",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,268 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,127",
+    "page": 1028
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001626",
+   "code": "5.4.5.12",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1028,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Touch Screen Panel 7\"",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,716 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,072",
+    "page": 1028
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001627",
+   "code": "5.4.5.13",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1029,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Touch Screen Panel 10\"",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,716 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,072",
+    "page": 1029
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001628",
+   "code": "5.4.5.14",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1029,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Touch Screen Panel 12\"",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,133 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,113",
+    "page": 1029
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001629",
+   "code": "5.4.5.15",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1029,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Touch Screen Panel 14\" Pemasangan 1 Unit Wall Mounted Rack",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 1,133 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,113",
+    "page": 1029
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001630",
+   "code": "5.4.5.16",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1030,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Wall Mounted Rack 15U",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,636 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,064",
+    "page": 1030
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001631",
+   "code": "5.4.5.17",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1030,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Workstation, Meja+Kursi",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / 0,696 L.02 Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,070",
+    "page": 1030
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001632",
+   "code": "5.4.5.18",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1030,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Modular Jack Pemasangan 1 m' Kabel Fiber Optic 4 Core",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / L.02 Elektronik 0,080 Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,008",
+    "page": 1030
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001654",
+   "code": "5.5.1.1",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1039,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Wall Mounted Kap : 5.000 BTUH",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,127",
+    "page": 1039
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001655",
+   "code": "5.5.1.2",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1040,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Wall Mounted Kap : 6.500 BTUH",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,149",
+    "page": 1040
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001656",
+   "code": "5.5.1.3",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1040,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Wall Mounted Kap : 7.000 BTUH",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,149",
+    "page": 1040
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001657",
+   "code": "5.5.1.4",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1040,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Wall Mounted Kap : 9.000 BTUH",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,149",
+    "page": 1040
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001658",
+   "code": "5.5.1.5",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1041,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Wall Mounted Kap : 12.000 BTUH",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,149",
+    "page": 1041
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001659",
+   "code": "5.5.1.6",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1041,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Wall Mounted Kap : 24.000 BTUH",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,211",
+    "page": 1041
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001660",
+   "code": "5.5.1.7",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1041,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Cassete Kap : 35.000 BTUH",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,338",
+    "page": 1041
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001664",
+   "code": "5.5.1.11",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1043,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Wall Mounted Kap : 19.100 BTUH",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang 2,111 Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,211",
+    "page": 1043
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001665",
+   "code": "5.5.1.12",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1043,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Cassette Kap : 15.400 BTUH",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang 2,111 Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,211",
+    "page": 1043
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001666",
+   "code": "5.5.1.13",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1043,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Cassette Kap : 19.100 BTUH",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang 2,111 Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,211",
+    "page": 1043
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001667",
+   "code": "5.5.1.14",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1044,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Cassette Kap : 24.200 BTUH",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang 2,111 Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,211",
+    "page": 1044
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001668",
+   "code": "5.5.1.15",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1044,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Cassette Kap : 30.700 BTUH",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang 2,111 Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,211",
+    "page": 1044
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001669",
+   "code": "5.5.1.16",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1044,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Cassette Kap : 38.200 BTUH",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang 3,380 Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,338",
+    "page": 1044
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001670",
+   "code": "5.5.1.17",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1045,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Cassette Kap : 47.800 BTUH",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang 3,380 Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,338",
+    "page": 1045
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001671",
+   "code": "5.5.1.18",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1045,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Cassette Kap : 54.600 BTUH",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang 4,394 Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,439",
+    "page": 1045
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001672",
+   "code": "5.5.1.19",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1045,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Cassette Duct Kap. 24.200 Btu/h",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang 2,322 Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,232",
+    "page": 1045
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001673",
+   "code": "5.5.1.20",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1046,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Cassette Duct Kap. 30.700 Btu/h",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang 2,322 Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,232",
+    "page": 1046
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001674",
+   "code": "5.5.1.21",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1046,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Cassette Duct Kap. 38.200 Btu/h",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang 3,718 Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,372",
+    "page": 1046
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001675",
+   "code": "5.5.1.22",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1046,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit AC Split Duct Kap. 12.300 Btu/h",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang 1,431 Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,143",
+    "page": 1046
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001688",
+   "code": "5.5.2.1",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1052,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Ceiling Fan ; 50 CFM",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,043",
+    "page": 1052
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001689",
+   "code": "5.5.2.2",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1052,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Ceiling Fan ; 75 CFM",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,043",
+    "page": 1052
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001690",
+   "code": "5.5.2.3",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1052,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Ceiling Fan ; 100 CFM",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,043",
+    "page": 1052
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001691",
+   "code": "5.5.2.4",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1053,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Ceiling Fan ; 200 CFM",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,043",
+    "page": 1053
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001692",
+   "code": "5.5.2.5",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1053,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Inline Fan ; 500 CFM",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,127",
+    "page": 1053
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001693",
+   "code": "5.5.2.6",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1053,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Inline Fan ; 700 CFM",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,127",
+    "page": 1053
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001694",
+   "code": "5.5.2.7",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1054,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Axial Fan ; 2.600 CFM",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,380",
+    "page": 1054
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001695",
+   "code": "5.5.2.8",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1054,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Axial Fan ; 2.800 CFM",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,380",
+    "page": 1054
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001696",
+   "code": "5.5.2.9",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1054,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Axial Fan ; 3.200 CFM",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,380",
+    "page": 1054
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001697",
+   "code": "5.5.2.10",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1055,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Axial Fan ; 3.500 CFM",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,549",
+    "page": 1055
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001698",
+   "code": "5.5.2.11",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1055,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Axial Fan ; 4.000 CFM",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,844",
+    "page": 1055
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001699",
+   "code": "5.5.2.12",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1055,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Axial Fan ; 5.500 CFM",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,844",
+    "page": 1055
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001700",
+   "code": "5.5.2.13",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1056,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Rotary Fan",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,043",
+    "page": 1056
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001701",
+   "code": "5.5.2.14",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1056,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Ceiling Fan Rotary Pemasangan 1 Unit Bifurcated Fan ; 1.500",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,043",
+    "page": 1056
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001702",
+   "code": "5.5.2.15",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1056,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Bifurcated Fan ; 1.500 CFM",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,211",
+    "page": 1056
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001703",
+   "code": "5.5.2.16",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1057,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Propeller Fan ; 75 CFM Pemasangan 1 Unit Propeller Fan ; 100",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,064",
+    "page": 1057
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001704",
+   "code": "5.5.2.17",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1057,
+   "attachment": "VI",
+   "description": "CFM Pemasangan 1 Unit Propeller Fan ; 150",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,064",
+    "page": 1057
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001705",
+   "code": "5.5.2.18",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1057,
+   "attachment": "VI",
+   "description": "CFM Pemasangan 1 Unit Propeller Fan ; 375",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,064",
+    "page": 1057
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001706",
+   "code": "5.5.2.19",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1058,
+   "attachment": "VI",
+   "description": "CFM Pemasangan 1 Unit Propeller Fan ; 500",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,085",
+    "page": 1058
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001707",
+   "code": "5.5.2.20",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1058,
+   "attachment": "VI",
+   "description": "CFM Pemasangan 1 Unit Propeller Fan ; 600",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,148",
+    "page": 1058
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001708",
+   "code": "5.5.2.21",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1058,
+   "attachment": "VI",
+   "description": "CFM Pemasangan 1 Unit Intake Grille 600 x 300",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,148",
+    "page": 1058
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001709",
+   "code": "5.5.2.22",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1059,
+   "attachment": "VI",
+   "description": "mm Pemasangan 1 Unit Intake Grille 650 x 350",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 1059
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001710",
+   "code": "5.5.2.23",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1059,
+   "attachment": "VI",
+   "description": "mm Pemasangan 1 Unit Intake Grille 800 x 350",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 1059
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001711",
+   "code": "5.5.2.24",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1059,
+   "attachment": "VI",
+   "description": "mm Pemasangan 1 Unit Intake Grille 800 x 400",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,013",
+    "page": 1059
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001712",
+   "code": "5.5.2.25",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1060,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Intake Grille 800 x 400 mm",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,013",
+    "page": 1060
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001713",
+   "code": "5.5.2.26",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1060,
+   "attachment": "VI",
+   "description": "400 mm Pemasangan 1 Unit Fan Louvre 750 x 400",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,043",
+    "page": 1060
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001714",
+   "code": "5.5.2.27",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1060,
+   "attachment": "VI",
+   "description": "mm Pemasangan 1 Unit Fan Louvre 900 x 500",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,043",
+    "page": 1060
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001715",
+   "code": "5.5.2.28",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1061,
+   "attachment": "VI",
+   "description": "mm Pemasangan 1 Unit Fan Louvre 1000 x 400",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,064",
+    "page": 1061
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001716",
+   "code": "5.5.2.29",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1061,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Fan Louvre 1.000 x 400 mm",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,085",
+    "page": 1061
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001717",
+   "code": "5.5.2.30",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1061,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Fan Louvre 1.000 x 450 mm",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,085",
+    "page": 1061
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001718",
+   "code": "5.5.2.31",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1062,
+   "attachment": "VI",
+   "description": "150 mm Pemasangan 1 Unit Exhaust Grille 200 x",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 1062
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001719",
+   "code": "5.5.2.32",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1062,
+   "attachment": "VI",
+   "description": "200 mm Pemasangan 1 Unit Exhaust Grille 600 x",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 1062
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001720",
+   "code": "5.5.2.33",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1062,
+   "attachment": "VI",
+   "description": "300 mm Pemasangan 1 Unit Exhaust Grille 650 x",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 1062
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001721",
+   "code": "5.5.2.34",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1063,
+   "attachment": "VI",
+   "description": "350 mm Pemasangan 1 Unit Exhaust Grille 900 x",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,011",
+    "page": 1063
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001722",
+   "code": "5.5.2.35",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1063,
+   "attachment": "VI",
+   "description": "400 mm Pemasangan 1 Unit Exhaust Louvre 200 x",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,013",
+    "page": 1063
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001723",
+   "code": "5.5.2.36",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1063,
+   "attachment": "VI",
+   "description": "200 mm Pemasangan 1 Unit Exhaust Louvre 450 x",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,043",
+    "page": 1063
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001724",
+   "code": "5.5.2.37",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1064,
+   "attachment": "VI",
+   "description": "250 mm Pemasangan 1 Unit Exhaust Louvre 400 x",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,043",
+    "page": 1064
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001725",
+   "code": "5.5.2.38",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1064,
+   "attachment": "VI",
+   "description": "300 mm Pemasangan 1 Unit Exhaust Louvre 750 x",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,043",
+    "page": 1064
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001726",
+   "code": "5.5.2.39",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1064,
+   "attachment": "VI",
+   "description": "350 mm Pemasangan 1 Unit Exhaust Louvre 800 x",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,043",
+    "page": 1064
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001727",
+   "code": "5.5.2.40",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1065,
+   "attachment": "VI",
+   "description": "400 mm Pemasangan 1 Unit Exhaust Louvre 850 x",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,064",
+    "page": 1065
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001728",
+   "code": "5.5.2.41",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1065,
+   "attachment": "VI",
+   "description": "400 mm Pemasangan 1 Unit Exhaust Louvre 900 x",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,085",
+    "page": 1065
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001729",
+   "code": "5.5.2.42",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1065,
+   "attachment": "VI",
+   "description": "500 mm Pemasangan 1 Unit Exhaust Louvre 1000 x",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,085",
+    "page": 1065
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001730",
+   "code": "5.5.2.43",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1066,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Exhaust Louvre 1.000 x 400 mm",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,106",
+    "page": 1066
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001731",
+   "code": "5.5.2.44",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1066,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Exhaust Louvre 1.000 x 450 mm",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,106",
+    "page": 1066
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001734",
+   "code": "5.5.2.47",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1067,
+   "attachment": "VI",
+   "description": "CFM Pemasangan 1 Unit Propeller Fan ; 1200",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,085",
+    "page": 1067
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001735",
+   "code": "5.5.2.48",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1067,
+   "attachment": "VI",
+   "description": "CFM Pemasangan 1 Titik Kabel Power Exhaust",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang 2,227 Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,223",
+    "page": 1067
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001736",
+   "code": "5.5.2.49",
+   "field": "CIPTA_KARYA",
+   "unit": "titik",
+   "page": 1068,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Titik Kabel Power Exhaust Fan NYY 3x2,5 mm2",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang 0,040 Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,004",
+    "page": 1068
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001747",
+   "code": "5.5.3.1",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 1073,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m2 BJLS 50 (Tanpa Isolasi)",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,024",
+    "page": 1073
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001748",
+   "code": "5.5.3.2",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 1073,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m2 BJLS 60 (Tanpa Isolasi)",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,024",
+    "page": 1073
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001749",
+   "code": "5.5.3.3",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 1074,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m2 BJLS 70 (Tanpa Isolasi)",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,024",
+    "page": 1074
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001750",
+   "code": "5.5.3.4",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 1074,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m2 BJLS 80 (Tanpa Isolasi)",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,024",
+    "page": 1074
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001751",
+   "code": "5.5.3.5",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 1075,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m2 BJLS 100 (Tanpa Isolasi)",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,024",
+    "page": 1075
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001752",
+   "code": "5.5.3.6",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 1075,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m2 BJLS 50 (Isolasi Luar)",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,032",
+    "page": 1075
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001753",
+   "code": "5.5.3.7",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 1076,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m2 BJLS 60 (Isolasi Luar)",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,032",
+    "page": 1076
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001754",
+   "code": "5.5.3.8",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 1076,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m2 BJLS 70 (Isolasi Luar)",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,032",
+    "page": 1076
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001755",
+   "code": "5.5.3.9",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 1077,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m2 BJLS 80 (Isolasi Luar)",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,032",
+    "page": 1077
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001756",
+   "code": "5.5.3.10",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 1077,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m2 BJLS 100 (Isolasi Luar) Pemasangan 1 m2 BJLS 50 (Isolasi Luar",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,032",
+    "page": 1077
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001757",
+   "code": "5.5.3.11",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 1078,
+   "attachment": "VI",
+   "description": "Dalam) Pemasangan 1 m2 BJLS 60 (Isolasi Luar",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,036",
+    "page": 1078
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001758",
+   "code": "5.5.3.12",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 1078,
+   "attachment": "VI",
+   "description": "Dalam) Pemasangan 1 m2 BJLS 70 (Isolasi Luar",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,036",
+    "page": 1078
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001759",
+   "code": "5.5.3.13",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 1079,
+   "attachment": "VI",
+   "description": "Dalam) Pemasangan 1 m2 BJLS 80 (Isolasi Luar",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,036",
+    "page": 1079
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001760",
+   "code": "5.5.3.14",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 1079,
+   "attachment": "VI",
+   "description": "Dalam) Pemasangan 1 m2 BJLS 100 (Isolasi Luar",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,036",
+    "page": 1079
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001761",
+   "code": "5.5.3.15",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 1080,
+   "attachment": "VI",
+   "description": "Pemasangan 1 m2 BJLS 100 (Isolasi Luar Dalam)",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,036",
+    "page": 1080
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001818",
+   "code": "5.6.3.1",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1104,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Fire Extinguisher 3 Kg",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,017",
+    "page": 1104
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001819",
+   "code": "5.6.3.2",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1104,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Fire Extinguisher 5 Kg",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,017",
+    "page": 1104
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001820",
+   "code": "5.6.3.3",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1105,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Fire Extinguisher 25 Kg",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,017",
+    "page": 1105
+   }
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001821",
+   "code": "5.6.3.4",
+   "field": "CIPTA_KARYA",
+   "unit": "unit",
+   "page": 1105,
+   "attachment": "VI",
+   "description": "Pemasangan 1 Unit Fire Extinguisher 6 Kg Pemasangan 1 Unit Jockey Fire Pump",
+   "issues": [
+    "SUSPECT_MERGED_RESOURCE_NAME",
+    "POSSIBLE_DUPLICATE"
+   ],
+   "component": {
+    "code": "L.03",
+    "name": "Tukang Listrik / Elektronik Kepala Tukang",
+    "unit": "OH",
+    "coefficient_raw": "0,017",
+    "page": 1105
+   }
+  }
+ ]
+}

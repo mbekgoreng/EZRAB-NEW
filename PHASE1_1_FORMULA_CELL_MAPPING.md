@@ -1,0 +1,3 @@
+# Phase 1.1 Formula Cell Mapping
+
+The machine-readable mapping is `phase1_1_formula_map.json`. It contains all discovered formula cells for each of the 19 sheets. Input/output labels are additionally documented in workbook sheets `INPUT_MAP` and `FORMULA_SPEC`, but this pass does not promote cells to verified semantic inputs/outputs because the workbook has no reliable evaluated-result harness in the current environment. Every unknown input/output mapping is deliberately retained as `UNVERIFIED`; no input labels or units are inferred from TypeScript names alone.

@@ -1,0 +1,224 @@
+/* Refined portfolio dashboard: clean light modern visual system */
+.ez-dashboard-refined {
+  --dash-ink: #111827;
+  --dash-muted: #64748b;
+  --dash-line: #e5e7eb;
+  --dash-blue: #2563eb;
+  --dash-navy: #1e293b;
+  gap: 20px !important;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.ez-dashboard-heading-row h1 {
+  color: var(--dash-ink) !important;
+  font-size: 24px !important;
+  letter-spacing: -.025em !important;
+}
+
+.ez-dashboard-heading-row p {
+  margin-top: 4px !important;
+  color: var(--dash-muted) !important;
+  font-size: 13.5px !important;
+}
+
+.ez-dashboard-heading-actions button {
+  min-height: 40px !important;
+  border-radius: 10px !important;
+}
+
+.ez-dashboard-heading-actions button:first-child {
+  padding-inline: 16px !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, .2) !important;
+}
+
+.ez-dashboard-kpi-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.ez-dashboard-kpi-card {
+  position: relative;
+  min-height: 120px;
+  padding: 18px 20px !important;
+  overflow: hidden;
+  background: #ffffff !important;
+  border: 1px solid var(--dash-line) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .03) !important;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.ez-dashboard-kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: #dbeafe !important;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, .06) !important;
+}
+
+.ez-dashboard-kpi-1 {
+  order: -1;
+  grid-column: span 2;
+  color: #111827;
+  border-color: #e5e7eb !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .03) !important;
+}
+
+.ez-dashboard-kpi-1::after {
+  display: none;
+}
+
+.ez-dashboard-kpi-1 .ez-dashboard-kpi-head span,
+.ez-dashboard-kpi-1 .ez-dashboard-kpi-sub { color: #64748b !important; }
+.ez-dashboard-kpi-1 .ez-dashboard-kpi-value { color: #111827 !important; font-size: 26px !important; }
+.ez-dashboard-kpi-1 .ez-dashboard-kpi-icon {
+  color: #2563eb !important;
+  background: #eff6ff !important;
+  border: 1px solid #dbeafe;
+}
+
+.ez-dashboard-kpi-head { margin-bottom: 12px !important; }
+.ez-dashboard-kpi-head > span { color: #64748b !important; font-size: 12px !important; font-weight: 600 !important; }
+.ez-dashboard-kpi-icon { width: 35px !important; height: 35px !important; border-radius: 10px !important; }
+.ez-dashboard-kpi-value {
+  color: var(--dash-ink) !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+  font-variant-numeric: tabular-nums !important;
+}
+.ez-dashboard-kpi-sub { margin-top: 6px !important; color: #8b98ad !important; font-size: 11.5px !important; font-weight: 500 !important; }
+
+.ez-dashboard-focus-grid {
+  grid-template-columns: minmax(0, 1.65fr) minmax(330px, .85fr) !important;
+  gap: 14px !important;
+}
+
+.ez-dashboard-latest-card,
+.ez-dashboard-projects-card,
+.ez-dashboard-quick-card,
+.ez-dashboard-activity-card {
+  border-color: var(--dash-line) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 9px 30px rgba(15, 23, 42, .035) !important;
+}
+
+.ez-dashboard-latest-card {
+  position: relative;
+  min-height: 230px;
+  padding: 24px 25px !important;
+  background: #ffffff !important;
+  border: 1px solid var(--dash-line) !important;
+}
+
+.ez-dashboard-latest-card::before {
+  content: '';
+  position: absolute;
+  top: 24px;
+  bottom: 24px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: var(--dash-blue);
+}
+
+.ez-dashboard-latest-card h3 {
+  max-width: 720px;
+  color: var(--dash-ink) !important;
+  font-size: 22px !important;
+  letter-spacing: -.025em;
+}
+
+.ez-dashboard-latest-actions button {
+  min-height: 40px !important;
+  border-radius: 10px !important;
+}
+
+.ez-dashboard-projects-card { padding: 21px !important; }
+
+.ez-dashboard-project-row {
+  min-height: 54px;
+  padding: 10px 11px !important;
+  border-color: transparent !important;
+  background: transparent !important;
+}
+
+.ez-dashboard-project-row + .ez-dashboard-project-row {
+  border-top: 1px solid #edf1f6 !important;
+  border-radius: 0 !important;
+}
+
+.ez-dashboard-project-row:hover {
+  background: #f5f8fd !important;
+  border-color: transparent !important;
+}
+
+.ez-dashboard-bottom-grid {
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr) !important;
+  gap: 14px !important;
+}
+
+.ez-dashboard-quick-card,
+.ez-dashboard-activity-card { padding: 21px !important; }
+
+.ez-dashboard-quick-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.ez-dashboard-quick-button {
+  min-height: 76px;
+  padding: 11px 7px !important;
+  background: transparent !important;
+  border-color: transparent !important;
+  border-radius: 13px !important;
+}
+
+.ez-dashboard-quick-button:hover {
+  background: #f1f6ff !important;
+  border-color: #dbeafe !important;
+}
+
+.ez-dashboard-quick-button svg {
+  width: 19px;
+  height: 19px;
+}
+
+.ez-dashboard-activity-card {
+  min-height: 144px;
+  background: #ffffff !important;
+}
+
+@media (max-width: 1300px) {
+  .ez-dashboard-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .ez-dashboard-kpi-1 { grid-column: span 2; }
+  .ez-dashboard-focus-grid,
+  .ez-dashboard-bottom-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 760px) {
+  .ez-dashboard-refined { gap: 16px !important; }
+  .ez-dashboard-heading-row { align-items: flex-start !important; }
+  .ez-dashboard-heading-actions { width: 100%; }
+  .ez-dashboard-heading-actions button:first-child { flex: 1; justify-content: center; }
+  .ez-dashboard-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .ez-dashboard-kpi-card { min-height: 116px; padding: 16px !important; }
+  .ez-dashboard-kpi-1 { grid-column: span 2; }
+  .ez-dashboard-kpi-1 .ez-dashboard-kpi-value { font-size: 22px !important; }
+  .ez-dashboard-latest-card { min-height: 0; padding: 20px !important; }
+  .ez-dashboard-latest-actions { flex-direction: column; align-items: stretch !important; }
+  .ez-dashboard-latest-actions button { width: 100%; justify-content: center; }
+  .ez-dashboard-quick-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width: 420px) {
+  .ez-dashboard-heading-row h1 { font-size: 23px !important; }
+  .ez-dashboard-kpi-grid { grid-template-columns: 1fr !important; }
+  .ez-dashboard-kpi-1 { grid-column: auto; }
+  .ez-dashboard-kpi-card { min-height: 108px; }
+  .ez-dashboard-quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ez-dashboard-kpi-card { transition: none !important; }
+}

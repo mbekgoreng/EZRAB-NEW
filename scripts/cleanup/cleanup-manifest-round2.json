@@ -1,0 +1,2758 @@
+{
+ "root": "D:/file kerja/PEMBUATAN SOFTWARE/ezrab site web",
+ "generated_at": "2026-10-05",
+ "entry_count": 305,
+ "total_bytes": 392809511,
+ "total_mb": 374.61,
+ "preserved_despite_orphan": [
+  "public/favicon.ico",
+  "public/favicon.png"
+ ],
+ "entries": [
+  {
+   "path": "dist",
+   "size_bytes": 225318084,
+   "size_mb": 214.88,
+   "files": 108,
+   "category": "E_GENERATED",
+   "reason": "Vite build output; regenerate with `npm run build`.",
+   "confidence": 0.99
+  },
+  {
+   "path": "src/assets/0908.mp4",
+   "size_bytes": 18224634,
+   "size_mb": 17.38,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": ".git/objects/be/tmp_obj_oDgCmc",
+   "size_bytes": 16879616,
+   "size_mb": 16.098,
+   "files": 1,
+   "category": "G_TEMPORARY",
+   "reason": "Dangling git temp object left by an interrupted object write; not a valid object name (git objects are 40-hex). Not history.",
+   "confidence": 0.97
+  },
+  {
+   "path": "src/assets/landpage-vid1-blackbg.mp4",
+   "size_bytes": 10092801,
+   "size_mb": 9.625,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/animasi-building-hero.mp4",
+   "size_bytes": 8965236,
+   "size_mb": 8.55,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/downloaded_hero.mp4",
+   "size_bytes": 7094714,
+   "size_mb": 6.766,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/videos/ezrab-magic-ai-scroll.mp4",
+   "size_bytes": 7048258,
+   "size_mb": 6.722,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/landpage-vid1-transparent.webm",
+   "size_bytes": 7034915,
+   "size_mb": 6.709,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/ezrab-hero.mp4",
+   "size_bytes": 6476269,
+   "size_mb": 6.176,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/landpage vid 1.mp4",
+   "size_bytes": 6084577,
+   "size_mb": 5.803,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/videos/ezrab-hero.mp4",
+   "size_bytes": 6025176,
+   "size_mb": 5.746,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/ezrab-hero.webm",
+   "size_bytes": 4188891,
+   "size_mb": 3.995,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/asada-hero-bg.png",
+   "size_bytes": 3869498,
+   "size_mb": 3.69,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/__pycache__",
+   "size_bytes": 2704653,
+   "size_mb": 2.579,
+   "files": 85,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "public/videos/roles/konsultan.mp4",
+   "size_bytes": 2109252,
+   "size_mb": 2.012,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/videos/roles/kontraktor.mp4",
+   "size_bytes": 1994878,
+   "size_mb": 1.902,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/videos/roles/developer.mp4",
+   "size_bytes": 1832023,
+   "size_mb": 1.747,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/landing/backgrounds/land-page-awal.jpg",
+   "size_bytes": 1786679,
+   "size_mb": 1.704,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/images/landing/backgrounds/land-page-awal.jpg",
+   "size_bytes": 1786679,
+   "size_mb": 1.704,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/logo_oy.svg",
+   "size_bytes": 1727354,
+   "size_mb": 1.647,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/logo_oy.svg",
+   "size_bytes": 1727354,
+   "size_mb": 1.647,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/videos/roles/estimator.mp4",
+   "size_bytes": 1591585,
+   "size_mb": 1.518,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/1.jpg",
+   "size_bytes": 1585778,
+   "size_mb": 1.512,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/hero-bg-1.png",
+   "size_bytes": 1585778,
+   "size_mb": 1.512,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": ".git/objects/eb/tmp_obj_M8Uby7",
+   "size_bytes": 1191936,
+   "size_mb": 1.137,
+   "files": 1,
+   "category": "G_TEMPORARY",
+   "reason": "Dangling git temp object left by an interrupted object write; not a valid object name (git objects are 40-hex). Not history.",
+   "confidence": 0.97
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/rich/__pycache__",
+   "size_bytes": 1134782,
+   "size_mb": 1.082,
+   "files": 77,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/rich/__pycache__",
+   "size_bytes": 1131995,
+   "size_mb": 1.08,
+   "files": 77,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "src/assets/check_0908fg.png",
+   "size_bytes": 1119580,
+   "size_mb": 1.068,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/frame_test.png",
+   "size_bytes": 1119580,
+   "size_mb": 1.068,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/test_transparent_frame.png",
+   "size_bytes": 1116105,
+   "size_mb": 1.064,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/test_chroma.webm",
+   "size_bytes": 1103416,
+   "size_mb": 1.052,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/check_bg.png",
+   "size_bytes": 1043742,
+   "size_mb": 0.995,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/images/about/about_magic_ai_pipeline.png",
+   "size_bytes": 1000686,
+   "size_mb": 0.954,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/images/about/ChatGPT Image Sep 9, 2026, 01_35_58 AM.png",
+   "size_bytes": 1000686,
+   "size_mb": 0.954,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/test_f1.png",
+   "size_bytes": 977695,
+   "size_mb": 0.932,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/check_0908.png",
+   "size_bytes": 964519,
+   "size_mb": 0.92,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/ezrab-hero.png",
+   "size_bytes": 896514,
+   "size_mb": 0.855,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/cta-skyline-cranes.jpg",
+   "size_bytes": 861152,
+   "size_mb": 0.821,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/landing/backgrounds/cta-skyline-cranes.jpg",
+   "size_bytes": 861152,
+   "size_mb": 0.821,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/test_f3.png",
+   "size_bytes": 803198,
+   "size_mb": 0.766,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pydantic/__pycache__",
+   "size_bytes": 710597,
+   "size_mb": 0.678,
+   "files": 35,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "public/images/about/ChatGPT Image Sep 9, 2026, 01_37_09 AM.png",
+   "size_bytes": 683641,
+   "size_mb": 0.652,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/magic-ai-blueprint-bg.png",
+   "size_bytes": 661917,
+   "size_mb": 0.631,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/landing/backgrounds/magic-ai-blueprint-bg.png",
+   "size_bytes": 661917,
+   "size_mb": 0.631,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/hero-hologram-platform-bg.png",
+   "size_bytes": 649647,
+   "size_mb": 0.62,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/landing/backgrounds/hero-hologram-platform-bg.png",
+   "size_bytes": 649647,
+   "size_mb": 0.62,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/magic-ai-orb.jpg",
+   "size_bytes": 640215,
+   "size_mb": 0.611,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": ".git/objects/be/tmp_obj_NRPQTO",
+   "size_bytes": 634880,
+   "size_mb": 0.605,
+   "files": 1,
+   "category": "G_TEMPORARY",
+   "reason": "Dangling git temp object left by an interrupted object write; not a valid object name (git objects are 40-hex). Not history.",
+   "confidence": 0.97
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pydantic/v1/__pycache__",
+   "size_bytes": 583186,
+   "size_mb": 0.556,
+   "files": 26,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/asyncio/__pycache__",
+   "size_bytes": 566021,
+   "size_mb": 0.54,
+   "files": 31,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "src/assets/workflow-blueprint-bg.png",
+   "size_bytes": 535615,
+   "size_mb": 0.511,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/landing/backgrounds/workflow-blueprint-bg.png",
+   "size_bytes": 535615,
+   "size_mb": 0.511,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/ezrab-robot-waving.jpg",
+   "size_bytes": 534543,
+   "size_mb": 0.51,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/images/about/photoreal_cinematic_cityscape.webp",
+   "size_bytes": 534200,
+   "size_mb": 0.509,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/ezrab-robot-idea.jpg",
+   "size_bytes": 522603,
+   "size_mb": 0.498,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/click/__pycache__",
+   "size_bytes": 505696,
+   "size_mb": 0.482,
+   "files": 17,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pydantic/_internal/__pycache__",
+   "size_bytes": 486238,
+   "size_mb": 0.464,
+   "files": 29,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/distlib/__pycache__",
+   "size_bytes": 469170,
+   "size_mb": 0.447,
+   "files": 13,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/fastapi/__pycache__",
+   "size_bytes": 385917,
+   "size_mb": 0.368,
+   "files": 23,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "public/assets/mascot/master_eye_texture.png",
+   "size_bytes": 351416,
+   "size_mb": 0.335,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/packaging/__pycache__",
+   "size_bytes": 334174,
+   "size_mb": 0.319,
+   "files": 18,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/httpx/__pycache__",
+   "size_bytes": 301200,
+   "size_mb": 0.287,
+   "files": 17,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "src/assets/logo_magic_ai.svg",
+   "size_bytes": 289746,
+   "size_mb": 0.276,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/logo_magic_ai.svg",
+   "size_bytes": 289746,
+   "size_mb": 0.276,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/unittest/__pycache__",
+   "size_bytes": 285965,
+   "size_mb": 0.273,
+   "files": 11,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/idna/__pycache__",
+   "size_bytes": 284253,
+   "size_mb": 0.271,
+   "files": 8,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "public/ezrab-bot-mascot.png",
+   "size_bytes": 283411,
+   "size_mb": 0.27,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/starlette/__pycache__",
+   "size_bytes": 275849,
+   "size_mb": 0.263,
+   "files": 23,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "public/assets/mascot/white_crop.png",
+   "size_bytes": 263910,
+   "size_mb": 0.252,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/assets/mascot/albedo_thumb.png",
+   "size_bytes": 260333,
+   "size_mb": 0.248,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/anyio/_core/__pycache__",
+   "size_bytes": 250475,
+   "size_mb": 0.239,
+   "files": 18,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "src/assets/animasi-building-poster.jpg",
+   "size_bytes": 246816,
+   "size_mb": 0.235,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/frame6.jpg",
+   "size_bytes": 246783,
+   "size_mb": 0.235,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/assets/mascot/extracted_albedo.jpg",
+   "size_bytes": 244118,
+   "size_mb": 0.233,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": ".git/objects/74/tmp_obj_hDGZJs",
+   "size_bytes": 243563,
+   "size_mb": 0.232,
+   "files": 1,
+   "category": "G_TEMPORARY",
+   "reason": "Dangling git temp object left by an interrupted object write; not a valid object name (git objects are 40-hex). Not history.",
+   "confidence": 0.97
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/requests/__pycache__",
+   "size_bytes": 243077,
+   "size_mb": 0.232,
+   "files": 19,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "src/assets/logo_magic_ai.png",
+   "size_bytes": 242509,
+   "size_mb": 0.231,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/logo_magic_ai.png",
+   "size_bytes": 242509,
+   "size_mb": 0.231,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/urllib3/__pycache__",
+   "size_bytes": 241498,
+   "size_mb": 0.23,
+   "files": 12,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "src/assets/frame3.jpg",
+   "size_bytes": 231469,
+   "size_mb": 0.221,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/anyio/_backends/__pycache__",
+   "size_bytes": 223064,
+   "size_mb": 0.213,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "src/assets/landpage-vid1-poster.jpg",
+   "size_bytes": 218721,
+   "size_mb": 0.209,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/test_vp9_alpha.webm",
+   "size_bytes": 218420,
+   "size_mb": 0.208,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/email/__pycache__",
+   "size_bytes": 214053,
+   "size_mb": 0.204,
+   "files": 15,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "src/assets/0908-poster.jpg",
+   "size_bytes": 212140,
+   "size_mb": 0.202,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/requests/__pycache__",
+   "size_bytes": 210872,
+   "size_mb": 0.201,
+   "files": 18,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/logging/__pycache__",
+   "size_bytes": 206506,
+   "size_mb": 0.197,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/packaging/__pycache__",
+   "size_bytes": 177515,
+   "size_mb": 0.169,
+   "files": 14,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/urllib/__pycache__",
+   "size_bytes": 174561,
+   "size_mb": 0.166,
+   "files": 5,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/distlib/__pycache__",
+   "size_bytes": 174126,
+   "size_mb": 0.166,
+   "files": 5,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pygments/formatters/__pycache__",
+   "size_bytes": 172448,
+   "size_mb": 0.164,
+   "files": 14,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/idna/__pycache__",
+   "size_bytes": 170383,
+   "size_mb": 0.162,
+   "files": 10,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/utils/__pycache__",
+   "size_bytes": 170195,
+   "size_mb": 0.162,
+   "files": 26,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/http/__pycache__",
+   "size_bytes": 169096,
+   "size_mb": 0.161,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pygments/__pycache__",
+   "size_bytes": 167189,
+   "size_mb": 0.159,
+   "files": 16,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/commands/__pycache__",
+   "size_bytes": 167118,
+   "size_mb": 0.159,
+   "files": 19,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/urllib3/__pycache__",
+   "size_bytes": 166798,
+   "size_mb": 0.159,
+   "files": 11,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/__pycache__",
+   "size_bytes": 166560,
+   "size_mb": 0.159,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/idna/__pycache__",
+   "size_bytes": 164717,
+   "size_mb": 0.157,
+   "files": 10,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pkg_resources/__pycache__",
+   "size_bytes": 161287,
+   "size_mb": 0.154,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pkg_resources/__pycache__",
+   "size_bytes": 161273,
+   "size_mb": 0.154,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pydantic_core/__pycache__",
+   "size_bytes": 159206,
+   "size_mb": 0.152,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/utils/__pycache__",
+   "size_bytes": 155997,
+   "size_mb": 0.149,
+   "files": 26,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "public/images/about/minimalist_ui_scene.jpg",
+   "size_bytes": 153415,
+   "size_mb": 0.146,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/commands/__pycache__",
+   "size_bytes": 149454,
+   "size_mb": 0.143,
+   "files": 18,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/__pycache__",
+   "size_bytes": 144052,
+   "size_mb": 0.137,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/multiprocessing/__pycache__",
+   "size_bytes": 143521,
+   "size_mb": 0.137,
+   "files": 9,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pygments/__pycache__",
+   "size_bytes": 141131,
+   "size_mb": 0.135,
+   "files": 15,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/platformdirs/__pycache__",
+   "size_bytes": 137393,
+   "size_mb": 0.131,
+   "files": 9,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/cli/__pycache__",
+   "size_bytes": 133949,
+   "size_mb": 0.128,
+   "files": 13,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/req/__pycache__",
+   "size_bytes": 132996,
+   "size_mb": 0.127,
+   "files": 8,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/anyio/__pycache__",
+   "size_bytes": 132963,
+   "size_mb": 0.127,
+   "files": 10,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "public/ezrab-bot-mascot.svg",
+   "size_bytes": 132841,
+   "size_mb": 0.127,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/resolution/resolvelib/__pycache__",
+   "size_bytes": 128788,
+   "size_mb": 0.123,
+   "files": 9,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pygments/lexers/__pycache__",
+   "size_bytes": 128149,
+   "size_mb": 0.122,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "public/images/ezrab-logo-original.png",
+   "size_bytes": 127225,
+   "size_mb": 0.121,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pygments/lexers/__pycache__",
+   "size_bytes": 125932,
+   "size_mb": 0.12,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/req/__pycache__",
+   "size_bytes": 125135,
+   "size_mb": 0.119,
+   "files": 6,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/httpcore/_async/__pycache__",
+   "size_bytes": 124909,
+   "size_mb": 0.119,
+   "files": 8,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/resolution/resolvelib/__pycache__",
+   "size_bytes": 120502,
+   "size_mb": 0.115,
+   "files": 9,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/html/__pycache__",
+   "size_bytes": 119385,
+   "size_mb": 0.114,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/httpcore/_sync/__pycache__",
+   "size_bytes": 113844,
+   "size_mb": 0.109,
+   "files": 8,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/__pycache__",
+   "size_bytes": 112732,
+   "size_mb": 0.108,
+   "files": 9,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "public/assets/mascot/adad.jpg",
+   "size_bytes": 108813,
+   "size_mb": 0.104,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/__pycache__",
+   "size_bytes": 108131,
+   "size_mb": 0.103,
+   "files": 8,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/urllib3/util/__pycache__",
+   "size_bytes": 107275,
+   "size_mb": 0.102,
+   "files": 13,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/cli/__pycache__",
+   "size_bytes": 105620,
+   "size_mb": 0.101,
+   "files": 13,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/__pycache__",
+   "size_bytes": 104373,
+   "size_mb": 0.1,
+   "files": 12,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "public/assets/mascot/maskot-lucu.svg",
+   "size_bytes": 102892,
+   "size_mb": 0.098,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/urllib3/util/__pycache__",
+   "size_bytes": 100540,
+   "size_mb": 0.096,
+   "files": 13,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/zipfile/__pycache__",
+   "size_bytes": 99987,
+   "size_mb": 0.095,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/re/__pycache__",
+   "size_bytes": 93765,
+   "size_mb": 0.089,
+   "files": 5,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/protocols/http/__pycache__",
+   "size_bytes": 88607,
+   "size_mb": 0.085,
+   "files": 6,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/network/__pycache__",
+   "size_bytes": 88512,
+   "size_mb": 0.084,
+   "files": 8,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/urllib3/contrib/__pycache__",
+   "size_bytes": 86973,
+   "size_mb": 0.083,
+   "files": 7,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/platformdirs/__pycache__",
+   "size_bytes": 83789,
+   "size_mb": 0.08,
+   "files": 8,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/protocols/websockets/__pycache__",
+   "size_bytes": 83334,
+   "size_mb": 0.079,
+   "files": 5,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/h11/__pycache__",
+   "size_bytes": 81383,
+   "size_mb": 0.078,
+   "files": 11,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/index/__pycache__",
+   "size_bytes": 80180,
+   "size_mb": 0.076,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/starlette/middleware/__pycache__",
+   "size_bytes": 79235,
+   "size_mb": 0.076,
+   "files": 12,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/index/__pycache__",
+   "size_bytes": 75838,
+   "size_mb": 0.072,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/vcs/__pycache__",
+   "size_bytes": 74929,
+   "size_mb": 0.071,
+   "files": 6,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/vcs/__pycache__",
+   "size_bytes": 73876,
+   "size_mb": 0.07,
+   "files": 6,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/network/__pycache__",
+   "size_bytes": 73795,
+   "size_mb": 0.07,
+   "files": 8,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/collections/__pycache__",
+   "size_bytes": 73296,
+   "size_mb": 0.07,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/anyio/streams/__pycache__",
+   "size_bytes": 70435,
+   "size_mb": 0.067,
+   "files": 7,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "public/assets/mascot/ref_dashboard_mascot.png",
+   "size_bytes": 68975,
+   "size_mb": 0.066,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/models/__pycache__",
+   "size_bytes": 67557,
+   "size_mb": 0.064,
+   "files": 12,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/importlib/metadata/__pycache__",
+   "size_bytes": 67463,
+   "size_mb": 0.064,
+   "files": 7,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/anyio/abc/__pycache__",
+   "size_bytes": 65791,
+   "size_mb": 0.063,
+   "files": 8,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/models/__pycache__",
+   "size_bytes": 62324,
+   "size_mb": 0.059,
+   "files": 13,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/fastapi/openapi/__pycache__",
+   "size_bytes": 61956,
+   "size_mb": 0.059,
+   "files": 5,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/metadata/__pycache__",
+   "size_bytes": 60216,
+   "size_mb": 0.057,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/metadata/__pycache__",
+   "size_bytes": 59946,
+   "size_mb": 0.057,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/truststore/__pycache__",
+   "size_bytes": 57241,
+   "size_mb": 0.055,
+   "files": 6,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/truststore/__pycache__",
+   "size_bytes": 56335,
+   "size_mb": 0.054,
+   "files": 6,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/packaging/licenses/__pycache__",
+   "size_bytes": 55353,
+   "size_mb": 0.053,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/distro/__pycache__",
+   "size_bytes": 55122,
+   "size_mb": 0.053,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/distro/__pycache__",
+   "size_bytes": 55116,
+   "size_mb": 0.053,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/httpcore/__pycache__",
+   "size_bytes": 55018,
+   "size_mb": 0.052,
+   "files": 8,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/urllib3/contrib/emscripten/__pycache__",
+   "size_bytes": 53901,
+   "size_mb": 0.051,
+   "files": 5,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/msgpack/__pycache__",
+   "size_bytes": 53651,
+   "size_mb": 0.051,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/msgpack/__pycache__",
+   "size_bytes": 53643,
+   "size_mb": 0.051,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pydantic/deprecated/__pycache__",
+   "size_bytes": 51979,
+   "size_mb": 0.05,
+   "files": 8,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/xmlrpc/__pycache__",
+   "size_bytes": 51774,
+   "size_mb": 0.049,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/packaging/licenses/__pycache__",
+   "size_bytes": 51536,
+   "size_mb": 0.049,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/fastapi/security/__pycache__",
+   "size_bytes": 51341,
+   "size_mb": 0.049,
+   "files": 7,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/fastapi/dependencies/__pycache__",
+   "size_bytes": 50676,
+   "size_mb": 0.048,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/operations/__pycache__",
+   "size_bytes": 50015,
+   "size_mb": 0.048,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/cachecontrol/__pycache__",
+   "size_bytes": 48744,
+   "size_mb": 0.046,
+   "files": 9,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/cachecontrol/__pycache__",
+   "size_bytes": 48236,
+   "size_mb": 0.046,
+   "files": 9,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/encodings/__pycache__",
+   "size_bytes": 46959,
+   "size_mb": 0.045,
+   "files": 6,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/resolvelib/__pycache__",
+   "size_bytes": 46654,
+   "size_mb": 0.044,
+   "files": 5,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/json/__pycache__",
+   "size_bytes": 46166,
+   "size_mb": 0.044,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "public/assets/mascot/vector_eye_right.png",
+   "size_bytes": 44830,
+   "size_mb": 0.043,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/assets/mascot/vector_eye_left.png",
+   "size_bytes": 44745,
+   "size_mb": 0.043,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/httpcore/_backends/__pycache__",
+   "size_bytes": 43834,
+   "size_mb": 0.042,
+   "files": 7,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/importlib/resources/__pycache__",
+   "size_bytes": 43647,
+   "size_mb": 0.042,
+   "files": 7,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/concurrent/futures/__pycache__",
+   "size_bytes": 43530,
+   "size_mb": 0.042,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/operations/__pycache__",
+   "size_bytes": 43421,
+   "size_mb": 0.041,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "public/videos/roles/kontraktor-poster.jpg",
+   "size_bytes": 43043,
+   "size_mb": 0.041,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/videos/roles/konsultan-poster.jpg",
+   "size_bytes": 42116,
+   "size_mb": 0.04,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/urllib3/packages/__pycache__",
+   "size_bytes": 41508,
+   "size_mb": 0.04,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pygments/filters/__pycache__",
+   "size_bytes": 37941,
+   "size_mb": 0.036,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pygments/filters/__pycache__",
+   "size_bytes": 37938,
+   "size_mb": 0.036,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pydantic/experimental/__pycache__",
+   "size_bytes": 37827,
+   "size_mb": 0.036,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/httpx/_transports/__pycache__",
+   "size_bytes": 37796,
+   "size_mb": 0.036,
+   "files": 6,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/urllib3/contrib/__pycache__",
+   "size_bytes": 36703,
+   "size_mb": 0.035,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/operations/install/__pycache__",
+   "size_bytes": 36242,
+   "size_mb": 0.035,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/resolvelib/resolvers/__pycache__",
+   "size_bytes": 35813,
+   "size_mb": 0.034,
+   "files": 5,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/build_env/__pycache__",
+   "size_bytes": 35671,
+   "size_mb": 0.034,
+   "files": 6,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/typing_inspection/__pycache__",
+   "size_bytes": 35513,
+   "size_mb": 0.034,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/ctypes/__pycache__",
+   "size_bytes": 35501,
+   "size_mb": 0.034,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/locations/__pycache__",
+   "size_bytes": 35140,
+   "size_mb": 0.034,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/tomli/__pycache__",
+   "size_bytes": 34890,
+   "size_mb": 0.033,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/operations/install/__pycache__",
+   "size_bytes": 34738,
+   "size_mb": 0.033,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/tomli/__pycache__",
+   "size_bytes": 34203,
+   "size_mb": 0.033,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "public/videos/roles/developer-poster.jpg",
+   "size_bytes": 34182,
+   "size_mb": 0.033,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/locations/__pycache__",
+   "size_bytes": 33757,
+   "size_mb": 0.032,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "public/videos/roles/estimator-poster.jpg",
+   "size_bytes": 33276,
+   "size_mb": 0.032,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/urllib3/contrib/_securetransport/__pycache__",
+   "size_bytes": 32486,
+   "size_mb": 0.031,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/venv/__pycache__",
+   "size_bytes": 31879,
+   "size_mb": 0.03,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/supervisors/__pycache__",
+   "size_bytes": 31700,
+   "size_mb": 0.03,
+   "files": 5,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/tomllib/__pycache__",
+   "size_bytes": 31538,
+   "size_mb": 0.03,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/fastapi/_compat/__pycache__",
+   "size_bytes": 31008,
+   "size_mb": 0.03,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/annotated_types/__pycache__",
+   "size_bytes": 30898,
+   "size_mb": 0.029,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/metadata/importlib/__pycache__",
+   "size_bytes": 28907,
+   "size_mb": 0.028,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/resolvelib/__pycache__",
+   "size_bytes": 26592,
+   "size_mb": 0.025,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/metadata/importlib/__pycache__",
+   "size_bytes": 25746,
+   "size_mb": 0.025,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/middleware/__pycache__",
+   "size_bytes": 23518,
+   "size_mb": 0.022,
+   "files": 5,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/resolution/legacy/__pycache__",
+   "size_bytes": 22833,
+   "size_mb": 0.022,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/resolution/legacy/__pycache__",
+   "size_bytes": 22770,
+   "size_mb": 0.022,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/urllib3/http2/__pycache__",
+   "size_bytes": 22460,
+   "size_mb": 0.021,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/operations/build/__pycache__",
+   "size_bytes": 22388,
+   "size_mb": 0.021,
+   "files": 8,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/zipfile/_path/__pycache__",
+   "size_bytes": 20971,
+   "size_mb": 0.02,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pydantic/plugin/__pycache__",
+   "size_bytes": 18874,
+   "size_mb": 0.018,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pyproject_hooks/__pycache__",
+   "size_bytes": 18847,
+   "size_mb": 0.018,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pyproject_hooks/__pycache__",
+   "size_bytes": 18843,
+   "size_mb": 0.018,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/distributions/__pycache__",
+   "size_bytes": 17952,
+   "size_mb": 0.017,
+   "files": 5,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/importlib/__pycache__",
+   "size_bytes": 17295,
+   "size_mb": 0.016,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pyproject_hooks/_in_process/__pycache__",
+   "size_bytes": 16444,
+   "size_mb": 0.016,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pyproject_hooks/_in_process/__pycache__",
+   "size_bytes": 16440,
+   "size_mb": 0.016,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/distributions/__pycache__",
+   "size_bytes": 16367,
+   "size_mb": 0.016,
+   "files": 5,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/operations/build/__pycache__",
+   "size_bytes": 15452,
+   "size_mb": 0.015,
+   "files": 6,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/zoneinfo/__pycache__",
+   "size_bytes": 13658,
+   "size_mb": 0.013,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pygments/formatters/__pycache__",
+   "size_bytes": 11170,
+   "size_mb": 0.011,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/cachecontrol/caches/__pycache__",
+   "size_bytes": 10990,
+   "size_mb": 0.01,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/tomli_w/__pycache__",
+   "size_bytes": 10726,
+   "size_mb": 0.01,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/cachecontrol/caches/__pycache__",
+   "size_bytes": 10274,
+   "size_mb": 0.01,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/ensurepip/__pycache__",
+   "size_bytes": 9906,
+   "size_mb": 0.009,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/urllib3/packages/backports/__pycache__",
+   "size_bytes": 9451,
+   "size_mb": 0.009,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "src/assets/ezrab-building.svg",
+   "size_bytes": 9256,
+   "size_mb": 0.009,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/lifespan/__pycache__",
+   "size_bytes": 9174,
+   "size_mb": 0.009,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pygments/styles/__pycache__",
+   "size_bytes": 6366,
+   "size_mb": 0.006,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pygments/styles/__pycache__",
+   "size_bytes": 6365,
+   "size_mb": 0.006,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "package.json.bak",
+   "size_bytes": 5992,
+   "size_mb": 0.006,
+   "files": 1,
+   "category": "I_OBSOLETE",
+   "reason": "Stale backup of package.json (package.json is authoritative).",
+   "confidence": 0.97
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/__pycache__",
+   "size_bytes": 4617,
+   "size_mb": 0.004,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/certifi/__pycache__",
+   "size_bytes": 4252,
+   "size_mb": 0.004,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/__pycache__",
+   "size_bytes": 3808,
+   "size_mb": 0.004,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/__pycache__",
+   "size_bytes": 3801,
+   "size_mb": 0.004,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/protocols/__pycache__",
+   "size_bytes": 3378,
+   "size_mb": 0.003,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/fastapi/middleware/__pycache__",
+   "size_bytes": 3218,
+   "size_mb": 0.003,
+   "files": 7,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/certifi/__pycache__",
+   "size_bytes": 3117,
+   "size_mb": 0.003,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/certifi/__pycache__",
+   "size_bytes": 3052,
+   "size_mb": 0.003,
+   "files": 3,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "src/assets/ezrab-blueprint.svg",
+   "size_bytes": 2703,
+   "size_mb": 0.003,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/logo.css",
+   "size_bytes": 2690,
+   "size_mb": 0.003,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "src/assets/ezrab-mascot.svg",
+   "size_bytes": 2632,
+   "size_mb": 0.003,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "public/ezrab-mascot.svg",
+   "size_bytes": 2632,
+   "size_mb": 0.003,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/loops/__pycache__",
+   "size_bytes": 2389,
+   "size_mb": 0.002,
+   "files": 4,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "src/assets/ezrab-excavator.svg",
+   "size_bytes": 2217,
+   "size_mb": 0.002,
+   "files": 1,
+   "category": "K_ORPHAN",
+   "reason": "Exact-filename search across src/, server/, scripts/, docs/, index.html found 0 references (no import.meta.glob, no dynamic path).",
+   "confidence": 0.96
+  },
+  {
+   "path": "build.log",
+   "size_bytes": 2200,
+   "size_mb": 0.002,
+   "files": 1,
+   "category": "G_TEMPORARY",
+   "reason": "Build log at repo root.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/annotated_doc/__pycache__",
+   "size_bytes": 2194,
+   "size_mb": 0.002,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/certifi/tests/__pycache__",
+   "size_bytes": 1753,
+   "size_mb": 0.002,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/resolution/__pycache__",
+   "size_bytes": 1432,
+   "size_mb": 0.001,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/resolution/__pycache__",
+   "size_bytes": 1401,
+   "size_mb": 0.001,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/xml/parsers/__pycache__",
+   "size_bytes": 843,
+   "size_mb": 0.001,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/xml/__pycache__",
+   "size_bytes": 762,
+   "size_mb": 0.001,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/resolvelib/compat/__pycache__",
+   "size_bytes": 674,
+   "size_mb": 0.001,
+   "files": 2,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/__pycache__",
+   "size_bytes": 263,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/America/North_Dakota/__pycache__",
+   "size_bytes": 232,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/America/Argentina/__pycache__",
+   "size_bytes": 229,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/America/Kentucky/__pycache__",
+   "size_bytes": 228,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/America/Indiana/__pycache__",
+   "size_bytes": 227,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Antarctica/__pycache__",
+   "size_bytes": 222,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Australia/__pycache__",
+   "size_bytes": 221,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Atlantic/__pycache__",
+   "size_bytes": 220,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/America/__pycache__",
+   "size_bytes": 219,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Pacific/__pycache__",
+   "size_bytes": 219,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Africa/__pycache__",
+   "size_bytes": 218,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Arctic/__pycache__",
+   "size_bytes": 218,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Brazil/__pycache__",
+   "size_bytes": 218,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Canada/__pycache__",
+   "size_bytes": 218,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Europe/__pycache__",
+   "size_bytes": 218,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Indian/__pycache__",
+   "size_bytes": 218,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Mexico/__pycache__",
+   "size_bytes": 218,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Chile/__pycache__",
+   "size_bytes": 217,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Asia/__pycache__",
+   "size_bytes": 216,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Etc/__pycache__",
+   "size_bytes": 215,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/US/__pycache__",
+   "size_bytes": 214,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/__pycache__",
+   "size_bytes": 211,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.venv; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/concurrent/__pycache__",
+   "size_bytes": 194,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Doc/html/_downloads/6dc1f3f4f0e6ca13cb42ddf4d6cbc8af/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/ctypes/macholib/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/curses/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/dbm/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/email/mime/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/idlelib/idle_test/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/idlelib/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/lib2to3/fixes/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/lib2to3/pgen2/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/lib2to3/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/msilib/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/multiprocessing/dummy/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/pydoc_data/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/sqlite3/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/tkinter/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/turtledemo/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/wsgiref/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/xml/dom/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/xml/etree/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/xml/sax/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/__phello__/ham/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/__phello__/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/tcl/tix8.4.3/pref/__pycache__",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 0,
+   "category": "F_CACHE",
+   "reason": "Python bytecode cache inside EZRAB-LOCAL-AI/.python; recompiled on import.",
+   "confidence": 0.98
+  },
+  {
+   "path": ".git/objects/28/tmp_obj_zTkndK",
+   "size_bytes": 0,
+   "size_mb": 0.0,
+   "files": 1,
+   "category": "G_TEMPORARY",
+   "reason": "Dangling git temp object left by an interrupted object write; not a valid object name (git objects are 40-hex). Not history.",
+   "confidence": 0.97
+  }
+ ]
+}

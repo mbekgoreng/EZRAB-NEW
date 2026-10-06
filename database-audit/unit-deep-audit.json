@@ -1,0 +1,811 @@
+{
+  "timestamp": "2026-10-05T12:06:01.721Z",
+  "totalAhspChecked": 5768,
+  "validUnitsCount": 5668,
+  "incompatibleUnitsCount": 108,
+  "violationsDetected": 127,
+  "blockersCount": 8,
+  "warningsCount": 119,
+  "violations": [
+    {
+      "code": "A.3.01.2b.1",
+      "name": "Memuat dan angkut tanah biasa menggunakan DT Untuk Jarak n Km",
+      "unit": "km",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Satuan pekerjaan \"km\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "A.3.01.2b.2",
+      "name": "Memuat dan angkut tanah keras/cadas menggunakan DT Untuk Jarak n Km",
+      "unit": "km",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Satuan pekerjaan \"km\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "A.3.01.2b.3",
+      "name": "Memuat dan Angkut Batu Pecah menggunakan DT Normatif / No Kode Item Pekerjaan Satuan Informatif",
+      "unit": "km",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Satuan pekerjaan \"km\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "A.3.01.2b.4",
+      "name": "Angkutan bahan mentah/jadi/olahan menggunakan flatbed truck dan crane truck",
+      "unit": "",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Satuan pekerjaan \"\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "A.3.01.2c.3.a",
+      "name": "Mengolah Batu/Medium Boulder Primary menjadi Agregat Kasar dan Agregat Halus",
+      "unit": "",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Satuan pekerjaan \"\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "A.3.01.2c.3.b",
+      "name": "Mengolah Batu/Gravel Secondary menjadi Agregat Kasar dan Agregat Halus",
+      "unit": "",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Satuan pekerjaan \"\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "A.3.04.2",
+      "name": "Pembuatan s.d. Pengecoran Campuran Beton Secara Mekanis di BP yang diangkut Truck Mixer ke Lokasi Pekerjaan",
+      "unit": "",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Satuan pekerjaan \"\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "A.3.07.7",
+      "name": "Mengangkat A-JACK dari Gudang ke Trailer dan diangkut Lokasi Pekerjaan oleh Kapal Kayu",
+      "unit": "ke",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Satuan pekerjaan \"ke\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "1.7",
+      "name": "Provisional Pembayaran Bersyarat (Provisional Sums) Sums",
+      "unit": "",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan pekerjaan \"\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "",
+      "name": "Sistem Manajemen Keselamatan Konstruksi (SMKK)",
+      "unit": "",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan pekerjaan \"\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(1)",
+      "name": "Gorong-gorong Pipa Beton Tanpa Tulangan diameter dalam 20 cm",
+      "unit": "m'",
+      "domain": "BINA_MARGA",
+      "issue": "Pekerjaan pembesian/tulangan harus berdimensi MASS (kg/ton), ditemukan: \"m'\" (LENGTH).",
+      "severity": "BLOCKER"
+    },
+    {
+      "code": "2.3.(2)",
+      "name": "Gorong-gorong Pipa Beton Tanpa Tulangan diameter dalam 30 cm Gorong-gorong Pipa Beton Bertulang, diameter dalam 40",
+      "unit": "m'",
+      "domain": "BINA_MARGA",
+      "issue": "Pekerjaan pembesian/tulangan harus berdimensi MASS (kg/ton), ditemukan: \"m'\" (LENGTH).",
+      "severity": "BLOCKER"
+    },
+    {
+      "code": "2.3.(22b)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(22c)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(22d)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(23a)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(23b)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(23c)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(23d)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(24a)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(24b)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(24c)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(24d)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(25a)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(25b)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(25c)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(25d)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(26a)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/M'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/M'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.3.(26b)",
+      "componentName": "Formworks",
+      "componentUnit": "bh/m'",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan komponen \"bh/m'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.3.(1c)",
+      "name": "Perkerasan Beton Semen Fast Track hingga 24 Jam Perkerasan Beton Semen dengan Anyaman Tulangan",
+      "unit": "m3",
+      "domain": "BINA_MARGA",
+      "issue": "Pekerjaan pembesian/tulangan harus berdimensi MASS (kg/ton), ditemukan: \"m3\" (VOLUME).",
+      "severity": "BLOCKER"
+    },
+    {
+      "code": "5.3.(2b)",
+      "name": "Perkerasan Beton Semen Fast Track hingga 8 Jam dengan Anyaman Tulangan Tunggal",
+      "unit": "m3",
+      "domain": "BINA_MARGA",
+      "issue": "Pekerjaan pembesian/tulangan harus berdimensi MASS (kg/ton), ditemukan: \"m3\" (VOLUME).",
+      "severity": "BLOCKER"
+    },
+    {
+      "code": "5.3.(2c)",
+      "name": "Perkerasan Beton Semen Fast Track hingga 24 Jam dengan Anyaman Tulangan Tunggal",
+      "unit": "m3",
+      "domain": "BINA_MARGA",
+      "issue": "Pekerjaan pembesian/tulangan harus berdimensi MASS (kg/ton), ditemukan: \"m3\" (VOLUME).",
+      "severity": "BLOCKER"
+    },
+    {
+      "code": "5.3.(3b)",
+      "name": "Perkerasan Beton Semen Fast Track hingga 8 Jam dengan Anyaman Tulangan Ganda",
+      "unit": "m3",
+      "domain": "BINA_MARGA",
+      "issue": "Pekerjaan pembesian/tulangan harus berdimensi MASS (kg/ton), ditemukan: \"m3\" (VOLUME).",
+      "severity": "BLOCKER"
+    },
+    {
+      "code": "5.3.(3c)",
+      "name": "Perkerasan Beton Semen Fast Track hingga 24 Jam dengan Anyaman Tulangan Ganda",
+      "unit": "m3",
+      "domain": "BINA_MARGA",
+      "issue": "Pekerjaan pembesian/tulangan harus berdimensi MASS (kg/ton), ditemukan: \"m3\" (VOLUME).",
+      "severity": "BLOCKER"
+    },
+    {
+      "code": "7.15.(9)",
+      "name": "Pengangkutan Hasil Bongkaran yang melebihi 5 per km",
+      "unit": "km",
+      "domain": "BINA_MARGA",
+      "issue": "Satuan pekerjaan \"km\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "1.1.3.8",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 5 s.d. 15 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang)",
+      "unit": "tgl",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"tgl\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "1.1.3.9",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 15 cm s.d. 30 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang)",
+      "unit": "tgl",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"tgl\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "1.1.3.10",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 30 cm s.d. 50 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang)",
+      "unit": "tgl",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"tgl\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "1.1.3.11",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 50 cm s.d. 75 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang)",
+      "unit": "tgl",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"tgl\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "1.1.3.12",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 75 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang)",
+      "unit": "tgl",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"tgl\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "1.1.3.13",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 5 s.d. 15 cm (termasuk pembuangan sisa tunggul dengan menutup kembali bekas lubang)",
+      "unit": "tgl",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"tgl\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "1.1.3.14",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 15 cm s.d. 30 cm (termasuk pembuangan sisa tunggul dengan menutup kembali bekas lubang)",
+      "unit": "tgl",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"tgl\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "1.1.3.15",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 15 cm s.d. 50 cm (termasuk pembuangan sisa tunggul dengan menutup kembali bekas lubang)",
+      "unit": "ha",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"ha\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "1.1.4.1",
+      "name": "Pengukuran ulang topografi seluas 1 Ha",
+      "unit": "ha",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"ha\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.2.1.6.2",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 15 Mpa",
+      "unit": "m4",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"m4\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.2.1.6.3",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 17 Mpa",
+      "unit": "m5",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"m5\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.2.1.6.4",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 20 Mpa",
+      "unit": "m6",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"m6\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.2.1.6.5",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 21 Mpa",
+      "unit": "m7",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"m7\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.2.1.6.6",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 25 Mpa",
+      "unit": "m8",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"m8\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.2.1.6.7",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 28 Mpa",
+      "unit": "m9",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"m9\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.2.1.6.8",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 30 Mpa",
+      "unit": "m10",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"m10\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.2.1.6.9",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 31 Mpa",
+      "unit": "m11",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"m11\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.2.1.6.10",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 35 Mpa",
+      "unit": "m12",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"m12\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "2.2.1.8.1",
+      "name": "Pemadatan 1 m3 beton dengan baja tulangan pada bangunan gedung",
+      "unit": "m3",
+      "domain": "CIPTA_KARYA",
+      "issue": "Pekerjaan pembesian/tulangan harus berdimensi MASS (kg/ton), ditemukan: \"m3\" (VOLUME).",
+      "severity": "BLOCKER"
+    },
+    {
+      "code": "3.1.3.11",
+      "name": "Pemasangan 1 m' Nok/bubung atap aluminium gelombang",
+      "unit": "m;'",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"m;'\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "3.16.5",
+      "name": "Pemasangan 1 m2 Marka dengan Cat Thermoplast",
+      "unit": "n2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"n2\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.1.1",
+      "componentName": "Umur Ekonomis",
+      "componentUnit": "Tahun",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan komponen \"Tahun\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.11.2",
+      "name": "Penyiraman untuk 1 Hari (dengan Selang Plastik 3/4 inch) untuk 1 m2 Semak/Penutup Tanah di Tanah Tidak Subur di Lahan Datar dan Tidak Memiliki Jaringan Air Yang Baik",
+      "unit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari/m2\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.11.3",
+      "name": "Penyiraman untuk 1 Hari (dengan Selang Plastik 3/4 inch) untuk 1 m2 Rumput di Tanah Tidak Subur di Lahan Datar dan Tidak Memiliki Jaringan Air Yang Baik",
+      "unit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari/m2\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.11.4",
+      "name": "Penyiraman untuk 1 Hari (dengan Selang Plastik 3/4 inch) untuk 1 m2 Rumput di Tanah Tidak Subur di Lahan Datar dan Tidak Memiliki Jaringan Air Yang Baik",
+      "unit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari/m2\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.11.5",
+      "name": "Penyiraman untuk 1 Hari (dengan Sprinkler*) untuk 1 m2 Rumput di Tanah Tidak Subur di Lahan Datar dan Tidak Memiliki Jaringan Air Yang Baik",
+      "unit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari/m2\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.11.6",
+      "name": "Penyiraman untuk 1 Hari (dengan Selang Plastik 3/4 inch) untuk 1 Buah Pohon/Palem di Tanah Tidak Subur di Lahan Datar dan Memiliki Jaringan Air Yang Baik",
+      "unit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari/m2\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.11.7",
+      "name": "Penyiraman untuk 1 Hari (dengan Selang Plastik 3/4 inch) untuk 1 m2 Semak/Penutup Tanah di Tanah Tidak Subur di Lahan Datar dan Memiliki Jaringan Air Yang Baik",
+      "unit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari/m2\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.11.8",
+      "name": "Penyiraman untuk 1 Hari (dengan Selang Plastik 3/4 inch) untuk 1 m2 Rumput di Tanah Tidak Subur di Lahan Datar dan Memiliki Jaringan Air Yang Baik",
+      "unit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari/m2\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.11.9",
+      "name": "Penyiraman untuk 1 Hari (dengan Sprinkler*) untuk 1 m2 Semak/Penutup Tanah di Tanah Tidak Subur di Lahan Datar dan Memiliki Jaringan Air Yang Baik",
+      "unit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari/m2\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.11.10",
+      "name": "Penyiraman untuk 1 Hari (dengan Sprinkler*) untuk 1 m2 Rumput di Tanah Tidak Subur di Lahan Datar dan Memiliki Jaringan Air Yang Baik",
+      "unit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari/m2\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.12.1",
+      "name": "Penyiraman untuk 1 Hari di Tanah Subur di Kelerengan Tanah 1:2 (13° - 26.5°) per m2",
+      "unit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari/m2\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.12.2",
+      "name": "Penyiraman untuk 1 Hari di Tanah Subur di Kelerengan Tanah 1:2 (26.5°- 45°) per m2",
+      "unit": "hari.m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari.m2\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.12.3",
+      "name": "Penyiraman untuk 1 Hari di Tanah Subur di Kelerengan Tanah 1:0.5 (45° - 63°) per m2",
+      "unit": "hari/m3",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari/m3\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.13.1",
+      "name": "Penyiraman untuk 1 Hari di Tanah Tidak Subur di Kelerengan Tanah 1:2 (13° - 26.5°) per m2 untuk Sumber Air Dari Luar Lokasi Pekerjaan",
+      "unit": "hari/m4",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari/m4\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.13.2",
+      "name": "Penyiraman untuk 1 Hari di Tanah Tidak Subur di Kelerengan Tanah 1:1 (26.5° - 45°) per m2 untuk Sumber Air Dari Luar Lokasi Pekerjaan",
+      "unit": "hari.m4",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari.m4\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.13.3",
+      "name": "Penyiraman untuk 1 Hari di Tanah Tidak Subur di Kelerengan Tanah 1:0.5 (45° - 63°) per m2 untuk Sumber Air Dari Luar Lokasi Pekerjaan",
+      "unit": "hari/m5",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari/m5\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.13.4",
+      "name": "Penyiraman untuk 1 Hari di Tanah Tidak Subur di Kelerengan Tanah 1:2 (13° - 26.5°) per m2 untuk Sumber Air Tersedia Lokasi Pekerjaan",
+      "unit": "hari.m5",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari.m5\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.13.5",
+      "name": "Penyiraman untuk 1 Hari di Tanah Tidak Subur di Kelerengan Tanah 1:1 (26.5° - 45°) per m2 untuk Sumber Air Tersedia Lokasi Pekerjaan",
+      "unit": "hari/m6",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari/m6\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "4.1.13.6",
+      "name": "Penyiraman untuk 1 Hari di Tanah Tidak Subur di Kelerengan Tanah 1:0.5 (45° - 63°) per m2 untuk Sumber Air Tersedia Lokasi Pekerjaan",
+      "unit": "hari.m6",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"hari.m6\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.8.2",
+      "name": "Pemasangan 1 set pembumian sistem elektrikal dengan batang tembaga dia.3/4\"",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.1",
+      "name": "Pemasangan 1 m' Busduct 1.000A",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.2",
+      "name": "Pemasangan 1 m' Busduct 2.000A",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.3",
+      "name": "Pemasangan 1 m' Plug in Busway 1.000A",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.4",
+      "name": "Pemasangan 1 m' Plug in Busway 2.000A",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.5",
+      "name": "Pemasangan 1 unit Flange End 1.000A",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.6",
+      "name": "Pemasangan 1 unit Flange End 2.000A",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.7",
+      "name": "Pemasangan 1 unit Edgewise Elbow 1.000A",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.8",
+      "name": "Pemasangan 1 unit Edgewise Elbow 2.000A",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.9",
+      "name": "Pemasangan 1 unit End Closure 1.000A",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.10",
+      "name": "Pemasangan 1 unit End Closure 2.000A",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.11",
+      "name": "Pemasangan 1 unit Plug in Box (with MCCB 800A/50KA)",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.12",
+      "name": "Pemasangan 1 unit Plug in Box (with MCCB 400A/50KA)",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.13",
+      "name": "Pemasangan 1 unit Plug in Box (with MCCB 150A/36KA)",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.14",
+      "name": "Pemasangan 1 unit Plug in Box (with MCCB 100A/36KA)",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.15",
+      "name": "Pemasangan 1 unit Plug in Box (with MCCB 80A/36KA)",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.1.9.16",
+      "name": "Pemasangan 1 unit Plug in Box (with MCCB 50A/36KA)",
+      "unit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"sey\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.3.1.2",
+      "name": "Pemasangan 1 titik Instalasi Lampu (Kabel LSOH)",
+      "unit": "titk",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"titk\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.3.1.33",
+      "name": "Pemasangan 1 titik Instalasi Lampu Luar/Taman ( dengan Kabel NYY)",
+      "unit": "titk",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"titk\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.3.1.35",
+      "name": "Pemasangan 1 titik Instalasi Lampu PJU ( dengan Kabel NYFGBY)",
+      "unit": "titk",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"titk\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "5.3.1.37",
+      "name": "Pemasangan 1 titik Instalasi Lampu PJU Tiang 7 m ( dengan Kabel NYM)",
+      "unit": "titk",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"titk\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "9.3.1.16",
+      "componentName": "Tukang pipa",
+      "componentUnit": "",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan komponen \"\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "1.000",
+      "name": "USGPM",
+      "unit": "",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "1.250",
+      "name": "USGPM",
+      "unit": "",
+      "domain": "CIPTA_KARYA",
+      "issue": "Satuan pekerjaan \"\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    },
+    {
+      "code": "SMKK.0008",
+      "name": "Pelindung Kerja dan Alat Pelindung APK, antara lain:",
+      "unit": "Diri:",
+      "domain": "SMKK",
+      "issue": "Satuan pekerjaan \"Diri:\" tidak terdefinisi dalam Canonical Unit Registry.",
+      "severity": "WARNING"
+    }
+  ]
+}

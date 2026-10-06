@@ -1,0 +1,39 @@
+{
+ "field": "SDA",
+ "brief_target": 1556,
+ "parsed": 1556,
+ "gap": 0,
+ "index_no_range": [
+  1,
+  1556
+ ],
+ "missing_index_numbers": [],
+ "code_less_rows": 1,
+ "records": [
+  {
+   "no": 810,
+   "page": 28,
+   "description": "Pondasi Tiang Bor ∅ 180 cm",
+   "unit": "m'",
+   "status": "Informatif",
+   "code_printed": null,
+   "neighbours": [
+    {
+     "no": 809,
+     "code": "A.3.06.5d"
+    },
+    {
+     "no": 811,
+     "code": "A.3.06.6a"
+    }
+   ],
+   "verdict": "The source prints this row WITHOUT a KODE. The code is not reconstructed (that would be fabrication, §2). Recorded as a SOURCE_DEFECT and demoted to NEEDS_REVIEW."
+  }
+ ],
+ "classification": "SOURCE_MISSING",
+ "verdict": "Lampiran IV prints 1556 inventory rows; the parser captures 1556. The single difference is row 810, which the source itself prints without a code.",
+ "target_provenance": {
+  "verdict": "SOURCE_CONFIRMED",
+  "evidence": "Lampiran IV's own 'Daftar Kode AHSP' prints rows 1..1556 — the target matches the source, and all 1556 are now captured (row 810 is printed without a code and is flagged SOURCE_DEFECT)."
+ }
+}

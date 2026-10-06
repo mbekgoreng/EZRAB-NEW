@@ -1,0 +1,24 @@
+{
+  "status": "UNVERIFIED",
+  "nodes": [
+    {"id":"building.wall.gross_area","ownership":"produced"},
+    {"id":"building.openings.area","ownership":"produced"},
+    {"id":"building.wall.net_area","ownership":"derived"},
+    {"id":"building.plaster.area","ownership":"consumed"},
+    {"id":"building.acian.area","ownership":"consumed"},
+    {"id":"building.painting.area","ownership":"consumed"},
+    {"id":"building.roof.geometry","ownership":"produced"},
+    {"id":"building.roof.framing","ownership":"derived"},
+    {"id":"building.roof.covering","ownership":"derived"}
+  ],
+  "edges": [
+    {"from":"building.wall.gross_area","to":"building.wall.net_area","relation":"gross_minus_openings"},
+    {"from":"building.openings.area","to":"building.wall.net_area","relation":"deduction"},
+    {"from":"building.wall.net_area","to":"building.plaster.area","relation":"input_candidate"},
+    {"from":"building.plaster.area","to":"building.acian.area","relation":"input_candidate"},
+    {"from":"building.acian.area","to":"building.painting.area","relation":"input_candidate"},
+    {"from":"building.roof.geometry","to":"building.roof.framing","relation":"input_candidate"},
+    {"from":"building.roof.framing","to":"building.roof.covering","relation":"input_candidate"}
+  ],
+  "note": "Candidate relationships are not activated as production dependencies until workbook cell mapping and human validation confirm them."
+}

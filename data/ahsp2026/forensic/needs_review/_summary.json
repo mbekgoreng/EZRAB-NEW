@@ -1,0 +1,354 @@
+{
+ "generated_at": "2026-09-28T11:51:59.593Z",
+ "total_items": 5801,
+ "needs_review": 2361,
+ "buckets": {
+  "POSSIBLE_DUPLICATES": 1319,
+  "NO_COMPONENTS": 965,
+  "INDEX_ONLY": 726,
+  "MERGED_RESOURCE_NAMES": 196,
+  "MISSING_UNITS": 81
+ },
+ "other_needs_review": 27,
+ "other_sample": [
+  {
+   "id": "AHSP-2026-SDA-000606",
+   "code": "A.3.03.1",
+   "field": "SDA",
+   "unit": "m3",
+   "page": 260,
+   "attachment": "IV",
+   "description": "Pengerukan 1 m3 Sedimen menggunakan Kapal Keruk Sunction Dredger sampai kedalaman 10 m’ Harga satuan Jumlah harga",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000607",
+   "code": "A.3.03.1",
+   "field": "SDA",
+   "unit": "m'",
+   "page": 260,
+   "attachment": "IV",
+   "description": "Pengerukan 1 m3 Sedimen menggunakan Kapal Keruk Sunction Dredger sampai kedalaman 10 m’ Harga satuan Jumlah harga",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000608",
+   "code": "A.3.03.1",
+   "field": "SDA",
+   "unit": "m3",
+   "page": 260,
+   "attachment": "IV",
+   "description": "Pengerukan 1 m3 Sedimen menggunakan Kapal Keruk Sunction Dredger sampai kedalaman 10 m’ Harga satuan Jumlah harga",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000618",
+   "code": "A.3.03.6a",
+   "field": "SDA",
+   "unit": "m3",
+   "page": 294,
+   "attachment": "IV",
+   "description": "Pengangkatan 1 m3 Gulma Air dari Situ/Waduk/Saluran Menggunakan 5-rate Estafet",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000619",
+   "code": "A.3.03.6a",
+   "field": "SDA",
+   "unit": "m3",
+   "page": 294,
+   "attachment": "IV",
+   "description": "Pemuatan ke DT setiap 1 m3 Gulma Air Hasil Pengangkatan/Pemanenan, dan Pengangkutannya ke Lokasi Disposal Area",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000620",
+   "code": "A.3.03.6a",
+   "field": "SDA",
+   "unit": "m2",
+   "page": 294,
+   "attachment": "IV",
+   "description": "Penghamparan, Perataan dan Perapihan 1 m2 Hasil galian di Disposal Area, Menggunakan 5-rate estafet",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000621",
+   "code": "A.3.03.6a",
+   "field": "SDA",
+   "unit": "m2",
+   "page": 294,
+   "attachment": "IV",
+   "description": "Pengangkatan 1 m3 Gulma Air dari Situ/Waduk/Saluran Menggunakan 5-rate Estafet",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000793",
+   "code": "A.3.05.5b",
+   "field": "SDA",
+   "unit": "m",
+   "page": 696,
+   "attachment": "IV",
+   "description": "Pemasangan Tiang Pipa Beton dengan Metode Innerboring melalui badan air",
+   "issues": [
+    "resource name unreadable (code E.11, page 696)",
+    "UNREADABLE_RESOURCE_NAME"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000795",
+   "code": "A.3.06.1b",
+   "field": "SDA",
+   "unit": "m'",
+   "page": 698,
+   "attachment": "IV",
+   "description": "Penulangan dan Pengecoran 1 m' Pondasi Tiang Bor ∅ 60 cm, campuran beton semi Mekanis",
+   "issues": [
+    "resource name unreadable (code L.01, page 698)",
+    "resource name unreadable (code L.02, page 698)",
+    "resource name unreadable (code L.04, page 698)",
+    "UNREADABLE_RESOURCE_NAME"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000796",
+   "code": "A.3.06.2a",
+   "field": "SDA",
+   "unit": "m'",
+   "page": 699,
+   "attachment": "IV",
+   "description": "Pengeboran 1 m' Pondasi Tiang Bor ∅ 80 cm",
+   "issues": [
+    "resource name unreadable (code L.01, page 699)",
+    "resource name unreadable (code L.02, page 699)",
+    "resource name unreadable (code L.04, page 699)",
+    "UNREADABLE_RESOURCE_NAME"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000797",
+   "code": "A.3.06.2b",
+   "field": "SDA",
+   "unit": "m'",
+   "page": 699,
+   "attachment": "IV",
+   "description": "Penulangan dan Pengecoran 1 m' Pondasi Tiang Bor ∅ 80 cm, campuran beton semi Mikanis",
+   "issues": [
+    "resource name unreadable (code L.01, page 699)",
+    "resource name unreadable (code L.02, page 699)",
+    "resource name unreadable (code L.04, page 699)",
+    "UNREADABLE_RESOURCE_NAME"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000925",
+   "code": "A.3.08.2p",
+   "field": "SDA",
+   "unit": "m'",
+   "page": 898,
+   "attachment": "IV",
+   "description": "Sampling 1 sampel Analisis Kualitas Air (diambil dari AHSP Pengelolaan Kualitas Air)",
+   "issues": [
+    "resource name unreadable (code L.12, page 898)",
+    "UNREADABLE_RESOURCE_NAME"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000926",
+   "code": "A.3.08.2q",
+   "field": "SDA",
+   "unit": "titik",
+   "page": 899,
+   "attachment": "IV",
+   "description": "1 titik Electric Logging (diambil dari AHSP Hidrologi)",
+   "issues": [
+    "resource name unreadable (code L.10, page 899)",
+    "UNREADABLE_RESOURCE_NAME"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-001222",
+   "code": "A.3.08.3.4.b.6.a",
+   "field": "SDA",
+   "unit": "unit",
+   "page": 1234,
+   "attachment": "IV",
+   "description": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1400 (jarak 1.0 km)",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-001223",
+   "code": "A.3.08.3.4.b.6.b",
+   "field": "SDA",
+   "unit": "unit",
+   "page": 1234,
+   "attachment": "IV",
+   "description": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1400 (jarak 2.0 km)",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-001224",
+   "code": "A.3.08.3.4.b.6.c",
+   "field": "SDA",
+   "unit": "unit",
+   "page": 1235,
+   "attachment": "IV",
+   "description": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1400 (jarak 2.5 km)",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-001225",
+   "code": "A.3.08.3.4.b.6.d",
+   "field": "SDA",
+   "unit": "unit",
+   "page": 1235,
+   "attachment": "IV",
+   "description": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1400 (jarak 5.0 km)",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-001226",
+   "code": "A.3.08.3.4.b.6.e",
+   "field": "SDA",
+   "unit": "unit",
+   "page": 1236,
+   "attachment": "IV",
+   "description": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1400 (jarak 10 km)",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-001227",
+   "code": "A.3.08.3.4.b.6.f",
+   "field": "SDA",
+   "unit": "unit",
+   "page": 1236,
+   "attachment": "IV",
+   "description": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1400 (jarak 15 km)",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-001228",
+   "code": "A.3.08.3.4.b.6.a",
+   "field": "SDA",
+   "unit": "unit",
+   "page": 1234,
+   "attachment": "IV",
+   "description": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1200 (jarak 1.0 km)",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-001229",
+   "code": "A.3.08.3.4.b.6.b",
+   "field": "SDA",
+   "unit": "unit",
+   "page": 1234,
+   "attachment": "IV",
+   "description": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1200 (jarak 2.0 km)",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-001230",
+   "code": "A.3.08.3.4.b.6.c",
+   "field": "SDA",
+   "unit": "unit",
+   "page": 1235,
+   "attachment": "IV",
+   "description": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1200 (jarak 2.5 km)",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-001231",
+   "code": "A.3.08.3.4.b.6.d",
+   "field": "SDA",
+   "unit": "unit",
+   "page": 1235,
+   "attachment": "IV",
+   "description": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1200 (jarak 5.0 km)",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-001232",
+   "code": "A.3.08.3.4.b.6.e",
+   "field": "SDA",
+   "unit": "unit",
+   "page": 1236,
+   "attachment": "IV",
+   "description": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1200 (jarak 10 km)",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-001233",
+   "code": "A.3.08.3.4.b.6.f",
+   "field": "SDA",
+   "unit": "unit",
+   "page": 1236,
+   "attachment": "IV",
+   "description": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1200 (jarak 15 km)",
+   "issues": [
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-BINA_MARGA-001138",
+   "code": "7.6.(10)",
+   "field": "BINA_MARGA",
+   "unit": "M'",
+   "page": 1225,
+   "attachment": "V",
+   "description": "Tambahan Biaya untuk Mata Pembayaran No.7.6.(9a) dan No.7.6.(9b) Jika Dikerjakan di Tempat Berair",
+   "issues": [
+    "has an analysis table but is absent from the Lampiran V code index",
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-001058",
+   "code": "4.2.2.2",
+   "field": "CIPTA_KARYA",
+   "unit": "m2",
+   "page": 778,
+   "attachment": "VI",
+   "description": "m2 semak/penutup tanah/rumput Pemupukan pupuk anorganik padat (1 kali)",
+   "issues": [
+    "resource name unreadable (code L.02, page 778)",
+    "UNREADABLE_RESOURCE_NAME"
+   ]
+  }
+ ],
+ "note": "A record can appear in more than one bucket; the buckets are diagnostic, not exclusive."
+}

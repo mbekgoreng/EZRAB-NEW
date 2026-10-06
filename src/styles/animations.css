@@ -1,0 +1,124 @@
+/* Blueprint Drift Animation */
+@keyframes blueprint-drift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 64px 64px;
+  }
+}
+
+/* Building Subtle Levitation */
+@keyframes building-float {
+  0%, 100% {
+    transform: translate(-50%, -50%) translateY(0px) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(-10px) scale(1.015);
+  }
+}
+
+/* Card Independent Levitations */
+@keyframes ai-card-float {
+  0%, 100% {
+    transform: translate3d(0, 0, 40px);
+  }
+  50% {
+    transform: translate3d(8px, -12px, 40px);
+  }
+}
+
+@keyframes rab-float {
+  0%, 100% {
+    transform: translate3d(0, 0, 80px) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(-10px, 10px, 80px) rotate(1deg);
+  }
+}
+
+@keyframes spreadsheet-float {
+  0%, 100% {
+    transform: translate3d(0, 0, 30px);
+  }
+  50% {
+    transform: translate3d(10px, -8px, 30px);
+  }
+}
+
+@keyframes progress-float {
+  0%, 100% {
+    transform: translate3d(0, 0, 50px);
+  }
+  50% {
+    transform: translate3d(-6px, -10px, 50px);
+  }
+}
+
+@keyframes export-badge-float {
+  0%, 100% {
+    transform: translate3d(0, 0, 60px) rotate(-1deg);
+  }
+  50% {
+    transform: translate3d(6px, 8px, 60px) rotate(1.5deg);
+  }
+}
+
+/* 3D Energy Ring Rotation */
+@keyframes ring-rotate {
+  from {
+    transform: translate(-50%, -50%) rotateX(68deg) rotateZ(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotateX(68deg) rotateZ(360deg);
+  }
+}
+
+@keyframes ring-rotate-reverse {
+  from {
+    transform: translate(-50%, -50%) rotateX(68deg) rotateZ(360deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotateX(68deg) rotateZ(0deg);
+  }
+}
+
+/* Laser/Scanning Line Effect */
+@keyframes scan-line {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.8;
+  }
+  85% {
+    opacity: 0.8;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+/* Pulse Animation */
+@keyframes ezrab-pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+/* Glow Shimmer */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

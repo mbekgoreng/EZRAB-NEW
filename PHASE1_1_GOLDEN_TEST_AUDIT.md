@@ -1,0 +1,3 @@
+# Phase 1.1 Golden Test Audit
+
+Golden tests are independent only when their expected values originate in the workbook evaluated result, a separately maintained reference implementation, or a reviewed external source. A test that compares production output to itself is not a golden test. Current vector status is in `phase1_1_golden_vectors.json` and `phase1_1_independent_vectors.json`; both remain BLOCKED because no supported recalculation engine is installed.

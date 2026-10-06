@@ -1,0 +1,1207 @@
+{
+  "generatedAt": "2026-09-28T13:00:42.825Z",
+  "aliasRules": 0,
+  "activePriceRows": 6855,
+  "matchedRows": 309,
+  "unmatchedRows": 6546,
+  "matchRate": 4.51,
+  "matchMethodHistogram": {
+    "UNMATCHED": 6546,
+    "NAME_UNIT": 294,
+    "EXACT_CODE": 12,
+    "NORMALIZED_CODE_UNIT": 3
+  },
+  "perSource": [
+    {
+      "key": "HSD_2026",
+      "tier": "OFFICIAL_GOVERNMENT",
+      "rows": 231,
+      "matched": 76,
+      "unmatched": 155
+    },
+    {
+      "key": "LABOR_2026",
+      "tier": "VERIFIED_REGIONAL",
+      "rows": 170,
+      "matched": 30,
+      "unmatched": 140
+    },
+    {
+      "key": "EQUIPMENT_2026",
+      "tier": "VERIFIED_REGIONAL",
+      "rows": 74,
+      "matched": 15,
+      "unmatched": 59
+    },
+    {
+      "key": "MATERIAL_MASTER_2026",
+      "tier": "PROJECT_INTERNAL_MASTER",
+      "rows": 6197,
+      "matched": 162,
+      "unmatched": 6035
+    },
+    {
+      "key": "MATERIAL_LIBRARY",
+      "tier": "COMMERCIAL_REFERENCE",
+      "rows": 28,
+      "matched": 1,
+      "unmatched": 27
+    },
+    {
+      "key": "COMMERCIAL_2026",
+      "tier": "COMMERCIAL_REFERENCE",
+      "rows": 155,
+      "matched": 25,
+      "unmatched": 130
+    }
+  ],
+  "componentKeyCoverage": {
+    "distinctComponentKeys": 782,
+    "keysWithPrice": 71,
+    "coveragePercent": 9.08,
+    "perType": {
+      "material": {
+        "total": 642,
+        "priced": 40,
+        "coveragePercent": 6.23
+      },
+      "labor": {
+        "total": 22,
+        "priced": 10,
+        "coveragePercent": 45.45
+      },
+      "equipment": {
+        "total": 118,
+        "priced": 21,
+        "coveragePercent": 17.8
+      }
+    }
+  },
+  "ahspCoverage": {
+    "total": 5801,
+    "full": 1235,
+    "partial": 3488,
+    "missing": 113,
+    "noPriceableComponents": 965,
+    "byDomain": {
+      "SMKK": {
+        "full": 0,
+        "partial": 0,
+        "missing": 223
+      },
+      "SUMBER_DAYA_AIR": {
+        "full": 29,
+        "partial": 1125,
+        "missing": 402
+      },
+      "BINA_MARGA": {
+        "full": 1,
+        "partial": 964,
+        "missing": 198
+      },
+      "CIPTA_KARYA": {
+        "full": 1205,
+        "partial": 1399,
+        "missing": 255
+      }
+    }
+  },
+  "verification": {
+    "NEEDS_REVIEW": 294,
+    "SOURCE_REPORTED": 4,
+    "VERIFIED": 11
+  },
+  "duplicates": {
+    "exactDuplicateGroups": 31,
+    "samples": [
+      {
+        "identity": "RES-001231|kg|NATIONAL|||2026-Q1|COMMERCIAL_2026",
+        "count": 6,
+        "ids": [
+          "PRC-COMMERCIAL_2026-0cxyva6t",
+          "PRC-COMMERCIAL_2026-0qkamm5t",
+          "PRC-COMMERCIAL_2026-0thrvxet",
+          "PRC-COMMERCIAL_2026-1743n9dt",
+          "PRC-COMMERCIAL_2026-1kqfelct",
+          "PRC-COMMERCIAL_2026-1ycr5xbt"
+        ]
+      },
+      {
+        "identity": "RES-000471|jam|NATIONAL|||2026-Q1|COMMERCIAL_2026",
+        "count": 2,
+        "ids": [
+          "PRC-COMMERCIAL_2026-0enbxcis",
+          "PRC-COMMERCIAL_2026-0z1w28es"
+        ]
+      },
+      {
+        "identity": "RES-001286|OH|NATIONAL|||2026-Q1|COMMERCIAL_2026",
+        "count": 2,
+        "ids": [
+          "PRC-COMMERCIAL_2026-0ewot5mr",
+          "PRC-COMMERCIAL_2026-1vnbgs4r"
+        ]
+      },
+      {
+        "identity": "RES-001287|OH|NATIONAL|||2026-Q1|COMMERCIAL_2026",
+        "count": 3,
+        "ids": [
+          "PRC-COMMERCIAL_2026-0iv8lp5r",
+          "PRC-COMMERCIAL_2026-10g45knr",
+          "PRC-COMMERCIAL_2026-1gu6tuar"
+        ]
+      },
+      {
+        "identity": "RES-001272|OH|NATIONAL|||2026-Q1|COMMERCIAL_2026",
+        "count": 2,
+        "ids": [
+          "PRC-COMMERCIAL_2026-0pljb6cr",
+          "PRC-COMMERCIAL_2026-0sj0khlr"
+        ]
+      },
+      {
+        "identity": "RES-001396|OH|NATIONAL|||2026-Q1|COMMERCIAL_2026",
+        "count": 2,
+        "ids": [
+          "PRC-COMMERCIAL_2026-137v2ibr",
+          "PRC-COMMERCIAL_2026-165cbtkr"
+        ]
+      },
+      {
+        "identity": "RES-000471|jam|NATIONAL|||2026-01|EQUIPMENT_2026",
+        "count": 3,
+        "ids": [
+          "PRC-EQUIPMENT_2026-0akyorvs",
+          "PRC-EQUIPMENT_2026-0z1vai5s",
+          "PRC-EQUIPMENT_2026-1rl4d2ts"
+        ]
+      },
+      {
+        "identity": "RES-001231|kg|NATIONAL|||2026-Q1|HSD_2026",
+        "count": 2,
+        "ids": [
+          "PRC-HSD_2026-0089lags",
+          "PRC-HSD_2026-0dulcmfs"
+        ]
+      },
+      {
+        "identity": "RES-002763|kg|NATIONAL|||2026-Q1|HSD_2026",
+        "count": 2,
+        "ids": [
+          "PRC-HSD_2026-057vx29s",
+          "PRC-HSD_2026-1qmo7pes"
+        ]
+      },
+      {
+        "identity": "RES-003640|m3|NATIONAL|||2026-Q1|HSD_2026",
+        "count": 3,
+        "ids": [
+          "PRC-HSD_2026-06h7jtgs",
+          "PRC-HSD_2026-0k3jb5fs",
+          "PRC-HSD_2026-0yqxlpos"
+        ]
+      },
+      {
+        "identity": "RES-001397|OJ|NATIONAL|||2026-Q1|HSD_2026",
+        "count": 7,
+        "ids": [
+          "PRC-HSD_2026-06q2o90s",
+          "PRC-HSD_2026-09njxk9s",
+          "PRC-HSD_2026-0n9vow8s",
+          "PRC-HSD_2026-10w7g87s",
+          "PRC-HSD_2026-1eij7k6s",
+          "PRC-HSD_2026-1s4uyw5s",
+          "PRC-HSD_2026-1v2c87es"
+        ]
+      },
+      {
+        "identity": "RES-002976|kg|NATIONAL|||2026-Q1|HSD_2026",
+        "count": 5,
+        "ids": [
+          "PRC-HSD_2026-09qb7pbs",
+          "PRC-HSD_2026-0ncmz1as",
+          "PRC-HSD_2026-10yyqd9s",
+          "PRC-HSD_2026-1d0cgdfs",
+          "PRC-HSD_2026-1v53icgs"
+        ]
+      },
+      {
+        "identity": "RES-001293|OJ|NATIONAL|||2026-Q1|HSD_2026",
+        "count": 3,
+        "ids": [
+          "PRC-HSD_2026-0bvfcees",
+          "PRC-HSD_2026-0qs9ggkr",
+          "PRC-HSD_2026-1imtchas"
+        ]
+      },
+      {
+        "identity": "RES-001217|liter|NATIONAL|||2026-Q1|HSD_2026",
+        "count": 2,
+        "ids": [
+          "PRC-HSD_2026-0jdp8j2v",
+          "PRC-HSD_2026-0os7m3zv"
+        ]
+      },
+      {
+        "identity": "RES-001354|OJ|NATIONAL|||2026-Q1|HSD_2026",
+        "count": 2,
+        "ids": [
+          "PRC-HSD_2026-0y4gjajs",
+          "PRC-HSD_2026-1pd41yhs"
+        ]
+      },
+      {
+        "identity": "RES-000471|jam|NATIONAL|||2026-Q1|HSD_2026",
+        "count": 2,
+        "ids": [
+          "PRC-HSD_2026-12rqckct",
+          "PRC-HSD_2026-1q1u2ort"
+        ]
+      },
+      {
+        "identity": "RES-001629|kg|NATIONAL|||2026-Q1|HSD_2026",
+        "count": 2,
+        "ids": [
+          "PRC-HSD_2026-1e1se1qs",
+          "PRC-HSD_2026-1ro45dps"
+        ]
+      },
+      {
+        "identity": "RES-001397|OJ|NATIONAL|||2026-01|LABOR_2026",
+        "count": 13,
+        "ids": [
+          "PRC-LABOR_2026-0105qp6v",
+          "PRC-LABOR_2026-012vzcpv",
+          "PRC-LABOR_2026-0639og1v",
+          "PRC-LABOR_2026-0d5wxecr",
+          "PRC-LABOR_2026-0ityohfv",
+          "PRC-LABOR_2026-0j4juv9v",
+          "PRC-LABOR_2026-0txkm13v",
+          "PRC-LABOR_2026-0vtssitv",
+          "PRC-LABOR_2026-0yeve2ov",
+          "PRC-LABOR_2026-0zkjeciv",
+          "PRC-LABOR_2026-1hb9quhv",
+          "PRC-LABOR_2026-1k3uxhwv",
+          "PRC-LABOR_2026-1u8adz1v"
+        ]
+      },
+      {
+        "identity": "RES-001287|OH|NATIONAL|||2026-01|LABOR_2026",
+        "count": 4,
+        "ids": [
+          "PRC-LABOR_2026-0fhzxyav",
+          "PRC-LABOR_2026-1cp2g1iv",
+          "PRC-LABOR_2026-1gu6241r",
+          "PRC-LABOR_2026-1se5go4v"
+        ]
+      },
+      {
+        "identity": "RES-001293|OJ|NATIONAL|||2026-01|LABOR_2026",
+        "count": 4,
+        "ids": [
+          "PRC-LABOR_2026-0mn52nsv",
+          "PRC-LABOR_2026-0qs8oqbr",
+          "PRC-LABOR_2026-12c83aev",
+          "PRC-LABOR_2026-1oh6mjov"
+        ]
+      }
+    ]
+  },
+  "conflicts": {
+    "conflictGroups": 29,
+    "samples": [
+      {
+        "identity": "RES-000857|jam|NATIONAL|||2026-Q1",
+        "resourceId": "RES-000857",
+        "resourceCode": "E13",
+        "resourceName": "Motor Grader",
+        "unit": "jam",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Jabodetabek"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 500000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 360000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "HSD_2026"
+      },
+      {
+        "identity": "RES-001231|kg|NATIONAL|||2026-Q1",
+        "resourceId": "RES-001231",
+        "resourceCode": "M57a",
+        "resourceName": "Besi Beton",
+        "unit": "kg",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Jabodetabek"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 15000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 14500,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 12500,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          },
+          {
+            "price": 12500,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          },
+          {
+            "price": 13200,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          },
+          {
+            "price": 13200,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          },
+          {
+            "price": 13200,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          },
+          {
+            "price": 12500,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "HSD_2026"
+      },
+      {
+        "identity": "RES-000471|jam|NATIONAL|||2026-Q1",
+        "resourceId": "RES-000471",
+        "resourceCode": "E10",
+        "resourceName": "Excavator",
+        "unit": "jam",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Jabodetabek"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 550000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 450000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 450000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          },
+          {
+            "price": 285000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "HSD_2026"
+      },
+      {
+        "identity": "RES-001286|OH|NATIONAL|||2026-Q1",
+        "resourceId": "RES-001286",
+        "resourceCode": "L.04",
+        "resourceName": "Mandor",
+        "unit": "OH",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Jabodetabek"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 210000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          },
+          {
+            "price": 225000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "COMMERCIAL_2026"
+      },
+      {
+        "identity": "RES-001287|OH|NATIONAL|||2026-Q1",
+        "resourceId": "RES-001287",
+        "resourceCode": "L.01",
+        "resourceName": "Pekerja",
+        "unit": "OH",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Jabodetabek"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 150000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          },
+          {
+            "price": 230000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          },
+          {
+            "price": 130000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "COMMERCIAL_2026"
+      },
+      {
+        "identity": "RES-001272|OH|NATIONAL|||2026-Q1",
+        "resourceId": "RES-001272",
+        "resourceCode": "L.03",
+        "resourceName": "Kepala Tukang",
+        "unit": "OH",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Jabodetabek"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 165000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          },
+          {
+            "price": 185000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "COMMERCIAL_2026"
+      },
+      {
+        "identity": "RES-001396|OH|NATIONAL|||2026-Q1",
+        "resourceId": "RES-001396",
+        "resourceCode": "L.02",
+        "resourceName": "Tukang Pipa",
+        "unit": "OH",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Jabodetabek"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 160000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          },
+          {
+            "price": 170000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "COMMERCIAL_2026"
+      },
+      {
+        "identity": "RES-000118|jam|NATIONAL|||2026-Q1",
+        "resourceId": "RES-000118",
+        "resourceCode": "E02",
+        "resourceName": "Asphalt Finisher",
+        "unit": "jam",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Jabodetabek"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 600000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 480000,
+            "sourceKey": "COMMERCIAL_2026",
+            "sourceName": "EZRAB Master Database 2026",
+            "priority": 6,
+            "tier": "COMMERCIAL_REFERENCE"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "HSD_2026"
+      },
+      {
+        "identity": "RES-000471|jam|NATIONAL|||2026-01",
+        "resourceId": "RES-000471",
+        "resourceCode": "E10",
+        "resourceName": "Excavator",
+        "unit": "jam",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Nasional / Acuan 2026"
+        },
+        "period": "2026-01",
+        "candidates": [
+          {
+            "price": 450000,
+            "sourceKey": "EQUIPMENT_2026",
+            "sourceName": "Master Sewa Alat Berat 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 550000,
+            "sourceKey": "EQUIPMENT_2026",
+            "sourceName": "Master Sewa Alat Berat 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 650000,
+            "sourceKey": "EQUIPMENT_2026",
+            "sourceName": "Master Sewa Alat Berat 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "EQUIPMENT_2026"
+      },
+      {
+        "identity": "RES-002763|kg|NATIONAL|||2026-Q1",
+        "resourceId": "RES-002763",
+        "resourceCode": "M279",
+        "resourceName": "Mortar",
+        "unit": "kg",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Nasional / Acuan 2026"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 3500,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 3000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "HSD_2026"
+      },
+      {
+        "identity": "RES-003640|m3|NATIONAL|||2026-Q1",
+        "resourceId": "RES-003640",
+        "resourceCode": "M16a",
+        "resourceName": "Sirtu 2 / 3",
+        "unit": "m3",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Nasional / Acuan 2026"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 200000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 180000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 190000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "HSD_2026"
+      },
+      {
+        "identity": "RES-001397|OJ|NATIONAL|||2026-Q1",
+        "resourceId": "RES-001397",
+        "resourceCode": "L.02",
+        "resourceName": "Tukang",
+        "unit": "OJ",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Nasional / Acuan 2026"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 140000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 150000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 160000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 145000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 150000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 145000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 155000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "HSD_2026"
+      },
+      {
+        "identity": "RES-002976|kg|NATIONAL|||2026-Q1",
+        "resourceId": "RES-002976",
+        "resourceCode": "M12",
+        "resourceName": "Semen",
+        "unit": "kg",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Nasional / Acuan 2026"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 1800,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 1700,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 1600,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 6500,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 2300,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "HSD_2026"
+      },
+      {
+        "identity": "RES-001293|OJ|NATIONAL|||2026-Q1",
+        "resourceId": "RES-001293",
+        "resourceCode": "L.01",
+        "resourceName": "Pekerja",
+        "unit": "OJ",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Nasional / Acuan 2026"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 180000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 120000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 180000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "HSD_2026"
+      },
+      {
+        "identity": "RES-001354|OJ|NATIONAL|||2026-Q1",
+        "resourceId": "RES-001354",
+        "resourceCode": "L08",
+        "resourceName": "Mekanik",
+        "unit": "OJ",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Nasional / Acuan 2026"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 200000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 220000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "HSD_2026"
+      },
+      {
+        "identity": "RES-001629|kg|NATIONAL|||2026-Q1",
+        "resourceId": "RES-001629",
+        "resourceCode": "M170",
+        "resourceName": "Air",
+        "unit": "kg",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": "Nasional / Acuan 2026"
+        },
+        "period": "2026-Q1",
+        "candidates": [
+          {
+            "price": 28000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          },
+          {
+            "price": 30000,
+            "sourceKey": "HSD_2026",
+            "sourceName": "Katalog Acuan HSD 2026",
+            "priority": 1,
+            "tier": "OFFICIAL_GOVERNMENT"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "HSD_2026"
+      },
+      {
+        "identity": "RES-001397|OJ|NATIONAL|||2026-01",
+        "resourceId": "RES-001397",
+        "resourceCode": "L.02",
+        "resourceName": "Tukang",
+        "unit": "OJ",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": null
+        },
+        "period": "2026-01",
+        "candidates": [
+          {
+            "price": 27857,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 25714,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 25000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 25000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 33750,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 27142,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 26428,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 25714,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 26428,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 25000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 26428,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 28571,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 26428,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "LABOR_2026"
+      },
+      {
+        "identity": "RES-001287|OH|NATIONAL|||2026-01",
+        "resourceId": "RES-001287",
+        "resourceCode": "L.01",
+        "resourceName": "Pekerja",
+        "unit": "OH",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": null
+        },
+        "period": "2026-01",
+        "candidates": [
+          {
+            "price": 175000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 155000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 140000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 270000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "LABOR_2026"
+      },
+      {
+        "identity": "RES-001293|OJ|NATIONAL|||2026-01",
+        "resourceId": "RES-001293",
+        "resourceCode": "L.01",
+        "resourceName": "Pekerja",
+        "unit": "OJ",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": null
+        },
+        "period": "2026-01",
+        "candidates": [
+          {
+            "price": 22142,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 20000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 33750,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 25000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "LABOR_2026"
+      },
+      {
+        "identity": "RES-001354|OJ|NATIONAL|||2026-01",
+        "resourceId": "RES-001354",
+        "resourceCode": "L08",
+        "resourceName": "Mekanik",
+        "unit": "OJ",
+        "location": {
+          "level": "NATIONAL",
+          "provinceName": null,
+          "regencyName": null,
+          "cityName": null
+        },
+        "period": "2026-01",
+        "candidates": [
+          {
+            "price": 45000,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 32500,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          },
+          {
+            "price": 37500,
+            "sourceKey": "LABOR_2026",
+            "sourceName": "Master Upah Tenaga Kerja 2026 (EZRAB)",
+            "priority": 3,
+            "tier": "VERIFIED_REGIONAL"
+          }
+        ],
+        "resolution": "SOURCE_PRIORITY",
+        "preferred": "LABOR_2026"
+      }
+    ]
+  }
+}

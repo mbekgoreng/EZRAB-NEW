@@ -1,0 +1,8 @@
+{
+ "method": "B",
+ "label": "Header inventory (item headers in the analysis body)",
+ "how": "Each printed analysis item header (serial + name + code) counted once.",
+ "headers_total": 1118,
+ "codes_distinct": 1117,
+ "source": "docs/_audit/lampiran2-official-items.json (built from the same MD5-verified PDF)"
+}

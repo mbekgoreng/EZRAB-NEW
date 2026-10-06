@@ -1,0 +1,1602 @@
+{
+ "field": "BINA_MARGA",
+ "compared": "DAFTAR ISI code index (Method A) vs rendered analysis tables (Method C)",
+ "index_codes": 1134,
+ "analysis_codes": 986,
+ "missing_count": 177,
+ "records": [
+  {
+   "serial": "A.1",
+   "code": "1.2",
+   "unit": "Lumsum",
+   "status": "Informatif",
+   "page": 4,
+   "description": "Mobilisasi",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "A.2",
+   "code": "1.7",
+   "unit": "",
+   "status": "Informatif",
+   "page": 4,
+   "description": "Provisional Pembayaran Bersyarat (Provisional Sums) Sums",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "A.3",
+   "code": "1.13.(1)",
+   "unit": "Lumsum",
+   "status": "Informatif",
+   "page": 4,
+   "description": "Building Information Modelling (BIM)",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "A.4",
+   "code": "1.20.(1)",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 4,
+   "description": "Pengeboran, termasuk SPT dan Laporan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "A.5",
+   "code": "1.20.(2)",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 4,
+   "description": "Sondir termasuk Laporan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "A.6",
+   "code": "1.20.(3)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 4,
+   "description": "DCP-CBR termasuk Laporan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.12",
+   "code": "3.1.(11)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Galian Perkerasan Berbutir",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.13",
+   "code": "3.1.(12)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Galian Perkerasan Beton",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.23",
+   "code": "3.2.(2a1)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Timbunan Pilihan Halus dari Sumber Galian",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.24",
+   "code": "3.2.(2a2)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Timbunan Pilihan Kasar dari Sumber Galian Timbunan Pilihan Halus dari Sumber Galian dengan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.25",
+   "code": "3.2.(2b1)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Pemadatan Cerdas (IC) Timbunan Pilihan Kasar dari Sumber Galian dengan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.26",
+   "code": "3.2.(2b2)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Pemadatan Cerdas (IC)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.27",
+   "code": "3.2.(2c1)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Timbunan Pilihan Halus dari Hasil Galian",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.28",
+   "code": "3.2.(2c2)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Timbunan Pilihan Kasar dari Hasil Galian Timbunan Pilihan Halus dari Hasil Galian dengan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.29",
+   "code": "3.2.(2d1)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Pemadatan Cerdas (IC) Timbunan Pilihan Kasar dari Hasil Galian dengan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.30",
+   "code": "3.2.(2d2)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Pemadatan Cerdas (IC)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.31",
+   "code": "3.2.(3)",
+   "unit": "Ton",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Timbunan Pilihan Berbutir diatas Tanah Rawa",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.32",
+   "code": "3.2.(4)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Penimbunan Kembali Bahan Berbutir (Granular Backfill)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.33",
+   "code": "3.3.(1a)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Penyiapan Badan Jalan pada Galian Penyiapan Badan Jalan pada Galian dengan Pemadatan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.34",
+   "code": "3.3.(1b)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Cerdas (IC) Penyiapan Badan Jalan untuk Rekonstruksi Perkerasan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.35",
+   "code": "3.3.(2a)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Lama Penyiapan Badan Jalan untuk Rekonstruksi Perkerasan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.36",
+   "code": "3.3.(2b)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Lama dengan Pemadatan Cerdas (IC)",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "C.37",
+   "code": "3.4.(1)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Pembersihan dan Pengupasan Lahan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.38",
+   "code": "3.4.(2)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Pemotongan Pohon Pilihan diameter >15 – 30 cm",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.39",
+   "code": "3.4.(3)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Pemotongan Pohon Pilihan diameter >30 – 50 cm",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.40",
+   "code": "3.4.(4)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Pemotongan Pohon Pilihan diameter >50 – 75 cm",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.42",
+   "code": "3.5.(1a)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Geotekstil Filter untuk Drainase Bawah Permukaan Kelas 2",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "C.43",
+   "code": "3.5.(1b)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Geotekstil Filter untuk Drainase Bawah Permukaan Kelas 3",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "C.44",
+   "code": "3.5.(2a)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 6,
+   "description": "Geotekstil Separator Kelas 4A",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "C.45",
+   "code": "3.5.(2b)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 7,
+   "description": "Geotekstil Separator Kelas 1",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "C.46",
+   "code": "3.5.(2c)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 7,
+   "description": "Geotekstil Separator Kelas 2",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "C.47",
+   "code": "3.5.(2d)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 7,
+   "description": "Geotekstil Separator Kelas 3",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "C.48",
+   "code": "3.5.(3a)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 7,
+   "description": "Geotekstil Stabilisasi Tanah Kelas 4A",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "C.49",
+   "code": "3.5.(3b)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 7,
+   "description": "Geotekstil Stabilisasi Tanah Kelas 1",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "C.50",
+   "code": "3.5.(3c)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 7,
+   "description": "Geotekstil Stabilisasi Tanah Kelas 2",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "C.51",
+   "code": "3.5.(3d)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 7,
+   "description": "Geotekstil Stabilisasi Tanah Kelas 3 Penyalir Vertikal Pra-Fabrikasi (Prefabricated Vertical Drain,",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "C.52",
+   "code": "3.6.(1)",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 7,
+   "description": "PVD), panjang ≤ 25 m Penyalir Vertikal Pra-Fabrikasi (Prefabricated Vertical Drain,",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "C.53",
+   "code": "3.6.(2)",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 7,
+   "description": "PVD), panjang >25 m Pisometer Pipa Terbuka Casagrande atau Open/ Water",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "C.54",
+   "code": "3.7.(1)",
+   "unit": "Titik",
+   "status": "Informatif",
+   "page": 7,
+   "description": "Standpipe Piezometer (Pemantauan Tekanan Air Pori) Vibrating Wire Piezometer (Pemantauan Tekanan Air Pori",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.55",
+   "code": "3.7.(2)",
+   "unit": "Titik",
+   "status": "Informatif",
+   "page": 7,
+   "description": "pada Kedalaman Tertentu)",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "C.56",
+   "code": "3.7.(3)",
+   "unit": "Titik",
+   "status": "Informatif",
+   "page": 7,
+   "description": "Settlement Plate (Pemantauan Penurunan Vertikal) Extensometer (Pemantauan Penurunan Vertikal pada",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.57",
+   "code": "3.7.(4)",
+   "unit": "Titik",
+   "status": "Informatif",
+   "page": 7,
+   "description": "Kedalaman Tertentu)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.58",
+   "code": "3.7.(5)",
+   "unit": "Titik",
+   "status": "Informatif",
+   "page": 7,
+   "description": "Inklinometer (Pemantauan Pergerakan Horizontal)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.59",
+   "code": "3.7.(6)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 7,
+   "description": "Total Pressure Cell (Pemantauan Tekanan Total) Penyalir Horizontal Pra-Fabrikasi (Prefabricated Horizontal",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "C.60",
+   "code": "3.8.(1)",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 7,
+   "description": "Drain, PHD) Pengabutan (Fog Seal) dengan Aspal Emulsi yang",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "E.5",
+   "code": "5.1.(3a)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 8,
+   "description": "Lapis Fondasi Agregat Kelas S Lapis Fondasi Agregat Kelas S dengan Mesin Gilas",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "E.7",
+   "code": "5.1.(4a)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 8,
+   "description": "Lapis Fondasi Agregat Kelas C Lapis Fondasi Agregat Kelas C dengan Mesin Gilas",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "E.14",
+   "code": "5.3.(1b)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 8,
+   "description": "Perkerasan Beton Semen Fast Track hingga 8 Jam",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "E.15",
+   "code": "5.3.(1c)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 8,
+   "description": "Perkerasan Beton Semen Fast Track hingga 24 Jam Perkerasan Beton Semen dengan Anyaman Tulangan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "E.16",
+   "code": "5.3.(2a)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 8,
+   "description": "Tunggal Perkerasan Beton Semen Fast Track hingga 8 Jam dengan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "E.17",
+   "code": "5.3.(2b)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 8,
+   "description": "Anyaman Tulangan Tunggal Perkerasan Beton Semen Fast Track hingga 24 Jam",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "E.18",
+   "code": "5.3.(2c)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 8,
+   "description": "dengan Anyaman Tulangan Tunggal Perkerasan Beton Semen dengan Anyaman Tulangan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "E.19",
+   "code": "5.3.(3a)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 9,
+   "description": "Ganda Perkerasan Beton Semen Fast Track hingga 8 Jam dengan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "E.20",
+   "code": "5.3.(3b)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 9,
+   "description": "Anyaman Tulangan Ganda Perkerasan Beton Semen Fast Track hingga 24 Jam",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "E.21",
+   "code": "5.3.(3c)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 9,
+   "description": "dengan Anyaman Tulangan Ganda",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "E.23",
+   "code": "5.3.(5)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 9,
+   "description": "Lapis Fondasi Bawah Beton Kurus",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "F.31",
+   "code": "6.3.(6a1)",
+   "unit": "Ton",
+   "status": "Informatif",
+   "page": 10,
+   "description": "Laston Lapis Fondasi (AC-Base) Laston Lapis Fondasi (AC-Base) dengan mesin gilas",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "F.32",
+   "code": "6.3.(6a2)",
+   "unit": "Ton",
+   "status": "Informatif",
+   "page": 10,
+   "description": "pemadatan cerdas (IC)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.7",
+   "code": "7.1.(2c)",
+   "unit": "Meter Kubik",
+   "status": "Informatif",
+   "page": 10,
+   "description": "Beton struktur memadat sendiri, fc’45 MPa",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.51",
+   "code": "7.2.(7).65.50",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 11,
+   "description": "Unit Pracetak Gelagar Beton Pratekan fc’ 65 MPa, Tipe T 60 bentang nominal 50-60 m, Penyediaan",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.52",
+   "code": "7.2.(8).65.50",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 11,
+   "description": "Unit Pracetak Gelagar Beton Pratekan fc’ 65 MPa, Tipe T 60 bentang nominal 50-60 m, Pemasangan Unit Pracetak Gelagar Beton Pratekan Box bentang nominal",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.120",
+   "code": "7.6.(10",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 13,
+   "description": "No.7.6.(9b) Jika Dikerjakan di Tempat Berair",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.121",
+   "code": "7.6.(11).400.40",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 13,
+   "description": "Tiang Pancang Beton Bertulang Pracetak Ukuran 400 mm x 0 400 mm, Penyediaan",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.122",
+   "code": "7.6.(12).400.40",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 13,
+   "description": "Tiang Pancang Beton Bertulang Pracetak Ukuran 400 mm x 0 400 mm, Pemancangan Tiang Pancang Beton Pratekan Pracetak, Bundar Berongga,",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.136",
+   "code": "7.6.(20a)",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 13,
+   "description": "7.6.(18b) Jika Dikerjakan di Tempat yang Berair Perlengkapan Pemantauan Pengukuran Ultrasonik untuk Tiang Diameter 500 mm Tiang Uji Jenis Tiang Pancang Beton Pratekan Pracetak",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.137",
+   "code": "7.6.(21).500",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 13,
+   "description": "Bulat Berongga, Ukuran diameter 500 mm Pengujian Pembebanan Statis pada Tiang Diameter 500",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.138",
+   "code": "7.6.(22a)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 13,
+   "description": "mm dengan Beban Hidrolik Cara Beban Siklik Pengujian Pembebanan Statis pada Tiang Diameter 500",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.139",
+   "code": "7.6.(23a)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 13,
+   "description": "mm dengan beban hidrolik Cara Beban Bertahap Pengujian Pembebanan Statis pada Tiang Diameter 500 mm",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.140",
+   "code": "7.6.(24a)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "dengan meja beban statis Cara Beban Siklik Pengujian Pembebanan Statis pada Tiang Diameter 500 mm",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.141",
+   "code": "7.6.(25a)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "dengan meja beban statis Cara Beban Bertahap Pengujian Crosshole Sonic Logging (CSL) pada Tiang Bor",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.142",
+   "code": "7.6.(26a)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "Beton Diameter 800 mm Pengujian Crosshole Sonic Logging (CSL) pada Tiang Bor",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.143",
+   "code": "7.6.(26b).400",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "Beton Diameter 400 mm Pengujian Crosshole Sonic Logging (CSL) pada Tiang Bor",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.144",
+   "code": "7.6.(26b).500",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "Beton Diameter 500 mm Pengujian Crosshole Sonic Logging (CSL) pada Tiang Bor",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.145",
+   "code": "7.6.(26b).600",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "Beton Diameter 600 mm Pengujian Crosshole Sonic Logging (CSL) pada Tiang Bor",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.146",
+   "code": "7.6.(26b).1000",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "Beton Diameter 1000 mm Pengujian Pembebanan Dinamis Jenis PDLT (Pile Dynamic",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.147",
+   "code": "7.6.(27a)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "Load Testing) pada Tiang Diameter 800 mm Pengujian Pembebanan Dinamis Jenis PDLT (Pile Dynamic",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.148",
+   "code": "7.6.(27b).400",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "Load Testing) pada Tiang Diameter 400 mm Pengujian Pembebanan Dinamis Jenis PDLT (Pile Dynamic",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.149",
+   "code": "7.6.(27b).500",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "Load Testing) pada Tiang Diameter 500 mm Pengujian Pembebanan Dinamis Jenis PDLT (Pile Dynamic",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.150",
+   "code": "7.6.(27b).600",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "Load Testing) pada Tiang Diameter 600 mm Pengujian Pembebanan Dinamis Jenis PDLT (Pile Dynamic",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.151",
+   "code": "7.6.(27b).1000",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "Load Testing) pada Tiang Diameter 1000 mm Pengujian Pembebanan Horizontal (Lateral Loading Test)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.152",
+   "code": "7.6.(28a)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "untuk Tiang Diameter 500 mm Pengujian Pembebanan Horizontal (Lateral Loading Test)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.153",
+   "code": "7.6.(28b).400",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "untuk Tiang Diameter 400 mm Pengujian Pembebanan Horizontal (Lateral Loading Test)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.154",
+   "code": "7.6.(28b).600",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "untuk Tiang Diameter 600 mm",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.155",
+   "code": "7.6.(29)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 14,
+   "description": "Pengujian Keutuhan Tiang (Pile Integrity Test, (PIT))",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "G.170",
+   "code": "7.11.(2).50",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 14,
+   "description": "Sealant), lebar celah 50 mm (fixed)",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.183",
+   "code": "7.12.(2).450.40",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 15,
+   "description": "mm x 400 mm x 45 mm 0.45 Landasan Elastomerik Karet Alam Berlapis Baja Ukuran 300",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.184",
+   "code": "7.12.(2).300.20",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 15,
+   "description": "mm x 200 mm x 50 mm 0.50",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.185",
+   "code": "7.12.(3).450.40",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 15,
+   "description": "Landasan Elastomerik Karet Sintetis Berlapis Baja Ukuran 0.45 450 mm x 400 mm x 45 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.186",
+   "code": "7.12.(3).200.30",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 15,
+   "description": "Landasan Elastomerik Karet Sintetis Berlapis Baja Ukuran 0.40 200 mm x 300 mm x 40 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.187",
+   "code": "7.12.(3).400.25",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 15,
+   "description": "Landasan Elastomerik Karet Sintetis Berlapis Baja Ukuran 0.52 400 mm x 250 mm x 52 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.188",
+   "code": "7.12.(3).400.35",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 15,
+   "description": "Landasan Elastomerik Karet Sintetis Berlapis Baja Ukuran 0.52 400 mm x 350 mm x 52 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.189",
+   "code": "7.12.(3).400.40",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 15,
+   "description": "Landasan Elastomerik Karet Sintetis Berlapis Baja Ukuran 0.60 400 mm x 400 mm x 60 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.190",
+   "code": "7.12.(3).450.40",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 15,
+   "description": "Landasan Elastomerik Karet Sintetis Berlapis Baja Ukuran 0.73 450 mm x 400 mm x 73 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.206",
+   "code": "7.15.(3).18",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 15,
+   "description": "Bentang 18 m",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "G.221",
+   "code": "7.17.(1)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 15,
+   "description": "Pengujian Pembebanan Jembatan",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "H.78",
+   "code": "8.12.(2).450.40",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 17,
+   "description": "Penggantian Landasan Elastomer Karet Alam Berlapis Baja 0.45 Ukuran 450 mm x 400 mm x 45 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "H.79",
+   "code": "8.12.(2).500.50",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 17,
+   "description": "Penggantian Landasan Elastomer Karet Alam Berlapis Baja 0.100 Ukuran 500 mm x 500 mm x 100 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "H.80",
+   "code": "8.12.(3).450.40",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 17,
+   "description": "Penggantian Landasan Elastomer Sintetis Berlapis Baja 0.45 Ukuran 450 mm x 400 mm x 45 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "H.81",
+   "code": "8.12.(3).150.25",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 17,
+   "description": "Penggantian Landasan Elastomer Sintetis Berlapis Baja 0.50 Ukuran 150 mm x 250 mm x 50 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "H.82",
+   "code": "8.12.(3).300.30",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 17,
+   "description": "Penggantian Landasan Elastomer Sintetis Berlapis Baja 0.40 Ukuran 300 mm x 300 mm x 40 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "H.83",
+   "code": "8.12.(3).300.30",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 17,
+   "description": "Penggantian Landasan Elastomer Sintetis Berlapis Baja 0.100 Ukuran 300 mm x 300 mm x 100 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "H.84",
+   "code": "8.12.(3).380.38",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 17,
+   "description": "Penggantian Landasan Elastomer Sintetis Berlapis Baja 0.102 Ukuran 380 mm x 380 mm x 102 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "H.85",
+   "code": "8.12.(3).380.45",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 18,
+   "description": "Penggantian Landasan Elastomer Sintetis Berlapis Baja 0.45 Ukuran 380 mm x 450 mm x 45 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "H.86",
+   "code": "8.12.(3).400.20",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 18,
+   "description": "Penggantian Landasan Elastomer Sintetis Berlapis Baja 0.50 Ukuran 400 mm x 200 mm x 50 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "H.87",
+   "code": "8.12.(3).400.35",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 18,
+   "description": "Penggantian Landasan Elastomer Sintetis Berlapis Baja 0.52 Ukuran 400 mm x 350 mm x 52 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "H.88",
+   "code": "8.12.(3).400.45",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 18,
+   "description": "Penggantian Landasan Elastomer Sintetis Berlapis Baja 0.50 Ukuran 400 mm x 450 mm x 50 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "H.89",
+   "code": "8.12.(3).500.50",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 18,
+   "description": "Penggantian Landasan Elastomer Sintetis Berlapis Baja 0.100 Ukuran 500 mm x 500 mm x 100 mm",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "I.4",
+   "code": "9.1.(4a)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Dump Truck, kapasitas nominal 4 ton",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.6",
+   "code": "9.1.(5a)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Truk Bak Datar, kapasitas nominal 4 ton",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.7",
+   "code": "9.1.(5b)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Truk Bak Datar, kapasitas nominal 10 ton",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.8",
+   "code": "9.1.(6)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Truk Tangki 3000 - 4500 Liter",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.9",
+   "code": "9.1.(7)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Bulldozer 100 - 150 PK",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.10",
+   "code": "9.1.(8)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Motor Grader min 100 PK",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.11",
+   "code": "9.1.(9)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Loader Roda Karet 1,0 – 1,6 M3",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.12",
+   "code": "9.1.(10)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Loader Roda Berantai 75 - 100 PK",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.13",
+   "code": "9.1.(11)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Alat Penggali (Excavator) 80 - 140 PK",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.14",
+   "code": "9.1.(12a)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Truck Crane 5 Ton",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.15",
+   "code": "9.1.(12b)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Truck Crane 10 - 15 Ton",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.16",
+   "code": "9.1.(12c)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Truck Crane 22 Ton",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.17",
+   "code": "9.1.(13)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Penggilas Roda Baja 6 - 9 Ton",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.18",
+   "code": "9.1.(14)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Penggilas Bervibrasi 5 - 8 Ton",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.19",
+   "code": "9.1.(15)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Pemadat Bervibrasi 1,5 – 3,0 PK",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.20",
+   "code": "9.1.(16)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Penggilas Roda Karet 8 - 10 Ton",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.21",
+   "code": "9.1.(17)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Kompresor 4000 - 6500 Ltr/mnt",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.22",
+   "code": "9.1.(18)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Mesin Pengaduk Beton (Molen) 0,3 – 0,6 m3",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.23",
+   "code": "9.1.(19)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Pompa Air 70 - 100 mm",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.24",
+   "code": "9.1.(20)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Jack Hammer",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.25",
+   "code": "9.1.(21)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Crawler Type Road Cutter W = 2,1 m",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.26",
+   "code": "9.1.(22)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Concrete Breaker 20 Kg",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.27",
+   "code": "9.1.(23)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Concrete Cutter 30 cm",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.28",
+   "code": "9.1.(24a)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Generator Set 45 KVA",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.29",
+   "code": "9.1.(24b)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Generator Set 125 KVA",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.30",
+   "code": "9.1.(25a)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Welding Machine 300 A",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.31",
+   "code": "9.1.(25b)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Welding Machine Semi Automatis",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.32",
+   "code": "9.1.(26)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Agitator Truck 4,5 m,3",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.33",
+   "code": "9.1.(27a)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Concrete Pump Truck 55 - 60 m3/jam",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.34",
+   "code": "9.1.(27b)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Concrete Pump Truck 90-110 m3/jam",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.35",
+   "code": "9.1.(28)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Concrete Finisher 3,0 - 7,5 m",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.36",
+   "code": "9.1.(29)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Concrete Vibrator",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.37",
+   "code": "9.1.(30)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 18,
+   "description": "Rammer 60 - 100 Kg",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.38",
+   "code": "9.1.(31)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 19,
+   "description": "Soil Compactor 100-110 Kg",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.39",
+   "code": "9.1.(32a)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 19,
+   "description": "Vibro Hammer 40 KW",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.40",
+   "code": "9.1.(32b)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 19,
+   "description": "Vibro Hammer 60 KW",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.41",
+   "code": "9.1.(33)",
+   "unit": "Jam",
+   "status": "Normatif",
+   "page": 19,
+   "description": "Winch 1,8 Ton x 30 m/menit",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.42",
+   "code": "9.2.(1a)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 19,
+   "description": "Marka Jalan Cat (Penerapan Umum)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.43",
+   "code": "9.2.(1b)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 19,
+   "description": "Marka Jalan Cat (Penerapan Khusus) Marka Jalan Termoplastik Non Glow in The Dark",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.48",
+   "code": "9.2.(1g)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 19,
+   "description": "Marka Jalan Coldplastic (Penerapan Umum)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.49",
+   "code": "9.2.(1h)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 19,
+   "description": "Marka Jalan Coldplastic (Penerapan Khusus)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.50",
+   "code": "9.2.(2a)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 19,
+   "description": "Pengupasan Marka Jalan Non Termoplastik Lama",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.51",
+   "code": "9.2.(2b)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 19,
+   "description": "Pengupasan Marka Jalan Termoplastik Lama",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.52",
+   "code": "9.2.(2c1)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 19,
+   "description": "Pengupasan Pita Penggaduh Lama ≤ 4 mm",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.53",
+   "code": "9.2.(2c2)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 19,
+   "description": "Pengupasan Pita Penggaduh Lama > 4 mm - ≤ 10 mm",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.54",
+   "code": "9.2.(2c3)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 19,
+   "description": "Pengupasan Pita Penggaduh Lama > 10 mm - ≤ 13 mm",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.55",
+   "code": "9.2.(2c4)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 19,
+   "description": "Pengupasan Pita Penggaduh Lama > 13 mm",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.56",
+   "code": "9.2.(2d)",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 19,
+   "description": "Pengupasan Marka Kewaspadaan Dengan Efek Kejut",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.62",
+   "code": "9.2.(4)",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 19,
+   "description": "Marka Kewaspadaan Dengan Efek Kejut Rambu Peringatan/Larangan/Perintah, Tunggal",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.165",
+   "code": "9.2.(25a)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 22,
+   "description": "Perkerasan Bata Beton Kuat Tekan 25 MPa",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.166",
+   "code": "9.2.(25b)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 22,
+   "description": "Perkerasan Bata Beton Yang Digunakan Kembali Pembongkaran Ubin Eksisting atau Perkerasan Bata Beton",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.179",
+   "code": "9.2.(29a)",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 22,
+   "description": "Pagar Separator Tipe A (Panel Beton)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.181",
+   "code": "9.2.(30a)",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 22,
+   "description": "Pagar Rumija Tipe 1 (Panel Beton)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.182",
+   "code": "9.2.(30b)",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 22,
+   "description": "Pagar Rumija Tipe 2 (Kawat Berduri)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.183",
+   "code": "9.2.(30c)",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 22,
+   "description": "Pagar Rumija Tipe 3 (BRC)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.184",
+   "code": "9.2.(31a)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 22,
+   "description": "Pagar Yang Dapat Dipindahkan Tipe A",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.185",
+   "code": "9.2.(31b)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 22,
+   "description": "Pagar Yang Dapat Dipindahkan Tipe B",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.186",
+   "code": "9.2.(32)",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 22,
+   "description": "Pagar Kawat (Chainlink Fence), Tinggi 2,6 m Pembongkaran pagar Pengaman semi kaku (Guardrail)/",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.188",
+   "code": "9.2.(34a)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 22,
+   "description": "Pintu Pagar Tipe A",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.189",
+   "code": "9.2.(34b)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 22,
+   "description": "Pintu Pagar Tipe B",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.190",
+   "code": "9.2.(35)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 22,
+   "description": "Jalur Penghentian Darurat Perkerasan pada Trotoar dan Median Tipe Andesit Bintik",
+   "reason": "listed in the index with no analysis table in the source (Informatif-only reference row)"
+  },
+  {
+   "serial": "I.256",
+   "code": "9.3.(37a)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 25,
+   "description": "Gembalan Rumput Penuh (Solid Sodding)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.257",
+   "code": "9.3.(37b)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 25,
+   "description": "Gembalan Rumput Garis (Strip Sodding)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.258",
+   "code": "9.3.(37c)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 25,
+   "description": "Rumput Vetiver System",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "I.342",
+   "code": "9.3.(38cf)",
+   "unit": "Buah",
+   "status": "Informatif",
+   "page": 26,
+   "description": "Perdu/Semak ………..",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "J.8",
+   "code": "10.1.(7)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 28,
+   "description": "Perbaikan dan Perataan Permukaan Jalan Tanah Perbaikan dan Perataan Permukaan Perkerasan Berbutir",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "J.9",
+   "code": "10.1.(8)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 28,
+   "description": "Tanpa Penutup Aspal Perbaikan Lapis Tipis Beton Aspal B Halus (LTBA B Halus)",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "J.49",
+   "code": "10.1.(26)",
+   "unit": "Meter Panjang",
+   "status": "Informatif",
+   "page": 29,
+   "description": "Pembersihan Drainase dan Saluran Samping",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "J.51",
+   "code": "10.1.(28)",
+   "unit": "Lumsum",
+   "status": "Informatif",
+   "page": 29,
+   "description": "Pemeriksaan Rutin pada Jalan dan Jembatan Pembersihan Struktur Bangunan Atas Jembatan Tipe",
+   "reason": "header exists in the body but no analysis table was rendered"
+  },
+  {
+   "serial": "J.75",
+   "code": "10.2.(12b)",
+   "unit": "Meter Persegi",
+   "status": "Informatif",
+   "page": 30,
+   "description": "Pengecatan Dinding Beton Sandaran",
+   "reason": "header exists in the body but no analysis table was rendered"
+  }
+ ]
+}

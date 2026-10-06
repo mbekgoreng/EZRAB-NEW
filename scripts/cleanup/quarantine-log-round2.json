@@ -1,0 +1,1533 @@
+{
+ "quarantine": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-round2-2026-10-05",
+ "moved": 305,
+ "mb_moved": 374.61,
+ "failed": [],
+ "log": [
+  {
+   "path": "dist",
+   "size_bytes": 225318084,
+   "category": "E_GENERATED"
+  },
+  {
+   "path": "src/assets/0908.mp4",
+   "size_bytes": 18224634,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": ".git/objects/be/tmp_obj_oDgCmc",
+   "size_bytes": 16879616,
+   "category": "G_TEMPORARY"
+  },
+  {
+   "path": "src/assets/landpage-vid1-blackbg.mp4",
+   "size_bytes": 10092801,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/animasi-building-hero.mp4",
+   "size_bytes": 8965236,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/downloaded_hero.mp4",
+   "size_bytes": 7094714,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/videos/ezrab-magic-ai-scroll.mp4",
+   "size_bytes": 7048258,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/landpage-vid1-transparent.webm",
+   "size_bytes": 7034915,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/ezrab-hero.mp4",
+   "size_bytes": 6476269,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/landpage vid 1.mp4",
+   "size_bytes": 6084577,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/videos/ezrab-hero.mp4",
+   "size_bytes": 6025176,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/ezrab-hero.webm",
+   "size_bytes": 4188891,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/asada-hero-bg.png",
+   "size_bytes": 3869498,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/__pycache__",
+   "size_bytes": 2704653,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "public/videos/roles/konsultan.mp4",
+   "size_bytes": 2109252,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/videos/roles/kontraktor.mp4",
+   "size_bytes": 1994878,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/videos/roles/developer.mp4",
+   "size_bytes": 1832023,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/landing/backgrounds/land-page-awal.jpg",
+   "size_bytes": 1786679,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/images/landing/backgrounds/land-page-awal.jpg",
+   "size_bytes": 1786679,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/logo_oy.svg",
+   "size_bytes": 1727354,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/logo_oy.svg",
+   "size_bytes": 1727354,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/videos/roles/estimator.mp4",
+   "size_bytes": 1591585,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/1.jpg",
+   "size_bytes": 1585778,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/hero-bg-1.png",
+   "size_bytes": 1585778,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": ".git/objects/eb/tmp_obj_M8Uby7",
+   "size_bytes": 1191936,
+   "category": "G_TEMPORARY"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/rich/__pycache__",
+   "size_bytes": 1134782,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/rich/__pycache__",
+   "size_bytes": 1131995,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "src/assets/check_0908fg.png",
+   "size_bytes": 1119580,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/frame_test.png",
+   "size_bytes": 1119580,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/test_transparent_frame.png",
+   "size_bytes": 1116105,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/test_chroma.webm",
+   "size_bytes": 1103416,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/check_bg.png",
+   "size_bytes": 1043742,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/images/about/about_magic_ai_pipeline.png",
+   "size_bytes": 1000686,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/images/about/ChatGPT Image Sep 9, 2026, 01_35_58 AM.png",
+   "size_bytes": 1000686,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/test_f1.png",
+   "size_bytes": 977695,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/check_0908.png",
+   "size_bytes": 964519,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/ezrab-hero.png",
+   "size_bytes": 896514,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/cta-skyline-cranes.jpg",
+   "size_bytes": 861152,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/landing/backgrounds/cta-skyline-cranes.jpg",
+   "size_bytes": 861152,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/test_f3.png",
+   "size_bytes": 803198,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pydantic/__pycache__",
+   "size_bytes": 710597,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "public/images/about/ChatGPT Image Sep 9, 2026, 01_37_09 AM.png",
+   "size_bytes": 683641,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/magic-ai-blueprint-bg.png",
+   "size_bytes": 661917,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/landing/backgrounds/magic-ai-blueprint-bg.png",
+   "size_bytes": 661917,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/hero-hologram-platform-bg.png",
+   "size_bytes": 649647,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/landing/backgrounds/hero-hologram-platform-bg.png",
+   "size_bytes": 649647,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/magic-ai-orb.jpg",
+   "size_bytes": 640215,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": ".git/objects/be/tmp_obj_NRPQTO",
+   "size_bytes": 634880,
+   "category": "G_TEMPORARY"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pydantic/v1/__pycache__",
+   "size_bytes": 583186,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/asyncio/__pycache__",
+   "size_bytes": 566021,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "src/assets/workflow-blueprint-bg.png",
+   "size_bytes": 535615,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/landing/backgrounds/workflow-blueprint-bg.png",
+   "size_bytes": 535615,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/ezrab-robot-waving.jpg",
+   "size_bytes": 534543,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/images/about/photoreal_cinematic_cityscape.webp",
+   "size_bytes": 534200,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/ezrab-robot-idea.jpg",
+   "size_bytes": 522603,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/click/__pycache__",
+   "size_bytes": 505696,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pydantic/_internal/__pycache__",
+   "size_bytes": 486238,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/distlib/__pycache__",
+   "size_bytes": 469170,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/fastapi/__pycache__",
+   "size_bytes": 385917,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "public/assets/mascot/master_eye_texture.png",
+   "size_bytes": 351416,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/packaging/__pycache__",
+   "size_bytes": 334174,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/httpx/__pycache__",
+   "size_bytes": 301200,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "src/assets/logo_magic_ai.svg",
+   "size_bytes": 289746,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/logo_magic_ai.svg",
+   "size_bytes": 289746,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/unittest/__pycache__",
+   "size_bytes": 285965,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/idna/__pycache__",
+   "size_bytes": 284253,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "public/ezrab-bot-mascot.png",
+   "size_bytes": 283411,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/starlette/__pycache__",
+   "size_bytes": 275849,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "public/assets/mascot/white_crop.png",
+   "size_bytes": 263910,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/assets/mascot/albedo_thumb.png",
+   "size_bytes": 260333,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/anyio/_core/__pycache__",
+   "size_bytes": 250475,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "src/assets/animasi-building-poster.jpg",
+   "size_bytes": 246816,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/frame6.jpg",
+   "size_bytes": 246783,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/assets/mascot/extracted_albedo.jpg",
+   "size_bytes": 244118,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": ".git/objects/74/tmp_obj_hDGZJs",
+   "size_bytes": 243563,
+   "category": "G_TEMPORARY"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/requests/__pycache__",
+   "size_bytes": 243077,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "src/assets/logo_magic_ai.png",
+   "size_bytes": 242509,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/logo_magic_ai.png",
+   "size_bytes": 242509,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/urllib3/__pycache__",
+   "size_bytes": 241498,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "src/assets/frame3.jpg",
+   "size_bytes": 231469,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/anyio/_backends/__pycache__",
+   "size_bytes": 223064,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "src/assets/landpage-vid1-poster.jpg",
+   "size_bytes": 218721,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/test_vp9_alpha.webm",
+   "size_bytes": 218420,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/email/__pycache__",
+   "size_bytes": 214053,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "src/assets/0908-poster.jpg",
+   "size_bytes": 212140,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/requests/__pycache__",
+   "size_bytes": 210872,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/logging/__pycache__",
+   "size_bytes": 206506,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/packaging/__pycache__",
+   "size_bytes": 177515,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/urllib/__pycache__",
+   "size_bytes": 174561,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/distlib/__pycache__",
+   "size_bytes": 174126,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pygments/formatters/__pycache__",
+   "size_bytes": 172448,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/idna/__pycache__",
+   "size_bytes": 170383,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/utils/__pycache__",
+   "size_bytes": 170195,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/http/__pycache__",
+   "size_bytes": 169096,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pygments/__pycache__",
+   "size_bytes": 167189,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/commands/__pycache__",
+   "size_bytes": 167118,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/urllib3/__pycache__",
+   "size_bytes": 166798,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/__pycache__",
+   "size_bytes": 166560,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/idna/__pycache__",
+   "size_bytes": 164717,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pkg_resources/__pycache__",
+   "size_bytes": 161287,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pkg_resources/__pycache__",
+   "size_bytes": 161273,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pydantic_core/__pycache__",
+   "size_bytes": 159206,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/utils/__pycache__",
+   "size_bytes": 155997,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "public/images/about/minimalist_ui_scene.jpg",
+   "size_bytes": 153415,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/commands/__pycache__",
+   "size_bytes": 149454,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/__pycache__",
+   "size_bytes": 144052,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/multiprocessing/__pycache__",
+   "size_bytes": 143521,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pygments/__pycache__",
+   "size_bytes": 141131,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/platformdirs/__pycache__",
+   "size_bytes": 137393,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/cli/__pycache__",
+   "size_bytes": 133949,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/req/__pycache__",
+   "size_bytes": 132996,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/anyio/__pycache__",
+   "size_bytes": 132963,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "public/ezrab-bot-mascot.svg",
+   "size_bytes": 132841,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/resolution/resolvelib/__pycache__",
+   "size_bytes": 128788,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pygments/lexers/__pycache__",
+   "size_bytes": 128149,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "public/images/ezrab-logo-original.png",
+   "size_bytes": 127225,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pygments/lexers/__pycache__",
+   "size_bytes": 125932,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/req/__pycache__",
+   "size_bytes": 125135,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/httpcore/_async/__pycache__",
+   "size_bytes": 124909,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/resolution/resolvelib/__pycache__",
+   "size_bytes": 120502,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/html/__pycache__",
+   "size_bytes": 119385,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/httpcore/_sync/__pycache__",
+   "size_bytes": 113844,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/__pycache__",
+   "size_bytes": 112732,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "public/assets/mascot/adad.jpg",
+   "size_bytes": 108813,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/__pycache__",
+   "size_bytes": 108131,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/urllib3/util/__pycache__",
+   "size_bytes": 107275,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/cli/__pycache__",
+   "size_bytes": 105620,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/__pycache__",
+   "size_bytes": 104373,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "public/assets/mascot/maskot-lucu.svg",
+   "size_bytes": 102892,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/urllib3/util/__pycache__",
+   "size_bytes": 100540,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/zipfile/__pycache__",
+   "size_bytes": 99987,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/re/__pycache__",
+   "size_bytes": 93765,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/protocols/http/__pycache__",
+   "size_bytes": 88607,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/network/__pycache__",
+   "size_bytes": 88512,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/urllib3/contrib/__pycache__",
+   "size_bytes": 86973,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/platformdirs/__pycache__",
+   "size_bytes": 83789,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/protocols/websockets/__pycache__",
+   "size_bytes": 83334,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/h11/__pycache__",
+   "size_bytes": 81383,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/index/__pycache__",
+   "size_bytes": 80180,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/starlette/middleware/__pycache__",
+   "size_bytes": 79235,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/index/__pycache__",
+   "size_bytes": 75838,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/vcs/__pycache__",
+   "size_bytes": 74929,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/vcs/__pycache__",
+   "size_bytes": 73876,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/network/__pycache__",
+   "size_bytes": 73795,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/collections/__pycache__",
+   "size_bytes": 73296,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/anyio/streams/__pycache__",
+   "size_bytes": 70435,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "public/assets/mascot/ref_dashboard_mascot.png",
+   "size_bytes": 68975,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/models/__pycache__",
+   "size_bytes": 67557,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/importlib/metadata/__pycache__",
+   "size_bytes": 67463,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/anyio/abc/__pycache__",
+   "size_bytes": 65791,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/models/__pycache__",
+   "size_bytes": 62324,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/fastapi/openapi/__pycache__",
+   "size_bytes": 61956,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/metadata/__pycache__",
+   "size_bytes": 60216,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/metadata/__pycache__",
+   "size_bytes": 59946,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/truststore/__pycache__",
+   "size_bytes": 57241,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/truststore/__pycache__",
+   "size_bytes": 56335,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/packaging/licenses/__pycache__",
+   "size_bytes": 55353,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/distro/__pycache__",
+   "size_bytes": 55122,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/distro/__pycache__",
+   "size_bytes": 55116,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/httpcore/__pycache__",
+   "size_bytes": 55018,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/urllib3/contrib/emscripten/__pycache__",
+   "size_bytes": 53901,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/msgpack/__pycache__",
+   "size_bytes": 53651,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/msgpack/__pycache__",
+   "size_bytes": 53643,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pydantic/deprecated/__pycache__",
+   "size_bytes": 51979,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/xmlrpc/__pycache__",
+   "size_bytes": 51774,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/packaging/licenses/__pycache__",
+   "size_bytes": 51536,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/fastapi/security/__pycache__",
+   "size_bytes": 51341,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/fastapi/dependencies/__pycache__",
+   "size_bytes": 50676,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/operations/__pycache__",
+   "size_bytes": 50015,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/cachecontrol/__pycache__",
+   "size_bytes": 48744,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/cachecontrol/__pycache__",
+   "size_bytes": 48236,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/encodings/__pycache__",
+   "size_bytes": 46959,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/resolvelib/__pycache__",
+   "size_bytes": 46654,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/json/__pycache__",
+   "size_bytes": 46166,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "public/assets/mascot/vector_eye_right.png",
+   "size_bytes": 44830,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/assets/mascot/vector_eye_left.png",
+   "size_bytes": 44745,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/httpcore/_backends/__pycache__",
+   "size_bytes": 43834,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/importlib/resources/__pycache__",
+   "size_bytes": 43647,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/concurrent/futures/__pycache__",
+   "size_bytes": 43530,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/operations/__pycache__",
+   "size_bytes": 43421,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "public/videos/roles/kontraktor-poster.jpg",
+   "size_bytes": 43043,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/videos/roles/konsultan-poster.jpg",
+   "size_bytes": 42116,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/urllib3/packages/__pycache__",
+   "size_bytes": 41508,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pygments/filters/__pycache__",
+   "size_bytes": 37941,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pygments/filters/__pycache__",
+   "size_bytes": 37938,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pydantic/experimental/__pycache__",
+   "size_bytes": 37827,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/httpx/_transports/__pycache__",
+   "size_bytes": 37796,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/urllib3/contrib/__pycache__",
+   "size_bytes": 36703,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/operations/install/__pycache__",
+   "size_bytes": 36242,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/resolvelib/resolvers/__pycache__",
+   "size_bytes": 35813,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/build_env/__pycache__",
+   "size_bytes": 35671,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/typing_inspection/__pycache__",
+   "size_bytes": 35513,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/ctypes/__pycache__",
+   "size_bytes": 35501,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/locations/__pycache__",
+   "size_bytes": 35140,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/tomli/__pycache__",
+   "size_bytes": 34890,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/operations/install/__pycache__",
+   "size_bytes": 34738,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/tomli/__pycache__",
+   "size_bytes": 34203,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "public/videos/roles/developer-poster.jpg",
+   "size_bytes": 34182,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/locations/__pycache__",
+   "size_bytes": 33757,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "public/videos/roles/estimator-poster.jpg",
+   "size_bytes": 33276,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/urllib3/contrib/_securetransport/__pycache__",
+   "size_bytes": 32486,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/venv/__pycache__",
+   "size_bytes": 31879,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/supervisors/__pycache__",
+   "size_bytes": 31700,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/tomllib/__pycache__",
+   "size_bytes": 31538,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/fastapi/_compat/__pycache__",
+   "size_bytes": 31008,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/annotated_types/__pycache__",
+   "size_bytes": 30898,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/metadata/importlib/__pycache__",
+   "size_bytes": 28907,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/resolvelib/__pycache__",
+   "size_bytes": 26592,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/metadata/importlib/__pycache__",
+   "size_bytes": 25746,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/middleware/__pycache__",
+   "size_bytes": 23518,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/resolution/legacy/__pycache__",
+   "size_bytes": 22833,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/resolution/legacy/__pycache__",
+   "size_bytes": 22770,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/urllib3/http2/__pycache__",
+   "size_bytes": 22460,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/operations/build/__pycache__",
+   "size_bytes": 22388,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/zipfile/_path/__pycache__",
+   "size_bytes": 20971,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pydantic/plugin/__pycache__",
+   "size_bytes": 18874,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pyproject_hooks/__pycache__",
+   "size_bytes": 18847,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pyproject_hooks/__pycache__",
+   "size_bytes": 18843,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/distributions/__pycache__",
+   "size_bytes": 17952,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/importlib/__pycache__",
+   "size_bytes": 17295,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pyproject_hooks/_in_process/__pycache__",
+   "size_bytes": 16444,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pyproject_hooks/_in_process/__pycache__",
+   "size_bytes": 16440,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/distributions/__pycache__",
+   "size_bytes": 16367,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/operations/build/__pycache__",
+   "size_bytes": 15452,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/zoneinfo/__pycache__",
+   "size_bytes": 13658,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pygments/formatters/__pycache__",
+   "size_bytes": 11170,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/cachecontrol/caches/__pycache__",
+   "size_bytes": 10990,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/tomli_w/__pycache__",
+   "size_bytes": 10726,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/cachecontrol/caches/__pycache__",
+   "size_bytes": 10274,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/ensurepip/__pycache__",
+   "size_bytes": 9906,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/urllib3/packages/backports/__pycache__",
+   "size_bytes": 9451,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "src/assets/ezrab-building.svg",
+   "size_bytes": 9256,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/lifespan/__pycache__",
+   "size_bytes": 9174,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/pygments/styles/__pycache__",
+   "size_bytes": 6366,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/pygments/styles/__pycache__",
+   "size_bytes": 6365,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "package.json.bak",
+   "size_bytes": 5992,
+   "category": "I_OBSOLETE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/__pycache__",
+   "size_bytes": 4617,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/certifi/__pycache__",
+   "size_bytes": 4252,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/__pycache__",
+   "size_bytes": 3808,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/__pycache__",
+   "size_bytes": 3801,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/protocols/__pycache__",
+   "size_bytes": 3378,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/fastapi/middleware/__pycache__",
+   "size_bytes": 3218,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_vendor/certifi/__pycache__",
+   "size_bytes": 3117,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/certifi/__pycache__",
+   "size_bytes": 3052,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "src/assets/ezrab-blueprint.svg",
+   "size_bytes": 2703,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/logo.css",
+   "size_bytes": 2690,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "src/assets/ezrab-mascot.svg",
+   "size_bytes": 2632,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "public/ezrab-mascot.svg",
+   "size_bytes": 2632,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/uvicorn/loops/__pycache__",
+   "size_bytes": 2389,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "src/assets/ezrab-excavator.svg",
+   "size_bytes": 2217,
+   "category": "K_ORPHAN"
+  },
+  {
+   "path": "build.log",
+   "size_bytes": 2200,
+   "category": "G_TEMPORARY"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/annotated_doc/__pycache__",
+   "size_bytes": 2194,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/certifi/tests/__pycache__",
+   "size_bytes": 1753,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_internal/resolution/__pycache__",
+   "size_bytes": 1432,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/pip/_internal/resolution/__pycache__",
+   "size_bytes": 1401,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/xml/parsers/__pycache__",
+   "size_bytes": 843,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/xml/__pycache__",
+   "size_bytes": 762,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/site-packages/pip/_vendor/resolvelib/compat/__pycache__",
+   "size_bytes": 674,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/__pycache__",
+   "size_bytes": 263,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/America/North_Dakota/__pycache__",
+   "size_bytes": 232,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/America/Argentina/__pycache__",
+   "size_bytes": 229,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/America/Kentucky/__pycache__",
+   "size_bytes": 228,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/America/Indiana/__pycache__",
+   "size_bytes": 227,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Antarctica/__pycache__",
+   "size_bytes": 222,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Australia/__pycache__",
+   "size_bytes": 221,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Atlantic/__pycache__",
+   "size_bytes": 220,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/America/__pycache__",
+   "size_bytes": 219,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Pacific/__pycache__",
+   "size_bytes": 219,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Africa/__pycache__",
+   "size_bytes": 218,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Arctic/__pycache__",
+   "size_bytes": 218,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Brazil/__pycache__",
+   "size_bytes": 218,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Canada/__pycache__",
+   "size_bytes": 218,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Europe/__pycache__",
+   "size_bytes": 218,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Indian/__pycache__",
+   "size_bytes": 218,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Mexico/__pycache__",
+   "size_bytes": 218,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Chile/__pycache__",
+   "size_bytes": 217,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Asia/__pycache__",
+   "size_bytes": 216,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/Etc/__pycache__",
+   "size_bytes": 215,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/US/__pycache__",
+   "size_bytes": 214,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.venv/Lib/site-packages/tzdata/zoneinfo/__pycache__",
+   "size_bytes": 211,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/concurrent/__pycache__",
+   "size_bytes": 194,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Doc/html/_downloads/6dc1f3f4f0e6ca13cb42ddf4d6cbc8af/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/ctypes/macholib/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/curses/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/dbm/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/email/mime/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/idlelib/idle_test/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/idlelib/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/lib2to3/fixes/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/lib2to3/pgen2/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/lib2to3/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/msilib/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/multiprocessing/dummy/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/pydoc_data/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/sqlite3/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/tkinter/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/turtledemo/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/wsgiref/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/xml/dom/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/xml/etree/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/xml/sax/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/__phello__/ham/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/Lib/__phello__/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/.python/tcl/tix8.4.3/pref/__pycache__",
+   "size_bytes": 0,
+   "category": "F_CACHE"
+  },
+  {
+   "path": ".git/objects/28/tmp_obj_zTkndK",
+   "size_bytes": 0,
+   "category": "G_TEMPORARY"
+  }
+ ]
+}

@@ -1,0 +1,102 @@
+import { KnowledgeEntry } from './knowledgeTypes';
+
+export const CONSTRUCTION_KNOWLEDGE_ENTRIES: KnowledgeEntry[] = [
+  {
+    id: 'KNOW-BOUWPLANK',
+    title: 'Pemasangan Bouwplank / Papan Duga',
+    category: 'CONSTRUCTION_GENERAL',
+    summary: 'Papan kayu pemandu peletakan as dinding, elevasi tinggi lantai ±0.00, dan batas galian pondasi.',
+    content: 'Bouwplank (papan duga) dipasang pada awal pekerjaan persiapan sebagai acuan menentukan as/titik tengah pondasi, kelurusan dinding, dan elevasi tinggi lantai bangunan (+0.00). Dibuat dari kayu meranti/terentang 2/20 cm dan patok kayu 5/7 cm dengan jarak ±1 meter dari garis galian agar tidak terganggu saat penggalian.',
+    keywords: ['bouwplank', 'papan duga', 'elevasi', 'titik as', 'persiapan', 'titik nol'],
+    authority: 'OFFICIAL_STANDARD',
+    version: 'PUPR-2026',
+    searchable: true,
+    projectScoped: false,
+    workspaceScoped: false,
+    updatedAt: '2026-09-01'
+  },
+  {
+    id: 'KNOW-SLOOF',
+    title: 'Sloof Beton Bertulang',
+    category: 'CONSTRUCTION_GENERAL',
+    summary: 'Balok beton bertulang di atas pondasi yang mengikat kolom dan meratakan beban ke pondasi.',
+    content: 'Sloof adalah elemen struktur horizontal beton bertulang yang terletak di atas pondasi batu kali/footplate. Fungsi utamanya adalah meratakan beban dinding ke pondasi dan mengunci struktur bawah agar tidak terjadi penurunan diferensial (differential settlement). Dimensi standar rumah 1 lantai: 15x20 cm, rumah 2 lantai: 15x30 cm atau 20x35 cm.',
+    keywords: ['sloof', 'balok sloof', 'meratakan beban', 'struktur bawah', 'tie beam'],
+    authority: 'OFFICIAL_STANDARD',
+    version: 'PUPR-2026',
+    searchable: true,
+    projectScoped: false,
+    workspaceScoped: false,
+    updatedAt: '2026-09-01'
+  },
+  {
+    id: 'KNOW-PONDASI-BATU-KALI',
+    title: 'Pondasi Batu Kali (Menerus)',
+    category: 'CONSTRUCTION_GENERAL',
+    summary: 'Pondasi dangkal menerus untuk menopang dinding bangunan 1-2 lantai pada tanah keras dangkal.',
+    content: 'Pondasi batu kali adalah pondasi dangkal berbentuk trapesium menerus di bawah dinding penahan. Komposisi spesi adukan umumnya 1 Pc : 4 Ps atau 1 Pc : 5 Ps dengan aanstamping (batu kosong) dan pasir urug setebal 5-10 cm di bawahnya untuk perataan tegangan tanah.',
+    keywords: ['pondasi', 'batu kali', 'aanstamping', 'pondasi menerus', 'trapesium'],
+    authority: 'OFFICIAL_STANDARD',
+    version: 'PUPR-2026',
+    searchable: true,
+    projectScoped: false,
+    workspaceScoped: false,
+    updatedAt: '2026-09-01'
+  },
+  {
+    id: 'KNOW-PONDASI-FOOTPLATE',
+    title: 'Pondasi Tapak Beton (Foot Plate)',
+    category: 'CONSTRUCTION_GENERAL',
+    summary: 'Pondasi setempat beton bertulang di bawah kolom utama untuk bangunan bertingkat.',
+    content: 'Pondasi foot plate (tapak beton bertulang) digunakan untuk menopang beban titik terpusat dari kolom struktur bangunan bertingkat (2-4 lantai). Tebal telapak umumnya 25-40 cm dengan mutu beton minimal K-250 / fc 20 MPa dan tulangan ulir BJTS 420B.',
+    keywords: ['footplate', 'pondasi tapak', 'cakar ayam', 'kolom utama', 'bangunan bertingkat'],
+    authority: 'OFFICIAL_STANDARD',
+    version: 'PUPR-2026',
+    searchable: true,
+    projectScoped: false,
+    workspaceScoped: false,
+    updatedAt: '2026-09-01'
+  },
+  {
+    id: 'KNOW-KOLOM-PRAKTIS',
+    title: 'Kolom Praktis vs Kolom Struktur',
+    category: 'CONSTRUCTION_GENERAL',
+    summary: 'Kolom praktis mengikat dinding setiap 9-12 m2, sedangkan kolom struktur menopang beban dak dan lantai atas.',
+    content: 'Kolom praktis (biasanya dimensi 15x15 cm atau 10x15 cm) berfungsi memegang dinding bata/hebel agar tidak roboh akibat gempa atau angin (dipasang tiap jarak maksimal 3-3.5 meter atau luas dinding 9-12 m2). Kolom struktur (20x20 cm s.d 40x40 cm) didesain khusus menahan gaya aksial dan momen lentur portal bangunan.',
+    keywords: ['kolom praktis', 'kolom struktur', 'kolom utama', 'pengikat dinding'],
+    authority: 'OFFICIAL_STANDARD',
+    version: 'PUPR-2026',
+    searchable: true,
+    projectScoped: false,
+    workspaceScoped: false,
+    updatedAt: '2026-09-01'
+  },
+  {
+    id: 'KNOW-WATERPROOFING',
+    title: 'Pekerjaan Waterproofing Kamar Mandi & Rooftop',
+    category: 'CONSTRUCTION_GENERAL',
+    summary: 'Lapisan kedap air untuk mencegah rembesan pada area basah dan dak beton terbuka.',
+    content: 'Waterproofing kamar mandi dan dak beton menggunakan bahan semen fleksibel (cementitious coating 2-komponen) atau membran bakar bitumen. Diaplikasikan minimum 2 lapis menyilang dengan overlap naik ke dinding minimal 20-30 cm (flashing) dan uji rendam air (waterpond test) selama 24 jam sebelum pemasangan screed keramik.',
+    keywords: ['waterproofing', 'kamar mandi', 'dak beton', 'rembes', 'kedap air', 'membran'],
+    authority: 'OFFICIAL_STANDARD',
+    version: 'PUPR-2026',
+    searchable: true,
+    projectScoped: false,
+    workspaceScoped: false,
+    updatedAt: '2026-09-01'
+  },
+  {
+    id: 'KNOW-AHSP-STANDARDS',
+    title: 'Standar AHSP PUPR 2026 (Analisa Harga Satuan Pekerjaan)',
+    category: 'AHSP',
+    summary: 'Pedoman resmi koefisien kebutuhan bahan, upah tenaga kerja, dan alat per satuan pekerjaan.',
+    content: 'AHSP standar PUPR merupakan pedoman baku menghitung biaya satuan pekerjaan konstruksi. Terdiri dari koefisien tenaga kerja (pekerja, tukang, kepala tukang, mandor), bahan baku material, dan peralatan mekanis. Total HSS dijumlahkan dan ditambahkan biaya overhead & profit sesuai ketentuan peraturan perundangan.',
+    keywords: ['ahsp', 'pupr', 'koefisien', 'analisa harga', 'upah', 'overhead', 'profit'],
+    authority: 'REGULATORY',
+    version: 'Permen-PUPR-2026',
+    searchable: true,
+    projectScoped: false,
+    workspaceScoped: false,
+    updatedAt: '2026-09-01'
+  }
+];

@@ -1,0 +1,1452 @@
+[
+  {
+    "workId": "W-01",
+    "workName": "Galian Tanah Pondasi Batu Gunung",
+    "volume": 28.5,
+    "unit": "m3",
+    "ahspCode": "1.2.1.1.1",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 90860,
+    "total": 2589510,
+    "componentsCount": 2,
+    "components": [
+      {
+        "code": "",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.75,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.038,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "28.5 m3 × Rp 90.860/m3 = Rp 2.589.510"
+  },
+  {
+    "workId": "W-02",
+    "workName": "Pasir urug bawah pondasi dan lantai",
+    "volume": 4.8,
+    "unit": "m3",
+    "ahspCode": "1.3.1.2",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 372504,
+    "total": 1788019,
+    "componentsCount": 3,
+    "components": [
+      {
+        "code": "",
+        "name": "Pasir urug (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 1.2,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "L.01",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.3,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "L.04",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.015,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "4.8 m3 × Rp 372.504/m3 = Rp 1.788.019"
+  },
+  {
+    "workId": "W-03",
+    "workName": "Cerucuk Ulin 80x80x2000-1500 mm",
+    "volume": 120,
+    "unit": "m",
+    "ahspCode": "2.6.2.1",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 164749,
+    "total": 19769880,
+    "componentsCount": 4,
+    "components": [
+      {
+        "code": "L.01",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.0605,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "L.02",
+        "name": "Tukang kayu",
+        "unit": "OH",
+        "coefficient": 0.0605,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "L.03",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.006,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Sepatu Pancang",
+        "unit": "buah",
+        "coefficient": 0.25,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "120 m × Rp 164.749/m = Rp 19.769.880"
+  },
+  {
+    "workId": "W-04",
+    "workName": "Cor Lantai Kerja T = 50 mm",
+    "volume": 3.2,
+    "unit": "m3",
+    "ahspCode": "2.2.1.4.1",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 928002,
+    "total": 2969606,
+    "componentsCount": 8,
+    "components": [
+      {
+        "code": "",
+        "name": "Semen Portland (PC)",
+        "unit": "kg",
+        "coefficient": 250,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pasir beton",
+        "unit": "kg",
+        "coefficient": 888,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Batu split 2/3",
+        "unit": "kg",
+        "coefficient": 1.009,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Air",
+        "unit": "liter",
+        "coefficient": 202,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 1.65,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 0.275,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Kepala Tukang",
+        "unit": "OH",
+        "coefficient": 0.028,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.009,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "3.2 m3 × Rp 928.002/m3 = Rp 2.969.606"
+  },
+  {
+    "workId": "W-05",
+    "workName": "Pondasi Batu Gunung (1SP : 4PP)",
+    "volume": 24.5,
+    "unit": "m3",
+    "ahspCode": "2.2.2.1.6",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 1046320,
+    "total": 25634840,
+    "componentsCount": 6,
+    "components": [
+      {
+        "code": "",
+        "name": "Batu belah (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 1.2,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Semen portland (PC)",
+        "unit": "kg",
+        "coefficient": 163,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pasir pasang (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 0.52,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "L.01",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 1.5,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "L.02",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 0.5,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "L.04",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.15,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "24.5 m3 × Rp 1.046.320/m3 = Rp 25.634.840"
+  },
+  {
+    "workId": "W-06",
+    "workName": "Sloof 15x20 beton bertulang mutu sedang",
+    "volume": 3,
+    "unit": "m3",
+    "ahspCode": "2.2.1.4.5",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 1325155,
+    "total": 3975465,
+    "componentsCount": 8,
+    "components": [
+      {
+        "code": "",
+        "name": "Semen Portland (PC)",
+        "unit": "kg",
+        "coefficient": 348,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pasir beton",
+        "unit": "kg",
+        "coefficient": 790,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Batu split 2/3",
+        "unit": "kg",
+        "coefficient": 1009,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Air",
+        "unit": "liter",
+        "coefficient": 202,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 1.65,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 0.275,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Kepala Tukang",
+        "unit": "OH",
+        "coefficient": 0.028,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.009,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "3 m3 × Rp 1.325.155/m3 = Rp 3.975.465"
+  },
+  {
+    "workId": "W-07",
+    "workName": "Kolom praktis 15x15 beton bertulang",
+    "volume": 2.5,
+    "unit": "m3",
+    "ahspCode": "2.2.1.4.5",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 1325155,
+    "total": 3312888,
+    "componentsCount": 8,
+    "components": [
+      {
+        "code": "",
+        "name": "Semen Portland (PC)",
+        "unit": "kg",
+        "coefficient": 348,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pasir beton",
+        "unit": "kg",
+        "coefficient": 790,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Batu split 2/3",
+        "unit": "kg",
+        "coefficient": 1009,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Air",
+        "unit": "liter",
+        "coefficient": 202,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 1.65,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 0.275,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Kepala Tukang",
+        "unit": "OH",
+        "coefficient": 0.028,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.009,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "2.5 m3 × Rp 1.325.155/m3 = Rp 3.312.888"
+  },
+  {
+    "workId": "W-08",
+    "workName": "Ringbalk 15x20 beton bertulang mutu sedang",
+    "volume": 2.8,
+    "unit": "m3",
+    "ahspCode": "2.2.1.4.5",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 1325155,
+    "total": 3710434,
+    "componentsCount": 8,
+    "components": [
+      {
+        "code": "",
+        "name": "Semen Portland (PC)",
+        "unit": "kg",
+        "coefficient": 348,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pasir beton",
+        "unit": "kg",
+        "coefficient": 790,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Batu split 2/3",
+        "unit": "kg",
+        "coefficient": 1009,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Air",
+        "unit": "liter",
+        "coefficient": 202,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 1.65,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 0.275,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Kepala Tukang",
+        "unit": "OH",
+        "coefficient": 0.028,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.009,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "2.8 m3 × Rp 1.325.155/m3 = Rp 3.710.434"
+  },
+  {
+    "workId": "W-09",
+    "workName": "Pelat t = 100 mm dak beton",
+    "volume": 4.5,
+    "unit": "m3",
+    "ahspCode": "2.2.1.4.5",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 1325155,
+    "total": 5963198,
+    "componentsCount": 8,
+    "components": [
+      {
+        "code": "",
+        "name": "Semen Portland (PC)",
+        "unit": "kg",
+        "coefficient": 348,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pasir beton",
+        "unit": "kg",
+        "coefficient": 790,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Batu split 2/3",
+        "unit": "kg",
+        "coefficient": 1009,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Air",
+        "unit": "liter",
+        "coefficient": 202,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 1.65,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 0.275,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Kepala Tukang",
+        "unit": "OH",
+        "coefficient": 0.028,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.009,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "4.5 m3 × Rp 1.325.155/m3 = Rp 5.963.198"
+  },
+  {
+    "workId": "W-10",
+    "workName": "Pembesian Tulangan Utama Ringbalk (4 D12)",
+    "volume": 177.92,
+    "unit": "kg",
+    "ahspCode": "2.2.1.1.3",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 22009,
+    "total": 3915841,
+    "componentsCount": 6,
+    "components": [
+      {
+        "code": "",
+        "name": "Baja Tulangan Polos (BjTP) diameter < 12 mm",
+        "unit": "kg",
+        "coefficient": 1.05,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Kawat beton",
+        "unit": "kg",
+        "coefficient": 0.028,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.016,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Tukang besi",
+        "unit": "OH",
+        "coefficient": 0.016,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.0016,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0016,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "177.92 kg × Rp 22.009/kg = Rp 3.915.841"
+  },
+  {
+    "workId": "W-11",
+    "workName": "Pasangan Dinding Bata Merah tebal 1/2 bata 1SP : 4PP",
+    "volume": 185,
+    "unit": "m2",
+    "ahspCode": "3.6.1.8",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 125424,
+    "total": 23203440,
+    "componentsCount": 7,
+    "components": [
+      {
+        "code": "",
+        "name": "Bata merah",
+        "unit": "buah",
+        "coefficient": 71.91,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Semen portland (pc)",
+        "unit": "kg",
+        "coefficient": 11.5,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pasir pasang (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 0.043,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.2,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 0.1,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.01,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0033,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "185 m2 × Rp 125.424/m2 = Rp 23.203.440"
+  },
+  {
+    "workId": "W-12",
+    "workName": "Plesteran 1SP : 4PP tebal 15 mm",
+    "volume": 370,
+    "unit": "m2",
+    "ahspCode": "3.7.4",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 56784,
+    "total": 21010080,
+    "componentsCount": 6,
+    "components": [
+      {
+        "code": "",
+        "name": "Semen portland (PC)",
+        "unit": "kg",
+        "coefficient": 6.24,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pasir pasang (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 0.024,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.2,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 0.1,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.01,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0033,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "370 m2 × Rp 56.784/m2 = Rp 21.010.080"
+  },
+  {
+    "workId": "W-13",
+    "workName": "Pemasangan Acian Dinding",
+    "volume": 370,
+    "unit": "m2",
+    "ahspCode": "3.7.8",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 45248,
+    "total": 16741760,
+    "componentsCount": 5,
+    "components": [
+      {
+        "code": "",
+        "name": "Semen portland (PC)",
+        "unit": "kg",
+        "coefficient": 3.25,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.2,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 0.1,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.01,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0033,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "370 m2 × Rp 45.248/m2 = Rp 16.741.760"
+  },
+  {
+    "workId": "W-14",
+    "workName": "Kuda-kuda baja ringan profil C75",
+    "volume": 68,
+    "unit": "m2",
+    "ahspCode": "2.1.1.1",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 187281,
+    "total": 12735108,
+    "componentsCount": 12,
+    "components": [
+      {
+        "code": "",
+        "name": "Baja Ringan C75, t=1 mm (Batang Utama)",
+        "unit": "batang",
+        "coefficient": 0.6137,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Baja Ringan C75, t=0,75 mm (Batang Pengaku)",
+        "unit": "batang",
+        "coefficient": 0.5016,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Baja Ringan C.75, t=1,00 mm (L Bracket)",
+        "unit": "batang",
+        "coefficient": 0.0113,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Dynabolt dia. 12 x 120 mm",
+        "unit": "buah",
+        "coefficient": 0.6429,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Self Drilling Screw dia-6 x 20 mm (Main Truss Screw)",
+        "unit": "buah",
+        "coefficient": 15.75,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Reng/ Roof Bottom RT-35 t=0,45 mm",
+        "unit": "batang",
+        "coefficient": 0.3357,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Self Drilling Screw dia-4 x 16 mm (Roof Bottom Screw)",
+        "unit": "buah",
+        "coefficient": 3,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "L.01",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.1014,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "L.02",
+        "name": "Tukang besi",
+        "unit": "OH",
+        "coefficient": 0.0169,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "L.03",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.0017,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "L.04",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0006,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mesin bor (jam)",
+        "unit": "jam",
+        "coefficient": 0.3726,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "68 m2 × Rp 187.281/m2 = Rp 12.735.108"
+  },
+  {
+    "workId": "W-15",
+    "workName": "Reng baja ringan",
+    "volume": 68,
+    "unit": "m2",
+    "ahspCode": "2.1.1.3",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 24971,
+    "total": 1698028,
+    "componentsCount": 6,
+    "components": [
+      {
+        "code": "",
+        "name": "Baja ringan C75 x 0,75 mm (permeter)",
+        "unit": "m",
+        "coefficient": 1.05,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Paku Rivet",
+        "unit": "buah",
+        "coefficient": 2,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "L.01",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.0476,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "L.02",
+        "name": "Tukang besi",
+        "unit": "OH",
+        "coefficient": 0.0238,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "L.03",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.0024,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "L.04",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0008,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "68 m2 × Rp 24.971/m2 = Rp 1.698.028"
+  },
+  {
+    "workId": "W-16",
+    "workName": "Atap metal spandek lembaran",
+    "volume": 74,
+    "unit": "m2",
+    "ahspCode": "3.1.3.7",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 188775,
+    "total": 13969350,
+    "componentsCount": 6,
+    "components": [
+      {
+        "code": "",
+        "name": "Atap metal lembaran",
+        "unit": "m2",
+        "coefficient": 1.3,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Paku 1 inch",
+        "unit": "kg",
+        "coefficient": 0.05,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.1333,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Tukang kayu",
+        "unit": "OH",
+        "coefficient": 0.0667,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.0067,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0022,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "74 m2 × Rp 188.775/m2 = Rp 13.969.350"
+  },
+  {
+    "workId": "W-17",
+    "workName": "Plafond gypsum board 9 mm",
+    "volume": 48.5,
+    "unit": "m2",
+    "ahspCode": "3.5.2.1",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 51980,
+    "total": 2521030,
+    "componentsCount": 6,
+    "components": [
+      {
+        "code": "",
+        "name": "Gypsum board (120 cm x 240 cm x 9 mm)",
+        "unit": "lembar",
+        "coefficient": 0.364,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Paku sekrup",
+        "unit": "kg",
+        "coefficient": 0.11,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.1,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Tukang kayu",
+        "unit": "OH",
+        "coefficient": 0.05,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.005,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0017,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "48.5 m2 × Rp 51.980/m2 = Rp 2.521.030"
+  },
+  {
+    "workId": "W-18",
+    "workName": "Lantai Keramik 40x40 cm",
+    "volume": 42,
+    "unit": "m2",
+    "ahspCode": "3.9.8.6",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 130245,
+    "total": 5470290,
+    "componentsCount": 8,
+    "components": [
+      {
+        "code": "",
+        "name": "Keramik Lantai uk. 40 x 40 cm, Polished",
+        "unit": "buah",
+        "coefficient": 6.563,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Semen portland (PC)",
+        "unit": "kg",
+        "coefficient": 13.632,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Semen warna",
+        "unit": "kg",
+        "coefficient": 1.5,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pasir pasang (quarry - lokasi pekerjaan)",
+        "unit": "m3",
+        "coefficient": 0.027,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.1538,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Tukang batu",
+        "unit": "OH",
+        "coefficient": 0.0769,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.0077,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.0026,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "42 m2 × Rp 130.245/m2 = Rp 5.470.290"
+  },
+  {
+    "workId": "W-19",
+    "workName": "Kusen aluminium 4 inch",
+    "volume": 36,
+    "unit": "m",
+    "ahspCode": "3.11.3.1",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 175583,
+    "total": 6320988,
+    "componentsCount": 7,
+    "components": [
+      {
+        "code": "",
+        "name": "Profil aluminium",
+        "unit": "m'",
+        "coefficient": 1.1,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Skrup fixer",
+        "unit": "buah",
+        "coefficient": 2,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Sealant",
+        "unit": "tube",
+        "coefficient": 0.06,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.043,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Tukang alumunium",
+        "unit": "OH",
+        "coefficient": 0.043,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.004,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.001,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "36 m × Rp 175.583/m = Rp 6.320.988"
+  },
+  {
+    "workId": "W-20",
+    "workName": "Kaca bening 5 mm",
+    "volume": 14.5,
+    "unit": "m2",
+    "ahspCode": "3.11.2.1",
+    "ahspSource": "SE DJBK No. 47/2026 (CIPTA_KARYA)",
+    "ahspUnitPrice": 369710,
+    "total": 5360795,
+    "componentsCount": 6,
+    "components": [
+      {
+        "code": "",
+        "name": "Jendela Nako Rangka Aluminium (rangka+kaca 5 mm)",
+        "unit": "m2",
+        "coefficient": 1.1,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Paku Sekrup 1-2 cm",
+        "unit": "buah",
+        "coefficient": 10,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Pekerja",
+        "unit": "OH",
+        "coefficient": 0.2,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Tukang besi",
+        "unit": "OH",
+        "coefficient": 0.2,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Kepala tukang",
+        "unit": "OH",
+        "coefficient": 0.02,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      },
+      {
+        "code": "",
+        "name": "Mandor",
+        "unit": "OH",
+        "coefficient": 0.007,
+        "unitPrice": 0,
+        "subtotal": 0,
+        "source": "HSD 2026 / SE DJBK No. 47"
+      }
+    ],
+    "calculationTrace": "14.5 m2 × Rp 369.710/m2 = Rp 5.360.795"
+  }
+]

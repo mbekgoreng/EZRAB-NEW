@@ -1,0 +1,5 @@
+{
+  "version": "2026.1",
+  "description": "Explicit, auditable resource→price-source alias table (PHASE 13). Every rule is a human decision with a stated reason. Fuzzy matching is NEVER used to create a rule.",
+  "rules": []
+}

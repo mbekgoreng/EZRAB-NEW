@@ -1,0 +1,435 @@
+{
+  "timestamp": "2026-10-05T11:15:33.399Z",
+  "totalUnitsExamined": 5768,
+  "unitFrequency": {
+    "m2": 822,
+    "m3": 836,
+    "m'": 1095,
+    "buah": 1442,
+    "jam": 44,
+    "ls": 7,
+    "kg": 76,
+    "batang": 18,
+    "cm": 3,
+    "km": 4,
+    "-": 8,
+    "unit": 748,
+    "m": 223,
+    "ke": 1,
+    "titik": 89,
+    "ton": 61,
+    "l": 7,
+    "M'": 4,
+    "M": 1,
+    "btg": 4,
+    "tgl": 7,
+    "ha": 2,
+    "Kg": 8,
+    "m4": 1,
+    "m5": 1,
+    "m6": 1,
+    "m7": 1,
+    "m8": 1,
+    "m9": 1,
+    "m10": 1,
+    "m11": 1,
+    "m12": 1,
+    "m;'": 1,
+    "n2": 1,
+    "hari": 2,
+    "hari/m2": 10,
+    "hari.m2": 1,
+    "hari/m3": 1,
+    "hari/m4": 1,
+    "hari.m4": 1,
+    "hari/m5": 1,
+    "hari.m5": 1,
+    "hari/m6": 1,
+    "hari.m6": 1,
+    "m 2": 1,
+    "set": 17,
+    "sey": 17,
+    "titk": 4,
+    "Buah": 127,
+    "Diri:": 1,
+    "Kesehatan:": 1,
+    "Pengendalian": 2,
+    "Personel": 1,
+    "SMKK:": 1,
+    "Pelindung Diri:": 1,
+    "Meter": 9,
+    "Panjang": 5,
+    "Persegi": 2,
+    "Ls": 4,
+    "Org-Bln": 10,
+    "Kesehatan": 1,
+    "persegi": 1,
+    "Lumsum": 1,
+    "Keselamatan": 1,
+    "OJ": 20
+  },
+  "dimensionFrequency": {
+    "AREA": 823,
+    "VOLUME": 843,
+    "LENGTH": 1335,
+    "COUNT": 2445,
+    "EQUIPMENT_TIME": 46,
+    "LUMP_SUM": 11,
+    "MASS": 145,
+    "UNKNOWN": 100,
+    "LABOR_TIME": 20
+  },
+  "unknownDimensionCount": 100,
+  "unitConflicts": [
+    {
+      "code": "A.3.01.2b.1",
+      "name": "Memuat dan angkut tanah biasa menggunakan DT Untuk Jarak n Km",
+      "rawUnit": "km",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "A.3.01.2b.2",
+      "name": "Memuat dan angkut tanah keras/cadas menggunakan DT Untuk Jarak n Km",
+      "rawUnit": "km",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "A.3.01.2b.3",
+      "name": "Memuat dan Angkut Batu Pecah menggunakan DT Normatif / No Kode Item Pekerjaan Satuan Informatif",
+      "rawUnit": "km",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "A.3.01.2b.4",
+      "name": "Angkutan bahan mentah/jadi/olahan menggunakan flatbed truck dan crane truck",
+      "rawUnit": "-",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "A.3.01.2c.3.a",
+      "name": "Mengolah Batu/Medium Boulder Primary menjadi Agregat Kasar dan Agregat Halus",
+      "rawUnit": "-",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "A.3.01.2c.3.b",
+      "name": "Mengolah Batu/Gravel Secondary menjadi Agregat Kasar dan Agregat Halus",
+      "rawUnit": "-",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "A.3.04.2",
+      "name": "Pembuatan s.d. Pengecoran Campuran Beton Secara Mekanis di BP yang diangkut Truck Mixer ke Lokasi Pekerjaan",
+      "rawUnit": "-",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "A.3.07.7",
+      "name": "Mengangkat A-JACK dari Gudang ke Trailer dan diangkut Lokasi Pekerjaan oleh Kapal Kayu",
+      "rawUnit": "ke",
+      "domain": "SUMBER_DAYA_AIR",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "1.7",
+      "name": "Provisional Pembayaran Bersyarat (Provisional Sums) Sums",
+      "rawUnit": "-",
+      "domain": "BINA_MARGA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "",
+      "name": "Sistem Manajemen Keselamatan Konstruksi (SMKK)",
+      "rawUnit": "-",
+      "domain": "BINA_MARGA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "7.15.(9)",
+      "name": "Pengangkutan Hasil Bongkaran yang melebihi 5 per km",
+      "rawUnit": "km",
+      "domain": "BINA_MARGA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "1.1.3.8",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 5 s.d. 15 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang)",
+      "rawUnit": "tgl",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "1.1.3.9",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 15 cm s.d. 30 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang)",
+      "rawUnit": "tgl",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "1.1.3.10",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 30 cm s.d. 50 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang)",
+      "rawUnit": "tgl",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "1.1.3.11",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 50 cm s.d. 75 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang)",
+      "rawUnit": "tgl",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "1.1.3.12",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 75 cm (termasuk pembuangan sisa tunggul tanpa menutup kembali bekas lubang)",
+      "rawUnit": "tgl",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "1.1.3.13",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 5 s.d. 15 cm (termasuk pembuangan sisa tunggul dengan menutup kembali bekas lubang)",
+      "rawUnit": "tgl",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "1.1.3.14",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 15 cm s.d. 30 cm (termasuk pembuangan sisa tunggul dengan menutup kembali bekas lubang)",
+      "rawUnit": "tgl",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "1.1.3.15",
+      "name": "Gali dan cabut 1 tunggul pohon tanaman keras ∅ > 15 cm s.d. 50 cm (termasuk pembuangan sisa tunggul dengan menutup kembali bekas lubang)",
+      "rawUnit": "ha",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "1.1.4.1",
+      "name": "Pengukuran ulang topografi seluas 1 Ha",
+      "rawUnit": "ha",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "2.2.1.6.2",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 15 Mpa",
+      "rawUnit": "m4",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "2.2.1.6.3",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 17 Mpa",
+      "rawUnit": "m5",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "2.2.1.6.4",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 20 Mpa",
+      "rawUnit": "m6",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "2.2.1.6.5",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 21 Mpa",
+      "rawUnit": "m7",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "2.2.1.6.6",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 25 Mpa",
+      "rawUnit": "m8",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "2.2.1.6.7",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 28 Mpa",
+      "rawUnit": "m9",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "2.2.1.6.8",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 30 Mpa",
+      "rawUnit": "m10",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "2.2.1.6.9",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 31 Mpa",
+      "rawUnit": "m11",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "2.2.1.6.10",
+      "name": "Pengecoran 1 M3 Beton Menggunakan Ready Mixed F'c 35 Mpa",
+      "rawUnit": "m12",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "3.1.3.11",
+      "name": "Pemasangan 1 m' Nok/bubung atap aluminium gelombang",
+      "rawUnit": "m;'",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "3.16.5",
+      "name": "Pemasangan 1 m2 Marka dengan Cat Thermoplast",
+      "rawUnit": "n2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.11.2",
+      "name": "Penyiraman untuk 1 Hari (dengan Selang Plastik 3/4 inch) untuk 1 m2 Semak/Penutup Tanah di Tanah Tidak Subur di Lahan Datar dan Tidak Memiliki Jaringan Air Yang Baik",
+      "rawUnit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.11.3",
+      "name": "Penyiraman untuk 1 Hari (dengan Selang Plastik 3/4 inch) untuk 1 m2 Rumput di Tanah Tidak Subur di Lahan Datar dan Tidak Memiliki Jaringan Air Yang Baik",
+      "rawUnit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.11.4",
+      "name": "Penyiraman untuk 1 Hari (dengan Selang Plastik 3/4 inch) untuk 1 m2 Rumput di Tanah Tidak Subur di Lahan Datar dan Tidak Memiliki Jaringan Air Yang Baik",
+      "rawUnit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.11.5",
+      "name": "Penyiraman untuk 1 Hari (dengan Sprinkler*) untuk 1 m2 Rumput di Tanah Tidak Subur di Lahan Datar dan Tidak Memiliki Jaringan Air Yang Baik",
+      "rawUnit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.11.6",
+      "name": "Penyiraman untuk 1 Hari (dengan Selang Plastik 3/4 inch) untuk 1 Buah Pohon/Palem di Tanah Tidak Subur di Lahan Datar dan Memiliki Jaringan Air Yang Baik",
+      "rawUnit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.11.7",
+      "name": "Penyiraman untuk 1 Hari (dengan Selang Plastik 3/4 inch) untuk 1 m2 Semak/Penutup Tanah di Tanah Tidak Subur di Lahan Datar dan Memiliki Jaringan Air Yang Baik",
+      "rawUnit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.11.8",
+      "name": "Penyiraman untuk 1 Hari (dengan Selang Plastik 3/4 inch) untuk 1 m2 Rumput di Tanah Tidak Subur di Lahan Datar dan Memiliki Jaringan Air Yang Baik",
+      "rawUnit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.11.9",
+      "name": "Penyiraman untuk 1 Hari (dengan Sprinkler*) untuk 1 m2 Semak/Penutup Tanah di Tanah Tidak Subur di Lahan Datar dan Memiliki Jaringan Air Yang Baik",
+      "rawUnit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.11.10",
+      "name": "Penyiraman untuk 1 Hari (dengan Sprinkler*) untuk 1 m2 Rumput di Tanah Tidak Subur di Lahan Datar dan Memiliki Jaringan Air Yang Baik",
+      "rawUnit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.12.1",
+      "name": "Penyiraman untuk 1 Hari di Tanah Subur di Kelerengan Tanah 1:2 (13° - 26.5°) per m2",
+      "rawUnit": "hari/m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.12.2",
+      "name": "Penyiraman untuk 1 Hari di Tanah Subur di Kelerengan Tanah 1:2 (26.5°- 45°) per m2",
+      "rawUnit": "hari.m2",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.12.3",
+      "name": "Penyiraman untuk 1 Hari di Tanah Subur di Kelerengan Tanah 1:0.5 (45° - 63°) per m2",
+      "rawUnit": "hari/m3",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.13.1",
+      "name": "Penyiraman untuk 1 Hari di Tanah Tidak Subur di Kelerengan Tanah 1:2 (13° - 26.5°) per m2 untuk Sumber Air Dari Luar Lokasi Pekerjaan",
+      "rawUnit": "hari/m4",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.13.2",
+      "name": "Penyiraman untuk 1 Hari di Tanah Tidak Subur di Kelerengan Tanah 1:1 (26.5° - 45°) per m2 untuk Sumber Air Dari Luar Lokasi Pekerjaan",
+      "rawUnit": "hari.m4",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.13.3",
+      "name": "Penyiraman untuk 1 Hari di Tanah Tidak Subur di Kelerengan Tanah 1:0.5 (45° - 63°) per m2 untuk Sumber Air Dari Luar Lokasi Pekerjaan",
+      "rawUnit": "hari/m5",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.13.4",
+      "name": "Penyiraman untuk 1 Hari di Tanah Tidak Subur di Kelerengan Tanah 1:2 (13° - 26.5°) per m2 untuk Sumber Air Tersedia Lokasi Pekerjaan",
+      "rawUnit": "hari.m5",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.13.5",
+      "name": "Penyiraman untuk 1 Hari di Tanah Tidak Subur di Kelerengan Tanah 1:1 (26.5° - 45°) per m2 untuk Sumber Air Tersedia Lokasi Pekerjaan",
+      "rawUnit": "hari/m6",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "4.1.13.6",
+      "name": "Penyiraman untuk 1 Hari di Tanah Tidak Subur di Kelerengan Tanah 1:0.5 (45° - 63°) per m2 untuk Sumber Air Tersedia Lokasi Pekerjaan",
+      "rawUnit": "hari.m6",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    },
+    {
+      "code": "5.1.8.2",
+      "name": "Pemasangan 1 set pembumian sistem elektrikal dengan batang tembaga dia.3/4\"",
+      "rawUnit": "sey",
+      "domain": "CIPTA_KARYA",
+      "issue": "Unrecognized physical dimension in canonical unit registry"
+    }
+  ]
+}

@@ -1,0 +1,306 @@
+{
+ "total_bytes": 1588090379,
+ "total_files": 29379,
+ "top": [
+  {
+   "size": 95941632,
+   "path": "node_modules\\@supabase\\cli-windows-x64\\bin\\supabase.exe",
+   "mb": 91.497
+  },
+  {
+   "size": 56624433,
+   "path": "sources\\ahsp2026\\Lampiran-VI-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Cipta-Karya.pdf",
+   "mb": 54.001
+  },
+  {
+   "size": 41475072,
+   "path": "node_modules\\@supabase\\cli-windows-x64\\bin\\supabase-go.exe",
+   "mb": 39.554
+  },
+  {
+   "size": 40188115,
+   "path": "sources\\ahsp2026\\Lampiran-IV-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Sumber-Daya-Air.pdf",
+   "mb": 38.326
+  },
+  {
+   "size": 39462384,
+   "path": "public\\videos\\roles-bg.mp4",
+   "mb": 37.634
+  },
+  {
+   "size": 39462384,
+   "path": "dist\\videos\\roles-bg.mp4",
+   "mb": 37.634
+  },
+  {
+   "size": 34296454,
+   "path": "public\\videos\\ezrab-magic-ai.mp4",
+   "mb": 32.708
+  },
+  {
+   "size": 34296454,
+   "path": "dist\\videos\\ezrab-magic-ai.mp4",
+   "mb": 32.708
+  },
+  {
+   "size": 32485867,
+   "path": "dist\\assets\\index-DaJhJaSB.js",
+   "mb": 30.981
+  },
+  {
+   "size": 27436032,
+   "path": "node_modules\\@napi-rs\\canvas-win32-x64-msvc\\skia.win32-x64-msvc.node",
+   "mb": 26.165
+  },
+  {
+   "size": 21735137,
+   "path": "src\\assets\\0908fg-transparent.webm",
+   "mb": 20.728
+  },
+  {
+   "size": 21577263,
+   "path": "sources\\ahsp2026\\Lampiran-V-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Bina-Marga.pdf",
+   "mb": 20.578
+  },
+  {
+   "size": 20875776,
+   "path": "node_modules\\@rolldown\\.binding-win32-x64-msvc-JIAGLXoW\\rolldown-binding.win32-x64-msvc.node",
+   "mb": 19.909
+  },
+  {
+   "size": 20861802,
+   "path": "data\\ahsp2026\\validated\\ahsp_2026_master.json",
+   "mb": 19.895
+  },
+  {
+   "size": 19097119,
+   "path": ".git\\objects\\be\\7838c7ad5712b08e4644d04988368f7af5264f",
+   "mb": 18.212
+  },
+  {
+   "size": 18224634,
+   "path": "src\\assets\\0908.mp4",
+   "mb": 17.38
+  },
+  {
+   "size": 16879616,
+   "path": ".git\\objects\\be\\tmp_obj_oDgCmc",
+   "mb": 16.098
+  },
+  {
+   "size": 15573204,
+   "path": "src\\data\\nationalCostDatabase\\ahsp2026Canonical.generated.ts",
+   "mb": 14.852
+  },
+  {
+   "size": 13460770,
+   "path": "data\\ahsp2026\\validated\\ahsp_2026_components.json",
+   "mb": 12.837
+  },
+  {
+   "size": 13083853,
+   "path": "data\\ahsp2026\\normalized\\ahsp_2026_normalized.json",
+   "mb": 12.478
+  },
+  {
+   "size": 11433217,
+   "path": "data\\ahsp2026\\raw\\binamarga_raw.jsonl",
+   "mb": 10.904
+  },
+  {
+   "size": 10876560,
+   "path": "node_modules\\@napi-rs\\canvas-win32-x64-msvc\\icudtl.dat",
+   "mb": 10.373
+  },
+  {
+   "size": 10617344,
+   "path": "node_modules\\@esbuild\\win32-x64\\esbuild.exe",
+   "mb": 10.125
+  },
+  {
+   "size": 10092801,
+   "path": "src\\assets\\landpage-vid1-blackbg.mp4",
+   "mb": 9.625
+  },
+  {
+   "size": 9112572,
+   "path": "node_modules\\typescript\\lib\\typescript.js",
+   "mb": 8.69
+  },
+  {
+   "size": 8965236,
+   "path": "src\\assets\\animasi-building-hero.mp4",
+   "mb": 8.55
+  },
+  {
+   "size": 8345305,
+   "path": "data\\price2026\\normalized\\price_rows.json",
+   "mb": 7.959
+  },
+  {
+   "size": 7517061,
+   "path": "src\\assets\\0908fg.mp4",
+   "mb": 7.169
+  },
+  {
+   "size": 7517061,
+   "path": "public\\videos\\0908fg.mp4",
+   "mb": 7.169
+  },
+  {
+   "size": 7517061,
+   "path": "dist\\videos\\0908fg.mp4",
+   "mb": 7.169
+  },
+  {
+   "size": 7094714,
+   "path": "src\\assets\\downloaded_hero.mp4",
+   "mb": 6.766
+  },
+  {
+   "size": 7048258,
+   "path": "public\\videos\\ezrab-magic-ai-scroll.mp4",
+   "mb": 6.722
+  },
+  {
+   "size": 7048258,
+   "path": "dist\\videos\\ezrab-magic-ai-scroll.mp4",
+   "mb": 6.722
+  },
+  {
+   "size": 7034915,
+   "path": "src\\assets\\landpage-vid1-transparent.webm",
+   "mb": 6.709
+  },
+  {
+   "size": 6945272,
+   "path": "EZRAB-LOCAL-AI\\.python\\python312.dll",
+   "mb": 6.624
+  },
+  {
+   "size": 6863998,
+   "path": "node_modules\\jspdf\\dist\\jspdf.umd.js.map",
+   "mb": 6.546
+  },
+  {
+   "size": 6476269,
+   "path": "src\\assets\\ezrab-hero.mp4",
+   "mb": 6.176
+  },
+  {
+   "size": 6442037,
+   "path": "backups\\legacy-ahsp-pre-2026-purge\\src__data__nationalCostDatabase__ciptaKaryaAHSPDataset.ts",
+   "mb": 6.144
+  },
+  {
+   "size": 6302752,
+   "path": "data\\ahsp2026\\validated\\AHSP_2026_MASTER.txt",
+   "mb": 6.011
+  },
+  {
+   "size": 6213092,
+   "path": "node_modules\\typescript\\lib\\_tsc.js",
+   "mb": 5.925
+  },
+  {
+   "size": 6084577,
+   "path": "src\\assets\\landpage vid 1.mp4",
+   "mb": 5.803
+  },
+  {
+   "size": 6025176,
+   "path": "public\\videos\\ezrab-hero.mp4",
+   "mb": 5.746
+  },
+  {
+   "size": 6025176,
+   "path": "dist\\videos\\ezrab-hero.mp4",
+   "mb": 5.746
+  },
+  {
+   "size": 6008463,
+   "path": "node_modules\\lucide-react\\dist\\cjs\\lucide-react.js.map",
+   "mb": 5.73
+  },
+  {
+   "size": 5918691,
+   "path": "backups\\excel-ahsp-bina-marga-2026\\CURRENT_BINA_MARGA_CANONICAL_SNAPSHOT.json",
+   "mb": 5.645
+  },
+  {
+   "size": 5672985,
+   "path": "data\\ahsp2026\\raw\\sda_raw.jsonl",
+   "mb": 5.41
+  },
+  {
+   "size": 5592542,
+   "path": "docs\\_audit\\lampiran2-pages.jsonl",
+   "mb": 5.333
+  },
+  {
+   "size": 5466926,
+   "path": "node_modules\\pdfjs-dist\\legacy\\build\\pdf.worker.mjs.map",
+   "mb": 5.214
+  },
+  {
+   "size": 5324998,
+   "path": "src\\data\\masterMaterials2026.json",
+   "mb": 5.078
+  },
+  {
+   "size": 5252731,
+   "path": "node_modules\\pdfjs-dist\\build\\pdf.worker.mjs.map",
+   "mb": 5.009
+  },
+  {
+   "size": 5246337,
+   "path": "sources\\ahsp2026\\Lampiran-I-SE-DJBK-No-47-Tahun-2026-Teknis-Pengumpulan-Data-Harga-Pokok.pdf",
+   "mb": 5.003
+  },
+  {
+   "size": 5231472,
+   "path": "EZRAB-LOCAL-AI\\.python\\DLLs\\libcrypto-3.dll",
+   "mb": 4.989
+  },
+  {
+   "size": 5218755,
+   "path": "node_modules\\jspdf\\dist\\jspdf.node.js.map",
+   "mb": 4.977
+  },
+  {
+   "size": 5157888,
+   "path": "EZRAB-LOCAL-AI\\.venv\\Lib\\site-packages\\pydantic_core\\_pydantic_core.cp312-win_amd64.pyd",
+   "mb": 4.919
+  },
+  {
+   "size": 5019517,
+   "path": "node_modules\\jspdf\\dist\\jspdf.es.js.map",
+   "mb": 4.787
+  },
+  {
+   "size": 4984461,
+   "path": "data\\ahsp2026\\raw\\ciptakarya_raw.jsonl",
+   "mb": 4.754
+  },
+  {
+   "size": 4971269,
+   "path": "backups\\excel-ahsp-cipta-karya-2026\\ahsp bina kontruksi 2026.xlsx",
+   "mb": 4.741
+  },
+  {
+   "size": 4917427,
+   "path": "EZRAB-LOCAL-AI\\.python\\Doc\\html\\whatsnew\\changelog.html",
+   "mb": 4.69
+  },
+  {
+   "size": 4420149,
+   "path": "EZRAB_VOLUME_CALCULATOR_MASTER.xlsx",
+   "mb": 4.215
+  },
+  {
+   "size": 4208636,
+   "path": ".git\\objects\\6a\\8af7d1fa326018b3a016809ecbf68b63dd768b",
+   "mb": 4.014
+  }
+ ]
+}

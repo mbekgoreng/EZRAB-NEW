@@ -1,0 +1,10 @@
+{
+ "method": "C",
+ "label": "Analysis tables (items with a rendered component table)",
+ "how": "Header entries whose analysis page was located and whose component table was read.",
+ "analyses_total": 986,
+ "codes_distinct": 986,
+ "header_only": 132,
+ "orphan_analyses": 5,
+ "source": "docs/_audit/lampiran2-official-items.json"
+}

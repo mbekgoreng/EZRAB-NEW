@@ -1,0 +1,169 @@
+import { calculateItemAmount, calculateRabTotals } from '../calculations/decimalEngine';
+import { recalculateProjectCost } from '../engine/formulaEngine';
+import { SafeDecimalEngine } from '../engine/safeDecimalEngine';
+import { recalculateCostSummary } from '../engine/unifiedProjectEngine';
+import {
+  createCalculationPolicy,
+  LEGACY_UNIFIED_PROJECT_POLICY,
+} from '../domain/estimate/calculationPolicy';
+import { calculatePolicyAdditions } from '../domain/estimate/policyTotals';
+import { resolveStoredAmount } from '../domain/estimate/valueSemantics';
+import { ProjectCostSummary, RABItem, RABSection, RabItem } from '../types';
+
+interface TestResult { readonly name: string; readonly passed: boolean; }
+
+function assertEqual(actual: unknown, expected: unknown, message: string): void {
+  if (actual !== expected) {
+    throw new Error(`${message}. Expected ${String(expected)}, received ${String(actual)}.`);
+  }
+}
+
+function test(results: TestResult[], name: string, run: () => void): void {
+  try {
+    run();
+    results.push({ name, passed: true });
+    console.log(`PASS ${name}`);
+  } catch (error) {
+    results.push({ name, passed: false });
+    console.error(`FAIL ${name}: ${(error as Error).message}`);
+  }
+}
+
+function flatItem(id: string, volume: number, unitPrice: number, amount = SafeDecimalEngine.safeMultiply(volume, unitPrice, 0)): RabItem {
+  return { id, no: 1, projectId: 'project-1', code: id, category: 'Struktur', description: id, volume, unit: 'm2', unitPrice, amount };
+}
+
+function treeSummary(overrides: Partial<ProjectCostSummary> = {}): ProjectCostSummary {
+  return {
+    directCost: 0, overheadPercent: 5, overheadAmount: 0, profitPercent: 5, profitAmount: 0,
+    contingencyPercent: 0, contingencyAmount: 0, directorMarkupPercent: 0, directorMarkupNominal: 0,
+    directorMarkupTotal: 0, showMarkupToEditor: false, showMarkupToClient: false,
+    subtotalBeforeTax: 0, taxPercent: 11, taxAmount: 0, pphPercent: 0, pphAmount: 0,
+    grandTotal: 0, costPerM2: 0, ...overrides,
+  };
+}
+
+function treeSections(): RABSection[] {
+  const items: RABItem[] = [
+    { id: 'tree-1', sectionId: 'section-1', itemNumber: '1.1', code: 'A.1', description: 'Item A', specification: '', volume: 10, unit: 'm2', materialPrice: 0, laborPrice: 0, equipmentPrice: 0, unitPrice: 100000, totalPrice: 0, verificationStatus: 'VERIFIED' },
+    { id: 'tree-2', sectionId: 'section-1', itemNumber: '1.2', code: 'A.2', description: 'Item B', specification: '', volume: 10, unit: 'm2', materialPrice: 0, laborPrice: 0, equipmentPrice: 0, unitPrice: 200000, totalPrice: 0, verificationStatus: 'VERIFIED' },
+  ];
+  return [{ id: 'section-1', code: 'A', name: 'Struktur', subtotal: 0, items }];
+}
+
+export function runCalculationFoundationCharacterizationTests(): { passed: number; failed: number } {
+  const results: TestResult[] = [];
+
+  test(results, 'A basic item: 10 × 100000 = 1000000', () => {
+    assertEqual(SafeDecimalEngine.safeMultiply(10, 100000, 0), 1000000, 'SafeDecimal amount');
+    assertEqual(calculateItemAmount(10, 100000), 1000000, 'Decimal.js amount');
+  });
+
+  test(results, 'B decimal quantity: 12.75 × 1235000 = 15746250', () => {
+    assertEqual(SafeDecimalEngine.safeMultiply(12.75, 1235000, 0), 15746250, 'SafeDecimal amount');
+    assertEqual(calculateItemAmount(12.75, 1235000), 15746250, 'Decimal.js amount');
+  });
+
+  test(results, 'C zero volume remains zero', () => {
+    assertEqual(SafeDecimalEngine.safeMultiply(0, 1500000, 0), 0, 'SafeDecimal amount');
+    assertEqual(calculateItemAmount(0, 1500000), 0, 'Decimal.js amount');
+  });
+
+  test(results, 'D zero unit price remains zero', () => {
+    assertEqual(SafeDecimalEngine.safeMultiply(10, 0, 0), 0, 'SafeDecimal amount');
+    assertEqual(calculateItemAmount(10, 0), 0, 'Decimal.js amount');
+  });
+
+  test(results, 'E large estimate keeps the SafeDecimal and Decimal.js result aligned', () => {
+    const safe = SafeDecimalEngine.safeMultiply(9876543.21, 12345.67, 2);
+    const decimal = calculateItemAmount(9876543.21, 12345.67);
+    assertEqual(safe, decimal, 'Large-value calculation');
+  });
+
+  test(results, 'F legacy flat and section representations expose their current totals', () => {
+    const flat = [flatItem('flat-1', 10, 100000), flatItem('flat-2', 10, 200000)];
+    const unified = recalculateCostSummary(flat, treeSummary());
+    const formula = recalculateProjectCost(treeSections(), treeSummary());
+    const decimal = calculateRabTotals(flat);
+    assertEqual(unified.directCost, 3000000, 'Unified direct cost');
+    assertEqual(formula.updatedSections[0].subtotal, 3000000, 'Formula section subtotal');
+    assertEqual(formula.updatedSummary.grandTotal, 3663000, 'Formula grand total');
+    assertEqual(unified.grandTotal, 3663000, 'Unified grand total');
+    assertEqual(decimal.grandTotal, 3496500, 'Decimal-engine legacy grand total');
+  });
+
+  test(results, 'G overhead can be explicitly enabled and disabled', () => {
+    const enabled = calculatePolicyAdditions(1000000, createCalculationPolicy({ overheadRate: 10, profitEnabled: false, ppnEnabled: false }));
+    const disabled = calculatePolicyAdditions(1000000, createCalculationPolicy({ overheadRate: 10, overheadEnabled: false, profitEnabled: false, ppnEnabled: false }));
+    assertEqual(enabled.overhead, 100000, 'Enabled overhead');
+    assertEqual(disabled.overhead, 0, 'Disabled overhead');
+  });
+
+  test(results, 'H profit can be explicitly enabled and disabled', () => {
+    const enabled = calculatePolicyAdditions(1000000, createCalculationPolicy({ overheadEnabled: false, profitRate: 10, ppnEnabled: false }));
+    const disabled = calculatePolicyAdditions(1000000, createCalculationPolicy({ overheadEnabled: false, profitRate: 10, profitEnabled: false, ppnEnabled: false }));
+    assertEqual(enabled.profit, 100000, 'Enabled profit');
+    assertEqual(disabled.profit, 0, 'Disabled profit');
+  });
+
+  test(results, 'I PPN and PPh can be explicitly enabled and disabled', () => {
+    const enabled = calculatePolicyAdditions(1000000, createCalculationPolicy({ overheadEnabled: false, profitEnabled: false, ppnRate: 11, pphRate: 2.5, pphEnabled: true }));
+    const disabled = calculatePolicyAdditions(1000000, createCalculationPolicy({ overheadEnabled: false, profitEnabled: false, ppnEnabled: false, pphEnabled: false }));
+    assertEqual(enabled.ppn, 110000, 'Enabled PPN');
+    assertEqual(enabled.pph, 25000, 'Enabled PPh');
+    assertEqual(disabled.ppn, 0, 'Disabled PPN');
+    assertEqual(disabled.pph, 0, 'Disabled PPh');
+  });
+
+  test(results, 'J configured additions use the explicit policy, not hidden rates', () => {
+    const totals = calculatePolicyAdditions(1000000, createCalculationPolicy({
+      overheadRate: 10, profitRate: 10, contingencyRate: 2, markupRate: 3,
+      contingencyEnabled: true, markupEnabled: true, ppnRate: 11, pphRate: 2.5, pphEnabled: true,
+    }));
+    assertEqual(totals.subtotalBeforeTax, 1250000, 'Configured subtotal');
+    assertEqual(totals.ppn, 137500, 'Configured PPN');
+    assertEqual(totals.pph, 31250, 'Configured PPh');
+    assertEqual(totals.grandTotal, 1418750, 'Configured grand total');
+  });
+
+  test(results, 'K rounding differences are captured before consolidation', () => {
+    const native = 1.005 * 1;
+    const mathRound = Math.round(1.005 * 100) / 100;
+    const safe = SafeDecimalEngine.safeMultiply(1.005, 1, 2);
+    const decimal = calculateItemAmount(1.005, 1);
+    assertEqual(native, 1.005, 'Native arithmetic');
+    assertEqual(mathRound, 1, 'Math.round binary-float result');
+    assertEqual(safe, 1.01, 'SafeDecimal half-up rounding result');
+    assertEqual(decimal, 1.01, 'Decimal.js half-up result');
+  });
+
+  test(results, 'zero stored amount does not execute a fallback', () => {
+    let fallbackCalls = 0;
+    const amount = resolveStoredAmount(0, () => { fallbackCalls += 1; return 999; });
+    assertEqual(amount, 0, 'Stored zero');
+    assertEqual(fallbackCalls, 0, 'Fallback calls');
+  });
+
+  test(results, 'null and undefined remain missing while SafeDecimal legacy negative behavior is visible', () => {
+    assertEqual(resolveStoredAmount(null, () => 12), 12, 'Null fallback');
+    assertEqual(resolveStoredAmount(undefined, () => 12), 12, 'Undefined fallback');
+    assertEqual(SafeDecimalEngine.safeMultiply(-2, 100, 0), -200, 'Negative multiplication legacy behavior');
+    assertEqual(SafeDecimalEngine.safePercent(-100, 10, 0), 0, 'Negative percentage legacy behavior');
+  });
+
+  test(results, 'policy rejects invalid negative rate and preserves explicit compatibility defaults', () => {
+    assertEqual(LEGACY_UNIFIED_PROJECT_POLICY.overheadRate, 5, 'Legacy policy overhead');
+    let rejected = false;
+    try { createCalculationPolicy({ overheadRate: -1 }); } catch { rejected = true; }
+    assertEqual(rejected, true, 'Negative rate rejection');
+  });
+
+  const passed = results.filter((result) => result.passed).length;
+  const failed = results.length - passed;
+  console.log(`Calculation foundation: ${passed} passed, ${failed} failed.`);
+  if (failed > 0) throw new Error(`${failed} calculation characterization test(s) failed.`);
+  return { passed, failed };
+}
+
+runCalculationFoundationCharacterizationTests();
+

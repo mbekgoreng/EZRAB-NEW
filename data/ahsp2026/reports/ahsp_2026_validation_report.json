@@ -1,0 +1,106 @@
+{
+ "generated_at": "2026-09-28T11:51:47.813Z",
+ "regulation": "SE DJBK No. 47/SE/Dk/2026",
+ "totals": {
+  "items": 5801,
+  "components": 29320,
+  "resources": 3898
+ },
+ "status_counts": {
+  "VERIFIED": 3440,
+  "NEEDS_REVIEW": 2361,
+  "INVALID": 0
+ },
+ "issue_counts": {
+  "SMKK_NOT_AN_AHSP_ANALYSIS": 223,
+  "MISSING_UNIT": 81,
+  "NO_COMPONENTS_IN_SOURCE": 965,
+  "EXACT_DUPLICATE_CODE": 35,
+  "POSSIBLE_DUPLICATE": 1319,
+  "MISSING_DESCRIPTION": 8,
+  "NO_ANALYSIS_TABLE": 350,
+  "SUSPECT_MERGED_RESOURCE_NAME": 196,
+  "UNREADABLE_RESOURCE_NAME": 20,
+  "source prints inventory row no. 810 without a KODE (page 28)": 1,
+  "MISSING_CODE": 2,
+  "ZERO_COEFFICIENT": 32,
+  "HEADER_ONLY_ENTRY": 130,
+  "IN_INDEX_ONLY_BM": 46,
+  "SOURCE_TOTAL_MISMATCH_EQUIPMENT": 8,
+  "SOURCE_TOTAL_MISMATCH_LABOR": 59,
+  "SOURCE_TOTAL_MISMATCH_MATERIAL": 46,
+  "UNREADABLE_COMPONENT_ROW": 30,
+  "SOURCE_TOTAL_MISMATCH_ABC": 33,
+  "ANALYSIS_ONLY_BM": 28,
+  "IN_INDEX_ONLY_CK": 200,
+  "ANALYSIS_ONLY_CK": 18
+ },
+ "category_counts": {
+  "total": 5801,
+  "smkk": 223,
+  "sda": 1556,
+  "bina_marga": 1163,
+  "cipta_karya": 2859,
+  "umum": 0
+ },
+ "expected_vs_actual": {
+  "smkk": {
+   "expected": 246,
+   "actual": 223,
+   "difference": -23
+  },
+  "sda": {
+   "expected": 1556,
+   "actual": 1556,
+   "difference": 0
+  },
+  "bina_marga": {
+   "expected": 1425,
+   "actual": 1163,
+   "difference": -262
+  },
+  "cipta_karya": {
+   "expected": 2841,
+   "actual": 2859,
+   "difference": 18
+  },
+  "umum": {
+   "expected": 143,
+   "actual": 0,
+   "difference": -143
+  },
+  "total": {
+   "expected": 6211,
+   "actual": 5801,
+   "difference": -410
+  }
+ },
+ "target_provenance": {
+  "SMKK": {
+   "verdict": "SOURCE_DISPUTED",
+   "evidence": "Lampiran III prints risk-tiered cost tables (Tabel III.1 KECIL, Tabel III.2 SEDANG DAN BESAR), not a numbered AHSP catalogue. A raw line scan and the parser both return exactly 223 rows. No index in the annex prints 246."
+  },
+  "SDA": {
+   "verdict": "SOURCE_CONFIRMED",
+   "evidence": "Lampiran IV's own 'Daftar Kode AHSP' prints rows 1..1556 — the target matches the source, and all 1556 are now captured (row 810 is printed without a code and is flagged SOURCE_DEFECT)."
+  },
+  "BINA_MARGA": {
+   "verdict": "SOURCE_DISPUTED",
+   "evidence": "Lampiran V's own DAFTAR ISI prints exactly 1,137 rows (41 Normatif, 1,096 Informatif). The document does not contain 1,425 items. 129 of the 1,137 were hidden by an over-strict parser regex and are now recovered."
+  },
+  "CIPTA_KARYA": {
+   "verdict": "SOURCE_DISPUTED",
+   "evidence": "Lampiran VI's 'Daftar Isi Tabel AHSP' prints 2,841 status-bearing rows (verified by an independent line scan). The target 2,841 is the INDEX count; the dataset is slightly larger because analysis tables absent from the index are kept and flagged analysis-only."
+  },
+  "UMUM": {
+   "verdict": "SOURCE_NONEXISTENT",
+   "evidence": "SE 47/2026 has seven annexes: I (harga pokok), II (acuan penyusunan AHSP), III (SMKK), IV (SDA), V (Bina Marga), VI (Cipta Karya), VII (tata cara pengajuan usulan AHSP). There is no \"AHSP Bidang Umum\". The 143 target does not correspond to any annex."
+  }
+ },
+ "duplicate_summary": {
+  "groups": 291,
+  "exact": 15,
+  "possible": 276
+ },
+ "missing_data_records": 90
+}

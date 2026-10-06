@@ -1,0 +1,44 @@
+{
+ "field": "CIPTA_KARYA",
+ "brief_target": 2841,
+ "parsed_index_rows": 2841,
+ "parsed_distinct_codes": 2841,
+ "independent_status_line_scan": 2841,
+ "gap": 0,
+ "classification": "ACTUAL",
+ "recovered_by_phase05_fix": 38,
+ "recovered_detail": [
+  {
+   "kind": "letter_suffixed_codes",
+   "count": 13,
+   "example": "2.2.1.1.1a  < 12 mm, cara Manual … kg Normatif Tetap",
+   "pages": [
+    53,
+    54
+   ]
+  },
+  {
+   "kind": "unit_missing_in_source",
+   "count": 1,
+   "example": "4.1.1.1   Informatif Tetap",
+   "pages": [
+    77
+   ]
+  },
+  {
+   "kind": "code_wrapped_mid_column",
+   "count": 24,
+   "example": "5.1.1.12.10 + \"0\" → 5.1.1.12.100",
+   "pages": [
+    102,
+    103
+   ]
+  }
+ ],
+ "missing_records": [],
+ "verdict": "The annex prints exactly 2841 index rows. After the Phase 0.5 parser fix the index parses 2841 rows, so the CK index gap is closed (PARSER_ERROR, now fixed). The final dataset count is higher than the index because analysis tables absent from the DAFTAR ISI are kept and flagged as analysis-only.",
+ "target_provenance": {
+  "verdict": "SOURCE_DISPUTED",
+  "evidence": "Lampiran VI's 'Daftar Isi Tabel AHSP' prints 2,841 status-bearing rows (verified by an independent line scan). The target 2,841 is the INDEX count; the dataset is slightly larger because analysis tables absent from the index are kept and flagged analysis-only."
+ }
+}

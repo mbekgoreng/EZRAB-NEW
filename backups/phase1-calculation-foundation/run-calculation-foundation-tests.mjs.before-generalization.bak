@@ -1,0 +1,17 @@
+import { build } from 'esbuild';
+import { resolve } from 'node:path';
+
+const root = resolve(import.meta.dirname, '..');
+const entryPoint = resolve(root, 'src/test/calculationFoundation.characterization.test.ts');
+const result = await build({
+  entryPoints: [entryPoint],
+  bundle: true,
+  format: 'esm',
+  platform: 'node',
+  target: 'node20',
+  write: false,
+  logLevel: 'silent',
+});
+
+const source = result.outputFiles[0].text;
+await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);

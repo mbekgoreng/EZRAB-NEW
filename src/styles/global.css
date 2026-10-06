@@ -1,0 +1,755 @@
+@import './tokens.css';
+@import './animations.css';
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+html, body, button, input, select, textarea, optgroup {
+  font-family: var(--ezrab-font-sans);
+}
+
+body {
+  background-color: var(--ezrab-bg);
+  color: var(--ezrab-text);
+  font-family: var(--ezrab-font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: var(--line-height-body, 1.5);
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--ezrab-font-sans);
+  letter-spacing: -0.025em;
+  font-weight: 700;
+  color: var(--ezrab-text);
+}
+
+code, pre, .font-mono {
+  font-family: var(--ezrab-font-mono);
+}
+
+/* Tabular numbers for financial and measurement data across tables and spreadsheets */
+.tabular-nums,
+.font-tabular,
+.ezrab-table td,
+.ezrab-table th,
+[data-tabular="true"] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-feature-settings: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Container System */
+.ezrab-container {
+  width: min(calc(100% - 48px), var(--ezrab-container));
+  margin-inline: auto;
+}
+
+@media (max-width: 640px) {
+  .ezrab-container {
+    width: min(calc(100% - 32px), var(--ezrab-container));
+  }
+}
+
+/* Glassmorphism Floating Card */
+.ezrab-float-card {
+  position: absolute;
+  padding: 16px 20px;
+  border-radius: var(--ezrab-radius-md);
+  background: var(--ezrab-card-bg);
+  border: 1px solid var(--ezrab-card-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--ezrab-shadow-card);
+  transform-style: preserve-3d;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.2s ease-out;
+  user-select: none;
+}
+
+.ezrab-float-card:hover {
+  border-color: rgba(37, 99, 235, 0.3);
+  box-shadow: 0 25px 65px -10px rgba(37, 99, 235, 0.18);
+}
+
+/* Badge Styles */
+.ezrab-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: var(--ezrab-radius-full);
+  background: var(--ezrab-blue-soft);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  color: var(--ezrab-blue);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.ezrab-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ezrab-blue);
+  animation: ezrab-pulse 2s infinite ease-in-out;
+}
+
+/* Button System */
+.ezrab-button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 50px;
+  padding: 0 26px;
+  border-radius: 12px;
+  background: var(--ezrab-blue);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  transition: transform 0.25s var(--ezrab-transition), box-shadow 0.25s var(--ezrab-transition), background-color 0.2s ease;
+  box-shadow: 0 10px 25px -4px rgba(37, 99, 235, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  white-space: nowrap;
+}
+
+.ezrab-button-primary:hover {
+  transform: translateY(-2px);
+  background: var(--ezrab-blue-hover);
+  box-shadow: 0 16px 35px -6px rgba(37, 99, 235, 0.45);
+}
+
+.ezrab-button-primary:active {
+  transform: translateY(0);
+}
+
+.ezrab-button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 50px;
+  padding: 0 24px;
+  border-radius: 12px;
+  background: var(--ezrab-surface);
+  color: var(--ezrab-text);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  border: 1px solid var(--ezrab-border-strong);
+  box-shadow: var(--ezrab-shadow-sm);
+  transition: transform 0.25s var(--ezrab-transition), background-color 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.ezrab-button-secondary:hover {
+  transform: translateY(-2px);
+  background: var(--ezrab-surface-soft);
+  border-color: rgba(37, 99, 235, 0.3);
+}
+
+/* Section Header Typography */
+.ezrab-section-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ezrab-blue);
+  margin-bottom: 12px;
+}
+
+.ezrab-section-title {
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  color: var(--ezrab-text);
+  margin-bottom: 16px;
+}
+
+.ezrab-section-desc {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--ezrab-text-secondary);
+  max-width: 640px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ezrab-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ezrab-border-strong);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ezrab-text-secondary);
+}
+
+/* =========================================================================
+   REUSABLE SAAS DESIGN SYSTEM UTILITIES
+   ========================================================================= */
+
+/* Cards */
+.ezrab-card {
+  background: #ffffff;
+  border: 1px solid var(--ezrab-card-border);
+  border-radius: 14px;
+  box-shadow: var(--ezrab-shadow-sm);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ezrab-card-interactive:hover {
+  border-color: var(--ezrab-blue-border);
+  box-shadow: 0 10px 24px -4px rgba(37, 99, 235, 0.08);
+}
+
+/* Table */
+.ezrab-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid var(--ezrab-border);
+  box-shadow: var(--ezrab-shadow-sm);
+}
+
+.ezrab-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.ezrab-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--ezrab-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.ezrab-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+
+.ezrab-table tr:last-child td {
+  border-bottom: none;
+}
+
+.ezrab-table tr:hover td {
+  background: #f8fbff;
+}
+
+/* Form Inputs */
+.ezrab-input {
+  height: 38px;
+  padding: 0 12px;
+  background: #ffffff;
+  border: 1px solid var(--ezrab-border);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--ezrab-text);
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.ezrab-input:focus {
+  border-color: var(--ezrab-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+/* Empty State */
+.ezrab-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  border-radius: 16px;
+  border: 1px dashed var(--ezrab-border-strong);
+  background: #ffffff;
+}
+
+.ezrab-empty-state-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--ezrab-blue-soft);
+  color: var(--ezrab-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.ezrab-empty-state-title {
+  font-size: 16px;
+  font-weight: 750;
+  color: var(--ezrab-text);
+  margin-bottom: 6px;
+}
+
+.ezrab-empty-state-desc {
+  font-size: 13.5px;
+  color: var(--ezrab-text-secondary);
+  max-width: 420px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+/* Tabs */
+.ezrab-tab-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.ezrab-tab-item {
+  padding: 6px 14px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+  background: transparent;
+}
+
+.ezrab-tab-item.is-active {
+  background: #ffffff;
+  color: var(--ezrab-blue);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Volume Calculator 3-Column Grid (Legacy fallback) */
+.ezrab-volume-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .ezrab-volume-grid {
+    grid-template-columns: 360px 1fr 1.15fr;
+  }
+}
+
+@media (min-width: 1280px) {
+  .ezrab-volume-grid {
+    grid-template-columns: 380px 1.05fr 1.3fr;
+  }
+}
+
+/* Volume Calculator Redesign 2-Level Grids */
+.ezrab-domain-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+@media (max-width: 640px) {
+  .ezrab-domain-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+
+.ezrab-calculator-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1200px) {
+  .ezrab-calculator-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 860px) {
+  .ezrab-calculator-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 540px) {
+  .ezrab-calculator-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Volume Calculator New Top-Bottom Layout (Bottom 2-Column: Parameters + Results) */
+.ezrab-volume-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .ezrab-volume-bottom-grid {
+    grid-template-columns: 1fr 1.18fr;
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .ezrab-volume-bottom-grid {
+    grid-template-columns: 1fr 1.25fr;
+    gap: 24px;
+  }
+}
+
+/* =========================================================================
+   MOBILE RESPONSIVE SYSTEM & TOUCH UTILITIES (< 1024px & < 768px)
+   ========================================================================= */
+
+/* Visibility Utilities */
+@media (max-width: 1023px) {
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .tablet-up {
+    display: none !important;
+  }
+}
+
+/* Minimum 44x44px Touch Target */
+.ezrab-touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Drawer Backdrop */
+.ezrab-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9990;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Mobile Slide-Over Left Drawer */
+.ezrab-mobile-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(84vw, 320px);
+  background: #ffffff;
+  z-index: 9995;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  padding-top: var(--ezrab-safe-top);
+  padding-bottom: var(--ezrab-safe-bottom);
+}
+
+/* Mobile Bottom Navigation Bar */
+.ezrab-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(58px + var(--ezrab-safe-bottom));
+  padding-bottom: var(--ezrab-safe-bottom);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 9980;
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.05);
+}
+
+.ezrab-bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 100%;
+  color: #64748B;
+  font-size: 10.5px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color 0.15s ease;
+  user-select: none;
+}
+
+.ezrab-bottom-nav-item.is-active {
+  color: #2563EB;
+  font-weight: 750;
+}
+
+/* Floating Center AI Item in Bottom Nav */
+.ezrab-bottom-nav-ai-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4338CA 0%, #6366F1 50%, #7C3AED 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+  margin-top: -14px;
+  border: 3px solid #ffffff;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ezrab-bottom-nav-ai-btn:active {
+  transform: scale(0.92);
+}
+
+/* Mobile Bottom Sheet Modal Base */
+.ezrab-bottom-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+  z-index: 10000;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--ezrab-safe-bottom);
+  animation: ezrabSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes ezrabSlideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.ezrab-sheet-drag-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: #CBD5E1;
+  margin: 10px auto 4px;
+  flex-shrink: 0;
+}
+
+/* Safe area padding helper */
+.ezrab-safe-pb {
+  padding-bottom: calc(72px + var(--ezrab-safe-bottom)) !important;
+}
+
+/* EZRAB Co Assistant Floating Action Button (FAB) */
+.ezrab-fab:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.20) !important;
+}
+.ezrab-fab:active {
+  transform: scale(0.98) !important;
+}
+
+/* =========================================================================
+   EZRAB VOLUME CALCULATOR — CAD / QUANTITY SURVEYOR WORKSTATION STYLES
+   ========================================================================= */
+
+.ezrab-workstation-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 1080px) {
+  .ezrab-workstation-split {
+    grid-template-columns: 420px minmax(0, 1fr);
+    gap: 18px;
+    align-items: stretch;
+  }
+}
+
+@media (min-width: 1440px) {
+  .ezrab-workstation-split {
+    grid-template-columns: 460px minmax(0, 1fr);
+    gap: 20px;
+    align-items: stretch;
+  }
+}
+
+/* Sidebar Container (Full-height sticky on desktop, reaching bottom of page) */
+.ezrab-workstation-sidebar {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  padding: 14px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+@media (min-width: 1080px) {
+  .ezrab-workstation-sidebar {
+    position: sticky;
+    top: 124px;
+    height: calc(100vh - 140px);
+    min-height: 520px;
+    max-height: calc(100vh - 140px);
+  }
+}
+
+.ezrab-workstation-scrollable {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overscroll-behavior: contain;
+}
+
+/* Category Group Card in Catalog Tree (Strictly flex-shrink: 0 to prevent squashing) */
+.ezrab-calc-group-card {
+  flex-shrink: 0;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ezrab-calc-group-card:hover {
+  border-color: #CBD5E1;
+}
+
+/* Thin clean engineering scrollbar */
+.ezrab-workstation-scrollable::-webkit-scrollbar {
+  width: 5px;
+}
+.ezrab-workstation-scrollable::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 4px;
+}
+.ezrab-workstation-scrollable::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+.ezrab-workstation-scrollable::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Compact Calculator Workstation Row */
+.ezrab-calc-compact-row {
+  flex-shrink: 0;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.ezrab-calc-compact-row:hover {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  transform: translateX(1px);
+}
+
+.ezrab-calc-compact-row.active {
+  background: #EFF6FF;
+  border-color: #2563EB;
+  border-left: 3.5px solid #2563EB;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.12);
+}
+
+.ezrab-calc-compact-row.active:hover {
+  background: #DBEAFE;
+}
+
+

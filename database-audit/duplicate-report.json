@@ -1,0 +1,1560 @@
+{
+  "timestamp": "2026-10-05T11:15:32.419Z",
+  "summary": {
+    "totalAhspAudited": 5768,
+    "duplicateAhspCodesFound": 9,
+    "duplicateAhspNamesFound": 66,
+    "duplicateResourceCodesFound": 0
+  },
+  "duplicateAhspCodes": [
+    {
+      "code": "A.3.03.1",
+      "count": 3,
+      "domains": [
+        "SUMBER_DAYA_AIR"
+      ],
+      "items": [
+        {
+          "code": "A.3.03.1",
+          "name": "Pengerukan 1 m3 Sedimen menggunakan Kapal Keruk Sunction Dredger sampai kedalaman 10 m’ Harga satuan Jumlah harga",
+          "unit": "m3",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.3.03.1",
+          "name": "Pengerukan 1 m3 Sedimen menggunakan Kapal Keruk Sunction Dredger sampai kedalaman 10 m’ Harga satuan Jumlah harga",
+          "unit": "m'",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.3.03.1",
+          "name": "Pengerukan 1 m3 Sedimen menggunakan Kapal Keruk Sunction Dredger sampai kedalaman 10 m’ Harga satuan Jumlah harga",
+          "unit": "m3",
+          "domain": "SUMBER_DAYA_AIR"
+        }
+      ]
+    },
+    {
+      "code": "A.3.03.6a",
+      "count": 4,
+      "domains": [
+        "SUMBER_DAYA_AIR"
+      ],
+      "items": [
+        {
+          "code": "A.3.03.6a",
+          "name": "Pengangkatan 1 m3 Gulma Air dari Situ/Waduk/Saluran Menggunakan 5-rate Estafet",
+          "unit": "m3",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.3.03.6a",
+          "name": "Pemuatan ke DT setiap 1 m3 Gulma Air Hasil Pengangkatan/Pemanenan, dan Pengangkutannya ke Lokasi Disposal Area",
+          "unit": "m3",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.3.03.6a",
+          "name": "Penghamparan, Perataan dan Perapihan 1 m2 Hasil galian di Disposal Area, Menggunakan 5-rate estafet",
+          "unit": "m2",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.3.03.6a",
+          "name": "Pengangkatan 1 m3 Gulma Air dari Situ/Waduk/Saluran Menggunakan 5-rate Estafet",
+          "unit": "m2",
+          "domain": "SUMBER_DAYA_AIR"
+        }
+      ]
+    },
+    {
+      "code": "",
+      "count": 2,
+      "domains": [
+        "SUMBER_DAYA_AIR",
+        "BINA_MARGA"
+      ],
+      "items": [
+        {
+          "code": "",
+          "name": "Pondasi Tiang Bor ∅ 180 cm",
+          "unit": "m'",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "",
+          "name": "Sistem Manajemen Keselamatan Konstruksi (SMKK)",
+          "unit": "",
+          "domain": "BINA_MARGA"
+        }
+      ]
+    },
+    {
+      "code": "A.3.08.3.4.b.6.a",
+      "count": 2,
+      "domains": [
+        "SUMBER_DAYA_AIR"
+      ],
+      "items": [
+        {
+          "code": "A.3.08.3.4.b.6.a",
+          "name": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1400 (jarak 1.0 km)",
+          "unit": "unit",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.3.08.3.4.b.6.a",
+          "name": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1200 (jarak 1.0 km)",
+          "unit": "unit",
+          "domain": "SUMBER_DAYA_AIR"
+        }
+      ]
+    },
+    {
+      "code": "A.3.08.3.4.b.6.b",
+      "count": 2,
+      "domains": [
+        "SUMBER_DAYA_AIR"
+      ],
+      "items": [
+        {
+          "code": "A.3.08.3.4.b.6.b",
+          "name": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1400 (jarak 2.0 km)",
+          "unit": "unit",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.3.08.3.4.b.6.b",
+          "name": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1200 (jarak 2.0 km)",
+          "unit": "unit",
+          "domain": "SUMBER_DAYA_AIR"
+        }
+      ]
+    },
+    {
+      "code": "A.3.08.3.4.b.6.c",
+      "count": 2,
+      "domains": [
+        "SUMBER_DAYA_AIR"
+      ],
+      "items": [
+        {
+          "code": "A.3.08.3.4.b.6.c",
+          "name": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1400 (jarak 2.5 km)",
+          "unit": "unit",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.3.08.3.4.b.6.c",
+          "name": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1200 (jarak 2.5 km)",
+          "unit": "unit",
+          "domain": "SUMBER_DAYA_AIR"
+        }
+      ]
+    },
+    {
+      "code": "A.3.08.3.4.b.6.d",
+      "count": 2,
+      "domains": [
+        "SUMBER_DAYA_AIR"
+      ],
+      "items": [
+        {
+          "code": "A.3.08.3.4.b.6.d",
+          "name": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1400 (jarak 5.0 km)",
+          "unit": "unit",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.3.08.3.4.b.6.d",
+          "name": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1200 (jarak 5.0 km)",
+          "unit": "unit",
+          "domain": "SUMBER_DAYA_AIR"
+        }
+      ]
+    },
+    {
+      "code": "A.3.08.3.4.b.6.e",
+      "count": 2,
+      "domains": [
+        "SUMBER_DAYA_AIR"
+      ],
+      "items": [
+        {
+          "code": "A.3.08.3.4.b.6.e",
+          "name": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1400 (jarak 10 km)",
+          "unit": "unit",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.3.08.3.4.b.6.e",
+          "name": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1200 (jarak 10 km)",
+          "unit": "unit",
+          "domain": "SUMBER_DAYA_AIR"
+        }
+      ]
+    },
+    {
+      "code": "A.3.08.3.4.b.6.f",
+      "count": 2,
+      "domains": [
+        "SUMBER_DAYA_AIR"
+      ],
+      "items": [
+        {
+          "code": "A.3.08.3.4.b.6.f",
+          "name": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1400 (jarak 15 km)",
+          "unit": "unit",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.3.08.3.4.b.6.f",
+          "name": "Pengangkutan dan Pemasangan Reducer DN 2000 x DN 1200 (jarak 15 km)",
+          "unit": "unit",
+          "domain": "SUMBER_DAYA_AIR"
+        }
+      ]
+    }
+  ],
+  "duplicateAhspNames": [
+    {
+      "name": "1 m3 bronjong wiremesh m6 lubang 100 x 100 mm; beda tinggi",
+      "count": 8,
+      "items": [
+        {
+          "code": "A.1.02.4b.1.c.2",
+          "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+          "unit": "m3",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.1.02.4b.1.c.3",
+          "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+          "unit": "m3",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.1.02.4b.1.c.5",
+          "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+          "unit": "m3",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.1.02.4b.1.c.6",
+          "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+          "unit": "m3",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.1.02.4b.1.c.7",
+          "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+          "unit": "m3",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.1.02.4b.1.c.8",
+          "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+          "unit": "m3",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.1.02.4b.1.c.9",
+          "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+          "unit": "m3",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.1.02.4b.1.c.10",
+          "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+          "unit": "m3",
+          "domain": "SUMBER_DAYA_AIR"
+        }
+      ]
+    },
+    {
+      "name": "1 m2 pasangan geotekstil, tipis (> 100 s.d. < 400 gr/m2), semi mekanis harga satuan jumlah",
+      "count": 2,
+      "items": [
+        {
+          "code": "A.2.02.5b.1",
+          "name": "1 m2 Pasangan Geotekstil, Tipis (> 100 s.d. < 400 gr/m2), Semi Mekanis Harga satuan Jumlah",
+          "unit": "m2",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.2.02.5b.2",
+          "name": "1 m2 Pasangan Geotekstil, Tipis (> 100 s.d. < 400 gr/m2), Semi Mekanis Harga satuan Jumlah",
+          "unit": "m2",
+          "domain": "SUMBER_DAYA_AIR"
+        }
+      ]
+    },
+    {
+      "name": "pengerukan 1 m3 sedimen menggunakan kapal keruk sunction dredger sampai kedalaman 10 m’ harga satuan jumlah harga",
+      "count": 3,
+      "items": [
+        {
+          "code": "A.3.03.1",
+          "name": "Pengerukan 1 m3 Sedimen menggunakan Kapal Keruk Sunction Dredger sampai kedalaman 10 m’ Harga satuan Jumlah harga",
+          "unit": "m3",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.3.03.1",
+          "name": "Pengerukan 1 m3 Sedimen menggunakan Kapal Keruk Sunction Dredger sampai kedalaman 10 m’ Harga satuan Jumlah harga",
+          "unit": "m'",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.3.03.1",
+          "name": "Pengerukan 1 m3 Sedimen menggunakan Kapal Keruk Sunction Dredger sampai kedalaman 10 m’ Harga satuan Jumlah harga",
+          "unit": "m3",
+          "domain": "SUMBER_DAYA_AIR"
+        }
+      ]
+    },
+    {
+      "name": "pengangkatan 1 m3 gulma air dari situ/waduk/saluran menggunakan 5-rate estafet",
+      "count": 2,
+      "items": [
+        {
+          "code": "A.3.03.6a",
+          "name": "Pengangkatan 1 m3 Gulma Air dari Situ/Waduk/Saluran Menggunakan 5-rate Estafet",
+          "unit": "m3",
+          "domain": "SUMBER_DAYA_AIR"
+        },
+        {
+          "code": "A.3.03.6a",
+          "name": "Pengangkatan 1 m3 Gulma Air dari Situ/Waduk/Saluran Menggunakan 5-rate Estafet",
+          "unit": "m2",
+          "domain": "SUMBER_DAYA_AIR"
+        }
+      ]
+    },
+    {
+      "name": "1 kg penulangan slab untuk bjts atau bjts dia. < 12 mm, cara manual (untuk bangunan gedung)",
+      "count": 2,
+      "items": [
+        {
+          "code": "2.2.1.1.1a",
+          "name": "1 kg penulangan slab untuk BjTS atau BjTS dia. < 12 mm, cara manual (untuk bangunan gedung)",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.1.a",
+          "name": "1 kg penulangan slab untuk BjTS atau BjTS dia. < 12 mm, cara manual (untuk bangunan gedung)",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "1 kg penulangan slab untuk bjts dia. ≥ 12 mm, cara semi mekanis (untuk bangunan gedung)",
+      "count": 2,
+      "items": [
+        {
+          "code": "2.2.1.1.2a",
+          "name": "1 kg penulangan slab untuk BjTS dia. ≥ 12 mm, cara semi mekanis (untuk bangunan gedung)",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.2.a",
+          "name": "1 kg penulangan slab untuk BjTS dia. ≥ 12 mm, cara semi mekanis (untuk bangunan gedung)",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "1 kg penulangan kolom, balok, ring balk dan sloof untuk bjts diameter <12 mm cara manual",
+      "count": 2,
+      "items": [
+        {
+          "code": "2.2.1.1.3a",
+          "name": "1 kg Penulangan Kolom, Balok, Ring Balk dan Sloof untuk BjTS diameter <12 mm cara Manual",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.3.a",
+          "name": "1 kg Penulangan Kolom, Balok, Ring Balk dan Sloof untuk BjTS diameter <12 mm cara Manual",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "1 kg penulangan wiremesh m6-m10 untuk slab atau dinding atau ferrocement, secara manual (untuk bangunan gedung)",
+      "count": 9,
+      "items": [
+        {
+          "code": "2.2.1.1.5",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara manual (untuk bangunan gedung)",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.5a",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara manual (untuk bangunan gedung)",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.5b",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara manual (untuk bangunan gedung)",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.5c",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara manual (untuk bangunan gedung)",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.5d",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara manual (untuk bangunan gedung)",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.5.a",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara manual (untuk bangunan gedung)",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.5.b",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara manual (untuk bangunan gedung)",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.5.c",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara manual (untuk bangunan gedung)",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.5.d",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara manual (untuk bangunan gedung)",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "1 kg penulangan wiremesh m6-m10 untuk slab atau dinding atau ferrocement, secara semi mekanis",
+      "count": 8,
+      "items": [
+        {
+          "code": "2.2.1.1.6",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara semi mekanis",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.6a",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara semi mekanis",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.6b",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara semi mekanis",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.6c",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara semi mekanis",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.6d",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara semi mekanis",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.6.a",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara semi mekanis",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.6.b",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara semi mekanis",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.1.6.c",
+          "name": "1 kg penulangan wiremesh M6-M10 untuk slab atau dinding atau ferrocement, secara semi mekanis",
+          "unit": "kg",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 m' pvc waterstop lebar 150 mm (untuk bangunan gedung)",
+      "count": 2,
+      "items": [
+        {
+          "code": "2.2.1.2.1",
+          "name": "Pemasangan 1 m' PVC waterstop lebar 150 mm (untuk bangunan gedung)",
+          "unit": "m",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.2.4",
+          "name": "Pemasangan 1 m' PVC waterstop lebar 150 mm (untuk bangunan gedung)",
+          "unit": "m",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pembongkaran 1 m2 bekisting secara hati-hati pada bangunan gedung (untuk beton expose dan/atau pemanfaatan kembali bekisting)",
+      "count": 2,
+      "items": [
+        {
+          "code": "2.2.1.3.10",
+          "name": "Pembongkaran 1 m2 bekisting secara hati-hati pada bangunan gedung (untuk beton expose dan/atau pemanfaatan kembali bekisting)",
+          "unit": "m2",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "2.2.1.3.11",
+          "name": "Pembongkaran 1 m2 bekisting secara hati-hati pada bangunan gedung (untuk beton expose dan/atau pemanfaatan kembali bekisting)",
+          "unit": "m2",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 m2 kaca tempered tebal 12 mm",
+      "count": 2,
+      "items": [
+        {
+          "code": "3.1.3.9.2",
+          "name": "Pemasangan 1 m2 kaca tempered tebal 12 mm",
+          "unit": "m2",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "3.12.13",
+          "name": "Pemasangan 1 m2 kaca tempered tebal 12 mm",
+          "unit": "m2",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 m' nok/bubung atap seng gelombang",
+      "count": 2,
+      "items": [
+        {
+          "code": "3.1.3.9.3",
+          "name": "Pemasangan 1 m' Nok/bubung atap seng gelombang",
+          "unit": "m'",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "3.1.3.10",
+          "name": "Pemasangan 1 m' Nok/bubung atap seng gelombang",
+          "unit": "m'",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 m2 plafon serat semen/grc tebal 4 mm, 5 mm, dan 6 mm",
+      "count": 3,
+      "items": [
+        {
+          "code": "3.5.2.2.1",
+          "name": "Pemasangan 1 m2 plafon serat semen/GRC tebal 4 mm, 5 mm, dan 6 mm",
+          "unit": "m2",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "3.5.2.2.2",
+          "name": "Pemasangan 1 m2 plafon serat semen/GRC tebal 4 mm, 5 mm, dan 6 mm",
+          "unit": "m2",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "3.5.2.2.3",
+          "name": "Pemasangan 1 m2 plafon serat semen/GRC tebal 4 mm, 5 mm, dan 6 mm",
+          "unit": "m2",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 buah kran diameter ½\" atau 3/4\"",
+      "count": 2,
+      "items": [
+        {
+          "code": "3.18.6.2.1",
+          "name": "Pemasangan 1 buah kran diameter ½\" atau 3/4\"",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "3.18.6.2.2",
+          "name": "Pemasangan 1 buah kran diameter ½\" atau 3/4\"",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "penyiraman untuk 1 hari (dengan selang plastik 3/4 inch) untuk 1 m2 rumput di tanah tidak subur di lahan datar dan tidak memiliki jaringan air yang baik",
+      "count": 2,
+      "items": [
+        {
+          "code": "4.1.11.3",
+          "name": "Penyiraman untuk 1 Hari (dengan Selang Plastik 3/4 inch) untuk 1 m2 Rumput di Tanah Tidak Subur di Lahan Datar dan Tidak Memiliki Jaringan Air Yang Baik",
+          "unit": "hari/m2",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "4.1.11.4",
+          "name": "Penyiraman untuk 1 Hari (dengan Selang Plastik 3/4 inch) untuk 1 m2 Rumput di Tanah Tidak Subur di Lahan Datar dan Tidak Memiliki Jaringan Air Yang Baik",
+          "unit": "hari/m2",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemupukan pupuk anorganik cair (1 kali) untuk 1 buah semak/penutup tanah/rumput",
+      "count": 2,
+      "items": [
+        {
+          "code": "4.2.3.4",
+          "name": "Pemupukan pupuk anorganik cair (1 kali) untuk 1 buah semak/penutup tanah/rumput",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "4.2.3.5",
+          "name": "Pemupukan pupuk anorganik cair (1 kali) untuk 1 buah semak/penutup tanah/rumput",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemangkasan 1 buah pohon kecil (dia. tajuk < 5 m, tinggi 3-6m) termasuk pengangkutan keluar area tanam",
+      "count": 2,
+      "items": [
+        {
+          "code": "4.2.4.1",
+          "name": "Pemangkasan 1 Buah Pohon Kecil (Dia. Tajuk < 5 m, Tinggi 3-6m) Termasuk Pengangkutan Keluar Area Tanam",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "4.2.4.2",
+          "name": "Pemangkasan 1 Buah Pohon Kecil (Dia. Tajuk < 5 m, Tinggi 3-6m) Termasuk Pengangkutan Keluar Area Tanam",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 m' kabel nyy 1 x 6 mm²",
+      "count": 2,
+      "items": [
+        {
+          "code": "5.1.1.1.2",
+          "name": "Pemasangan 1 m' kabel NYY 1 x 6 mm²",
+          "unit": "m'",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "5.1.1.1.21",
+          "name": "Pemasangan 1 m' kabel NYY 1 x 6 mm²",
+          "unit": "m'",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 unit panel kontrol power chiller",
+      "count": 4,
+      "items": [
+        {
+          "code": "5.1.2.12",
+          "name": "Pemasangan 1 Unit Panel Kontrol Power Chiller",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "5.1.2.13",
+          "name": "Pemasangan 1 Unit Panel Kontrol Power Chiller",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "5.1.2.14",
+          "name": "Pemasangan 1 Unit Panel Kontrol Power Chiller",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "5.1.2.21",
+          "name": "Pemasangan 1 Unit Panel Kontrol Power Chiller",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 unit panel power gondola",
+      "count": 2,
+      "items": [
+        {
+          "code": "5.1.2.15",
+          "name": "Pemasangan 1 Unit Panel Power Gondola",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "5.1.2.16",
+          "name": "Pemasangan 1 Unit Panel Power Gondola",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasanga 1 unit grid switch 2 x 2",
+      "count": 2,
+      "items": [
+        {
+          "code": "5.1.5.4",
+          "name": "Pemasanga 1 Unit Grid Switch 2 x 2",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "5.1.5.6",
+          "name": "Pemasanga 1 Unit Grid Switch 2 x 2",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 unit exhaust louvre 800 x 400 mm",
+      "count": 4,
+      "items": [
+        {
+          "code": "5.5.2.37",
+          "name": "Pemasangan 1 Unit Exhaust Louvre 800 x 400 mm",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "5.5.2.39",
+          "name": "Pemasangan 1 Unit Exhaust Louvre 800 x 400 mm",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "5.5.2.40",
+          "name": "Pemasangan 1 Unit Exhaust Louvre 800 x 400 mm",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "5.5.2.42",
+          "name": "Pemasangan 1 Unit Exhaust Louvre 800 x 400 mm",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 unit exhaust louvre 450 x 300 mm",
+      "count": 2,
+      "items": [
+        {
+          "code": "5.5.2.38",
+          "name": "Pemasangan 1 Unit Exhaust Louvre 450 x 300 mm",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "5.5.2.59",
+          "name": "Pemasangan 1 Unit Exhaust Louvre 450 x 300 mm",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 m' pipa pvc aw, dn. 3\" (80 mm) + isolasi",
+      "count": 2,
+      "items": [
+        {
+          "code": "5.5.4.17",
+          "name": "Pemasangan 1 m' pipa PVC AW, DN. 3\" (80 mm) + Isolasi",
+          "unit": "m'",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "5.5.4.18",
+          "name": "Pemasangan 1 m' pipa PVC AW, DN. 3\" (80 mm) + Isolasi",
+          "unit": "m'",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 m2 tube settler",
+      "count": 2,
+      "items": [
+        {
+          "code": "6.1.3.7",
+          "name": "Pemasangan 1 m2 Tube Settler",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "8.3.1.6",
+          "name": "Pemasangan 1 m2 Tube Settler",
+          "unit": "unit",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 buah floater velve, dia 1\" ( 25 mm)",
+      "count": 2,
+      "items": [
+        {
+          "code": "6.5.5.3",
+          "name": "Pemasangan 1 buah Floater Velve, Dia 1\" ( 25 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "6.5.6.3",
+          "name": "Pemasangan 1 buah Floater Velve, Dia 1\" ( 25 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 buah floater velve dia. 1-1/4 \" (32 mm)",
+      "count": 2,
+      "items": [
+        {
+          "code": "6.5.5.4",
+          "name": "Pemasangan 1 buah Floater Velve Dia. 1-1/4 \" (32 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "6.5.6.4",
+          "name": "Pemasangan 1 buah Floater Velve Dia. 1-1/4 \" (32 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 buah floater velve, dia. 8\" (200 mm)",
+      "count": 2,
+      "items": [
+        {
+          "code": "6.5.5.12",
+          "name": "Pemasangan 1 buah Floater Velve, Dia. 8\" (200 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "6.5.6.12",
+          "name": "Pemasangan 1 buah Floater Velve, Dia. 8\" (200 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 unit sambungan rumah air minum dia. 1-1/2\" (40 mm)",
+      "count": 2,
+      "items": [
+        {
+          "code": "6.5.6.5",
+          "name": "Pemasangan 1 Unit Sambungan Rumah Air Minum dia. 1-1/2\" (40 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "6.7.1.1",
+          "name": "Pemasangan 1 Unit Sambungan Rumah Air Minum dia. 1-1/2\" (40 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 unit pressure gauge 16 k + gate valve, dn 1/2\" (15 mm)",
+      "count": 2,
+      "items": [
+        {
+          "code": "6.5.10.1",
+          "name": "Pemasangan 1 Unit Pressure Gauge 16 K + Gate valve, DN 1/2\" (15 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "6.5.10.11",
+          "name": "Pemasangan 1 Unit Pressure Gauge 16 K + Gate valve, DN 1/2\" (15 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 unit pressure gauge 16 k + gate valve, dn 1\" (25 mm)",
+      "count": 2,
+      "items": [
+        {
+          "code": "6.5.10.2",
+          "name": "Pemasangan 1 Unit Pressure Gauge 16 K + Gate valve, DN 1\" (25 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "6.5.10.12",
+          "name": "Pemasangan 1 Unit Pressure Gauge 16 K + Gate valve, DN 1\" (25 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 buah reducer ø 6\" x 4\" (150 x 100 mm)",
+      "count": 2,
+      "items": [
+        {
+          "code": "6.5.29.4",
+          "name": "Pemasangan 1 Buah Reducer Ø 6\" x 4\" (150 x 100 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "6.5.29.11",
+          "name": "Pemasangan 1 Buah Reducer Ø 6\" x 4\" (150 x 100 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 buah reducer ø 3\" x 2\" (80 x 50 mm)",
+      "count": 2,
+      "items": [
+        {
+          "code": "6.5.29.6",
+          "name": "Pemasangan 1 Buah Reducer Ø 3\" x 2\" (80 x 50 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "6.5.29.8",
+          "name": "Pemasangan 1 Buah Reducer Ø 3\" x 2\" (80 x 50 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "pemasangan 1 buah compression elbow hdpe ø 1/2” (15 mm)",
+      "count": 2,
+      "items": [
+        {
+          "code": "6.5.49.1",
+          "name": "Pemasangan 1 Buah Compression Elbow HDPE Ø 1/2” (15 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "6.5.50.1",
+          "name": "Pemasangan 1 Buah Compression Elbow HDPE Ø 1/2” (15 mm)",
+          "unit": "buah",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "1 m saluran u-ditch 50x50x120 cm dengan lantai kerja fc 10 mpa",
+      "count": 2,
+      "items": [
+        {
+          "code": "8.1.1.4",
+          "name": "1 m Saluran U-Ditch 50x50x120 cm dengan lantai kerja fc 10 Mpa",
+          "unit": "m'",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "8.1.1.6",
+          "name": "1 m Saluran U-Ditch 50x50x120 cm dengan lantai kerja fc 10 Mpa",
+          "unit": "m'",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "1 m saluran u-ditch 30x40x120 cm dengan lantai kerja fc 7,5 mpa",
+      "count": 2,
+      "items": [
+        {
+          "code": "8.1.8.1",
+          "name": "1 m Saluran U-Ditch 30x40x120 cm dengan lantai kerja fc 7,5 Mpa",
+          "unit": "m'",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "8.1.2.2",
+          "name": "1 m Saluran U-Ditch 30x40x120 cm dengan lantai kerja fc 7,5 Mpa",
+          "unit": "m'",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "1 m' box culvert 40x40x100 dengan lantai kerja fc 7,5 mpa",
+      "count": 2,
+      "items": [
+        {
+          "code": "8.3.1.8",
+          "name": "1 m' Box Culvert 40x40x100 dengan lantai kerja fc 7,5 Mpa",
+          "unit": "m'",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "8.3.2.1",
+          "name": "1 m' Box Culvert 40x40x100 dengan lantai kerja fc 7,5 Mpa",
+          "unit": "m'",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "1 m' box culvert 80x80x100 dengan lantai kerja fc 7,5 mpa",
+      "count": 2,
+      "items": [
+        {
+          "code": "8.3.8.3",
+          "name": "1 m' Box Culvert 80x80x100 dengan lantai kerja fc 7,5 Mpa",
+          "unit": "m'",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "8.3.2.4",
+          "name": "1 m' Box Culvert 80x80x100 dengan lantai kerja fc 7,5 Mpa",
+          "unit": "m'",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "usgpm",
+      "count": 2,
+      "items": [
+        {
+          "code": "1.000",
+          "name": "USGPM",
+          "unit": "",
+          "domain": "CIPTA_KARYA"
+        },
+        {
+          "code": "1.250",
+          "name": "USGPM",
+          "unit": "",
+          "domain": "CIPTA_KARYA"
+        }
+      ]
+    },
+    {
+      "name": "kegiatan induksi keselamatan konstruksi (safety induction)",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0001",
+          "name": "Kegiatan Induksi Keselamatan Konstruksi (Safety Induction)",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0045",
+          "name": "Kegiatan Induksi Keselamatan Konstruksi (Safety Induction)",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "kegiatan pengarahan keselamatan konstruksi (safety briefing)",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0002",
+          "name": "Kegiatan Pengarahan Keselamatan Konstruksi (Safety Briefing)",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0046",
+          "name": "Kegiatan Pengarahan Keselamatan Konstruksi (Safety Briefing)",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "kegiatan simulasi keselamatan konstruksi (tanggap darurat)",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0005",
+          "name": "Kegiatan Simulasi Keselamatan Konstruksi (tanggap darurat)",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0058",
+          "name": "Kegiatan Simulasi Keselamatan Konstruksi (tanggap darurat)",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "poster/leaflet/brosur",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0007",
+          "name": "Poster/leaflet/brosur",
+          "unit": "buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0061",
+          "name": "Poster/leaflet/brosur",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "fasilitas sarana, prasarana, dan alat",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0015",
+          "name": "Fasilitas Sarana, Prasarana, dan Alat",
+          "unit": "Kesehatan:",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0104",
+          "name": "Fasilitas Sarana, Prasarana, dan Alat",
+          "unit": "Kesehatan",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "rambu petunjuk",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0016",
+          "name": "Rambu petunjuk",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0113",
+          "name": "Rambu petunjuk",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "rambu larangan",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0017",
+          "name": "Rambu larangan",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0114",
+          "name": "Rambu larangan",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "rambu peringatan",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0018",
+          "name": "Rambu peringatan",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0115",
+          "name": "Rambu peringatan",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "rambu kewajiban",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0019",
+          "name": "Rambu kewajiban",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0116",
+          "name": "Rambu kewajiban",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "rambu informasi",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0020",
+          "name": "Rambu informasi",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0117",
+          "name": "Rambu informasi",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "rambu pekerjaan sementara",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0021",
+          "name": "Rambu pekerjaan sementara",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0118",
+          "name": "Rambu pekerjaan sementara",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "jalur evakuasi (petunjuk escape route)",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0022",
+          "name": "Jalur Evakuasi (Petunjuk escape route)",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0119",
+          "name": "Jalur evakuasi (petunjuk escape route)",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "lampu putar (rotary lamp)",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0023",
+          "name": "Lampu putar (rotary lamp)",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0122",
+          "name": "Lampu putar (rotary lamp)",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "lampu/alat penerangan sementara",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0024",
+          "name": "Lampu/alat penerangan sementara",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0128",
+          "name": "Lampu/alat penerangan sementara",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "lampu darurat (emergency lamp)",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0025",
+          "name": "Lampu darurat (emergency lamp)",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0143",
+          "name": "Lampu darurat (emergency lamp)",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "1) alat pemadam api ringan (apar) kelas a",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0027",
+          "name": "1) Alat Pemadam Api Ringan (APAR) Kelas A",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0169",
+          "name": "1) Alat Pemadam Api Ringan (APAR) Kelas A",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "2) alat pemadam api ringan (apar) kelas b",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0028",
+          "name": "2) Alat Pemadam Api Ringan (APAR) Kelas B",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0170",
+          "name": "2) Alat Pemadam Api Ringan (APAR) Kelas B",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "3) alat pemadam api ringan (apar) kelas c",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0029",
+          "name": "3) Alat Pemadam Api Ringan (APAR) Kelas C",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0171",
+          "name": "3) Alat Pemadam Api Ringan (APAR) Kelas C",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "4) alat pemadam api ringan (apar) kelas d",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0030",
+          "name": "4) Alat Pemadam Api Ringan (APAR) Kelas D",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0172",
+          "name": "4) Alat Pemadam Api Ringan (APAR) Kelas D",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "bendera k3",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0031",
+          "name": "Bendera K3",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0175",
+          "name": "Bendera K3",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "pembuatan kartu identitas pekerja (kip)",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0032",
+          "name": "Pembuatan Kartu Identitas Pekerja (KIP)",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0177",
+          "name": "Pembuatan Kartu Identitas Pekerja (KIP)",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "1) pengujian baku mutu air kelas 1 lengkap",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0033",
+          "name": "1) Pengujian Baku Mutu Air Kelas 1 Lengkap",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0180",
+          "name": "1) Pengujian Baku Mutu Air Kelas 1 Lengkap",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "2) pengujian baku mutu air kelas 2 lengkap",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0034",
+          "name": "2) Pengujian Baku Mutu Air Kelas 2 Lengkap",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0181",
+          "name": "2) Pengujian Baku Mutu Air Kelas 2 Lengkap",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "3) pengujian baku mutu air kelas 3 lengkap",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0035",
+          "name": "3) Pengujian Baku Mutu Air Kelas 3 Lengkap",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0182",
+          "name": "3) Pengujian Baku Mutu Air Kelas 3 Lengkap",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "4) pengujian baku mutu air kelas 4 lengkap",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0036",
+          "name": "4) Pengujian Baku Mutu Air Kelas 4 Lengkap",
+          "unit": "Buah",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0183",
+          "name": "4) Pengujian Baku Mutu Air Kelas 4 Lengkap",
+          "unit": "Buah",
+          "domain": "SMKK"
+        }
+      ]
+    },
+    {
+      "name": "barrier)",
+      "count": 2,
+      "items": [
+        {
+          "code": "SMKK.0125",
+          "name": "barrier)",
+          "unit": "Panjang",
+          "domain": "SMKK"
+        },
+        {
+          "code": "SMKK.0127",
+          "name": "barrier)",
+          "unit": "Panjang",
+          "domain": "SMKK"
+        }
+      ]
+    }
+  ],
+  "duplicateResourceCodes": []
+}

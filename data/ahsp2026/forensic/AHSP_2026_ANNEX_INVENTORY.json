@@ -1,0 +1,94 @@
+{
+ "regulation": "SE DJBK No. 47/SE/Dk/2026",
+ "authority_page": "https://binakonstruksi.pu.go.id/produk/produk-hukum/surat-edaran-direktur-jenderal-bina-konstruksi-nomor-47-se-dk-2026/",
+ "bina_marga_official_md5": "96e4a1b33f7b514ea785baf6086bcd80",
+ "annex_count": 8,
+ "ahsp_bearing_annexes": [
+  "III",
+  "IV",
+  "V",
+  "VI"
+ ],
+ "bidangs_present": [
+  "SMKK",
+  "SDA",
+  "BINA_MARGA",
+  "CIPTA_KARYA"
+ ],
+ "bidangs_absent": [
+  "UMUM"
+ ],
+ "rows": [
+  {
+   "attachment": "Batang Tubuh",
+   "title": "Tata Cara Penyusunan Perkiraan Biaya Pekerjaan Konstruksi",
+   "download_id": 10892,
+   "local": null,
+   "contains_ahsp_items": false,
+   "role": "MAIN_BODY"
+  },
+  {
+   "attachment": "I",
+   "title": "Teknis pengumpulan data Harga pokok sektor konstruksi di Kementerian PU",
+   "download_id": 10894,
+   "local": "sources/ahsp2026/Lampiran-I-SE-DJBK-No-47-Tahun-2026-Teknis-Pengumpulan-Data-Harga-Pokok.pdf",
+   "contains_ahsp_items": false,
+   "role": "GUIDANCE",
+   "note": "Technical guidance for collecting basic prices. Contains no AHSP analysis tables."
+  },
+  {
+   "attachment": "II",
+   "title": "Acuan dalam Penyusunan AHSP",
+   "download_id": 10897,
+   "local": "sources/ahsp2026/Lampiran-II-SE-DJBK-No-47-Tahun-2026-Acuan-dalam-Penyusunan-AHSP.pdf",
+   "contains_ahsp_items": false,
+   "role": "GUIDANCE",
+   "note": "Reference tables only: conversion factors (Tabel A.1–A.36), material/equipment productivity formulas and coefficients. Verified to contain no itemised AHSP analysis list (no code index, no DAFTAR, no division headers)."
+  },
+  {
+   "attachment": "III",
+   "title": "Biaya Penerapan SMKK",
+   "download_id": 10899,
+   "local": "sources/ahsp2026/Lampiran-III-SE-DJBK-No-47-Tahun-2026-Biaya-Penerapan-SMKK.pdf",
+   "contains_ahsp_items": true,
+   "role": "AHSP_SOURCE",
+   "field": "SMKK"
+  },
+  {
+   "attachment": "IV",
+   "title": "AHSP Bidang SDA",
+   "download_id": 10901,
+   "local": "sources/ahsp2026/Lampiran-IV-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Sumber-Daya-Air.pdf",
+   "contains_ahsp_items": true,
+   "role": "AHSP_SOURCE",
+   "field": "SDA"
+  },
+  {
+   "attachment": "V",
+   "title": "AHSP Bidang BINA MARGA",
+   "download_id": 10903,
+   "local": "sources/ahsp2026/Lampiran-V-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Bina-Marga.pdf",
+   "contains_ahsp_items": true,
+   "role": "AHSP_SOURCE",
+   "field": "BINA_MARGA"
+  },
+  {
+   "attachment": "VI",
+   "title": "AHSP Bidang CIPTA KARYA",
+   "download_id": 10904,
+   "local": "sources/ahsp2026/Lampiran-VI-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Cipta-Karya.pdf",
+   "contains_ahsp_items": true,
+   "role": "AHSP_SOURCE",
+   "field": "CIPTA_KARYA"
+  },
+  {
+   "attachment": "VII",
+   "title": "Tata Cara Pengajuan Usulan AHSP",
+   "download_id": 10906,
+   "local": "sources/ahsp2026/Lampiran-VII-SE-DJBK-No-47-Tahun-2026-Tata-Cara-Pengajuan-Usulan-AHSP.pdf",
+   "contains_ahsp_items": false,
+   "role": "GUIDANCE",
+   "note": "Procedural guidance for submitting new AHSP proposals. Contains no AHSP analysis tables."
+  }
+ ]
+}

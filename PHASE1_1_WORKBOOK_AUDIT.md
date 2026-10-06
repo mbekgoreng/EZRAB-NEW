@@ -1,0 +1,3 @@
+# Phase 1.1 Workbook Audit
+
+The machine-readable structural inventory is `phase1_1_workbook_inventory.json`. The selected workbook contains 24 sheets: 19 calculator sheets plus `EZRAB_README`, `Rekap RAB`, `FORMULA_SPEC`, `INPUT_MAP`, and `CALC_AUDIT`. Formula evaluation is reported separately from structural extraction. The `xlsx` parser exposes formula strings and cached cells but does not recalculate; a formula string is not an evaluated Excel result. Unsupported or unevaluated formulas remain BLOCKED/UNVERIFIED.
