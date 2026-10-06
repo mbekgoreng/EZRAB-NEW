@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && NODE_OPTIONS=--max-old-space-size=4096 vite build",
     "preview": "vite preview",
     "test": "npx tsx src/test/coreCalculatorEngine.test.ts",
     "test:ai-estimate": "npx tsx src/test/aiEstimateOnly.test.ts",
