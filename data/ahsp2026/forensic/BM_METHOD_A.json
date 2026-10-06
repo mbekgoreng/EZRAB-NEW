@@ -1,0 +1,16 @@
+{
+ "method": "A",
+ "label": "Code index (DAFTAR ISI AHSP BIDANG BINA MARGA, pages 4-30)",
+ "how": "Every row beginning with a serial (A.1 … ) is one published AHSP line item.",
+ "rows_total": 1137,
+ "serials_distinct": 1137,
+ "codes_distinct": 1134,
+ "rows_without_code": 1,
+ "rows_without_unit": 3,
+ "status_breakdown": {
+  "Normatif": 41,
+  "Informatif": 1096,
+  "unknown": 0
+ },
+ "note": "The 25 code-less rows are printed that way: 1 genuinely has no code (A.7 SMKK), 24 carry their code inside the wrapped description column and are recovered by promoteEmbeddedBmCode()."
+}

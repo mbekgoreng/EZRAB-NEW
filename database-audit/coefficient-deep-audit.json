@@ -1,0 +1,813 @@
+{
+  "timestamp": "2026-10-05T12:06:01.732Z",
+  "totalCoefficientsAudited": 33243,
+  "validCoeffCount": 32557,
+  "zeroCount": 390,
+  "negativeCount": 0,
+  "nanCount": 0,
+  "extremelyLargeCount": 296,
+  "healthScorePercent": 97.94,
+  "blockersCount": 0,
+  "violations": [
+    {
+      "ahspCode": "A.2.02.5d.1",
+      "ahspName": "1 m3 Pasangan (Elastis) atau Construction Joint atau Joint Filler atau joint sealant Harga satuan Jumlah",
+      "component": "pada awal",
+      "coefficient": 2022,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.1.03.1a.1",
+      "ahspName": "1 m3 Beton mutu rendah fc' 10 Mpa, Slump (10 ± 2,5) cm, agregat maks 19 mm secara manual",
+      "component": "Kr: Krikil / Agregat Kasar M.04.d.3",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.1.03.1a.2",
+      "ahspName": "1 m3 Beton mutu rendah fc' 15 Mpa, Slump (10 ± 2,5) cm, agregat maks 19 mm secara manual",
+      "component": "Kr: Krikil / Agregat Kasar M.04.d.3",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.1.03.1b.1",
+      "ahspName": "1 m3 Beton mutu rendah fc' 20 Mpa, Slump (10 ± 2,5) cm, agregat maks 19 mm secara manual",
+      "component": "Kr: Krikil / Agregat Kasar M.04.d.3",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.1.03.1b.2",
+      "ahspName": "1 m3 Beton mutu rendah fc' 25 Mpa, Slump (10 ± 2,5) cm, agregat maks 19 mm secara manual",
+      "component": "Kr: Krikil / Agregat Kasar M.04.d.3",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.2.03.1b.1",
+      "ahspName": "1 m3 Beton mutu sedang fc' 40 Mpa, Slump (10 ± 2,5) cm, agregat maks 19 mm secara semi mekanis",
+      "component": "Kr: Krikil / Agregat Kasar M.04.d.3",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.1.07.6.b",
+      "ahspName": "Pengecoran 1 Buah buis beton ∅ 1 m'-pjg 1m' dengan campuran beton f'c' 20 MPa",
+      "component": "Kr: Krikil / Agregat M.04.c.3",
+      "coefficient": 1047,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.04.1a.1",
+      "ahspName": "Pembuatan s.d. Pengecoran 1 m3 campuran beton mutu rendah fc' 10 MPa; Slump (10 ± 2,5) cm, agr. maks 19 mm Normatif / No Kode Item Pekerjaan Satuan Informatif",
+      "component": "Kr: Krikil / Agregat M.04.d.3",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.04.1b.1",
+      "ahspName": "Pembuatan s.d. Pengecoran 1 m3 campuran beton mutu sedang fc’ 20 MPa; Slump (10 ± 2,5) cm, agregat maks 19 mm",
+      "component": "Kr: Krikil / Agregat M.04.d.3",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.04.1b.2",
+      "ahspName": "Pembuatan s.d. Pengecoran 1 m3 campuran beton mutu sedang fc’ 25 MPa; Slump (10 ± 2,5) cm, agregat maks 19 mm",
+      "component": "Kr: Krikil / Agregat Kasar M.04.d.3",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.04.1c.1",
+      "ahspName": "Pembuatan s.d. Pengecoran 1 m3 campuran beton mutu sedang fc’ 30 MPa; Slump (10 ± 2,5) cm, agregat maks 19 mm",
+      "component": "Kr: Krikil / Agregat Kasar M.04.d.3",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.04.4a.1",
+      "ahspName": "Pembuatan s.d. Pengecoran 1 m3 Campuran Beton mutu sedang fc' 25 MPa; W/C=0,509",
+      "component": "Halus Kr: Krikil / Agregat Kasar M.04.d.3",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.04.4a.2",
+      "ahspName": "Pembuatan s.d. Pengecoran 1 m3 Campuran Beton mutu tinggi fc' 40 MPa; W/C=0,339",
+      "component": "Halus Kr: Krikil / Agregat Kasar M.04.d.3",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.04.4b",
+      "ahspName": "Pembuatan dan pengecoran 1 m3 Campuran Beton fc' = 30 MPa pakai Batching Plant Mini",
+      "component": "Halus Kr: Krikil / Agregat Kasar M.04.c.2",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.04.4c",
+      "ahspName": "Pembuatan dan pengecoran 1 m3 Campuran Beton fc' = 30 MPa pakai Batching Plant Midi",
+      "component": "Halus Kr: Krikil / Agregat Kasar M.04.c.2",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.04.4d",
+      "ahspName": "Pembuatan dan pengecoran 1 m3 Campuran Beton fc' = 30 MPa pakai Batching Plant Besar",
+      "component": "Halus Kr: Krikil / Agregat Kasar M.04.d.2",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.04.4d",
+      "ahspName": "Pembuatan dan pengecoran 1 m3 Campuran Beton fc' = 30 MPa pakai Batching Plant Besar",
+      "component": "m3 / jam; 75 KW; V=0,8",
+      "coefficient": 6286.34,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.06.3c",
+      "ahspName": "Penulangan dan Pengecoran 1 m' Pondasi Tiang Bor ∅ 100 cm, campuran beton Ready Mix",
+      "component": "Kr: Kerikil / Agregat beton M.04.d.3",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.06.4b",
+      "ahspName": "Penulangan dan Pengecoran 1 m' Pondasi Tiang Bor ∅ 120 cm, campuran beton semi Mekanis",
+      "component": "Baja tulangan Pondasi Tiang Bor To.42.c",
+      "coefficient": 10726.86,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.06.4d",
+      "ahspName": "Penulangan + Pengecoran 1 m' Pondasi Tiang Bor ∅ 120 cm, dari Batching Plant diangkut Truck Mixer Beton Jumlah",
+      "component": "Baja tulangan Pondasi Tiang Bor B.06.a.1)",
+      "coefficient": 18720.43,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.06.4d",
+      "ahspName": "Penulangan + Pengecoran 1 m' Pondasi Tiang Bor ∅ 120 cm, dari Batching Plant diangkut Truck Mixer Beton Jumlah",
+      "component": "Kr: Kerikil / Agregat beton M.04.d.3",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.06.5d",
+      "ahspName": "Penulangan + Pengecoran 1 m' Pondasi Tiang Bor ∅ 160 cm, dari Batching Plant diangkut Truck Mixer Beton Jumlah",
+      "component": "Kr: Kerikil / Agregat beton M.04.d.3",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.06.6a",
+      "ahspName": "Pengeboran 1 m' Pondasi Tiang Bor ∅ 180 cm Jumlah",
+      "component": "Auger ø 60 - 180",
+      "coefficient": 445990.64,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.06.6d",
+      "ahspName": "Penulangan + Pengecoran 1 m' Pondasi Tiang Bor ∅ 180 cm, dari Batching Plant diangkut Truck Mixer Beton Jumlah",
+      "component": "Kr: Kerikil / Agregat beton M.04.d.3",
+      "coefficient": 1009,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.08.3.7.b",
+      "ahspName": "Pekerjaan Pemasangan Jacking Pipa RCP DN 2000 dan Pipa Baja DN 1800",
+      "component": "Mandor",
+      "coefficient": 0,
+      "issue": "Koefisien bernilai 0 (tanpa volume kerja)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.1.a",
+      "ahspName": "Pasangan 1 m' U-Ditch 40 x 60 x 120 cm, 314,9 Kg (tanpa seal karet)",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.1.a",
+      "ahspName": "Pasangan 1 m' U-Ditch 40 x 60 x 120 cm, 314,9 Kg (tanpa seal karet)",
+      "component": "Ton;Bak 8m3;120 HP E.11,o",
+      "coefficient": 331423.24,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.1.b",
+      "ahspName": "Pasangan 1 m' U-Ditch 40 x 60 x 120 cm, 314,9 Kg (dengan seal karet)",
+      "component": "To.42.c",
+      "coefficient": 27014.77,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.1.b",
+      "ahspName": "Pasangan 1 m' U-Ditch 40 x 60 x 120 cm, 314,9 Kg (dengan seal karet)",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.1.b",
+      "ahspName": "Pasangan 1 m' U-Ditch 40 x 60 x 120 cm, 314,9 Kg (dengan seal karet)",
+      "component": "E.11.o",
+      "coefficient": 357800.58,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.1.c",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 40: 53 x 60 x 8 cm (LD); 60 kg",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.1.c",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 40: 53 x 60 x 8 cm (LD); 60 kg",
+      "component": "E.11.o",
+      "coefficient": 357800.58,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.1.d",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 40: 53 x 60 x 12 cm (HD); 90 kg",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.1.d",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 40: 53 x 60 x 12 cm (HD); 90 kg",
+      "component": "E.11.o",
+      "coefficient": 357800.58,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.2.b",
+      "ahspName": "Pasangan 1m’ U-Ditch 60 x 80 x 120cm,553,6 Kg (dengan seal karet)",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.2.b",
+      "ahspName": "Pasangan 1m’ U-Ditch 60 x 80 x 120cm,553,6 Kg (dengan seal karet)",
+      "component": "E.11.o",
+      "coefficient": 357800.58,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.2.c",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 60: 73 x 60 x 10 cm (LD); 106 kg",
+      "component": "E.20.b",
+      "coefficient": 27014.77,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.2.c",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 60: 73 x 60 x 10 cm (LD); 106 kg",
+      "component": "E.11.o",
+      "coefficient": 357800.58,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.3.a",
+      "ahspName": "Pasangan 1 m' U-Ditch 80 x 100 x 120 cm, 732,5 Kg (tanpa seal karet}",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.3.a",
+      "ahspName": "Pasangan 1 m' U-Ditch 80 x 100 x 120 cm, 732,5 Kg (tanpa seal karet}",
+      "component": "Ton;Bak 8m3;120 HP E.11,o",
+      "coefficient": 331423.24,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.3.b",
+      "ahspName": "Pasangan 1 m' U-Ditch 80 x 100 x 120 cm, 732,5 Kg (dengan seal karet}",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.3.b",
+      "ahspName": "Pasangan 1 m' U-Ditch 80 x 100 x 120 cm, 732,5 Kg (dengan seal karet}",
+      "component": "E.11.o",
+      "coefficient": 357800.58,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.3.c",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 80: 95 x 60 x 10 cm (LD); 138 kg",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.3.c",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 80: 95 x 60 x 10 cm (LD); 138 kg",
+      "component": "E.11.o",
+      "coefficient": 357800.58,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.3.d",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 80: 95 x 60 x 15 cm (HD); 207 kg",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.3.d",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 80: 95 x 60 x 15 cm (HD); 207 kg",
+      "component": "E.11.o",
+      "coefficient": 357800.58,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.4.a",
+      "ahspName": "Pasangan 1 m' U-Ditch 100 x 100 x 120 cm, 979,7 Kg (tanpa seal karet)",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.4.a",
+      "ahspName": "Pasangan 1 m' U-Ditch 100 x 100 x 120 cm, 979,7 Kg (tanpa seal karet)",
+      "component": "Ton;Bak 8m3;120 HP E.11,o",
+      "coefficient": 331423.24,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.4.b",
+      "ahspName": "Pasangan 1 m' U-Ditch 100 x 100 x 120 cm, 979,7 Kg (dengan seal karet)",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.4.b",
+      "ahspName": "Pasangan 1 m' U-Ditch 100 x 100 x 120 cm, 979,7 Kg (dengan seal karet)",
+      "component": "E.11.o",
+      "coefficient": 331423.24,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.4.c",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 100: 118 x 60 x 12 cm (LD); 207 kg",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.4.c",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 100: 118 x 60 x 12 cm (LD); 207 kg",
+      "component": "E.11.o",
+      "coefficient": 357800.58,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.4.d",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 100: 118 x 60 x 15 cm (HD); 259 kg",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.4.d",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 100: 118 x 60 x 15 cm (HD); 259 kg",
+      "component": "E.11.o",
+      "coefficient": 357800.58,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.5.a",
+      "ahspName": "Pasangan 1 m' U-Ditch 150 x 100 x 120 cm; 1.658,7 Kg (tanpa seal karet)",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.5.a",
+      "ahspName": "Pasangan 1 m' U-Ditch 150 x 100 x 120 cm; 1.658,7 Kg (tanpa seal karet)",
+      "component": "Ton;Bak 8m3;120 HP E.11,o",
+      "coefficient": 331423.37,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.5.b",
+      "ahspName": "Pasangan 1 m' U-Ditch 150 x 100 x 120 cm, 1.658,7 Kg (dengan seal karet)",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.5.b",
+      "ahspName": "Pasangan 1 m' U-Ditch 150 x 100 x 120 cm, 1.658,7 Kg (dengan seal karet)",
+      "component": "E.11.o",
+      "coefficient": 331423.24,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.5.c",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 150: 177,4 x 60 x 14 cm (LD); 385 kg",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.5.c",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 150: 177,4 x 60 x 14 cm (LD); 385 kg",
+      "component": "E.11.o",
+      "coefficient": 357800.58,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.5.d",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 150: 198,4 x 120 x 20 cm (HD); 1.155 kg",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.5.d",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 150: 198,4 x 120 x 20 cm (HD); 1.155 kg",
+      "component": "E.11.o",
+      "coefficient": 357800.58,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.6.a",
+      "ahspName": "Pasangan 1 m' U-Ditch 200 x 200 x 120 cm; 3.265,6 Kg (tanpa seal karet)",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.6.a",
+      "ahspName": "Pasangan 1 m' U-Ditch 200 x 200 x 120 cm; 3.265,6 Kg (tanpa seal karet)",
+      "component": "Ton;Bak 8m3;120 HP E.11,o",
+      "coefficient": 331423.37,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.6.b",
+      "ahspName": "Pasangan 1 m' U-Ditch 200 x 200 x 120 cm; 3.265,6 Kg (dengan seal karet)",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.6.b",
+      "ahspName": "Pasangan 1 m' U-Ditch 200 x 200 x 120 cm; 3.265,6 Kg (dengan seal karet)",
+      "component": "E.11.o",
+      "coefficient": 331423.24,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.6.c",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 200: 229,4 x 120 x 16,5 cm (LD); 559 kg",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.6.c",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 200: 229,4 x 120 x 16,5 cm (LD); 559 kg",
+      "component": "E.11.o",
+      "coefficient": 357800.58,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.6.d",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 200: 250 x 120 x 23 cm (HD); 1.697 kg",
+      "component": "E.20.b",
+      "coefficient": 372097.42,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.09.2a.6.d",
+      "ahspName": "Pasangan 1 m' Tutup U-Ditch 200: 250 x 120 x 23 cm (HD); 1.697 kg",
+      "component": "E.11.o",
+      "coefficient": 357800.58,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "Abrasion Test",
+      "coefficient": 43321.84,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "Ayakan uk. saringan 7,27 cm atau G.02.a",
+      "coefficient": 59916.53,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "Ayakan uk. saringan 10,48 cm G.02.b",
+      "coefficient": 61213.95,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "atau 3 Ayakan uk. saringan 12,43 cm G.02.c",
+      "coefficient": 62690.07,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "atau 5 Ayakan uk. saringan 15,66 cm G.02.d",
+      "coefficient": 64344.91,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "atau 10 Ayakan uk. saringan 22,59 cm G.02.e",
+      "coefficient": 65284.91,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "atau 30 Ayakan uk. saringan 26,79 cm G.02.f",
+      "coefficient": 66761.03,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "atau 50 Ayakan uk. saringan 33,75 cm G.02.g",
+      "coefficient": 68326.52,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "atau 100 Ayakan uk. saringan 42,52 cm G.02.h",
+      "coefficient": 70249.41,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "atau 200 Ayakan uk. saringan 48,68 cm G.02.i",
+      "coefficient": 71993.6,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "atau 300 Ayakan uk. saringan 53,58 cm G.02.j",
+      "coefficient": 73827.15,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "atau 400 Ayakan uk. saringan 57,72 cm G.02.k",
+      "coefficient": 76464.88,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "Ayakan uk. saringan 62,99 cm G.02.l",
+      "coefficient": 78477.14,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "atau 650 Ayakan uk. saringan 67,51 cm G.02.m",
+      "coefficient": 80578.74,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "atau 800 Ayakan Particle Size Manual, G.02.n",
+      "coefficient": 61082.17,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "Volume 1 Ayakan Particle Size (Mini- G.02.o",
+      "coefficient": 134134.89,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "mekanis), Volume 2,5 Ayakan Particle Size (Midi- G.02.p",
+      "coefficient": 191430.84,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "mekanis), Volume 5,0 Ayakan Particle Size (Standar, G.02.q",
+      "coefficient": 286326.79,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "mekanis), Volume 10 Ayakan Particle Size (Besar, G.02.r",
+      "coefficient": 535561.93,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "mekanis) 25 Ayakan particle size di G.02.s",
+      "coefficient": 79126.66,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "laboratorium ∅ < 5 cm…...................(original) Ayakan particle size di G.02.t",
+      "coefficient": 62419.13,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "laboratorium ∅ 7,5 -65 cm (13 bh)…..(original) Ayakan particle size di G.02.u",
+      "coefficient": 55523.93,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "laboratorium ∅ > 65 cm (8 bh)…….....(original) Bor Tangan, kedalaman mak. 10 G.03.a",
+      "coefficient": 58859.28,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "Bor Horizontal (mekanis) G.03.b",
+      "coefficient": 107012.72,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "Bor: Stang bor ∅ 1,25\" + reducer G.04.a",
+      "coefficient": 57396.58,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "Mata bor ∅ 2\" Widia atau G.04.f",
+      "coefficient": 1111.95,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "Mata bor ∅ 4\" Widia atau G.04.h",
+      "coefficient": 1482.56,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "lainnya Bor: Mata bor ∅ 6\" besi G.04.i",
+      "coefficient": 1251.2,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "Mata bor ∅ 6\" Widia atau G.04.j",
+      "coefficient": 1853.16,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    },
+    {
+      "ahspCode": "A.3.11.2b.4.a",
+      "ahspName": "1 m3 Pas. Bata Merah dengan Mortar Tipe O (2,4 MPa), Semi- mekanis, beda tinggi > 0 s.d. 1 m' Harga satuan Jumlah harga",
+      "component": "lainnya Bor Pile: Auger ∅ 20 cm G.05.a",
+      "coefficient": 116112.08,
+      "issue": "Koefisien bernilai sangat besar (> 1000)",
+      "severity": "WARNING"
+    }
+  ]
+}

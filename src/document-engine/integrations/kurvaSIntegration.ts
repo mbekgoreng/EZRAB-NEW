@@ -1,0 +1,2 @@
+import type { KurvaSDataPoint } from '../../types';
+export const mapKurvaSData = (items: KurvaSDataPoint[]) => items.map(x => ({ period: x.weekLabel, plannedProgress: x.plannedWeeklyPercent, cumulativeProgress: x.cumulativePlannedPercent, actualProgress: x.actualProgressPercent }));

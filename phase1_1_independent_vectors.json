@@ -1,0 +1,5 @@
+{
+  "status": "BLOCKED",
+  "reason": "Independent vectors are not generated from production output. Formula/input mapping and evaluated reference values must be established first.",
+  "vectors": []
+}

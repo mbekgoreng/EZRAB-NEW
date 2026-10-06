@@ -1,0 +1,3 @@
+# Phase 1.1 Test Execution Report
+
+Initial `npx tsc --noEmit`, `npm test`, and `npm run build` invocations exceeded the tool runner's 30-second limit. This is not a PASS or FAIL result. The repository's `npm test` launches the broad `server/test/runAllVerificationTests.ts` aggregator rather than a calculator-specific runner. The investigation must separate compile cost, test discovery, hanging processes, and external-service tests; targeted calculator/core commands are required for reproducible evidence.

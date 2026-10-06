@@ -1,0 +1,1967 @@
+{
+ "root": "D:\\file kerja\\PEMBUATAN SOFTWARE\\ezrab site web",
+ "total_bytes": 2208671832,
+ "total_files": 29654,
+ "total_gb": 2.057,
+ "per_top": {
+  "node_modules": {
+   "bytes": 788005378,
+   "files": 19649,
+   "mb": 751.5
+  },
+  "dist": {
+   "bytes": 225317836,
+   "files": 108,
+   "mb": 214.88
+  },
+  "dist-qa": {
+   "bytes": 201983852,
+   "files": 97,
+   "mb": 192.63
+  },
+  "src": {
+   "bytes": 200262086,
+   "files": 802,
+   "mb": 190.98
+  },
+  "public": {
+   "bytes": 183140901,
+   "files": 90,
+   "mb": 174.66
+  },
+  "EZRAB-LOCAL-AI": {
+   "bytes": 180124446,
+   "files": 6537,
+   "mb": 171.78
+  },
+  "sources": {
+   "bytes": 130195798,
+   "files": 7,
+   "mb": 124.16
+  },
+  "data": {
+   "bytes": 99314072,
+   "files": 49,
+   "mb": 94.71
+  },
+  "(root files)": {
+   "bytes": 89766842,
+   "files": 278,
+   "mb": 85.61
+  },
+  ".git": {
+   "bytes": 60929442,
+   "files": 295,
+   "mb": 58.11
+  },
+  "backups": {
+   "bytes": 26668405,
+   "files": 55,
+   "mb": 25.43
+  },
+  "docs": {
+   "bytes": 11007364,
+   "files": 186,
+   "mb": 10.5
+  },
+  "qa-fixtures": {
+   "bytes": 3259043,
+   "files": 11,
+   "mb": 3.11
+  },
+  "server": {
+   "bytes": 2097410,
+   "files": 1117,
+   "mb": 2.0
+  },
+  "tmp": {
+   "bytes": 1417388,
+   "files": 53,
+   "mb": 1.35
+  },
+  "scripts": {
+   "bytes": 1320611,
+   "files": 165,
+   "mb": 1.26
+  },
+  "prototypes": {
+   "bytes": 442442,
+   "files": 2,
+   "mb": 0.42
+  },
+  "reports": {
+   "bytes": 393450,
+   "files": 2,
+   "mb": 0.38
+  },
+  ".agents": {
+   "bytes": 321184,
+   "files": 14,
+   "mb": 0.31
+  },
+  ".claude": {
+   "bytes": 321184,
+   "files": 14,
+   "mb": 0.31
+  },
+  ".codeartsdoer": {
+   "bytes": 321184,
+   "files": 14,
+   "mb": 0.31
+  },
+  ".commandcode": {
+   "bytes": 321184,
+   "files": 14,
+   "mb": 0.31
+  },
+  ".cortex": {
+   "bytes": 321184,
+   "files": 14,
+   "mb": 0.31
+  },
+  ".grok": {
+   "bytes": 321184,
+   "files": 14,
+   "mb": 0.31
+  },
+  ".hermes": {
+   "bytes": 321184,
+   "files": 14,
+   "mb": 0.31
+  },
+  ".qwen": {
+   "bytes": 321184,
+   "files": 14,
+   "mb": 0.31
+  },
+  "skills": {
+   "bytes": 321184,
+   "files": 14,
+   "mb": 0.31
+  },
+  "supabase": {
+   "bytes": 69101,
+   "files": 17,
+   "mb": 0.07
+  },
+  ".workbuddy-ai": {
+   "bytes": 49916,
+   "files": 4,
+   "mb": 0.05
+  },
+  "scratch": {
+   "bytes": 15356,
+   "files": 3,
+   "mb": 0.01
+  },
+  ".freebuff": {
+   "bytes": 37,
+   "files": 1,
+   "mb": 0.0
+  }
+ },
+ "per_top2": {
+  "node_modules/.vite-temp": {
+   "bytes": 268937495,
+   "files": 5,
+   "mb": 256.48
+  },
+  "src/assets": {
+   "bytes": 159931089,
+   "files": 83,
+   "mb": 152.52
+  },
+  "node_modules/@supabase": {
+   "bytes": 145222920,
+   "files": 554,
+   "mb": 138.5
+  },
+  "sources/ahsp2026": {
+   "bytes": 130195798,
+   "files": 7,
+   "mb": 124.16
+  },
+  "EZRAB-LOCAL-AI/.python": {
+   "bytes": 121769117,
+   "files": 3989,
+   "mb": 116.13
+  },
+  "dist/videos": {
+   "bytes": 102334610,
+   "files": 15,
+   "mb": 97.59
+  },
+  "dist-qa/videos": {
+   "bytes": 102334610,
+   "files": 15,
+   "mb": 97.59
+  },
+  "public/videos": {
+   "bytes": 102334610,
+   "files": 15,
+   "mb": 97.59
+  },
+  "(root files)": {
+   "bytes": 89766842,
+   "files": 278,
+   "mb": 85.61
+  },
+  "data/ahsp2026": {
+   "bytes": 86658835,
+   "files": 39,
+   "mb": 82.64
+  },
+  "dist/assets": {
+   "bytes": 82148774,
+   "files": 51,
+   "mb": 78.34
+  },
+  "dist-qa/assets": {
+   "bytes": 62512940,
+   "files": 44,
+   "mb": 59.62
+  },
+  ".git/objects": {
+   "bytes": 60902174,
+   "files": 276,
+   "mb": 58.08
+  },
+  "public/assets": {
+   "bytes": 39973384,
+   "files": 34,
+   "mb": 38.12
+  },
+  "node_modules/@napi-rs": {
+   "bytes": 38439063,
+   "files": 14,
+   "mb": 36.66
+  },
+  "node_modules/.vite": {
+   "bytes": 35382053,
+   "files": 59,
+   "mb": 33.74
+  },
+  "node_modules/pdfjs-dist": {
+   "bytes": 34781083,
+   "files": 554,
+   "mb": 33.17
+  },
+  "dist/images": {
+   "bytes": 32883283,
+   "files": 30,
+   "mb": 31.36
+  },
+  "public/images": {
+   "bytes": 32883283,
+   "files": 30,
+   "mb": 31.36
+  },
+  "dist-qa/images": {
+   "bytes": 32756052,
+   "files": 29,
+   "mb": 31.24
+  },
+  "node_modules/lucide-react": {
+   "bytes": 32023893,
+   "files": 4172,
+   "mb": 30.54
+  },
+  "node_modules/jspdf": {
+   "bytes": 30192058,
+   "files": 18,
+   "mb": 28.79
+  },
+  "EZRAB-LOCAL-AI/.venv": {
+   "bytes": 29694136,
+   "files": 2440,
+   "mb": 28.32
+  },
+  "src/data": {
+   "bytes": 29247855,
+   "files": 39,
+   "mb": 27.89
+  },
+  "EZRAB-LOCAL-AI/python-3.12.10-amd64.exe": {
+   "bytes": 26964224,
+   "files": 1,
+   "mb": 25.72
+  },
+  "node_modules/typescript": {
+   "bytes": 23625066,
+   "files": 132,
+   "mb": 22.53
+  },
+  "node_modules/exceljs": {
+   "bytes": 21825509,
+   "files": 519,
+   "mb": 20.81
+  },
+  "node_modules/@rolldown": {
+   "bytes": 20902226,
+   "files": 7,
+   "mb": 19.93
+  },
+  "node_modules/three": {
+   "bytes": 20443175,
+   "files": 1263,
+   "mb": 19.5
+  },
+  "backups/legacy-ahsp-pre-2026-purge": {
+   "bytes": 14183459,
+   "files": 30,
+   "mb": 13.53
+  },
+  "data/price2026": {
+   "bytes": 12655237,
+   "files": 10,
+   "mb": 12.07
+  },
+  "node_modules/@esbuild": {
+   "bytes": 10617862,
+   "files": 3,
+   "mb": 10.13
+  },
+  "docs/_audit": {
+   "bytes": 10117485,
+   "files": 7,
+   "mb": 9.65
+  },
+  "node_modules/@babel": {
+   "bytes": 8532442,
+   "files": 1048,
+   "mb": 8.14
+  },
+  "node_modules/@dimforge": {
+   "bytes": 7522790,
+   "files": 51,
+   "mb": 7.17
+  },
+  "node_modules/xlsx": {
+   "bytes": 7499035,
+   "files": 26,
+   "mb": 7.15
+  },
+  "node_modules/react-dom": {
+   "bytes": 7319407,
+   "files": 43,
+   "mb": 6.98
+  },
+  "backups/excel-ahsp-bina-marga-2026": {
+   "bytes": 6996008,
+   "files": 3,
+   "mb": 6.67
+  },
+  "node_modules/gsap": {
+   "bytes": 6258071,
+   "files": 179,
+   "mb": 5.97
+  },
+  "node_modules/codepage": {
+   "bytes": 5676274,
+   "files": 155,
+   "mb": 5.41
+  },
+  "node_modules/@types": {
+   "bytes": 5014774,
+   "files": 1138,
+   "mb": 4.78
+  },
+  "backups/excel-ahsp-cipta-karya-2026": {
+   "bytes": 4971269,
+   "files": 1,
+   "mb": 4.74
+  },
+  "src/components": {
+   "bytes": 4794484,
+   "files": 196,
+   "mb": 4.57
+  },
+  "node_modules/framer-motion": {
+   "bytes": 4792116,
+   "files": 382,
+   "mb": 4.57
+  },
+  "node_modules/@rollup": {
+   "bytes": 4766275,
+   "files": 6,
+   "mb": 4.55
+  },
+  "node_modules/docx": {
+   "bytes": 4668758,
+   "files": 23,
+   "mb": 4.45
+  },
+  "node_modules/@noble": {
+   "bytes": 3958243,
+   "files": 617,
+   "mb": 3.77
+  },
+  "node_modules/motion-dom": {
+   "bytes": 3459174,
+   "files": 451,
+   "mb": 3.3
+  },
+  "node_modules/html2canvas": {
+   "bytes": 3379055,
+   "files": 391,
+   "mb": 3.22
+  },
+  "node_modules/@fast-csv": {
+   "bytes": 3342906,
+   "files": 262,
+   "mb": 3.19
+  },
+  "dist/samples": {
+   "bytes": 3154667,
+   "files": 1,
+   "mb": 3.01
+  },
+  "public/samples": {
+   "bytes": 3154667,
+   "files": 1,
+   "mb": 3.01
+  },
+  "qa-fixtures/pdf-gambar-rumah-1-lantai_compress.pdf": {
+   "bytes": 3154667,
+   "files": 1,
+   "mb": 3.01
+  },
+  "node_modules/rollup": {
+   "bytes": 2858394,
+   "files": 27,
+   "mb": 2.73
+  },
+  "node_modules/vite": {
+   "bytes": 2657552,
+   "files": 35,
+   "mb": 2.53
+  },
+  "node_modules/fast-png": {
+   "bytes": 1904869,
+   "files": 114,
+   "mb": 1.82
+  },
+  "node_modules/dompurify": {
+   "bytes": 1802029,
+   "files": 24,
+   "mb": 1.72
+  },
+  "dist/logo_oy.svg": {
+   "bytes": 1727354,
+   "files": 1,
+   "mb": 1.65
+  },
+  "dist-qa/logo_oy.svg": {
+   "bytes": 1727354,
+   "files": 1,
+   "mb": 1.65
+  },
+  "public/logo_oy.svg": {
+   "bytes": 1727354,
+   "files": 1,
+   "mb": 1.65
+  }
+ },
+ "top300": [
+  {
+   "size": 95941632,
+   "path": "node_modules\\@supabase\\cli-windows-x64\\bin\\supabase.exe",
+   "mb": 91.497
+  },
+  {
+   "size": 73705975,
+   "path": "node_modules\\.vite-temp\\vite.config.ts.timestamp-1790793875398-63c975f8237be.mjs",
+   "mb": 70.291
+  },
+  {
+   "size": 64425313,
+   "path": "node_modules\\.vite-temp\\vite.config.ts.timestamp-1790596069379-18b200f83b326.mjs",
+   "mb": 61.441
+  },
+  {
+   "size": 56624433,
+   "path": "sources\\ahsp2026\\Lampiran-VI-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Cipta-Karya.pdf",
+   "mb": 54.001
+  },
+  {
+   "size": 52464526,
+   "path": "node_modules\\.vite-temp\\vite.config.ts.timestamp-1790397810011-eb4d616ca32268.mjs",
+   "mb": 50.034
+  },
+  {
+   "size": 41475072,
+   "path": "node_modules\\@supabase\\cli-windows-x64\\bin\\supabase-go.exe",
+   "mb": 39.554
+  },
+  {
+   "size": 40188115,
+   "path": "sources\\ahsp2026\\Lampiran-IV-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Sumber-Daya-Air.pdf",
+   "mb": 38.326
+  },
+  {
+   "size": 39462384,
+   "path": "public\\videos\\roles-bg.mp4",
+   "mb": 37.634
+  },
+  {
+   "size": 39462384,
+   "path": "dist\\videos\\roles-bg.mp4",
+   "mb": 37.634
+  },
+  {
+   "size": 39462384,
+   "path": "dist-qa\\videos\\roles-bg.mp4",
+   "mb": 37.634
+  },
+  {
+   "size": 39171741,
+   "path": "node_modules\\.vite-temp\\vite.config.ts.timestamp-1790157258539-8669e1ba806ba.mjs",
+   "mb": 37.357
+  },
+  {
+   "size": 39169940,
+   "path": "node_modules\\.vite-temp\\vite.config.ts.timestamp-1790157238281-88489c6634f85.mjs",
+   "mb": 37.355
+  },
+  {
+   "size": 34296454,
+   "path": "public\\videos\\ezrab-magic-ai.mp4",
+   "mb": 32.708
+  },
+  {
+   "size": 34296454,
+   "path": "dist\\videos\\ezrab-magic-ai.mp4",
+   "mb": 32.708
+  },
+  {
+   "size": 34296454,
+   "path": "dist-qa\\videos\\ezrab-magic-ai.mp4",
+   "mb": 32.708
+  },
+  {
+   "size": 32485619,
+   "path": "dist\\assets\\index-h3nEqa2P.js",
+   "mb": 30.981
+  },
+  {
+   "size": 27436032,
+   "path": "node_modules\\@napi-rs\\canvas-win32-x64-msvc\\skia.win32-x64-msvc.node",
+   "mb": 26.165
+  },
+  {
+   "size": 26964224,
+   "path": "EZRAB-LOCAL-AI\\python-3.12.10-amd64.exe",
+   "mb": 25.715
+  },
+  {
+   "size": 21735137,
+   "path": "src\\assets\\0908fg-transparent.webm",
+   "mb": 20.728
+  },
+  {
+   "size": 21577263,
+   "path": "sources\\ahsp2026\\Lampiran-V-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Bina-Marga.pdf",
+   "mb": 20.578
+  },
+  {
+   "size": 21577263,
+   "path": "bina_marga_downloaded.pdf",
+   "mb": 20.578
+  },
+  {
+   "size": 21577263,
+   "path": "Lampiran-II-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Bina-Marga.pdf",
+   "mb": 20.578
+  },
+  {
+   "size": 20875776,
+   "path": "node_modules\\@rolldown\\.binding-win32-x64-msvc-JIAGLXoW\\rolldown-binding.win32-x64-msvc.node",
+   "mb": 19.909
+  },
+  {
+   "size": 20861802,
+   "path": "data\\ahsp2026\\validated\\ahsp_2026_master.json",
+   "mb": 19.895
+  },
+  {
+   "size": 19097119,
+   "path": ".git\\objects\\be\\7838c7ad5712b08e4644d04988368f7af5264f",
+   "mb": 18.212
+  },
+  {
+   "size": 18224634,
+   "path": "src\\assets\\0908.mp4",
+   "mb": 17.38
+  },
+  {
+   "size": 16879616,
+   "path": ".git\\objects\\be\\tmp_obj_oDgCmc",
+   "mb": 16.098
+  },
+  {
+   "size": 15573204,
+   "path": "src\\data\\nationalCostDatabase\\ahsp2026Canonical.generated.ts",
+   "mb": 14.852
+  },
+  {
+   "size": 15359836,
+   "path": "dist-qa\\assets\\index-DmRjQuWz.js",
+   "mb": 14.648
+  },
+  {
+   "size": 13460770,
+   "path": "data\\ahsp2026\\validated\\ahsp_2026_components.json",
+   "mb": 12.837
+  },
+  {
+   "size": 13083853,
+   "path": "data\\ahsp2026\\normalized\\ahsp_2026_normalized.json",
+   "mb": 12.478
+  },
+  {
+   "size": 11756229,
+   "path": "phase1_1_workbook_inventory.json",
+   "mb": 11.212
+  },
+  {
+   "size": 11433217,
+   "path": "data\\ahsp2026\\raw\\binamarga_raw.jsonl",
+   "mb": 10.904
+  },
+  {
+   "size": 10876560,
+   "path": "node_modules\\@napi-rs\\canvas-win32-x64-msvc\\icudtl.dat",
+   "mb": 10.373
+  },
+  {
+   "size": 10617344,
+   "path": "node_modules\\@esbuild\\win32-x64\\esbuild.exe",
+   "mb": 10.125
+  },
+  {
+   "size": 10092801,
+   "path": "src\\assets\\landpage-vid1-blackbg.mp4",
+   "mb": 9.625
+  },
+  {
+   "size": 9112572,
+   "path": "node_modules\\typescript\\lib\\typescript.js",
+   "mb": 8.69
+  },
+  {
+   "size": 8965236,
+   "path": "src\\assets\\animasi-building-hero.mp4",
+   "mb": 8.55
+  },
+  {
+   "size": 8345305,
+   "path": "data\\price2026\\normalized\\price_rows.json",
+   "mb": 7.959
+  },
+  {
+   "size": 7517061,
+   "path": "src\\assets\\0908fg.mp4",
+   "mb": 7.169
+  },
+  {
+   "size": 7517061,
+   "path": "public\\videos\\0908fg.mp4",
+   "mb": 7.169
+  },
+  {
+   "size": 7517061,
+   "path": "dist\\videos\\0908fg.mp4",
+   "mb": 7.169
+  },
+  {
+   "size": 7517061,
+   "path": "dist-qa\\videos\\0908fg.mp4",
+   "mb": 7.169
+  },
+  {
+   "size": 7094714,
+   "path": "src\\assets\\downloaded_hero.mp4",
+   "mb": 6.766
+  },
+  {
+   "size": 7048258,
+   "path": "public\\videos\\ezrab-magic-ai-scroll.mp4",
+   "mb": 6.722
+  },
+  {
+   "size": 7048258,
+   "path": "dist\\videos\\ezrab-magic-ai-scroll.mp4",
+   "mb": 6.722
+  },
+  {
+   "size": 7048258,
+   "path": "dist-qa\\videos\\ezrab-magic-ai-scroll.mp4",
+   "mb": 6.722
+  },
+  {
+   "size": 7034915,
+   "path": "src\\assets\\landpage-vid1-transparent.webm",
+   "mb": 6.709
+  },
+  {
+   "size": 6945272,
+   "path": "EZRAB-LOCAL-AI\\.python\\python312.dll",
+   "mb": 6.624
+  },
+  {
+   "size": 6863998,
+   "path": "node_modules\\jspdf\\dist\\jspdf.umd.js.map",
+   "mb": 6.546
+  },
+  {
+   "size": 6476269,
+   "path": "src\\assets\\ezrab-hero.mp4",
+   "mb": 6.176
+  },
+  {
+   "size": 6442037,
+   "path": "backups\\legacy-ahsp-pre-2026-purge\\src__data__nationalCostDatabase__ciptaKaryaAHSPDataset.ts",
+   "mb": 6.144
+  },
+  {
+   "size": 6302752,
+   "path": "data\\ahsp2026\\validated\\AHSP_2026_MASTER.txt",
+   "mb": 6.011
+  },
+  {
+   "size": 6213092,
+   "path": "node_modules\\typescript\\lib\\_tsc.js",
+   "mb": 5.925
+  },
+  {
+   "size": 6084577,
+   "path": "src\\assets\\landpage vid 1.mp4",
+   "mb": 5.803
+  },
+  {
+   "size": 6025176,
+   "path": "public\\videos\\ezrab-hero.mp4",
+   "mb": 5.746
+  },
+  {
+   "size": 6025176,
+   "path": "dist\\videos\\ezrab-hero.mp4",
+   "mb": 5.746
+  },
+  {
+   "size": 6025176,
+   "path": "dist-qa\\videos\\ezrab-hero.mp4",
+   "mb": 5.746
+  },
+  {
+   "size": 6008463,
+   "path": "node_modules\\lucide-react\\dist\\cjs\\lucide-react.js.map",
+   "mb": 5.73
+  },
+  {
+   "size": 5918691,
+   "path": "backups\\excel-ahsp-bina-marga-2026\\CURRENT_BINA_MARGA_CANONICAL_SNAPSHOT.json",
+   "mb": 5.645
+  },
+  {
+   "size": 5672985,
+   "path": "data\\ahsp2026\\raw\\sda_raw.jsonl",
+   "mb": 5.41
+  },
+  {
+   "size": 5592542,
+   "path": "docs\\_audit\\lampiran2-pages.jsonl",
+   "mb": 5.333
+  },
+  {
+   "size": 5547525,
+   "path": "ezrab_downloaded.html",
+   "mb": 5.291
+  },
+  {
+   "size": 5466926,
+   "path": "node_modules\\pdfjs-dist\\legacy\\build\\pdf.worker.mjs.map",
+   "mb": 5.214
+  },
+  {
+   "size": 5324998,
+   "path": "src\\data\\masterMaterials2026.json",
+   "mb": 5.078
+  },
+  {
+   "size": 5252731,
+   "path": "node_modules\\pdfjs-dist\\build\\pdf.worker.mjs.map",
+   "mb": 5.009
+  },
+  {
+   "size": 5246337,
+   "path": "sources\\ahsp2026\\Lampiran-I-SE-DJBK-No-47-Tahun-2026-Teknis-Pengumpulan-Data-Harga-Pokok.pdf",
+   "mb": 5.003
+  },
+  {
+   "size": 5231472,
+   "path": "EZRAB-LOCAL-AI\\.python\\DLLs\\libcrypto-3.dll",
+   "mb": 4.989
+  },
+  {
+   "size": 5218755,
+   "path": "node_modules\\jspdf\\dist\\jspdf.node.js.map",
+   "mb": 4.977
+  },
+  {
+   "size": 5157888,
+   "path": "EZRAB-LOCAL-AI\\.venv\\Lib\\site-packages\\pydantic_core\\_pydantic_core.cp312-win_amd64.pyd",
+   "mb": 4.919
+  },
+  {
+   "size": 5019517,
+   "path": "node_modules\\jspdf\\dist\\jspdf.es.js.map",
+   "mb": 4.787
+  },
+  {
+   "size": 4984461,
+   "path": "data\\ahsp2026\\raw\\ciptakarya_raw.jsonl",
+   "mb": 4.754
+  },
+  {
+   "size": 4971269,
+   "path": "backups\\excel-ahsp-cipta-karya-2026\\ahsp bina kontruksi 2026.xlsx",
+   "mb": 4.741
+  },
+  {
+   "size": 4917427,
+   "path": "EZRAB-LOCAL-AI\\.python\\Doc\\html\\whatsnew\\changelog.html",
+   "mb": 4.69
+  },
+  {
+   "size": 4420149,
+   "path": "EZRAB_VOLUME_CALCULATOR_MASTER_COPY.xlsx",
+   "mb": 4.215
+  },
+  {
+   "size": 4420149,
+   "path": "EZRAB_VOLUME_CALCULATOR_MASTER.xlsx",
+   "mb": 4.215
+  },
+  {
+   "size": 4208636,
+   "path": ".git\\objects\\6a\\8af7d1fa326018b3a016809ecbf68b63dd768b",
+   "mb": 4.014
+  },
+  {
+   "size": 4188891,
+   "path": "src\\assets\\ezrab-hero.webm",
+   "mb": 3.995
+  },
+  {
+   "size": 3950298,
+   "path": "data\\ahsp2026\\excel_extracted\\cipta_karya_analyses.json",
+   "mb": 3.767
+  },
+  {
+   "size": 3869498,
+   "path": "src\\assets\\landing\\backgrounds\\land-page-awal.png",
+   "mb": 3.69
+  },
+  {
+   "size": 3869498,
+   "path": "src\\assets\\land-page-awal.png",
+   "mb": 3.69
+  },
+  {
+   "size": 3869498,
+   "path": "src\\assets\\asada-hero-bg.png",
+   "mb": 3.69
+  },
+  {
+   "size": 3869498,
+   "path": "dist\\assets\\land-page-awal-rKh6JDKs.png",
+   "mb": 3.69
+  },
+  {
+   "size": 3869498,
+   "path": "dist-qa\\assets\\land-page-awal-rKh6JDKs.png",
+   "mb": 3.69
+  },
+  {
+   "size": 3818697,
+   "path": "node_modules\\exceljs\\dist\\exceljs.js.map",
+   "mb": 3.642
+  },
+  {
+   "size": 3752154,
+   "path": "sources\\ahsp2026\\Lampiran-II-SE-DJBK-No-47-Tahun-2026-Acuan-dalam-Penyusunan-AHSP.pdf",
+   "mb": 3.578
+  },
+  {
+   "size": 3649361,
+   "path": "data\\price2026\\validated\\unmatched_price_rows.json",
+   "mb": 3.48
+  },
+  {
+   "size": 3606444,
+   "path": "node_modules\\exceljs\\dist\\exceljs.bare.js.map",
+   "mb": 3.439
+  },
+  {
+   "size": 3550952,
+   "path": "node_modules\\.vite\\deps\\exceljs.js.map",
+   "mb": 3.386
+  },
+  {
+   "size": 3528067,
+   "path": "node_modules\\.vite\\deps\\lucide-react.js.map",
+   "mb": 3.365
+  },
+  {
+   "size": 3431010,
+   "path": "EZRAB-LOCAL-AI\\.python\\Doc\\html\\searchindex.js",
+   "mb": 3.272
+  },
+  {
+   "size": 3421589,
+   "path": "node_modules\\jspdf\\dist\\jspdf.umd.min.js.map",
+   "mb": 3.263
+  },
+  {
+   "size": 3385145,
+   "path": "backups\\legacy-ahsp-pre-2026-purge\\src__data__nationalCostDatabase__binaMargaAHSP2026Official.ts",
+   "mb": 3.228
+  },
+  {
+   "size": 3312238,
+   "path": "docs\\_audit\\lampiran2-official-items.json",
+   "mb": 3.159
+  },
+  {
+   "size": 3249905,
+   "path": "node_modules\\exceljs\\dist\\exceljs.min.js.map",
+   "mb": 3.099
+  },
+  {
+   "size": 3163754,
+   "path": "node_modules\\.vite\\deps\\chunk-HDEMVUAG.js.map",
+   "mb": 3.017
+  },
+  {
+   "size": 3154667,
+   "path": "qa-fixtures\\pdf-gambar-rumah-1-lantai_compress.pdf",
+   "mb": 3.009
+  },
+  {
+   "size": 3154667,
+   "path": "public\\samples\\pdf-gambar-rumah-1-lantai_compress.pdf",
+   "mb": 3.009
+  },
+  {
+   "size": 3154667,
+   "path": "dist\\samples\\pdf-gambar-rumah-1-lantai_compress.pdf",
+   "mb": 3.009
+  },
+  {
+   "size": 2997481,
+   "path": "node_modules\\exceljs\\dist\\exceljs.bare.min.js.map",
+   "mb": 2.859
+  },
+  {
+   "size": 2893775,
+   "path": "src\\data\\nationalCostDatabase\\officialBinaMargaDhsp2026.ts",
+   "mb": 2.76
+  },
+  {
+   "size": 2877745,
+   "path": "public\\images\\roles\\kontraktor.jpg",
+   "mb": 2.744
+  },
+  {
+   "size": 2877745,
+   "path": "dist\\images\\roles\\kontraktor.jpg",
+   "mb": 2.744
+  },
+  {
+   "size": 2877745,
+   "path": "dist-qa\\images\\roles\\kontraktor.jpg",
+   "mb": 2.744
+  },
+  {
+   "size": 2821490,
+   "path": "phase3_workbook_inventory.json",
+   "mb": 2.691
+  },
+  {
+   "size": 2786030,
+   "path": "public\\images\\roles\\konsultan.jpg",
+   "mb": 2.657
+  },
+  {
+   "size": 2786030,
+   "path": "dist\\images\\roles\\konsultan.jpg",
+   "mb": 2.657
+  },
+  {
+   "size": 2786030,
+   "path": "dist-qa\\images\\roles\\konsultan.jpg",
+   "mb": 2.657
+  },
+  {
+   "size": 2782909,
+   "path": "public\\images\\roles\\estimator.jpg",
+   "mb": 2.654
+  },
+  {
+   "size": 2782909,
+   "path": "dist\\images\\roles\\estimator.jpg",
+   "mb": 2.654
+  },
+  {
+   "size": 2782909,
+   "path": "dist-qa\\images\\roles\\estimator.jpg",
+   "mb": 2.654
+  },
+  {
+   "size": 2743681,
+   "path": "node_modules\\jspdf\\dist\\jspdf.node.min.js.map",
+   "mb": 2.617
+  },
+  {
+   "size": 2714658,
+   "path": "node_modules\\jspdf\\dist\\jspdf.es.min.js.map",
+   "mb": 2.589
+  },
+  {
+   "size": 2681344,
+   "path": "node_modules\\@rollup\\rollup-win32-x64-msvc\\rollup.win32-x64-msvc.node",
+   "mb": 2.557
+  },
+  {
+   "size": 2628161,
+   "path": "public\\images\\roles\\developer.jpg",
+   "mb": 2.506
+  },
+  {
+   "size": 2628161,
+   "path": "dist\\images\\roles\\developer.jpg",
+   "mb": 2.506
+  },
+  {
+   "size": 2628161,
+   "path": "dist-qa\\images\\roles\\developer.jpg",
+   "mb": 2.506
+  },
+  {
+   "size": 2444351,
+   "path": "public\\assets\\volume-calculation\\references\\pondasi.jpg",
+   "mb": 2.331
+  },
+  {
+   "size": 2444351,
+   "path": "dist\\assets\\volume-calculation\\references\\pondasi.jpg",
+   "mb": 2.331
+  },
+  {
+   "size": 2444351,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\pondasi.jpg",
+   "mb": 2.331
+  },
+  {
+   "size": 2432087,
+   "path": "node_modules\\lucide-react\\dynamic.d.ts",
+   "mb": 2.319
+  },
+  {
+   "size": 2432087,
+   "path": "node_modules\\lucide-react\\dynamic.d.mts",
+   "mb": 2.319
+  },
+  {
+   "size": 2430875,
+   "path": "node_modules\\lucide-react\\dynamicIconImports.d.ts",
+   "mb": 2.318
+  },
+  {
+   "size": 2430875,
+   "path": "node_modules\\lucide-react\\dynamicIconImports.d.mts",
+   "mb": 2.318
+  },
+  {
+   "size": 2399899,
+   "path": "node_modules\\pdfjs-dist\\legacy\\build\\pdf.mjs.map",
+   "mb": 2.289
+  },
+  {
+   "size": 2395538,
+   "path": "node_modules\\pdfjs-dist\\legacy\\build\\pdf.worker.mjs",
+   "mb": 2.285
+  },
+  {
+   "size": 2358080,
+   "path": "backups\\legacy-ahsp-pre-2026-purge\\src__data__nationalCostDatabase__binaMargaAHSPDataset.ts",
+   "mb": 2.249
+  },
+  {
+   "size": 2343967,
+   "path": "public\\assets\\volume-calculation\\references\\footplate.jpg",
+   "mb": 2.235
+  },
+  {
+   "size": 2343967,
+   "path": "dist\\assets\\volume-calculation\\references\\footplate.jpg",
+   "mb": 2.235
+  },
+  {
+   "size": 2343967,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\footplate.jpg",
+   "mb": 2.235
+  },
+  {
+   "size": 2337737,
+   "path": "node_modules\\lucide-react\\dist\\lucide-react.d.ts",
+   "mb": 2.229
+  },
+  {
+   "size": 2332150,
+   "path": ".git\\objects\\34\\dd1d993d2c6fe338113ac19ec939f4917694e4",
+   "mb": 2.224
+  },
+  {
+   "size": 2284823,
+   "path": "node_modules\\three\\build\\three.webgpu.js",
+   "mb": 2.179
+  },
+  {
+   "size": 2276182,
+   "path": "node_modules\\three\\build\\three.webgpu.nodes.js",
+   "mb": 2.171
+  },
+  {
+   "size": 2275424,
+   "path": "public\\assets\\volume-calculation\\references\\BATA MERAH.JPG",
+   "mb": 2.17
+  },
+  {
+   "size": 2275424,
+   "path": "dist\\assets\\volume-calculation\\references\\BATA MERAH.JPG",
+   "mb": 2.17
+  },
+  {
+   "size": 2275424,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\BATA MERAH.JPG",
+   "mb": 2.17
+  },
+  {
+   "size": 2262497,
+   "path": ".git\\objects\\b5\\fef685a0055bb644180a4e01730cee26802dcc",
+   "mb": 2.158
+  },
+  {
+   "size": 2250981,
+   "path": "video.png",
+   "mb": 2.147
+  },
+  {
+   "size": 2250981,
+   "path": "src\\assets\\landing\\backgrounds\\construction-cinematic.png",
+   "mb": 2.147
+  },
+  {
+   "size": 2250981,
+   "path": "src\\assets\\construction-cinematic.png",
+   "mb": 2.147
+  },
+  {
+   "size": 2250981,
+   "path": "public\\images\\landing\\backgrounds\\construction-cinematic.png",
+   "mb": 2.147
+  },
+  {
+   "size": 2250981,
+   "path": "public\\images\\construction-cinematic.png",
+   "mb": 2.147
+  },
+  {
+   "size": 2250981,
+   "path": "dist\\images\\landing\\backgrounds\\construction-cinematic.png",
+   "mb": 2.147
+  },
+  {
+   "size": 2250981,
+   "path": "dist\\images\\construction-cinematic.png",
+   "mb": 2.147
+  },
+  {
+   "size": 2250981,
+   "path": "dist-qa\\images\\landing\\backgrounds\\construction-cinematic.png",
+   "mb": 2.147
+  },
+  {
+   "size": 2250981,
+   "path": "dist-qa\\images\\construction-cinematic.png",
+   "mb": 2.147
+  },
+  {
+   "size": 2243566,
+   "path": "node_modules\\lucide-react\\dist\\lucide-react.prefixed.d.ts",
+   "mb": 2.14
+  },
+  {
+   "size": 2239442,
+   "path": "node_modules\\lucide-react\\dist\\lucide-react.suffixed.d.ts",
+   "mb": 2.136
+  },
+  {
+   "size": 2228489,
+   "path": "node_modules\\pdfjs-dist\\build\\pdf.worker.mjs",
+   "mb": 2.125
+  },
+  {
+   "size": 2210515,
+   "path": "public\\assets\\volume-calculation\\references\\BATAKO.jpg",
+   "mb": 2.108
+  },
+  {
+   "size": 2210515,
+   "path": "dist\\assets\\volume-calculation\\references\\BATAKO.jpg",
+   "mb": 2.108
+  },
+  {
+   "size": 2210515,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\BATAKO.jpg",
+   "mb": 2.108
+  },
+  {
+   "size": 2195803,
+   "path": ".git\\objects\\be\\ecf28a5c1d7af40a27777e7331d344aec88dda",
+   "mb": 2.094
+  },
+  {
+   "size": 2173868,
+   "path": "data\\ahsp2026\\validated\\ahsp_2026_resources.json",
+   "mb": 2.073
+  },
+  {
+   "size": 2160218,
+   "path": "node_modules\\pdfjs-dist\\build\\pdf.mjs.map",
+   "mb": 2.06
+  },
+  {
+   "size": 2134725,
+   "path": "node_modules\\codepage\\cptable.js",
+   "mb": 2.036
+  },
+  {
+   "size": 2124627,
+   "path": "node_modules\\.vite\\deps\\jspdf.js.map",
+   "mb": 2.026
+  },
+  {
+   "size": 2109252,
+   "path": "public\\videos\\roles\\konsultan.mp4",
+   "mb": 2.012
+  },
+  {
+   "size": 2109252,
+   "path": "dist\\videos\\roles\\konsultan.mp4",
+   "mb": 2.012
+  },
+  {
+   "size": 2109252,
+   "path": "dist-qa\\videos\\roles\\konsultan.mp4",
+   "mb": 2.012
+  },
+  {
+   "size": 2104317,
+   "path": "public\\assets\\volume-calculation\\references\\penutup lantai.jpg",
+   "mb": 2.007
+  },
+  {
+   "size": 2104317,
+   "path": "dist\\assets\\volume-calculation\\references\\penutup lantai.jpg",
+   "mb": 2.007
+  },
+  {
+   "size": 2104317,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\penutup lantai.jpg",
+   "mb": 2.007
+  },
+  {
+   "size": 2098873,
+   "path": "public\\assets\\volume-calculation\\references\\plester dinding acian.jpg",
+   "mb": 2.002
+  },
+  {
+   "size": 2098873,
+   "path": "dist\\assets\\volume-calculation\\references\\plester dinding acian.jpg",
+   "mb": 2.002
+  },
+  {
+   "size": 2098873,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\plester dinding acian.jpg",
+   "mb": 2.002
+  },
+  {
+   "size": 2083840,
+   "path": "node_modules\\@rollup\\rollup-win32-x64-gnu\\rollup.win32-x64-gnu.node",
+   "mb": 1.987
+  },
+  {
+   "size": 2075640,
+   "path": "public\\assets\\volume-calculation\\references\\BATA RINGAN.JPG",
+   "mb": 1.979
+  },
+  {
+   "size": 2075640,
+   "path": "dist\\assets\\volume-calculation\\references\\BATA RINGAN.JPG",
+   "mb": 1.979
+  },
+  {
+   "size": 2075640,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\BATA RINGAN.JPG",
+   "mb": 1.979
+  },
+  {
+   "size": 2062909,
+   "path": "public\\assets\\volume-calculation\\references\\blowplank.jpg",
+   "mb": 1.967
+  },
+  {
+   "size": 2062909,
+   "path": "dist\\assets\\volume-calculation\\references\\blowplank.jpg",
+   "mb": 1.967
+  },
+  {
+   "size": 2062909,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\blowplank.jpg",
+   "mb": 1.967
+  },
+  {
+   "size": 2062080,
+   "path": ".git\\objects\\23\\5dba9d73a883869718cbfa999a59b0e13fd28d",
+   "mb": 1.967
+  },
+  {
+   "size": 2052394,
+   "path": "node_modules\\@dimforge\\rapier3d-compat\\rapier.cjs.js",
+   "mb": 1.957
+  },
+  {
+   "size": 2050892,
+   "path": ".git\\objects\\07\\267a701864f8b6d2f228ffd84fe15900b216f7",
+   "mb": 1.956
+  },
+  {
+   "size": 2050249,
+   "path": "node_modules\\@dimforge\\rapier3d-compat\\rapier.es.js",
+   "mb": 1.955
+  },
+  {
+   "size": 2020517,
+   "path": "public\\assets\\volume-calculation\\references\\penutup dinding.jpg",
+   "mb": 1.927
+  },
+  {
+   "size": 2020517,
+   "path": "dist\\assets\\volume-calculation\\references\\penutup dinding.jpg",
+   "mb": 1.927
+  },
+  {
+   "size": 2020517,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\penutup dinding.jpg",
+   "mb": 1.927
+  },
+  {
+   "size": 2012934,
+   "path": "public\\assets\\volume-calculation\\references\\jaringan listrik.jpg",
+   "mb": 1.92
+  },
+  {
+   "size": 2012934,
+   "path": "dist\\assets\\volume-calculation\\references\\jaringan listrik.jpg",
+   "mb": 1.92
+  },
+  {
+   "size": 2012934,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\jaringan listrik.jpg",
+   "mb": 1.92
+  },
+  {
+   "size": 1994878,
+   "path": "public\\videos\\roles\\kontraktor.mp4",
+   "mb": 1.902
+  },
+  {
+   "size": 1994878,
+   "path": "dist\\videos\\roles\\kontraktor.mp4",
+   "mb": 1.902
+  },
+  {
+   "size": 1994878,
+   "path": "dist-qa\\videos\\roles\\kontraktor.mp4",
+   "mb": 1.902
+  },
+  {
+   "size": 1965556,
+   "path": "public\\assets\\volume-calculation\\references\\dinding baru.jpg",
+   "mb": 1.875
+  },
+  {
+   "size": 1965556,
+   "path": "dist\\assets\\volume-calculation\\references\\dinding baru.jpg",
+   "mb": 1.875
+  },
+  {
+   "size": 1965556,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\dinding baru.jpg",
+   "mb": 1.875
+  },
+  {
+   "size": 1952777,
+   "path": ".git\\objects\\23\\6e46a39ee86fc0d130fd193de6f91962e03ff1",
+   "mb": 1.862
+  },
+  {
+   "size": 1937992,
+   "path": "public\\assets\\volume-calculation\\references\\atap pelana baja ringan.jpg",
+   "mb": 1.848
+  },
+  {
+   "size": 1937992,
+   "path": "dist\\assets\\volume-calculation\\references\\atap pelana baja ringan.jpg",
+   "mb": 1.848
+  },
+  {
+   "size": 1937992,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\atap pelana baja ringan.jpg",
+   "mb": 1.848
+  },
+  {
+   "size": 1931084,
+   "path": "node_modules\\exceljs\\dist\\exceljs.js",
+   "mb": 1.842
+  },
+  {
+   "size": 1924141,
+   "path": ".git\\objects\\b9\\1d260a9707b62327b169348ce740fb7d584cc8",
+   "mb": 1.835
+  },
+  {
+   "size": 1908492,
+   "path": "public\\assets\\volume-calculation\\references\\pemasangan plafond.jpg",
+   "mb": 1.82
+  },
+  {
+   "size": 1908492,
+   "path": "dist\\assets\\volume-calculation\\references\\pemasangan plafond.jpg",
+   "mb": 1.82
+  },
+  {
+   "size": 1908492,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\pemasangan plafond.jpg",
+   "mb": 1.82
+  },
+  {
+   "size": 1874901,
+   "path": "node_modules\\typescript\\lib\\lib.dom.d.ts",
+   "mb": 1.788
+  },
+  {
+   "size": 1841896,
+   "path": "EZRAB-LOCAL-AI\\.python\\DLLs\\tcl86t.dll",
+   "mb": 1.757
+  },
+  {
+   "size": 1841526,
+   "path": "EZRAB-LOCAL-AI\\.python\\Lib\\ensurepip\\_bundled\\pip-25.0.1-py3-none-any.whl",
+   "mb": 1.756
+  },
+  {
+   "size": 1833123,
+   "path": "EZRAB-LOCAL-AI\\.python\\Doc\\html\\genindex-all.html",
+   "mb": 1.748
+  },
+  {
+   "size": 1832023,
+   "path": "public\\videos\\roles\\developer.mp4",
+   "mb": 1.747
+  },
+  {
+   "size": 1832023,
+   "path": "dist\\videos\\roles\\developer.mp4",
+   "mb": 1.747
+  },
+  {
+   "size": 1832023,
+   "path": "dist-qa\\videos\\roles\\developer.mp4",
+   "mb": 1.747
+  },
+  {
+   "size": 1814630,
+   "path": "node_modules\\.vite\\deps\\pdfjs-dist.js.map",
+   "mb": 1.731
+  },
+  {
+   "size": 1790373,
+   "path": "EZRAB-LOCAL-AI\\.python\\NEWS.txt",
+   "mb": 1.707
+  },
+  {
+   "size": 1786679,
+   "path": "src\\assets\\landing\\backgrounds\\land-page-awal.jpg",
+   "mb": 1.704
+  },
+  {
+   "size": 1786679,
+   "path": "public\\images\\landing\\backgrounds\\land-page-awal.jpg",
+   "mb": 1.704
+  },
+  {
+   "size": 1786679,
+   "path": "dist\\images\\landing\\backgrounds\\land-page-awal.jpg",
+   "mb": 1.704
+  },
+  {
+   "size": 1786679,
+   "path": "dist-qa\\images\\landing\\backgrounds\\land-page-awal.jpg",
+   "mb": 1.704
+  },
+  {
+   "size": 1785286,
+   "path": "public\\assets\\volume-calculation\\references\\BALOK.jpg",
+   "mb": 1.703
+  },
+  {
+   "size": 1785286,
+   "path": "dist\\assets\\volume-calculation\\references\\BALOK.jpg",
+   "mb": 1.703
+  },
+  {
+   "size": 1785286,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\BALOK.jpg",
+   "mb": 1.703
+  },
+  {
+   "size": 1773196,
+   "path": ".git\\objects\\81\\d4836fffafa8f5c0c427971e68853383e4c054",
+   "mb": 1.691
+  },
+  {
+   "size": 1759533,
+   "path": "public\\assets\\volume-calculation\\references\\kolom.jpg",
+   "mb": 1.678
+  },
+  {
+   "size": 1759533,
+   "path": "dist\\assets\\volume-calculation\\references\\kolom.jpg",
+   "mb": 1.678
+  },
+  {
+   "size": 1759533,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\kolom.jpg",
+   "mb": 1.678
+  },
+  {
+   "size": 1753420,
+   "path": "public\\assets\\volume-calculation\\references\\sloof.jpg",
+   "mb": 1.672
+  },
+  {
+   "size": 1753420,
+   "path": "dist\\assets\\volume-calculation\\references\\sloof.jpg",
+   "mb": 1.672
+  },
+  {
+   "size": 1753420,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\sloof.jpg",
+   "mb": 1.672
+  },
+  {
+   "size": 1751422,
+   "path": "public\\images\\landing\\backgrounds\\land-page-awal.png",
+   "mb": 1.67
+  },
+  {
+   "size": 1751422,
+   "path": "dist\\images\\landing\\backgrounds\\land-page-awal.png",
+   "mb": 1.67
+  },
+  {
+   "size": 1751422,
+   "path": "dist-qa\\images\\landing\\backgrounds\\land-page-awal.png",
+   "mb": 1.67
+  },
+  {
+   "size": 1743153,
+   "path": "node_modules\\exceljs\\dist\\exceljs.bare.js",
+   "mb": 1.662
+  },
+  {
+   "size": 1730262,
+   "path": "node_modules\\.vite\\deps\\docx.js.map",
+   "mb": 1.65
+  },
+  {
+   "size": 1727354,
+   "path": "src\\assets\\logo_oy.svg",
+   "mb": 1.647
+  },
+  {
+   "size": 1727354,
+   "path": "public\\logo_oy.svg",
+   "mb": 1.647
+  },
+  {
+   "size": 1727354,
+   "path": "dist\\logo_oy.svg",
+   "mb": 1.647
+  },
+  {
+   "size": 1727354,
+   "path": "dist-qa\\logo_oy.svg",
+   "mb": 1.647
+  },
+  {
+   "size": 1694820,
+   "path": "node_modules\\.vite\\deps\\chunk-HDEMVUAG.js",
+   "mb": 1.616
+  },
+  {
+   "size": 1691957,
+   "path": "backups\\legacy-ahsp-pre-2026-purge\\src__data__nationalCostDatabase__sdaAHSPDataset.ts",
+   "mb": 1.614
+  },
+  {
+   "size": 1676763,
+   "path": "node_modules\\.vite\\deps\\xlsx.js.map",
+   "mb": 1.599
+  },
+  {
+   "size": 1675379,
+   "path": "public\\assets\\volume-calculation\\references\\kusen pintu jendela.jpg",
+   "mb": 1.598
+  },
+  {
+   "size": 1675379,
+   "path": "dist\\assets\\volume-calculation\\references\\kusen pintu jendela.jpg",
+   "mb": 1.598
+  },
+  {
+   "size": 1675379,
+   "path": "dist-qa\\assets\\volume-calculation\\references\\kusen pintu jendela.jpg",
+   "mb": 1.598
+  },
+  {
+   "size": 1674864,
+   "path": "src\\assets\\ezrab-3d-scene.png",
+   "mb": 1.597
+  },
+  {
+   "size": 1591585,
+   "path": "public\\videos\\roles\\estimator.mp4",
+   "mb": 1.518
+  },
+  {
+   "size": 1591585,
+   "path": "dist\\videos\\roles\\estimator.mp4",
+   "mb": 1.518
+  },
+  {
+   "size": 1591585,
+   "path": "dist-qa\\videos\\roles\\estimator.mp4",
+   "mb": 1.518
+  },
+  {
+   "size": 1590776,
+   "path": "EZRAB-LOCAL-AI\\.python\\DLLs\\tk86t.dll",
+   "mb": 1.517
+  },
+  {
+   "size": 1585778,
+   "path": "src\\assets\\hero-bg-1.png",
+   "mb": 1.512
+  },
+  {
+   "size": 1585778,
+   "path": "src\\assets\\1.png",
+   "mb": 1.512
+  },
+  {
+   "size": 1585778,
+   "path": "src\\assets\\1.jpg",
+   "mb": 1.512
+  },
+  {
+   "size": 1583608,
+   "path": "EZRAB-LOCAL-AI\\.python\\DLLs\\sqlite3.dll",
+   "mb": 1.51
+  },
+  {
+   "size": 1559128,
+   "path": "node_modules\\.vite\\deps\\react-dom_client.js.map",
+   "mb": 1.487
+  },
+  {
+   "size": 1504267,
+   "path": "node_modules\\vite\\dist\\node\\chunks\\dep-Dm0c1Wj2.js",
+   "mb": 1.435
+  },
+  {
+   "size": 1501664,
+   "path": "sources\\ahsp2026\\Lampiran-III-SE-DJBK-No-47-Tahun-2026-Biaya-Penerapan-SMKK.pdf",
+   "mb": 1.432
+  },
+  {
+   "size": 1491284,
+   "path": "src\\assets\\hero-bg-custom.png",
+   "mb": 1.422
+  },
+  {
+   "size": 1461876,
+   "path": "node_modules\\.vite\\deps\\exceljs.js",
+   "mb": 1.394
+  },
+  {
+   "size": 1458113,
+   "path": "node_modules\\three\\build\\three.core.js",
+   "mb": 1.391
+  },
+  {
+   "size": 1456493,
+   "path": "node_modules\\.vite\\deps\\@supabase_supabase-js.js.map",
+   "mb": 1.389
+  },
+  {
+   "size": 1440651,
+   "path": "node_modules\\@dimforge\\rapier3d-compat\\rapier_wasm3d_bg.wasm",
+   "mb": 1.374
+  },
+  {
+   "size": 1436340,
+   "path": "node_modules\\@babel\\parser\\lib\\index.js.map",
+   "mb": 1.37
+  },
+  {
+   "size": 1373399,
+   "path": "src\\data\\nationalCostDatabase\\ahsp2026CanonicalResources.generated.ts",
+   "mb": 1.31
+  },
+  {
+   "size": 1349532,
+   "path": "public\\models\\ezrab-mascot.glb",
+   "mb": 1.287
+  },
+  {
+   "size": 1349532,
+   "path": "public\\assets\\mascot\\robot_head_with_hard_hat.glb",
+   "mb": 1.287
+  },
+  {
+   "size": 1349532,
+   "path": "dist\\models\\ezrab-mascot.glb",
+   "mb": 1.287
+  },
+  {
+   "size": 1349532,
+   "path": "dist\\assets\\mascot\\robot_head_with_hard_hat.glb",
+   "mb": 1.287
+  },
+  {
+   "size": 1349532,
+   "path": "dist-qa\\models\\ezrab-mascot.glb",
+   "mb": 1.287
+  },
+  {
+   "size": 1349532,
+   "path": "dist-qa\\assets\\mascot\\robot_head_with_hard_hat.glb",
+   "mb": 1.287
+  },
+  {
+   "size": 1317034,
+   "path": "node_modules\\pdfjs-dist\\legacy\\build\\pdf.worker.min.mjs",
+   "mb": 1.256
+  },
+  {
+   "size": 1305832,
+   "path": "sources\\ahsp2026\\Lampiran-VII-SE-DJBK-No-47-Tahun-2026-Tata-Cara-Pengajuan-Usulan-AHSP.pdf",
+   "mb": 1.245
+  },
+  {
+   "size": 1291181,
+   "path": "all_19_calculators_raw.json",
+   "mb": 1.231
+  },
+  {
+   "size": 1265413,
+   "path": "node_modules\\pdfjs-dist\\build\\pdf.worker.min.mjs",
+   "mb": 1.207
+  },
+  {
+   "size": 1204344,
+   "path": "node_modules\\jspdf\\dist\\jspdf.umd.js",
+   "mb": 1.149
+  },
+  {
+   "size": 1191936,
+   "path": ".git\\objects\\eb\\tmp_obj_M8Uby7",
+   "mb": 1.137
+  },
+  {
+   "size": 1175410,
+   "path": "src\\data\\priceDatabase2026\\resourceIndex.generated.ts",
+   "mb": 1.121
+  },
+  {
+   "size": 1174242,
+   "path": "src\\data\\nationalCostDatabase\\officialCiptaKaryaDhsp2026.ts",
+   "mb": 1.12
+  },
+  {
+   "size": 1143967,
+   "path": "node_modules\\.vite\\deps\\framer-motion.js.map",
+   "mb": 1.091
+  },
+  {
+   "size": 1140971,
+   "path": "node_modules\\.vite\\deps\\lucide-react.js",
+   "mb": 1.088
+  },
+  {
+   "size": 1140592,
+   "path": "EZRAB-LOCAL-AI\\.python\\DLLs\\unicodedata.pyd",
+   "mb": 1.088
+  },
+  {
+   "size": 1123599,
+   "path": "node_modules\\docx\\dist\\index.umd.cjs",
+   "mb": 1.072
+  },
+  {
+   "size": 1123332,
+   "path": "node_modules\\docx\\dist\\index.iife.js",
+   "mb": 1.071
+  },
+  {
+   "size": 1119580,
+   "path": "src\\assets\\frame_test.png",
+   "mb": 1.068
+  },
+  {
+   "size": 1119580,
+   "path": "src\\assets\\check_0908fg.png",
+   "mb": 1.068
+  },
+  {
+   "size": 1116105,
+   "path": "src\\assets\\test_transparent_frame.png",
+   "mb": 1.064
+  },
+  {
+   "size": 1104594,
+   "path": "EZRAB-LOCAL-AI\\knowledge\\pdf_index.json",
+   "mb": 1.053
+  },
+  {
+   "size": 1103416,
+   "path": "src\\assets\\test_chroma.webm",
+   "mb": 1.052
+  },
+  {
+   "size": 1090108,
+   "path": "node_modules\\docx\\dist\\index.cjs",
+   "mb": 1.04
+  },
+  {
+   "size": 1082363,
+   "path": "node_modules\\docx\\dist\\index.mjs",
+   "mb": 1.032
+  },
+  {
+   "size": 1082082,
+   "path": "node_modules\\react-dom\\cjs\\react-dom-profiling.development.js",
+   "mb": 1.032
+  },
+  {
+   "size": 1077224,
+   "path": "backups\\excel-ahsp-bina-marga-2026\\AHSP 2026 Bina Marga.xlsx",
+   "mb": 1.027
+  },
+  {
+   "size": 1072549,
+   "path": "docs\\_audit\\lampiran2-reconciliation.json",
+   "mb": 1.023
+  },
+  {
+   "size": 1071123,
+   "path": "qa-qto-current.png",
+   "mb": 1.022
+  },
+  {
+   "size": 1065698,
+   "path": "node_modules\\react-dom\\cjs\\react-dom-client.development.js",
+   "mb": 1.016
+  },
+  {
+   "size": 1065647,
+   "path": "data\\ahsp2026\\normalized\\ahsp_2026_resources.json",
+   "mb": 1.016
+  },
+  {
+   "size": 1047456,
+   "path": "node_modules\\pdfjs-dist\\legacy\\build\\pdf.mjs",
+   "mb": 0.999
+  },
+  {
+   "size": 1043742,
+   "path": "src\\assets\\check_bg.png",
+   "mb": 0.995
+  },
+  {
+   "size": 1005505,
+   "path": "node_modules\\.vite\\deps\\react-dom_client.js",
+   "mb": 0.959
+  },
+  {
+   "size": 1000686,
+   "path": "public\\images\\about\\about_magic_ai_pipeline.png",
+   "mb": 0.954
+  },
+  {
+   "size": 1000686,
+   "path": "public\\images\\about\\ChatGPT Image Sep 9, 2026, 01_35_58 AM.png",
+   "mb": 0.954
+  },
+  {
+   "size": 1000686,
+   "path": "dist\\images\\about\\about_magic_ai_pipeline.png",
+   "mb": 0.954
+  },
+  {
+   "size": 1000686,
+   "path": "dist\\images\\about\\ChatGPT Image Sep 9, 2026, 01_35_58 AM.png",
+   "mb": 0.954
+  },
+  {
+   "size": 1000686,
+   "path": "dist-qa\\images\\about\\about_magic_ai_pipeline.png",
+   "mb": 0.954
+  },
+  {
+   "size": 1000686,
+   "path": "dist-qa\\images\\about\\ChatGPT Image Sep 9, 2026, 01_35_58 AM.png",
+   "mb": 0.954
+  },
+  {
+   "size": 1000374,
+   "path": "node_modules\\lucide-react\\dist\\cjs\\lucide-react.js",
+   "mb": 0.954
+  },
+  {
+   "size": 996700,
+   "path": "node_modules\\.vite\\deps\\pdfjs-dist.js",
+   "mb": 0.951
+  },
+  {
+   "size": 995631,
+   "path": "node_modules\\pdfjs-dist\\legacy\\web\\pdf_viewer.mjs.map",
+   "mb": 0.95
+  }
+ ]
+}

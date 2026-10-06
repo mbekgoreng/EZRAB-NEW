@@ -1,0 +1,30 @@
+{
+  "timestamp": "2026-10-05T11:15:33.406Z",
+  "totalAhsp": 5768,
+  "domainCoverage": {
+    "SUMBER_DAYA_AIR": {
+      "total": 1556,
+      "priced": 1156,
+      "coveragePercent": 74.29
+    },
+    "BINA_MARGA": {
+      "total": 1163,
+      "priced": 1115,
+      "coveragePercent": 95.87
+    },
+    "CIPTA_KARYA": {
+      "total": 2859,
+      "priced": 2835,
+      "coveragePercent": 99.16
+    },
+    "SMKK": {
+      "total": 190,
+      "priced": 190,
+      "coveragePercent": 100
+    }
+  },
+  "resourceMasterCoverage": {
+    "totalCanonicalResources": 309,
+    "canonicalMaterials": 24
+  }
+}

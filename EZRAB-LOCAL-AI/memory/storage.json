@@ -1,0 +1,13 @@
+[
+  {
+    "id": "d9454ca4-1f19-4c3b-8698-212849c4344d",
+    "type": "preference",
+    "scope": "global",
+    "project_id": null,
+    "key": "rab_style",
+    "value": "RAB EZRAB harus profesional, spreadsheet-like, semua rumus saling terhubung, dan mendukung export Excel serta PDF.",
+    "importance": 0.9,
+    "created_at": "2026-09-12T08:20:14.807666+00:00",
+    "updated_at": "2026-09-12T08:20:14.807683+00:00"
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "status": "BLOCKED",
+  "reason": "xlsx structural parser exposes formulas and cached values but does not evaluate workbook formulas; no Excel/LibreOffice-compatible engine is available in PATH.",
+  "sourceWorkbook": "EZRAB_VOLUME_CALCULATOR_MASTER.xlsx",
+  "sourceSha256": "BC350C1E9D7CF298FCD4C865A7A35F359C0BA71444647A593F98E37B239B7C28",
+  "vectors": [],
+  "requiredEvidence": ["evaluated Excel result", "input cell snapshot", "output cell snapshot", "reproducible calculation engine"]
+}

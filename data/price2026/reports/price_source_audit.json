@@ -1,0 +1,219 @@
+{
+  "generatedAt": "2026-09-28T13:00:24.667Z",
+  "totalRegisteredSources": 7,
+  "activeSources": 6,
+  "excludedSources": 1,
+  "activeRowCount": 0,
+  "excludedRowCount": 6913,
+  "sources": [
+    {
+      "key": "HSD_2026",
+      "label": "Katalog Acuan HSD 2026",
+      "origin": "src/data/nationalCostDatabase/officialHSD2026.ts",
+      "tier": "OFFICIAL_GOVERNMENT",
+      "priority": 1,
+      "active": true,
+      "verificationStatus": "VERIFIED",
+      "sourceDocument": "SE 12/SE/Db/2026",
+      "locationLevel": "NATIONAL",
+      "rows": 231,
+      "rowsWithPositivePrice": 231,
+      "rowsNonPositive": 0,
+      "unitHistogram": {
+        "jam": 47,
+        "OJ": 40,
+        "bh": 28,
+        "kg": 26,
+        "m3": 26,
+        "m": 23,
+        "m2": 14,
+        "liter": 11,
+        "unit": 6,
+        "set": 4,
+        "ton": 3,
+        "batang": 2
+      },
+      "typeHistogram": {
+        "material": 144,
+        "labor": 40,
+        "equipment": 47
+      },
+      "notes": "Official 2026 basic-price catalogue carried in the repository."
+    },
+    {
+      "key": "LABOR_2026",
+      "label": "Master Upah Tenaga Kerja 2026",
+      "origin": "src/domain/labor/laborDatabaseService.ts",
+      "tier": "VERIFIED_REGIONAL",
+      "priority": 3,
+      "active": true,
+      "verificationStatus": "VERIFIED",
+      "sourceDocument": "SE DJBK No. 12/SE/Db/2026 & Permen PUPR 1/2022",
+      "locationLevel": "PROVINCE",
+      "rows": 170,
+      "rowsWithPositivePrice": 170,
+      "rowsNonPositive": 0,
+      "unitHistogram": {
+        "OH": 85,
+        "OJ": 85
+      },
+      "typeHistogram": {
+        "labor": 170
+      },
+      "notes": "Per-role labour rates. Emits BOTH OH (orang-hari) and OJ (orang-jam) rows so the canonical unit (OH or jam) can be matched without an implicit conversion."
+    },
+    {
+      "key": "EQUIPMENT_2026",
+      "label": "Master Sewa Alat Berat 2026",
+      "origin": "src/domain/equipment/equipmentDatabaseService.ts",
+      "tier": "VERIFIED_REGIONAL",
+      "priority": 3,
+      "active": true,
+      "verificationStatus": "VERIFIED",
+      "sourceDocument": "SE DJBK No. 12/SE/Db/2026",
+      "locationLevel": "NATIONAL",
+      "rows": 74,
+      "rowsWithPositivePrice": 74,
+      "rowsNonPositive": 0,
+      "unitHistogram": {
+        "jam": 37,
+        "hari": 37
+      },
+      "typeHistogram": {
+        "equipment": 74
+      },
+      "notes": "Emits both `jam` (hourly) and `hari` (daily) rows."
+    },
+    {
+      "key": "MATERIAL_MASTER_2026",
+      "label": "Master Material & Harga 2026",
+      "origin": "src/domain/material/materialDatabaseService.ts",
+      "tier": "PROJECT_INTERNAL_MASTER",
+      "priority": 5,
+      "active": true,
+      "verificationStatus": "SOURCE_REPORTED",
+      "sourceDocument": null,
+      "locationLevel": "CITY",
+      "rows": 6197,
+      "rowsWithPositivePrice": 6197,
+      "rowsNonPositive": 0,
+      "unitHistogram": {
+        "m2": 4731,
+        "kg": 395,
+        "unit": 302,
+        "pohon": 200,
+        "bh": 144,
+        "batang": 97,
+        "m3": 91,
+        "sak": 83,
+        "m¹": 51,
+        "set": 35,
+        "m": 32,
+        "tube": 18
+      },
+      "typeHistogram": {
+        "material": 6197
+      },
+      "notes": "Multi-sector, multi-region material catalogue carried in the repository. Reports province + city, so it is the only source that can serve REGENCY/CITY queries. Not externally audited → SOURCE_REPORTED, never VERIFIED."
+    },
+    {
+      "key": "MATERIAL_LIBRARY",
+      "label": "EZRAB Material Library (brand)",
+      "origin": "src/services/materialLibraryService.ts",
+      "tier": "COMMERCIAL_REFERENCE",
+      "priority": 6,
+      "active": true,
+      "verificationStatus": "SOURCE_REPORTED",
+      "sourceDocument": null,
+      "locationLevel": "NATIONAL",
+      "rows": 28,
+      "rowsWithPositivePrice": 28,
+      "rowsNonPositive": 0,
+      "unitHistogram": {
+        "m2": 9,
+        "unit": 3,
+        "liter": 3,
+        "batang": 2,
+        "m3": 2,
+        "kg": 2,
+        "sak": 2,
+        "roll": 2,
+        "set": 1,
+        "lembar": 1,
+        "m": 1
+      },
+      "typeHistogram": {
+        "material": 28
+      },
+      "notes": "Branded commercial reference prices."
+    },
+    {
+      "key": "COMMERCIAL_2026",
+      "label": "EZRAB Master Commercial Price Items",
+      "origin": "src/data/indonesianPrices.ts",
+      "tier": "COMMERCIAL_REFERENCE",
+      "priority": 6,
+      "active": true,
+      "verificationStatus": "SOURCE_REPORTED",
+      "sourceDocument": null,
+      "locationLevel": "NATIONAL",
+      "rows": 155,
+      "rowsWithPositivePrice": 155,
+      "rowsNonPositive": 0,
+      "unitHistogram": {
+        "OH": 36,
+        "m2": 29,
+        "sewa-hari": 16,
+        "kg": 11,
+        "unit": 10,
+        "lembar": 9,
+        "jam": 9,
+        "set": 9,
+        "bh": 6,
+        "sak": 6,
+        "m3": 4,
+        "batang": 4
+      },
+      "typeHistogram": {
+        "material": 82,
+        "labor": 36,
+        "equipment": 37
+      },
+      "notes": "Branded commercial reference prices (keramik, cat, sanitary, …)."
+    },
+    {
+      "key": "LEGACY_PUPR_2022",
+      "label": "Permen PUPR No. 1/PRT/M/2022 component prices",
+      "origin": "src/data/indonesianAHSP.ts (MASTER_AHSP_DATABASE)",
+      "tier": "LEGACY_SUPERSEDED",
+      "priority": 99,
+      "active": false,
+      "verificationStatus": "NEEDS_REVIEW",
+      "sourceDocument": "Permen PUPR No. 1/PRT/M/2022",
+      "locationLevel": "NATIONAL",
+      "rows": 58,
+      "rowsWithPositivePrice": 58,
+      "rowsNonPositive": 0,
+      "unitHistogram": {
+        "OH": 9,
+        "m¹": 8,
+        "m2": 7,
+        "m3": 6,
+        "ls": 5,
+        "kg": 5,
+        "set": 4,
+        "unit": 4,
+        "hari": 3,
+        "sak": 2,
+        "lembar": 2,
+        "batang": 1
+      },
+      "typeHistogram": {
+        "material": 45,
+        "equipment": 4,
+        "labor": 9
+      },
+      "notes": "EXCLUDED. This is the superseded 2022 baseline that was purged from AHSP. It is also the source that SHADOWS the correct 2026 labour rates inside PriceRepository (first-wins ingestion inserts L.01 with unit `oj` before the 2026 labour master is read). Retained for audit only."
+    }
+  ]
+}

@@ -1,0 +1,326 @@
+{
+ "total_bytes": 127853558,
+ "count": 80,
+ "orphans": [
+  {
+   "path": "src/assets/0908.mp4",
+   "size": 18224634
+  },
+  {
+   "path": "src/assets/landpage-vid1-blackbg.mp4",
+   "size": 10092801
+  },
+  {
+   "path": "src/assets/animasi-building-hero.mp4",
+   "size": 8965236
+  },
+  {
+   "path": "src/assets/downloaded_hero.mp4",
+   "size": 7094714
+  },
+  {
+   "path": "public/videos/ezrab-magic-ai-scroll.mp4",
+   "size": 7048258
+  },
+  {
+   "path": "src/assets/landpage-vid1-transparent.webm",
+   "size": 7034915
+  },
+  {
+   "path": "src/assets/ezrab-hero.mp4",
+   "size": 6476269
+  },
+  {
+   "path": "src/assets/landpage vid 1.mp4",
+   "size": 6084577
+  },
+  {
+   "path": "public/videos/ezrab-hero.mp4",
+   "size": 6025176
+  },
+  {
+   "path": "src/assets/ezrab-hero.webm",
+   "size": 4188891
+  },
+  {
+   "path": "src/assets/asada-hero-bg.png",
+   "size": 3869498
+  },
+  {
+   "path": "public/videos/roles/konsultan.mp4",
+   "size": 2109252
+  },
+  {
+   "path": "public/videos/roles/kontraktor.mp4",
+   "size": 1994878
+  },
+  {
+   "path": "public/videos/roles/developer.mp4",
+   "size": 1832023
+  },
+  {
+   "path": "src/assets/landing/backgrounds/land-page-awal.jpg",
+   "size": 1786679
+  },
+  {
+   "path": "public/images/landing/backgrounds/land-page-awal.jpg",
+   "size": 1786679
+  },
+  {
+   "path": "src/assets/logo_oy.svg",
+   "size": 1727354
+  },
+  {
+   "path": "public/logo_oy.svg",
+   "size": 1727354
+  },
+  {
+   "path": "public/videos/roles/estimator.mp4",
+   "size": 1591585
+  },
+  {
+   "path": "src/assets/1.jpg",
+   "size": 1585778
+  },
+  {
+   "path": "src/assets/hero-bg-1.png",
+   "size": 1585778
+  },
+  {
+   "path": "src/assets/check_0908fg.png",
+   "size": 1119580
+  },
+  {
+   "path": "src/assets/frame_test.png",
+   "size": 1119580
+  },
+  {
+   "path": "src/assets/test_transparent_frame.png",
+   "size": 1116105
+  },
+  {
+   "path": "src/assets/test_chroma.webm",
+   "size": 1103416
+  },
+  {
+   "path": "src/assets/check_bg.png",
+   "size": 1043742
+  },
+  {
+   "path": "public/images/about/about_magic_ai_pipeline.png",
+   "size": 1000686
+  },
+  {
+   "path": "public/images/about/ChatGPT Image Sep 9, 2026, 01_35_58 AM.png",
+   "size": 1000686
+  },
+  {
+   "path": "src/assets/test_f1.png",
+   "size": 977695
+  },
+  {
+   "path": "src/assets/check_0908.png",
+   "size": 964519
+  },
+  {
+   "path": "src/assets/ezrab-hero.png",
+   "size": 896514
+  },
+  {
+   "path": "src/assets/cta-skyline-cranes.jpg",
+   "size": 861152
+  },
+  {
+   "path": "src/assets/landing/backgrounds/cta-skyline-cranes.jpg",
+   "size": 861152
+  },
+  {
+   "path": "src/assets/test_f3.png",
+   "size": 803198
+  },
+  {
+   "path": "public/images/about/ChatGPT Image Sep 9, 2026, 01_37_09 AM.png",
+   "size": 683641
+  },
+  {
+   "path": "src/assets/magic-ai-blueprint-bg.png",
+   "size": 661917
+  },
+  {
+   "path": "src/assets/landing/backgrounds/magic-ai-blueprint-bg.png",
+   "size": 661917
+  },
+  {
+   "path": "src/assets/hero-hologram-platform-bg.png",
+   "size": 649647
+  },
+  {
+   "path": "src/assets/landing/backgrounds/hero-hologram-platform-bg.png",
+   "size": 649647
+  },
+  {
+   "path": "src/assets/magic-ai-orb.jpg",
+   "size": 640215
+  },
+  {
+   "path": "src/assets/workflow-blueprint-bg.png",
+   "size": 535615
+  },
+  {
+   "path": "src/assets/landing/backgrounds/workflow-blueprint-bg.png",
+   "size": 535615
+  },
+  {
+   "path": "src/assets/ezrab-robot-waving.jpg",
+   "size": 534543
+  },
+  {
+   "path": "public/images/about/photoreal_cinematic_cityscape.webp",
+   "size": 534200
+  },
+  {
+   "path": "src/assets/ezrab-robot-idea.jpg",
+   "size": 522603
+  },
+  {
+   "path": "public/favicon.ico",
+   "size": 371557
+  },
+  {
+   "path": "public/favicon.png",
+   "size": 371557
+  },
+  {
+   "path": "public/assets/mascot/master_eye_texture.png",
+   "size": 351416
+  },
+  {
+   "path": "src/assets/logo_magic_ai.svg",
+   "size": 289746
+  },
+  {
+   "path": "public/logo_magic_ai.svg",
+   "size": 289746
+  },
+  {
+   "path": "public/ezrab-bot-mascot.png",
+   "size": 283411
+  },
+  {
+   "path": "public/assets/mascot/white_crop.png",
+   "size": 263910
+  },
+  {
+   "path": "public/assets/mascot/albedo_thumb.png",
+   "size": 260333
+  },
+  {
+   "path": "src/assets/animasi-building-poster.jpg",
+   "size": 246816
+  },
+  {
+   "path": "src/assets/frame6.jpg",
+   "size": 246783
+  },
+  {
+   "path": "public/assets/mascot/extracted_albedo.jpg",
+   "size": 244118
+  },
+  {
+   "path": "src/assets/logo_magic_ai.png",
+   "size": 242509
+  },
+  {
+   "path": "public/logo_magic_ai.png",
+   "size": 242509
+  },
+  {
+   "path": "src/assets/frame3.jpg",
+   "size": 231469
+  },
+  {
+   "path": "src/assets/landpage-vid1-poster.jpg",
+   "size": 218721
+  },
+  {
+   "path": "src/assets/test_vp9_alpha.webm",
+   "size": 218420
+  },
+  {
+   "path": "src/assets/0908-poster.jpg",
+   "size": 212140
+  },
+  {
+   "path": "public/images/about/minimalist_ui_scene.jpg",
+   "size": 153415
+  },
+  {
+   "path": "public/ezrab-bot-mascot.svg",
+   "size": 132841
+  },
+  {
+   "path": "public/images/ezrab-logo-original.png",
+   "size": 127225
+  },
+  {
+   "path": "public/assets/mascot/adad.jpg",
+   "size": 108813
+  },
+  {
+   "path": "public/assets/mascot/maskot-lucu.svg",
+   "size": 102892
+  },
+  {
+   "path": "public/assets/mascot/ref_dashboard_mascot.png",
+   "size": 68975
+  },
+  {
+   "path": "public/assets/mascot/vector_eye_right.png",
+   "size": 44830
+  },
+  {
+   "path": "public/assets/mascot/vector_eye_left.png",
+   "size": 44745
+  },
+  {
+   "path": "public/videos/roles/kontraktor-poster.jpg",
+   "size": 43043
+  },
+  {
+   "path": "public/videos/roles/konsultan-poster.jpg",
+   "size": 42116
+  },
+  {
+   "path": "public/videos/roles/developer-poster.jpg",
+   "size": 34182
+  },
+  {
+   "path": "public/videos/roles/estimator-poster.jpg",
+   "size": 33276
+  },
+  {
+   "path": "src/assets/ezrab-building.svg",
+   "size": 9256
+  },
+  {
+   "path": "src/assets/ezrab-blueprint.svg",
+   "size": 2703
+  },
+  {
+   "path": "src/assets/logo.css",
+   "size": 2690
+  },
+  {
+   "path": "src/assets/ezrab-mascot.svg",
+   "size": 2632
+  },
+  {
+   "path": "public/ezrab-mascot.svg",
+   "size": 2632
+  },
+  {
+   "path": "src/assets/ezrab-excavator.svg",
+   "size": 2217
+  }
+ ]
+}

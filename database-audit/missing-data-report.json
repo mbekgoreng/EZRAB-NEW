@@ -1,0 +1,306 @@
+{
+  "timestamp": "2026-10-05T11:15:33.401Z",
+  "unpricedAhspCount": 472,
+  "unpricedAhspExamples": [
+    {
+      "code": "A.1.02.4a.1.b",
+      "name": "1 m3 Pasangan Batu Kosong yang teratur dan padat-sedikit rongga, beda tinggi > 1 s.d 2 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4a.1.c",
+      "name": "1 m3 Pasangan Batu Kosong yang teratur dan padat-sedikit rongga, beda tinggi > 2 s.d 3 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4a.1.e",
+      "name": "1 m3 Pasangan Batu Kosong yang teratur dan padat-sedikit rongga, beda tinggi > 4 s.d 5 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4a.1.f",
+      "name": "1 m3 Pasangan Batu Kosong yang teratur dan padat-sedikit rongga, beda tinggi > 5 s.d 6 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4a.1.g",
+      "name": "1 m3 Pasangan Batu Kosong yang teratur dan padat-sedikit rongga, beda tinggi > 6 s.d 7 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4a.1.h",
+      "name": "1 m3 Pasangan Batu Kosong yang teratur dan padat-sedikit rongga, beda tinggi > 7 s.d 8 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4a.1.i",
+      "name": "1 m3 Pasangan Batu Kosong yang teratur dan padat-sedikit rongga, beda tinggi > 8 s.d 9 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4a.1.j",
+      "name": "1 m3 Pasangan Batu Kosong yang teratur dan padat-sedikit rongga, beda tinggi > 9 s.d 10 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4a.2.b",
+      "name": "1 m3 Pasangan batu kosong tidak teratur, kurang padat-banyak rongga, beda tinggi > 1 s.d 2 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4a.2.c",
+      "name": "1 m3 Pasangan batu kosong tidak teratur, kurang padat-banyak rongga, beda tinggi > 2 s.d 3 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4a.2.e",
+      "name": "1 m3 Pasangan batu kosong tidak teratur, kurang padat-banyak rongga, beda tinggi > 4 s.d 5 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4a.2.f",
+      "name": "1 m3 Pasangan batu kosong tidak teratur, kurang padat-banyak rongga, beda tinggi > 5 s.d 6 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4a.2.g",
+      "name": "1 m3 Pasangan batu kosong tidak teratur, kurang padat-banyak rongga, beda tinggi > 6 s.d 7 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4a.2.h",
+      "name": "1 m3 Pasangan batu kosong tidak teratur, kurang padat-banyak rongga, beda tinggi > 7 s.d 8 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4a.2.i",
+      "name": "1 m3 Pasangan batu kosong tidak teratur, kurang padat-banyak rongga, beda tinggi > 8 s.d 9 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4a.2.j",
+      "name": "1 m3 Pasangan batu kosong tidak teratur, kurang padat-banyak rongga, beda tinggi > 9 s.d 10 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.a.2",
+      "name": "1 m3 Bronjong kawat digalvanis, lubang heksagonal 80 x 100mm; Beda tinggi > 1 s.d. 2 m' Normatif / No Kode Item Pekerjaan Satuan Informatif",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.a.3",
+      "name": "1 m3 Bronjong kawat digalvanis, lubang heksagonal 80 x 100mm; Beda tinggi > 2 s.d. 3 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.a.5",
+      "name": "1 m3 Bronjong kawat digalvanis, lubang heksagonal 80 x 100mm; Beda tinggi > 4 s.d. 5 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.a.6",
+      "name": "1 m3 Bronjong kawat digalvanis, lubang heksagonal 80 x 100mm; Beda tinggi > 5 s.d. 6 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.a.7",
+      "name": "1 m3 Bronjong kawat digalvanis, lubang heksagonal 80 x 100mm; Beda tinggi > 6 s.d. 7 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.a.8",
+      "name": "1 m3 Bronjong kawat digalvanis, lubang heksagonal 80 x 100mm; Beda tinggi > 7 s.d. 8 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.a.9",
+      "name": "1 m3 Bronjong kawat digalvanis, lubang heksagonal 80 x 100mm; Beda tinggi > 8 s.d. 9 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.a.10",
+      "name": "1 m3 Bronjong kawat digalvanis, lubang heksagonal 80 x 100mm; Beda tinggi > 9 s.d. 10 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.b.2",
+      "name": "1 m3 Bronjong kawat galvanis, lubang heksagonal 100 x 120mm; Beda tinggi > 1 s.d. 2 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.b.3",
+      "name": "1 m3 Bronjong kawat galvanis, lubang heksagonal 100 x 120mm; Beda tinggi > 2 s.d. 3 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.b.5",
+      "name": "1 m3 Bronjong kawat galvanis, lubang heksagonal 100 x 120mm; Beda tinggi > 4 s.d. 5 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.b.6",
+      "name": "1 m3 Bronjong kawat galvanis, lubang heksagonal 100 x 120mm; Beda tinggi > 5 s.d. 6 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.b.7",
+      "name": "1 m3 Bronjong kawat galvanis, lubang heksagonal 100 x 120mm; Beda tinggi > 6 s.d. 7 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.b.8",
+      "name": "1 m3 Bronjong kawat galvanis, lubang heksagonal 100 x 120mm; Beda tinggi > 7 s.d. 8 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.b.9",
+      "name": "1 m3 Bronjong kawat galvanis, lubang heksagonal 100 x 120mm; Beda tinggi > 8 s.d. 9 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.b.10",
+      "name": "1 m3 Bronjong kawat galvanis, lubang heksagonal 100 x 120mm; Beda tinggi > 9 s.d. 10 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.c.2",
+      "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.c.3",
+      "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.c.5",
+      "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.c.6",
+      "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.c.7",
+      "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.c.8",
+      "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.c.9",
+      "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.c.10",
+      "name": "1 m3 Bronjong Wiremesh M6 lubang 100 x 100 mm; beda tinggi",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.d.2",
+      "name": "1 m3 Bronjong Tambang Nylon/Rami untuk lubang Hexagonal 80 x 100 mm; beda tinggi > 1 s.d. 2 m' Normatif / No Kode Item Pekerjaan Satuan Informatif",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.d.3",
+      "name": "1 m3 Bronjong Tambang Nylon/Rami untuk lubang Hexagonal 80 x 100 mm; beda tinggi > 2 s.d. 3 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.d.5",
+      "name": "1 m3 Bronjong Tambang Nylon/Rami untuk lubang Hexagonal 80 x 100 mm; beda tinggi > 4 s.d. 5 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.d.6",
+      "name": "1 m3 Bronjong Tambang Nylon/Rami untuk lubang Hexagonal 80 x 100 mm; beda tinggi > 5 s.d. 6 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.d.7",
+      "name": "1 m3 Bronjong Tambang Nylon/Rami untuk lubang Hexagonal 80 x 100 mm; beda tinggi > 6 s.d. 7 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.d.8",
+      "name": "1 m3 Bronjong Tambang Nylon/Rami untuk lubang Hexagonal 80 x 100 mm; beda tinggi > 7 s.d. 8 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.d.9",
+      "name": "1 m3 Bronjong Tambang Nylon/Rami untuk lubang Hexagonal 80 x 100 mm; beda tinggi > 8 s.d. 9 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.d.10",
+      "name": "1 m3 Bronjong Tambang Nylon/Rami untuk lubang Hexagonal 80 x 100 mm; beda tinggi > 9 s.d. 10 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.e.2",
+      "name": "1 m3 Bronjong Tambang Nylon/Rami untuk lubang Hexagonal 100 x 120 mm; beda tinggi > 1 s.d. 2 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    },
+    {
+      "code": "A.1.02.4b.1.e.3",
+      "name": "1 m3 Bronjong Tambang Nylon/Rami untuk lubang Hexagonal 100 X 120 mm; beda tinggi > 2 s.d 3 m'",
+      "unit": "m3",
+      "domain": "SUMBER_DAYA_AIR"
+    }
+  ]
+}

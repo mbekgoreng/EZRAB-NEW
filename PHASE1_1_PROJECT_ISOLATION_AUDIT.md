@@ -1,0 +1,3 @@
+# Phase 1.1 Project Isolation Audit
+
+`ProjectContext` now initializes without an active project when persistence has no validated selection, validates selected IDs against available projects, and retains fail-closed behavior for missing context. LocalStorage remains persistence only; it is not an authoritative ownership source. Direct RAB auto-sync now requires an explicit unit price and no longer falls back to registry pricing. Status: PARTIALLY VERIFIED; backend ownership tests and stale/switch tests remain required.

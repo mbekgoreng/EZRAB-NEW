@@ -1,0 +1,223 @@
+{
+  "timestamp": "2026-10-05T12:06:01.678Z",
+  "auditObjective": "Reconcile expected 5.801 AHSP items vs active 5.768 items and identify the exact 33 excluded records.",
+  "expectedTotal": 5801,
+  "activeTotal": 5768,
+  "delta": 33,
+  "breakdownExpectedInGeneratedFile": {
+    "SMKK": 223,
+    "SUMBER_DAYA_AIR": 1556,
+    "BINA_MARGA": 1163,
+    "CIPTA_KARYA": 2859,
+    "total": 5801
+  },
+  "breakdownActiveInMasterRegistry": {
+    "SMKK": 190,
+    "SUMBER_DAYA_AIR": 1556,
+    "BINA_MARGA": 1163,
+    "CIPTA_KARYA": 2859,
+    "total": 5768
+  },
+  "forensicFinding": "Selisih 33 item terjadi sepenuhnya di domain SMKK (Lampiran III SE DJBK No. 47/2026). Dataset parser mentah awal (ahsp2026Canonical.generated.ts) memuat 223 baris yang mencakup judul bab/seksi dokumen dan header tabel tanpa koefisien. Dataset resmi terkurasi (officialSmkk2026.ts) memuat 190 item pekerjaan SMKK normatif dengan rincian koefisien bahan, upah, dan alat lengkap. Sebanyak 33 baris mentah non-analisa disaring demi integritas matematis.",
+  "excludedItemsCount": 223,
+  "excludedItemsSample": [
+    {
+      "code": "KECIL-1",
+      "name": "Penyiapan dokumen Penerapan SMKK:",
+      "unit": "",
+      "reason": "Judul seksi/kategori dokumen (Section Header) tanpa koefisien"
+    },
+    {
+      "code": "KECIL-1.a",
+      "name": "Pembuatan dokumen SMKK (RKK",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-1.b",
+      "name": "Pembuatan prosedur dan",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-1.c",
+      "name": "Penyusunan pelaporan",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-2",
+      "name": "Sosialisasi, Promosi dan Pelatihan:",
+      "unit": "",
+      "reason": "Judul seksi/kategori dokumen (Section Header) tanpa koefisien"
+    },
+    {
+      "code": "KECIL-2.a",
+      "name": "Kegiatan Induksi Keselamatan",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-2.b",
+      "name": "Kegiatan Pengarahan Keselamatan",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-2.c",
+      "name": "Kegiatan Pertemuan keselamatan",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-2.c.1",
+      "name": "Kegiatan perilaku berbasis",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-2.f",
+      "name": "Spanduk (banner) ukuran 200 cm",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-2.x",
+      "name": "75 cm (spanduk utamakan cm dan dokumentasi",
+      "unit": "",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-2.g",
+      "name": "Poster/leaflet/brosur",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-2.h",
+      "name": "Papan Informasi Keselamatan",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-3",
+      "name": "Alat Pelindung Kerja dan Alat Pelindung Diri:",
+      "unit": "",
+      "reason": "Judul seksi/kategori dokumen (Section Header) tanpa koefisien"
+    },
+    {
+      "code": "KECIL-3.a",
+      "name": "APK, antara lain:",
+      "unit": "",
+      "reason": "Judul seksi/kategori dokumen (Section Header) tanpa koefisien"
+    },
+    {
+      "code": "KECIL-3.a.1",
+      "name": "Pembatas area (restricted area)",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-3.a.2",
+      "name": "Perlengkapan keselamatan",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-3.b",
+      "name": "APD, antara lain:",
+      "unit": "",
+      "reason": "Judul seksi/kategori dokumen (Section Header) tanpa koefisien"
+    },
+    {
+      "code": "KECIL-3.b.1",
+      "name": "Helm pelindung (safety helmet)",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-3.b.2",
+      "name": "Penyumbat telinga (ear plug)",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-3.b.3",
+      "name": "Sarung tangan (safety gloves)",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-3.b.4",
+      "name": "Sepatu keselamatan (rubber",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-3.b.5",
+      "name": "Rompi keselamatan (safety vest)",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-5",
+      "name": "Personel Keselamatan Konstruksi:",
+      "unit": "",
+      "reason": "Judul seksi/kategori dokumen (Section Header) tanpa koefisien"
+    },
+    {
+      "code": "KECIL-5.a",
+      "name": "Petugas Keselamatan Konstruksi Org-Bln penambahan 1 Mampu melaksanakan Sertifikat Kompetensi",
+      "unit": "",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-5.a",
+      "name": "pengukur suhu) 1",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-7",
+      "name": "Rambu dan Perlengkapan Lalu Lintas:",
+      "unit": "",
+      "reason": "Judul seksi/kategori dokumen (Section Header) tanpa koefisien"
+    },
+    {
+      "code": "KECIL-7.a",
+      "name": "Rambu petunjuk",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-7.b",
+      "name": "Rambu larangan",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-7.c",
+      "name": "Rambu peringatan",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-7.d",
+      "name": "Rambu kewajiban",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-7.e",
+      "name": "Rambu informasi",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    },
+    {
+      "code": "KECIL-7.f",
+      "name": "Rambu pekerjaan sementara",
+      "unit": "buah",
+      "reason": "Baris teks deskriptif Lampiran III tanpa analisa rincian harga"
+    }
+  ]
+}

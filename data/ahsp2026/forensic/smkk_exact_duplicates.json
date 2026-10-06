@@ -1,0 +1,89 @@
+{
+ "field": "SMKK",
+ "method": "identical normalized code within Lampiran III",
+ "groups": 6,
+ "records": [
+  {
+   "code": "kecil-5.a",
+   "occurrences": 2,
+   "pages": [
+    34,
+    35
+   ],
+   "descriptions": [
+    "Petugas Keselamatan Konstruksi  Org-Bln penambahan 1  Mampu melaksanakan  Sertifikat Kompetensi",
+    "pengukur suhu)  1"
+   ],
+   "verdict": "The NO. hierarchy restarts at each risk tier, so the same NO. (e.g. \"1.a\") legitimately recurs in KECIL and SEDANG/BESAR. The tier prefix disambiguates them."
+  },
+  {
+   "code": "sedang-1",
+   "occurrences": 3,
+   "pages": [
+    39,
+    44,
+    56
+   ],
+   "descriptions": [
+    "Penyiapan Dokumen Penerapan SMKK:",
+    "",
+    "(satu)"
+   ],
+   "verdict": "The NO. hierarchy restarts at each risk tier, so the same NO. (e.g. \"1.a\") legitimately recurs in KECIL and SEDANG/BESAR. The tier prefix disambiguates them."
+  },
+  {
+   "code": "sedang-12",
+   "occurrences": 2,
+   "pages": [
+    40,
+    57
+   ],
+   "descriptions": [
+    "prosedur).",
+    ""
+   ],
+   "verdict": "The NO. hierarchy restarts at each risk tier, so the same NO. (e.g. \"1.a\") legitimately recurs in KECIL and SEDANG/BESAR. The tier prefix disambiguates them."
+  },
+  {
+   "code": "sedang-2",
+   "occurrences": 3,
+   "pages": [
+    41,
+    42,
+    46
+   ],
+   "descriptions": [
+    "Sosialisasi, Promosi, dan Pelatihan:",
+    "",
+    ""
+   ],
+   "verdict": "The NO. hierarchy restarts at each risk tier, so the same NO. (e.g. \"1.a\") legitimately recurs in KECIL and SEDANG/BESAR. The tier prefix disambiguates them."
+  },
+  {
+   "code": "sedang-4",
+   "occurrences": 2,
+   "pages": [
+    42,
+    54
+   ],
+   "descriptions": [
+    "",
+    "Asuransi:"
+   ],
+   "verdict": "The NO. hierarchy restarts at each risk tier, so the same NO. (e.g. \"1.a\") legitimately recurs in KECIL and SEDANG/BESAR. The tier prefix disambiguates them."
+  },
+  {
+   "code": "sedang-8.i",
+   "occurrences": 2,
+   "pages": [
+    69,
+    69
+   ],
+   "descriptions": [
+    "Ahli Geoteknik OJ Minimal 1 Sertifikat Ahli dan",
+    "Ahli Teknik Landasan Terbang OJ Minimal 1 Sertifikat Ahli dan"
+   ],
+   "verdict": "The NO. hierarchy restarts at each risk tier, so the same NO. (e.g. \"1.a\") legitimately recurs in KECIL and SEDANG/BESAR. The tier prefix disambiguates them."
+  }
+ ]
+}

@@ -1,0 +1,1190 @@
+{
+  "generatedAt": "2026-09-28T13:00:50.422Z",
+  "componentKeyCoverage": {
+    "distinctKeys": 782,
+    "pricedKeys": 71,
+    "keyCoveragePercent": 9.08,
+    "componentUses": 22026,
+    "pricedUses": 16950,
+    "useWeightedCoveragePercent": 76.95,
+    "byType": {
+      "material": {
+        "keys": 642,
+        "pricedKeys": 40,
+        "keyCoveragePercent": 6.23,
+        "uses": 3911,
+        "pricedUses": 1359,
+        "useWeightedCoveragePercent": 34.75
+      },
+      "labor": {
+        "keys": 22,
+        "pricedKeys": 10,
+        "keyCoveragePercent": 45.45,
+        "uses": 15474,
+        "pricedUses": 14502,
+        "useWeightedCoveragePercent": 93.72
+      },
+      "equipment": {
+        "keys": 118,
+        "pricedKeys": 21,
+        "keyCoveragePercent": 17.8,
+        "uses": 2641,
+        "pricedUses": 1089,
+        "useWeightedCoveragePercent": 41.23
+      }
+    }
+  },
+  "ahspCoverage": {
+    "total": 5801,
+    "full": 1235,
+    "partial": 3488,
+    "missing": 113,
+    "noComponents": 965,
+    "fullyPricedPercent": 21.29,
+    "anyPricePercent": 81.42,
+    "byDomain": {
+      "BINA_MARGA": {
+        "full": 1,
+        "partial": 964,
+        "missing": 19,
+        "noComponents": 179,
+        "total": 1163
+      },
+      "CIPTA_KARYA": {
+        "full": 1205,
+        "partial": 1399,
+        "missing": 47,
+        "noComponents": 208,
+        "total": 2859
+      },
+      "SMKK": {
+        "full": 0,
+        "partial": 0,
+        "missing": 0,
+        "noComponents": 223,
+        "total": 223
+      },
+      "SUMBER_DAYA_AIR": {
+        "full": 29,
+        "partial": 1125,
+        "missing": 47,
+        "noComponents": 355,
+        "total": 1556
+      }
+    }
+  },
+  "resourceQuality": {
+    "CLEAN": 3428,
+    "SUSPECT": 353,
+    "DEFECTIVE": 117
+  },
+  "topMissingComponentKeys": [
+    {
+      "code": "L.03",
+      "name": "Mandor",
+      "unit": "OJ",
+      "type": "labor",
+      "usageCount": 943
+    },
+    {
+      "code": "E23",
+      "name": "Water Tank Truck",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 244
+    },
+    {
+      "code": "E.11",
+      "name": "FLAT BED TRUCK 4 TON",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 135
+    },
+    {
+      "code": "E08",
+      "name": "DUMP TRUCK 4 TON; 134 HP",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 116
+    },
+    {
+      "code": "E07",
+      "name": "CRANE ON TRACK 10-15 TON",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 111
+    },
+    {
+      "code": "E35",
+      "name": "DUMP TRUCK TRONTON 10 TON",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 106
+    },
+    {
+      "code": "EI311",
+      "name": "Galian Tanah Biasa",
+      "unit": "m3",
+      "type": "material",
+      "usageCount": 86
+    },
+    {
+      "code": "M271",
+      "name": "Tanah Humus ketebalan 20 cm",
+      "unit": "m3",
+      "type": "material",
+      "usageCount": 84
+    },
+    {
+      "code": "M272",
+      "name": "Pupuk",
+      "unit": "kg",
+      "type": "material",
+      "usageCount": 84
+    },
+    {
+      "code": "T.34",
+      "name": "Trailer 10-20 ton (lebar 3,5 m x 8,0 m)",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 77
+    },
+    {
+      "code": "M.23",
+      "name": "Portland Cement",
+      "unit": "kg",
+      "type": "material",
+      "usageCount": 72
+    },
+    {
+      "code": "E71",
+      "name": "Mesin Bor",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 65
+    },
+    {
+      "code": "M182",
+      "name": "Super Plastizier",
+      "unit": "kg",
+      "type": "material",
+      "usageCount": 60
+    },
+    {
+      "code": "E01",
+      "name": "ASPHALT MIXING PLANT (AMP)",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 51
+    },
+    {
+      "code": "M366",
+      "name": "Bambu Penopang",
+      "unit": "batang",
+      "type": "material",
+      "usageCount": 48
+    },
+    {
+      "code": "E76",
+      "name": "ASPHALT CUTTER (0,5-0,7 m / menit)",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 44
+    },
+    {
+      "code": "M186",
+      "name": "Beton Fc 20 Mpa",
+      "unit": "m3",
+      "type": "material",
+      "usageCount": 42
+    },
+    {
+      "code": "M09",
+      "name": "Timbunan Pilihan",
+      "unit": "m3",
+      "type": "material",
+      "usageCount": 41
+    },
+    {
+      "code": "M05",
+      "name": "Fly Ash",
+      "unit": "kg",
+      "type": "material",
+      "usageCount": 40
+    },
+    {
+      "code": "M.74",
+      "name": "Kawat las listrik",
+      "unit": "kg",
+      "type": "material",
+      "usageCount": 40
+    },
+    {
+      "code": "M91",
+      "name": "Agr 0 - 5",
+      "unit": "m3",
+      "type": "material",
+      "usageCount": 39
+    },
+    {
+      "code": "M171",
+      "name": "Plastizier",
+      "unit": "kg",
+      "type": "material",
+      "usageCount": 38
+    },
+    {
+      "code": "M92",
+      "name": "Agr 5-10 & 10-15",
+      "unit": "m3",
+      "type": "material",
+      "usageCount": 38
+    },
+    {
+      "code": "E11a",
+      "name": "FLAT BED TRUCK 10 TON",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 36
+    },
+    {
+      "code": "E74",
+      "name": "Kunci Torsi (Torque Wrench)",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 36
+    },
+    {
+      "code": "M59",
+      "name": "Beton 30 MPa",
+      "unit": "m3",
+      "type": "material",
+      "usageCount": 35
+    },
+    {
+      "code": "M73a",
+      "name": "Multipleks Phenolic 12 mm",
+      "unit": "lembar",
+      "type": "material",
+      "usageCount": 34
+    },
+    {
+      "code": "E18",
+      "name": "P. Tyre Roller",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 33
+    },
+    {
+      "code": "M195",
+      "name": "Perancah",
+      "unit": "m2",
+      "type": "material",
+      "usageCount": 33
+    },
+    {
+      "code": "M240e",
+      "name": "PVC AW Ø 1 Inch",
+      "unit": "m",
+      "type": "material",
+      "usageCount": 33
+    },
+    {
+      "code": "M388",
+      "name": "Angkur Baut dia.25 - 40 cm & mur",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 31
+    },
+    {
+      "code": "E69",
+      "name": "Gerinda GWS 750-100 4\"; 1 HP",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 29
+    },
+    {
+      "code": "E78",
+      "name": "Skyliftcrane Truck; 16 m, 1 Ton",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 28
+    },
+    {
+      "code": "M275b",
+      "name": "Pipa Galvanis Dia 3\" 2 mm",
+      "unit": "m",
+      "type": "material",
+      "usageCount": 28
+    },
+    {
+      "code": "E19a",
+      "name": "Baby Vibratory Roller",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 27
+    },
+    {
+      "code": "M400",
+      "name": "Cable Connector 4 mm",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 27
+    },
+    {
+      "code": "E62",
+      "name": "Stressing Jack; 46--100 Ton; 89 HP",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 23
+    },
+    {
+      "code": "M291",
+      "name": "Cetakan Kereb E1h",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 22
+    },
+    {
+      "code": "M398",
+      "name": "MCB 1P, 2A, 4,5 kA",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 22
+    },
+    {
+      "code": "M401",
+      "name": "Schoen 16 mm2",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 22
+    },
+    {
+      "code": "E41",
+      "name": "Asphalt Slurry Seal Truck",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 21
+    },
+    {
+      "code": "M144",
+      "name": "Timbunan Porus",
+      "unit": "m3",
+      "type": "material",
+      "usageCount": 21
+    },
+    {
+      "code": "EI612a",
+      "name": "Lapis Perekat",
+      "unit": "liter",
+      "type": "material",
+      "usageCount": 20
+    },
+    {
+      "code": "M33",
+      "name": "Pengencer (thinner)",
+      "unit": "liter",
+      "type": "material",
+      "usageCount": 20
+    },
+    {
+      "code": "M397",
+      "name": "BC 16 mm2",
+      "unit": "m",
+      "type": "material",
+      "usageCount": 20
+    },
+    {
+      "code": "E17a",
+      "name": "Tandem Roller",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 19
+    },
+    {
+      "code": "M133",
+      "name": "mm, tebal 10 mm",
+      "unit": "kg",
+      "type": "material",
+      "usageCount": 19
+    },
+    {
+      "code": "M275c",
+      "name": "Pipa Galvanis Dia 4\" 2 mm",
+      "unit": "m",
+      "type": "material",
+      "usageCount": 19
+    },
+    {
+      "code": "E51",
+      "name": "CRANE ON TRACK (75-100) T; 190 HP",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 18
+    },
+    {
+      "code": "M226",
+      "name": "Beton fast track 8 jam",
+      "unit": "m3",
+      "type": "material",
+      "usageCount": 18
+    },
+    {
+      "code": "E83",
+      "name": "Hydraulic Pump",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 17
+    },
+    {
+      "code": "L.29",
+      "name": "Welding Inspector",
+      "unit": "OJ",
+      "type": "labor",
+      "usageCount": 17
+    },
+    {
+      "code": "M195",
+      "name": "Formworks",
+      "unit": "bh/m'",
+      "type": "material",
+      "usageCount": 17
+    },
+    {
+      "code": "M.44",
+      "name": "Kawat Las (Elektroda)",
+      "unit": "kg",
+      "type": "material",
+      "usageCount": 17
+    },
+    {
+      "code": "T.27",
+      "name": "Alat Las",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 17
+    },
+    {
+      "code": "M130",
+      "name": "Triplek",
+      "unit": "lembar",
+      "type": "material",
+      "usageCount": 16
+    },
+    {
+      "code": "M381i",
+      "name": "Baut, ring, mur 16 x 50",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 16
+    },
+    {
+      "code": "M66",
+      "name": "Anti Stripping Agent",
+      "unit": "kg",
+      "type": "material",
+      "usageCount": 16
+    },
+    {
+      "code": "E56",
+      "name": "Grouting Pump; 100 HP",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 15
+    },
+    {
+      "code": "M.21",
+      "name": "Air Bersih",
+      "unit": "m3",
+      "type": "material",
+      "usageCount": 15
+    },
+    {
+      "code": "E33",
+      "name": "Bore Pile Machine, Diameter Maks 2m; 150 HP",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 14
+    },
+    {
+      "code": "M60",
+      "name": "Beton fc' 15 MPa",
+      "unit": "m3",
+      "type": "material",
+      "usageCount": 14
+    },
+    {
+      "code": "E03",
+      "name": "Power Broom",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 13
+    },
+    {
+      "code": "E100",
+      "name": "Truck Crane 5 Ton",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 13
+    },
+    {
+      "code": "E73",
+      "name": "Crawler 55 Ton",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 13
+    },
+    {
+      "code": "E17b",
+      "name": "Tandem Roller With IC",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 12
+    },
+    {
+      "code": "E27",
+      "name": "Pulvi mixer",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 12
+    },
+    {
+      "code": "E97",
+      "name": "Machine Beam Launcher Crane 300 Ton",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 12
+    },
+    {
+      "code": "M240h",
+      "name": "Pipa PVC AW 2 inch",
+      "unit": "m",
+      "type": "material",
+      "usageCount": 11
+    },
+    {
+      "code": "M437",
+      "name": "Anchor L Dia. 12 mm",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 11
+    },
+    {
+      "code": "E18a",
+      "name": "P. Tyre Roller With IC",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 10
+    },
+    {
+      "code": "E19",
+      "name": "Vibratory Roller",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 10
+    },
+    {
+      "code": "M125",
+      "name": "Perekat",
+      "unit": "kg",
+      "type": "material",
+      "usageCount": 10
+    },
+    {
+      "code": "M212",
+      "name": "Baut Biasa Grade A diameter M25",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 10
+    },
+    {
+      "code": "M223a",
+      "name": "Mur dan Angkur Baut (L = 60 cm)",
+      "unit": "set",
+      "type": "material",
+      "usageCount": 10
+    },
+    {
+      "code": "M265",
+      "name": "Beton f`c 10 Mpa",
+      "unit": "m3",
+      "type": "material",
+      "usageCount": 10
+    },
+    {
+      "code": "M369",
+      "name": "Guiding Block Go Difabel Stainless Steel",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 10
+    },
+    {
+      "code": "M369a",
+      "name": "Guiding Block Stop Difabel Stainless Steel",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 10
+    },
+    {
+      "code": "M369b",
+      "name": "Guiding Block Go Difabel Alumunium",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 10
+    },
+    {
+      "code": "M369c",
+      "name": "Guiding Block Stop Difabel Alumunium",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 10
+    },
+    {
+      "code": "M398g",
+      "name": "MCB, 1P, 16A",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 10
+    },
+    {
+      "code": "M409",
+      "name": "Panel-Canopy 0x500x250 Circuit Breaker-MCCB 3P 15 A",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 10
+    },
+    {
+      "code": "E30",
+      "name": "PILE DRIVER HAMMER (3,5-5,0) TON; 300 HP",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 9
+    },
+    {
+      "code": "E.37",
+      "name": "Rock Drill Breaker",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 9
+    },
+    {
+      "code": "E88",
+      "name": "Truck 2 Ton",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 9
+    },
+    {
+      "code": "E94",
+      "name": "Hot Compressor Air Lance (HCA)",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 9
+    },
+    {
+      "code": "M100",
+      "name": "Casing, Diameter 400 mm",
+      "unit": "m",
+      "type": "material",
+      "usageCount": 9
+    },
+    {
+      "code": "M142",
+      "name": "Kayu Kelas 1",
+      "unit": "m3",
+      "type": "material",
+      "usageCount": 9
+    },
+    {
+      "code": "M395a",
+      "name": "Lampu PJU LED 150 W",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 9
+    },
+    {
+      "code": "M396g",
+      "name": "NYFGbY 4x10 mm² dan aksesoris BCC 16 mm2 (0,16 kg / m) dan",
+      "unit": "m",
+      "type": "material",
+      "usageCount": 9
+    },
+    {
+      "code": "M396h",
+      "name": "NYFGbY 4x16 mm² dan aksesoris",
+      "unit": "m",
+      "type": "material",
+      "usageCount": 9
+    },
+    {
+      "code": "M39a",
+      "name": "Besi Tulangan Polos Diameter 13",
+      "unit": "m",
+      "type": "material",
+      "usageCount": 9
+    },
+    {
+      "code": "M408b",
+      "name": "Panel 700x500x250 SS316L",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 9
+    },
+    {
+      "code": "M414",
+      "name": "PE 15x3",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 9
+    },
+    {
+      "code": "M417",
+      "name": "20kA Pipa-Galvanis Galv Pipe Ø 4\"",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 9
+    },
+    {
+      "code": "M418",
+      "name": "Panel-Acc Pilot LED Panel-Acc Fuse+Catridge 6A,",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 9
+    },
+    {
+      "code": "M435",
+      "name": "Gembok Anti Karat",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 9
+    },
+    {
+      "code": "M436",
+      "name": "Dynabolt m10 x 70mm",
+      "unit": "bh",
+      "type": "material",
+      "usageCount": 9
+    },
+    {
+      "code": "E29a",
+      "name": "SEMI TRAILER 30 TON; 245 HP",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 8
+    },
+    {
+      "code": "E85",
+      "name": "Thermoplastic Road Marking Machine",
+      "unit": "jam",
+      "type": "equipment",
+      "usageCount": 8
+    }
+  ],
+  "topMissingComponentKeysByItemCount": [
+    {
+      "key": "equipment:(no code)|jam",
+      "itemCount": 1800
+    },
+    {
+      "key": "material:(no code)|kg",
+      "itemCount": 1088
+    },
+    {
+      "key": "equipment:(no code)|ls",
+      "itemCount": 944
+    },
+    {
+      "key": "labor:L03|OJ",
+      "itemCount": 943
+    },
+    {
+      "key": "material:(no code)|m3",
+      "itemCount": 936
+    },
+    {
+      "key": "equipment:(no code)|hari",
+      "itemCount": 817
+    },
+    {
+      "key": "material:(no code)|bh",
+      "itemCount": 455
+    },
+    {
+      "key": "material:(no code)|m",
+      "itemCount": 364
+    },
+    {
+      "key": "equipment:E23|jam",
+      "itemCount": 244
+    },
+    {
+      "key": "labor:(no code)|OH",
+      "itemCount": 156
+    },
+    {
+      "key": "equipment:E11|jam",
+      "itemCount": 135
+    },
+    {
+      "key": "material:(no code)|liter",
+      "itemCount": 122
+    },
+    {
+      "key": "equipment:E08|jam",
+      "itemCount": 116
+    },
+    {
+      "key": "equipment:E07|jam",
+      "itemCount": 111
+    },
+    {
+      "key": "material:(no code)|m2",
+      "itemCount": 107
+    },
+    {
+      "key": "equipment:E35|jam",
+      "itemCount": 106
+    },
+    {
+      "key": "equipment:(no code)|km",
+      "itemCount": 101
+    },
+    {
+      "key": "material:EI311|m3",
+      "itemCount": 86
+    },
+    {
+      "key": "material:M271|m3",
+      "itemCount": 84
+    },
+    {
+      "key": "material:M272|kg",
+      "itemCount": 84
+    },
+    {
+      "key": "equipment:T34|jam",
+      "itemCount": 77
+    },
+    {
+      "key": "material:M23|kg",
+      "itemCount": 72
+    },
+    {
+      "key": "labor:(no code)|OJ",
+      "itemCount": 71
+    },
+    {
+      "key": "equipment:E71|jam",
+      "itemCount": 65
+    },
+    {
+      "key": "material:M182|kg",
+      "itemCount": 60
+    },
+    {
+      "key": "material:(no code)|lembar",
+      "itemCount": 54
+    },
+    {
+      "key": "material:(no code)|unit",
+      "itemCount": 52
+    },
+    {
+      "key": "equipment:E01|jam",
+      "itemCount": 51
+    },
+    {
+      "key": "material:M366|batang",
+      "itemCount": 48
+    },
+    {
+      "key": "equipment:E76|jam",
+      "itemCount": 44
+    },
+    {
+      "key": "material:M186|m3",
+      "itemCount": 42
+    },
+    {
+      "key": "material:M09|m3",
+      "itemCount": 41
+    },
+    {
+      "key": "material:M74|kg",
+      "itemCount": 40
+    },
+    {
+      "key": "equipment:(no code)|m",
+      "itemCount": 40
+    },
+    {
+      "key": "material:M05|kg",
+      "itemCount": 40
+    },
+    {
+      "key": "material:M91|m3",
+      "itemCount": 39
+    },
+    {
+      "key": "material:M171|kg",
+      "itemCount": 38
+    },
+    {
+      "key": "material:M92|m3",
+      "itemCount": 38
+    },
+    {
+      "key": "equipment:E11A|jam",
+      "itemCount": 36
+    },
+    {
+      "key": "equipment:E74|jam",
+      "itemCount": 36
+    },
+    {
+      "key": "material:M59|m3",
+      "itemCount": 35
+    },
+    {
+      "key": "equipment:(no code)|liter",
+      "itemCount": 34
+    },
+    {
+      "key": "material:M73A|lembar",
+      "itemCount": 34
+    },
+    {
+      "key": "material:M195|m2",
+      "itemCount": 33
+    },
+    {
+      "key": "equipment:E18|jam",
+      "itemCount": 33
+    },
+    {
+      "key": "material:M240E|m",
+      "itemCount": 33
+    },
+    {
+      "key": "material:(no code)|bh/m'",
+      "itemCount": 31
+    },
+    {
+      "key": "material:M388|bh",
+      "itemCount": 31
+    },
+    {
+      "key": "equipment:(no code)|m2",
+      "itemCount": 30
+    },
+    {
+      "key": "equipment:E69|jam",
+      "itemCount": 29
+    },
+    {
+      "key": "material:M275B|m",
+      "itemCount": 28
+    },
+    {
+      "key": "equipment:E78|jam",
+      "itemCount": 28
+    },
+    {
+      "key": "equipment:(no code)|kg",
+      "itemCount": 27
+    },
+    {
+      "key": "material:M400|bh",
+      "itemCount": 27
+    },
+    {
+      "key": "equipment:E19A|jam",
+      "itemCount": 27
+    },
+    {
+      "key": "equipment:E62|jam",
+      "itemCount": 23
+    },
+    {
+      "key": "material:M291|bh",
+      "itemCount": 22
+    },
+    {
+      "key": "material:M398|bh",
+      "itemCount": 22
+    },
+    {
+      "key": "material:M401|bh",
+      "itemCount": 22
+    },
+    {
+      "key": "material:M144|m3",
+      "itemCount": 21
+    },
+    {
+      "key": "equipment:E41|jam",
+      "itemCount": 21
+    },
+    {
+      "key": "material:M33|liter",
+      "itemCount": 20
+    },
+    {
+      "key": "material:M397|m",
+      "itemCount": 20
+    },
+    {
+      "key": "material:EI612A|liter",
+      "itemCount": 20
+    },
+    {
+      "key": "equipment:E17A|jam",
+      "itemCount": 19
+    },
+    {
+      "key": "material:M133|kg",
+      "itemCount": 19
+    },
+    {
+      "key": "material:M275C|m",
+      "itemCount": 19
+    },
+    {
+      "key": "material:(no code)|batang",
+      "itemCount": 18
+    },
+    {
+      "key": "equipment:E51|jam",
+      "itemCount": 18
+    },
+    {
+      "key": "material:M226|m3",
+      "itemCount": 18
+    },
+    {
+      "key": "labor:L29|OJ",
+      "itemCount": 17
+    },
+    {
+      "key": "material:M44|kg",
+      "itemCount": 17
+    },
+    {
+      "key": "material:(no code)|cm",
+      "itemCount": 17
+    },
+    {
+      "key": "equipment:T27|jam",
+      "itemCount": 17
+    },
+    {
+      "key": "material:M195|bh/m'",
+      "itemCount": 17
+    },
+    {
+      "key": "equipment:E83|jam",
+      "itemCount": 17
+    },
+    {
+      "key": "material:M130|lembar",
+      "itemCount": 16
+    },
+    {
+      "key": "material:M66|kg",
+      "itemCount": 16
+    },
+    {
+      "key": "material:M381I|bh",
+      "itemCount": 16
+    },
+    {
+      "key": "material:M21|m3",
+      "itemCount": 15
+    },
+    {
+      "key": "equipment:E56|jam",
+      "itemCount": 15
+    },
+    {
+      "key": "material:M60|m3",
+      "itemCount": 14
+    },
+    {
+      "key": "equipment:E33|jam",
+      "itemCount": 14
+    },
+    {
+      "key": "equipment:E03|jam",
+      "itemCount": 13
+    },
+    {
+      "key": "equipment:E73|jam",
+      "itemCount": 13
+    },
+    {
+      "key": "equipment:E100|jam",
+      "itemCount": 13
+    },
+    {
+      "key": "equipment:E17B|jam",
+      "itemCount": 12
+    },
+    {
+      "key": "equipment:E27|jam",
+      "itemCount": 12
+    },
+    {
+      "key": "equipment:E97|jam",
+      "itemCount": 12
+    },
+    {
+      "key": "material:M240H|m",
+      "itemCount": 11
+    },
+    {
+      "key": "material:M437|bh",
+      "itemCount": 11
+    },
+    {
+      "key": "material:M265|m3",
+      "itemCount": 10
+    },
+    {
+      "key": "equipment:E19|jam",
+      "itemCount": 10
+    },
+    {
+      "key": "equipment:E18A|jam",
+      "itemCount": 10
+    },
+    {
+      "key": "material:M125|kg",
+      "itemCount": 10
+    },
+    {
+      "key": "material:M212|bh",
+      "itemCount": 10
+    },
+    {
+      "key": "material:M369|bh",
+      "itemCount": 10
+    },
+    {
+      "key": "material:M369A|bh",
+      "itemCount": 10
+    },
+    {
+      "key": "material:M369B|bh",
+      "itemCount": 10
+    },
+    {
+      "key": "material:M369C|bh",
+      "itemCount": 10
+    }
+  ],
+  "notes": [
+    "Coverage is a measurement, not a target. Unpriced resources are reported, never invented.",
+    "Component-key coverage is the share of distinct (code, unit) pairs that have a price.",
+    "Use-weighted coverage is the share of actual component OCCURRENCES that have a price."
+  ]
+}

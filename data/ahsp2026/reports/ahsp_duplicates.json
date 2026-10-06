@@ -1,0 +1,5686 @@
+{
+ "generated_at": "2026-09-28T11:51:47.803Z",
+ "total_groups": 291,
+ "exact_duplicate_groups": 15,
+ "possible_duplicate_groups": 276,
+ "groups": [
+  {
+   "key": "SMKK|2026|kecil-5.a",
+   "status": "exact_duplicate",
+   "ids": [
+    "AHSP-2026-SMKK-000025",
+    "AHSP-2026-SMKK-000026"
+   ],
+   "codes": [
+    "KECIL-5.a",
+    "KECIL-5.a"
+   ],
+   "field": "SMKK",
+   "detail": "same normalized code within the same field+version"
+  },
+  {
+   "key": "SMKK|2026|sedang-1",
+   "status": "exact_duplicate",
+   "ids": [
+    "AHSP-2026-SMKK-000057",
+    "AHSP-2026-SMKK-000077",
+    "AHSP-2026-SMKK-000124"
+   ],
+   "codes": [
+    "SEDANG-1",
+    "SEDANG-1",
+    "SEDANG-1"
+   ],
+   "field": "SMKK",
+   "detail": "same normalized code within the same field+version"
+  },
+  {
+   "key": "SMKK|2026|sedang-12",
+   "status": "exact_duplicate",
+   "ids": [
+    "AHSP-2026-SMKK-000060",
+    "AHSP-2026-SMKK-000130"
+   ],
+   "codes": [
+    "SEDANG-12",
+    "SEDANG-12"
+   ],
+   "field": "SMKK",
+   "detail": "same normalized code within the same field+version"
+  },
+  {
+   "key": "SMKK|2026|sedang-2",
+   "status": "exact_duplicate",
+   "ids": [
+    "AHSP-2026-SMKK-000062",
+    "AHSP-2026-SMKK-000066",
+    "AHSP-2026-SMKK-000086"
+   ],
+   "codes": [
+    "SEDANG-2",
+    "SEDANG-2",
+    "SEDANG-2"
+   ],
+   "field": "SMKK",
+   "detail": "same normalized code within the same field+version"
+  },
+  {
+   "key": "SMKK|2026|sedang-4",
+   "status": "exact_duplicate",
+   "ids": [
+    "AHSP-2026-SMKK-000067",
+    "AHSP-2026-SMKK-000119"
+   ],
+   "codes": [
+    "SEDANG-4",
+    "SEDANG-4"
+   ],
+   "field": "SMKK",
+   "detail": "same normalized code within the same field+version"
+  },
+  {
+   "key": "SMKK|2026|sedang-8.i",
+   "status": "exact_duplicate",
+   "ids": [
+    "AHSP-2026-SMKK-000186",
+    "AHSP-2026-SMKK-000187"
+   ],
+   "codes": [
+    "SEDANG-8.i",
+    "SEDANG-8.i"
+   ],
+   "field": "SMKK",
+   "detail": "same normalized code within the same field+version"
+  },
+  {
+   "key": "SDA|2026|a.3.03.1",
+   "status": "exact_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000606",
+    "AHSP-2026-SDA-000607",
+    "AHSP-2026-SDA-000608"
+   ],
+   "codes": [
+    "A.3.03.1",
+    "A.3.03.1",
+    "A.3.03.1"
+   ],
+   "field": "SDA",
+   "detail": "same normalized code within the same field+version"
+  },
+  {
+   "key": "SDA|2026|a.3.03.6a",
+   "status": "exact_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000618",
+    "AHSP-2026-SDA-000619",
+    "AHSP-2026-SDA-000620",
+    "AHSP-2026-SDA-000621"
+   ],
+   "codes": [
+    "A.3.03.6a",
+    "A.3.03.6a",
+    "A.3.03.6a",
+    "A.3.03.6a"
+   ],
+   "field": "SDA",
+   "detail": "same normalized code within the same field+version"
+  },
+  {
+   "key": "SDA|2026|a.3.08.3.4.b.6.a",
+   "status": "exact_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001222",
+    "AHSP-2026-SDA-001228"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.6.a",
+    "A.3.08.3.4.b.6.a"
+   ],
+   "field": "SDA",
+   "detail": "same normalized code within the same field+version"
+  },
+  {
+   "key": "SDA|2026|a.3.08.3.4.b.6.b",
+   "status": "exact_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001223",
+    "AHSP-2026-SDA-001229"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.6.b",
+    "A.3.08.3.4.b.6.b"
+   ],
+   "field": "SDA",
+   "detail": "same normalized code within the same field+version"
+  },
+  {
+   "key": "SDA|2026|a.3.08.3.4.b.6.c",
+   "status": "exact_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001224",
+    "AHSP-2026-SDA-001230"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.6.c",
+    "A.3.08.3.4.b.6.c"
+   ],
+   "field": "SDA",
+   "detail": "same normalized code within the same field+version"
+  },
+  {
+   "key": "SDA|2026|a.3.08.3.4.b.6.d",
+   "status": "exact_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001225",
+    "AHSP-2026-SDA-001231"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.6.d",
+    "A.3.08.3.4.b.6.d"
+   ],
+   "field": "SDA",
+   "detail": "same normalized code within the same field+version"
+  },
+  {
+   "key": "SDA|2026|a.3.08.3.4.b.6.e",
+   "status": "exact_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001226",
+    "AHSP-2026-SDA-001232"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.6.e",
+    "A.3.08.3.4.b.6.e"
+   ],
+   "field": "SDA",
+   "detail": "same normalized code within the same field+version"
+  },
+  {
+   "key": "SDA|2026|a.3.08.3.4.b.6.f",
+   "status": "exact_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001227",
+    "AHSP-2026-SDA-001233"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.6.f",
+    "A.3.08.3.4.b.6.f"
+   ],
+   "field": "SDA",
+   "detail": "same normalized code within the same field+version"
+  },
+  {
+   "key": "BINA_MARGA|2026|7.6.10",
+   "status": "exact_duplicate",
+   "ids": [
+    "AHSP-2026-BINA_MARGA-000403",
+    "AHSP-2026-BINA_MARGA-001138"
+   ],
+   "codes": [
+    "7.6.(10",
+    "7.6.(10)"
+   ],
+   "field": "BINA_MARGA",
+   "detail": "same normalized code within the same field+version"
+  },
+  {
+   "key": "SMKK|kegiatan dan peralatan terkait pengendalian risiko keselamatan konstruksi",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SMKK-000040",
+    "AHSP-2026-SMKK-000197"
+   ],
+   "codes": [
+    "KECIL-9",
+    "SEDANG-9"
+   ],
+   "field": "SMKK",
+   "detail": "identical description text within the same field"
+  },
+  {
+   "key": "SDA|1 m3 bronjong wiremesh m6 lubang 100 x 100 mm beda tinggi",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000090",
+    "AHSP-2026-SDA-000091",
+    "AHSP-2026-SDA-000093",
+    "AHSP-2026-SDA-000094",
+    "AHSP-2026-SDA-000095",
+    "AHSP-2026-SDA-000096",
+    "AHSP-2026-SDA-000097",
+    "AHSP-2026-SDA-000098"
+   ],
+   "codes": [
+    "A.1.02.4b.1.c.2",
+    "A.1.02.4b.1.c.3",
+    "A.1.02.4b.1.c.5",
+    "A.1.02.4b.1.c.6",
+    "A.1.02.4b.1.c.7",
+    "A.1.02.4b.1.c.8",
+    "A.1.02.4b.1.c.9",
+    "A.1.02.4b.1.c.10"
+   ],
+   "field": "SDA",
+   "detail": "identical description text within the same field"
+  },
+  {
+   "key": "SDA|1 m2 pasangan geotekstil tipis 100 s d 400 gr m2 semi mekanis harga satuan jumlah",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000144",
+    "AHSP-2026-SDA-000146"
+   ],
+   "codes": [
+    "A.2.02.5b.1",
+    "A.2.02.5b.2"
+   ],
+   "field": "SDA",
+   "detail": "identical description text within the same field"
+  },
+  {
+   "key": "SDA|pengerukan 1 m3 sedimen menggunakan kapal keruk sunction dredger sampai kedalaman 10 m harga satuan jumlah harga",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000606",
+    "AHSP-2026-SDA-000607",
+    "AHSP-2026-SDA-000608"
+   ],
+   "codes": [
+    "A.3.03.1",
+    "A.3.03.1",
+    "A.3.03.1"
+   ],
+   "field": "SDA",
+   "detail": "identical description text within the same field"
+  },
+  {
+   "key": "SDA|pengangkatan 1 m3 gulma air dari situ waduk saluran menggunakan 5 rate estafet",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000618",
+    "AHSP-2026-SDA-000621"
+   ],
+   "codes": [
+    "A.3.03.6a",
+    "A.3.03.6a"
+   ],
+   "field": "SDA",
+   "detail": "identical description text within the same field"
+  },
+  {
+   "key": "SDA|terobos 1 m sumbatan pipa atau syphon 1 0 m tersumbat 60 penampang 0 1 0 m",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001387",
+    "AHSP-2026-SDA-001388"
+   ],
+   "codes": [
+    "A.3.09.4a.1",
+    "A.3.09.4a.2"
+   ],
+   "field": "SDA",
+   "detail": "identical description text within the same field"
+  },
+  {
+   "key": "SDA|terobos 1 m sumbatan pipa atau syphon 0 3 m tersumbat 60 penampang 0 0 3m",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001391",
+    "AHSP-2026-SDA-001392"
+   ],
+   "codes": [
+    "A.3.09.4c.1",
+    "A.3.09.4c.2"
+   ],
+   "field": "SDA",
+   "detail": "identical description text within the same field"
+  },
+  {
+   "key": "CIPTA_KARYA|pvc conduit hi 20 mm pemasangan 1 m kabel nya 3 x 2 5 mm2",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001134",
+    "AHSP-2026-CIPTA_KARYA-001135"
+   ],
+   "codes": [
+    "5.1.1.2.8",
+    "5.1.1.2.9"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical description text within the same field"
+  },
+  {
+   "key": "CIPTA_KARYA|dia 6 150 mm perubahan pemasangan 1 unit gate valve 16 k ada",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002026",
+    "AHSP-2026-CIPTA_KARYA-002037"
+   ],
+   "codes": [
+    "6.5.1.15",
+    "6.5.1.26"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical description text within the same field"
+  },
+  {
+   "key": "CIPTA_KARYA|dia 12 300 mm perubahan pemasangan 1 unit flexible joint 20 k ada",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002146",
+    "AHSP-2026-CIPTA_KARYA-002155"
+   ],
+   "codes": [
+    "6.5.7.14",
+    "6.5.7.23"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical description text within the same field"
+  },
+  {
+   "key": "CIPTA_KARYA|k gate valve dia 4 100 mm perubahan pemasangan 1 unit pressure gauge 25 ada",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002183",
+    "AHSP-2026-CIPTA_KARYA-002187"
+   ],
+   "codes": [
+    "6.5.10.5",
+    "6.5.10.9"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical description text within the same field"
+  },
+  {
+   "key": "SDA|m'|labor:L.01:Pekerja:0,4500|labor:L.02:Tukang:0,0750|labor:L.04:Mandor:0,0450|material:M.74:Sepatu pancang ø 30 atau 30 x 30 Kawat las listrik:0,1629|material::Cat anti karat M.129.a:1,2000|equipment::Tripod tinggi 7 m, To.39.h:0,0750|equipment::B_max 3 Kerekan beban 2 Ton + To.03.i:0,0750|equipment::Bandul pancang To.03.b:0,0750|equipment::Las listrik 500 A diesel E.25.b:0,0750",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000334",
+    "AHSP-2026-SDA-000335"
+   ],
+   "codes": [
+    "A.2.05.1b.5",
+    "A.2.05.1b.6"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|m'|labor:L.01:Pekerja:0,0260|labor:L.02:Tukang:0,0130|labor:L.04:Mandor:0,0026|equipment::Tripod tinggi 7 m, To.39.k:0,0130|equipment::B_max 5 Kerekan beban 2 Ton + To.03.i:0,0130|equipment::Bandul pancang To.03.b:0,0130",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000345",
+    "AHSP-2026-SDA-000346"
+   ],
+   "codes": [
+    "A.2.05.1d.7",
+    "A.2.05.1d.8"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|m'|labor:L.01:Pekerja:0,0260|labor:L.02:Tukang:0,0130|labor:L.04:Mandor:0,0026|equipment::Tripod tinggi 7 m, To.39.h:0,0130|equipment::B_max 3 Kerekan beban 1 Ton + To.03.h:0,0130|equipment::Bandul pancang To.03.a:0,0130",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000347",
+    "AHSP-2026-SDA-000348"
+   ],
+   "codes": [
+    "A.2.05.1d.9",
+    "A.2.05.1d.10"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|buah|labor:L.01:Pekerja:0,30|labor:L.04:Mandor:0,03|material::Stempet M.149:0,02",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000396",
+    "AHSP-2026-SDA-000397",
+    "AHSP-2026-SDA-000401"
+   ],
+   "codes": [
+    "A.1.06.1b.2",
+    "A.1.06.1b.3",
+    "A.1.06.1c.1"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|buah|labor:L.01:Pekerja:0,50|labor:L.04:Mandor:0,05|material::Stempet M.149:0,03",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000398",
+    "AHSP-2026-SDA-000399",
+    "AHSP-2026-SDA-000402",
+    "AHSP-2026-SDA-000403"
+   ],
+   "codes": [
+    "A.1.06.1b.4",
+    "A.1.06.1b.5",
+    "A.1.06.1c.2",
+    "A.1.06.1c.3"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|buah|labor:L.01:Pekerja:0,80|labor:L.04:Mandor:0,08|material::Stempet M.149:0,05",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000400",
+    "AHSP-2026-SDA-000404",
+    "AHSP-2026-SDA-000405"
+   ],
+   "codes": [
+    "A.1.06.1b.6",
+    "A.1.06.1c.4",
+    "A.1.06.1c.5"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|buah|labor:L.01:Pekerja:0,060|labor:L.04:Mandor:0,006|equipment::Gergaji besi mesin To.09.c:0,042|equipment::Generator (D): Genset 2 kW E.16.c:0,042",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000472",
+    "AHSP-2026-SDA-000474"
+   ],
+   "codes": [
+    "A.2.08.6i",
+    "A.2.08.6k"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|m3|labor:L.01:Pekerja:0,0248|labor:L.02:Tukang:0,0124|labor:L.04:Mandor:0,0024|equipment::E.15.e:0,0124",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000493",
+    "AHSP-2026-SDA-000521"
+   ],
+   "codes": [
+    "A.3.01.1b.3",
+    "A.3.01.1f.2"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|m3|labor:L.01:Pekerja:0,0195|labor:L.02:Tukang:0,0097|labor:L.04:Mandor:0,0019|equipment::E.15.e:0,0097",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000498",
+    "AHSP-2026-SDA-000507"
+   ],
+   "codes": [
+    "A.3.01.1c.1",
+    "A.3.01.1c.10"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|m3|labor:L.01:Pekerja:0,0222|labor:L.02:Tukang:0,0111|labor:L.04:Mandor:0,0022|equipment::E.15.e:0,0111",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000517",
+    "AHSP-2026-SDA-000520"
+   ],
+   "codes": [
+    "A.3.01.1e.1",
+    "A.3.01.1f.1"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|m3|labor:L.01:Pekerja:0,0272|labor:L.02:Tukang:0,0136|labor:L.04:Mandor:0,0027|equipment::E.15.e:0,0136",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000519",
+    "AHSP-2026-SDA-000522"
+   ],
+   "codes": [
+    "A.3.01.1e.3",
+    "A.3.01.1f.3"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|m3|labor:L.01:Pekerja:0,0652|labor:L.02:Tukang:0,0186|labor:L.04:Mandor:0,0065|equipment::besar); 450 HP, Dm = E.23.d:0,00466|equipment::E.04.d:0,00466|equipment::HP…... 1 Buah E.30.b:0,00932",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000606",
+    "AHSP-2026-SDA-000608"
+   ],
+   "codes": [
+    "A.3.03.1",
+    "A.3.03.1"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|m3|labor:L.01:Pekerja:0,0250|labor:L.04:Mandor:0,0025|equipment::Amphibi); Bucket 0,50 To.36.b:0,0125",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000618",
+    "AHSP-2026-SDA-000619"
+   ],
+   "codes": [
+    "A.3.03.6a",
+    "A.3.03.6a"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|m2|labor:L.01:Pekerja:0,0250|labor:L.04:Mandor:0,0025|equipment::Amphibi); Bucket 0,50 To.36.b:0,0125",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000620",
+    "AHSP-2026-SDA-000621"
+   ],
+   "codes": [
+    "A.3.03.6a",
+    "A.3.03.6a"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|m'|labor:L.01:Pekerja:0,0853|labor:L.02:Tukang:0,0853|labor:L.04:Mandor:0,0085|equipment::Crawler Crane 10 Ton + E.11.b:0,0853|equipment::Leader 14 Diesel Hammer 2 ton E.01.e:0,0853",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000669",
+    "AHSP-2026-SDA-000670"
+   ],
+   "codes": [
+    "A.3.05.1b.2.b",
+    "A.3.05.1b.2.c"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|m'|labor:L.01:Pekerja:0,0667|labor:L.02:Tukang:0,0667|labor:L.04:Mandor:0,0067|equipment::Excavator (Std.); Bucket 0,90 m3; 155 HP; Dmax = E.15.e:0,0693|equipment::Pile Vibratory Driver - 80 E.37.b:0,0693",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000698",
+    "AHSP-2026-SDA-000699"
+   ],
+   "codes": [
+    "A.3.05.2a.1.b",
+    "A.3.05.2a.1.c"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|m3|labor:L.01:Pekerja:0,08935|labor:L.02:Tukang:0,04468|labor:L.04:Mandor:0,00894|material::M.27.f:1,30|equipment::E.27.c:0,02058|equipment::Bulldozer 155 HP E.07.c:0,00352|equipment::E.50.m:0,00709|equipment::E.60.a:0,00703",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000841",
+    "AHSP-2026-SDA-000842"
+   ],
+   "codes": [
+    "A.3.07.2b.6",
+    "A.3.07.2b.7"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|jam|labor:L.01:Pekerja:0,572|labor:L.04:Mandor:0,057|equipment::G.13.f:1,000",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-000922",
+    "AHSP-2026-SDA-000923"
+   ],
+   "codes": [
+    "A.3.08.2m",
+    "A.3.08.2n"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:1,0040|labor:L.04:Mandor:0,1004|equipment::Mobile Crane Kapasitas 25 ton T.13.a:0,5020",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001021",
+    "AHSP-2026-SDA-001026",
+    "AHSP-2026-SDA-001041"
+   ],
+   "codes": [
+    "A.3.08.3.3.a.2",
+    "A.3.08.3.3.a.7",
+    "A.3.08.3.3.b.2"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:0,9036|labor:L.04:Mandor:0,0904|equipment::Mobile Crane Kapasitas 25 ton T.13.a:0,4518",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001022",
+    "AHSP-2026-SDA-001027",
+    "AHSP-2026-SDA-001042",
+    "AHSP-2026-SDA-001046"
+   ],
+   "codes": [
+    "A.3.08.3.3.a.3",
+    "A.3.08.3.3.a.8",
+    "A.3.08.3.3.b.3",
+    "A.3.08.3.3.b.7"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:0,8032|labor:L.04:Mandor:0,0803|equipment::Mobile Crane Kapasitas 25 ton T.13.a:0,4016",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001023",
+    "AHSP-2026-SDA-001024",
+    "AHSP-2026-SDA-001028",
+    "AHSP-2026-SDA-001044"
+   ],
+   "codes": [
+    "A.3.08.3.3.a.4",
+    "A.3.08.3.3.a.5",
+    "A.3.08.3.3.a.9",
+    "A.3.08.3.3.b.5"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:0,7363|labor:L.04:Mandor:0,0736|equipment::Mobile Crane Kapasitas 25 ton T.13.a:0,3681",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001025",
+    "AHSP-2026-SDA-001047"
+   ],
+   "codes": [
+    "A.3.08.3.3.a.6",
+    "A.3.08.3.3.b.8"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:0,7530|labor:L.04:Mandor:0,0753|equipment::Mobile Crane Kapasitas 25 ton T.13.a:0,3765",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001030",
+    "AHSP-2026-SDA-001043"
+   ],
+   "codes": [
+    "A.3.08.3.3.a.11",
+    "A.3.08.3.3.b.4"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:0,7119|labor:L.04:Mandor:0,0712|equipment::Mobile Crane Kapasitas 25 ton T.13.a:0,3560",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001031",
+    "AHSP-2026-SDA-001048"
+   ],
+   "codes": [
+    "A.3.08.3.3.a.12",
+    "A.3.08.3.3.b.9"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:0,6827|labor:L.04:Mandor:0,0683|equipment::Mobile Crane Kapasitas 25 ton T.13.a:0,3414",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001033",
+    "AHSP-2026-SDA-001049"
+   ],
+   "codes": [
+    "A.3.08.3.3.a.14",
+    "A.3.08.3.3.b.10"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:0,6627|labor:L.04:Mandor:0,0663|equipment::Mobile Crane Kapasitas 25 ton T.13.a:0,3313",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001035",
+    "AHSP-2026-SDA-001036",
+    "AHSP-2026-SDA-001037",
+    "AHSP-2026-SDA-001038",
+    "AHSP-2026-SDA-001050"
+   ],
+   "codes": [
+    "A.3.08.3.3.a.16",
+    "A.3.08.3.3.a.17",
+    "A.3.08.3.3.a.18",
+    "A.3.08.3.3.a.19",
+    "A.3.08.3.3.b.11"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:3,5301|labor:L.02:2. Tukang Besi:1,1426|labor:L.04:3. Mandor:0,3530|equipment::Mobile Crane Kapasitas 1. T.13.a:1,7651",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001052",
+    "AHSP-2026-SDA-001053",
+    "AHSP-2026-SDA-001054",
+    "AHSP-2026-SDA-001055",
+    "AHSP-2026-SDA-001056"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.1.a",
+    "A.3.08.3.4.a.1.b",
+    "A.3.08.3.4.a.1.c",
+    "A.3.08.3.4.a.1.d",
+    "A.3.08.3.4.a.1.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:3,2610|labor:L.02:2. Tukang Besi:1,1084|labor:L.04:3. Mandor:0,3261|equipment::Mobile Crane Kapasitas 1. T.13.a:1,6305",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001058",
+    "AHSP-2026-SDA-001059",
+    "AHSP-2026-SDA-001060",
+    "AHSP-2026-SDA-001061",
+    "AHSP-2026-SDA-001062"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.2.a",
+    "A.3.08.3.4.a.2.b",
+    "A.3.08.3.4.a.2.c",
+    "A.3.08.3.4.a.2.d",
+    "A.3.08.3.4.a.2.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:3,0924|labor:L.02:2. Tukang Besi:1,0743|labor:L.04:3. Mandor:0,3092|equipment::Mobile Crane Kapasitas 1. T.13.a:1,5462",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001064",
+    "AHSP-2026-SDA-001065",
+    "AHSP-2026-SDA-001066",
+    "AHSP-2026-SDA-001067",
+    "AHSP-2026-SDA-001068"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.3.a",
+    "A.3.08.3.4.a.3.b",
+    "A.3.08.3.4.a.3.c",
+    "A.3.08.3.4.a.3.d",
+    "A.3.08.3.4.a.3.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:2,9438|labor:L.02:2. Tukang Besi:1,0502|labor:L.04:3. Mandor:0,2944|equipment::Mobile Crane Kapasitas 1. T.13.a:1,4719",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001070",
+    "AHSP-2026-SDA-001071",
+    "AHSP-2026-SDA-001072",
+    "AHSP-2026-SDA-001073",
+    "AHSP-2026-SDA-001074"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.4.a",
+    "A.3.08.3.4.a.4.b",
+    "A.3.08.3.4.a.4.c",
+    "A.3.08.3.4.a.4.d",
+    "A.3.08.3.4.a.4.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:2,9197|labor:L.02:2. Tukang Besi:1,0382|labor:L.04:3. Mandor:0,2920|equipment::Mobile Crane Kapasitas 1. T.13.a:1,4598",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001076",
+    "AHSP-2026-SDA-001077",
+    "AHSP-2026-SDA-001078",
+    "AHSP-2026-SDA-001079",
+    "AHSP-2026-SDA-001080"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.5.a",
+    "A.3.08.3.4.a.5.b",
+    "A.3.08.3.4.a.5.c",
+    "A.3.08.3.4.a.5.d",
+    "A.3.08.3.4.a.5.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:2,8206|labor:L.02:2. Tukang Besi:1,0221|labor:L.04:3. Mandor:0,2821|equipment::Mobile Crane Kapasitas 1. T.13.a:1,4103",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001082",
+    "AHSP-2026-SDA-001083",
+    "AHSP-2026-SDA-001084",
+    "AHSP-2026-SDA-001085",
+    "AHSP-2026-SDA-001086"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.6.a",
+    "A.3.08.3.4.a.6.b",
+    "A.3.08.3.4.a.6.c",
+    "A.3.08.3.4.a.6.d",
+    "A.3.08.3.4.a.6.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:3,2530|labor:L.02:2. Tukang Besi:1,1044|labor:L.04:3. Mandor:0,3253|equipment::Mobile Crane Kapasitas 1. T.13.a:1,6265",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001088",
+    "AHSP-2026-SDA-001089",
+    "AHSP-2026-SDA-001090",
+    "AHSP-2026-SDA-001091",
+    "AHSP-2026-SDA-001092",
+    "AHSP-2026-SDA-001093",
+    "AHSP-2026-SDA-001094",
+    "AHSP-2026-SDA-001095"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.7.a",
+    "A.3.08.3.4.a.7.b",
+    "A.3.08.3.4.a.7.c",
+    "A.3.08.3.4.a.7.d",
+    "A.3.08.3.4.a.7.e",
+    "A.3.08.3.4.a.7.f",
+    "A.3.08.3.4.a.7.g",
+    "A.3.08.3.4.a.7.h"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:3,1004|labor:L.02:2. Tukang Besi:1,0783|labor:L.04:3. Mandor:0,3100|equipment::Mobile Crane Kapasitas 1. T.13.a:1,5502",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001097",
+    "AHSP-2026-SDA-001098",
+    "AHSP-2026-SDA-001099",
+    "AHSP-2026-SDA-001100",
+    "AHSP-2026-SDA-001101",
+    "AHSP-2026-SDA-001102",
+    "AHSP-2026-SDA-001103",
+    "AHSP-2026-SDA-001104"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.8.a",
+    "A.3.08.3.4.a.8.b",
+    "A.3.08.3.4.a.8.c",
+    "A.3.08.3.4.a.8.d",
+    "A.3.08.3.4.a.8.e",
+    "A.3.08.3.4.a.8.f",
+    "A.3.08.3.4.a.8.g",
+    "A.3.08.3.4.a.8.h"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:2,9518|labor:L.02:2. Tukang Besi:1,0542|labor:L.04:3. Mandor:0,2952|equipment::Mobile Crane Kapasitas 1. T.13.a:1,4759",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001106",
+    "AHSP-2026-SDA-001107",
+    "AHSP-2026-SDA-001108",
+    "AHSP-2026-SDA-001109",
+    "AHSP-2026-SDA-001110",
+    "AHSP-2026-SDA-001111",
+    "AHSP-2026-SDA-001112",
+    "AHSP-2026-SDA-001113"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.9.a",
+    "A.3.08.3.4.a.9.b",
+    "A.3.08.3.4.a.9.c",
+    "A.3.08.3.4.a.9.d",
+    "A.3.08.3.4.a.9.e",
+    "A.3.08.3.4.a.9.f",
+    "A.3.08.3.4.a.9.g",
+    "A.3.08.3.4.a.9.h"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:2,8870|labor:L.02:2. Tukang Besi:1,0361|labor:L.04:3. Mandor:0,2887|equipment::Mobile Crane Kapasitas 1. T.13.a:1,4435",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001115",
+    "AHSP-2026-SDA-001116",
+    "AHSP-2026-SDA-001117",
+    "AHSP-2026-SDA-001118",
+    "AHSP-2026-SDA-001119",
+    "AHSP-2026-SDA-001120",
+    "AHSP-2026-SDA-001121",
+    "AHSP-2026-SDA-001122"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.10.a",
+    "A.3.08.3.4.a.10.b",
+    "A.3.08.3.4.a.10.c",
+    "A.3.08.3.4.a.10.d",
+    "A.3.08.3.4.a.10.e",
+    "A.3.08.3.4.a.10.f",
+    "A.3.08.3.4.a.10.g",
+    "A.3.08.3.4.a.10.h"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:2,8494|labor:L.02:2. Tukang Besi:1,0281|labor:L.04:3. Mandor:0,2849|equipment::Mobile Crane Kapasitas 1. T.13.a:1,4247",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001124",
+    "AHSP-2026-SDA-001125",
+    "AHSP-2026-SDA-001126",
+    "AHSP-2026-SDA-001127",
+    "AHSP-2026-SDA-001128",
+    "AHSP-2026-SDA-001129",
+    "AHSP-2026-SDA-001130",
+    "AHSP-2026-SDA-001131"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.11.a",
+    "A.3.08.3.4.a.11.b",
+    "A.3.08.3.4.a.11.c",
+    "A.3.08.3.4.a.11.d",
+    "A.3.08.3.4.a.11.e",
+    "A.3.08.3.4.a.11.f",
+    "A.3.08.3.4.a.11.g",
+    "A.3.08.3.4.a.11.h"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:2,7882|labor:L.02:2. Tukang Besi:1,0181|labor:L.04:3. Mandor:0,2788|equipment::Mobile Crane Kapasitas 1. T.13.a:1,3941",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001133",
+    "AHSP-2026-SDA-001134",
+    "AHSP-2026-SDA-001135",
+    "AHSP-2026-SDA-001136",
+    "AHSP-2026-SDA-001137",
+    "AHSP-2026-SDA-001138",
+    "AHSP-2026-SDA-001139",
+    "AHSP-2026-SDA-001140"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.12.a",
+    "A.3.08.3.4.a.12.b",
+    "A.3.08.3.4.a.12.c",
+    "A.3.08.3.4.a.12.d",
+    "A.3.08.3.4.a.12.e",
+    "A.3.08.3.4.a.12.f",
+    "A.3.08.3.4.a.12.g",
+    "A.3.08.3.4.a.12.h"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:2,8313|labor:L.02:2. Tukang Besi:1,0341|labor:L.04:3. Mandor:0,2831|equipment::Mobile Crane Kapasitas 1. T.13.a:1,4157",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001142",
+    "AHSP-2026-SDA-001143",
+    "AHSP-2026-SDA-001144",
+    "AHSP-2026-SDA-001145",
+    "AHSP-2026-SDA-001146"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.13.a",
+    "A.3.08.3.4.a.13.b",
+    "A.3.08.3.4.a.13.c",
+    "A.3.08.3.4.a.13.d",
+    "A.3.08.3.4.a.13.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:2,7631|labor:L.02:2. Tukang Besi:1,0201|labor:L.04:3. Mandor:0,2763|equipment::Mobile Crane Kapasitas 1. T.13.a:1,3815",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001148",
+    "AHSP-2026-SDA-001149",
+    "AHSP-2026-SDA-001150",
+    "AHSP-2026-SDA-001151",
+    "AHSP-2026-SDA-001152"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.14.a",
+    "A.3.08.3.4.a.14.b",
+    "A.3.08.3.4.a.14.c",
+    "A.3.08.3.4.a.14.d",
+    "A.3.08.3.4.a.14.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:2,7376|labor:L.02:2. Tukang Besi:1,0141|labor:L.04:3. Mandor:0,2738|equipment::Mobile Crane Kapasitas 1. T.13.a:1,3688",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001154",
+    "AHSP-2026-SDA-001155",
+    "AHSP-2026-SDA-001156",
+    "AHSP-2026-SDA-001157",
+    "AHSP-2026-SDA-001158"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.15.a",
+    "A.3.08.3.4.a.15.b",
+    "A.3.08.3.4.a.15.c",
+    "A.3.08.3.4.a.15.d",
+    "A.3.08.3.4.a.15.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:1. Pekerja:2,7269|labor:L.02:2. Tukang Besi:1,0120|labor:L.04:3. Mandor:0,2727|equipment::Mobile Crane Kapasitas 1. T.13.a:1,3635",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001160",
+    "AHSP-2026-SDA-001161",
+    "AHSP-2026-SDA-001162",
+    "AHSP-2026-SDA-001163",
+    "AHSP-2026-SDA-001164",
+    "AHSP-2026-SDA-001166",
+    "AHSP-2026-SDA-001167",
+    "AHSP-2026-SDA-001168",
+    "AHSP-2026-SDA-001169",
+    "AHSP-2026-SDA-001170",
+    "AHSP-2026-SDA-001171",
+    "AHSP-2026-SDA-001173",
+    "AHSP-2026-SDA-001174",
+    "AHSP-2026-SDA-001175",
+    "AHSP-2026-SDA-001176",
+    "AHSP-2026-SDA-001177",
+    "AHSP-2026-SDA-001178",
+    "AHSP-2026-SDA-001180",
+    "AHSP-2026-SDA-001181",
+    "AHSP-2026-SDA-001182",
+    "AHSP-2026-SDA-001183",
+    "AHSP-2026-SDA-001184",
+    "AHSP-2026-SDA-001186",
+    "AHSP-2026-SDA-001187",
+    "AHSP-2026-SDA-001188",
+    "AHSP-2026-SDA-001189",
+    "AHSP-2026-SDA-001190"
+   ],
+   "codes": [
+    "A.3.08.3.4.a.16.a",
+    "A.3.08.3.4.a.16.b",
+    "A.3.08.3.4.a.16.c",
+    "A.3.08.3.4.a.16.d",
+    "A.3.08.3.4.a.16.e",
+    "A.3.08.3.4.a.17.a",
+    "A.3.08.3.4.a.17.b",
+    "A.3.08.3.4.a.17.c",
+    "A.3.08.3.4.a.17.d",
+    "A.3.08.3.4.a.17.e",
+    "A.3.08.3.4.a.17.f",
+    "A.3.08.3.4.a.18.a",
+    "A.3.08.3.4.a.18.b",
+    "A.3.08.3.4.a.18.c",
+    "A.3.08.3.4.a.18.d",
+    "A.3.08.3.4.a.18.e",
+    "A.3.08.3.4.a.18.f",
+    "A.3.08.3.4.a.19.a",
+    "A.3.08.3.4.a.19.b",
+    "A.3.08.3.4.a.19.c",
+    "A.3.08.3.4.a.19.d",
+    "A.3.08.3.4.a.19.e",
+    "A.3.08.3.4.a.20.a",
+    "A.3.08.3.4.a.20.b",
+    "A.3.08.3.4.a.20.c",
+    "A.3.08.3.4.a.20.d",
+    "A.3.08.3.4.a.20.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:1,7671|labor:L.02:Tukang Besi:0,4418|labor:L.04:Mandor:0,1767|equipment::Mobile Crane Kapasitas 25 T.13.a:0,8835",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001192",
+    "AHSP-2026-SDA-001193",
+    "AHSP-2026-SDA-001194",
+    "AHSP-2026-SDA-001195",
+    "AHSP-2026-SDA-001196"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.1.a",
+    "A.3.08.3.4.b.1.b",
+    "A.3.08.3.4.b.1.c",
+    "A.3.08.3.4.b.1.d",
+    "A.3.08.3.4.b.1.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:2,0080|labor:L.02:Tukang Besi:0,5020|labor:L.04:Mandor:0,2008|equipment::Mobile Crane Kapasitas 25 T.13.a:1,0040",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001198",
+    "AHSP-2026-SDA-001199",
+    "AHSP-2026-SDA-001200",
+    "AHSP-2026-SDA-001201",
+    "AHSP-2026-SDA-001202"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.2.a",
+    "A.3.08.3.4.b.2.b",
+    "A.3.08.3.4.b.2.c",
+    "A.3.08.3.4.b.2.d",
+    "A.3.08.3.4.b.2.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:1,8072|labor:L.02:Tukang Besi:0,4518|labor:L.04:Mandor:0,1807|equipment::Mobile Crane Kapasitas 25 T.13.a:0,9036",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001204",
+    "AHSP-2026-SDA-001205",
+    "AHSP-2026-SDA-001206",
+    "AHSP-2026-SDA-001207",
+    "AHSP-2026-SDA-001208"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.3.a",
+    "A.3.08.3.4.b.3.b",
+    "A.3.08.3.4.b.3.c",
+    "A.3.08.3.4.b.3.d",
+    "A.3.08.3.4.b.3.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:1,5060|labor:L.02:Tukang Besi:0,3765|labor:L.04:Mandor:0,1506|equipment::Mobile Crane T.13.a:0,7530",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001210",
+    "AHSP-2026-SDA-001211",
+    "AHSP-2026-SDA-001212",
+    "AHSP-2026-SDA-001213",
+    "AHSP-2026-SDA-001214"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.4.a",
+    "A.3.08.3.4.b.4.b",
+    "A.3.08.3.4.b.4.c",
+    "A.3.08.3.4.b.4.d",
+    "A.3.08.3.4.b.4.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:1,6064|labor:L.02:Tukang Besi:0,4016|labor:L.04:Mandor:0,1606|equipment::Mobile Crane T.13.a:0,8032",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001216",
+    "AHSP-2026-SDA-001217",
+    "AHSP-2026-SDA-001218",
+    "AHSP-2026-SDA-001219",
+    "AHSP-2026-SDA-001220"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.5.a",
+    "A.3.08.3.4.b.5.b",
+    "A.3.08.3.4.b.5.c",
+    "A.3.08.3.4.b.5.d",
+    "A.3.08.3.4.b.5.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:1,6867|labor:L.02:Tukang Besi:0,4217|labor:L.04:Mandor:0,1687|equipment::Mobile Crane T.13.a:0,8434",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001222",
+    "AHSP-2026-SDA-001223",
+    "AHSP-2026-SDA-001224",
+    "AHSP-2026-SDA-001225",
+    "AHSP-2026-SDA-001226",
+    "AHSP-2026-SDA-001228",
+    "AHSP-2026-SDA-001229",
+    "AHSP-2026-SDA-001230",
+    "AHSP-2026-SDA-001231",
+    "AHSP-2026-SDA-001232"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.6.a",
+    "A.3.08.3.4.b.6.b",
+    "A.3.08.3.4.b.6.c",
+    "A.3.08.3.4.b.6.d",
+    "A.3.08.3.4.b.6.e",
+    "A.3.08.3.4.b.6.a",
+    "A.3.08.3.4.b.6.b",
+    "A.3.08.3.4.b.6.c",
+    "A.3.08.3.4.b.6.d",
+    "A.3.08.3.4.b.6.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:1,6867|labor:L.02:Tukang Besi:0,4217|labor:L.04:Mandor:0,1687|equipment::Mobile Crane T.13.a:0,8434|equipment::Koefisien alat = 1 / Q.1' Trailer 10-20 ton (lebar 3.5 m x 8.0 m) Jarak angkut:1,00|equipment::Koefisien alat = 1 / Q.2' Pengangkutan dengan Jarak Angkut isi KosongMuat Turun(simpangan TotalProduksiKoef Alat - Jarak 10,0 km:5,00",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001227",
+    "AHSP-2026-SDA-001233"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.6.f",
+    "A.3.08.3.4.b.6.f"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:1,5964|labor:L.02:Tukang Besi:0,3765|labor:L.04:Mandor:0,1596|equipment::Mobile Crane Kapasitas 25 T.13.a:0,7982",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001234",
+    "AHSP-2026-SDA-001235",
+    "AHSP-2026-SDA-001236",
+    "AHSP-2026-SDA-001237",
+    "AHSP-2026-SDA-001238"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.7.a",
+    "A.3.08.3.4.b.7.b",
+    "A.3.08.3.4.b.7.c",
+    "A.3.08.3.4.b.7.d",
+    "A.3.08.3.4.b.7.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:1,4726|labor:L.02:Tukang Besi:0,3681|labor:L.04:Mandor:0,1473|equipment::Mobile Crane Kapasitas 25 T.13.a:0,7363",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001240",
+    "AHSP-2026-SDA-001241",
+    "AHSP-2026-SDA-001242",
+    "AHSP-2026-SDA-001243",
+    "AHSP-2026-SDA-001244"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.8.a",
+    "A.3.08.3.4.b.8.b",
+    "A.3.08.3.4.b.8.c",
+    "A.3.08.3.4.b.8.d",
+    "A.3.08.3.4.b.8.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:1,4239|labor:L.02:Tukang Besi:0,3560|labor:L.04:Mandor:0,1424|equipment::Mobile Crane T.13.a:0,7119",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001246",
+    "AHSP-2026-SDA-001247",
+    "AHSP-2026-SDA-001248",
+    "AHSP-2026-SDA-001249",
+    "AHSP-2026-SDA-001250"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.9.a",
+    "A.3.08.3.4.b.9.b",
+    "A.3.08.3.4.b.9.c",
+    "A.3.08.3.4.b.9.d",
+    "A.3.08.3.4.b.9.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:1,3655|labor:L.02:Tukang Besi:0,3414|labor:L.04:Mandor:0,1365|equipment::Mobile Crane Kapasitas 25 T.13.a:0,6827",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001252",
+    "AHSP-2026-SDA-001253",
+    "AHSP-2026-SDA-001254",
+    "AHSP-2026-SDA-001255",
+    "AHSP-2026-SDA-001256"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.10.a",
+    "A.3.08.3.4.b.10.b",
+    "A.3.08.3.4.b.10.c",
+    "A.3.08.3.4.b.10.d",
+    "A.3.08.3.4.b.10.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:1,3253|labor:L.02:Tukang Besi:0,3313|labor:L.04:Mandor:0,1325|equipment::Mobile Crane Kapasitas 25 T.13.a:0,6627",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001258",
+    "AHSP-2026-SDA-001259",
+    "AHSP-2026-SDA-001260",
+    "AHSP-2026-SDA-001261",
+    "AHSP-2026-SDA-001262"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.11.a",
+    "A.3.08.3.4.b.11.b",
+    "A.3.08.3.4.b.11.c",
+    "A.3.08.3.4.b.11.d",
+    "A.3.08.3.4.b.11.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "SDA|unit|labor:L.01:Pekerja:1,3096|labor:L.02:Tukang Besi:0,3274|labor:L.04:Mandor:0,1310|equipment::Mobile Crane Kapasitas 25 T.13.a:0,6548",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-SDA-001264",
+    "AHSP-2026-SDA-001265",
+    "AHSP-2026-SDA-001266",
+    "AHSP-2026-SDA-001267",
+    "AHSP-2026-SDA-001268"
+   ],
+   "codes": [
+    "A.3.08.3.4.b.12.a",
+    "A.3.08.3.4.b.12.b",
+    "A.3.08.3.4.b.12.c",
+    "A.3.08.3.4.b.12.d",
+    "A.3.08.3.4.b.12.e"
+   ],
+   "field": "SDA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "BINA_MARGA|Meter Panjang|labor:L01:Pekerja:1. Pekerja L01 Jam 0,0916 27.643,54 2.531,22|labor:L02:Tukang:2. Tukang L02 Jam 0,0229 29.049,71 664,99|labor:L03:Mandor:3. Mandor L03 Jam 0,0229 33.312,62 762,58|material:M59:Beton 30 MPa:1. Beton 30 MPa M59 M3 0,5929 1.382.749,35 819.797,52|material:M57a:Baja Tulangan:2. Baja Tulangan M57a Kg 65,2163 9.831,00 641.140,95|material:M144:Timbunan Porus:3. Timbunan Porus M144 M3 0,4410 348.757,77 153.802,18|material:M09:Timbunan Pilihan:4. Timbunan Pilihan M09 M3 3,1400 25.000,00 78.500,00|material::Cetakan gorong-gorong kotak ukuran 100 x 100:5 Cetakan gorong-gorong kotak  bh/M' 1,0000 58.661,58 58.661,58 ⏎ ukuran 100 x 100|equipment:E10a:Mini Excavator:1. Mini Excavator E10a jam 0,0226 281.237,82 6.351,68|equipment:E25:Stamper:2. Stamper E25 Jam 0,5422 103.174,22 55.937,83|equipment:E25:Stamper:3. Stamper E25 Jam 1,5060 103.174,22 155.382,86|equipment:E11a:FLAT BED TRUCK 10 TON:4. FLAT BED TRUCK 10 TON E11a Jam 0,1828 730.037,27 133.470,39|equipment:E07:CRANE ON TRACK 10-15 TON:5. CRANE ON TRACK 10-15 TON E07 jam 0,0229 773.917,31 17.716,18|equipment::Alat Bantu:6. Alat Bantu Ls 1,0000 0,00 0,00",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-BINA_MARGA-000037",
+    "AHSP-2026-BINA_MARGA-000038"
+   ],
+   "codes": [
+    "2.3.(14a)",
+    "2.3.(14b)"
+   ],
+   "field": "BINA_MARGA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "BINA_MARGA|Buah|labor:L01:Pekerja:1. Pekerja L01 jam 3,6466 27.643,54 100.804,55|labor:L02:Tukang Batu:2. Tukang Batu L02 jam 1,4586 29.049,71 42.372,91|labor:L03:Mandor:3. Mandor L03 jam 0,1823 33.312,62 6.073,87|material:M02:Batu Kali:1. Batu Kali M02 M3 3,4071 209.100,00 712.429,07|material:M12:Semen:2. Semen M12 Kg 560,8656 1.600,00 897.384,97|material:M01b:Pasir:3. Pasir M01b M3 4,8541 246.300,00 1.195.563,93|material:M170:Air:4. Air M170 Ltr 455,3300 14,65 6.670,58|material:M03:Agregat Kasar:5. Agregat Kasar M03 M3 2,6594 315.168,58 838.143,93|material:M06:Batu Kosong:6. Batu Kosong M06 M3 1,9680 209.100,00 411.508,80|material:M171:Plastizier:7. Plastizier M171 Kg 1,8900 35.000,00 66.150,00|equipment:E06:Concrete Mixer:1. Concrete Mixer E06 jam 0,1823 119.474,74 21.783,75|equipment:E23:Water Tank Truck:2. Water Tank Truck E23 jam 0,0482 500.906,19 24.145,34|equipment::Alat Bantu:3. Alat Bantu Ls 1,0000 0,00 0,00",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-BINA_MARGA-000080",
+    "AHSP-2026-BINA_MARGA-000083"
+   ],
+   "codes": [
+    "2.3.(33a)",
+    "2.3.(34a)"
+   ],
+   "field": "BINA_MARGA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "BINA_MARGA|Buah|labor:L01:Pekerja:1. Pekerja L01 jam 6,0559 27.643,54 167.406,61|labor:L02:Tukang Batu:2. Tukang Batu L02 jam 2,4224 29.049,71 70.368,89|labor:L03:Mandor:3. Mandor L03 jam 0,3028 33.312,62 10.086,90|material:M02:Batu Kali:1. Batu Kali M02 M3 6,9261 209.100,00 1.448.239,16|material:M12:Semen:2. Semen M12 Kg 931,7088 1.600,00 1.490.734,00|material:M01b:Pasir:3. Pasir M01b M3 8,0904 246.300,00 1.992.665,06|material:M170:Air:4. Air M170 Ltr 686,2992 14,65 10.054,28|material:M03:Agregat Kasar:5. Agregat Kasar M03 M3 4,4164 315.168,58 1.391.909,69|material:M06:Batu Kosong:6. Batu Kosong M06 M3 4,7371 209.100,00 990.526,77|material:M171:Plastizier:7. Plastizier M171 Kg 1,8900 35.000,00 66.150,00|equipment:E06:Concrete Mixer:1. Concrete Mixer E06 jam 0,3028 119.474,74 36.176,38|equipment:E23:Water Tank Truck:2. Water Tank Truck E23 jam 0,0801 500.906,19 40.098,28|equipment::Alat Bantu:3. Alat Bantu Ls 1,0000 0,00 0,00",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-BINA_MARGA-000081",
+    "AHSP-2026-BINA_MARGA-000084"
+   ],
+   "codes": [
+    "2.3.(33b)",
+    "2.3.(34b)"
+   ],
+   "field": "BINA_MARGA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "BINA_MARGA|Meter Panjang|labor:L01:Pekerja:1. Pekerja L01 Jam 0,0669 27.643,54 1.850,30|labor:L03:Mandor:2. Mandor L03 Jam 0,0335 33.312,62 1.114,88|material:M179:Backer Rod:1. Backer Rod M179 M 1,05000 16.554,86 17.382,60|material:M178:Termoplastik (sealant tuang panas) Crack filling machine; 12:2. Termoplastik M178 Kg/m 4,61295 28.985,00 133.706,36 ⏎ (sealant tuang panas) ⏎ Crack filling machine; 12|equipment::E99 Ltr / mnt; 2,92 HP Concrete Cutter (0,5-:1   E99 Jam 0,0077 87.088 672,24 ⏎ Ltr/mnt; 2,92 HP ⏎ Concrete Cutter (0,5-|equipment::E76 0,7 m / menit) Compressor AHX-10,:2   E76 Jam 0,0335 101.054 3.382,00 ⏎ 0,7 m/menit) ⏎ Compressor AHX-10,|equipment::E05:3   E05 Jam 0,0335 215.444 7.210,31|equipment::Alat Bantu:4 Alat Bantu Ls 1,0000 0,00 0,00",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-BINA_MARGA-000190",
+    "AHSP-2026-BINA_MARGA-000196"
+   ],
+   "codes": [
+    "4.12.(1)",
+    "4.12.(7)"
+   ],
+   "field": "BINA_MARGA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "BINA_MARGA|Buah|labor:L01:Pekerja:1. Pekerja L01 jam 22,1687 27.643,54 612.820,64|labor:L02:Tukang:2. Tukang L02 jam 11,0843 29.049,71 321.996,75|labor:L03:Mandor -:3. Mandor L03 jam 11,0843 33.312,62 369.248,35 ⏎ -|equipment:E97:Machine Beam Launcher Crane 300 Ton:1. Machine Beam Launcher Crane 300 Ton E97 jam 11,0843 485.881 5.385.672,42|equipment::Alat Bantu:2. Alat Bantu Ls 1,0000 0,00 0,00",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-BINA_MARGA-000339",
+    "AHSP-2026-BINA_MARGA-001137"
+   ],
+   "codes": [
+    "7.2.(12a)",
+    "7.2.(8).65.50-60"
+   ],
+   "field": "BINA_MARGA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "BINA_MARGA|Buah|labor:L01:Pekerja:1. Pekerja L01 jam 20,2410 27.643,54 559.531,89|labor:L02:Tukang:2. Tukang L02 jam 10,1205 29.049,71 293.997,03|labor:L03:Mandor -:3. Mandor L03 jam 10,1205 33.312,62 337.139,80 ⏎ -|equipment:E97:Machine Beam Launcher Crane 300 Ton:1. Machine Beam Launcher Crane 300 Ton E97 jam 10,1205 485.881 4.917.353,08|equipment::Alat Bantu:2. Alat Bantu Ls 1,0000 0,00 0,00",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-BINA_MARGA-000341",
+    "AHSP-2026-BINA_MARGA-000343"
+   ],
+   "codes": [
+    "7.2.(14a)",
+    "7.2.(16).50"
+   ],
+   "field": "BINA_MARGA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "BINA_MARGA|Buah|labor:L01:Pekerja:1. Pekerja L01 jam 0,50 27.643,54 13.877,28|labor:L03:Mandor:2 Mandor L03 jam 0,05 33.312,62 1.672,32|equipment:E74:Kunci Torsi (Torque Wrench):1. Kunci Torsi (Torque Wrench) E74 jam 0,0502 69.935,01 3.510,79|equipment:E78:Skyliftcrane Truck; 16 m, 1 Ton:2 Skyliftcrane Truck; 16 m, 1 Ton E78 jam 0,0502 674.452,27 33.858,05|equipment::Alat Bantu:3 Alat Bantu Ls 1,0000 0,00 0,00",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-BINA_MARGA-000533",
+    "AHSP-2026-BINA_MARGA-000534"
+   ],
+   "codes": [
+    "8.5.(6a)",
+    "8.5.(7a)"
+   ],
+   "field": "BINA_MARGA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "BINA_MARGA|Meter Panjang|labor:L01:Pekerja:1 Pekerja L01 jam 0,0301 27.643,54 832,64|labor:L02:Tukang:2 Tukang L02 jam 0,0301 29.049,71 874,99|labor:L03:Mandor:3 Mandor L03 jam 0,0151 33.312,62 501,70|material:M240a:Pipa PVC dia 6 Inch:1 Pipa PVC dia 6 Inch M240a Btg/m 0,2550 363.000,00 92.565,00|material:M242:Sambungan pipa PVC:2 Sambungan pipa PVC M242 buah 2,0000 15.000,00 30.000,00|material:M125:Perekat:3 Perekat M125 kg 0,0942 460.000,00 43.336,64|material:M226:Mortar fast track (8 jam):4 Mortar fast track (8 jam) M226 m3 0,0573 2.183.299,83 125.149,87|material:M170:Air:5 Air M170 liter 17,9901 14,65 263,56|equipment:E26:Jack Hammer:1 Jack Hammer E26 jam 0,0151 70.534,42 1.062,27|equipment:E05:Compressor:2 Compressor E05 jam 0,0151 215.443,91 3.244,64|equipment:E12:Generator Set:3 Generator Set E12 jam 0,0151 497.970,68 7.499,56|equipment::Alat Bantu:4 Alat Bantu Ls 1,0000 0,00 0,00",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-BINA_MARGA-000607",
+    "AHSP-2026-BINA_MARGA-000608"
+   ],
+   "codes": [
+    "8.14.(2).150",
+    "8.14.(3).150"
+   ],
+   "field": "BINA_MARGA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "BINA_MARGA|Buah|labor:L01:Pekerja:1. Pekerja L01 jam 0,0203 27.643,54 562,03|labor:L02:Tukang:2. Tukang L02 jam 0,0041 29.049,71 118,12|labor:L03:Mandor:3. Mandor L03 jam 0,0041 33.312,62 135,46|material:M12:Semen:1. Semen M12 Kg 11,3603 1.600,00 18.176,40|material:M01a:Pasir Beton:2. Pasir Beton M01a M3 0,0228 168.800,00 3.852,88|material:M03:Aggregat Kasar:3. Aggregat Kasar M03 M3 0,0259 315.168,58 8.172,72|material:M19:Kayu Kaso bekisting:4. Kayu Kaso bekisting M19 M3 0,0416 2.750.000,00 114.430,56|material:M73:Multiplek:5. Multiplek M73 Lbr 0,4535 150.850,00 68.411,55|material:M170:Air:6. Air M170 Liter 5,6690 14,65 83,05|material:M57a:Besi Beton:7. Besi Beton M57a Kg 1,6200 9.831,00 15.926,22|material:M14:Kawat beton:8. Kawat beton M14 Kg 0,0034 25.000,00 84,38|material:M18:Paku:9. Paku M18 Kg 0,1350 36.000,00 4.860,00|material:M17b:Cat:10. Cat M17b Kg 1,8000 123.333,33 222.000,00|equipment:E06:Concrete Mixer:1. Concrete Mixer E06 Jam 0,0041 119.474,74 485,82|equipment:E23:WATER TANK TRUCK:2. WATER TANK TRUCK E23 Jam 0,0017 500.906,19 855,31|equipment:E20:CONCRETE VIBRATOR:3. CONCRETE VIBRATOR E20 Jam 0,0041 77.078,00 313,42|equipment:E08:DUMP TRUCK 4 TON; 134 HP:4. DUMP TRUCK 4 TON; 134 HP E08 Jam 0,0219 433.363,61 9.499,60|equipment:E78:Mobile Crane 1 ton:5. Mobile Crane 1 ton E78 Jam 0,0081 674.452,27 5.485,00|equipment::Alat Bantu:6. Alat Bantu Ls 1,000 0,00 0,00",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-BINA_MARGA-000707",
+    "AHSP-2026-BINA_MARGA-000711"
+   ],
+   "codes": [
+    "9.2.(11a)",
+    "9.2.(12a)"
+   ],
+   "field": "BINA_MARGA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "BINA_MARGA|Buah|labor:L01:Pekerja:1. Pekerja L01 jam 0,0500 27.643,54 1.382,18|labor:L03:Mandor:2. Mandor L03 jam 0,0250 33.312,62 832,82|material:M170:Air:1. Air M170 Ltr 10,5000 14,65 153,83|material::Bahan lainnya:2. Bahan lainnya Ls 1,0000 0,00 0,00|equipment:E23:Water Tank Truck:1. Water Tank Truck E23 jam 0,0250 500.906,19 12.522,65|equipment::Alat Bantu:2. Alat Bantu Ls 1,0000 0,00 0,00",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-BINA_MARGA-001105",
+    "AHSP-2026-BINA_MARGA-001106"
+   ],
+   "codes": [
+    "10.1.(24b)",
+    "10.1.(24c)"
+   ],
+   "field": "BINA_MARGA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "BINA_MARGA|Meter Panjang|labor:L01:Pekerja:1. Pekerja L01 jam 0,0717 27.643,54 1.982,47|labor:L03:Mandor:2. Mandor L03 jam 0,0143 33.312,62 477,81|material:M170:Air:1. Air M170 Ltr 21,0000 14,65 307,65|equipment:E22:WATER PUMP 70-100 mm:1. WATER PUMP 70-100 mm E22 jam 0,0143 76.546,90 1.097,92|equipment:E23:Water Tank Truck:2. Water Tank Truck E23 jam 0,0063 500.906,19 3.168,38|equipment::Alat Bantu:3. Alat Bantu Ls 1,0000 0,00 0,00",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-BINA_MARGA-001117",
+    "AHSP-2026-BINA_MARGA-001118"
+   ],
+   "codes": [
+    "10.2.(2c)",
+    "10.2.(3)"
+   ],
+   "field": "BINA_MARGA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor::Pekerja:0,2500|labor::Tukang batu / tembok:0,1250|labor::Kepala Tukang:0,0125|labor::Mandor:0,0042",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000140",
+    "AHSP-2026-CIPTA_KARYA-000142"
+   ],
+   "codes": [
+    "1.6.16",
+    "1.6.18"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor::Pekerja:0,2000|labor::Tukang batu / tembok:0,1000|labor::Kepala Tukang:0,0100|labor::Mandor:0,0033",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000143",
+    "AHSP-2026-CIPTA_KARYA-000144"
+   ],
+   "codes": [
+    "1.6.19",
+    "1.6.20"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m3|labor:L.01:Pekerja:0,400|labor:L.02:Tukang batu / tembok:0,100|labor:L.03:Kepala tukang:0,010|labor:L.04:Mandor:0,040",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000236",
+    "AHSP-2026-CIPTA_KARYA-000237",
+    "AHSP-2026-CIPTA_KARYA-000238",
+    "AHSP-2026-CIPTA_KARYA-000239",
+    "AHSP-2026-CIPTA_KARYA-000240",
+    "AHSP-2026-CIPTA_KARYA-000241",
+    "AHSP-2026-CIPTA_KARYA-000242",
+    "AHSP-2026-CIPTA_KARYA-000243",
+    "AHSP-2026-CIPTA_KARYA-000244",
+    "AHSP-2026-CIPTA_KARYA-000245"
+   ],
+   "codes": [
+    "2.2.1.6.1",
+    "2.2.1.6.2",
+    "2.2.1.6.3",
+    "2.2.1.6.4",
+    "2.2.1.6.5",
+    "2.2.1.6.6",
+    "2.2.1.6.7",
+    "2.2.1.6.8",
+    "2.2.1.6.9",
+    "2.2.1.6.10"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.02:Tukang batu / tembok:0,0380|labor:L.03:Kepala Tukang:0,0038|labor:L.04:Mandor:0,001|equipment::Sewa crane unit:0,019",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000340",
+    "AHSP-2026-CIPTA_KARYA-000341",
+    "AHSP-2026-CIPTA_KARYA-000342"
+   ],
+   "codes": [
+    "2.4.4.1",
+    "2.4.4.2",
+    "2.4.4.3"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,067|labor:L.02:Tukang batu / tembok:0,067|labor:L.02:Tukang ereksi:0,134|labor:L.03:Kepala Tukang:0,067|labor:L.04:Mandor:0,022|equipment::Sewa crane unit:0,067|equipment::Sewa pipe support buah:1,100",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000343",
+    "AHSP-2026-CIPTA_KARYA-000345"
+   ],
+   "codes": [
+    "2.4.5.1",
+    "2.4.5.3"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,1500|labor:L.02:Tukang Kayu:0,0750|labor:L.03:Kepala Tukang:0,0075|labor:L.04:Mandor:0,0025",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000375",
+    "AHSP-2026-CIPTA_KARYA-000376"
+   ],
+   "codes": [
+    "3.1.1.2",
+    "3.1.1.3"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,0840|labor:L.02:Tukang Kayu:0,1250|labor:L.03:Kepala Tukang:0,0125|labor:L.04:Mandor:0,0042|material::lembar 1,100 Sekrup 3,5”:6,000",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000403",
+    "AHSP-2026-CIPTA_KARYA-000404"
+   ],
+   "codes": [
+    "3.1.2.22",
+    "3.1.2.23"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,300|labor:L.02:Tukang:0,100|labor:L.03:Kepala Tukang:0,010|labor:L.04:Mandor:0,003|material::Sealent:0,05",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000413",
+    "AHSP-2026-CIPTA_KARYA-000414",
+    "AHSP-2026-CIPTA_KARYA-000415"
+   ],
+   "codes": [
+    "3.1.3.9.1",
+    "3.1.3.9.2",
+    "3.1.3.9.3"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,1000|labor:L.02:Tukang Cat / Pelitur:0,1000|labor:L.03:Kepala Tukang:0,0100|labor:L.04:Mandor:0,0033",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000431",
+    "AHSP-2026-CIPTA_KARYA-000432",
+    "AHSP-2026-CIPTA_KARYA-000433"
+   ],
+   "codes": [
+    "3.4.2",
+    "3.4.3",
+    "3.4.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,120|labor:L.02:Tukang Kayu:0,120|labor:L.03:Kepala Tukang:0,012|labor:L.04:Mandor:0,004",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000434",
+    "AHSP-2026-CIPTA_KARYA-000435"
+   ],
+   "codes": [
+    "3.5.1.1",
+    "3.5.1.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,0250|labor:L.02:Tukang Kayu:0,0250|labor:L.03:Kepala Tukang:0,0025|labor:L.04:Mandor:0,0008|material::Paku:0,01",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000446",
+    "AHSP-2026-CIPTA_KARYA-000447"
+   ],
+   "codes": [
+    "3.5.2.5",
+    "3.5.2.6"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,2000|labor:L.02:Tukang:0,1000|labor:L.03:Kepala Tukang:0,0100|labor:L.04:Mandor:0,0033|material::Semen Portland:14,00|material::Pasir Pasang:0,032",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000468",
+    "AHSP-2026-CIPTA_KARYA-000471"
+   ],
+   "codes": [
+    "3.6.3.1",
+    "3.6.3.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,1667|labor:L.02:Tukang:0,0833|labor:L.03:Kepala Tukang:0,0083|labor:L.04:Mandor:0,0028",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000473",
+    "AHSP-2026-CIPTA_KARYA-000474",
+    "AHSP-2026-CIPTA_KARYA-000486"
+   ],
+   "codes": [
+    "3.6.4.1",
+    "3.6.4.2",
+    "3.7.7"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,1429|labor:L.02:Tukang:0,0714|labor:L.03:Kepala Tukang:0,0071|labor:L.04:Mandor:0,0024|material::cm x 30 Semen Portland:13,632|material::Semen Warna:1,500|material::Pasir Pasang:0,027",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000530",
+    "AHSP-2026-CIPTA_KARYA-000554"
+   ],
+   "codes": [
+    "3.9.2.2",
+    "3.9.5.1"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,1538|labor:L.02:Tukang:0,0769|labor:L.03:Kepala Tukang:0,0077|labor:L.04:Mandor:0,0026|material::cm x 40 Semen Portland:13,632|material::Semen Warna:1,500|material::Pasir Pasang:0,027",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000531",
+    "AHSP-2026-CIPTA_KARYA-000555"
+   ],
+   "codes": [
+    "3.9.2.3",
+    "3.9.5.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,0625|labor:L.02:Tukang:0,0313|labor:L.03:Kepala Tukang:0,0031|labor:L.04:Mandor:0,0010|material::Semen Portland:1,704|material::Semen Warna:0,188|material::Pasir Pasang:0,003",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000534",
+    "AHSP-2026-CIPTA_KARYA-000540",
+    "AHSP-2026-CIPTA_KARYA-000557"
+   ],
+   "codes": [
+    "3.9.2.6",
+    "3.9.3.4",
+    "3.9.5.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,0667|labor:L.02:Tukang:0,0333|labor:L.03:Kepala Tukang:0,0033|labor:L.04:Mandor:0,0011|material::Semen Portland:1,704|material::Semen Warna:0,188|material::Pasir Pasang:0,003",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000535",
+    "AHSP-2026-CIPTA_KARYA-000541",
+    "AHSP-2026-CIPTA_KARYA-000558"
+   ],
+   "codes": [
+    "3.9.2.7",
+    "3.9.3.5",
+    "3.9.5.5"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,0714|labor:L.02:Tukang:0,0357|labor:L.03:Kepala Tukang:0,0036|labor:L.04:Mandor:0,0012|material::Semen Portland:1,704|material::Semen Warna:0,188|material::Pasir Pasang:0,003",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000536",
+    "AHSP-2026-CIPTA_KARYA-000559"
+   ],
+   "codes": [
+    "3.9.2.8",
+    "3.9.5.6"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,1429|labor:L.02:Tukang:0,0714|labor:L.03:Kepala Tukang:0,0071|labor:L.04:Mandor:0,0024|material::Semen Portland:13,632|material::Semen Warna:1,500|material::Pasir Pasang:0,027",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000537",
+    "AHSP-2026-CIPTA_KARYA-000577",
+    "AHSP-2026-CIPTA_KARYA-000578"
+   ],
+   "codes": [
+    "3.9.3.1",
+    "3.9.8.3",
+    "3.9.8.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,1538|labor:L.02:Tukang:0,0769|labor:L.03:Kepala Tukang:0,0077|labor:L.04:Mandor:0,0026|material::Semen Portland:13,632|material::Semen Warna:1,500|material::Pasir Pasang:0,027",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000538",
+    "AHSP-2026-CIPTA_KARYA-000580"
+   ],
+   "codes": [
+    "3.9.3.2",
+    "3.9.8.6"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,0625|labor:L.02:Tukang:0,0313|labor:L.03:Kepala Tukang:0,0031|labor:L.04:Mandor:0,0010|material::uk. 10 s.d. 15 cm x 30:3,500|material::Semen Portland:1,704|material::Semen Warna:0,188|material::Pasir Pasang:0,003",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000563",
+    "AHSP-2026-CIPTA_KARYA-000566"
+   ],
+   "codes": [
+    "3.9.6.4",
+    "3.9.6.7"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,0667|labor:L.02:Tukang:0,0333|labor:L.03:Kepala Tukang:0,0033|labor:L.04:Mandor:0,0011|material::uk. 10 s.d. 15 cm x 40:2,625|material::Semen Portland:1,704|material::Semen Warna:0,188|material::Pasir Pasang:0,003",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000564",
+    "AHSP-2026-CIPTA_KARYA-000567"
+   ],
+   "codes": [
+    "3.9.6.5",
+    "3.9.6.8"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,0714|labor:L.02:Tukang:0,0357|labor:L.03:Kepala Tukang:0,0036|labor:L.04:Mandor:0,0012|material::uk. 10 s.d. 15 cm x 60:1,750|material::Semen Portland:1,704|material::Semen Warna:0,188|material::Pasir Pasang:0,003",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000565",
+    "AHSP-2026-CIPTA_KARYA-000568"
+   ],
+   "codes": [
+    "3.9.6.6",
+    "3.9.6.9"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,1429|labor:L.02:Tukang:0,0714|labor:L.03:Kepala Tukang:0,0071|labor:L.04:Mandor:0,0024|material::Unpolished Semen Portland:13,632|material::Semen Warna:1,500|material::Pasir Pasang:0,027",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000585",
+    "AHSP-2026-CIPTA_KARYA-000586"
+   ],
+   "codes": [
+    "3.9.8.11",
+    "3.9.8.12"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,085|labor:L.02:Tukang Kaca:0,085|labor:L.03:Kepala Tukang:0,009|labor:L.04:Mandor:0,003",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000640",
+    "AHSP-2026-CIPTA_KARYA-000641"
+   ],
+   "codes": [
+    "3.11.1.5",
+    "3.11.1.6"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,167|labor:L.02:Tukang Aluminium:0,167|labor:L.03:Kepala Tukang:0,017|labor:L.04:Mandor:0,006|material::cm lengkap dengan:1,00",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000653",
+    "AHSP-2026-CIPTA_KARYA-000654"
+   ],
+   "codes": [
+    "3.11.1.18",
+    "3.11.1.19"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m3|labor:L.01:Pekerja:0,2857|labor:L.02:Tukang Kayu:0,1429|labor:L.03:Kepala Tukang:0,0143|labor:L.04:Mandor:0,0048|material::Kelas I Paku 10 cm:0,1276|material::Lem Kayu:1,0000",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000660",
+    "AHSP-2026-CIPTA_KARYA-000661"
+   ],
+   "codes": [
+    "3.11.3.2",
+    "3.11.3.3"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m3|labor:L.01:Pekerja:0,2857|labor:L.02:Tukang Kayu:0,1429|labor:L.03:Kepala Tukang:0,0143|labor:L.04:Mandor:0,0048|material::Kelas II atau III Paku 10 cm:0,1276|material::Lem Kayu:1,0000",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000662",
+    "AHSP-2026-CIPTA_KARYA-000663"
+   ],
+   "codes": [
+    "3.11.3.4",
+    "3.11.3.5"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,250|labor:L.02:Tukang Kaca:0,125|labor:L.02:Tukang Aluminium:0,100|labor:L.03:Kepala Tukang:0,013|labor:L.04:Mandor:0,004|material::Frame Aluminium:4,000",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000701",
+    "AHSP-2026-CIPTA_KARYA-000703"
+   ],
+   "codes": [
+    "3.12.12",
+    "3.12.14"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,0100|labor:L.02:Tukang:0,4000|labor:L.03:Kepala Tukang:0,0400|labor:L.04:Mandor:0,0133|material::Sealtape:0,025",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000737",
+    "AHSP-2026-CIPTA_KARYA-000738"
+   ],
+   "codes": [
+    "3.18.6.2.1",
+    "3.18.6.2.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,0299|labor:L.04:Mandor:0,0030|equipment::Colt T-120 (D); R-Blk. 4; 12 m3:0,0355",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000750",
+    "AHSP-2026-CIPTA_KARYA-000774"
+   ],
+   "codes": [
+    "4.1.1.5",
+    "4.1.1.29"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,0563|labor:L.04:Mandor:0,0056|equipment::Fuso (D); R-Blk. 8; 35 m3:0,0268",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000752",
+    "AHSP-2026-CIPTA_KARYA-000768",
+    "AHSP-2026-CIPTA_KARYA-000776"
+   ],
+   "codes": [
+    "4.1.1.7",
+    "4.1.1.23",
+    "4.1.1.31"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,5269|labor:L.04:Mandor:0,0527|equipment::Fuso (D); R-Blk. 8; 35 m3:0,1819|equipment::Crane Truk 3 ton; Winch 5 Ton:0,1318",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000756",
+    "AHSP-2026-CIPTA_KARYA-000778"
+   ],
+   "codes": [
+    "4.1.1.11",
+    "4.1.1.33"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,5434|labor:L.04:Mandor:0,0543|equipment::Fuso (D); R-Blk. 8; 35 m3:0,196|equipment::Crane Truk 3 ton; Winch 5 Ton:0,136",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000758",
+    "AHSP-2026-CIPTA_KARYA-000780"
+   ],
+   "codes": [
+    "4.1.1.13",
+    "4.1.1.35"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,0054|labor:L.04:Mandor:0,0005|equipment::Pick up L300:0,0163",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000764",
+    "AHSP-2026-CIPTA_KARYA-000770",
+    "AHSP-2026-CIPTA_KARYA-000784"
+   ],
+   "codes": [
+    "4.1.1.19",
+    "4.1.1.25",
+    "4.1.1.39"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,0172|labor:L.04:Mandor:0,0017|equipment::Pick up L300:0,0465",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000766",
+    "AHSP-2026-CIPTA_KARYA-000772",
+    "AHSP-2026-CIPTA_KARYA-000786"
+   ],
+   "codes": [
+    "4.1.1.21",
+    "4.1.1.27",
+    "4.1.1.41"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.02:Tukang Tanam:0,04|labor:L.03:Kepala Tukang Tanam:0,01|labor:L.04:Mandor:0,0033|material::Penutup Tanah Kacang hias di Polybag 0.5 Liter Anti Rayap pada Tanah:0,010",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-000996",
+    "AHSP-2026-CIPTA_KARYA-000997"
+   ],
+   "codes": [
+    "4.1.5.1",
+    "4.1.5.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m3|labor:L.01:Pekerja:0,360|labor:L.04:Mandor:0,036|material::Material Organik:0,350|material::Sulfur:0,150|equipment::Mesin Molen 1m3:0,0714",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001024",
+    "AHSP-2026-CIPTA_KARYA-001026"
+   ],
+   "codes": [
+    "4.1.8.7",
+    "4.1.8.9"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m3|labor:L.01:Pekerja:0,360|labor:L.04:Mandor:0,036|material::Material Organik:0,400|equipment::Mesin Molen 1m3:0,0714",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001029",
+    "AHSP-2026-CIPTA_KARYA-001030"
+   ],
+   "codes": [
+    "4.1.9.2",
+    "4.1.9.3"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,024|labor:L.02:Tukang Listrik:0,040|labor:L.03:Elektronik Kepala Tukang:0,004|labor:L.04:Mandor:0,001",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001079",
+    "AHSP-2026-CIPTA_KARYA-001080",
+    "AHSP-2026-CIPTA_KARYA-001081",
+    "AHSP-2026-CIPTA_KARYA-001082",
+    "AHSP-2026-CIPTA_KARYA-001096",
+    "AHSP-2026-CIPTA_KARYA-001097",
+    "AHSP-2026-CIPTA_KARYA-001098",
+    "AHSP-2026-CIPTA_KARYA-001099",
+    "AHSP-2026-CIPTA_KARYA-001100",
+    "AHSP-2026-CIPTA_KARYA-001101",
+    "AHSP-2026-CIPTA_KARYA-001102",
+    "AHSP-2026-CIPTA_KARYA-001103",
+    "AHSP-2026-CIPTA_KARYA-001111",
+    "AHSP-2026-CIPTA_KARYA-001112",
+    "AHSP-2026-CIPTA_KARYA-001131",
+    "AHSP-2026-CIPTA_KARYA-001132",
+    "AHSP-2026-CIPTA_KARYA-001133",
+    "AHSP-2026-CIPTA_KARYA-001134",
+    "AHSP-2026-CIPTA_KARYA-001135",
+    "AHSP-2026-CIPTA_KARYA-001136",
+    "AHSP-2026-CIPTA_KARYA-001137",
+    "AHSP-2026-CIPTA_KARYA-001138",
+    "AHSP-2026-CIPTA_KARYA-001141",
+    "AHSP-2026-CIPTA_KARYA-001144",
+    "AHSP-2026-CIPTA_KARYA-001145",
+    "AHSP-2026-CIPTA_KARYA-001146",
+    "AHSP-2026-CIPTA_KARYA-001147",
+    "AHSP-2026-CIPTA_KARYA-001148",
+    "AHSP-2026-CIPTA_KARYA-001149",
+    "AHSP-2026-CIPTA_KARYA-001150",
+    "AHSP-2026-CIPTA_KARYA-001154",
+    "AHSP-2026-CIPTA_KARYA-001155",
+    "AHSP-2026-CIPTA_KARYA-001160",
+    "AHSP-2026-CIPTA_KARYA-001161",
+    "AHSP-2026-CIPTA_KARYA-001162",
+    "AHSP-2026-CIPTA_KARYA-001163",
+    "AHSP-2026-CIPTA_KARYA-001164",
+    "AHSP-2026-CIPTA_KARYA-001165",
+    "AHSP-2026-CIPTA_KARYA-001168",
+    "AHSP-2026-CIPTA_KARYA-001169",
+    "AHSP-2026-CIPTA_KARYA-001170",
+    "AHSP-2026-CIPTA_KARYA-001171",
+    "AHSP-2026-CIPTA_KARYA-001172",
+    "AHSP-2026-CIPTA_KARYA-001173",
+    "AHSP-2026-CIPTA_KARYA-001174",
+    "AHSP-2026-CIPTA_KARYA-001180",
+    "AHSP-2026-CIPTA_KARYA-001196",
+    "AHSP-2026-CIPTA_KARYA-001201",
+    "AHSP-2026-CIPTA_KARYA-001206",
+    "AHSP-2026-CIPTA_KARYA-001207",
+    "AHSP-2026-CIPTA_KARYA-001213",
+    "AHSP-2026-CIPTA_KARYA-001633"
+   ],
+   "codes": [
+    "5.1.1.1.1",
+    "5.1.1.1.2",
+    "5.1.1.1.3",
+    "5.1.1.1.4",
+    "5.1.1.1.18",
+    "5.1.1.1.19",
+    "5.1.1.1.20",
+    "5.1.1.1.21",
+    "5.1.1.1.22",
+    "5.1.1.1.23",
+    "5.1.1.1.24",
+    "5.1.1.1.25",
+    "5.1.1.1.33",
+    "5.1.1.1.34",
+    "5.1.1.2.5",
+    "5.1.1.2.6",
+    "5.1.1.2.7",
+    "5.1.1.2.8",
+    "5.1.1.2.9",
+    "5.1.1.2.10",
+    "5.1.1.2.11",
+    "5.1.1.2.12",
+    "5.1.1.2.15",
+    "5.1.1.3.1",
+    "5.1.1.3.2",
+    "5.1.1.3.3",
+    "5.1.1.3.4",
+    "5.1.1.3.5",
+    "5.1.1.3.6",
+    "5.1.1.3.7",
+    "5.1.1.3.11",
+    "5.1.1.3.12",
+    "5.1.1.4.1",
+    "5.1.1.4.2",
+    "5.1.1.4.3",
+    "5.1.1.4.4",
+    "5.1.1.4.5",
+    "5.1.1.4.6",
+    "5.1.1.5.1",
+    "5.1.1.5.2",
+    "5.1.1.5.3",
+    "5.1.1.5.4",
+    "5.1.1.5.5",
+    "5.1.1.5.6",
+    "5.1.1.5.7",
+    "5.1.1.5.13",
+    "5.1.1.6.1",
+    "5.1.1.6.6",
+    "5.1.1.7.3",
+    "5.1.1.7.4",
+    "5.1.1.8.1",
+    "5.4.5.19"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,029|labor:L.02:Tukang Listrik:0,048|labor:L.03:Elektronik Kepala Tukang:0,005|labor:L.04:Mandor:0,002",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001083",
+    "AHSP-2026-CIPTA_KARYA-001104",
+    "AHSP-2026-CIPTA_KARYA-001105",
+    "AHSP-2026-CIPTA_KARYA-001113",
+    "AHSP-2026-CIPTA_KARYA-001114",
+    "AHSP-2026-CIPTA_KARYA-001151",
+    "AHSP-2026-CIPTA_KARYA-001152",
+    "AHSP-2026-CIPTA_KARYA-001156",
+    "AHSP-2026-CIPTA_KARYA-001157",
+    "AHSP-2026-CIPTA_KARYA-001175",
+    "AHSP-2026-CIPTA_KARYA-001176",
+    "AHSP-2026-CIPTA_KARYA-001181",
+    "AHSP-2026-CIPTA_KARYA-001182",
+    "AHSP-2026-CIPTA_KARYA-001197",
+    "AHSP-2026-CIPTA_KARYA-001198",
+    "AHSP-2026-CIPTA_KARYA-001208"
+   ],
+   "codes": [
+    "5.1.1.1.5",
+    "5.1.1.1.26",
+    "5.1.1.1.27",
+    "5.1.1.1.35",
+    "5.1.1.1.36",
+    "5.1.1.3.8",
+    "5.1.1.3.9",
+    "5.1.1.3.13",
+    "5.1.1.3.14",
+    "5.1.1.5.8",
+    "5.1.1.5.9",
+    "5.1.1.5.14",
+    "5.1.1.5.15",
+    "5.1.1.6.2",
+    "5.1.1.6.3",
+    "5.1.1.7.5"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,036|labor:L.02:Tukang Listrik:0,060|labor:L.03:Elektronik Kepala Tukang:0,006|labor:L.04:Mandor:0,002",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001084",
+    "AHSP-2026-CIPTA_KARYA-001085",
+    "AHSP-2026-CIPTA_KARYA-001106",
+    "AHSP-2026-CIPTA_KARYA-001107",
+    "AHSP-2026-CIPTA_KARYA-001108",
+    "AHSP-2026-CIPTA_KARYA-001115",
+    "AHSP-2026-CIPTA_KARYA-001116",
+    "AHSP-2026-CIPTA_KARYA-001139",
+    "AHSP-2026-CIPTA_KARYA-001142",
+    "AHSP-2026-CIPTA_KARYA-001153",
+    "AHSP-2026-CIPTA_KARYA-001158",
+    "AHSP-2026-CIPTA_KARYA-001159",
+    "AHSP-2026-CIPTA_KARYA-001177",
+    "AHSP-2026-CIPTA_KARYA-001178",
+    "AHSP-2026-CIPTA_KARYA-001179",
+    "AHSP-2026-CIPTA_KARYA-001183",
+    "AHSP-2026-CIPTA_KARYA-001184",
+    "AHSP-2026-CIPTA_KARYA-001209",
+    "AHSP-2026-CIPTA_KARYA-001210"
+   ],
+   "codes": [
+    "5.1.1.1.6",
+    "5.1.1.1.7",
+    "5.1.1.1.28",
+    "5.1.1.1.29",
+    "5.1.1.1.30",
+    "5.1.1.1.37",
+    "5.1.1.1.38",
+    "5.1.1.2.13",
+    "5.1.1.2.16",
+    "5.1.1.3.10",
+    "5.1.1.3.15",
+    "5.1.1.3.16",
+    "5.1.1.5.10",
+    "5.1.1.5.11",
+    "5.1.1.5.12",
+    "5.1.1.5.16",
+    "5.1.1.5.17",
+    "5.1.1.7.6",
+    "5.1.1.7.7"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,060|labor:L.02:Tukang Listrik:0,099|labor:L.03:Elektronik Kepala Tukang:0,010|labor:L.04:Mandor:0,003",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001086",
+    "AHSP-2026-CIPTA_KARYA-001087",
+    "AHSP-2026-CIPTA_KARYA-001088",
+    "AHSP-2026-CIPTA_KARYA-001089",
+    "AHSP-2026-CIPTA_KARYA-001118",
+    "AHSP-2026-CIPTA_KARYA-001140",
+    "AHSP-2026-CIPTA_KARYA-001143",
+    "AHSP-2026-CIPTA_KARYA-001186",
+    "AHSP-2026-CIPTA_KARYA-001211",
+    "AHSP-2026-CIPTA_KARYA-001212"
+   ],
+   "codes": [
+    "5.1.1.1.8",
+    "5.1.1.1.9",
+    "5.1.1.1.10",
+    "5.1.1.1.11",
+    "5.1.1.1.40",
+    "5.1.1.2.14",
+    "5.1.1.2.17",
+    "5.1.1.5.19",
+    "5.1.1.7.8",
+    "5.1.1.7.9"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,071|labor:L.02:Tukang Listrik:0,119|labor:L.03:Elektronik Kepala Tukang:0,012|labor:L.04:Mandor:0,004",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001090",
+    "AHSP-2026-CIPTA_KARYA-001091",
+    "AHSP-2026-CIPTA_KARYA-001119",
+    "AHSP-2026-CIPTA_KARYA-001187"
+   ],
+   "codes": [
+    "5.1.1.1.12",
+    "5.1.1.1.13",
+    "5.1.1.1.41",
+    "5.1.1.5.20"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,095|labor:L.02:Tukang Listrik:0,159|labor:L.03:Elektronik Kepala Tukang:0,016|labor:L.04:Mandor:0,005",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001093",
+    "AHSP-2026-CIPTA_KARYA-001202"
+   ],
+   "codes": [
+    "5.1.1.1.15",
+    "5.1.1.6.7"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,143|labor:L.02:Tukang Listrik:0,239|labor:L.03:Elektronik Kepala Tukang:0,024|labor:L.04:Mandor:0,008",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001095",
+    "AHSP-2026-CIPTA_KARYA-001121",
+    "AHSP-2026-CIPTA_KARYA-001122",
+    "AHSP-2026-CIPTA_KARYA-001189",
+    "AHSP-2026-CIPTA_KARYA-001190",
+    "AHSP-2026-CIPTA_KARYA-001200"
+   ],
+   "codes": [
+    "5.1.1.1.17",
+    "5.1.1.1.43",
+    "5.1.1.1.44",
+    "5.1.1.5.22",
+    "5.1.1.5.23",
+    "5.1.1.6.5"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,048|labor:L.02:Tukang Listrik:0,080|labor:L.03:Elektronik Kepala Tukang:0,008|labor:L.04:Mandor:0,003",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001110",
+    "AHSP-2026-CIPTA_KARYA-001117",
+    "AHSP-2026-CIPTA_KARYA-001185"
+   ],
+   "codes": [
+    "5.1.1.1.32",
+    "5.1.1.1.39",
+    "5.1.1.5.18"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,107|labor:L.02:Tukang Listrik:0,179|labor:L.03:Elektronik Kepala Tukang:0,018|labor:L.04:Mandor:0,006",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001120",
+    "AHSP-2026-CIPTA_KARYA-001188"
+   ],
+   "codes": [
+    "5.1.1.1.42",
+    "5.1.1.5.21"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,179|labor:L.02:Tukang Listrik:0,298|labor:L.03:Elektronik Kepala Tukang:0,030|labor:L.04:Mandor:0,010",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001123",
+    "AHSP-2026-CIPTA_KARYA-001124",
+    "AHSP-2026-CIPTA_KARYA-001191",
+    "AHSP-2026-CIPTA_KARYA-001192",
+    "AHSP-2026-CIPTA_KARYA-001199"
+   ],
+   "codes": [
+    "5.1.1.1.45",
+    "5.1.1.1.46",
+    "5.1.1.5.24",
+    "5.1.1.5.25",
+    "5.1.1.6.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,238|labor:L.02:Tukang Listrik:0,398|labor:L.03:Elektronik Kepala Tukang:0,040|labor:L.04:Mandor:0,013",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001125",
+    "AHSP-2026-CIPTA_KARYA-001126",
+    "AHSP-2026-CIPTA_KARYA-001193",
+    "AHSP-2026-CIPTA_KARYA-001194",
+    "AHSP-2026-CIPTA_KARYA-001195"
+   ],
+   "codes": [
+    "5.1.1.1.47",
+    "5.1.1.1.48",
+    "5.1.1.5.26",
+    "5.1.1.5.27",
+    "5.1.1.5.28"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,012|labor:L.02:Tukang Listrik:0,020|labor:L.03:Elektronik Kepala Tukang:0,002|labor:L.04:Mandor:0,001",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001127",
+    "AHSP-2026-CIPTA_KARYA-001128"
+   ],
+   "codes": [
+    "5.1.1.2.1",
+    "5.1.1.2.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,019|labor:L.02:Tukang Listrik:0,032|labor:L.03:Elektronik Kepala Tukang:0,003|labor:L.04:Mandor:0,001",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001129",
+    "AHSP-2026-CIPTA_KARYA-001130",
+    "AHSP-2026-CIPTA_KARYA-001204",
+    "AHSP-2026-CIPTA_KARYA-001205"
+   ],
+   "codes": [
+    "5.1.1.2.3",
+    "5.1.1.2.4",
+    "5.1.1.7.1",
+    "5.1.1.7.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,031|labor:L.02:Tukang Listrik:0,052|labor:L.03:Elektronik Kepala Tukang:0,005|labor:L.04:Mandor:0,002",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001166",
+    "AHSP-2026-CIPTA_KARYA-001217"
+   ],
+   "codes": [
+    "5.1.1.4.7",
+    "5.1.1.11.1"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,119|labor:L.02:Tukang Listrik:0,199|labor:L.03:Elektronik Kepala Tukang:0,020|labor:L.04:Mandor:0,007",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001218",
+    "AHSP-2026-CIPTA_KARYA-001219",
+    "AHSP-2026-CIPTA_KARYA-001220",
+    "AHSP-2026-CIPTA_KARYA-001221",
+    "AHSP-2026-CIPTA_KARYA-001222",
+    "AHSP-2026-CIPTA_KARYA-001223",
+    "AHSP-2026-CIPTA_KARYA-001224",
+    "AHSP-2026-CIPTA_KARYA-001225",
+    "AHSP-2026-CIPTA_KARYA-001226",
+    "AHSP-2026-CIPTA_KARYA-001227",
+    "AHSP-2026-CIPTA_KARYA-001250",
+    "AHSP-2026-CIPTA_KARYA-001252",
+    "AHSP-2026-CIPTA_KARYA-001253",
+    "AHSP-2026-CIPTA_KARYA-001255",
+    "AHSP-2026-CIPTA_KARYA-001257",
+    "AHSP-2026-CIPTA_KARYA-001258",
+    "AHSP-2026-CIPTA_KARYA-001260",
+    "AHSP-2026-CIPTA_KARYA-001262",
+    "AHSP-2026-CIPTA_KARYA-001263",
+    "AHSP-2026-CIPTA_KARYA-001265",
+    "AHSP-2026-CIPTA_KARYA-001267",
+    "AHSP-2026-CIPTA_KARYA-001268",
+    "AHSP-2026-CIPTA_KARYA-001270",
+    "AHSP-2026-CIPTA_KARYA-001272",
+    "AHSP-2026-CIPTA_KARYA-001273",
+    "AHSP-2026-CIPTA_KARYA-001275",
+    "AHSP-2026-CIPTA_KARYA-001277",
+    "AHSP-2026-CIPTA_KARYA-001278",
+    "AHSP-2026-CIPTA_KARYA-001280",
+    "AHSP-2026-CIPTA_KARYA-001281",
+    "AHSP-2026-CIPTA_KARYA-001283",
+    "AHSP-2026-CIPTA_KARYA-001284",
+    "AHSP-2026-CIPTA_KARYA-001286",
+    "AHSP-2026-CIPTA_KARYA-001305",
+    "AHSP-2026-CIPTA_KARYA-001306",
+    "AHSP-2026-CIPTA_KARYA-001307",
+    "AHSP-2026-CIPTA_KARYA-001308",
+    "AHSP-2026-CIPTA_KARYA-001309",
+    "AHSP-2026-CIPTA_KARYA-001310",
+    "AHSP-2026-CIPTA_KARYA-001311",
+    "AHSP-2026-CIPTA_KARYA-001312",
+    "AHSP-2026-CIPTA_KARYA-001313",
+    "AHSP-2026-CIPTA_KARYA-001314",
+    "AHSP-2026-CIPTA_KARYA-001315",
+    "AHSP-2026-CIPTA_KARYA-001316",
+    "AHSP-2026-CIPTA_KARYA-001317",
+    "AHSP-2026-CIPTA_KARYA-001318",
+    "AHSP-2026-CIPTA_KARYA-001319",
+    "AHSP-2026-CIPTA_KARYA-001320",
+    "AHSP-2026-CIPTA_KARYA-001321",
+    "AHSP-2026-CIPTA_KARYA-001322",
+    "AHSP-2026-CIPTA_KARYA-001323",
+    "AHSP-2026-CIPTA_KARYA-001324",
+    "AHSP-2026-CIPTA_KARYA-001325",
+    "AHSP-2026-CIPTA_KARYA-001326",
+    "AHSP-2026-CIPTA_KARYA-001327",
+    "AHSP-2026-CIPTA_KARYA-001328",
+    "AHSP-2026-CIPTA_KARYA-001329",
+    "AHSP-2026-CIPTA_KARYA-001330",
+    "AHSP-2026-CIPTA_KARYA-001331",
+    "AHSP-2026-CIPTA_KARYA-001332",
+    "AHSP-2026-CIPTA_KARYA-001333",
+    "AHSP-2026-CIPTA_KARYA-001334",
+    "AHSP-2026-CIPTA_KARYA-001335",
+    "AHSP-2026-CIPTA_KARYA-001336",
+    "AHSP-2026-CIPTA_KARYA-001337",
+    "AHSP-2026-CIPTA_KARYA-001338",
+    "AHSP-2026-CIPTA_KARYA-001339",
+    "AHSP-2026-CIPTA_KARYA-001340",
+    "AHSP-2026-CIPTA_KARYA-001341"
+   ],
+   "codes": [
+    "5.1.1.12.1",
+    "5.1.1.12.2",
+    "5.1.1.12.3",
+    "5.1.1.12.4",
+    "5.1.1.12.5",
+    "5.1.1.12.6",
+    "5.1.1.12.7",
+    "5.1.1.12.8",
+    "5.1.1.12.9",
+    "5.1.1.12.10",
+    "5.1.1.12.33",
+    "5.1.1.12.35",
+    "5.1.1.12.36",
+    "5.1.1.12.38",
+    "5.1.1.12.40",
+    "5.1.1.12.41",
+    "5.1.1.12.43",
+    "5.1.1.12.45",
+    "5.1.1.12.46",
+    "5.1.1.12.48",
+    "5.1.1.12.50",
+    "5.1.1.12.51",
+    "5.1.1.12.53",
+    "5.1.1.12.55",
+    "5.1.1.12.56",
+    "5.1.1.12.58",
+    "5.1.1.12.60",
+    "5.1.1.12.61",
+    "5.1.1.12.63",
+    "5.1.1.12.64",
+    "5.1.1.12.66",
+    "5.1.1.12.67",
+    "5.1.1.12.69",
+    "5.1.1.12.88",
+    "5.1.1.12.89",
+    "5.1.1.12.90",
+    "5.1.1.12.91",
+    "5.1.1.12.92",
+    "5.1.1.12.93",
+    "5.1.1.12.94",
+    "5.1.1.12.95",
+    "5.1.1.12.96",
+    "5.1.1.12.97",
+    "5.1.1.12.98",
+    "5.1.1.12.99",
+    "5.1.1.12.100",
+    "5.1.1.12.101",
+    "5.1.1.12.102",
+    "5.1.1.12.103",
+    "5.1.1.12.104",
+    "5.1.1.12.105",
+    "5.1.1.12.106",
+    "5.1.1.12.107",
+    "5.1.1.12.108",
+    "5.1.1.12.109",
+    "5.1.1.12.110",
+    "5.1.1.12.111",
+    "5.1.1.12.112",
+    "5.1.1.12.113",
+    "5.1.1.12.114",
+    "5.1.1.12.115",
+    "5.1.1.12.116",
+    "5.1.1.12.117",
+    "5.1.1.12.118",
+    "5.1.1.12.119",
+    "5.1.1.12.120",
+    "5.1.1.12.121",
+    "5.1.1.12.122",
+    "5.1.1.12.123",
+    "5.1.1.12.124"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,179|labor:L.02:Tukang Listrik:0,298|labor:L.03:Elektronik Kepala Tukang:0,030|labor:L.04:Mandor:0,010",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001232",
+    "AHSP-2026-CIPTA_KARYA-001234",
+    "AHSP-2026-CIPTA_KARYA-001235",
+    "AHSP-2026-CIPTA_KARYA-001237",
+    "AHSP-2026-CIPTA_KARYA-001238",
+    "AHSP-2026-CIPTA_KARYA-001240",
+    "AHSP-2026-CIPTA_KARYA-001241",
+    "AHSP-2026-CIPTA_KARYA-001243",
+    "AHSP-2026-CIPTA_KARYA-001244",
+    "AHSP-2026-CIPTA_KARYA-001246",
+    "AHSP-2026-CIPTA_KARYA-001247",
+    "AHSP-2026-CIPTA_KARYA-001249",
+    "AHSP-2026-CIPTA_KARYA-001287",
+    "AHSP-2026-CIPTA_KARYA-001288",
+    "AHSP-2026-CIPTA_KARYA-001290",
+    "AHSP-2026-CIPTA_KARYA-001291",
+    "AHSP-2026-CIPTA_KARYA-001293",
+    "AHSP-2026-CIPTA_KARYA-001294",
+    "AHSP-2026-CIPTA_KARYA-001295",
+    "AHSP-2026-CIPTA_KARYA-001296",
+    "AHSP-2026-CIPTA_KARYA-001297",
+    "AHSP-2026-CIPTA_KARYA-001298",
+    "AHSP-2026-CIPTA_KARYA-001299",
+    "AHSP-2026-CIPTA_KARYA-001300",
+    "AHSP-2026-CIPTA_KARYA-001301",
+    "AHSP-2026-CIPTA_KARYA-001302",
+    "AHSP-2026-CIPTA_KARYA-001303",
+    "AHSP-2026-CIPTA_KARYA-001304"
+   ],
+   "codes": [
+    "5.1.1.12.15",
+    "5.1.1.12.17",
+    "5.1.1.12.18",
+    "5.1.1.12.20",
+    "5.1.1.12.21",
+    "5.1.1.12.23",
+    "5.1.1.12.24",
+    "5.1.1.12.26",
+    "5.1.1.12.27",
+    "5.1.1.12.29",
+    "5.1.1.12.30",
+    "5.1.1.12.32",
+    "5.1.1.12.70",
+    "5.1.1.12.71",
+    "5.1.1.12.73",
+    "5.1.1.12.74",
+    "5.1.1.12.76",
+    "5.1.1.12.77",
+    "5.1.1.12.78",
+    "5.1.1.12.79",
+    "5.1.1.12.80",
+    "5.1.1.12.81",
+    "5.1.1.12.82",
+    "5.1.1.12.83",
+    "5.1.1.12.84",
+    "5.1.1.12.85",
+    "5.1.1.12.86",
+    "5.1.1.12.87"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:1,167|labor:L.02:Tukang Listrik:1,948|labor:L.03:Elektronik Kepala Tukang:0,195|labor:L.04:Mandor:0,065",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001346",
+    "AHSP-2026-CIPTA_KARYA-001360"
+   ],
+   "codes": [
+    "5.1.2.4",
+    "5.1.2.18"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:1,076|labor:L.02:Tukang Listrik:1,797|labor:L.03:Elektronik Kepala Tukang:0,180|labor:L.04:Mandor:0,060",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001347",
+    "AHSP-2026-CIPTA_KARYA-001351"
+   ],
+   "codes": [
+    "5.1.2.5",
+    "5.1.2.9"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,895|labor:L.02:Tukang Listrik:1,495|labor:L.03:Elektronik Kepala Tukang:0,150|labor:L.04:Mandor:0,050",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001348",
+    "AHSP-2026-CIPTA_KARYA-001361"
+   ],
+   "codes": [
+    "5.1.2.6",
+    "5.1.2.19"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,626|labor:L.02:Tukang Listrik:1,046|labor:L.03:Elektronik Kepala Tukang:0,105|labor:L.04:Mandor:0,035",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001349",
+    "AHSP-2026-CIPTA_KARYA-001359"
+   ],
+   "codes": [
+    "5.1.2.7",
+    "5.1.2.17"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,562|labor:L.02:Tukang Listrik:0,938|labor:L.03:Elektronik Kepala Tukang:0,094|labor:L.04:Mandor:0,031",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001350",
+    "AHSP-2026-CIPTA_KARYA-001353",
+    "AHSP-2026-CIPTA_KARYA-001354",
+    "AHSP-2026-CIPTA_KARYA-001355",
+    "AHSP-2026-CIPTA_KARYA-001356",
+    "AHSP-2026-CIPTA_KARYA-001357",
+    "AHSP-2026-CIPTA_KARYA-001368"
+   ],
+   "codes": [
+    "5.1.2.8",
+    "5.1.2.11",
+    "5.1.2.12",
+    "5.1.2.13",
+    "5.1.2.14",
+    "5.1.2.15",
+    "5.1.2.26"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,460|labor:L.02:Tukang Listrik:0,767|labor:L.03:Elektronik Kepala Tukang:0,077|labor:L.04:Mandor:0,026",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001352",
+    "AHSP-2026-CIPTA_KARYA-001358",
+    "AHSP-2026-CIPTA_KARYA-001367"
+   ],
+   "codes": [
+    "5.1.2.10",
+    "5.1.2.16",
+    "5.1.2.25"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,788|labor:L.02:Tukang Listrik:1,316|labor:L.03:Elektronik Kepala Tukang:0,132|labor:L.04:Mandor:0,044",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001365",
+    "AHSP-2026-CIPTA_KARYA-001641"
+   ],
+   "codes": [
+    "5.1.2.23",
+    "5.4.7.1"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,729|labor:L.02:Tukang Pipa:1,217|labor:L.03:Kepala Tukang:0,122|labor:L.04:Mandor:0,041",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001380",
+    "AHSP-2026-CIPTA_KARYA-001857",
+    "AHSP-2026-CIPTA_KARYA-001859",
+    "AHSP-2026-CIPTA_KARYA-001860",
+    "AHSP-2026-CIPTA_KARYA-001865"
+   ],
+   "codes": [
+    "5.1.3.12",
+    "6.1.2.10",
+    "6.1.2.12",
+    "6.1.2.13",
+    "6.1.2.18"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,031|labor:L.02:Tukang Listrik:0,052|labor:L.03:Elektronik Kepala Tukang:0,005|labor:L.04:Mandor:0,002",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001383",
+    "AHSP-2026-CIPTA_KARYA-001384",
+    "AHSP-2026-CIPTA_KARYA-001385",
+    "AHSP-2026-CIPTA_KARYA-001605"
+   ],
+   "codes": [
+    "5.1.5.1",
+    "5.1.5.2",
+    "5.1.5.3",
+    "5.4.3.27"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,145|labor:L.02:Tukang Listrik:0,243|labor:L.03:Elektronik Kepala Tukang:0,024|labor:L.04:Mandor:0,008",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001387",
+    "AHSP-2026-CIPTA_KARYA-001388",
+    "AHSP-2026-CIPTA_KARYA-001390"
+   ],
+   "codes": [
+    "5.1.5.5",
+    "5.1.5.6",
+    "5.1.5.8"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,026|labor:L.02:Tukang Listrik:0,044|labor:L.03:Elektronik Kepala Tukang:0,004|labor:L.04:Mandor:0,001",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001391",
+    "AHSP-2026-CIPTA_KARYA-001392",
+    "AHSP-2026-CIPTA_KARYA-001393",
+    "AHSP-2026-CIPTA_KARYA-001397",
+    "AHSP-2026-CIPTA_KARYA-001398",
+    "AHSP-2026-CIPTA_KARYA-001614"
+   ],
+   "codes": [
+    "5.1.5.9",
+    "5.1.5.10",
+    "5.1.5.11",
+    "5.1.5.15",
+    "5.1.5.16",
+    "5.4.4.8"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,038|labor:L.02:Tukang Listrik:0,064|labor:L.03:Elektronik Kepala Tukang:0,006|labor:L.04:Mandor:0,002",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001394",
+    "AHSP-2026-CIPTA_KARYA-001624"
+   ],
+   "codes": [
+    "5.1.5.12",
+    "5.4.5.10"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,217|labor:L.02:Tukang Listrik:0,362|labor:L.03:Elektronik Kepala Tukang:0,036|labor:L.04:Mandor:0,012",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001400",
+    "AHSP-2026-CIPTA_KARYA-001435"
+   ],
+   "codes": [
+    "5.1.6.1",
+    "5.2.14"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,636|labor:L.02:Tukang Listrik:1,062|labor:L.03:Elektronik Kepala Tukang:0,106|labor:L.04:Mandor:0,035",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001402",
+    "AHSP-2026-CIPTA_KARYA-001403",
+    "AHSP-2026-CIPTA_KARYA-001649"
+   ],
+   "codes": [
+    "5.1.6.3",
+    "5.1.6.4",
+    "5.4.8.1"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|set|labor:L.01:Pekerja:4,000|labor:L.02:Tukang Listrik:2,000|labor:L.03:Elektronik Kepala Tukang:0,200|labor:L.04:Mandor:0,067|material::Bak Kontrol Pemeriksaan dari Batu Bata 45 x 45 x:1,0|material::Pantek (kedalaman lot 1,0 min. 12 m) Kabel BC 95 mm2:26,4|material::Kabel Skun 95 mm2:4,4|material::Rod Coupling:6,0|material::Material Bantu:1,0",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001404",
+    "AHSP-2026-CIPTA_KARYA-001405"
+   ],
+   "codes": [
+    "5.1.8.1",
+    "5.1.8.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,845|labor:L.03:Tukang Listrik / 1,411 L.02 Elektronik Kepala Tukang:0,141|labor:L.04:Mandor:0,047",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001406",
+    "AHSP-2026-CIPTA_KARYA-001407",
+    "AHSP-2026-CIPTA_KARYA-001408",
+    "AHSP-2026-CIPTA_KARYA-001409"
+   ],
+   "codes": [
+    "5.1.9.1",
+    "5.1.9.2",
+    "5.1.9.3",
+    "5.1.9.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,845|labor:L.03:Tukang Listrik / 1,411 L.02 Elektronik Kepala Tukang:0,141|labor:L.04:Mandor:0,047",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001410",
+    "AHSP-2026-CIPTA_KARYA-001411",
+    "AHSP-2026-CIPTA_KARYA-001412",
+    "AHSP-2026-CIPTA_KARYA-001413",
+    "AHSP-2026-CIPTA_KARYA-001414",
+    "AHSP-2026-CIPTA_KARYA-001415"
+   ],
+   "codes": [
+    "5.1.9.5",
+    "5.1.9.6",
+    "5.1.9.7",
+    "5.1.9.8",
+    "5.1.9.9",
+    "5.1.9.10"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,190|labor:L.02:Tukang Listrik:0,318|labor:L.03:Elektronik Kepala Tukang:0,032|labor:L.04:Mandor:0,011",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001422",
+    "AHSP-2026-CIPTA_KARYA-001423",
+    "AHSP-2026-CIPTA_KARYA-001424",
+    "AHSP-2026-CIPTA_KARYA-001427",
+    "AHSP-2026-CIPTA_KARYA-001431",
+    "AHSP-2026-CIPTA_KARYA-001571",
+    "AHSP-2026-CIPTA_KARYA-001572",
+    "AHSP-2026-CIPTA_KARYA-001581",
+    "AHSP-2026-CIPTA_KARYA-001582",
+    "AHSP-2026-CIPTA_KARYA-001583",
+    "AHSP-2026-CIPTA_KARYA-001602",
+    "AHSP-2026-CIPTA_KARYA-001604",
+    "AHSP-2026-CIPTA_KARYA-001618"
+   ],
+   "codes": [
+    "5.2.1",
+    "5.2.2",
+    "5.2.3",
+    "5.2.6",
+    "5.2.10",
+    "5.4.2.9",
+    "5.4.2.10",
+    "5.4.3.3",
+    "5.4.3.4",
+    "5.4.3.5",
+    "5.4.3.24",
+    "5.4.3.26",
+    "5.4.5.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,114|labor:L.02:Tukang Listrik:0,191|labor:L.03:Elektronik Kepala Tukang:0,019|labor:L.04:Mandor:0,006",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001425",
+    "AHSP-2026-CIPTA_KARYA-001426",
+    "AHSP-2026-CIPTA_KARYA-001430",
+    "AHSP-2026-CIPTA_KARYA-001459",
+    "AHSP-2026-CIPTA_KARYA-001460",
+    "AHSP-2026-CIPTA_KARYA-001461",
+    "AHSP-2026-CIPTA_KARYA-001587"
+   ],
+   "codes": [
+    "5.2.4",
+    "5.2.5",
+    "5.2.9",
+    "5.3.1.13",
+    "5.3.1.14",
+    "5.3.1.15",
+    "5.4.3.9"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,048|labor:L.02:Tukang Listrik:0,080|labor:L.03:Elektronik Kepala Tukang:0,008|labor:L.04:Mandor:0,003",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001429",
+    "AHSP-2026-CIPTA_KARYA-001570",
+    "AHSP-2026-CIPTA_KARYA-001622"
+   ],
+   "codes": [
+    "5.2.8",
+    "5.4.2.8",
+    "5.4.5.8"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,036|labor:L.02:Tukang Listrik:0,060|labor:L.03:Elektronik Kepala Tukang:0,006|labor:L.04:Mandor:0,002",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001432",
+    "AHSP-2026-CIPTA_KARYA-001433"
+   ],
+   "codes": [
+    "5.2.11",
+    "5.2.12"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,190|labor:L.03:Tukang Listrik / 0,318 L.02 Elektronik Kepala Tukang:0,032|labor:L.04:Mandor:0,011",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001436",
+    "AHSP-2026-CIPTA_KARYA-001437",
+    "AHSP-2026-CIPTA_KARYA-001578"
+   ],
+   "codes": [
+    "5.2.15",
+    "5.2.16",
+    "5.4.2.16"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,190|labor:L.03:Tukang Listrik / 0,318 L.02 Elektronik Kepala Tukang:0,032|labor:L.04:Mandor:0,011",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001439",
+    "AHSP-2026-CIPTA_KARYA-001440",
+    "AHSP-2026-CIPTA_KARYA-001443"
+   ],
+   "codes": [
+    "5.2.18",
+    "5.2.19",
+    "5.2.22"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,064|labor:L.02:Tukang Listrik:0,107|labor:L.03:Elektronik Kepala Tukang:0,011|labor:L.04:Mandor:0,004",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001449",
+    "AHSP-2026-CIPTA_KARYA-001450",
+    "AHSP-2026-CIPTA_KARYA-001451",
+    "AHSP-2026-CIPTA_KARYA-001452",
+    "AHSP-2026-CIPTA_KARYA-001453",
+    "AHSP-2026-CIPTA_KARYA-001467",
+    "AHSP-2026-CIPTA_KARYA-001468",
+    "AHSP-2026-CIPTA_KARYA-001469",
+    "AHSP-2026-CIPTA_KARYA-001470",
+    "AHSP-2026-CIPTA_KARYA-001471",
+    "AHSP-2026-CIPTA_KARYA-001472",
+    "AHSP-2026-CIPTA_KARYA-001473",
+    "AHSP-2026-CIPTA_KARYA-001519",
+    "AHSP-2026-CIPTA_KARYA-001520",
+    "AHSP-2026-CIPTA_KARYA-001533",
+    "AHSP-2026-CIPTA_KARYA-001534",
+    "AHSP-2026-CIPTA_KARYA-001535",
+    "AHSP-2026-CIPTA_KARYA-001536",
+    "AHSP-2026-CIPTA_KARYA-001537",
+    "AHSP-2026-CIPTA_KARYA-001585",
+    "AHSP-2026-CIPTA_KARYA-001586",
+    "AHSP-2026-CIPTA_KARYA-001612",
+    "AHSP-2026-CIPTA_KARYA-001636",
+    "AHSP-2026-CIPTA_KARYA-001637"
+   ],
+   "codes": [
+    "5.3.1.3",
+    "5.3.1.4",
+    "5.3.1.5",
+    "5.3.1.6",
+    "5.3.1.7",
+    "5.3.1.21",
+    "5.3.1.22",
+    "5.3.1.23",
+    "5.3.1.24",
+    "5.3.1.25",
+    "5.3.1.26",
+    "5.3.1.27",
+    "5.3.2.1",
+    "5.3.2.2",
+    "5.4.1.13",
+    "5.4.1.14",
+    "5.4.1.15",
+    "5.4.1.16",
+    "5.4.1.17",
+    "5.4.3.7",
+    "5.4.3.8",
+    "5.4.4.6",
+    "5.4.6.2",
+    "5.4.6.3"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,129|labor:L.02:Tukang Listrik:0,215|labor:L.03:Elektronik Kepala Tukang:0,021|labor:L.04:Mandor:0,007",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001454",
+    "AHSP-2026-CIPTA_KARYA-001455",
+    "AHSP-2026-CIPTA_KARYA-001456",
+    "AHSP-2026-CIPTA_KARYA-001579",
+    "AHSP-2026-CIPTA_KARYA-001591",
+    "AHSP-2026-CIPTA_KARYA-001593",
+    "AHSP-2026-CIPTA_KARYA-001603",
+    "AHSP-2026-CIPTA_KARYA-001607",
+    "AHSP-2026-CIPTA_KARYA-001608",
+    "AHSP-2026-CIPTA_KARYA-001611"
+   ],
+   "codes": [
+    "5.3.1.8",
+    "5.3.1.9",
+    "5.3.1.10",
+    "5.4.3.1",
+    "5.4.3.13",
+    "5.4.3.15",
+    "5.4.3.25",
+    "5.4.4.1",
+    "5.4.4.2",
+    "5.4.4.5"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,255|labor:L.02:Tukang Listrik:0,425|labor:L.03:Elektronik Kepala Tukang:0,043|labor:L.04:Mandor:0,014",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001457",
+    "AHSP-2026-CIPTA_KARYA-001466"
+   ],
+   "codes": [
+    "5.3.1.11",
+    "5.3.1.20"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,076|labor:L.02:Tukang Listrik:0,127|labor:L.03:Elektronik Kepala Tukang:0,013|labor:L.04:Mandor:0,004",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001458",
+    "AHSP-2026-CIPTA_KARYA-001588"
+   ],
+   "codes": [
+    "5.3.1.12",
+    "5.4.3.10"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,167|labor:L.02:Tukang Listrik:0,278|labor:L.03:Elektronik Kepala Tukang:0,028|labor:L.04:Mandor:0,009",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001462",
+    "AHSP-2026-CIPTA_KARYA-001463"
+   ],
+   "codes": [
+    "5.3.1.16",
+    "5.3.1.17"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,114|labor:L.03:Tukang Listrik / 0,191 L.02 Elektronik Kepala Tukang:0,019|labor:L.04:Mandor:0,006",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001474",
+    "AHSP-2026-CIPTA_KARYA-001475",
+    "AHSP-2026-CIPTA_KARYA-001476",
+    "AHSP-2026-CIPTA_KARYA-001477",
+    "AHSP-2026-CIPTA_KARYA-001500",
+    "AHSP-2026-CIPTA_KARYA-001514",
+    "AHSP-2026-CIPTA_KARYA-001515",
+    "AHSP-2026-CIPTA_KARYA-001516"
+   ],
+   "codes": [
+    "5.3.1.28",
+    "5.3.1.29",
+    "5.3.1.30",
+    "5.3.1.31",
+    "5.3.1.54",
+    "5.3.1.68",
+    "5.3.1.69",
+    "5.3.1.70"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|titik|labor:L.01:Pekerja:0,190|labor:L.02:Tukang Listrik:0,318|labor:L.03:Elektronik Kepala Tukang:0,032|labor:L.04:Mandor:0,011|material::Kabel NYFGBY 3 x T Dus:1,0|material::Isolasi:0,5|material::Lasdop:3,0",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001478",
+    "AHSP-2026-CIPTA_KARYA-001481"
+   ],
+   "codes": [
+    "5.3.1.32",
+    "5.3.1.35"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|titik|labor:L.01:Pekerja:0,190|labor:L.02:Tukang Listrik:0,318|labor:L.03:Elektronik Kepala Tukang:0,032|labor:L.04:Mandor:0,011|material::Kabel NYM 3 x 2,5 mm2 Isolasi:0,5|material::Lasdop:3,0",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001480",
+    "AHSP-2026-CIPTA_KARYA-001483",
+    "AHSP-2026-CIPTA_KARYA-001484"
+   ],
+   "codes": [
+    "5.3.1.34",
+    "5.3.1.37",
+    "5.3.1.38"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,064|labor:L.03:Tukang Listrik / 0,107 L.02 Elektronik Kepala Tukang:0,011|labor:L.04:Mandor:0,004",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001490",
+    "AHSP-2026-CIPTA_KARYA-001491",
+    "AHSP-2026-CIPTA_KARYA-001492",
+    "AHSP-2026-CIPTA_KARYA-001493",
+    "AHSP-2026-CIPTA_KARYA-001494",
+    "AHSP-2026-CIPTA_KARYA-001495",
+    "AHSP-2026-CIPTA_KARYA-001496",
+    "AHSP-2026-CIPTA_KARYA-001497",
+    "AHSP-2026-CIPTA_KARYA-001499",
+    "AHSP-2026-CIPTA_KARYA-001504",
+    "AHSP-2026-CIPTA_KARYA-001505",
+    "AHSP-2026-CIPTA_KARYA-001508",
+    "AHSP-2026-CIPTA_KARYA-001509",
+    "AHSP-2026-CIPTA_KARYA-001510",
+    "AHSP-2026-CIPTA_KARYA-001511"
+   ],
+   "codes": [
+    "5.3.1.44",
+    "5.3.1.45",
+    "5.3.1.46",
+    "5.3.1.47",
+    "5.3.1.48",
+    "5.3.1.49",
+    "5.3.1.50",
+    "5.3.1.51",
+    "5.3.1.53",
+    "5.3.1.58",
+    "5.3.1.59",
+    "5.3.1.62",
+    "5.3.1.63",
+    "5.3.1.64",
+    "5.3.1.65"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,510|labor:L.03:Tukang Listrik / 0,851 L.02 Elektronik Kepala Tukang:0,085|labor:L.04:Mandor:0,028",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001502",
+    "AHSP-2026-CIPTA_KARYA-001503"
+   ],
+   "codes": [
+    "5.3.1.56",
+    "5.3.1.57"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,255|labor:L.03:Tukang Listrik / 0,425 L.02 Elektronik Kepala Tukang:0,043|labor:L.04:Mandor:0,014",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001512",
+    "AHSP-2026-CIPTA_KARYA-001513"
+   ],
+   "codes": [
+    "5.3.1.66",
+    "5.3.1.67"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,302|labor:L.02:Tukang Listrik:0,505|labor:L.03:Elektronik Kepala Tukang:0,050|labor:L.04:Mandor:0,017",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001523",
+    "AHSP-2026-CIPTA_KARYA-001524"
+   ],
+   "codes": [
+    "5.4.1.3",
+    "5.4.1.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:1,000|labor:L.02:Tukang Listrik:1,670|labor:L.03:Elektronik Kepala Tukang:0,167|labor:L.04:Mandor:0,056",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001525",
+    "AHSP-2026-CIPTA_KARYA-001526"
+   ],
+   "codes": [
+    "5.4.1.5",
+    "5.4.1.6"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,095|labor:L.02:Tukang Listrik:0,159|labor:L.03:Elektronik Kepala Tukang:0,016|labor:L.04:Mandor:0,005",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001527",
+    "AHSP-2026-CIPTA_KARYA-001528",
+    "AHSP-2026-CIPTA_KARYA-001529",
+    "AHSP-2026-CIPTA_KARYA-001530",
+    "AHSP-2026-CIPTA_KARYA-001531",
+    "AHSP-2026-CIPTA_KARYA-001532",
+    "AHSP-2026-CIPTA_KARYA-001592",
+    "AHSP-2026-CIPTA_KARYA-001594"
+   ],
+   "codes": [
+    "5.4.1.7",
+    "5.4.1.8",
+    "5.4.1.9",
+    "5.4.1.10",
+    "5.4.1.11",
+    "5.4.1.12",
+    "5.4.3.14",
+    "5.4.3.16"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|titik|labor:L.01:Pekerja:0,190|labor:L.02:Tukang Listrik:0,318|labor:L.03:Elektronik Kepala Tukang:0,032|labor:L.04:Mandor:0,011|material::Kabel NYA 2 x 1,5 mm2 Conduit 20 mm:16,5|material::T Dus:1,0|material::Socket Conduit 20 buah 9,0 Klem 20 mm:18,0|material::Flexible Conduit 20 buah 1,0 Fischer S6 + sekrup:27,0",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001540",
+    "AHSP-2026-CIPTA_KARYA-001542"
+   ],
+   "codes": [
+    "5.4.1.20",
+    "5.4.1.22"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|titik|labor:L.01:Pekerja:0,190|labor:L.02:Tukang Listrik:0,318|labor:L.03:Elektronik Kepala Tukang:0,032|labor:L.04:Mandor:0,011|material::Kabel FRC 2 x 1,5 mm2 Conduit 20 mm:16,5|material::T Dus:1,0|material::Socket Conduit 20 buah 9,0 Klem 20 mm:18,0|material::Flexible Conduit 20 buah 1,0 Fischer S6 + sekrup:27,0",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001541",
+    "AHSP-2026-CIPTA_KARYA-001543"
+   ],
+   "codes": [
+    "5.4.1.21",
+    "5.4.1.23"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,069|labor:L.03:Tukang Listrik / 0,115 L.02 Elektronik Kepala Tukang:0,012|labor:L.04:Mandor:0,004",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001546",
+    "AHSP-2026-CIPTA_KARYA-001547",
+    "AHSP-2026-CIPTA_KARYA-001548",
+    "AHSP-2026-CIPTA_KARYA-001549",
+    "AHSP-2026-CIPTA_KARYA-001550"
+   ],
+   "codes": [
+    "5.4.1.26",
+    "5.4.1.27",
+    "5.4.1.28",
+    "5.4.1.29",
+    "5.4.1.30"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,036|labor:L.03:Tukang Listrik / 0,060 L.02 Elektronik Kepala Tukang:0,006|labor:L.04:Mandor:0,002",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001552",
+    "AHSP-2026-CIPTA_KARYA-001554"
+   ],
+   "codes": [
+    "5.4.1.32",
+    "5.4.1.34"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,250|labor:L.03:Tukang Listrik / 0,418 L.02 Elektronik Kepala Tukang:0,042|labor:L.04:Mandor:0,014",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001557",
+    "AHSP-2026-CIPTA_KARYA-001558",
+    "AHSP-2026-CIPTA_KARYA-001559",
+    "AHSP-2026-CIPTA_KARYA-001560",
+    "AHSP-2026-CIPTA_KARYA-001561"
+   ],
+   "codes": [
+    "5.4.1.37",
+    "5.4.1.38",
+    "5.4.1.39",
+    "5.4.1.40",
+    "5.4.1.41"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,250|labor:L.02:Tukang Listrik:0,418|labor:L.03:Elektronik Kepala Tukang:0,042|labor:L.04:Mandor:0,014",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001563",
+    "AHSP-2026-CIPTA_KARYA-001568",
+    "AHSP-2026-CIPTA_KARYA-001589",
+    "AHSP-2026-CIPTA_KARYA-001598",
+    "AHSP-2026-CIPTA_KARYA-001599",
+    "AHSP-2026-CIPTA_KARYA-001600",
+    "AHSP-2026-CIPTA_KARYA-001601",
+    "AHSP-2026-CIPTA_KARYA-001642"
+   ],
+   "codes": [
+    "5.4.2.1",
+    "5.4.2.6",
+    "5.4.3.11",
+    "5.4.3.20",
+    "5.4.3.21",
+    "5.4.3.22",
+    "5.4.3.23",
+    "5.4.7.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,126|labor:L.02:Tukang Listrik:0,211|labor:L.03:Elektronik Kepala Tukang:0,021|labor:L.04:Mandor:0,007",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001564",
+    "AHSP-2026-CIPTA_KARYA-001643",
+    "AHSP-2026-CIPTA_KARYA-001645",
+    "AHSP-2026-CIPTA_KARYA-001646"
+   ],
+   "codes": [
+    "5.4.2.2",
+    "5.4.7.3",
+    "5.4.7.5",
+    "5.4.7.6"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,762|labor:L.02:Tukang Listrik:1,272|labor:L.03:Elektronik Kepala Tukang:0,127|labor:L.04:Mandor:0,042",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001565",
+    "AHSP-2026-CIPTA_KARYA-001566",
+    "AHSP-2026-CIPTA_KARYA-001609"
+   ],
+   "codes": [
+    "5.4.2.3",
+    "5.4.2.4",
+    "5.4.4.3"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,381|labor:L.02:Tukang Listrik:0,636|labor:L.03:Elektronik Kepala Tukang:0,064|labor:L.04:Mandor:0,021",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001567",
+    "AHSP-2026-CIPTA_KARYA-001580",
+    "AHSP-2026-CIPTA_KARYA-001584"
+   ],
+   "codes": [
+    "5.4.2.5",
+    "5.4.3.2",
+    "5.4.3.6"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,381|labor:L.03:Tukang Listrik / 0,636 L.02 Elektronik Kepala Tukang:0,064|labor:L.04:Mandor:0,021",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001576",
+    "AHSP-2026-CIPTA_KARYA-001577",
+    "AHSP-2026-CIPTA_KARYA-001630"
+   ],
+   "codes": [
+    "5.4.2.14",
+    "5.4.2.15",
+    "5.4.5.16"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,507|labor:L.02:Tukang Listrik:0,847|labor:L.03:Elektronik Kepala Tukang:0,085|labor:L.04:Mandor:0,028",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001590",
+    "AHSP-2026-CIPTA_KARYA-001610"
+   ],
+   "codes": [
+    "5.4.3.12",
+    "5.4.4.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,760|labor:L.02:Tukang Listrik:1,268|labor:L.03:Elektronik Kepala Tukang:0,127|labor:L.04:Mandor:0,042",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001616",
+    "AHSP-2026-CIPTA_KARYA-001617"
+   ],
+   "codes": [
+    "5.4.5.2",
+    "5.4.5.3"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,052|labor:L.02:Tukang Listrik:0,087|labor:L.03:Elektronik Kepala Tukang:0,009|labor:L.04:Mandor:0,003",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001620",
+    "AHSP-2026-CIPTA_KARYA-001638",
+    "AHSP-2026-CIPTA_KARYA-001647"
+   ],
+   "codes": [
+    "5.4.5.6",
+    "5.4.6.4",
+    "5.4.7.7"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,317|labor:L.02:Tukang Listrik:0,529|labor:L.03:Elektronik Kepala Tukang:0,053|labor:L.04:Mandor:0,018",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001623",
+    "AHSP-2026-CIPTA_KARYA-001644"
+   ],
+   "codes": [
+    "5.4.5.9",
+    "5.4.7.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,429|labor:L.03:Tukang Listrik / 0,716 L.02 Elektronik Kepala Tukang:0,072|labor:L.04:Mandor:0,024",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001626",
+    "AHSP-2026-CIPTA_KARYA-001627"
+   ],
+   "codes": [
+    "5.4.5.12",
+    "5.4.5.13"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,679|labor:L.03:Tukang Listrik / 1,133 L.02 Elektronik Kepala Tukang:0,113|labor:L.04:Mandor:0,038",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001628",
+    "AHSP-2026-CIPTA_KARYA-001629"
+   ],
+   "codes": [
+    "5.4.5.14",
+    "5.4.5.15"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,093|labor:L.02:Tukang Listrik:0,155|labor:L.03:Elektronik Kepala Tukang:0,016|labor:L.04:Mandor:0,005",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001650",
+    "AHSP-2026-CIPTA_KARYA-001651",
+    "AHSP-2026-CIPTA_KARYA-001652",
+    "AHSP-2026-CIPTA_KARYA-001653"
+   ],
+   "codes": [
+    "5.4.8.2",
+    "5.4.8.3",
+    "5.4.8.4",
+    "5.4.8.5"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,893|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,149|labor:L.04:Mandor:0,050",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001655",
+    "AHSP-2026-CIPTA_KARYA-001656",
+    "AHSP-2026-CIPTA_KARYA-001657",
+    "AHSP-2026-CIPTA_KARYA-001658"
+   ],
+   "codes": [
+    "5.5.1.2",
+    "5.5.1.3",
+    "5.5.1.4",
+    "5.5.1.5"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:1,264|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,211|labor:L.04:Mandor:0,070",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001659",
+    "AHSP-2026-CIPTA_KARYA-001702"
+   ],
+   "codes": [
+    "5.5.1.6",
+    "5.5.2.15"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|titik|labor:L.01:Pekerja:0,024|labor:L.02:Tukang Listrik:0,040|labor:L.03:Elektronik Kepala Tukang:0,004|labor:L.04:Mandor:0,001",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001661",
+    "AHSP-2026-CIPTA_KARYA-001662",
+    "AHSP-2026-CIPTA_KARYA-001732"
+   ],
+   "codes": [
+    "5.5.1.8",
+    "5.5.1.9",
+    "5.5.2.45"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:1,264|labor:L.03:Tukang 2,111 Listrik / Elektronik Kepala Tukang:0,211|labor:L.04:Mandor:0,070",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001664",
+    "AHSP-2026-CIPTA_KARYA-001665",
+    "AHSP-2026-CIPTA_KARYA-001666",
+    "AHSP-2026-CIPTA_KARYA-001667",
+    "AHSP-2026-CIPTA_KARYA-001668"
+   ],
+   "codes": [
+    "5.5.1.11",
+    "5.5.1.12",
+    "5.5.1.13",
+    "5.5.1.14",
+    "5.5.1.15"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:2,024|labor:L.03:Tukang 3,380 Listrik / Elektronik Kepala Tukang:0,338|labor:L.04:Mandor:0,113",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001669",
+    "AHSP-2026-CIPTA_KARYA-001670"
+   ],
+   "codes": [
+    "5.5.1.16",
+    "5.5.1.17"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:1,390|labor:L.03:Tukang 2,322 Listrik / Elektronik Kepala Tukang:0,232|labor:L.04:Mandor:0,077",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001672",
+    "AHSP-2026-CIPTA_KARYA-001673"
+   ],
+   "codes": [
+    "5.5.1.19",
+    "5.5.1.20"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:2,057|labor:L.02:Tukang Listrik / Elektronik:3,435|labor:L.03:Kepala Tukang:0,344|labor:L.04:Mandor:0,115",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001678",
+    "AHSP-2026-CIPTA_KARYA-001679",
+    "AHSP-2026-CIPTA_KARYA-001680",
+    "AHSP-2026-CIPTA_KARYA-001684",
+    "AHSP-2026-CIPTA_KARYA-001685"
+   ],
+   "codes": [
+    "5.5.1.25",
+    "5.5.1.26",
+    "5.5.1.27",
+    "5.5.1.31",
+    "5.5.1.32"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:2,571|labor:L.02:Tukang Listrik / Elektronik:4,294|labor:L.03:Kepala Tukang:0,429|labor:L.04:Mandor:0,143",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001682",
+    "AHSP-2026-CIPTA_KARYA-001683",
+    "AHSP-2026-CIPTA_KARYA-001686",
+    "AHSP-2026-CIPTA_KARYA-001687",
+    "AHSP-2026-CIPTA_KARYA-001739",
+    "AHSP-2026-CIPTA_KARYA-001740"
+   ],
+   "codes": [
+    "5.5.1.29",
+    "5.5.1.30",
+    "5.5.1.33",
+    "5.5.1.34",
+    "5.5.2.52",
+    "5.5.2.53"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,255|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,043|labor:L.04:Mandor:0,014",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001688",
+    "AHSP-2026-CIPTA_KARYA-001689",
+    "AHSP-2026-CIPTA_KARYA-001690",
+    "AHSP-2026-CIPTA_KARYA-001691",
+    "AHSP-2026-CIPTA_KARYA-001700",
+    "AHSP-2026-CIPTA_KARYA-001701",
+    "AHSP-2026-CIPTA_KARYA-001713",
+    "AHSP-2026-CIPTA_KARYA-001714",
+    "AHSP-2026-CIPTA_KARYA-001723",
+    "AHSP-2026-CIPTA_KARYA-001724",
+    "AHSP-2026-CIPTA_KARYA-001725",
+    "AHSP-2026-CIPTA_KARYA-001726"
+   ],
+   "codes": [
+    "5.5.2.1",
+    "5.5.2.2",
+    "5.5.2.3",
+    "5.5.2.4",
+    "5.5.2.13",
+    "5.5.2.14",
+    "5.5.2.26",
+    "5.5.2.27",
+    "5.5.2.36",
+    "5.5.2.37",
+    "5.5.2.38",
+    "5.5.2.39"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,760|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,127|labor:L.04:Mandor:0,042",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001692",
+    "AHSP-2026-CIPTA_KARYA-001693"
+   ],
+   "codes": [
+    "5.5.2.5",
+    "5.5.2.6"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:2,276|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,380|labor:L.04:Mandor:0,127",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001694",
+    "AHSP-2026-CIPTA_KARYA-001695",
+    "AHSP-2026-CIPTA_KARYA-001696"
+   ],
+   "codes": [
+    "5.5.2.7",
+    "5.5.2.8",
+    "5.5.2.9"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:5,055|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,844|labor:L.04:Mandor:0,281",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001698",
+    "AHSP-2026-CIPTA_KARYA-001699"
+   ],
+   "codes": [
+    "5.5.2.11",
+    "5.5.2.12"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,381|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,064|labor:L.04:Mandor:0,021",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001703",
+    "AHSP-2026-CIPTA_KARYA-001704",
+    "AHSP-2026-CIPTA_KARYA-001705",
+    "AHSP-2026-CIPTA_KARYA-001715",
+    "AHSP-2026-CIPTA_KARYA-001727"
+   ],
+   "codes": [
+    "5.5.2.16",
+    "5.5.2.17",
+    "5.5.2.18",
+    "5.5.2.28",
+    "5.5.2.40"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,507|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,085|labor:L.04:Mandor:0,028",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001706",
+    "AHSP-2026-CIPTA_KARYA-001716",
+    "AHSP-2026-CIPTA_KARYA-001717",
+    "AHSP-2026-CIPTA_KARYA-001728",
+    "AHSP-2026-CIPTA_KARYA-001729",
+    "AHSP-2026-CIPTA_KARYA-001734"
+   ],
+   "codes": [
+    "5.5.2.19",
+    "5.5.2.29",
+    "5.5.2.30",
+    "5.5.2.41",
+    "5.5.2.42",
+    "5.5.2.47"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,886|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,148|labor:L.04:Mandor:0,049",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001707",
+    "AHSP-2026-CIPTA_KARYA-001708"
+   ],
+   "codes": [
+    "5.5.2.20",
+    "5.5.2.21"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,064|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,011|labor:L.04:Mandor:0,004",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001709",
+    "AHSP-2026-CIPTA_KARYA-001710",
+    "AHSP-2026-CIPTA_KARYA-001718",
+    "AHSP-2026-CIPTA_KARYA-001719",
+    "AHSP-2026-CIPTA_KARYA-001720",
+    "AHSP-2026-CIPTA_KARYA-001721"
+   ],
+   "codes": [
+    "5.5.2.22",
+    "5.5.2.23",
+    "5.5.2.31",
+    "5.5.2.32",
+    "5.5.2.33",
+    "5.5.2.34"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,076|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,013|labor:L.04:Mandor:0,004",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001711",
+    "AHSP-2026-CIPTA_KARYA-001712",
+    "AHSP-2026-CIPTA_KARYA-001722"
+   ],
+   "codes": [
+    "5.5.2.24",
+    "5.5.2.25",
+    "5.5.2.35"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,633|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,106|labor:L.04:Mandor:0,035",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001730",
+    "AHSP-2026-CIPTA_KARYA-001731"
+   ],
+   "codes": [
+    "5.5.2.43",
+    "5.5.2.44"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,255|labor:L.02:Tukang Listrik / Elektronik:0,425|labor:L.03:Kepala Tukang:0,043|labor:L.04:Mandor:0,014",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001738",
+    "AHSP-2026-CIPTA_KARYA-001746"
+   ],
+   "codes": [
+    "5.5.2.51",
+    "5.5.2.59"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:1,371|labor:L.02:Tukang Listrik / Elektronik:2,290|labor:L.03:Kepala Tukang:0,229|labor:L.04:Mandor:0,076",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001741",
+    "AHSP-2026-CIPTA_KARYA-001742"
+   ],
+   "codes": [
+    "5.5.2.54",
+    "5.5.2.55"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:1,200|labor:L.02:Tukang Listrik / Elektronik:2,004|labor:L.03:Kepala Tukang:0,200|labor:L.04:Mandor:0,067",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001743",
+    "AHSP-2026-CIPTA_KARYA-001744"
+   ],
+   "codes": [
+    "5.5.2.56",
+    "5.5.2.57"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,143|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,024|labor:L.04:Mandor:0,008",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001747",
+    "AHSP-2026-CIPTA_KARYA-001748",
+    "AHSP-2026-CIPTA_KARYA-001749",
+    "AHSP-2026-CIPTA_KARYA-001750",
+    "AHSP-2026-CIPTA_KARYA-001751"
+   ],
+   "codes": [
+    "5.5.3.1",
+    "5.5.3.2",
+    "5.5.3.3",
+    "5.5.3.4",
+    "5.5.3.5"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,190|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,032|labor:L.04:Mandor:0,011",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001752",
+    "AHSP-2026-CIPTA_KARYA-001753",
+    "AHSP-2026-CIPTA_KARYA-001754",
+    "AHSP-2026-CIPTA_KARYA-001755",
+    "AHSP-2026-CIPTA_KARYA-001756"
+   ],
+   "codes": [
+    "5.5.3.6",
+    "5.5.3.7",
+    "5.5.3.8",
+    "5.5.3.9",
+    "5.5.3.10"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m2|labor:L.01:Pekerja:0,217|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,036|labor:L.04:Mandor:0,012",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001757",
+    "AHSP-2026-CIPTA_KARYA-001758",
+    "AHSP-2026-CIPTA_KARYA-001759",
+    "AHSP-2026-CIPTA_KARYA-001760",
+    "AHSP-2026-CIPTA_KARYA-001761"
+   ],
+   "codes": [
+    "5.5.3.11",
+    "5.5.3.12",
+    "5.5.3.13",
+    "5.5.3.14",
+    "5.5.3.15"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|m'|labor:L.01:Pekerja:0,024|labor:L.02:Tukang Listrik / Elektronik:0,040|labor:L.03:Kepala Tukang:0,004|labor:L.04:Mandor:0,001",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001763",
+    "AHSP-2026-CIPTA_KARYA-001764"
+   ],
+   "codes": [
+    "5.5.3.17",
+    "5.5.3.18"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,090|labor:L.02:Tukang:0,151|labor:L.03:Kepala Tukang:0,015|labor:L.04:Mandor:0,005",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001787",
+    "AHSP-2026-CIPTA_KARYA-001788"
+   ],
+   "codes": [
+    "5.5.5.1",
+    "5.5.5.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,512|labor:L.02:Tukang Pipa:0,855|labor:L.03:Kepala Tukang:0,085|labor:L.04:Mandor:0,028",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001789",
+    "AHSP-2026-CIPTA_KARYA-001801"
+   ],
+   "codes": [
+    "5.6.1.1",
+    "5.6.1.13"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,762|labor:L.02:Tukang Pipa:1,272|labor:L.03:Kepala Tukang:0,127|labor:L.04:Mandor:0,042",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001791",
+    "AHSP-2026-CIPTA_KARYA-001802",
+    "AHSP-2026-CIPTA_KARYA-001808",
+    "AHSP-2026-CIPTA_KARYA-001816"
+   ],
+   "codes": [
+    "5.6.1.3",
+    "5.6.1.14",
+    "5.6.1.20",
+    "5.6.2.6"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,052|labor:L.02:Tukang Pipa:0,087|labor:L.03:Kepala Tukang:0,009|labor:L.04:Mandor:0,003",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001811",
+    "AHSP-2026-CIPTA_KARYA-001812"
+   ],
+   "codes": [
+    "5.6.2.1",
+    "5.6.2.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:1,269|labor:L.02:Tukang Pipa:2,119|labor:L.03:Kepala Tukang:0,212|labor:L.04:Mandor:0,071",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001813",
+    "AHSP-2026-CIPTA_KARYA-001814"
+   ],
+   "codes": [
+    "5.6.2.3",
+    "5.6.2.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,102|labor:L.03:Tukang Listrik / Elektronik Kepala Tukang:0,017|labor:L.04:Mandor:0,006",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001818",
+    "AHSP-2026-CIPTA_KARYA-001819",
+    "AHSP-2026-CIPTA_KARYA-001820",
+    "AHSP-2026-CIPTA_KARYA-001821"
+   ],
+   "codes": [
+    "5.6.3.1",
+    "5.6.3.2",
+    "5.6.3.3",
+    "5.6.3.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,417|labor:L.02:Tukang:0,696|labor:L.03:Kepala Tukang:0,070|labor:L.04:Mandor:0,021",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001828",
+    "AHSP-2026-CIPTA_KARYA-001831"
+   ],
+   "codes": [
+    "6.1.1.1",
+    "6.1.1.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,646|labor:L.02:Tukang:1,079|labor:L.03:Kepala Tukang:0,108|labor:L.04:Mandor:0,032",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001829",
+    "AHSP-2026-CIPTA_KARYA-001832"
+   ],
+   "codes": [
+    "6.1.1.2",
+    "6.1.1.5"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,771|labor:L.02:Tukang:1,288|labor:L.03:Kepala Tukang:0,129|labor:L.04:Mandor:0,039",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001830",
+    "AHSP-2026-CIPTA_KARYA-001833"
+   ],
+   "codes": [
+    "6.1.1.3",
+    "6.1.1.6"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,129|labor:L.02:Tukang:0,215|labor:L.03:Kepala Tukang:0,021|labor:L.04:Mandor:0,006",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001834",
+    "AHSP-2026-CIPTA_KARYA-001845"
+   ],
+   "codes": [
+    "6.1.1.7",
+    "6.1.1.18"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,417|labor:L.02:Tukang:0,696|labor:L.03:Kepala Tukang:0,070|labor:L.04:Mandor:0,021",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001835",
+    "AHSP-2026-CIPTA_KARYA-001836"
+   ],
+   "codes": [
+    "6.1.1.8",
+    "6.1.1.9"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,646|labor:L.02:Tukang:1,079|labor:L.03:Kepala Tukang:0,108|labor:L.04:Mandor:0,032",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001837",
+    "AHSP-2026-CIPTA_KARYA-001838",
+    "AHSP-2026-CIPTA_KARYA-001839",
+    "AHSP-2026-CIPTA_KARYA-001840"
+   ],
+   "codes": [
+    "6.1.1.10",
+    "6.1.1.11",
+    "6.1.1.12",
+    "6.1.1.13"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,771|labor:L.02:Tukang:1,288|labor:L.03:Kepala Tukang:0,129|labor:L.04:Mandor:0,039",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001842",
+    "AHSP-2026-CIPTA_KARYA-001843",
+    "AHSP-2026-CIPTA_KARYA-001844"
+   ],
+   "codes": [
+    "6.1.1.15",
+    "6.1.1.16",
+    "6.1.1.17"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,417|labor:L.02:Tukang Pipa:0,696|labor:L.03:Kepala Tukang:0,070|labor:L.04:Mandor:0,021",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001849",
+    "AHSP-2026-CIPTA_KARYA-001850"
+   ],
+   "codes": [
+    "6.1.2.2",
+    "6.1.2.3"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,763|labor:L.02:Tukang Pipa:1,274|labor:L.03:Kepala Tukang:0,127|labor:L.04:Mandor:0,038",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001851",
+    "AHSP-2026-CIPTA_KARYA-001852",
+    "AHSP-2026-CIPTA_KARYA-001853",
+    "AHSP-2026-CIPTA_KARYA-001856",
+    "AHSP-2026-CIPTA_KARYA-001861",
+    "AHSP-2026-CIPTA_KARYA-001862",
+    "AHSP-2026-CIPTA_KARYA-001863",
+    "AHSP-2026-CIPTA_KARYA-001864"
+   ],
+   "codes": [
+    "6.1.2.4",
+    "6.1.2.5",
+    "6.1.2.6",
+    "6.1.2.9",
+    "6.1.2.14",
+    "6.1.2.15",
+    "6.1.2.16",
+    "6.1.2.17"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:1,104|labor:L.02:Tukang:1,844|labor:L.03:Kepala Tukang:0,184|labor:L.04:Mandor:0,055",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001866",
+    "AHSP-2026-CIPTA_KARYA-001868",
+    "AHSP-2026-CIPTA_KARYA-001870"
+   ],
+   "codes": [
+    "6.1.3.1",
+    "6.1.3.3",
+    "6.1.3.5"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:5,625|labor:L.02:Tukang:9,394|labor:L.03:Kepala Tukang:0,939|labor:L.04:Mandor:0,282",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001867",
+    "AHSP-2026-CIPTA_KARYA-001869"
+   ],
+   "codes": [
+    "6.1.3.2",
+    "6.1.3.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,729|labor:L.02:Tukang:1,218|labor:L.03:Kepala Tukang:0,122|labor:L.04:Mandor:0,037",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001874",
+    "AHSP-2026-CIPTA_KARYA-001876",
+    "AHSP-2026-CIPTA_KARYA-001877"
+   ],
+   "codes": [
+    "6.1.4.3",
+    "6.1.4.5",
+    "6.1.4.6"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|unit|labor:L.01:Pekerja:0,250|labor:L.02:Tukang:0,418|labor:L.03:Kepala Tukang:0,042|labor:L.04:Mandor:0,013",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-001889",
+    "AHSP-2026-CIPTA_KARYA-001890"
+   ],
+   "codes": [
+    "6.2.3.1",
+    "6.2.3.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,052|labor:L.02:Tukang Pipa:0,087|labor:L.03:Kepala Tukang:0,009|labor:L.04:Mandor:0,003",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002012",
+    "AHSP-2026-CIPTA_KARYA-002027",
+    "AHSP-2026-CIPTA_KARYA-002041",
+    "AHSP-2026-CIPTA_KARYA-002048",
+    "AHSP-2026-CIPTA_KARYA-002057",
+    "AHSP-2026-CIPTA_KARYA-002080",
+    "AHSP-2026-CIPTA_KARYA-002104",
+    "AHSP-2026-CIPTA_KARYA-002118",
+    "AHSP-2026-CIPTA_KARYA-002133",
+    "AHSP-2026-CIPTA_KARYA-002167",
+    "AHSP-2026-CIPTA_KARYA-002179",
+    "AHSP-2026-CIPTA_KARYA-002184",
+    "AHSP-2026-CIPTA_KARYA-002189",
+    "AHSP-2026-CIPTA_KARYA-002191"
+   ],
+   "codes": [
+    "6.5.1.1",
+    "6.5.1.16",
+    "6.5.1.30",
+    "6.5.2.1",
+    "6.5.3.1",
+    "6.5.4.1",
+    "6.5.5.1",
+    "6.5.6.1",
+    "6.5.7.1",
+    "6.5.9.1",
+    "6.5.10.1",
+    "6.5.10.6",
+    "6.5.10.11",
+    "6.5.11.1"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,079|labor:L.02:Tukang Pipa:0,131|labor:L.03:Kepala Tukang:0,013|labor:L.04:Mandor:0,004",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002013",
+    "AHSP-2026-CIPTA_KARYA-002028",
+    "AHSP-2026-CIPTA_KARYA-002049",
+    "AHSP-2026-CIPTA_KARYA-002058",
+    "AHSP-2026-CIPTA_KARYA-002081",
+    "AHSP-2026-CIPTA_KARYA-002105",
+    "AHSP-2026-CIPTA_KARYA-002119",
+    "AHSP-2026-CIPTA_KARYA-002134",
+    "AHSP-2026-CIPTA_KARYA-002168",
+    "AHSP-2026-CIPTA_KARYA-002192"
+   ],
+   "codes": [
+    "6.5.1.2",
+    "6.5.1.17",
+    "6.5.2.2",
+    "6.5.3.2",
+    "6.5.4.2",
+    "6.5.5.2",
+    "6.5.6.2",
+    "6.5.7.2",
+    "6.5.9.2",
+    "6.5.11.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,105|labor:L.02:Tukang Pipa:0,175|labor:L.03:Kepala Tukang:0,017|labor:L.04:Mandor:0,005",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002014",
+    "AHSP-2026-CIPTA_KARYA-002029",
+    "AHSP-2026-CIPTA_KARYA-002042",
+    "AHSP-2026-CIPTA_KARYA-002050",
+    "AHSP-2026-CIPTA_KARYA-002059",
+    "AHSP-2026-CIPTA_KARYA-002082",
+    "AHSP-2026-CIPTA_KARYA-002106",
+    "AHSP-2026-CIPTA_KARYA-002120",
+    "AHSP-2026-CIPTA_KARYA-002135",
+    "AHSP-2026-CIPTA_KARYA-002169",
+    "AHSP-2026-CIPTA_KARYA-002180",
+    "AHSP-2026-CIPTA_KARYA-002185",
+    "AHSP-2026-CIPTA_KARYA-002190",
+    "AHSP-2026-CIPTA_KARYA-002193",
+    "AHSP-2026-CIPTA_KARYA-002204"
+   ],
+   "codes": [
+    "6.5.1.3",
+    "6.5.1.18",
+    "6.5.1.31",
+    "6.5.2.3",
+    "6.5.3.3",
+    "6.5.4.3",
+    "6.5.5.3",
+    "6.5.6.3",
+    "6.5.7.3",
+    "6.5.9.3",
+    "6.5.10.2",
+    "6.5.10.7",
+    "6.5.10.12",
+    "6.5.11.3",
+    "6.5.11.14"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,129|labor:L.02:Tukang Pipa:0,215|labor:L.03:Kepala Tukang:0,021|labor:L.04:Mandor:0,006",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002015",
+    "AHSP-2026-CIPTA_KARYA-002030",
+    "AHSP-2026-CIPTA_KARYA-002051",
+    "AHSP-2026-CIPTA_KARYA-002060",
+    "AHSP-2026-CIPTA_KARYA-002083",
+    "AHSP-2026-CIPTA_KARYA-002107",
+    "AHSP-2026-CIPTA_KARYA-002136",
+    "AHSP-2026-CIPTA_KARYA-002170"
+   ],
+   "codes": [
+    "6.5.1.4",
+    "6.5.1.19",
+    "6.5.2.4",
+    "6.5.3.4",
+    "6.5.4.4",
+    "6.5.5.4",
+    "6.5.7.4",
+    "6.5.9.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,157|labor:L.02:Tukang Pipa:0,262|labor:L.03:Kepala Tukang:0,026|labor:L.04:Mandor:0,008",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002016",
+    "AHSP-2026-CIPTA_KARYA-002031",
+    "AHSP-2026-CIPTA_KARYA-002052",
+    "AHSP-2026-CIPTA_KARYA-002061",
+    "AHSP-2026-CIPTA_KARYA-002084",
+    "AHSP-2026-CIPTA_KARYA-002108",
+    "AHSP-2026-CIPTA_KARYA-002122",
+    "AHSP-2026-CIPTA_KARYA-002137",
+    "AHSP-2026-CIPTA_KARYA-002171",
+    "AHSP-2026-CIPTA_KARYA-002194"
+   ],
+   "codes": [
+    "6.5.1.5",
+    "6.5.1.20",
+    "6.5.2.5",
+    "6.5.3.5",
+    "6.5.4.5",
+    "6.5.5.5",
+    "6.5.6.5",
+    "6.5.7.5",
+    "6.5.9.5",
+    "6.5.11.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,207|labor:L.02:Tukang Pipa:0,346|labor:L.03:Kepala Tukang:0,035|labor:L.04:Mandor:0,010",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002017",
+    "AHSP-2026-CIPTA_KARYA-002032",
+    "AHSP-2026-CIPTA_KARYA-002043",
+    "AHSP-2026-CIPTA_KARYA-002053",
+    "AHSP-2026-CIPTA_KARYA-002062",
+    "AHSP-2026-CIPTA_KARYA-002071",
+    "AHSP-2026-CIPTA_KARYA-002085",
+    "AHSP-2026-CIPTA_KARYA-002095",
+    "AHSP-2026-CIPTA_KARYA-002109",
+    "AHSP-2026-CIPTA_KARYA-002123",
+    "AHSP-2026-CIPTA_KARYA-002138",
+    "AHSP-2026-CIPTA_KARYA-002147",
+    "AHSP-2026-CIPTA_KARYA-002157",
+    "AHSP-2026-CIPTA_KARYA-002172",
+    "AHSP-2026-CIPTA_KARYA-002181",
+    "AHSP-2026-CIPTA_KARYA-002186",
+    "AHSP-2026-CIPTA_KARYA-002195"
+   ],
+   "codes": [
+    "6.5.1.6",
+    "6.5.1.21",
+    "6.5.1.32",
+    "6.5.2.6",
+    "6.5.3.6",
+    "6.5.3.15",
+    "6.5.4.6",
+    "6.5.4.16",
+    "6.5.5.6",
+    "6.5.6.6",
+    "6.5.7.6",
+    "6.5.7.15",
+    "6.5.8.1",
+    "6.5.9.6",
+    "6.5.10.3",
+    "6.5.10.8",
+    "6.5.11.5"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,260|labor:L.02:Tukang Pipa:0,433|labor:L.03:Kepala Tukang:0,043|labor:L.04:Mandor:0,013",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002018",
+    "AHSP-2026-CIPTA_KARYA-002033",
+    "AHSP-2026-CIPTA_KARYA-002044",
+    "AHSP-2026-CIPTA_KARYA-002054",
+    "AHSP-2026-CIPTA_KARYA-002063",
+    "AHSP-2026-CIPTA_KARYA-002072",
+    "AHSP-2026-CIPTA_KARYA-002086",
+    "AHSP-2026-CIPTA_KARYA-002096",
+    "AHSP-2026-CIPTA_KARYA-002110",
+    "AHSP-2026-CIPTA_KARYA-002124",
+    "AHSP-2026-CIPTA_KARYA-002139",
+    "AHSP-2026-CIPTA_KARYA-002148",
+    "AHSP-2026-CIPTA_KARYA-002158",
+    "AHSP-2026-CIPTA_KARYA-002173"
+   ],
+   "codes": [
+    "6.5.1.7",
+    "6.5.1.22",
+    "6.5.1.33",
+    "6.5.2.7",
+    "6.5.3.7",
+    "6.5.3.16",
+    "6.5.4.7",
+    "6.5.4.17",
+    "6.5.5.7",
+    "6.5.6.7",
+    "6.5.7.7",
+    "6.5.7.16",
+    "6.5.8.2",
+    "6.5.9.7"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,471|labor:L.02:Tukang Pipa:0,787|labor:L.03:Kepala Tukang:0,079|labor:L.04:Mandor:0,024",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002019",
+    "AHSP-2026-CIPTA_KARYA-002034",
+    "AHSP-2026-CIPTA_KARYA-002045",
+    "AHSP-2026-CIPTA_KARYA-002055",
+    "AHSP-2026-CIPTA_KARYA-002064",
+    "AHSP-2026-CIPTA_KARYA-002073",
+    "AHSP-2026-CIPTA_KARYA-002087",
+    "AHSP-2026-CIPTA_KARYA-002097",
+    "AHSP-2026-CIPTA_KARYA-002111",
+    "AHSP-2026-CIPTA_KARYA-002125",
+    "AHSP-2026-CIPTA_KARYA-002140",
+    "AHSP-2026-CIPTA_KARYA-002149",
+    "AHSP-2026-CIPTA_KARYA-002159",
+    "AHSP-2026-CIPTA_KARYA-002174",
+    "AHSP-2026-CIPTA_KARYA-002182",
+    "AHSP-2026-CIPTA_KARYA-002187",
+    "AHSP-2026-CIPTA_KARYA-002196"
+   ],
+   "codes": [
+    "6.5.1.8",
+    "6.5.1.23",
+    "6.5.1.34",
+    "6.5.2.8",
+    "6.5.3.8",
+    "6.5.3.17",
+    "6.5.4.8",
+    "6.5.4.18",
+    "6.5.5.8",
+    "6.5.6.8",
+    "6.5.7.8",
+    "6.5.7.17",
+    "6.5.8.3",
+    "6.5.9.8",
+    "6.5.10.4",
+    "6.5.10.9",
+    "6.5.11.6"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,631|labor:L.02:Tukang Pipa:1,054|labor:L.03:Kepala Tukang:0,105|labor:L.04:Mandor:0,032",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002020",
+    "AHSP-2026-CIPTA_KARYA-002035",
+    "AHSP-2026-CIPTA_KARYA-002046",
+    "AHSP-2026-CIPTA_KARYA-002056",
+    "AHSP-2026-CIPTA_KARYA-002065",
+    "AHSP-2026-CIPTA_KARYA-002074",
+    "AHSP-2026-CIPTA_KARYA-002088",
+    "AHSP-2026-CIPTA_KARYA-002098",
+    "AHSP-2026-CIPTA_KARYA-002112",
+    "AHSP-2026-CIPTA_KARYA-002126",
+    "AHSP-2026-CIPTA_KARYA-002141",
+    "AHSP-2026-CIPTA_KARYA-002150",
+    "AHSP-2026-CIPTA_KARYA-002160",
+    "AHSP-2026-CIPTA_KARYA-002175",
+    "AHSP-2026-CIPTA_KARYA-002183",
+    "AHSP-2026-CIPTA_KARYA-002188",
+    "AHSP-2026-CIPTA_KARYA-002197",
+    "AHSP-2026-CIPTA_KARYA-002203"
+   ],
+   "codes": [
+    "6.5.1.9",
+    "6.5.1.24",
+    "6.5.1.35",
+    "6.5.2.9",
+    "6.5.3.9",
+    "6.5.3.18",
+    "6.5.4.9",
+    "6.5.4.19",
+    "6.5.5.9",
+    "6.5.6.9",
+    "6.5.7.9",
+    "6.5.7.18",
+    "6.5.8.4",
+    "6.5.9.9",
+    "6.5.10.5",
+    "6.5.10.10",
+    "6.5.11.7",
+    "6.5.11.13"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,788|labor:L.02:Tukang Pipa:1,316|labor:L.03:Kepala Tukang:0,132|labor:L.04:Mandor:0,039",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002021",
+    "AHSP-2026-CIPTA_KARYA-002036",
+    "AHSP-2026-CIPTA_KARYA-002066",
+    "AHSP-2026-CIPTA_KARYA-002075",
+    "AHSP-2026-CIPTA_KARYA-002089",
+    "AHSP-2026-CIPTA_KARYA-002099",
+    "AHSP-2026-CIPTA_KARYA-002113",
+    "AHSP-2026-CIPTA_KARYA-002127",
+    "AHSP-2026-CIPTA_KARYA-002142",
+    "AHSP-2026-CIPTA_KARYA-002151",
+    "AHSP-2026-CIPTA_KARYA-002161",
+    "AHSP-2026-CIPTA_KARYA-002176"
+   ],
+   "codes": [
+    "6.5.1.10",
+    "6.5.1.25",
+    "6.5.3.10",
+    "6.5.3.19",
+    "6.5.4.10",
+    "6.5.4.20",
+    "6.5.5.10",
+    "6.5.6.10",
+    "6.5.7.10",
+    "6.5.7.19",
+    "6.5.8.5",
+    "6.5.9.10"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,945|labor:L.02:Tukang Pipa:1,579|labor:L.03:Kepala Tukang:0,158|labor:L.04:Mandor:0,047",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002022",
+    "AHSP-2026-CIPTA_KARYA-002026",
+    "AHSP-2026-CIPTA_KARYA-002037",
+    "AHSP-2026-CIPTA_KARYA-002047",
+    "AHSP-2026-CIPTA_KARYA-002067",
+    "AHSP-2026-CIPTA_KARYA-002076",
+    "AHSP-2026-CIPTA_KARYA-002090",
+    "AHSP-2026-CIPTA_KARYA-002100",
+    "AHSP-2026-CIPTA_KARYA-002114",
+    "AHSP-2026-CIPTA_KARYA-002128",
+    "AHSP-2026-CIPTA_KARYA-002143",
+    "AHSP-2026-CIPTA_KARYA-002152",
+    "AHSP-2026-CIPTA_KARYA-002162",
+    "AHSP-2026-CIPTA_KARYA-002177",
+    "AHSP-2026-CIPTA_KARYA-002198"
+   ],
+   "codes": [
+    "6.5.1.11",
+    "6.5.1.15",
+    "6.5.1.26",
+    "6.5.1.36",
+    "6.5.3.11",
+    "6.5.3.20",
+    "6.5.4.11",
+    "6.5.4.21",
+    "6.5.5.11",
+    "6.5.6.11",
+    "6.5.7.11",
+    "6.5.7.20",
+    "6.5.8.6",
+    "6.5.9.11",
+    "6.5.11.8"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:1,260|labor:L.02:Tukang Pipa:2,103|labor:L.03:Kepala Tukang:0,210|labor:L.04:Mandor:0,063",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002023",
+    "AHSP-2026-CIPTA_KARYA-002038",
+    "AHSP-2026-CIPTA_KARYA-002068",
+    "AHSP-2026-CIPTA_KARYA-002077",
+    "AHSP-2026-CIPTA_KARYA-002091",
+    "AHSP-2026-CIPTA_KARYA-002101",
+    "AHSP-2026-CIPTA_KARYA-002115",
+    "AHSP-2026-CIPTA_KARYA-002129",
+    "AHSP-2026-CIPTA_KARYA-002144",
+    "AHSP-2026-CIPTA_KARYA-002153",
+    "AHSP-2026-CIPTA_KARYA-002163",
+    "AHSP-2026-CIPTA_KARYA-002178",
+    "AHSP-2026-CIPTA_KARYA-002199"
+   ],
+   "codes": [
+    "6.5.1.12",
+    "6.5.1.27",
+    "6.5.3.12",
+    "6.5.3.21",
+    "6.5.4.12",
+    "6.5.4.22",
+    "6.5.5.12",
+    "6.5.6.12",
+    "6.5.7.12",
+    "6.5.7.21",
+    "6.5.8.7",
+    "6.5.9.12",
+    "6.5.11.9"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:1,574|labor:L.02:Tukang Pipa:2,628|labor:L.03:Kepala Tukang:0,263|labor:L.04:Mandor:0,079",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002024",
+    "AHSP-2026-CIPTA_KARYA-002039",
+    "AHSP-2026-CIPTA_KARYA-002069",
+    "AHSP-2026-CIPTA_KARYA-002078",
+    "AHSP-2026-CIPTA_KARYA-002092",
+    "AHSP-2026-CIPTA_KARYA-002102",
+    "AHSP-2026-CIPTA_KARYA-002116",
+    "AHSP-2026-CIPTA_KARYA-002130",
+    "AHSP-2026-CIPTA_KARYA-002145",
+    "AHSP-2026-CIPTA_KARYA-002154",
+    "AHSP-2026-CIPTA_KARYA-002164",
+    "AHSP-2026-CIPTA_KARYA-002200"
+   ],
+   "codes": [
+    "6.5.1.13",
+    "6.5.1.28",
+    "6.5.3.13",
+    "6.5.3.22",
+    "6.5.4.13",
+    "6.5.4.23",
+    "6.5.5.13",
+    "6.5.6.13",
+    "6.5.7.13",
+    "6.5.7.22",
+    "6.5.8.8",
+    "6.5.11.10"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:1,886|labor:L.02:Tukang Pipa:3,149|labor:L.03:Kepala Tukang:0,315|labor:L.04:Mandor:0,094",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002025",
+    "AHSP-2026-CIPTA_KARYA-002040",
+    "AHSP-2026-CIPTA_KARYA-002070",
+    "AHSP-2026-CIPTA_KARYA-002079",
+    "AHSP-2026-CIPTA_KARYA-002093",
+    "AHSP-2026-CIPTA_KARYA-002103",
+    "AHSP-2026-CIPTA_KARYA-002117",
+    "AHSP-2026-CIPTA_KARYA-002131",
+    "AHSP-2026-CIPTA_KARYA-002155",
+    "AHSP-2026-CIPTA_KARYA-002165",
+    "AHSP-2026-CIPTA_KARYA-002201"
+   ],
+   "codes": [
+    "6.5.1.14",
+    "6.5.1.29",
+    "6.5.3.14",
+    "6.5.3.23",
+    "6.5.4.14",
+    "6.5.4.24",
+    "6.5.5.14",
+    "6.5.6.14",
+    "6.5.7.23",
+    "6.5.8.9",
+    "6.5.11.11"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:2,202|labor:L.02:Tukang Pipa:3,678|labor:L.03:Kepala Tukang:0,368|labor:L.04:Mandor:0,110",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002094",
+    "AHSP-2026-CIPTA_KARYA-002132",
+    "AHSP-2026-CIPTA_KARYA-002156",
+    "AHSP-2026-CIPTA_KARYA-002166",
+    "AHSP-2026-CIPTA_KARYA-002202"
+   ],
+   "codes": [
+    "6.5.4.15",
+    "6.5.6.15",
+    "6.5.7.24",
+    "6.5.8.10",
+    "6.5.11.12"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,094|labor:L.02:Tukang Pipa:0,157|labor:L.03:Kepala Tukang:0,016|labor:L.04:Mandor:0,005",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002206",
+    "AHSP-2026-CIPTA_KARYA-002228",
+    "AHSP-2026-CIPTA_KARYA-002239",
+    "AHSP-2026-CIPTA_KARYA-002243"
+   ],
+   "codes": [
+    "6.5.12.1",
+    "6.5.15.1",
+    "6.5.17.3",
+    "6.5.18.1"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,183|labor:L.02:Tukang Pipa:0,306|labor:L.03:Kepala Tukang:0,031|labor:L.04:Mandor:0,009",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002208",
+    "AHSP-2026-CIPTA_KARYA-002229",
+    "AHSP-2026-CIPTA_KARYA-002240"
+   ],
+   "codes": [
+    "6.5.12.3",
+    "6.5.15.2",
+    "6.5.17.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,244|labor:L.02:Tukang Pipa:0,408|labor:L.03:Kepala Tukang:0,041|labor:L.04:Mandor:0,012",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002209",
+    "AHSP-2026-CIPTA_KARYA-002230",
+    "AHSP-2026-CIPTA_KARYA-002241"
+   ],
+   "codes": [
+    "6.5.12.4",
+    "6.5.15.3",
+    "6.5.17.5"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,138|labor:L.02:Tukang Pipa:0,231|labor:L.03:Kepala Tukang:0,023|labor:L.04:Mandor:0,007",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002213",
+    "AHSP-2026-CIPTA_KARYA-002222"
+   ],
+   "codes": [
+    "6.5.13.1",
+    "6.5.14.1"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,173|labor:L.02:Tukang Pipa:0,289|labor:L.03:Kepala Tukang:0,029|labor:L.04:Mandor:0,009",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002214",
+    "AHSP-2026-CIPTA_KARYA-002223"
+   ],
+   "codes": [
+    "6.5.13.2",
+    "6.5.14.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,208|labor:L.02:Tukang Pipa:0,348|labor:L.03:Kepala Tukang:0,035|labor:L.04:Mandor:0,010",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002215",
+    "AHSP-2026-CIPTA_KARYA-002224"
+   ],
+   "codes": [
+    "6.5.13.3",
+    "6.5.14.3"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,269|labor:L.02:Tukang Pipa:0,449|labor:L.03:Kepala Tukang:0,045|labor:L.04:Mandor:0,013",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002216",
+    "AHSP-2026-CIPTA_KARYA-002225"
+   ],
+   "codes": [
+    "6.5.13.4",
+    "6.5.14.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,413|labor:L.02:Tukang Pipa:0,690|labor:L.03:Kepala Tukang:0,069|labor:L.04:Mandor:0,021",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002218",
+    "AHSP-2026-CIPTA_KARYA-002226"
+   ],
+   "codes": [
+    "6.5.13.6",
+    "6.5.14.5"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,550|labor:L.02:Tukang Pipa:0,919|labor:L.03:Kepala Tukang:0,092|labor:L.04:Mandor:0,028",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002219",
+    "AHSP-2026-CIPTA_KARYA-002227"
+   ],
+   "codes": [
+    "6.5.13.7",
+    "6.5.14.6"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Unit|labor:L.01:Pekerja:0,129|labor:L.02:Tukang Pipa:0,215|labor:L.03:Kepala Tukang:0,021|labor:L.04:Mandor:0,006",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002245",
+    "AHSP-2026-CIPTA_KARYA-002246"
+   ],
+   "codes": [
+    "6.5.20.1",
+    "6.5.20.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Unit|labor:L.01:Pekerja:0,048|labor:L.02:Tukang Pipa:0,080|labor:L.03:Kepala Tukang:0,008|labor:L.04:Mandor:0,002",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002254",
+    "AHSP-2026-CIPTA_KARYA-002257"
+   ],
+   "codes": [
+    "6.5.24.1",
+    "6.5.24.4"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,216|labor:L.02:Tukang Pipa:0,108|labor:L.04:Mandor:0,022|equipment::Sewa Tripot / Tackel:0,029",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002258",
+    "AHSP-2026-CIPTA_KARYA-002264",
+    "AHSP-2026-CIPTA_KARYA-002270",
+    "AHSP-2026-CIPTA_KARYA-002291",
+    "AHSP-2026-CIPTA_KARYA-002309",
+    "AHSP-2026-CIPTA_KARYA-002316",
+    "AHSP-2026-CIPTA_KARYA-002350",
+    "AHSP-2026-CIPTA_KARYA-002355",
+    "AHSP-2026-CIPTA_KARYA-002370",
+    "AHSP-2026-CIPTA_KARYA-002382",
+    "AHSP-2026-CIPTA_KARYA-002394"
+   ],
+   "codes": [
+    "6.5.25.1",
+    "6.5.29.3",
+    "6.5.29.9",
+    "6.5.34.16",
+    "6.5.35.6",
+    "6.5.35.13",
+    "6.5.41.1",
+    "6.5.42.5",
+    "6.5.43.6",
+    "6.5.44.6",
+    "6.5.45.6"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,326|labor:L.02:Tukang Pipa:0,163|labor:L.04:Mandor:0,033|equipment::Sewa Tripot / Tackel:0,039",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002259",
+    "AHSP-2026-CIPTA_KARYA-002262",
+    "AHSP-2026-CIPTA_KARYA-002263",
+    "AHSP-2026-CIPTA_KARYA-002317",
+    "AHSP-2026-CIPTA_KARYA-002324",
+    "AHSP-2026-CIPTA_KARYA-002356",
+    "AHSP-2026-CIPTA_KARYA-002371",
+    "AHSP-2026-CIPTA_KARYA-002383",
+    "AHSP-2026-CIPTA_KARYA-002395"
+   ],
+   "codes": [
+    "6.5.25.2",
+    "6.5.29.1",
+    "6.5.29.2",
+    "6.5.35.14",
+    "6.5.35.21",
+    "6.5.42.6",
+    "6.5.43.7",
+    "6.5.44.7",
+    "6.5.45.7"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,106|labor:L.02:Tukang Pipa:0,053|labor:L.04:Mandor:0,011|equipment::Sewa Tripot / Tackel:0,028",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002265",
+    "AHSP-2026-CIPTA_KARYA-002266",
+    "AHSP-2026-CIPTA_KARYA-002304",
+    "AHSP-2026-CIPTA_KARYA-002857"
+   ],
+   "codes": [
+    "6.5.29.4",
+    "6.5.29.5",
+    "6.5.35.1",
+    "6.5.29.11"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,054|labor:L.02:Tukang Pipa:0,027|labor:L.04:Mandor:0,005",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002267",
+    "AHSP-2026-CIPTA_KARYA-002269",
+    "AHSP-2026-CIPTA_KARYA-002274",
+    "AHSP-2026-CIPTA_KARYA-002286",
+    "AHSP-2026-CIPTA_KARYA-002293",
+    "AHSP-2026-CIPTA_KARYA-002296",
+    "AHSP-2026-CIPTA_KARYA-002302",
+    "AHSP-2026-CIPTA_KARYA-002306",
+    "AHSP-2026-CIPTA_KARYA-002333",
+    "AHSP-2026-CIPTA_KARYA-002334",
+    "AHSP-2026-CIPTA_KARYA-002367",
+    "AHSP-2026-CIPTA_KARYA-002379",
+    "AHSP-2026-CIPTA_KARYA-002391",
+    "AHSP-2026-CIPTA_KARYA-002402"
+   ],
+   "codes": [
+    "6.5.29.6",
+    "6.5.29.8",
+    "6.5.30.3",
+    "6.5.34.11",
+    "6.5.34.18",
+    "6.5.34.21",
+    "6.5.34.27",
+    "6.5.35.3",
+    "6.5.35.30",
+    "6.5.35.31",
+    "6.5.43.3",
+    "6.5.44.3",
+    "6.5.45.3",
+    "6.5.46.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,068|labor:L.02:Tukang Pipa:0,034|labor:L.04:Mandor:0,007",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002268",
+    "AHSP-2026-CIPTA_KARYA-002271",
+    "AHSP-2026-CIPTA_KARYA-002278",
+    "AHSP-2026-CIPTA_KARYA-002285",
+    "AHSP-2026-CIPTA_KARYA-002303",
+    "AHSP-2026-CIPTA_KARYA-002305",
+    "AHSP-2026-CIPTA_KARYA-002308",
+    "AHSP-2026-CIPTA_KARYA-002314",
+    "AHSP-2026-CIPTA_KARYA-002335",
+    "AHSP-2026-CIPTA_KARYA-002336",
+    "AHSP-2026-CIPTA_KARYA-002353",
+    "AHSP-2026-CIPTA_KARYA-002368",
+    "AHSP-2026-CIPTA_KARYA-002380",
+    "AHSP-2026-CIPTA_KARYA-002392",
+    "AHSP-2026-CIPTA_KARYA-002403"
+   ],
+   "codes": [
+    "6.5.29.7",
+    "6.5.29.10",
+    "6.5.34.3",
+    "6.5.34.10",
+    "6.5.34.28",
+    "6.5.35.2",
+    "6.5.35.5",
+    "6.5.35.11",
+    "6.5.35.32",
+    "6.5.35.33",
+    "6.5.42.3",
+    "6.5.43.4",
+    "6.5.44.4",
+    "6.5.45.4",
+    "6.5.46.3"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,020|labor:L.02:Tukang Pipa:0,010|labor:L.04:Mandor:0,002",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002272",
+    "AHSP-2026-CIPTA_KARYA-002337",
+    "AHSP-2026-CIPTA_KARYA-002347",
+    "AHSP-2026-CIPTA_KARYA-002348",
+    "AHSP-2026-CIPTA_KARYA-002349",
+    "AHSP-2026-CIPTA_KARYA-002404",
+    "AHSP-2026-CIPTA_KARYA-002405",
+    "AHSP-2026-CIPTA_KARYA-002406",
+    "AHSP-2026-CIPTA_KARYA-002407",
+    "AHSP-2026-CIPTA_KARYA-002408",
+    "AHSP-2026-CIPTA_KARYA-002409"
+   ],
+   "codes": [
+    "6.5.30.1",
+    "6.5.36.1",
+    "6.5.38.1",
+    "6.5.39.1",
+    "6.5.40.1",
+    "6.5.47.1",
+    "6.5.48.1",
+    "6.5.49.1",
+    "6.5.50.1",
+    "6.5.51.1",
+    "6.5.52.1"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,035|labor:L.02:Tukang Pipa:0,017|labor:L.04:Mandor:0,003",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002273",
+    "AHSP-2026-CIPTA_KARYA-002279",
+    "AHSP-2026-CIPTA_KARYA-002287",
+    "AHSP-2026-CIPTA_KARYA-002294",
+    "AHSP-2026-CIPTA_KARYA-002301",
+    "AHSP-2026-CIPTA_KARYA-002307",
+    "AHSP-2026-CIPTA_KARYA-002330",
+    "AHSP-2026-CIPTA_KARYA-002331",
+    "AHSP-2026-CIPTA_KARYA-002332",
+    "AHSP-2026-CIPTA_KARYA-002351",
+    "AHSP-2026-CIPTA_KARYA-002365",
+    "AHSP-2026-CIPTA_KARYA-002377",
+    "AHSP-2026-CIPTA_KARYA-002389",
+    "AHSP-2026-CIPTA_KARYA-002401"
+   ],
+   "codes": [
+    "6.5.30.2",
+    "6.5.34.4",
+    "6.5.34.12",
+    "6.5.34.19",
+    "6.5.34.26",
+    "6.5.35.4",
+    "6.5.35.27",
+    "6.5.35.28",
+    "6.5.35.29",
+    "6.5.42.1",
+    "6.5.43.1",
+    "6.5.44.1",
+    "6.5.45.1",
+    "6.5.46.1"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,1060|labor:L.02:Tukang Pipa:0,0530|labor:L.04:Mandor:0,0110|equipment::Sewa Tripot / Tackel:0,028",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002277",
+    "AHSP-2026-CIPTA_KARYA-002292"
+   ],
+   "codes": [
+    "6.5.34.2",
+    "6.5.34.17"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,044|labor:L.02:Tukang Pipa:0,022|labor:L.04:Mandor:0,004",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002297",
+    "AHSP-2026-CIPTA_KARYA-002313",
+    "AHSP-2026-CIPTA_KARYA-002323",
+    "AHSP-2026-CIPTA_KARYA-002352",
+    "AHSP-2026-CIPTA_KARYA-002366",
+    "AHSP-2026-CIPTA_KARYA-002378",
+    "AHSP-2026-CIPTA_KARYA-002390"
+   ],
+   "codes": [
+    "6.5.34.22",
+    "6.5.35.10",
+    "6.5.35.20",
+    "6.5.42.2",
+    "6.5.43.2",
+    "6.5.44.2",
+    "6.5.45.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,766|labor:L.02:Tukang Pipa:0,383|labor:L.04:Mandor:0,077|equipment::Sewa Tripot / Tackel:0,500",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002298",
+    "AHSP-2026-CIPTA_KARYA-002327",
+    "AHSP-2026-CIPTA_KARYA-002359",
+    "AHSP-2026-CIPTA_KARYA-002374",
+    "AHSP-2026-CIPTA_KARYA-002386",
+    "AHSP-2026-CIPTA_KARYA-002398"
+   ],
+   "codes": [
+    "6.5.34.23",
+    "6.5.35.24",
+    "6.5.42.9",
+    "6.5.43.10",
+    "6.5.44.10",
+    "6.5.45.10"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,876|labor:L.02:Tukang Pipa:0,438|labor:L.04:Mandor:0,088|equipment::Sewa Tripot / Tackel:0,600",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002299",
+    "AHSP-2026-CIPTA_KARYA-002328",
+    "AHSP-2026-CIPTA_KARYA-002360",
+    "AHSP-2026-CIPTA_KARYA-002375",
+    "AHSP-2026-CIPTA_KARYA-002387",
+    "AHSP-2026-CIPTA_KARYA-002399"
+   ],
+   "codes": [
+    "6.5.34.24",
+    "6.5.35.25",
+    "6.5.42.10",
+    "6.5.43.11",
+    "6.5.44.11",
+    "6.5.45.11"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,106|labor:L.02:Tukang Pipa:0,053|labor:L.04:Mandor:0,011",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002315",
+    "AHSP-2026-CIPTA_KARYA-002354",
+    "AHSP-2026-CIPTA_KARYA-002369",
+    "AHSP-2026-CIPTA_KARYA-002381",
+    "AHSP-2026-CIPTA_KARYA-002393"
+   ],
+   "codes": [
+    "6.5.35.12",
+    "6.5.42.4",
+    "6.5.43.5",
+    "6.5.44.5",
+    "6.5.45.5"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:1,096|labor:L.02:Tukang Pipa:0,548|labor:L.04:Mandor:0,110|equipment::Sewa Tripot / Tackel:0,193|equipment::Mobile Crane < 3 ton:0,096",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002322",
+    "AHSP-2026-CIPTA_KARYA-002329",
+    "AHSP-2026-CIPTA_KARYA-002361",
+    "AHSP-2026-CIPTA_KARYA-002376",
+    "AHSP-2026-CIPTA_KARYA-002388",
+    "AHSP-2026-CIPTA_KARYA-002400"
+   ],
+   "codes": [
+    "6.5.35.19",
+    "6.5.35.26",
+    "6.5.42.11",
+    "6.5.43.12",
+    "6.5.44.12",
+    "6.5.45.12"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,436|labor:L.02:Tukang Pipa:0,218|labor:L.04:Mandor:0,044|equipment::Sewa Tripot / Tackel:0,500",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002325",
+    "AHSP-2026-CIPTA_KARYA-002357",
+    "AHSP-2026-CIPTA_KARYA-002372",
+    "AHSP-2026-CIPTA_KARYA-002384",
+    "AHSP-2026-CIPTA_KARYA-002396"
+   ],
+   "codes": [
+    "6.5.35.22",
+    "6.5.42.7",
+    "6.5.43.8",
+    "6.5.44.8",
+    "6.5.45.8"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,656|labor:L.02:Tukang Pipa:0,328|labor:L.04:Mandor:0,066|equipment::Sewa Tripot / Tackel:0,500",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002326",
+    "AHSP-2026-CIPTA_KARYA-002358",
+    "AHSP-2026-CIPTA_KARYA-002373",
+    "AHSP-2026-CIPTA_KARYA-002385",
+    "AHSP-2026-CIPTA_KARYA-002397"
+   ],
+   "codes": [
+    "6.5.35.23",
+    "6.5.42.8",
+    "6.5.43.9",
+    "6.5.44.9",
+    "6.5.45.9"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,412|labor:L.02:Tukang Pipa:0,206|labor:L.04:Mandor:0,041",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002339",
+    "AHSP-2026-CIPTA_KARYA-002363"
+   ],
+   "codes": [
+    "6.5.37.2",
+    "6.5.42.13"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,263|labor:L.02:Tukang Pipa:0,132|labor:L.04:Mandor:0,026",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002341",
+    "AHSP-2026-CIPTA_KARYA-002362"
+   ],
+   "codes": [
+    "6.5.37.4",
+    "6.5.42.12"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|Buah|labor:L.01:Pekerja:0,515|labor:L.02:Tukang Pipa:0,257|labor:L.04:Mandor:0,051",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002343",
+    "AHSP-2026-CIPTA_KARYA-002364"
+   ],
+   "codes": [
+    "6.5.37.6",
+    "6.5.42.14"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,008|labor:L.02:Tukang pipa:0,016|labor:L.04:Mandor:0,008|equipment::Butt Fushion dan Genset:0,067",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002652",
+    "AHSP-2026-CIPTA_KARYA-002653"
+   ],
+   "codes": [
+    "9.3.3.1",
+    "9.3.3.2"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  },
+  {
+   "key": "CIPTA_KARYA|buah|labor:L.01:Pekerja:0,751|labor:L.02:Tukang pipa:0,375|labor:L.04:Mandor:0,075|equipment::Sewa Pompa Sedot Ø 5”:0,496",
+   "status": "possible_duplicate",
+   "ids": [
+    "AHSP-2026-CIPTA_KARYA-002768",
+    "AHSP-2026-CIPTA_KARYA-002769"
+   ],
+   "codes": [
+    "9.7.1.16",
+    "9.7.1.17"
+   ],
+   "field": "CIPTA_KARYA",
+   "detail": "identical component signature within the same field and unit"
+  }
+ ]
+}

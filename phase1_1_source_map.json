@@ -1,0 +1,7 @@
+{
+  "officialWorkbook": "EZRAB_VOLUME_CALCULATOR_MASTER.xlsx",
+  "sha256": "BC350C1E9D7CF298FCD4C865A7A35F359C0BA71444647A593F98E37B239B7C28",
+  "identicalCopy": "EZRAB_VOLUME_CALCULATOR_MASTER_COPY.xlsx",
+  "sourceConflict": "src/engine/constructionCalculators/masterJsonSpec.ts names RABPRO V.3 2025_UNLOCKED (2).xlsx",
+  "status": "MISMATCH"
+}

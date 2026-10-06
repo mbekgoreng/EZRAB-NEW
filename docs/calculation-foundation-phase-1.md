@@ -1,0 +1,38 @@
+# EZRAB Calculation Foundation — Phase 1
+
+This document records observed behavior only. It does not select a winner or change a legacy caller.
+
+## Current calculation matrix
+
+| Path | Line amount / direct cost | Additions and taxes | Rounding / precision | Zero, missing, negative |
+| --- | --- | --- | --- | --- |
+| `SafeDecimalEngine` | `safeMultiply` uses scaled integers, first rounds the first factor to 2 decimals and returns requested decimals; `safeAdd` is cents-based | `safePercent` accepts positive amount/rate and rounds to requested decimals | 4 decimal internal coefficient scale; cents for add/subtract; `Math.round` half-up style | null/undefined/empty/NaN/Infinity sanitize to fallback 0; negative multiplication is retained; strict-positive helpers turn negatives into 0 |
+| `UnifiedProjectEngine` | flat `RabItem.amount` sum only | defaults: overhead 5%, profit 5%, contingency 0%, director markup 0%, tax 11%; PPh absent; additions use direct cost and tax uses subtotal | native arithmetic with `Math.round` to whole Rupiah; weights use `toFixed(2)` | `amount || 0`; zero remains zero here but no `totalPrice` fallback; negatives flow into totals |
+| `formulaEngine` | section `RABItem`: material + labor + equipment, or supplied positive unit price only if material and labor are zero; `totalPrice = volume × unitPrice` | overhead, profit, contingency, director markup percent + nominal, PPN and PPh; PPN/PPh apply to subtotal | `SafeDecimalEngine`; project additions normally whole Rupiah; weights 2 decimals | component and quantity use `|| 0`; only positive manual unit price and positive markups survive; negatives are mostly sanitized away by strict-positive calls |
+| `calculations/decimalEngine` | Decimal.js `volume × unitPrice`; `calculateRabTotals` sums `amount` | hidden 5% combined overhead/profit and 11% PPN; no separate profit, contingency, markup, PPh | Decimal.js precision 20, `ROUND_HALF_UP`, line/subtotal to 2 decimals, additions whole Rupiah | `value || 0`; zero works but missing and zero are conflated; Decimal can calculate negatives |
+| `CalculationService` | `totalPrice ?? amount ?? volume × unitPrice` | defaults: overhead 5%, profit 5%, tax 11%; no contingency, markup, PPh | `SafeDecimalEngine` but percentage path multiplies then divides, generally cents | `??` correctly preserves zero stored total; volume/unit price use `|| 0`; negative values depend on `SafeDecimalEngine` |
+| `dbAdapter` | creates/updates line `totalPrice` with `Math.round(volume × unitPrice)` and recomputes in-memory project totals | hidden overhead 5% and PPN 11%; profit, contingency, markup, PPh absent | native arithmetic and whole Rupiah rounding | `totalPrice || volume × unitPrice || 0` treats valid stored 0 as missing; negative behavior is not validated |
+| `ProjectContext` and RAB views | several `SafeDecimalEngine.safeMultiply` paths, plus inline `Math.round(volume × unitPrice)` and `amount || totalPrice || volume × unitPrice` fallbacks | calls `UnifiedProjectEngine` for project summary | mixed whole-Rupiah SafeDecimal and native rounding | several `||` fallback sites conflate stored 0 with missing; localStorage autosave persists current model |
+| Excel export | reads `Project.sections`, line `totalPrice`, project `costSummary`; generates live Excel formulas for detail/recap | reads summary rates with defaults PPN 11%, PPh 1.75%, overhead 5%, profit 10% | Excel formulas and existing summary can disagree | `grandTotal || 1` and `directCost || grandTotal` make a legitimate zero export non-zero |
+| PDF export | reads `Project.sections` and existing `costSummary` / `totalRab` | does not calculate new business totals | formatting only | inherits existing project totals and fallbacks |
+
+## Measured discrepancies
+
+- With two flat items totalling Rp3,000,000, `UnifiedProjectEngine` and `formulaEngine` (5% overhead, 5% profit, 11% PPN) return Rp3,663,000. `decimalEngine.calculateRabTotals` (5% combined overhead, 11% PPN) returns Rp3,496,500.
+- `UnifiedProjectEngine` has no PPh. `formulaEngine` supports PPh. The server calculation service does not support PPh, contingency, or markup.
+- `amount`, `totalPrice`, and `finalTotalPrice` are different field names and may represent different stages. Flat items and `Project.sections` are independently represented.
+- Decimal behavior differs at `1.005`: native `Math.round(1.005 * 100) / 100` and SafeDecimal give `1`, while Decimal.js gives `1.01`.
+- Zero is a valid financial value. Existing `||` fallback patterns in context, UI, dbAdapter, and export paths can recalculate or replace a stored zero.
+
+## Phase 1 policy and contracts
+
+`src/domain/estimate/calculationPolicy.ts` provides explicit rates and enable flags. `LEGACY_UNIFIED_PROJECT_POLICY` represents only current UnifiedProjectEngine defaults; it is not a universal business rule. `policyTotals.ts` uses `SafeDecimalEngine` to apply an explicitly passed policy but is not called by current application flows.
+
+`contracts.ts` defines the future `CanonicalEstimateCalculator` and immutable `EstimateSnapshot` read model. No existing caller has migrated.
+
+## Boundaries retained for later phases
+
+- AHSP remains responsible for coefficients and authoritative unit price: `AHSP → unit price → RAB item → canonical estimate engine`. The RAB contract does not recalculate AHSP components.
+- QTO remains responsible for quantities: `CalculationRun → QTOItem → QTOItemRABMapping → RAB item quantity`. The estimate engine will calculate financial totals only.
+- Exporters will later consume `EstimateSnapshot`; Phase 1 keeps Excel and PDF behavior unchanged.
+

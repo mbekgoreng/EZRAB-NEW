@@ -1,0 +1,379 @@
+/* ==========================================================================
+   EZRAB FULL AI DED → RAB INTELLIGENCE ENGINE V3.0 STYLESHEET
+   World-Class Architectural AI Design System (Ultra-High Aesthetics & UX)
+   ========================================================================== */
+
+@keyframes dedPulseGlow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes dedShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes dedFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.ded-root {
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #0F172A;
+  background-color: #F8FAFC;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 45%),
+    radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.05) 0px, transparent 45%),
+    radial-gradient(at 50% 100%, rgba(59, 130, 246, 0.03) 0px, transparent 50%);
+  width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+.ded-root *, .ded-root *::before, .ded-root *::after {
+  box-sizing: border-box;
+}
+
+/* Glass & Card Foundations */
+.ded-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 4px -1px rgba(15, 23, 42, 0.02);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ded-card:hover {
+  border-color: #CBD5E1;
+  box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.08);
+}
+
+/* Hero Section (Architectural Precision AI Aesthetic) */
+.ded-hero {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FAFCFF 60%, #F0FDF4 100%);
+  border: 1px solid #E2E8F0;
+  border-radius: 24px;
+  box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  position: relative;
+  overflow: hidden;
+}
+
+.ded-hero::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 700px;
+  height: 240px;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Gradient Headline Text */
+.ded-gradient-text {
+  background: linear-gradient(135deg, #047857 0%, #0D9488 40%, #0284C7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Feature Cards Grid in Hero */
+.ded-feature-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px -2px rgba(15, 23, 42, 0.04);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.ded-feature-card:hover {
+  transform: translateY(-2px);
+  border-color: #A7F3D0;
+  box-shadow: 0 10px 24px -4px rgba(16, 185, 129, 0.12);
+}
+
+/* Feature Card Icon Orb */
+.ded-icon-orb {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* Interactive Dropzone Area */
+.ded-dropzone {
+  background: linear-gradient(180deg, #FAFAFC 0%, #FFFFFF 100%);
+  border: 2px dashed #CBD5E1;
+  border-radius: 20px;
+  padding: 40px 28px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  background-image: radial-gradient(#E2E8F0 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.ded-dropzone:hover {
+  border-color: #10B981;
+  background-color: #F0FDF4;
+  box-shadow: 0 12px 30px -10px rgba(16, 185, 129, 0.16);
+  transform: translateY(-2px);
+}
+
+.ded-dropzone.dragging {
+  border-color: #059669;
+  border-style: solid;
+  background-color: #ECFDF5;
+  box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.15);
+  transform: scale(1.01);
+}
+
+/* Dropzone Central Upload Orb */
+.ded-upload-orb {
+  width: 68px;
+  height: 68px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+  border: 1px solid #A7F3D0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px auto;
+  color: #059669;
+  box-shadow: 0 8px 20px -3px rgba(16, 185, 129, 0.22);
+  transition: all 0.3s ease;
+  animation: dedFloat 4s ease-in-out infinite;
+}
+
+.ded-dropzone:hover .ded-upload-orb {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 12px 28px -4px rgba(16, 185, 129, 0.32);
+}
+
+/* File Staging Card (Selected File Preview) */
+.ded-staged-file-card {
+  background: #FFFFFF;
+  border: 2px solid #86EFAC;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 8px 25px -4px rgba(16, 185, 129, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+/* Primary Action Buttons */
+.ded-btn-primary {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 13.5px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.28), 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ded-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+}
+
+.ded-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.ded-btn-secondary {
+  background: #FFFFFF;
+  color: #334155;
+  font-weight: 650;
+  font-size: 12px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #E2E8F0;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: all 0.15s ease;
+}
+
+.ded-btn-secondary:hover {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  color: #0F172A;
+  transform: translateY(-1px);
+}
+
+/* Sample Demo Banner (Zero-Friction Launchpad) */
+.ded-sample-card {
+  background: linear-gradient(135deg, #F0FDF4 0%, #EFF6FF 50%, #F8FAFC 100%);
+  border: 1px solid #BAE6FD;
+  border-radius: 18px;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 16px -4px rgba(14, 165, 233, 0.08);
+  transition: all 0.2s ease;
+}
+
+.ded-sample-card:hover {
+  border-color: #7DD3FC;
+  box-shadow: 0 8px 24px -4px rgba(14, 165, 233, 0.14);
+}
+
+/* Status Badges */
+.ded-badge-ready {
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #86EFAC;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ded-badge-review {
+  background: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FCD34D;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Tab Navigation */
+.ded-tab {
+  padding: 9px 18px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #64748B;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ded-tab:hover {
+  color: #0F172A;
+  background: #F1F5F9;
+}
+
+.ded-tab.active {
+  color: #047857;
+  background: #ECFDF5;
+  border-color: #A7F3D0;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.1);
+}
+
+/* Stepper Stage */
+.ded-step-box {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.ded-step-box.active {
+  background: #F0FDF4;
+  border-color: #10B981;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.14);
+}
+
+.ded-step-box.done {
+  background: #FFFFFF;
+  border-color: #CBD5E1;
+}
+
+/* Slide-over Detail Drawer */
+.ded-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 50;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ded-drawer {
+  width: 100%;
+  max-width: 600px;
+  background: #FFFFFF;
+  height: 100%;
+  box-shadow: -10px 0 35px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Custom Format Chip */
+.ded-format-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}

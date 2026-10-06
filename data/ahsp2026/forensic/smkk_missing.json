@@ -1,0 +1,26 @@
+{
+ "field": "SMKK",
+ "brief_target": 246,
+ "parsed": 223,
+ "gap": -23,
+ "independent_raw_scan": 223,
+ "independent_per_tier": {
+  "KECIL": 56,
+  "SEDANG DAN BESAR": 167
+ },
+ "parsed_per_tier": {
+  "KECIL": 56,
+  "SEDANG": 167
+ },
+ "subtotal_rows": {
+  "KECIL": 2,
+  "SEDANG DAN BESAR": 2
+ },
+ "classification": "EXPECTED",
+ "verdict": "The annex contains exactly 223 cost-component rows (Tabel III.1 KECIL + Tabel III.2 SEDANG DAN BESAR). Two independent methods agree with the parser. The 246 target is not a target of this annex — Lampiran III is a risk-tiered cost-component table, not a numbered AHSP catalogue. No rows are missing.",
+ "missing_records": [],
+ "target_provenance": {
+  "verdict": "SOURCE_DISPUTED",
+  "evidence": "Lampiran III prints risk-tiered cost tables (Tabel III.1 KECIL, Tabel III.2 SEDANG DAN BESAR), not a numbered AHSP catalogue. A raw line scan and the parser both return exactly 223 rows. No index in the annex prints 246."
+ }
+}

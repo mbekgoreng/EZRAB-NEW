@@ -1,0 +1,2 @@
+import type { ScheduleTask } from '../../types';
+export const mapScheduleRows = (items: ScheduleTask[]) => items.map((x, i) => ({ no: i + 1, activity: x.name, duration: x.durationWeeks, start: x.startDate, finish: x.endDate, weight: x.weightPercent, progress: x.actualProgressPercent }));

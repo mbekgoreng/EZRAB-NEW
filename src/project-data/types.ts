@@ -1,0 +1,6 @@
+export interface ProjectScopedEntity { id: string; projectId: string; createdAt: string; updatedAt: string; }
+export interface ProjectPersonnel extends ProjectScopedEntity { name: string; position: string; qualification?: string; experience?: string; responsibility?: string; }
+export interface ProjectEquipment extends ProjectScopedEntity { name: string; type?: string; quantity?: number; capacity?: string; condition?: string; owner?: string; }
+export interface ProjectJsaItem extends ProjectScopedEntity { activity: string; hazard: string; risk: string; control: string; responsiblePerson?: string; ppe?: string; }
+export interface ProjectRkkData extends ProjectScopedEntity { organization?: string; hsePersonnel?: string; safetyObjectives?: string; riskControls?: string; procedures?: string; }
+export interface ProjectAhspItem extends ProjectScopedEntity { ahspCode: string; description: string; unit: string; coefficients: number; materialCost?: number; laborCost?: number; equipmentCost?: number; sourceReferenceId?: string; }

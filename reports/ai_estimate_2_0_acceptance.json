@@ -1,0 +1,40 @@
+{
+  "timestamp": "2026-10-05T17:49:46.159Z",
+  "pdf": "pdf-gambar-rumah-1-lantai_compress.pdf",
+  "fast": {
+    "durationSec": "79.3",
+    "itemCount": 38,
+    "total": 0,
+    "range": [
+      0,
+      0
+    ],
+    "confidence": "LOW",
+    "blocked": 0,
+    "unresolved": 38,
+    "warnings": 115,
+    "confidenceDist": {
+      "high": 1,
+      "medium": 8,
+      "low": 29
+    }
+  },
+  "detail": {
+    "durationSec": "179.7",
+    "itemCount": 38,
+    "total": 0,
+    "range": [
+      0,
+      0
+    ],
+    "confidence": "LOW",
+    "blocked": 0,
+    "unresolved": 38,
+    "warnings": 115,
+    "confidenceDist": {
+      "high": 9,
+      "medium": 0,
+      "low": 29
+    }
+  }
+}

@@ -1,0 +1,534 @@
+{
+ "quarantine": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04",
+ "moved": 75,
+ "bytes_moved": 846096966,
+ "mb_moved": 806.9,
+ "failed": [],
+ "log": [
+  {
+   "path": "node_modules/.vite-temp",
+   "size_bytes": 268937495,
+   "category": "F_CACHE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/node_modules/.vite-temp",
+   "moved": true
+  },
+  {
+   "path": "dist",
+   "size_bytes": 225317836,
+   "category": "E_GENERATED",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/dist",
+   "moved": true
+  },
+  {
+   "path": "dist-qa",
+   "size_bytes": 201983852,
+   "category": "E_GENERATED",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/dist-qa",
+   "moved": true
+  },
+  {
+   "path": "node_modules/.vite",
+   "size_bytes": 35382053,
+   "category": "F_CACHE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/node_modules/.vite",
+   "moved": true
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/python-3.12.10-amd64.exe",
+   "size_bytes": 26964224,
+   "category": "I_OBSOLETE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/EZRAB-LOCAL-AI/python-3.12.10-amd64.exe",
+   "moved": true
+  },
+  {
+   "path": "bina_marga_downloaded.pdf",
+   "size_bytes": 21577263,
+   "category": "H_DUPLICATE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/bina_marga_downloaded.pdf",
+   "moved": true
+  },
+  {
+   "path": "Lampiran-II-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Bina-Marga.pdf",
+   "size_bytes": 21577263,
+   "category": "H_DUPLICATE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/Lampiran-II-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Bina-Marga.pdf",
+   "moved": true
+  },
+  {
+   "path": "phase1_1_workbook_inventory.json",
+   "size_bytes": 11756229,
+   "category": "I_OBSOLETE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/phase1_1_workbook_inventory.json",
+   "moved": true
+  },
+  {
+   "path": "ezrab_downloaded.html",
+   "size_bytes": 5547525,
+   "category": "I_OBSOLETE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/ezrab_downloaded.html",
+   "moved": true
+  },
+  {
+   "path": "EZRAB_VOLUME_CALCULATOR_MASTER_COPY.xlsx",
+   "size_bytes": 4420149,
+   "category": "H_DUPLICATE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/EZRAB_VOLUME_CALCULATOR_MASTER_COPY.xlsx",
+   "moved": true
+  },
+  {
+   "path": "qa-fixtures/pdf-gambar-rumah-1-lantai_compress.pdf",
+   "size_bytes": 3154667,
+   "category": "H_DUPLICATE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-fixtures/pdf-gambar-rumah-1-lantai_compress.pdf",
+   "moved": true
+  },
+  {
+   "path": "phase3_workbook_inventory.json",
+   "size_bytes": 2821490,
+   "category": "I_OBSOLETE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/phase3_workbook_inventory.json",
+   "moved": true
+  },
+  {
+   "path": "video.png",
+   "size_bytes": 2250981,
+   "category": "H_DUPLICATE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/video.png",
+   "moved": true
+  },
+  {
+   "path": "tmp",
+   "size_bytes": 1417388,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/tmp",
+   "moved": true
+  },
+  {
+   "path": "all_19_calculators_raw.json",
+   "size_bytes": 1291181,
+   "category": "I_OBSOLETE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/all_19_calculators_raw.json",
+   "moved": true
+  },
+  {
+   "path": "qa-qto-current.png",
+   "size_bytes": 1071123,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-qto-current.png",
+   "moved": true
+  },
+  {
+   "path": "frame_webm.png",
+   "size_bytes": 987840,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/frame_webm.png",
+   "moved": true
+  },
+  {
+   "path": "qa-qto-step4-scrolled-window-sticky.png",
+   "size_bytes": 463809,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-qto-step4-scrolled-window-sticky.png",
+   "moved": true
+  },
+  {
+   "path": "qa-material-workspace-1920.png",
+   "size_bytes": 373942,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-material-workspace-1920.png",
+   "moved": true
+  },
+  {
+   "path": "qa-spreadsheet-gsheets-tab.png",
+   "size_bytes": 280103,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-spreadsheet-gsheets-tab.png",
+   "moved": true
+  },
+  {
+   "path": "qa-qto-current-live.png",
+   "size_bytes": 267975,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-qto-current-live.png",
+   "moved": true
+  },
+  {
+   "path": "qa-database-spreadsheet-modal.png",
+   "size_bytes": 260750,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-database-spreadsheet-modal.png",
+   "moved": true
+  },
+  {
+   "path": "qa-material-detail-drawer.png",
+   "size_bytes": 254988,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-material-detail-drawer.png",
+   "moved": true
+  },
+  {
+   "path": "qa-material-workspace-1440.png",
+   "size_bytes": 254943,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-material-workspace-1440.png",
+   "moved": true
+  },
+  {
+   "path": "qa-qto-step3-scrolled-catalog.png",
+   "size_bytes": 253913,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-qto-step3-scrolled-catalog.png",
+   "moved": true
+  },
+  {
+   "path": "qa-qto-step2-collapsed.png",
+   "size_bytes": 253229,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-qto-step2-collapsed.png",
+   "moved": true
+  },
+  {
+   "path": "qa-database-materials.png",
+   "size_bytes": 240450,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-database-materials.png",
+   "moved": true
+  },
+  {
+   "path": "qa-database-alat.png",
+   "size_bytes": 239480,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-database-alat.png",
+   "moved": true
+  },
+  {
+   "path": "qa-qto-step4-scrolled-sticky-success.png",
+   "size_bytes": 234401,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-qto-step4-scrolled-sticky-success.png",
+   "moved": true
+  },
+  {
+   "path": "qa-qto-step4-scrolled-main-sticky.png",
+   "size_bytes": 234308,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-qto-step4-scrolled-main-sticky.png",
+   "moved": true
+  },
+  {
+   "path": "qa-database-upah.png",
+   "size_bytes": 233338,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-database-upah.png",
+   "moved": true
+  },
+  {
+   "path": "browser_proof_ahsp_catalog.png",
+   "size_bytes": 230873,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/browser_proof_ahsp_catalog.png",
+   "moved": true
+  },
+  {
+   "path": "browser_proof_2_modal_a1_full.png",
+   "size_bytes": 226600,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/browser_proof_2_modal_a1_full.png",
+   "moved": true
+  },
+  {
+   "path": "browser_proof_1_catalog_clean.png",
+   "size_bytes": 221383,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/browser_proof_1_catalog_clean.png",
+   "moved": true
+  },
+  {
+   "path": "browser_proof_3_add_to_rab.png",
+   "size_bytes": 220979,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/browser_proof_3_add_to_rab.png",
+   "moved": true
+  },
+  {
+   "path": "browser_proof_bm_3_detail_modal.png",
+   "size_bytes": 220648,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/browser_proof_bm_3_detail_modal.png",
+   "moved": true
+  },
+  {
+   "path": "browser_proof_bm_2_divisi2.png",
+   "size_bytes": 216595,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/browser_proof_bm_2_divisi2.png",
+   "moved": true
+  },
+  {
+   "path": "browser_proof_bm_1_catalog.png",
+   "size_bytes": 215984,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/browser_proof_bm_1_catalog.png",
+   "moved": true
+  },
+  {
+   "path": "browser_proof_bm_2_search_211.png",
+   "size_bytes": 211519,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/browser_proof_bm_2_search_211.png",
+   "moved": true
+  },
+  {
+   "path": "browser_proof_ded_rab_e2e.png",
+   "size_bytes": 210512,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/browser_proof_ded_rab_e2e.png",
+   "moved": true
+  },
+  {
+   "path": "audit_meta_sheets.json",
+   "size_bytes": 200372,
+   "category": "I_OBSOLETE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/audit_meta_sheets.json",
+   "moved": true
+  },
+  {
+   "path": "browser_proof_bm_5_missing_item.png",
+   "size_bytes": 199336,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/browser_proof_bm_5_missing_item.png",
+   "moved": true
+  },
+  {
+   "path": "qa-qto-step1-initial.png",
+   "size_bytes": 186310,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-qto-step1-initial.png",
+   "moved": true
+  },
+  {
+   "path": "qa-B1-result.png",
+   "size_bytes": 173192,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-B1-result.png",
+   "moved": true
+  },
+  {
+   "path": "qa-B3-result.png",
+   "size_bytes": 173192,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-B3-result.png",
+   "moved": true
+  },
+  {
+   "path": "qa-B4-result.png",
+   "size_bytes": 173192,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-B4-result.png",
+   "moved": true
+  },
+  {
+   "path": "qa-B-final.png",
+   "size_bytes": 171749,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-B-final.png",
+   "moved": true
+  },
+  {
+   "path": "qa-B8-result.png",
+   "size_bytes": 171749,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-B8-result.png",
+   "moved": true
+  },
+  {
+   "path": "qa-C1-conflict.png",
+   "size_bytes": 171739,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-C1-conflict.png",
+   "moved": true
+  },
+  {
+   "path": "qa-B6-result.png",
+   "size_bytes": 171703,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-B6-result.png",
+   "moved": true
+  },
+  {
+   "path": "browser_proof_bm_4_add_to_rab.png",
+   "size_bytes": 167292,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/browser_proof_bm_4_add_to_rab.png",
+   "moved": true
+  },
+  {
+   "path": "browser_proof_modal_a1_priced.png",
+   "size_bytes": 165666,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/browser_proof_modal_a1_priced.png",
+   "moved": true
+  },
+  {
+   "path": "browser_proof_ahsp_detail_modal.png",
+   "size_bytes": 163659,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/browser_proof_ahsp_detail_modal.png",
+   "moved": true
+  },
+  {
+   "path": "browser_proof_add_rab_a1_priced.png",
+   "size_bytes": 152444,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/browser_proof_add_rab_a1_priced.png",
+   "moved": true
+  },
+  {
+   "path": "scratch_ref_mascot.png",
+   "size_bytes": 139212,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/scratch_ref_mascot.png",
+   "moved": true
+  },
+  {
+   "path": "qaA_result.png",
+   "size_bytes": 135113,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qaA_result.png",
+   "moved": true
+  },
+  {
+   "path": "qaC_result.png",
+   "size_bytes": 135113,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qaC_result.png",
+   "moved": true
+  },
+  {
+   "path": "scratch_ref_expressions.png",
+   "size_bytes": 110992,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/scratch_ref_expressions.png",
+   "moved": true
+  },
+  {
+   "path": "qa-D2-unreadable-fixed.png",
+   "size_bytes": 109283,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-D2-unreadable-fixed.png",
+   "moved": true
+  },
+  {
+   "path": "qa-D1-unreadable.png",
+   "size_bytes": 108287,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-D1-unreadable.png",
+   "moved": true
+  },
+  {
+   "path": "qa-A5-result.png",
+   "size_bytes": 107363,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-A5-result.png",
+   "moved": true
+  },
+  {
+   "path": "frame_hero.jpg",
+   "size_bytes": 91317,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/frame_hero.jpg",
+   "moved": true
+  },
+  {
+   "path": "browser_proof_ded_rab_live_runtime.png",
+   "size_bytes": 82394,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/browser_proof_ded_rab_live_runtime.png",
+   "moved": true
+  },
+  {
+   "path": "qa-A-result.png",
+   "size_bytes": 79743,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-A-result.png",
+   "moved": true
+  },
+  {
+   "path": "scratch_ref_click.png",
+   "size_bytes": 76684,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/scratch_ref_click.png",
+   "moved": true
+  },
+  {
+   "path": "qa-denah-tipe70-result.png",
+   "size_bytes": 61326,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-denah-tipe70-result.png",
+   "moved": true
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/__pycache__",
+   "size_bytes": 30459,
+   "category": "F_CACHE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/EZRAB-LOCAL-AI/__pycache__",
+   "moved": true
+  },
+  {
+   "path": "scratch_3d_mascot_preview.png",
+   "size_bytes": 26040,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/scratch_3d_mascot_preview.png",
+   "moved": true
+  },
+  {
+   "path": "scratch_3d_correct_order.png",
+   "size_bytes": 25180,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/scratch_3d_correct_order.png",
+   "moved": true
+  },
+  {
+   "path": "scratch_3d_evenodd.png",
+   "size_bytes": 24462,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/scratch_3d_evenodd.png",
+   "moved": true
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/main.provider-step2.backup-20260912.py",
+   "size_bytes": 8596,
+   "category": "I_OBSOLETE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/EZRAB-LOCAL-AI/main.provider-step2.backup-20260912.py",
+   "moved": true
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/main.orchestrator-step3.backup-20260912.py",
+   "size_bytes": 8442,
+   "category": "I_OBSOLETE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/EZRAB-LOCAL-AI/main.orchestrator-step3.backup-20260912.py",
+   "moved": true
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/main.memory-aware-chat.backup-20260912.py",
+   "size_bytes": 8390,
+   "category": "I_OBSOLETE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/EZRAB-LOCAL-AI/main.memory-aware-chat.backup-20260912.py",
+   "moved": true
+  },
+  {
+   "path": "EZRAB-LOCAL-AI/main_backup_v0.2.py",
+   "size_bytes": 4326,
+   "category": "I_OBSOLETE",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/EZRAB-LOCAL-AI/main_backup_v0.2.py",
+   "moved": true
+  },
+  {
+   "path": "qa-B9-k290.png",
+   "size_bytes": 3368,
+   "category": "G_TEMPORARY",
+   "quarantined_to": "D:/file kerja/PEMBUATAN SOFTWARE/.ezrab-cleanup-quarantine-2026-10-04/qa-B9-k290.png",
+   "moved": true
+  }
+ ]
+}

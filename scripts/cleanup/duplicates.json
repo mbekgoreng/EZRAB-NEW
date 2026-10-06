@@ -1,0 +1,1103 @@
+{
+ "root": "D:\\file kerja\\PEMBUATAN SOFTWARE\\ezrab site web",
+ "min_size": 51200,
+ "groups": [
+  {
+   "size": 39462384,
+   "hash": "c5dbdc3112cbc35bf59740c5fed7457ec5a69ce620e4bf1ff104a3efb2717ab1",
+   "paths": [
+    "dist\\videos\\roles-bg.mp4",
+    "dist-qa\\videos\\roles-bg.mp4",
+    "public\\videos\\roles-bg.mp4"
+   ]
+  },
+  {
+   "size": 34296454,
+   "hash": "20e69cf248bb5709b556fc036da419af16b5f0b7f46540f90d84a751d6839eb2",
+   "paths": [
+    "dist\\videos\\ezrab-magic-ai.mp4",
+    "dist-qa\\videos\\ezrab-magic-ai.mp4",
+    "public\\videos\\ezrab-magic-ai.mp4"
+   ]
+  },
+  {
+   "size": 21577263,
+   "hash": "78e391305aded09a0b156711b7c7f0d7ce1e314317c87744808cadff36b036c0",
+   "paths": [
+    "bina_marga_downloaded.pdf",
+    "Lampiran-II-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Bina-Marga.pdf",
+    "sources\\ahsp2026\\Lampiran-V-SE-DJBK-No-47-Tahun-2026-AHSP-Bidang-Bina-Marga.pdf"
+   ]
+  },
+  {
+   "size": 7517061,
+   "hash": "43a8d5cee3b2425e97f17ac7c7d34b697e6c81f345219ae981c89613a972c622",
+   "paths": [
+    "dist\\videos\\0908fg.mp4",
+    "dist-qa\\videos\\0908fg.mp4",
+    "public\\videos\\0908fg.mp4",
+    "src\\assets\\0908fg.mp4"
+   ]
+  },
+  {
+   "size": 2250981,
+   "hash": "14dda74caca410ba2a248acbebfb6d559f1c05c322031158b55b189f072d8196",
+   "paths": [
+    "video.png",
+    "dist\\images\\construction-cinematic.png",
+    "dist\\images\\landing\\backgrounds\\construction-cinematic.png",
+    "dist-qa\\images\\construction-cinematic.png",
+    "dist-qa\\images\\landing\\backgrounds\\construction-cinematic.png",
+    "public\\images\\construction-cinematic.png",
+    "public\\images\\landing\\backgrounds\\construction-cinematic.png",
+    "src\\assets\\construction-cinematic.png",
+    "src\\assets\\landing\\backgrounds\\construction-cinematic.png"
+   ]
+  },
+  {
+   "size": 3869498,
+   "hash": "a877f0682fb2a7b965cfc4efbaa9e886ab2e69f4d884105b1cdf7686241caf78",
+   "paths": [
+    "dist\\assets\\land-page-awal-rKh6JDKs.png",
+    "dist-qa\\assets\\land-page-awal-rKh6JDKs.png",
+    "src\\assets\\asada-hero-bg.png",
+    "src\\assets\\land-page-awal.png",
+    "src\\assets\\landing\\backgrounds\\land-page-awal.png"
+   ]
+  },
+  {
+   "size": 7048258,
+   "hash": "c5672f5a25c52cf27ed2a787e43c044b9cd66cd15948e757af14ef006b213e70",
+   "paths": [
+    "dist\\videos\\ezrab-magic-ai-scroll.mp4",
+    "dist-qa\\videos\\ezrab-magic-ai-scroll.mp4",
+    "public\\videos\\ezrab-magic-ai-scroll.mp4"
+   ]
+  },
+  {
+   "size": 6025176,
+   "hash": "59baf7b631e44eee09a4e45001841fdb241a23cb2c676aa18c4a36b05f4949c2",
+   "paths": [
+    "dist\\videos\\ezrab-hero.mp4",
+    "dist-qa\\videos\\ezrab-hero.mp4",
+    "public\\videos\\ezrab-hero.mp4"
+   ]
+  },
+  {
+   "size": 896514,
+   "hash": "d8aca61427caf2730d3d367f461fd7eb06c15668f967e155fa0634659f02172c",
+   "paths": [
+    "dist\\images\\hero-building.jpg",
+    "dist\\images\\landing\\backgrounds\\hero-building.jpg",
+    "dist-qa\\images\\hero-building.jpg",
+    "dist-qa\\images\\landing\\backgrounds\\hero-building.jpg",
+    "public\\images\\hero-building.jpg",
+    "public\\images\\landing\\backgrounds\\hero-building.jpg",
+    "src\\assets\\ezrab-hero.png",
+    "src\\assets\\hero-building.jpg",
+    "src\\assets\\landing\\backgrounds\\hero-building.jpg"
+   ]
+  },
+  {
+   "size": 1349532,
+   "hash": "b4f39642f5fe73976a1d1059eeb630ebfdf48199cca8b6014436276f6262e89d",
+   "paths": [
+    "dist\\assets\\mascot\\robot_head_with_hard_hat.glb",
+    "dist\\models\\ezrab-mascot.glb",
+    "dist-qa\\assets\\mascot\\robot_head_with_hard_hat.glb",
+    "dist-qa\\models\\ezrab-mascot.glb",
+    "public\\assets\\mascot\\robot_head_with_hard_hat.glb",
+    "public\\models\\ezrab-mascot.glb"
+   ]
+  },
+  {
+   "size": 3154667,
+   "hash": "60d5967e402af77f87bb1a3029e463145a8108a35a1a059c595b8ef101f53d8a",
+   "paths": [
+    "dist\\samples\\pdf-gambar-rumah-1-lantai_compress.pdf",
+    "public\\samples\\pdf-gambar-rumah-1-lantai_compress.pdf",
+    "qa-fixtures\\pdf-gambar-rumah-1-lantai_compress.pdf"
+   ]
+  },
+  {
+   "size": 2877745,
+   "hash": "06f45a871d0fc228b4afed479ddccbc73b36187d5cdbda39f49f9e88a59decc6",
+   "paths": [
+    "dist\\images\\roles\\kontraktor.jpg",
+    "dist-qa\\images\\roles\\kontraktor.jpg",
+    "public\\images\\roles\\kontraktor.jpg"
+   ]
+  },
+  {
+   "size": 2786030,
+   "hash": "22c5a9c0fdafdce52323571d828d0e06f5df9ebf78484762f1500e43d6195094",
+   "paths": [
+    "dist\\images\\roles\\konsultan.jpg",
+    "dist-qa\\images\\roles\\konsultan.jpg",
+    "public\\images\\roles\\konsultan.jpg"
+   ]
+  },
+  {
+   "size": 2782909,
+   "hash": "c5c4cb3eea0e59a7751119a1f0d8134f30b6549adf4d60c26c0fd4a12a707aa9",
+   "paths": [
+    "dist\\images\\roles\\estimator.jpg",
+    "dist-qa\\images\\roles\\estimator.jpg",
+    "public\\images\\roles\\estimator.jpg"
+   ]
+  },
+  {
+   "size": 1786679,
+   "hash": "b64a4702911033dec47c30fb195e53b4c676629938c55da29ed2ac478d55e287",
+   "paths": [
+    "dist\\images\\landing\\backgrounds\\land-page-awal.jpg",
+    "dist-qa\\images\\landing\\backgrounds\\land-page-awal.jpg",
+    "public\\images\\landing\\backgrounds\\land-page-awal.jpg",
+    "src\\assets\\landing\\backgrounds\\land-page-awal.jpg"
+   ]
+  },
+  {
+   "size": 2628161,
+   "hash": "9ac4aff673ad3a8459f037141cd859178cc0cc771e812c4435c9dd618f7acc14",
+   "paths": [
+    "dist\\images\\roles\\developer.jpg",
+    "dist-qa\\images\\roles\\developer.jpg",
+    "public\\images\\roles\\developer.jpg"
+   ]
+  },
+  {
+   "size": 1727354,
+   "hash": "c0666a34c2edb8151f052e87fb5f4b03b5dfcc21bdc361a29c8447e9c717db33",
+   "paths": [
+    "dist\\logo_oy.svg",
+    "dist-qa\\logo_oy.svg",
+    "public\\logo_oy.svg",
+    "src\\assets\\logo_oy.svg"
+   ]
+  },
+  {
+   "size": 1000686,
+   "hash": "06cdc66f095b487a56fce352a7d5fd16069ea97dbcd96ed6d870fa612d411c9d",
+   "paths": [
+    "dist\\images\\about\\about_magic_ai_pipeline.png",
+    "dist\\images\\about\\ChatGPT Image Sep 9, 2026, 01_35_58 AM.png",
+    "dist-qa\\images\\about\\about_magic_ai_pipeline.png",
+    "dist-qa\\images\\about\\ChatGPT Image Sep 9, 2026, 01_35_58 AM.png",
+    "public\\images\\about\\about_magic_ai_pipeline.png",
+    "public\\images\\about\\ChatGPT Image Sep 9, 2026, 01_35_58 AM.png"
+   ]
+  },
+  {
+   "size": 2444351,
+   "hash": "40523666d928e0529620f9404738f41d2768f6eecec42bd5777d066d2c655a09",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\pondasi.jpg",
+    "dist-qa\\assets\\volume-calculation\\references\\pondasi.jpg",
+    "public\\assets\\volume-calculation\\references\\pondasi.jpg"
+   ]
+  },
+  {
+   "size": 2343967,
+   "hash": "20fc5974d2a10c20e24472ae081baf74d9700f944d665a2c276fa1b2c2ff93a0",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\footplate.jpg",
+    "dist-qa\\assets\\volume-calculation\\references\\footplate.jpg",
+    "public\\assets\\volume-calculation\\references\\footplate.jpg"
+   ]
+  },
+  {
+   "size": 2275424,
+   "hash": "4b2a8d92d7e761056812aac57c5d5d021f33c7cd37e6559b4e7e89d860ea30fb",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\BATA MERAH.JPG",
+    "dist-qa\\assets\\volume-calculation\\references\\BATA MERAH.JPG",
+    "public\\assets\\volume-calculation\\references\\BATA MERAH.JPG"
+   ]
+  },
+  {
+   "size": 2210515,
+   "hash": "57bbefbf504bd465dd68c6f96e77f8cd88ff07694be617d16c970b6cb829f599",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\BATAKO.jpg",
+    "dist-qa\\assets\\volume-calculation\\references\\BATAKO.jpg",
+    "public\\assets\\volume-calculation\\references\\BATAKO.jpg"
+   ]
+  },
+  {
+   "size": 4420149,
+   "hash": "bc350c1e9d7cf298fcd4c865a7a35f359c0ba71444647a593f98e37b239b7c28",
+   "paths": [
+    "EZRAB_VOLUME_CALCULATOR_MASTER.xlsx",
+    "EZRAB_VOLUME_CALCULATOR_MASTER_COPY.xlsx"
+   ]
+  },
+  {
+   "size": 2109252,
+   "hash": "763bc05bba6a41f63077e2b41d56252e956b404398e827d2b593a4d1c691fd7d",
+   "paths": [
+    "dist\\videos\\roles\\konsultan.mp4",
+    "dist-qa\\videos\\roles\\konsultan.mp4",
+    "public\\videos\\roles\\konsultan.mp4"
+   ]
+  },
+  {
+   "size": 2104317,
+   "hash": "1aa9bfb51c9a647fb529737b0f7f96dd45a217cc62cb69d7e081308e9e5ba169",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\penutup lantai.jpg",
+    "dist-qa\\assets\\volume-calculation\\references\\penutup lantai.jpg",
+    "public\\assets\\volume-calculation\\references\\penutup lantai.jpg"
+   ]
+  },
+  {
+   "size": 2098873,
+   "hash": "34d49fdc6e2e6e21092125496e9257e6a85feee6060e191e2a3333875b426c46",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\plester dinding acian.jpg",
+    "dist-qa\\assets\\volume-calculation\\references\\plester dinding acian.jpg",
+    "public\\assets\\volume-calculation\\references\\plester dinding acian.jpg"
+   ]
+  },
+  {
+   "size": 2075640,
+   "hash": "5ceb819e12b538c22c83994dc536833380ca4280c0c6b1ce7e36baddcacbe96b",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\BATA RINGAN.JPG",
+    "dist-qa\\assets\\volume-calculation\\references\\BATA RINGAN.JPG",
+    "public\\assets\\volume-calculation\\references\\BATA RINGAN.JPG"
+   ]
+  },
+  {
+   "size": 2062909,
+   "hash": "9565304e9a27ca22f754b4567739e02ed53da007110ad2a3a3f79a99136ca5ee",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\blowplank.jpg",
+    "dist-qa\\assets\\volume-calculation\\references\\blowplank.jpg",
+    "public\\assets\\volume-calculation\\references\\blowplank.jpg"
+   ]
+  },
+  {
+   "size": 2020517,
+   "hash": "d07a58c9e1ec67b92bd4e729d5b459ac98736346e0d6c36d7ebed6bdf5786dcc",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\penutup dinding.jpg",
+    "dist-qa\\assets\\volume-calculation\\references\\penutup dinding.jpg",
+    "public\\assets\\volume-calculation\\references\\penutup dinding.jpg"
+   ]
+  },
+  {
+   "size": 2012934,
+   "hash": "bcab82fdc3f9fc8df18111053a091f8fe043ab1b18f3c3f68b60a8f5839867de",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\jaringan listrik.jpg",
+    "dist-qa\\assets\\volume-calculation\\references\\jaringan listrik.jpg",
+    "public\\assets\\volume-calculation\\references\\jaringan listrik.jpg"
+   ]
+  },
+  {
+   "size": 1994878,
+   "hash": "0ab181e4e0b6eb3007a51423423bce4245e0b555c57f52c5da00ff9862a3ac9c",
+   "paths": [
+    "dist\\videos\\roles\\kontraktor.mp4",
+    "dist-qa\\videos\\roles\\kontraktor.mp4",
+    "public\\videos\\roles\\kontraktor.mp4"
+   ]
+  },
+  {
+   "size": 1965556,
+   "hash": "b6c7d5d27ac35773d9e7c62e39dc34654c2ec6f6c3cf66ac18568d5f8d8f30fd",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\dinding baru.jpg",
+    "dist-qa\\assets\\volume-calculation\\references\\dinding baru.jpg",
+    "public\\assets\\volume-calculation\\references\\dinding baru.jpg"
+   ]
+  },
+  {
+   "size": 1937992,
+   "hash": "5f5b1994c78d259c00acf90134a37f879d47d7d5a66046bc73c35800d9d95047",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\atap pelana baja ringan.jpg",
+    "dist-qa\\assets\\volume-calculation\\references\\atap pelana baja ringan.jpg",
+    "public\\assets\\volume-calculation\\references\\atap pelana baja ringan.jpg"
+   ]
+  },
+  {
+   "size": 1908492,
+   "hash": "b8c1584c9b115e613a2f2ad69b0228d08de08131cf7583d87213c5c58df8854f",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\pemasangan plafond.jpg",
+    "dist-qa\\assets\\volume-calculation\\references\\pemasangan plafond.jpg",
+    "public\\assets\\volume-calculation\\references\\pemasangan plafond.jpg"
+   ]
+  },
+  {
+   "size": 1832023,
+   "hash": "fd5bdb3171a700c70e6ee25d8bc2d46a89fc1c4161c7226bd86dbe3d0452340c",
+   "paths": [
+    "dist\\videos\\roles\\developer.mp4",
+    "dist-qa\\videos\\roles\\developer.mp4",
+    "public\\videos\\roles\\developer.mp4"
+   ]
+  },
+  {
+   "size": 1785286,
+   "hash": "16b6acd028ec9f354ae27c3cbf92d894b0f32cf9f579e3a45373460ba4ad1fbb",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\BALOK.jpg",
+    "dist-qa\\assets\\volume-calculation\\references\\BALOK.jpg",
+    "public\\assets\\volume-calculation\\references\\BALOK.jpg"
+   ]
+  },
+  {
+   "size": 1759533,
+   "hash": "62e987bc9d37c42c37d326fa4fc8dafb38df71f292de9287c25b1459595299ec",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\kolom.jpg",
+    "dist-qa\\assets\\volume-calculation\\references\\kolom.jpg",
+    "public\\assets\\volume-calculation\\references\\kolom.jpg"
+   ]
+  },
+  {
+   "size": 1753420,
+   "hash": "b5c1ef3600dfa040c67526506f54e93d2196a848dd2a465dc78491bd47deb51a",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\sloof.jpg",
+    "dist-qa\\assets\\volume-calculation\\references\\sloof.jpg",
+    "public\\assets\\volume-calculation\\references\\sloof.jpg"
+   ]
+  },
+  {
+   "size": 1751422,
+   "hash": "3b842307c449318aebf0526e2b7f1fa990a17814b3a23322ff58d269593663dd",
+   "paths": [
+    "dist\\images\\landing\\backgrounds\\land-page-awal.png",
+    "dist-qa\\images\\landing\\backgrounds\\land-page-awal.png",
+    "public\\images\\landing\\backgrounds\\land-page-awal.png"
+   ]
+  },
+  {
+   "size": 683641,
+   "hash": "124ba4bf11c17f5cb664b1dd19e52a3c07deeb23d57f57060b601a2ee87b952d",
+   "paths": [
+    "dist\\images\\about\\about_wireframe_philosophy.png",
+    "dist\\images\\about\\ChatGPT Image Sep 9, 2026, 01_37_09 AM.png",
+    "dist-qa\\images\\about\\about_wireframe_philosophy.png",
+    "dist-qa\\images\\about\\ChatGPT Image Sep 9, 2026, 01_37_09 AM.png",
+    "public\\images\\about\\about_wireframe_philosophy.png",
+    "public\\images\\about\\ChatGPT Image Sep 9, 2026, 01_37_09 AM.png"
+   ]
+  },
+  {
+   "size": 1675379,
+   "hash": "fe7908e9dcdeb7b146eb11e2ec4092ed106a9cce4ea790668e7b1c2b34451c43",
+   "paths": [
+    "dist\\assets\\volume-calculation\\references\\kusen pintu jendela.jpg",
+    "dist-qa\\assets\\volume-calculation\\references\\kusen pintu jendela.jpg",
+    "public\\assets\\volume-calculation\\references\\kusen pintu jendela.jpg"
+   ]
+  },
+  {
+   "size": 371557,
+   "hash": "93267e449795bc3be395d4bb3962497e3e84bfffd9582a091bf7e706623c4962",
+   "paths": [
+    "dist\\favicon.ico",
+    "dist\\favicon.png",
+    "dist\\images\\ez-emblem.png",
+    "dist-qa\\favicon.ico",
+    "dist-qa\\favicon.png",
+    "dist-qa\\images\\ez-emblem.png",
+    "public\\favicon.ico",
+    "public\\favicon.png",
+    "public\\images\\ez-emblem.png",
+    "src\\assets\\ez-emblem.png"
+   ]
+  },
+  {
+   "size": 1591585,
+   "hash": "1d808df3d17e0e2270e9c83e70db7ef86c386b8b1e191b8c82aa37d373263fdc",
+   "paths": [
+    "dist\\videos\\roles\\estimator.mp4",
+    "dist-qa\\videos\\roles\\estimator.mp4",
+    "public\\videos\\roles\\estimator.mp4"
+   ]
+  },
+  {
+   "size": 1585778,
+   "hash": "0bac3d85fb9bd4370ad446641d166d5e23fea9107ba4f0058efc57cf6ea20fb4",
+   "paths": [
+    "src\\assets\\1.jpg",
+    "src\\assets\\1.png",
+    "src\\assets\\hero-bg-1.png"
+   ]
+  },
+  {
+   "size": 962371,
+   "hash": "f3a1709eda2e185e14fb73a6eab34d25f52cba0c9bc28c90c847cb1868d4ee95",
+   "paths": [
+    "dist\\images\\workflow\\step-2-ai-scan.jpg",
+    "dist-qa\\images\\workflow\\step-2-ai-scan.jpg",
+    "public\\images\\workflow\\step-2-ai-scan.jpg",
+    "src\\assets\\workflow\\step-2-ai-scan.jpg"
+   ]
+  },
+  {
+   "size": 939746,
+   "hash": "05924587b362b219496f740680e20e49536d5cfabc4791ebaeb9e4e562e520ed",
+   "paths": [
+    "dist\\images\\workflow\\step-5-download-share.jpg",
+    "dist-qa\\images\\workflow\\step-5-download-share.jpg",
+    "public\\images\\workflow\\step-5-download-share.jpg",
+    "src\\assets\\workflow\\step-5-download-share.jpg"
+   ]
+  },
+  {
+   "size": 351416,
+   "hash": "64905e3d596ca75b5193337d47f2a53a27e3039ca9abba8658553585ca3edb2a",
+   "paths": [
+    "dist\\assets\\mascot\\master_eye_left.png",
+    "dist\\assets\\mascot\\master_eye_right.png",
+    "dist\\assets\\mascot\\master_eye_texture.png",
+    "dist-qa\\assets\\mascot\\master_eye_left.png",
+    "dist-qa\\assets\\mascot\\master_eye_right.png",
+    "dist-qa\\assets\\mascot\\master_eye_texture.png",
+    "public\\assets\\mascot\\master_eye_left.png",
+    "public\\assets\\mascot\\master_eye_right.png",
+    "public\\assets\\mascot\\master_eye_texture.png"
+   ]
+  },
+  {
+   "size": 534200,
+   "hash": "94ef7f2f740b2bbb975ede43dfcc8573e985521981969c392ffef3fb1ce7fadc",
+   "paths": [
+    "dist\\images\\about\\about_hero_cityscape.webp",
+    "dist\\images\\about\\photoreal_cinematic_cityscape.webp",
+    "dist-qa\\images\\about\\about_hero_cityscape.webp",
+    "dist-qa\\images\\about\\photoreal_cinematic_cityscape.webp",
+    "public\\images\\about\\about_hero_cityscape.webp",
+    "public\\images\\about\\photoreal_cinematic_cityscape.webp"
+   ]
+  },
+  {
+   "size": 889663,
+   "hash": "ee7530f71afde1282383e02827b83a818232e603011d0d6d23b1b4777c94f118",
+   "paths": [
+    "dist\\images\\workflow\\step-3-qto-ahsp.jpg",
+    "dist-qa\\images\\workflow\\step-3-qto-ahsp.jpg",
+    "public\\images\\workflow\\step-3-qto-ahsp.jpg",
+    "src\\assets\\workflow\\step-3-qto-ahsp.jpg"
+   ]
+  },
+  {
+   "size": 2432087,
+   "hash": "7e38687e87c624430985fee224243bcb60b2437fdebb5434b86119670b450819",
+   "paths": [
+    "node_modules\\lucide-react\\dynamic.d.mts",
+    "node_modules\\lucide-react\\dynamic.d.ts"
+   ]
+  },
+  {
+   "size": 2430875,
+   "hash": "07d2b4a890d28f44e79c9d338cc8dafc5eae5a9f9ad5860114bb827f924d404e",
+   "paths": [
+    "node_modules\\lucide-react\\dynamicIconImports.d.mts",
+    "node_modules\\lucide-react\\dynamicIconImports.d.ts"
+   ]
+  },
+  {
+   "size": 784191,
+   "hash": "d35d65be68bf51fdfd8fb3e43ad5fd35c951d3475ef433129c7706b94781884e",
+   "paths": [
+    "dist\\images\\workflow\\step-4-rab-boq.jpg",
+    "dist-qa\\images\\workflow\\step-4-rab-boq.jpg",
+    "public\\images\\workflow\\step-4-rab-boq.jpg",
+    "src\\assets\\workflow\\step-4-rab-boq.jpg"
+   ]
+  },
+  {
+   "size": 768096,
+   "hash": "fc30d179f7d0088e7156744557c16d701097b9794b599c333ac15be7786fd268",
+   "paths": [
+    "dist\\assets\\ahsp-crane-building-C7xhxSLS.jpg",
+    "dist-qa\\assets\\ahsp-crane-building-C7xhxSLS.jpg",
+    "src\\assets\\ahsp-crane-building.jpg",
+    "src\\assets\\landing\\backgrounds\\ahsp-crane-building.jpg"
+   ]
+  },
+  {
+   "size": 733003,
+   "hash": "813368ad346b0a55330f26e0b064ee1bcc145650f141b238dd65185413e7580f",
+   "paths": [
+    "dist\\images\\workflow\\step-1-upload.jpg",
+    "dist-qa\\images\\workflow\\step-1-upload.jpg",
+    "public\\images\\workflow\\step-1-upload.jpg",
+    "src\\assets\\workflow\\step-1-upload.jpg"
+   ]
+  },
+  {
+   "size": 811727,
+   "hash": "150eb2cae035112cd099dd32dc634d7c0cc5dfcd7140e60e0efeb8d7e9cdad74",
+   "paths": [
+    "dist\\images\\ezrab-3d-scene.png",
+    "dist-qa\\images\\ezrab-3d-scene.png",
+    "public\\images\\ezrab-3d-scene.png"
+   ]
+  },
+  {
+   "size": 796981,
+   "hash": "b6e22c3c4813eb5ca9361dd54c2a6ac1257d0f8d7dbe67d922a3ee096825a0c3",
+   "paths": [
+    "dist\\assets\\bowplank-technical-D0Z5F_AR.jpg",
+    "dist-qa\\assets\\bowplank-technical-D0Z5F_AR.jpg",
+    "src\\assets\\bowplank-technical.jpg"
+   ]
+  },
+  {
+   "size": 740820,
+   "hash": "9e728bed3571ddbf5d4c2d94d788b778d2375ec507023f69b674f5bb984c056e",
+   "paths": [
+    "dist\\assets\\volume-foundation-CS0hexLV.jpg",
+    "dist-qa\\assets\\volume-foundation-CS0hexLV.jpg",
+    "src\\assets\\volume-foundation.jpg"
+   ]
+  },
+  {
+   "size": 731305,
+   "hash": "6364a71d05bd20c15c64dec90dc6ea95a4c5d715fe996eecc95b521c7981e4a2",
+   "paths": [
+    "dist\\assets\\proyek-magic-ai-scene-DGFhuJ6Z.png",
+    "dist-qa\\assets\\proyek-magic-ai-scene-DGFhuJ6Z.png",
+    "src\\assets\\proyek-magic-ai-scene.png"
+   ]
+  },
+  {
+   "size": 682704,
+   "hash": "e8265e4ce0d0e0e0761c57c2b3a3f9c555ed5d4266c7b33aa529f11994292f90",
+   "paths": [
+    "dist\\images\\about\\ai_section_bg.png",
+    "dist-qa\\images\\about\\ai_section_bg.png",
+    "public\\images\\about\\ai_section_bg.png"
+   ]
+  },
+  {
+   "size": 674820,
+   "hash": "8f077da4eb60c6ad270c2fa9233fdf805346f0bc6b359731e9ca461b17b6d181",
+   "paths": [
+    "dist\\images\\magic-ai-core.png",
+    "dist-qa\\images\\magic-ai-core.png",
+    "public\\images\\magic-ai-core.png"
+   ]
+  },
+  {
+   "size": 616496,
+   "hash": "8899dff94ec8dfc46f1f53921d70191cd6a4f3a3b6943e3519efc9adc14fdd69",
+   "paths": [
+    "dist\\assets\\template-bertingkat-Bp1DFHeZ.jpg",
+    "dist-qa\\assets\\template-bertingkat-Bp1DFHeZ.jpg",
+    "src\\assets\\template-bertingkat.jpg"
+   ]
+  },
+  {
+   "size": 590704,
+   "hash": "e1565d7b145f8e6febce5a4b0ea1ea2c3ec878b81ee1051087b29126f5d78281",
+   "paths": [
+    "dist\\assets\\proyek-empty-blueprint-CH42U1U-.png",
+    "dist-qa\\assets\\proyek-empty-blueprint-CH42U1U-.png",
+    "src\\assets\\proyek-empty-blueprint.png"
+   ]
+  },
+  {
+   "size": 1119580,
+   "hash": "5699385552f03c7d60b48ccd8daaa8e6431f8c0773fd043698274d5937de3ec0",
+   "paths": [
+    "src\\assets\\check_0908fg.png",
+    "src\\assets\\frame_test.png"
+   ]
+  },
+  {
+   "size": 242509,
+   "hash": "af44af0e0d19bc1d25e11bc2ee8d21f34bf22a6882227810d6309f659d1aa439",
+   "paths": [
+    "dist\\logo_magic_ai.png",
+    "dist-qa\\logo_magic_ai.png",
+    "public\\logo_magic_ai.png",
+    "src\\assets\\ezrab-co-assistant-logo.jpg",
+    "src\\assets\\logo_magic_ai.png"
+   ]
+  },
+  {
+   "size": 289746,
+   "hash": "c04b52efdab128dda78fcee8831bc51323a126a018f55ec55cdd9221a6c7b5b8",
+   "paths": [
+    "dist\\logo_magic_ai.svg",
+    "dist-qa\\logo_magic_ai.svg",
+    "public\\logo_magic_ai.svg",
+    "src\\assets\\logo_magic_ai.svg"
+   ]
+  },
+  {
+   "size": 861152,
+   "hash": "59b777cdece4b3f8a46be670cc4e8f065dd3cff9e2f31e556b4ac19bc91b61f6",
+   "paths": [
+    "src\\assets\\cta-skyline-cranes.jpg",
+    "src\\assets\\landing\\backgrounds\\cta-skyline-cranes.jpg"
+   ]
+  },
+  {
+   "size": 153415,
+   "hash": "afa5fbc8ea6570215435e08e51e759b5d00114fea108dd1b692d366f032bce01",
+   "paths": [
+    "dist\\images\\about\\about_workspace_converge.jpg",
+    "dist\\images\\about\\minimalist_ui_scene.jpg",
+    "dist-qa\\images\\about\\about_workspace_converge.jpg",
+    "dist-qa\\images\\about\\minimalist_ui_scene.jpg",
+    "public\\images\\about\\about_workspace_converge.jpg",
+    "public\\images\\about\\minimalist_ui_scene.jpg"
+   ]
+  },
+  {
+   "size": 127225,
+   "hash": "0bd8d86051e638d19de8d10bef8742f6b367c3a0c6d31a980cc938cc34f1ad61",
+   "paths": [
+    "dist\\images\\ezrab-logo-original.png",
+    "dist\\images\\ezrab-logo.png",
+    "dist-qa\\images\\ezrab-logo-original.png",
+    "dist-qa\\images\\ezrab-logo.png",
+    "public\\images\\ezrab-logo-original.png",
+    "public\\images\\ezrab-logo.png",
+    "src\\assets\\ezrab-logo.png"
+   ]
+  },
+  {
+   "size": 88459,
+   "hash": "2e064e92aca020b2e0bad69326fe7ea55d59005ed53d1a8cbce1bd135d44b8b3",
+   "paths": [
+    ".agents\\skills\\design-taste-frontend\\SKILL.md",
+    ".claude\\skills\\design-taste-frontend\\SKILL.md",
+    ".codeartsdoer\\skills\\design-taste-frontend\\SKILL.md",
+    ".commandcode\\skills\\design-taste-frontend\\SKILL.md",
+    ".cortex\\skills\\design-taste-frontend\\SKILL.md",
+    ".grok\\skills\\design-taste-frontend\\SKILL.md",
+    ".hermes\\skills\\design-taste-frontend\\SKILL.md",
+    ".qwen\\skills\\design-taste-frontend\\SKILL.md",
+    "skills\\design-taste-frontend\\SKILL.md"
+   ]
+  },
+  {
+   "size": 690800,
+   "hash": "b5865a152d3518999a10d681fd3e1fe2059375295bb98c51be9b13812f06abfd",
+   "paths": [
+    "dist\\assets\\materials\\batu_belah.jpg",
+    "public\\assets\\materials\\batu_belah.jpg"
+   ]
+  },
+  {
+   "size": 661917,
+   "hash": "aaacb482b288a337b3e578e5f66f31f5f967c3fc3206cb74ce4b1432b5889862",
+   "paths": [
+    "src\\assets\\magic-ai-blueprint-bg.png",
+    "src\\assets\\landing\\backgrounds\\magic-ai-blueprint-bg.png"
+   ]
+  },
+  {
+   "size": 649647,
+   "hash": "0a85590a4a4c677b16023c374ca8b6c90d95f5b7807a02f091c6b1c1b4e856e7",
+   "paths": [
+    "src\\assets\\hero-hologram-platform-bg.png",
+    "src\\assets\\landing\\backgrounds\\hero-hologram-platform-bg.png"
+   ]
+  },
+  {
+   "size": 302959,
+   "hash": "b53c10c2c96eaaeef82ea4d8d986c42a9b40fc66996b2489ee1c2e71a19337d1",
+   "paths": [
+    "dist\\assets\\proyek-doc-empty-BUCbs5-2.png",
+    "dist-qa\\assets\\proyek-doc-empty-BUCbs5-2.png",
+    "src\\assets\\proyek-doc-empty.png"
+   ]
+  },
+  {
+   "size": 603263,
+   "hash": "4ff8e5104a3694c2c0483feb6ec07def4d75a94b41341befe2e0e9adf4ef9c15",
+   "paths": [
+    "dist\\assets\\materials\\semen_tiga_roda.jpg",
+    "public\\assets\\materials\\semen_tiga_roda.jpg"
+   ]
+  },
+  {
+   "size": 597642,
+   "hash": "9e496b889401784442e46e805d342a604d61e88e66b24585fd330963002b8ffe",
+   "paths": [
+    "dist\\assets\\materials\\semen_gresik.jpg",
+    "public\\assets\\materials\\semen_gresik.jpg"
+   ]
+  },
+  {
+   "size": 195281,
+   "hash": "13576ccc465d32e751f4addfa9f77567901a2e8a9e56c9dff08d30fd05adbc06",
+   "paths": [
+    "dist\\videos\\0908fg-poster.jpg",
+    "dist-qa\\videos\\0908fg-poster.jpg",
+    "public\\videos\\0908fg-poster.jpg",
+    "src\\assets\\0908fg-poster.jpg"
+   ]
+  },
+  {
+   "size": 535615,
+   "hash": "60cf2137854a1f431e22ec820a23a422cf612904ffc7a9915352d074619d7628",
+   "paths": [
+    "src\\assets\\workflow-blueprint-bg.png",
+    "src\\assets\\landing\\backgrounds\\workflow-blueprint-bg.png"
+   ]
+  },
+  {
+   "size": 263910,
+   "hash": "31a5a70555426dbc8cd2b7cc561d240a5fb827fa172d6d09ec0085c459f9385c",
+   "paths": [
+    "dist\\assets\\mascot\\white_crop.png",
+    "dist-qa\\assets\\mascot\\white_crop.png",
+    "public\\assets\\mascot\\white_crop.png"
+   ]
+  },
+  {
+   "size": 260333,
+   "hash": "d8f054a9cf86e9701a897c0b7853b6f07b6d255558e9a034fd5790a4500fa19c",
+   "paths": [
+    "dist\\assets\\mascot\\albedo_thumb.png",
+    "dist-qa\\assets\\mascot\\albedo_thumb.png",
+    "public\\assets\\mascot\\albedo_thumb.png"
+   ]
+  },
+  {
+   "size": 244118,
+   "hash": "23c8567f678a6b32d46d47cba7caf1dfe5c81271a7b682e678273d648126f44b",
+   "paths": [
+    "dist\\assets\\mascot\\extracted_albedo.jpg",
+    "dist-qa\\assets\\mascot\\extracted_albedo.jpg",
+    "public\\assets\\mascot\\extracted_albedo.jpg"
+   ]
+  },
+  {
+   "size": 471759,
+   "hash": "5f0cc8cc3c764e924a2877f32dcd93709756d0b6c26d2471bfd911ce6f8e81c2",
+   "paths": [
+    "node_modules\\codepage\\dist\\cpexcel.full.js",
+    "node_modules\\xlsx\\dist\\cpexcel.js"
+   ]
+  },
+  {
+   "size": 127231,
+   "hash": "6d548b3f71134e2e90851f440f09920fdd66a0175346bd445cc44478ebeb2dc7",
+   "paths": [
+    "dist\\assets\\mascot-ezrab-new-D7Jm792C.png",
+    "dist\\images\\mascot-ezrab-new.png",
+    "public\\images\\mascot-ezrab-new.png",
+    "src\\assets\\mascot-ezrab-new.png"
+   ]
+  },
+  {
+   "size": 123886,
+   "hash": "f70f62f5f87ff8900090069554f79d9757f8e385322d0e26268463e27c098204",
+   "paths": [
+    "node_modules\\@fast-csv\\format\\node_modules\\@types\\node\\inspector.d.ts",
+    "node_modules\\@fast-csv\\format\\node_modules\\@types\\node\\ts4.8\\inspector.d.ts",
+    "node_modules\\@fast-csv\\parse\\node_modules\\@types\\node\\inspector.d.ts",
+    "node_modules\\@fast-csv\\parse\\node_modules\\@types\\node\\ts4.8\\inspector.d.ts"
+   ]
+  },
+  {
+   "size": 173192,
+   "hash": "b7f12e9cdd5aebcc804e818d10fee1ae005b6d4f5e86fe2ac386577bdebc9b66",
+   "paths": [
+    "qa-B1-result.png",
+    "qa-B3-result.png",
+    "qa-B4-result.png"
+   ]
+  },
+  {
+   "size": 283411,
+   "hash": "c949307339152ac856792f6fe3b6487c7088d7694001d147db54663892a00100",
+   "paths": [
+    "dist\\ezrab-bot-mascot.png",
+    "public\\ezrab-bot-mascot.png"
+   ]
+  },
+  {
+   "size": 274424,
+   "hash": "0b471133e110cfb53a061cad528ce8e517d7b9ac41a0a396c39ad795a487fc14",
+   "paths": [
+    "EZRAB-LOCAL-AI\\.python\\Lib\\venv\\scripts\\nt\\python.exe",
+    "EZRAB-LOCAL-AI\\.venv\\Scripts\\python.exe"
+   ]
+  },
+  {
+   "size": 263400,
+   "hash": "c946a75fdc676012b084f6dc056506bfca5098dad04c407419ce7605bd85108c",
+   "paths": [
+    "EZRAB-LOCAL-AI\\.python\\Lib\\venv\\scripts\\nt\\pythonw.exe",
+    "EZRAB-LOCAL-AI\\.venv\\Scripts\\pythonw.exe"
+   ]
+  },
+  {
+   "size": 109641,
+   "hash": "a61aa16ca7a5792565de6362ad23a533a2f08a150b84b4adfc7dc3048299ccea",
+   "paths": [
+    "dist\\videos\\roles-bg-poster.jpg",
+    "dist-qa\\videos\\roles-bg-poster.jpg",
+    "public\\videos\\roles-bg-poster.jpg"
+   ]
+  },
+  {
+   "size": 108813,
+   "hash": "ad9c096aa58285cfe50232a7a8da8f154a35c7dd0c99e7bd0a0652fe4ba0742f",
+   "paths": [
+    "dist\\assets\\mascot\\adad.jpg",
+    "dist-qa\\assets\\mascot\\adad.jpg",
+    "public\\assets\\mascot\\adad.jpg"
+   ]
+  },
+  {
+   "size": 217478,
+   "hash": "15034e9f55f212f6e071bb18e2b85a429e5024186d27da80a7de28ad644f8fa7",
+   "paths": [
+    "tmp\\pdf_verification\\rendered_pages\\free_page_3.png",
+    "tmp\\pdf_verification\\rendered_pages\\paid_page_3.png"
+   ]
+  },
+  {
+   "size": 108446,
+   "hash": "705bb2543470bc3c4e63edf66c1d2b68c9932396216bf8568ce544de552686f2",
+   "paths": [
+    "EZRAB-LOCAL-AI\\.venv\\Scripts\\pip.exe",
+    "EZRAB-LOCAL-AI\\.venv\\Scripts\\pip3.12.exe",
+    "EZRAB-LOCAL-AI\\.venv\\Scripts\\pip3.exe"
+   ]
+  },
+  {
+   "size": 108440,
+   "hash": "1e19d251a0fecf5c4123007a4fb6f94c09c815da763ec9fc8000e8763635c7dd",
+   "paths": [
+    "EZRAB-LOCAL-AI\\.python\\Scripts\\pip.exe",
+    "EZRAB-LOCAL-AI\\.python\\Scripts\\pip3.12.exe",
+    "EZRAB-LOCAL-AI\\.python\\Scripts\\pip3.exe"
+   ]
+  },
+  {
+   "size": 53488,
+   "hash": "985db2599e33d85a70a6da5f2b7b6f1b0bf9b9119781b684573a1a9b463e0cc4",
+   "paths": [
+    "node_modules\\fflate\\esm\\browser.d.ts",
+    "node_modules\\fflate\\esm\\index.d.mts",
+    "node_modules\\fflate\\lib\\browser.d.cts",
+    "node_modules\\fflate\\lib\\index.d.ts",
+    "node_modules\\fflate\\lib\\node.d.cts"
+   ]
+  },
+  {
+   "size": 102892,
+   "hash": "4983599d6fff2b9d3ed140eb66522f91ff4d5599b8fde6d5f5f67ee0daa2b0c9",
+   "paths": [
+    "dist\\assets\\mascot\\maskot-lucu.svg",
+    "dist-qa\\assets\\mascot\\maskot-lucu.svg",
+    "public\\assets\\mascot\\maskot-lucu.svg"
+   ]
+  },
+  {
+   "size": 202379,
+   "hash": "061c08e50c0dc57b8d5e6531f0b8237a52a68b233260d49ab2f2c2906ad112c4",
+   "paths": [
+    "dist\\assets\\html2canvas.esm-QH1iLAAe.js",
+    "dist-qa\\assets\\html2canvas.esm-QH1iLAAe.js"
+   ]
+  },
+  {
+   "size": 182784,
+   "hash": "ebc4c06b7d95e74e315419ee7e88e1d0f71e9e9477538c00a93a9ff8c66a6cfc",
+   "paths": [
+    "EZRAB-LOCAL-AI\\.python\\Lib\\site-packages\\pip\\_vendor\\distlib\\t64-arm.exe",
+    "EZRAB-LOCAL-AI\\.venv\\Lib\\site-packages\\pip\\_vendor\\distlib\\t64-arm.exe"
+   ]
+  },
+  {
+   "size": 60411,
+   "hash": "9095b6f13d9e48704b919d9b4162c48b04236a4ce664dc07549a435d8f4e612e",
+   "paths": [
+    "node_modules\\@fast-csv\\format\\node_modules\\@types\\node\\http2.d.ts",
+    "node_modules\\@fast-csv\\format\\node_modules\\@types\\node\\ts4.8\\http2.d.ts",
+    "node_modules\\@fast-csv\\parse\\node_modules\\@types\\node\\http2.d.ts",
+    "node_modules\\@fast-csv\\parse\\node_modules\\@types\\node\\ts4.8\\http2.d.ts"
+   ]
+  },
+  {
+   "size": 90613,
+   "hash": "cac275566b5177d02e8bed562250f1c93f0f13a7b5ec9433853d4aae88c48f61",
+   "paths": [
+    "dist\\assets\\mascot\\matane.jpg",
+    "dist-qa\\assets\\mascot\\matane.jpg",
+    "public\\assets\\mascot\\matane.jpg"
+   ]
+  },
+  {
+   "size": 171749,
+   "hash": "6b68c344d6040b2ef0a6e1e4fa98b7252f5f43bd44e21621907b9733942fc009",
+   "paths": [
+    "qa-B-final.png",
+    "qa-B8-result.png"
+   ]
+  },
+  {
+   "size": 168448,
+   "hash": "c5dc9884a8f458371550e09bd396e5418bf375820a31b9899f6499bf391c7b2e",
+   "paths": [
+    "EZRAB-LOCAL-AI\\.python\\Lib\\site-packages\\pip\\_vendor\\distlib\\w64-arm.exe",
+    "EZRAB-LOCAL-AI\\.venv\\Lib\\site-packages\\pip\\_vendor\\distlib\\w64-arm.exe"
+   ]
+  },
+  {
+   "size": 163832,
+   "hash": "d26aee4b5a7eab8f1a9ad16f271c674474d69d9a1e99ae8923776252052e0f98",
+   "paths": [
+    "node_modules\\pdfjs-dist\\legacy\\web\\pdf_viewer.css",
+    "node_modules\\pdfjs-dist\\web\\pdf_viewer.css"
+   ]
+  },
+  {
+   "size": 140235,
+   "hash": "86ed552fd9db55da6926b5688a356c85195c4517bfbf7763bb7326776b0a65d6",
+   "paths": [
+    "EZRAB-LOCAL-AI\\.python\\Lib\\site-packages\\pip\\_vendor\\rich\\_emoji_codes.py",
+    "EZRAB-LOCAL-AI\\.venv\\Lib\\site-packages\\pip\\_vendor\\rich\\_emoji_codes.py"
+   ]
+  },
+  {
+   "size": 68975,
+   "hash": "90ab511002f596a1b91634a1c8702aca6afc3cfa335309ea348e77805ac011f9",
+   "paths": [
+    "dist\\assets\\mascot\\ref_dashboard_mascot.png",
+    "dist-qa\\assets\\mascot\\ref_dashboard_mascot.png",
+    "public\\assets\\mascot\\ref_dashboard_mascot.png"
+   ]
+  },
+  {
+   "size": 135113,
+   "hash": "b7e0b915c324fdeecc682ffcd3c0a0ff41c26747db0129d15e2abd44d8df09b8",
+   "paths": [
+    "qaA_result.png",
+    "qaC_result.png"
+   ]
+  },
+  {
+   "size": 132841,
+   "hash": "59d62f4066cd8b8b563f713371b27ab1bedb1e510486b277be00a08aa25000b7",
+   "paths": [
+    "dist\\ezrab-bot-mascot.svg",
+    "public\\ezrab-bot-mascot.svg"
+   ]
+  },
+  {
+   "size": 124972,
+   "hash": "f8236a21e67282f719a2e81228c97ac1fc7a443b4600fc66025aa470dbd5df4f",
+   "paths": [
+    "node_modules\\@fast-csv\\format\\node_modules\\@types\\node\\ts4.8\\fs.d.ts",
+    "node_modules\\@fast-csv\\parse\\node_modules\\@types\\node\\ts4.8\\fs.d.ts"
+   ]
+  },
+  {
+   "size": 124936,
+   "hash": "fdfdf2eab2bded61ee321ec88b8e083fe8d9fedad25a16ae040740869bc64e48",
+   "paths": [
+    "node_modules\\@fast-csv\\format\\node_modules\\@types\\node\\fs.d.ts",
+    "node_modules\\@fast-csv\\parse\\node_modules\\@types\\node\\fs.d.ts"
+   ]
+  },
+  {
+   "size": 112042,
+   "hash": "4a7139c9883a5b14a61c20ac7c4eae88e4c76182874ec1b3bc77f90e553b6453",
+   "paths": [
+    "node_modules\\docx\\dist\\index.d.cts",
+    "node_modules\\docx\\dist\\index.d.ts"
+   ]
+  },
+  {
+   "size": 110998,
+   "hash": "8649170a1de1307c9c1f9653bc5cdebdd1d7547a8fbf99a9cd29186f93e5d671",
+   "paths": [
+    "node_modules\\@supabase\\auth-js\\dist\\main\\lib\\types.d.ts",
+    "node_modules\\@supabase\\auth-js\\dist\\module\\lib\\types.d.ts"
+   ]
+  },
+  {
+   "size": 109634,
+   "hash": "1d74a31978bbee16b6b78f1759f56d6be3db4c63adccf2d1fee45371431ca403",
+   "paths": [
+    "node_modules\\@supabase\\auth-js\\dist\\main\\GoTrueClient.d.ts",
+    "node_modules\\@supabase\\auth-js\\dist\\module\\GoTrueClient.d.ts"
+   ]
+  },
+  {
+   "size": 108032,
+   "hash": "81a618f21cb87db9076134e70388b6e9cb7c2106739011b6a51772d22cae06b7",
+   "paths": [
+    "EZRAB-LOCAL-AI\\.python\\Lib\\site-packages\\pip\\_vendor\\distlib\\t64.exe",
+    "EZRAB-LOCAL-AI\\.venv\\Lib\\site-packages\\pip\\_vendor\\distlib\\t64.exe"
+   ]
+  },
+  {
+   "size": 101888,
+   "hash": "7a319ffaba23a017d7b1e18ba726ba6c54c53d6446db55f92af53c279894f8ad",
+   "paths": [
+    "EZRAB-LOCAL-AI\\.python\\Lib\\site-packages\\pip\\_vendor\\distlib\\w64.exe",
+    "EZRAB-LOCAL-AI\\.venv\\Lib\\site-packages\\pip\\_vendor\\distlib\\w64.exe"
+   ]
+  },
+  {
+   "size": 97792,
+   "hash": "6b4195e640a85ac32eb6f9628822a622057df1e459df7c17a12f97aeabc9415b",
+   "paths": [
+    "EZRAB-LOCAL-AI\\.python\\Lib\\site-packages\\pip\\_vendor\\distlib\\t32.exe",
+    "EZRAB-LOCAL-AI\\.venv\\Lib\\site-packages\\pip\\_vendor\\distlib\\t32.exe"
+   ]
+  },
+  {
+   "size": 91648,
+   "hash": "47872cc77f8e18cf642f868f23340a468e537e64521d9a3a416c8b84384d064b",
+   "paths": [
+    "EZRAB-LOCAL-AI\\.python\\Lib\\site-packages\\pip\\_vendor\\distlib\\w32.exe",
+    "EZRAB-LOCAL-AI\\.venv\\Lib\\site-packages\\pip\\_vendor\\distlib\\w32.exe"
+   ]
+  },
+  {
+   "size": 86971,
+   "hash": "1700af47dc012a48cec89cf1dfae6d1d0d2f40ed731eff6ca55296a055a11c00",
+   "paths": [
+    "EZRAB-LOCAL-AI\\.python\\tcl\\tcl8.6\\encoding\\euc-cn.enc",
+    "EZRAB-LOCAL-AI\\.python\\tcl\\tcl8.6\\encoding\\gb2312.enc"
+   ]
+  },
+  {
+   "size": 62164,
+   "hash": "239f7fb9d74b0cb8856e0b1a182bdf310f9fcf5b75a958e84edc158cd387dab2",
+   "paths": [
+    "node_modules\\cfb\\cfb.js",
+    "node_modules\\cfb\\dist\\cfb.js"
+   ]
+  },
+  {
+   "size": 60650,
+   "hash": "ce44d2643cd578977cf0aaa1aba413e3c706f852c6c0788ffef36a7ed4d709ef",
+   "paths": [
+    "node_modules\\cfb\\xlscfb.flow.js",
+    "node_modules\\cfb\\dist\\xlscfb.js"
+   ]
+  },
+  {
+   "size": 51236,
+   "hash": "2da83cc57a94f7aee832f2a71e1a294d857492761c1f5db717ea42c1a22467bc",
+   "paths": [
+    "node_modules\\@fast-csv\\format\\node_modules\\@types\\node\\crypto.d.ts",
+    "node_modules\\@fast-csv\\parse\\node_modules\\@types\\node\\crypto.d.ts"
+   ]
+  }
+ ],
+ "total_wasted_bytes": 488897331,
+ "total_wasted_mb": 466.25
+}

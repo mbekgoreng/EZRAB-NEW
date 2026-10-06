@@ -1,0 +1,183 @@
+{
+  "generated_at": "2026-09-28T11:08:02.386Z",
+  "purpose": "Legacy AHSP backup prior to AHSP 2026 purge + reimport (Phase B).",
+  "restore_hint": "Copy each backup file back to its \"source\" path to restore the pre-purge state.",
+  "counts": {
+    "targets": 19,
+    "copied": 19,
+    "missing": 0
+  },
+  "entries": [
+    {
+      "layer": "L1",
+      "source": "src/data/nationalCostDatabase/sdaAHSPDataset.ts",
+      "backup": "src__data__nationalCostDatabase__sdaAHSPDataset.ts",
+      "bytes": 1691957,
+      "sha256": "b76b330183553125ec59a982487c4c61d65dece972ba473a6602e665b6336020",
+      "note": "SDA 2026 dataset (fabricated prices)",
+      "exists": true
+    },
+    {
+      "layer": "L1",
+      "source": "src/data/nationalCostDatabase/binaMargaAHSPDataset.ts",
+      "backup": "src__data__nationalCostDatabase__binaMargaAHSPDataset.ts",
+      "bytes": 2358080,
+      "sha256": "f1175ab2e307126653c30fcc7706a284ad161eedc5f666ace2b0b3baa38c010e",
+      "note": "Bina Marga FABRICATED (self-deprecated, 1144 items)",
+      "exists": true
+    },
+    {
+      "layer": "L1",
+      "source": "src/data/nationalCostDatabase/binaMargaAHSP2026Official.ts",
+      "backup": "src__data__nationalCostDatabase__binaMargaAHSP2026Official.ts",
+      "bytes": 3385145,
+      "sha256": "bef60988a9389f3ee960873ae1a2c59068bde33e34ee90898ec0eb3dde5c52d0",
+      "note": "Bina Marga official extraction, MISLABELLED Lampiran II (must be V)",
+      "exists": true
+    },
+    {
+      "layer": "L1",
+      "source": "src/data/nationalCostDatabase/binaMargaAHSP2026OfficialTypes.ts",
+      "backup": "src__data__nationalCostDatabase__binaMargaAHSP2026OfficialTypes.ts",
+      "bytes": 3757,
+      "sha256": "9bf36683ff4542544908a508d10abee7b4608fd74e5e02d21ccf7eb239f44966",
+      "note": "Bina Marga official types + SOURCE_METADATA (Lampiran II mislabel)",
+      "exists": true
+    },
+    {
+      "layer": "L1",
+      "source": "src/data/nationalCostDatabase/ciptaKaryaAHSPDataset.ts",
+      "backup": "src__data__nationalCostDatabase__ciptaKaryaAHSPDataset.ts",
+      "bytes": 6442037,
+      "sha256": "617c81be13a1bf45c9cde778c891303f6e0b052958709a86965cbe004f3c99bd",
+      "note": "Cipta Karya 2026 dataset (fabricated prices)",
+      "exists": true
+    },
+    {
+      "layer": "L1",
+      "source": "src/data/nationalCostDatabase/smkkDataset.ts",
+      "backup": "src__data__nationalCostDatabase__smkkDataset.ts",
+      "bytes": 103060,
+      "sha256": "0d55ad0432845e0c788c593632608916d1706f3c1feb2f4a24e9510f129ac8c3",
+      "note": "SMKK Lampiran III dataset (fabricated prices)",
+      "exists": true
+    },
+    {
+      "layer": "L1",
+      "source": "src/data/nationalCostDatabase/sources.ts",
+      "backup": "src__data__nationalCostDatabase__sources.ts",
+      "bytes": 3187,
+      "sha256": "b68c11a5b8625374c5d99842b2ce6af9b3787fe5b475488fa817f06ad3d6372d",
+      "note": "Official source metadata registry",
+      "exists": true
+    },
+    {
+      "layer": "L1",
+      "source": "src/data/nationalCostDatabase/types.ts",
+      "backup": "src__data__nationalCostDatabase__types.ts",
+      "bytes": 3099,
+      "sha256": "8b476fb4205c0976f09752cb112c43a632224b0154c47d650888d19e52b7ccb5",
+      "note": "NationalAHSPItem types (contains UMUM domain)",
+      "exists": true
+    },
+    {
+      "layer": "L1",
+      "source": "src/data/nationalCostDatabase/masterRegistry.ts",
+      "backup": "src__data__nationalCostDatabase__masterRegistry.ts",
+      "bytes": 7558,
+      "sha256": "b46423e622e22065ac15fe16d6206fa64161e12abc065d59662bcb571b6e7cec",
+      "note": "Composite choke point ALL_OFFICIAL_AHSP_ITEMS + CostDatabaseEngine",
+      "exists": true
+    },
+    {
+      "layer": "L2",
+      "source": "src/data/indonesianAHSP.ts",
+      "backup": "src__data__indonesianAHSP.ts",
+      "bytes": 42618,
+      "sha256": "7ba03615040cc09ad0610c7136863c9ede38200810997b8f45aebeb3053e1eb4",
+      "note": "MASTER_AHSP_DATABASE — Permen PUPR 1/2022 legacy baseline",
+      "exists": true
+    },
+    {
+      "layer": "L4",
+      "source": "src/engine/ahsp/repository/ahspRepository.ts",
+      "backup": "src__engine__ahsp__repository__ahspRepository.ts",
+      "bytes": 9132,
+      "sha256": "ef38e7c0ab4997e6702fd77e3f670845b7a8a0612f7b44e4bcfdc748edd97743",
+      "note": "AHSPRepository singleton (ingests legacy 2022 + UMUM fallback)",
+      "exists": true
+    },
+    {
+      "layer": "L5",
+      "source": "server/services/ahspDataService.ts",
+      "backup": "server__services__ahspDataService.ts",
+      "bytes": 1807,
+      "sha256": "7b9faf9c35351fb476e55b26b438236542a114e9c305aa3a8d7c5b602944f89b",
+      "note": "Server AHSP search over legacy 2022 DB",
+      "exists": true
+    },
+    {
+      "layer": "L5",
+      "source": "server/services/authoritativeAhspPriceBridge.ts",
+      "backup": "server__services__authoritativeAhspPriceBridge.ts",
+      "bytes": 7783,
+      "sha256": "8533a168d23e3ada328ad8196055e94bf46716aed4b7b700b26b3e651dc423fa",
+      "note": "Bridge with fabricated 1150000 fallback",
+      "exists": true
+    },
+    {
+      "layer": "L6",
+      "source": "src/engine/ahsp/pipeline/ahspImportPipeline.ts",
+      "backup": "src__engine__ahsp__pipeline__ahspImportPipeline.ts",
+      "bytes": 7384,
+      "sha256": "e27a2c58bbf785fd968d70f8118a86b04caa5d54e3b9bb723db449d7750144f5",
+      "note": "Import pipeline (UMUM fallback, unconditional VERIFIED)",
+      "exists": true
+    },
+    {
+      "layer": "L6",
+      "source": "src/engine/ahsp/adapters/officialToDefinitionAdapter.ts",
+      "backup": "src__engine__ahsp__adapters__officialToDefinitionAdapter.ts",
+      "bytes": 3521,
+      "sha256": "5904337a372f0f32633845e164a7137150e7e512503a1ed0ec8913af5b502655",
+      "note": "OfficialAHSPItem -> AHSPDefinition adapter",
+      "exists": true
+    },
+    {
+      "layer": "L6",
+      "source": "src/engine/ahsp/contracts/types.ts",
+      "backup": "src__engine__ahsp__contracts__types.ts",
+      "bytes": 2146,
+      "sha256": "249832a165b822df62b92c91def62b719c38198b9febc1fdeed2834eb9e5d572",
+      "note": "AHSPDefinition contracts",
+      "exists": true
+    },
+    {
+      "layer": "L6",
+      "source": "src/engine/cost/scope/scopeAhspRegistry.ts",
+      "backup": "src__engine__cost__scope__scopeAhspRegistry.ts",
+      "bytes": 6339,
+      "sha256": "47ee33be464b55a9513e405aed21041537060748322fa0d1307d4a40f9e67a37",
+      "note": "Scope->AHSP registry (Lampiran II header, UMUM domain)",
+      "exists": true
+    },
+    {
+      "layer": "L7",
+      "source": "src/project-data/ahspBridge.ts",
+      "backup": "src__project-data__ahspBridge.ts",
+      "bytes": 3225,
+      "sha256": "60a9a6e209a00d1b263d24cb9e4625cef7b01b40253499742b5e402b6580a231",
+      "note": "Project AHSP bridge (localStorage ezrab:project:*:ahsp)",
+      "exists": true
+    },
+    {
+      "layer": "L7",
+      "source": "src/project-data/repository.ts",
+      "backup": "src__project-data__repository.ts",
+      "bytes": 1574,
+      "sha256": "b9d90c1b068c50398a85a72e023e9929ce51c7d602ccbd386fa78e79c27bce20",
+      "note": "ProjectDataRepository storage key impl",
+      "exists": true
+    }
+  ]
+}

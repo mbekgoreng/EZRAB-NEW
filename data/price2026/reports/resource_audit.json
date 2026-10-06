@@ -1,0 +1,318 @@
+{
+  "generatedAt": "2026-09-28T13:00:24.664Z",
+  "canonicalAhspItems": 5801,
+  "canonicalResources": 3898,
+  "classification": {
+    "EQUIPMENT": 1205,
+    "LABOR": 307,
+    "MATERIAL": 2386
+  },
+  "quality": {
+    "DEFECTIVE": 117,
+    "CLEAN": 3428,
+    "SUSPECT": 353
+  },
+  "classificationByQuality": {
+    "EQUIPMENT": {
+      "DEFECTIVE": 53,
+      "CLEAN": 999,
+      "SUSPECT": 153
+    },
+    "LABOR": {
+      "DEFECTIVE": 50,
+      "SUSPECT": 11,
+      "CLEAN": 246
+    },
+    "MATERIAL": {
+      "CLEAN": 2183,
+      "DEFECTIVE": 14,
+      "SUSPECT": 189
+    }
+  },
+  "priceableResources": 3781,
+  "unknownResources": 0,
+  "defectiveResources": 117,
+  "suspectResources": 353,
+  "cleanResources": 3428,
+  "issueHistogram": {
+    "NO_CODE": 2381,
+    "NAME_STARTS_LOWERCASE": 264,
+    "TYPE_CONTRADICTS_CODE_PREFIX": 72,
+    "NAME_STARTS_WITH_DIGIT": 61,
+    "NAME_CONTAINS_SUMMARY_LINE": 57,
+    "NAME_IS_A_DISTANCE_FRAGMENT": 37,
+    "NAME_SUSPICIOUSLY_LONG": 18,
+    "NAME_IS_A_CROSS_REFERENCE": 10,
+    "NAME_ENDS_WITH_DOT": 10,
+    "EMPTY_NAME": 7,
+    "NAME_IS_A_SPEC_FRAGMENT": 3,
+    "NAME_IS_A_PLACEHOLDER": 2,
+    "NAME_IS_PARENTHETICAL_FRAGMENT": 1
+  },
+  "unitHistogram": {
+    "jam": 863,
+    "kg": 678,
+    "bh": 581,
+    "m": 494,
+    "m3": 330,
+    "hari": 175,
+    "OH": 137,
+    "m2": 131,
+    "OJ": 105,
+    "batang": 95,
+    "liter": 89,
+    "unit": 66,
+    "lembar": 37,
+    "km": 34,
+    "bh/m'": 24,
+    "ls": 18,
+    "set": 8,
+    "ton": 6,
+    "batang/m'": 5,
+    "kg/m'": 4,
+    "cm": 3,
+    "m3/m2": 2,
+    "mm": 2,
+    "ea": 2,
+    "kg/m": 2,
+    "unit/hari": 1,
+    "paket": 1,
+    "dos": 1,
+    "lot": 1,
+    "tahun": 1
+  },
+  "lookAlikeNameGroups": 259,
+  "componentRows": 29320,
+  "componentDistinctKeys": 786,
+  "componentKeysBackedByResource": 786,
+  "componentRowsBackedByResource": 22026,
+  "samples": {
+    "unknown": [],
+    "defective": [
+      {
+        "code": "E.11",
+        "name": "",
+        "unit": "jam",
+        "issues": [
+          "EMPTY_NAME"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 10,0",
+        "unit": "km",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 10,0 km",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 10,0 km 0,1515",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 10,0 km 0,2083",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 10,0 km 0,2778",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 10,0 km 0,3333",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 10,0 km 0,4167",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 10,0 km 0,8333",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 10,0 km 1,6667",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 11,0",
+        "unit": "km",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 11,0 km 0,2209",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 15,0",
+        "unit": "km",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 15,0 km",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 15,0 km 0,1972",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 15,0 km 0,4337",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 15,0 km 0,5422",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 15,0 km 1,0843",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 2,0",
+        "unit": "km",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 2,5",
+        "unit": "km",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 2,5 km 0,0056",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 2,5 km 0,0088",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 2,5 km 0,0338",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 2,5 km 0,0435",
+        "unit": "jam",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      },
+      {
+        "code": "",
+        "name": "- Jarak 3,0",
+        "unit": "km",
+        "issues": [
+          "NO_CODE",
+          "NAME_IS_A_DISTANCE_FRAGMENT"
+        ]
+      }
+    ]
+  }
+}

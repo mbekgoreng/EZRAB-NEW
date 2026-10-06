@@ -1,0 +1,1188 @@
+{
+ "generated_at": "2026-09-28T11:51:47.820Z",
+ "count": 90,
+ "records": [
+  {
+   "id": "AHSP-2026-SMKK-000001",
+   "code": "KECIL-1",
+   "field": "SMKK",
+   "page": 30,
+   "unit": null,
+   "description": "Penyiapan dokumen Penerapan SMKK:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000005",
+   "code": "KECIL-2",
+   "field": "SMKK",
+   "page": 31,
+   "unit": null,
+   "description": "Sosialisasi, Promosi dan Pelatihan:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000011",
+   "code": "KECIL-2.x",
+   "field": "SMKK",
+   "page": 32,
+   "unit": null,
+   "description": "75 cm (spanduk utamakan cm dan dokumentasi",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000014",
+   "code": "KECIL-3",
+   "field": "SMKK",
+   "page": 33,
+   "unit": null,
+   "description": "Alat Pelindung Kerja dan Alat Pelindung Diri:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000015",
+   "code": "KECIL-3.a",
+   "field": "SMKK",
+   "page": 33,
+   "unit": null,
+   "description": "APK, antara lain:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000018",
+   "code": "KECIL-3.b",
+   "field": "SMKK",
+   "page": 33,
+   "unit": null,
+   "description": "APD, antara lain:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000024",
+   "code": "KECIL-5",
+   "field": "SMKK",
+   "page": 34,
+   "unit": null,
+   "description": "Personel Keselamatan Konstruksi:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000025",
+   "code": "KECIL-5.a",
+   "field": "SMKK",
+   "page": 34,
+   "unit": null,
+   "description": "Petugas Keselamatan Konstruksi Org-Bln penambahan 1 Mampu melaksanakan Sertifikat Kompetensi",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE",
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000027",
+   "code": "KECIL-7",
+   "field": "SMKK",
+   "page": 35,
+   "unit": null,
+   "description": "Rambu dan Perlengkapan Lalu Lintas:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000038",
+   "code": "KECIL-7.k",
+   "field": "SMKK",
+   "page": 36,
+   "unit": null,
+   "description": "Jembatan Sementara manajemen Lumsum Jumlah dan jenis",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000039",
+   "code": "KECIL-8",
+   "field": "SMKK",
+   "page": 37,
+   "unit": null,
+   "description": "Konsultasi dengan Ahli terkait Keselamatan Konstruksi: (komponen ini tidak bersifat wajib pada pekerjaan konstruksi dengan tingkat",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000040",
+   "code": "KECIL-9",
+   "field": "SMKK",
+   "page": 37,
+   "unit": null,
+   "description": "Kegiatan dan peralatan terkait Pengendalian Risiko Keselamatan Konstruksi:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE",
+    "POSSIBLE_DUPLICATE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000041",
+   "code": "KECIL-9.a",
+   "field": "SMKK",
+   "page": 37,
+   "unit": null,
+   "description": "Alat Pemadam Api Ringan (APAR):",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000048",
+   "code": "KECIL-9.d",
+   "field": "SMKK",
+   "page": 37,
+   "unit": null,
+   "description": "Konstruksi kali) selama masa pemeriksaan dan dokumentasi",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000049",
+   "code": "KECIL-9.e",
+   "field": "SMKK",
+   "page": 38,
+   "unit": null,
+   "description": "Pengujian lingkungan, antara",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000057",
+   "code": "SEDANG-1",
+   "field": "SMKK",
+   "page": 39,
+   "unit": null,
+   "description": "Penyiapan Dokumen Penerapan SMKK:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE",
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000060",
+   "code": "SEDANG-12",
+   "field": "SMKK",
+   "page": 40,
+   "unit": null,
+   "description": "prosedur).",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE",
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000062",
+   "code": "SEDANG-2",
+   "field": "SMKK",
+   "page": 41,
+   "unit": null,
+   "description": "Sosialisasi, Promosi, dan Pelatihan:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE",
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000066",
+   "code": "SEDANG-2",
+   "field": "SMKK",
+   "page": 42,
+   "unit": "buah",
+   "description": null,
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_DESCRIPTION",
+    "NO_COMPONENTS_IN_SOURCE",
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000067",
+   "code": "SEDANG-4",
+   "field": "SMKK",
+   "page": 42,
+   "unit": "buah",
+   "description": null,
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_DESCRIPTION",
+    "NO_COMPONENTS_IN_SOURCE",
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000070",
+   "code": "SEDANG-4.f",
+   "field": "SMKK",
+   "page": 42,
+   "unit": null,
+   "description": "Kegiatan Pelatihan kepedulian/",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000077",
+   "code": "SEDANG-1",
+   "field": "SMKK",
+   "page": 44,
+   "unit": "buah",
+   "description": null,
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_DESCRIPTION",
+    "NO_COMPONENTS_IN_SOURCE",
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000086",
+   "code": "SEDANG-2",
+   "field": "SMKK",
+   "page": 46,
+   "unit": "buah",
+   "description": null,
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_DESCRIPTION",
+    "NO_COMPONENTS_IN_SOURCE",
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000087",
+   "code": "SEDANG-3",
+   "field": "SMKK",
+   "page": 46,
+   "unit": null,
+   "description": "Alat Pelindung Kerja dan Alat Pelindung Diri:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000088",
+   "code": "SEDANG-3.a",
+   "field": "SMKK",
+   "page": 46,
+   "unit": null,
+   "description": "APK, antara lain:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000091",
+   "code": "SEDANG-3.a.3",
+   "field": "SMKK",
+   "page": 47,
+   "unit": null,
+   "description": "Pagar pengaman penahan Meter Keliling area kerja 1. Gambar kerja Gambar kerja,",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000092",
+   "code": "SEDANG-3.a.4",
+   "field": "SMKK",
+   "page": 47,
+   "unit": null,
+   "description": "Lantai penahan jatuh Meter Sepanjang sisi 1. Gambar kerja Gambar kerja,",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000096",
+   "code": "SEDANG-3.a.8",
+   "field": "SMKK",
+   "page": 49,
+   "unit": null,
+   "description": "Penutup lubang Meter Tergantung jumlah Bahan penutup Gambar kerja,",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000098",
+   "code": "SEDANG-3.a.10",
+   "field": "SMKK",
+   "page": 49,
+   "unit": null,
+   "description": "Pagar sementara pengaman Meter Disesuaikan dengan 1. Gambar kerja Gambar kerja,",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000099",
+   "code": "SEDANG-3.b",
+   "field": "SMKK",
+   "page": 49,
+   "unit": null,
+   "description": "APD, antara lain:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000105",
+   "code": "SEDANG-3.b.6",
+   "field": "SMKK",
+   "page": 51,
+   "unit": null,
+   "description": "Pelindung telinga (ear muff) Tergantung jumlah Mampu menahan Kuitansi pembelian,",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000114",
+   "code": "SEDANG-10",
+   "field": "SMKK",
+   "page": 53,
+   "unit": "m",
+   "description": null,
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_DESCRIPTION",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000119",
+   "code": "SEDANG-4",
+   "field": "SMKK",
+   "page": 54,
+   "unit": null,
+   "description": "Asuransi:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE",
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000121",
+   "code": "SEDANG-5",
+   "field": "SMKK",
+   "page": 55,
+   "unit": null,
+   "description": "Personel Keselamatan Konstruksi:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000122",
+   "code": "SEDANG-5.a",
+   "field": "SMKK",
+   "page": 55,
+   "unit": null,
+   "description": "Ahli K3 Konstruksi atau Ahli Org-Bln Risiko Sedang: Mampu melaksanakan Sertifikat Kompetensi",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000123",
+   "code": "SEDANG-5.b",
+   "field": "SMKK",
+   "page": 56,
+   "unit": null,
+   "description": "Petugas Keselamatan Org-Bln Risiko Sedang: Mampu melaksanakan Sertifikat Kompetensi",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000125",
+   "code": "SEDANG-1.a.40",
+   "field": "SMKK",
+   "page": 56,
+   "unit": null,
+   "description": "(empat puluh)",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000126",
+   "code": "SEDANG-1.c",
+   "field": "SMKK",
+   "page": 56,
+   "unit": null,
+   "description": "Petugas tanggap darurat Org-Bln Risiko Sedang: Mampu melaksanakan Sertifikat Pelatihan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000127",
+   "code": "SEDANG-1.d",
+   "field": "SMKK",
+   "page": 56,
+   "unit": null,
+   "description": "Petugas pemadam kebakaran Org-Bln Risiko Sedang: Mampu melaksanakan Sertifikat Pelatihan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000128",
+   "code": "SEDANG-1.e",
+   "field": "SMKK",
+   "page": 57,
+   "unit": null,
+   "description": "Petugas P3K Org-Bln Risiko Sedang: Mampu melaksanakan Sertifikat Pelatihan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000129",
+   "code": "SEDANG-1.f",
+   "field": "SMKK",
+   "page": 57,
+   "unit": null,
+   "description": "Petugas pengatur lalu Org-Bln Risiko Sedang: Mampu melaksanakan SK dari Project",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000130",
+   "code": "SEDANG-12",
+   "field": "SMKK",
+   "page": 57,
+   "unit": "orang",
+   "description": null,
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_DESCRIPTION",
+    "NO_COMPONENTS_IN_SOURCE",
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000131",
+   "code": "SEDANG-12.g",
+   "field": "SMKK",
+   "page": 57,
+   "unit": null,
+   "description": "Tenaga medis dan/atau Org-Bln Minimal memiliki Mampu memeriksa Sertifikat Dokter",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000132",
+   "code": "SEDANG-12.h",
+   "field": "SMKK",
+   "page": 58,
+   "unit": null,
+   "description": "Petugas paramedis Org-Bln Risiko Sedang: Mampu memeriksa Sertifikat Kompetensi",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000134",
+   "code": "SEDANG-12.j",
+   "field": "SMKK",
+   "page": 58,
+   "unit": null,
+   "description": "Koordinator Manajemen dan Org-Bln KMKL boleh Berkoordinasi dengan SK dari Project",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000135",
+   "code": "SEDANG-12.k",
+   "field": "SMKK",
+   "page": 59,
+   "unit": null,
+   "description": "Staf Koordinator Manajemen Org-Bln Staf KMKL harus Berkoordinasi dengan SK dari Project",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000136",
+   "code": "SEDANG-6",
+   "field": "SMKK",
+   "page": 59,
+   "unit": null,
+   "description": "Fasilitas Sarana, Prasarana, dan Alat Kesehatan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000145",
+   "code": "SEDANG-7",
+   "field": "SMKK",
+   "page": 61,
+   "unit": null,
+   "description": "Rambu dan Perlengkapan Lalu Lintas:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000152",
+   "code": "SEDANG-7.f.96",
+   "field": "SMKK",
+   "page": 64,
+   "unit": "buah",
+   "description": null,
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_DESCRIPTION",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000157",
+   "code": "SEDANG-7.j.20",
+   "field": "SMKK",
+   "page": 65,
+   "unit": "buah",
+   "description": null,
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_DESCRIPTION",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000159",
+   "code": "SEDANG-7.l",
+   "field": "SMKK",
+   "page": 65,
+   "unit": null,
+   "description": "Pembatas Jalan (water tank Meter Risiko Sedang: Kuitansi pembelian",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000160",
+   "code": "SEDANG-7.m",
+   "field": "SMKK",
+   "page": 65,
+   "unit": null,
+   "description": "Beton pembatas jalan (concrete Meter Risiko Sedang: Kuitansi pembelian",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000162",
+   "code": "SEDANG-7.o",
+   "field": "SMKK",
+   "page": 66,
+   "unit": null,
+   "description": "Lampu peringatan termasuk Meter Minimal 1.000 meter Kuitansi pembelian",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000165",
+   "code": "SEDANG-7.r",
+   "field": "SMKK",
+   "page": 67,
+   "unit": null,
+   "description": "Marka jalan sementara Meter Disesuaikan dengan Kuitansi pembelian",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000166",
+   "code": "SEDANG-7.s",
+   "field": "SMKK",
+   "page": 67,
+   "unit": null,
+   "description": "Alat pengendali pemakaian Kuitansi pembelian",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000169",
+   "code": "SEDANG-7.t",
+   "field": "SMKK",
+   "page": 67,
+   "unit": null,
+   "description": "Alat pengamanan pemakai Kuitansi pembelian",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000174",
+   "code": "SEDANG-7.t.5",
+   "field": "SMKK",
+   "page": 68,
+   "unit": null,
+   "description": "Pita Penggaduh- shoulder Meter dengan jumlah lokasi",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000177",
+   "code": "SEDANG-8",
+   "field": "SMKK",
+   "page": 68,
+   "unit": null,
+   "description": "Konsultasi dengan Ahli Terkait Keselamatan Konstruksi:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000178",
+   "code": "SEDANG-8.a",
+   "field": "SMKK",
+   "page": 68,
+   "unit": null,
+   "description": "Ahli Lingkungan OJ Minimal 1 Bukti hasil konsultasi Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000179",
+   "code": "SEDANG-8.b",
+   "field": "SMKK",
+   "page": 68,
+   "unit": null,
+   "description": "Ahli Teknik Jembatan OJ Minimal 1 acara. Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000180",
+   "code": "SEDANG-8.c",
+   "field": "SMKK",
+   "page": 68,
+   "unit": null,
+   "description": "Ahli Teknik Bangunan Gedung OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000181",
+   "code": "SEDANG-8.d",
+   "field": "SMKK",
+   "page": 68,
+   "unit": null,
+   "description": "Ahli Perencana Struktur OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000182",
+   "code": "SEDANG-8.e",
+   "field": "SMKK",
+   "page": 69,
+   "unit": null,
+   "description": "Ahli Perencana Pondasi OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000183",
+   "code": "SEDANG-8.f",
+   "field": "SMKK",
+   "page": 69,
+   "unit": null,
+   "description": "Ahli Teknik Bendungan Besar OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000184",
+   "code": "SEDANG-8.g",
+   "field": "SMKK",
+   "page": 69,
+   "unit": null,
+   "description": "Ahli gempa OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000185",
+   "code": "SEDANG-8.h",
+   "field": "SMKK",
+   "page": 69,
+   "unit": null,
+   "description": "Ahli Teknik Likuifaksi OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000186",
+   "code": "SEDANG-8.i",
+   "field": "SMKK",
+   "page": 69,
+   "unit": null,
+   "description": "Ahli Geoteknik OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE",
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000187",
+   "code": "SEDANG-8.i",
+   "field": "SMKK",
+   "page": 69,
+   "unit": null,
+   "description": "Ahli Teknik Landasan Terbang OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE",
+    "EXACT_DUPLICATE_CODE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000188",
+   "code": "SEDANG-8.j",
+   "field": "SMKK",
+   "page": 69,
+   "unit": null,
+   "description": "Ahli mekanikal OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000189",
+   "code": "SEDANG-8.k",
+   "field": "SMKK",
+   "page": 69,
+   "unit": null,
+   "description": "Ahli pertambangan OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000190",
+   "code": "SEDANG-8.l",
+   "field": "SMKK",
+   "page": 69,
+   "unit": null,
+   "description": "Ahli peledakan OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000191",
+   "code": "SEDANG-8.m",
+   "field": "SMKK",
+   "page": 69,
+   "unit": null,
+   "description": "Ahli elektrikal OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000192",
+   "code": "SEDANG-8.n",
+   "field": "SMKK",
+   "page": 69,
+   "unit": null,
+   "description": "Ahli perminyakan dan gas OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000193",
+   "code": "SEDANG-8.o",
+   "field": "SMKK",
+   "page": 69,
+   "unit": null,
+   "description": "Ahli manajemen konstruksi OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000194",
+   "code": "SEDANG-8.p",
+   "field": "SMKK",
+   "page": 70,
+   "unit": null,
+   "description": "Ahli Teknik Proteksi Kebakaran OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000195",
+   "code": "SEDANG-8.q",
+   "field": "SMKK",
+   "page": 70,
+   "unit": null,
+   "description": "Ahli K3 Pesawat Angkat Angkut OJ Minimal 1 Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000196",
+   "code": "SEDANG-8.r",
+   "field": "SMKK",
+   "page": 70,
+   "unit": null,
+   "description": "Ahli terkait lainnya sesuai OJ Sertifikat Ahli dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000197",
+   "code": "SEDANG-9",
+   "field": "SMKK",
+   "page": 70,
+   "unit": null,
+   "description": "Kegiatan dan Peralatan Terkait Pengendalian Risiko Keselamatan Konstruksi:",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE",
+    "POSSIBLE_DUPLICATE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000200",
+   "code": "SEDANG-9.c",
+   "field": "SMKK",
+   "page": 70,
+   "unit": null,
+   "description": "Alat Pemadam Api Ringan Dibuktikan dengan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SMKK-000212",
+   "code": "SEDANG-9.k",
+   "field": "SMKK",
+   "page": 72,
+   "unit": null,
+   "description": "Pengujian lingkungan, antara Pengujian dilakukan Dibuktikan dengan Laporan hasil uji dan",
+   "issues": [
+    "SMKK rows are cost components, not AHSP analyses (no coefficient table in source)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000553",
+   "code": "A.3.01.2b.4",
+   "field": "SDA",
+   "page": 165,
+   "unit": null,
+   "description": "Angkutan bahan mentah/jadi/olahan menggunakan flatbed truck dan crane truck",
+   "issues": [
+    "MISSING_UNIT"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000557",
+   "code": "A.3.01.2c.3.a",
+   "field": "SDA",
+   "page": 21,
+   "unit": null,
+   "description": "Mengolah Batu/Medium Boulder Primary menjadi Agregat Kasar dan Agregat Halus",
+   "issues": [
+    "no analysis table found in source (inventory-only record)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000558",
+   "code": "A.3.01.2c.3.b",
+   "field": "SDA",
+   "page": 21,
+   "unit": null,
+   "description": "Mengolah Batu/Gravel Secondary menjadi Agregat Kasar dan Agregat Halus",
+   "issues": [
+    "no analysis table found in source (inventory-only record)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000631",
+   "code": "A.3.04.2",
+   "field": "SDA",
+   "page": 23,
+   "unit": null,
+   "description": "Pembuatan s.d. Pengecoran Campuran Beton Secara Mekanis di BP yang diangkut Truck Mixer ke Lokasi Pekerjaan",
+   "issues": [
+    "no analysis table found in source (inventory-only record)",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-SDA-000810",
+   "code": "",
+   "field": "SDA",
+   "page": 28,
+   "unit": "m'",
+   "description": "Pondasi Tiang Bor ∅ 180 cm",
+   "issues": [
+    "source prints inventory row no. 810 without a KODE (page 28); code left empty",
+    "no analysis table found in source (inventory-only record)",
+    "MISSING_CODE",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-BINA_MARGA-000002",
+   "code": "1.7",
+   "field": "BINA_MARGA",
+   "page": 4,
+   "unit": null,
+   "description": "Provisional Pembayaran Bersyarat (Provisional Sums) Sums",
+   "issues": [
+    "header-only entry: no analysis table in the source",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-BINA_MARGA-000007",
+   "code": "",
+   "field": "BINA_MARGA",
+   "page": 4,
+   "unit": null,
+   "description": "Sistem Manajemen Keselamatan Konstruksi (SMKK)",
+   "issues": [
+    "listed in the Lampiran V code index but no analysis table was extracted",
+    "MISSING_CODE",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-000746",
+   "code": "4.1.1.1",
+   "field": "CIPTA_KARYA",
+   "page": 77,
+   "unit": null,
+   "description": "Pengangkutan Tanaman Jam Analisis Produktivitas Truck Angkutan",
+   "issues": [
+    "listed in DAFTAR ISI but no analysis table found in source",
+    "MISSING_UNIT",
+    "NO_COMPONENTS_IN_SOURCE"
+   ]
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-002855",
+   "code": "1.000",
+   "field": "CIPTA_KARYA",
+   "page": 1106,
+   "unit": null,
+   "description": "USGPM",
+   "issues": [
+    "has an analysis table but is absent from the DAFTAR ISI index",
+    "MISSING_UNIT"
+   ]
+  },
+  {
+   "id": "AHSP-2026-CIPTA_KARYA-002856",
+   "code": "1.250",
+   "field": "CIPTA_KARYA",
+   "page": 1107,
+   "unit": null,
+   "description": "USGPM",
+   "issues": [
+    "has an analysis table but is absent from the DAFTAR ISI index",
+    "MISSING_UNIT"
+   ]
+  }
+ ]
+}

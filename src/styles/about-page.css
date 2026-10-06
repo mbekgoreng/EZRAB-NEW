@@ -1,0 +1,1345 @@
+/* ==========================================================================
+   EZRAB — TENTANG EZRAB (FLAGSHIP ABOUT EXPERIENCE)
+   Luxury Technical Construction-Tech Design System
+   Rhythm: DARK -> LIGHT -> LIGHT -> DARK -> LIGHT -> DARK -> LIGHT -> DARK
+   Colors:
+     Primary dark: #061225, #08172B, #0A1B32
+     Primary blue: #2563EB, #3B82F6
+     Electric blue: #00A8FF
+     Accent cyan: #38BDF8
+     Light background: #FFFFFF, #F8FAFC, #F1F5F9
+     Primary text: #0B1B33, #0F172A
+     Secondary text: #64748B
+     Borders: #DCE5F0, rgba(56, 189, 248, 0.22)
+   ========================================================================== */
+
+:root {
+  --ez-dark-950: #040A17;
+  --ez-dark-900: #061225;
+  --ez-dark-850: #08172B;
+  --ez-dark-800: #0A1B32;
+  --ez-primary-blue: #2563EB;
+  --ez-bright-blue: #3B82F6;
+  --ez-electric-blue: #00A8FF;
+  --ez-accent-cyan: #38BDF8;
+  --ez-orange-accent: #F59E0B;
+  --ez-light-bg: #FFFFFF;
+  --ez-light-alt: #F8FAFC;
+  --ez-light-slate: #F1F5F9;
+  --ez-border-light: #DCE5F0;
+  --ez-border-dark: rgba(56, 189, 248, 0.2);
+  --ez-text-dark: #0B1B33;
+  --ez-text-muted: #64748B;
+  --ez-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ez-font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.ez-about-page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ez-dark-900);
+  color: #FFFFFF;
+  font-family: var(--ez-font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================================
+   MINIMAL ARCHITECTURAL NAVBAR
+   ========================================================================== */
+.ez-about-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 44px;
+  background: rgba(6, 18, 37, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ez-about-nav-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.ez-about-nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.ez-about-logo-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #00A8FF, #2563EB);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 16px rgba(0, 168, 255, 0.45);
+}
+
+.ez-about-logo-text {
+  font-size: 19px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  color: #FFFFFF;
+}
+
+.ez-about-nav-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(0, 168, 255, 0.1);
+  border: 1px solid rgba(0, 168, 255, 0.28);
+  color: var(--ez-electric-blue);
+  font-family: var(--ez-font-mono);
+}
+
+.ez-about-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.ez-about-nav-link {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #94A3B8;
+  text-decoration: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 6px 4px;
+  transition: color 0.2s ease;
+  position: relative;
+}
+
+.ez-about-nav-link:hover {
+  color: #FFFFFF;
+}
+
+.ez-about-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ez-about-nav-btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #94A3B8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ez-about-nav-btn-back:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.ez-about-nav-btn-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 650;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #2563EB, #1D4ED8);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 4px 18px rgba(37, 99, 235, 0.4);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ez-about-nav-btn-cta:hover {
+  background: linear-gradient(135deg, #1D4ED8, #1E40AF);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(37, 99, 235, 0.6);
+}
+
+/* ==========================================================================
+   SECTION 01 — HERO (PANORAMIC CITYSCAPE BACKGROUND & ARCHITECTURAL OVERLAYS)
+   ========================================================================== */
+.ez-about-hero-section {
+  position: relative;
+  min-height: calc(100vh - 72px);
+  padding: 100px 48px 120px;
+  display: flex;
+  align-items: center;
+  background-color: var(--ez-dark-950);
+  overflow: hidden;
+}
+
+/* Fullscreen Panoramic Background Image */
+.ez-about-hero-bg-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ez-about-hero-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: right 40%;
+  transform: scale(1.03);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: brightness(0.95) contrast(1.08);
+}
+
+/* Cinematic Dark Gradient Scrim to ensure crisp typography readability on left */
+.ez-about-hero-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(4, 10, 23, 0.97) 0%,
+    rgba(6, 18, 37, 0.92) 35%,
+    rgba(6, 18, 37, 0.62) 58%,
+    rgba(6, 18, 37, 0.25) 80%,
+    rgba(4, 10, 23, 0.6) 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ez-about-hero-bg-bottom-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 140px;
+  background: linear-gradient(180deg, transparent 0%, rgba(4, 10, 23, 0.85) 60%, var(--ez-dark-950) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ez-about-hero-cad-grid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.55;
+  z-index: 3;
+}
+
+.ez-about-hero-glow {
+  position: absolute;
+  top: 15%;
+  right: 20%;
+  width: 550px;
+  height: 550px;
+  background: radial-gradient(circle, rgba(0, 168, 255, 0.16) 0%, rgba(37, 99, 235, 0.06) 50%, transparent 70%);
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.ez-about-hero-container {
+  max-width: 1380px;
+  margin: 0 auto;
+  width: 100%;
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 1.12fr 0.88fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.ez-about-hero-content {
+  max-width: 680px;
+}
+
+.ez-about-hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ez-electric-blue);
+  background: rgba(0, 168, 255, 0.1);
+  border: 1px solid rgba(0, 168, 255, 0.32);
+  padding: 6px 16px;
+  border-radius: 999px;
+  margin-bottom: 28px;
+  font-family: var(--ez-font-mono);
+  box-shadow: 0 0 20px rgba(0, 168, 255, 0.15);
+}
+
+.ez-about-hero-headline {
+  font-size: clamp(38px, 4.4vw, 64px);
+  font-weight: 850;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  color: #FFFFFF;
+  margin-bottom: 26px;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+
+.ez-about-hero-headline .highlight-blue {
+  color: var(--ez-electric-blue);
+  text-shadow: 0 0 35px rgba(0, 168, 255, 0.5);
+}
+
+.ez-about-hero-subhead {
+  font-size: clamp(16.5px, 1.25vw, 19px);
+  line-height: 1.65;
+  color: #CBD5E1;
+  margin-bottom: 38px;
+  max-width: 600px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.ez-about-hero-cta-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+
+.ez-about-hero-cta-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #00A8FF, #2563EB);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 13px 28px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 6px 25px rgba(0, 168, 255, 0.35);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ez-about-hero-cta-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 168, 255, 0.5);
+}
+
+.ez-about-hero-cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 650;
+  color: #CBD5E1;
+  background: rgba(6, 18, 37, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 13px 24px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ez-about-hero-cta-secondary:hover {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #FFFFFF;
+}
+
+/* Quick specs ribbon on hero */
+.ez-about-hero-stats-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ez-about-hero-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ez-about-hero-stat-val {
+  font-size: 18px;
+  font-weight: 850;
+  color: #FFFFFF;
+  font-family: var(--ez-font-mono);
+}
+
+.ez-about-hero-stat-label {
+  font-size: 11.5px;
+  color: #94A3B8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Hero Right: Architectural Telemetry HUD Over Cityscape */
+.ez-about-hero-hud-card {
+  position: relative;
+  padding: 28px 32px;
+  border-radius: 20px;
+  background: rgba(6, 18, 37, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(0, 168, 255, 0.3);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.65),
+    0 0 40px rgba(0, 168, 255, 0.18);
+  max-width: 480px;
+  margin-left: auto;
+}
+
+.ez-about-hud-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.ez-about-hud-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-family: var(--ez-font-mono);
+  font-weight: 750;
+  color: #10B981;
+  background: rgba(16, 185, 129, 0.12);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.ez-about-hud-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
+  animation: hudPulse 2s infinite ease-in-out;
+}
+
+@keyframes hudPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.ez-about-hud-metrics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.ez-about-hud-metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(8, 23, 43, 0.6);
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  border-radius: 10px;
+  font-size: 12.5px;
+}
+
+.ez-about-hud-metric-row span:first-child {
+  color: #CBD5E1;
+  font-weight: 600;
+}
+
+.ez-about-hud-metric-row span:last-child {
+  font-family: var(--ez-font-mono);
+  color: var(--ez-electric-blue);
+  font-weight: 700;
+}
+
+.ez-about-hud-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #94A3B8;
+  font-family: var(--ez-font-mono);
+}
+
+/* ==========================================================================
+   SECTION 02 — WHY EZRAB (FULL-BLEED WORKSPACE CONVERGENCE BACKGROUND)
+   ========================================================================== */
+.ez-about-why-section {
+  position: relative;
+  min-height: 750px;
+  padding: 140px 48px 150px;
+  background: #FFFFFF;
+  color: var(--ez-text-dark);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+/* Full-bleed background layer */
+.ez-about-why-bg-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ez-about-why-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: right 30%;
+  transform: scale(1.02);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: contrast(1.04) brightness(1.02);
+}
+
+/* Scrim to ensure crisp left-side text contrast */
+.ez-about-why-bg-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(255, 255, 255, 0.94) 38%,
+    rgba(255, 255, 255, 0.65) 60%,
+    rgba(255, 255, 255, 0.25) 85%,
+    rgba(255, 255, 255, 0.4) 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ez-about-why-bg-top-fade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ez-about-why-bg-bottom-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 90px;
+  background: linear-gradient(180deg, transparent 0%, #F8FAFC 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.ez-about-why-container {
+  max-width: 1380px;
+  margin: 0 auto;
+  width: 100%;
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 64px;
+  align-items: center;
+}
+
+.ez-about-why-copy {
+  max-width: 640px;
+}
+
+.ez-about-section-tag-light {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ez-primary-blue);
+  background: rgba(239, 246, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid #BFDBFE;
+  padding: 6px 14px;
+  border-radius: 999px;
+  margin-bottom: 24px;
+  font-family: var(--ez-font-mono);
+}
+
+.ez-about-why-headline {
+  font-size: clamp(34px, 3.8vw, 52px);
+  font-weight: 850;
+  line-height: 1.14;
+  letter-spacing: -0.035em;
+  color: var(--ez-text-dark);
+  margin-bottom: 24px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.ez-about-why-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 34px;
+}
+
+.ez-about-why-pill {
+  padding: 7px 14px;
+  background: rgba(241, 245, 249, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #334155;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+}
+
+.ez-about-why-pill:hover {
+  background: #EFF6FF;
+  border-color: #93C5FD;
+  color: var(--ez-primary-blue);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+}
+
+.ez-about-why-punchline {
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--ez-primary-blue);
+  line-height: 1.45;
+  border-left: 3.5px solid var(--ez-primary-blue);
+  padding-left: 20px;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+/* Why EZRAB Right: Floating Glass Convergence HUD */
+.ez-about-why-hud-box {
+  position: relative;
+  padding: 28px 30px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(219, 234, 254, 0.9);
+  border-radius: 20px;
+  box-shadow:
+    0 20px 50px rgba(15, 23, 42, 0.08),
+    0 0 30px rgba(37, 99, 235, 0.05);
+  max-width: 440px;
+  margin-left: auto;
+}
+
+.ez-about-why-hud-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.ez-about-why-converge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.ez-about-why-converge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(248, 250, 252, 0.9);
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ez-text-dark);
+}
+
+.ez-about-why-converge-row b {
+  font-size: 11px;
+  color: var(--ez-primary-blue);
+  background: #EFF6FF;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--ez-font-mono);
+}
+
+.ez-about-why-hud-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748B;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   SECTION 03 — ONE CONNECTED WORKFLOW (LIGHT #F8FAFC)
+   ========================================================================== */
+.ez-about-workflow-section {
+  position: relative;
+  padding: 140px 48px;
+  background: var(--ez-light-alt);
+  color: var(--ez-text-dark);
+  border-top: 1px solid var(--ez-border-light);
+}
+
+.ez-about-workflow-container {
+  max-width: 1380px;
+  margin: 0 auto;
+}
+
+.ez-about-workflow-header {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 64px;
+}
+
+.ez-about-workflow-headline {
+  font-size: clamp(34px, 3.8vw, 52px);
+  font-weight: 850;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  color: var(--ez-text-dark);
+  margin-bottom: 18px;
+}
+
+.ez-about-workflow-subhead {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--ez-text-muted);
+}
+
+.ez-about-workflow-pipeline {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 12px;
+  position: relative;
+  margin-bottom: 36px;
+}
+
+.ez-about-pipeline-node {
+  background: #FFFFFF;
+  border: 1.5px solid var(--ez-border-light);
+  border-radius: 14px;
+  padding: 20px 12px;
+  text-align: center;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.ez-about-pipeline-node:hover {
+  border-color: #93C5FD;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.08);
+}
+
+.ez-about-pipeline-node.active {
+  border-color: var(--ez-primary-blue);
+  background: #F0F7FF;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.15);
+  transform: translateY(-4px);
+}
+
+.ez-about-pipeline-index {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #94A3B8;
+  font-family: var(--ez-font-mono);
+}
+
+.ez-about-pipeline-node.active .ez-about-pipeline-index {
+  color: var(--ez-primary-blue);
+}
+
+.ez-about-pipeline-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #F1F5F9;
+  color: #475569;
+  display: grid;
+  place-items: center;
+  transition: all 0.25s ease;
+}
+
+.ez-about-pipeline-node.active .ez-about-pipeline-icon {
+  background: var(--ez-primary-blue);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.ez-about-pipeline-title {
+  font-size: 11.5px;
+  font-weight: 750;
+  color: var(--ez-text-dark);
+  line-height: 1.3;
+}
+
+/* Contextual Inspector for active step */
+.ez-about-workflow-inspector {
+  background: #FFFFFF;
+  border: 1.5px solid var(--ez-border-light);
+  border-radius: 16px;
+  padding: 24px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.04);
+}
+
+/* ==========================================================================
+   SECTION 04 — EZRAB MAGIC AI (DARK NAVY #061225)
+   ========================================================================== */
+.ez-about-ai-section {
+  position: relative;
+  padding: 130px 48px;
+  background-color: #040D1B;
+  background-image: 
+    linear-gradient(to right, #040D1B 0%, rgba(4, 13, 27, 0.96) 28%, rgba(4, 13, 27, 0.6) 46%, rgba(4, 13, 27, 0.05) 68%, transparent 100%),
+    url('/images/about/ai_section_bg.png');
+  background-repeat: no-repeat;
+  background-position: right center;
+  background-size: cover;
+  color: #FFFFFF;
+  border-top: 1px solid rgba(56, 189, 248, 0.15);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.1);
+  overflow: hidden;
+}
+
+.ez-about-ai-visual-space {
+  min-height: 480px;
+  width: 100%;
+}
+
+.ez-about-ai-container {
+  max-width: 1380px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  gap: 72px;
+  align-items: center;
+}
+
+.ez-about-ai-headline {
+  font-size: clamp(34px, 3.8vw, 52px);
+  font-weight: 850;
+  line-height: 1.14;
+  letter-spacing: -0.035em;
+  color: #FFFFFF;
+  margin-bottom: 22px;
+}
+
+.ez-about-ai-subhead {
+  font-size: 18px;
+  line-height: 1.65;
+  color: #94A3B8;
+  margin-bottom: 36px;
+}
+
+.ez-about-ai-stages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ez-about-ai-stage-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 18px 22px;
+  border-radius: 14px;
+  background: rgba(8, 23, 43, 0.6);
+  border: 1px solid rgba(56, 189, 248, 0.14);
+  transition: all 0.25s ease;
+}
+
+.ez-about-ai-stage-card:hover {
+  border-color: rgba(0, 168, 255, 0.35);
+  background: rgba(8, 23, 43, 0.9);
+  transform: translateX(4px);
+}
+
+.ez-about-ai-stage-tag {
+  font-size: 12px;
+  font-weight: 850;
+  color: var(--ez-electric-blue);
+  background: rgba(0, 168, 255, 0.12);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: var(--ez-font-mono);
+  letter-spacing: 0.05em;
+}
+
+/* AI Right: Panoramic AI Pipeline Preview */
+.ez-about-ai-visual-frame {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1.5px solid rgba(0, 168, 255, 0.3);
+  background: #040D1B;
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.8),
+    0 0 50px rgba(0, 168, 255, 0.2);
+}
+
+.ez-about-ai-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.ez-about-ai-scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00A8FF, #FFFFFF, #00A8FF, transparent);
+  box-shadow: 0 0 16px #00A8FF;
+  animation: aiLaserScan 4.5s ease-in-out infinite;
+}
+
+@keyframes aiLaserScan {
+  0%, 100% { transform: translateY(20px); opacity: 0; }
+  10%, 90% { opacity: 1; }
+  50% { transform: translateY(320px); }
+}
+
+/* ==========================================================================
+   SECTION 05 — WHO IS EZRAB FOR (LIGHT #FFFFFF)
+   ========================================================================== */
+.ez-about-roles-section {
+  position: relative;
+  padding: 140px 48px;
+  background: #FFFFFF;
+  color: var(--ez-text-dark);
+}
+
+.ez-about-roles-container {
+  max-width: 1380px;
+  margin: 0 auto;
+}
+
+.ez-about-roles-header {
+  margin-bottom: 60px;
+}
+
+.ez-about-roles-headline {
+  font-size: clamp(34px, 3.8vw, 52px);
+  font-weight: 850;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+  color: var(--ez-text-dark);
+}
+
+.ez-about-roles-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+}
+
+.ez-about-role-card {
+  background: #F8FAFC;
+  border: 1.5px solid var(--ez-border-light);
+  border-radius: 16px;
+  padding: 28px 22px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ez-about-role-card:hover {
+  background: #FFFFFF;
+  border-color: #93C5FD;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.1);
+}
+
+.ez-about-role-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #EFF6FF;
+  color: var(--ez-primary-blue);
+  display: grid;
+  place-items: center;
+  transition: all 0.25s ease;
+}
+
+.ez-about-role-card:hover .ez-about-role-icon-box {
+  background: var(--ez-primary-blue);
+  color: #FFFFFF;
+}
+
+.ez-about-role-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ez-text-dark);
+  letter-spacing: -0.02em;
+}
+
+.ez-about-role-desc {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ez-text-muted);
+}
+
+/* ==========================================================================
+   SECTION 06 — PHILOSOPHY (DARK NAVY #061225)
+   ========================================================================== */
+.ez-about-philosophy-section {
+  position: relative;
+  padding: 160px 48px;
+  background: radial-gradient(circle at 50% 50%, #0A1B32 0%, var(--ez-dark-900) 70%, var(--ez-dark-950) 100%);
+  color: #FFFFFF;
+  text-align: center;
+  overflow: hidden;
+}
+
+.ez-about-philosophy-wireframe-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.28;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.ez-about-philosophy-container {
+  max-width: 960px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 10;
+}
+
+.ez-about-philosophy-tag {
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--ez-electric-blue);
+  margin-bottom: 24px;
+  font-family: var(--ez-font-mono);
+}
+
+.ez-about-philosophy-headline {
+  font-size: clamp(36px, 4.4vw, 60px);
+  font-weight: 850;
+  line-height: 1.14;
+  letter-spacing: -0.04em;
+  color: #FFFFFF;
+  margin-bottom: 32px;
+}
+
+.ez-about-philosophy-subhead {
+  font-size: clamp(17px, 1.35vw, 20px);
+  line-height: 1.7;
+  color: #CBD5E1;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   SECTION 07 — SIGNATURE STATEMENT (LIGHT #FFFFFF)
+   ========================================================================== */
+.ez-about-statement-section {
+  position: relative;
+  width: 100%;
+  background: #f8fafc;
+  overflow: visible;
+}
+
+.ez-drawings-decisions-scroll-track {
+  position: relative;
+  width: 100%;
+}
+
+.ez-drawings-decisions-viewport {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1024px) {
+  .ez-statement-hero-line1,
+  .ez-statement-hero-line2 {
+    font-size: clamp(38px, 7.5vw, 76px) !important;
+  }
+
+  .ez-bim-isometric-svg {
+    max-width: 95% !important;
+    opacity: 0.85;
+  }
+}
+
+@media (max-width: 768px) {
+  .ez-drawings-decisions-scroll-track {
+    min-height: auto !important;
+  }
+
+  .ez-drawings-decisions-viewport {
+    min-height: auto !important;
+    height: auto !important;
+    padding: 100px 20px 80px 20px !important;
+    position: relative !important;
+  }
+
+  .ez-statement-hero-line1,
+  .ez-statement-hero-line2 {
+    font-size: clamp(34px, 8.5vw, 54px) !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.035em !important;
+  }
+
+  .ez-bim-wireframe-layer {
+    opacity: 0.55;
+    transform: none !important;
+  }
+
+  .ez-statement-pipeline-flow {
+    gap: 8px !important;
+  }
+}
+
+/* ==========================================================================
+   SECTION 08 — FINAL CTA (DARK NAVY #061225)
+   ========================================================================== */
+.ez-about-cta-section {
+  position: relative;
+  padding: 150px 48px;
+  background: radial-gradient(ellipse at 50% 20%, #0A1E3E 0%, #061225 60%, #040A17 100%);
+  color: #FFFFFF;
+  text-align: center;
+  border-top: 1px solid rgba(56, 189, 248, 0.15);
+  overflow: hidden;
+}
+
+.ez-about-cta-wireframe-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.18;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.ez-about-cta-container {
+  max-width: 820px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 10;
+}
+
+.ez-about-cta-headline {
+  font-size: clamp(34px, 4vw, 54px);
+  font-weight: 850;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+  color: #FFFFFF;
+  margin-bottom: 20px;
+}
+
+.ez-about-cta-subhead {
+  font-size: 18.5px;
+  color: #94A3B8;
+  margin-bottom: 40px;
+}
+
+.ez-about-cta-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.ez-about-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 36px;
+  background: linear-gradient(135deg, #00A8FF, #2563EB);
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 6px 28px rgba(0, 168, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ez-about-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 36px rgba(0, 168, 255, 0.55);
+}
+
+.ez-about-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 32px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ez-about-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN
+   ========================================================================== */
+@media (max-width: 1200px) {
+  .ez-about-roles-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1080px) {
+  .ez-about-hero-container {
+    grid-template-columns: 1fr;
+    gap: 48px;
+    text-align: center;
+  }
+
+  .ez-about-hero-content {
+    margin: 0 auto;
+  }
+
+  .ez-about-hero-cta-group {
+    justify-content: center;
+  }
+
+  .ez-about-why-container {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+
+  .ez-about-ai-container {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+
+  .ez-about-ai-section {
+    background-image: 
+      linear-gradient(to bottom, rgba(4, 13, 27, 0.9) 0%, rgba(4, 13, 27, 0.96) 100%),
+      url('/images/about/ai_section_bg.png');
+    background-position: center;
+  }
+
+  .ez-about-ai-visual-space {
+    display: none;
+  }
+
+  .ez-about-workflow-pipeline {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .ez-about-nav-links {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .ez-about-navbar {
+    padding: 0 20px;
+  }
+
+  .ez-about-hero-section,
+  .ez-about-why-section,
+  .ez-about-workflow-section,
+  .ez-about-ai-section,
+  .ez-about-roles-section,
+  .ez-about-philosophy-section,
+  .ez-about-statement-section,
+  .ez-about-cta-section {
+    padding: 90px 20px;
+  }
+
+  .ez-about-workflow-pipeline {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .ez-about-roles-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ez-about-workflow-inspector {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .ez-about-cta-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .ez-about-btn-primary,
+  .ez-about-btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+}

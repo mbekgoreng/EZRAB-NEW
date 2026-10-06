@@ -1,0 +1,212 @@
+:root {
+  /* EZRAB Clean Modern Light Palette */
+  --ezrab-bg: #ffffff;
+  --ezrab-surface: #ffffff;
+  --ezrab-surface-soft: #f8fafc;
+  --ezrab-surface-subtle: #f1f5f9;
+  --ezrab-card-bg: #ffffff;
+  --ezrab-card-border: #e5e7eb;
+
+  --ezrab-text: #111827;
+  --ezrab-text-secondary: #64748b;
+  --ezrab-text-muted: #94a3b8;
+  --ezrab-text-inverse: #ffffff;
+
+  /* Primary Blue */
+  --ezrab-blue: #2563eb;
+  --ezrab-blue-hover: #1d4ed8;
+  --ezrab-blue-light: #60a5fa;
+  --ezrab-blue-soft: #eff6ff;
+  --ezrab-blue-subtle: rgba(37, 99, 235, 0.05);
+  --ezrab-blue-border: #dbeafe;
+
+  /* Status Colors */
+  --ezrab-success: #16a34a;
+  --ezrab-success-soft: #f0fdf4;
+  --ezrab-warning: #d97706;
+  --ezrab-warning-soft: #fffbeb;
+  --ezrab-cyan: #0891b2;
+  --ezrab-cyan-soft: #ecfeff;
+  --ezrab-purple: #7c3aed;
+  --ezrab-purple-soft: #f5f3ff;
+
+  /* Borders & Radius */
+  --ezrab-border: #e5e7eb;
+  --ezrab-border-light: #f1f5f9;
+  --ezrab-border-strong: #d1d5db;
+
+  --ezrab-radius-xs: 6px;
+  --ezrab-radius-sm: 8px;
+  --ezrab-radius-md: 14px;
+  --ezrab-radius-lg: 20px;
+  --ezrab-radius-xl: 28px;
+  --ezrab-radius-full: 9999px;
+
+  /* Soft Shadows */
+  --ezrab-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
+  --ezrab-shadow-md: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
+  --ezrab-shadow-lg: 0 20px 40px -4px rgba(15, 23, 42, 0.08);
+  --ezrab-shadow-card: 0 12px 36px -4px rgba(37, 99, 235, 0.08);
+
+  --ezrab-container: 1360px;
+  --ezrab-nav-height: 72px;
+
+  /* Safe Area Insets (iPhone Notch / Dynamic Island / Bottom Home Bar) */
+  --ezrab-safe-top: env(safe-area-inset-top, 0px);
+  --ezrab-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --ezrab-safe-left: env(safe-area-inset-left, 0px);
+  --ezrab-safe-right: env(safe-area-inset-right, 0px);
+
+  /* Touch Target Standard */
+  --ezrab-touch-min: 44px;
+  --ezrab-touch-target: 48px;
+
+  --ezrab-transition: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Global Typography System (Plus Jakarta Sans Primary) */
+  --ezrab-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ezrab-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Typography Weight Scale */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* Typography Hierarchy Scale */
+  --font-size-display: clamp(32px, 4vw, 44px);
+  --line-height-display: 1.15;
+  --letter-spacing-display: -0.035em;
+
+  --font-size-h1: 24px;
+  --line-height-h1: 1.25;
+  --letter-spacing-h1: -0.025em;
+
+  --font-size-h2: 19px;
+  --line-height-h2: 1.3;
+  --letter-spacing-h2: -0.02em;
+
+  --font-size-h3: 15px;
+  --line-height-h3: 1.4;
+  --letter-spacing-h3: -0.01em;
+
+  --font-size-body: 13.5px;
+  --line-height-body: 1.5;
+
+  --font-size-small: 12px;
+  --line-height-small: 1.45;
+
+  --font-size-caption: 11px;
+  --line-height-caption: 1.4;
+  --letter-spacing-caption: 0.02em;
+}
+
+/* Base resets */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--ezrab-bg);
+  color: var(--ezrab-text);
+  font-family: var(--ezrab-font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: var(--line-height-body);
+  overflow-x: hidden;
+}
+
+code, pre, .font-mono {
+  font-family: var(--ezrab-font-mono);
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+.ezrab-container {
+  width: min(calc(100% - 48px), var(--ezrab-container));
+  margin-inline: auto;
+}
+
+@media (max-width: 640px) {
+  .ezrab-container {
+    width: min(calc(100% - 32px), var(--ezrab-container));
+  }
+}
+
+/* Primary Button */
+.ezrab-button-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 10px;
+  background: var(--ezrab-blue);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--ezrab-transition);
+  box-shadow: 0 6px 18px -2px rgba(37, 99, 235, 0.35);
+  white-space: nowrap;
+}
+
+.ezrab-button-primary:hover {
+  background: var(--ezrab-blue-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px -2px rgba(37, 99, 235, 0.45);
+}
+
+.ezrab-button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--ezrab-text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--ezrab-border);
+  box-shadow: var(--ezrab-shadow-sm);
+  transition: all 0.2s var(--ezrab-transition);
+  white-space: nowrap;
+}
+
+.ezrab-button-secondary:hover {
+  background: var(--ezrab-surface-soft);
+  border-color: var(--ezrab-border-strong);
+}
+
+/* Glass Float Card */
+.ezrab-float-card {
+  background: #ffffff;
+  border: 1px solid var(--ezrab-card-border);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(12px);
+}

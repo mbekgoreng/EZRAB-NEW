@@ -1,0 +1,1946 @@
+[
+ {
+  "path": "public\\videos\\roles-bg.mp4",
+  "size": 39462384,
+  "mb": 37.634,
+  "referenced_by": [
+   "src\\components\\landing\\exact\\ExactRoles.tsx",
+   "src\\styles\\exact-landing.css",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "public\\videos\\ezrab-magic-ai.mp4",
+  "size": 34296454,
+  "mb": 32.708,
+  "referenced_by": [
+   "src\\components\\landing\\exact\\ExactMagicAi.tsx",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "src\\assets\\0908fg-transparent.webm",
+  "size": 21735137,
+  "mb": 20.728,
+  "referenced_by": [
+   "src\\components\\Hero.jsx",
+   "src\\components\\landing\\exact\\ExactHero.tsx",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "src\\assets\\0908.mp4",
+  "size": 18224634,
+  "mb": 17.38,
+  "referenced_by": [
+   "src\\components\\Hero.jsx",
+   "src\\components\\landing\\exact\\ExactHero.tsx",
+   "src\\data\\masterMaterials2026.json",
+   "src\\data\\nationalCostDatabase\\ahsp2026Canonical.generated.ts",
+   "src\\data\\nationalCostDatabase\\ahsp2026CanonicalResources.generated.ts",
+   "src\\data\\nationalCostDatabase\\officialBinaMargaDhsp2026.ts",
+   "src\\data\\nationalCostDatabase\\officialCiptaKaryaDhsp2026.ts",
+   "src\\data\\priceDatabase2026\\resourceIndex.generated.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json",
+   "docs\\_audit\\lampiran2-official-items.json",
+   "docs\\_audit\\lampiran2-reconciliation.json"
+  ],
+  "ref_count": 12
+ },
+ {
+  "path": "src\\assets\\landpage-vid1-blackbg.mp4",
+  "size": 10092801,
+  "mb": 9.625,
+  "referenced_by": [
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\animasi-building-hero.mp4",
+  "size": 8965236,
+  "mb": 8.55,
+  "referenced_by": [
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\0908fg.mp4",
+  "size": 7517061,
+  "mb": 7.169,
+  "referenced_by": [
+   "src\\components\\Hero.jsx",
+   "src\\components\\landing\\exact\\ExactHero.tsx",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "public\\videos\\0908fg.mp4",
+  "size": 7517061,
+  "mb": 7.169,
+  "referenced_by": [
+   "src\\components\\Hero.jsx",
+   "src\\components\\landing\\exact\\ExactHero.tsx",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "src\\assets\\downloaded_hero.mp4",
+  "size": 7094714,
+  "mb": 6.766,
+  "referenced_by": [
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\videos\\ezrab-magic-ai-scroll.mp4",
+  "size": 7048258,
+  "mb": 6.722,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\landpage-vid1-transparent.webm",
+  "size": 7034915,
+  "mb": 6.709,
+  "referenced_by": [
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\ezrab-hero.mp4",
+  "size": 6476269,
+  "mb": 6.176,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\landpage vid 1.mp4",
+  "size": 6084577,
+  "mb": 5.803,
+  "referenced_by": [
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\videos\\ezrab-hero.mp4",
+  "size": 6025176,
+  "mb": 5.746,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\ezrab-hero.webm",
+  "size": 4188891,
+  "mb": 3.995,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\asada-hero-bg.png",
+  "size": 3869498,
+  "mb": 3.69,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\land-page-awal.png",
+  "size": 3869498,
+  "mb": 3.69,
+  "referenced_by": [
+   "src\\assets\\landing\\backgrounds\\index.ts",
+   "src\\styles\\exact-landing.css",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "src\\assets\\landing\\backgrounds\\land-page-awal.png",
+  "size": 3869498,
+  "mb": 3.69,
+  "referenced_by": [
+   "src\\assets\\landing\\backgrounds\\index.ts",
+   "src\\styles\\exact-landing.css",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "public\\samples\\pdf-gambar-rumah-1-lantai_compress.pdf",
+  "size": 3154667,
+  "mb": 3.009,
+  "referenced_by": [
+   "src\\components\\document\\DedRabWorkflowView.tsx",
+   "src\\ded-rab-v2\\interpretation\\dedInventoryEngine.ts",
+   "src\\ded-rab-v3\\ui\\FullAiDedRabWorkflowView.tsx",
+   "src\\test\\ded3ModePipeline.test.ts",
+   "src\\test\\dedAiFirstCleanPipeline.test.ts",
+   "src\\test\\dedDifferentialPdf.test.ts",
+   "src\\test\\dedRabGoldenDEDPipeline.test.ts",
+   "src\\test\\dedRabProjectIntegration.test.ts",
+   "src\\test\\runRealDedRabAiOutputEngine.test.ts",
+   "scripts\\smokeTestZyrouterVision.ts",
+   "scripts\\testFirstPrinciplesV2.ts",
+   "scripts\\testFullAiDedV3.ts"
+  ],
+  "ref_count": 18
+ },
+ {
+  "path": "public\\images\\roles\\kontraktor.jpg",
+  "size": 2877745,
+  "mb": 2.744,
+  "referenced_by": [
+   "src\\components\\about\\AboutRolesSection.tsx",
+   "src\\components\\branding\\CompanyBrandingModal.tsx",
+   "src\\components\\documents\\DocumentPackageWizardModal.tsx",
+   "src\\components\\finance\\ExpenseTrackingTab.tsx",
+   "src\\components\\landing\\CtaSection.tsx",
+   "src\\components\\landing\\FeatureGrid.tsx",
+   "src\\components\\landing\\Footer.tsx",
+   "src\\components\\landing\\TestimonialsSection.tsx",
+   "src\\components\\landing\\exact\\ExactRoles.tsx",
+   "src\\components\\magic-ai\\ReceiptReaderModal.tsx",
+   "src\\components\\materials\\ProjectPriceModal.tsx",
+   "src\\components\\resources\\ResourceLibraryView.tsx"
+  ],
+  "ref_count": 23
+ },
+ {
+  "path": "public\\images\\roles\\konsultan.jpg",
+  "size": 2786030,
+  "mb": 2.657,
+  "referenced_by": [
+   "src\\components\\about\\AboutRolesSection.tsx",
+   "src\\components\\branding\\CompanyBrandingModal.tsx",
+   "src\\components\\export\\ExportProjectPackageModal.tsx",
+   "src\\components\\landing\\CtaSection.tsx",
+   "src\\components\\landing\\Footer.tsx",
+   "src\\components\\landing\\TestimonialsSection.tsx",
+   "src\\components\\landing\\exact\\ExactRoles.tsx",
+   "src\\domain\\labor\\laborMasterData49.ts",
+   "src\\export\\types.ts",
+   "server\\orchestrator\\promptManager.ts",
+   "server\\test\\phase6_2_pageDrawingIntelligence.test.ts",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 13
+ },
+ {
+  "path": "public\\images\\roles\\estimator.jpg",
+  "size": 2782909,
+  "mb": 2.654,
+  "referenced_by": [
+   "src\\components\\about\\AboutAiSection.tsx",
+   "src\\components\\about\\AboutRolesSection.tsx",
+   "src\\components\\copilot\\EstimatingCopilotPanel.tsx",
+   "src\\components\\dashboard\\WorkspaceView.tsx",
+   "src\\components\\document\\RabReviewWorkspaceModalView.tsx",
+   "src\\components\\estimator\\EstimatorColumnManagerModal.tsx",
+   "src\\components\\finance\\FinanceOverviewTab.tsx",
+   "src\\components\\landing\\CtaSection.tsx",
+   "src\\components\\landing\\FeatureGrid.tsx",
+   "src\\components\\landing\\Footer.tsx",
+   "src\\components\\landing\\TestimonialsSection.tsx",
+   "src\\components\\landing\\exact\\ExactRoles.tsx"
+  ],
+  "ref_count": 73
+ },
+ {
+  "path": "public\\images\\roles\\developer.jpg",
+  "size": 2628161,
+  "mb": 2.506,
+  "referenced_by": [
+   "src\\components\\landing\\exact\\ExactRoles.tsx",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json",
+   "docs\\staging-access-readiness.md"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\pondasi.jpg",
+  "size": 2444351,
+  "mb": 2.331,
+  "referenced_by": [
+   "src\\components\\about\\AboutAiSection.tsx",
+   "src\\components\\estimator\\EstimatorNotesView.tsx",
+   "src\\components\\landing\\CinematicScrollZoom.tsx",
+   "src\\components\\landing\\InteractiveSpreadsheetPreview.tsx",
+   "src\\components\\landing\\exact\\ExactProjectManagement.tsx",
+   "src\\components\\landing\\exact\\ExactVolumeCalculator.tsx",
+   "src\\components\\navigation\\TopBar.tsx",
+   "src\\components\\projects\\CreateProjectModal.tsx",
+   "src\\components\\qto\\QtoCalculatorView.tsx",
+   "src\\components\\qto\\QtoRekapVolumeView.tsx",
+   "src\\components\\workItems\\DaftarPekerjaanView.tsx",
+   "src\\context\\ProjectContext.tsx"
+  ],
+  "ref_count": 161
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\footplate.jpg",
+  "size": 2343967,
+  "mb": 2.235,
+  "referenced_by": [
+   "src\\components\\qto\\QtoCalculatorView.tsx",
+   "src\\data\\volumeTechnicalReferences.ts",
+   "src\\ded-rab-v2\\ahsp\\ahspMatcher.ts",
+   "src\\services\\coAssistantService.ts",
+   "server\\ai\\knowledge\\constructionKnowledge.ts",
+   "server\\services\\crossReferenceDetector.ts",
+   "server\\services\\scenarioComparisonEngine.ts",
+   "server\\services\\templateResolver.ts",
+   "server\\services\\vocabularyEngine.ts",
+   "server\\tools\\toolRegistry.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 14
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\BATA MERAH.JPG",
+  "size": 2275424,
+  "mb": 2.17,
+  "referenced_by": [
+   "src\\data\\volumeTechnicalReferences.ts",
+   "src\\engine\\calculatorCore\\parity\\goldenVectors.ts",
+   "src\\engine\\constructionCalculators\\diagrams.tsx",
+   "src\\engine\\constructionCalculators\\registry.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 6
+ },
+ {
+  "path": "src\\assets\\construction-cinematic.png",
+  "size": 2250981,
+  "mb": 2.147,
+  "referenced_by": [
+   "src\\assets\\landing\\backgrounds\\index.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "src\\assets\\landing\\backgrounds\\construction-cinematic.png",
+  "size": 2250981,
+  "mb": 2.147,
+  "referenced_by": [
+   "src\\assets\\landing\\backgrounds\\index.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "public\\images\\construction-cinematic.png",
+  "size": 2250981,
+  "mb": 2.147,
+  "referenced_by": [
+   "src\\assets\\landing\\backgrounds\\index.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "public\\images\\landing\\backgrounds\\construction-cinematic.png",
+  "size": 2250981,
+  "mb": 2.147,
+  "referenced_by": [
+   "src\\assets\\landing\\backgrounds\\index.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\BATAKO.jpg",
+  "size": 2210515,
+  "mb": 2.108,
+  "referenced_by": [
+   "src\\components\\qto\\QtoCalculatorView.tsx",
+   "src\\components\\workItems\\DaftarPekerjaanView.tsx",
+   "src\\data\\volumeTechnicalReferences.ts",
+   "src\\data\\buildingTemplates\\templates\\houseType36Template.ts",
+   "src\\data\\buildingTemplates\\templates\\houseType45Template.ts",
+   "src\\data\\nationalCostDatabase\\officialCiptaKaryaDhsp2026.ts",
+   "src\\engine\\calculatorCore\\packs\\packRegistry.ts",
+   "src\\engine\\calculatorCore\\parity\\calculatorWorkbookMap.ts",
+   "src\\engine\\calculatorCore\\parity\\goldenVectors.ts",
+   "src\\engine\\calculatorCore\\parity\\parityRunner.ts",
+   "src\\engine\\constructionCalculators\\diagrams.tsx",
+   "src\\engine\\constructionCalculators\\registry.ts"
+  ],
+  "ref_count": 20
+ },
+ {
+  "path": "public\\videos\\roles\\konsultan.mp4",
+  "size": 2109252,
+  "mb": 2.012,
+  "referenced_by": [
+   "src\\components\\about\\AboutRolesSection.tsx",
+   "src\\components\\branding\\CompanyBrandingModal.tsx",
+   "src\\components\\export\\ExportProjectPackageModal.tsx",
+   "src\\components\\landing\\CtaSection.tsx",
+   "src\\components\\landing\\Footer.tsx",
+   "src\\components\\landing\\TestimonialsSection.tsx",
+   "src\\components\\landing\\exact\\ExactRoles.tsx",
+   "src\\domain\\labor\\laborMasterData49.ts",
+   "src\\export\\types.ts",
+   "server\\orchestrator\\promptManager.ts",
+   "server\\test\\phase6_2_pageDrawingIntelligence.test.ts",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 13
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\penutup lantai.jpg",
+  "size": 2104317,
+  "mb": 2.007,
+  "referenced_by": [
+   "src\\data\\masterMaterials2026.json",
+   "src\\data\\volumeTechnicalReferences.ts",
+   "src\\data\\buildingTemplates\\templates\\houseType36Template.ts",
+   "src\\data\\buildingTemplates\\templates\\houseType36TwoFloorTemplate.ts",
+   "src\\data\\buildingTemplates\\templates\\houseType45Template.ts",
+   "src\\data\\buildingTemplates\\templates\\shophouse2FloorTemplate.ts",
+   "src\\data\\nationalCostDatabase\\officialCiptaKaryaPrices2026.ts",
+   "src\\ded-rab-v2\\ahsp\\ahspMatcher.ts",
+   "src\\engine\\constructionCalculators\\registry.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 11
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\plester dinding acian.jpg",
+  "size": 2098873,
+  "mb": 2.002,
+  "referenced_by": [
+   "src\\data\\volumeTechnicalReferences.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\BATA RINGAN.JPG",
+  "size": 2075640,
+  "mb": 1.979,
+  "referenced_by": [
+   "src\\data\\volumeTechnicalReferences.ts",
+   "src\\data\\nationalCostDatabase\\officialCiptaKaryaDhsp2026.ts",
+   "src\\domain\\material\\brandDatabase.ts",
+   "src\\engine\\calculatorCore\\parity\\goldenVectors.ts",
+   "src\\engine\\constructionCalculators\\diagrams.tsx",
+   "src\\engine\\constructionCalculators\\registry.ts",
+   "src\\viewer3d\\geometry\\buildingGeometryAdapter.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 9
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\blowplank.jpg",
+  "size": 2062909,
+  "mb": 1.967,
+  "referenced_by": [
+   "src\\data\\volumeTechnicalReferences.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json",
+   "docs\\EZRAB_VOLUME_ENGINE_SPEC.md"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\penutup dinding.jpg",
+  "size": 2020517,
+  "mb": 1.927,
+  "referenced_by": [
+   "src\\data\\masterMaterials2026.json",
+   "src\\data\\volumeTechnicalReferences.ts",
+   "src\\data\\buildingTemplates\\templates\\houseType36Template.ts",
+   "src\\data\\nationalCostDatabase\\officialCiptaKaryaPrices2026.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 6
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\jaringan listrik.jpg",
+  "size": 2012934,
+  "mb": 1.92,
+  "referenced_by": [
+   "src\\data\\volumeTechnicalReferences.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "public\\videos\\roles\\kontraktor.mp4",
+  "size": 1994878,
+  "mb": 1.902,
+  "referenced_by": [
+   "src\\components\\about\\AboutRolesSection.tsx",
+   "src\\components\\branding\\CompanyBrandingModal.tsx",
+   "src\\components\\documents\\DocumentPackageWizardModal.tsx",
+   "src\\components\\finance\\ExpenseTrackingTab.tsx",
+   "src\\components\\landing\\CtaSection.tsx",
+   "src\\components\\landing\\FeatureGrid.tsx",
+   "src\\components\\landing\\Footer.tsx",
+   "src\\components\\landing\\TestimonialsSection.tsx",
+   "src\\components\\landing\\exact\\ExactRoles.tsx",
+   "src\\components\\magic-ai\\ReceiptReaderModal.tsx",
+   "src\\components\\materials\\ProjectPriceModal.tsx",
+   "src\\components\\resources\\ResourceLibraryView.tsx"
+  ],
+  "ref_count": 23
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\dinding baru.jpg",
+  "size": 1965556,
+  "mb": 1.875,
+  "referenced_by": [
+   "src\\data\\volumeTechnicalReferences.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\atap pelana baja ringan.jpg",
+  "size": 1937992,
+  "mb": 1.848,
+  "referenced_by": [
+   "src\\data\\volumeTechnicalReferences.ts",
+   "src\\data\\nationalCostDatabase\\ahsp2026Canonical.generated.ts",
+   "src\\data\\nationalCostDatabase\\officialCiptaKaryaDhsp2026.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json",
+   "docs\\EZRAB_VOLUME_ENGINE_SPEC.md"
+  ],
+  "ref_count": 6
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\pemasangan plafond.jpg",
+  "size": 1908492,
+  "mb": 1.82,
+  "referenced_by": [
+   "src\\data\\volumeTechnicalReferences.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "public\\videos\\roles\\developer.mp4",
+  "size": 1832023,
+  "mb": 1.747,
+  "referenced_by": [
+   "src\\components\\landing\\exact\\ExactRoles.tsx",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json",
+   "docs\\staging-access-readiness.md"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "src\\assets\\landing\\backgrounds\\land-page-awal.jpg",
+  "size": 1786679,
+  "mb": 1.704,
+  "referenced_by": [
+   "src\\assets\\landing\\backgrounds\\index.ts",
+   "src\\styles\\exact-landing.css",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "public\\images\\landing\\backgrounds\\land-page-awal.jpg",
+  "size": 1786679,
+  "mb": 1.704,
+  "referenced_by": [
+   "src\\assets\\landing\\backgrounds\\index.ts",
+   "src\\styles\\exact-landing.css",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\BALOK.jpg",
+  "size": 1785286,
+  "mb": 1.703,
+  "referenced_by": [
+   "src\\components\\qto\\QtoCalculatorView.tsx",
+   "src\\components\\workItems\\DaftarPekerjaanView.tsx",
+   "src\\data\\volumeTechnicalReferences.ts",
+   "src\\ded-rab-v2\\ai\\dedVisionReader.ts",
+   "src\\engine\\rabCostAuditEngine.ts",
+   "src\\engine\\calculatorCore\\packs\\packRegistry.ts",
+   "src\\engine\\calculatorCore\\parity\\calculatorWorkbookMap.ts",
+   "src\\engine\\calculatorCore\\parity\\goldenVectors.ts",
+   "src\\engine\\calculatorCore\\parity\\parityRunner.ts",
+   "src\\engine\\calculatorCore\\registry\\calculatorRegistry.ts",
+   "src\\engine\\calculatorCore\\residential\\residentialPackCalculators.ts",
+   "src\\engine\\constructionCalculators\\registry.ts"
+  ],
+  "ref_count": 36
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\kolom.jpg",
+  "size": 1759533,
+  "mb": 1.678,
+  "referenced_by": [
+   "src\\components\\about\\AboutAiSection.tsx",
+   "src\\components\\about\\AboutWorkflowSection.tsx",
+   "src\\components\\common\\DemoModal.tsx",
+   "src\\components\\copilot\\EstimatingCopilotPanel.tsx",
+   "src\\components\\copilot\\EzrabAiAssistantFullView.tsx",
+   "src\\components\\estimator\\EstimatorColumnManagerModal.tsx",
+   "src\\components\\estimator\\SmartAddWorkItemModal.tsx",
+   "src\\components\\import\\IntelligentExcelImportModal.tsx",
+   "src\\components\\landing\\CinematicScrollZoom.tsx",
+   "src\\components\\landing\\exact\\ExactVolumeCalculator.tsx",
+   "src\\components\\magic-ai\\MagicAiSuperView.tsx",
+   "src\\components\\pricing\\PriceResolutionDrawer.tsx"
+  ],
+  "ref_count": 146
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\sloof.jpg",
+  "size": 1753420,
+  "mb": 1.672,
+  "referenced_by": [
+   "src\\components\\copilot\\EstimatingCopilotPanel.tsx",
+   "src\\components\\dashboard\\OnboardingTourModal.tsx",
+   "src\\components\\landing\\exact\\ExactVolumeCalculator.tsx",
+   "src\\components\\qto\\QtoCalculatorView.tsx",
+   "src\\components\\workItems\\DaftarPekerjaanView.tsx",
+   "src\\data\\quickActionContracts.ts",
+   "src\\data\\volumeTechnicalReferences.ts",
+   "src\\data\\buildingTemplates\\templates\\houseType36Template.ts",
+   "src\\data\\buildingTemplates\\templates\\houseType36TwoFloorTemplate.ts",
+   "src\\data\\buildingTemplates\\templates\\houseType45Template.ts",
+   "src\\data\\buildingTemplates\\templates\\houseType70Template.ts",
+   "src\\data\\buildingTemplates\\templates\\shophouse2FloorTemplate.ts"
+  ],
+  "ref_count": 102
+ },
+ {
+  "path": "public\\images\\landing\\backgrounds\\land-page-awal.png",
+  "size": 1751422,
+  "mb": 1.67,
+  "referenced_by": [
+   "src\\assets\\landing\\backgrounds\\index.ts",
+   "src\\styles\\exact-landing.css",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "src\\assets\\logo_oy.svg",
+  "size": 1727354,
+  "mb": 1.647,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\logo_oy.svg",
+  "size": 1727354,
+  "mb": 1.647,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\assets\\volume-calculation\\references\\kusen pintu jendela.jpg",
+  "size": 1675379,
+  "mb": 1.598,
+  "referenced_by": [
+   "src\\data\\volumeTechnicalReferences.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "src\\assets\\ezrab-3d-scene.png",
+  "size": 1674864,
+  "mb": 1.597,
+  "referenced_by": [
+   "src\\components\\landing\\CinematicFinalCta.tsx",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "public\\videos\\roles\\estimator.mp4",
+  "size": 1591585,
+  "mb": 1.518,
+  "referenced_by": [
+   "src\\components\\about\\AboutAiSection.tsx",
+   "src\\components\\about\\AboutRolesSection.tsx",
+   "src\\components\\copilot\\EstimatingCopilotPanel.tsx",
+   "src\\components\\dashboard\\WorkspaceView.tsx",
+   "src\\components\\document\\RabReviewWorkspaceModalView.tsx",
+   "src\\components\\estimator\\EstimatorColumnManagerModal.tsx",
+   "src\\components\\finance\\FinanceOverviewTab.tsx",
+   "src\\components\\landing\\CtaSection.tsx",
+   "src\\components\\landing\\FeatureGrid.tsx",
+   "src\\components\\landing\\Footer.tsx",
+   "src\\components\\landing\\TestimonialsSection.tsx",
+   "src\\components\\landing\\exact\\ExactRoles.tsx"
+  ],
+  "ref_count": 73
+ },
+ {
+  "path": "src\\assets\\1.jpg",
+  "size": 1585778,
+  "mb": 1.512,
+  "referenced_by": [
+   "src\\App.tsx",
+   "src\\assets\\logo.css",
+   "src\\calculations\\decimalEngine.ts",
+   "src\\components\\Hero.jsx",
+   "src\\components\\about\\AboutAiSection.tsx",
+   "src\\components\\about\\AboutCtaSection.tsx",
+   "src\\components\\about\\AboutHeroSection.tsx",
+   "src\\components\\about\\AboutPage.tsx",
+   "src\\components\\about\\AboutPhilosophySection.tsx",
+   "src\\components\\about\\AboutRolesSection.tsx",
+   "src\\components\\about\\AboutWhySection.tsx",
+   "src\\components\\about\\AboutWorkflowSection.tsx"
+  ],
+  "ref_count": 1155
+ },
+ {
+  "path": "src\\assets\\1.png",
+  "size": 1585778,
+  "mb": 1.512,
+  "referenced_by": [
+   "src\\App.tsx",
+   "src\\assets\\logo.css",
+   "src\\calculations\\decimalEngine.ts",
+   "src\\components\\Hero.jsx",
+   "src\\components\\about\\AboutAiSection.tsx",
+   "src\\components\\about\\AboutCtaSection.tsx",
+   "src\\components\\about\\AboutHeroSection.tsx",
+   "src\\components\\about\\AboutPage.tsx",
+   "src\\components\\about\\AboutPhilosophySection.tsx",
+   "src\\components\\about\\AboutRolesSection.tsx",
+   "src\\components\\about\\AboutWhySection.tsx",
+   "src\\components\\about\\AboutWorkflowSection.tsx"
+  ],
+  "ref_count": 1155
+ },
+ {
+  "path": "src\\assets\\hero-bg-1.png",
+  "size": 1585778,
+  "mb": 1.512,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\hero-bg-custom.png",
+  "size": 1491284,
+  "mb": 1.422,
+  "referenced_by": [
+   "src\\assets\\landing\\backgrounds\\index.ts",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\assets\\mascot\\robot_head_with_hard_hat.glb",
+  "size": 1349532,
+  "mb": 1.287,
+  "referenced_by": [
+   "src\\components\\mascot\\EZRABMascot3D.tsx",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "public\\models\\ezrab-mascot.glb",
+  "size": 1349532,
+  "mb": 1.287,
+  "referenced_by": [
+   "src\\components\\mascot\\EZRABMascot3D.tsx",
+   "src\\components\\mascot\\EZRABMascotEyes.tsx",
+   "src\\components\\mascot\\EZRABMascotLucu.tsx",
+   "scripts\\export_flagship_glb.py",
+   "scripts\\export_mascot_glb.py",
+   "scripts\\export_upright_glb.py",
+   "scripts\\inspect_accessors.py",
+   "scripts\\inspect_glb.py",
+   "scripts\\inspect_gltf_bounds.py",
+   "scripts\\test_export_opt.py",
+   "scripts\\test_load_gltf.ts",
+   "scripts\\test_packed_export.py"
+  ],
+  "ref_count": 16
+ },
+ {
+  "path": "src\\assets\\check_0908fg.png",
+  "size": 1119580,
+  "mb": 1.068,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\frame_test.png",
+  "size": 1119580,
+  "mb": 1.068,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\test_transparent_frame.png",
+  "size": 1116105,
+  "mb": 1.064,
+  "referenced_by": [
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\test_chroma.webm",
+  "size": 1103416,
+  "mb": 1.052,
+  "referenced_by": [
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\check_bg.png",
+  "size": 1043742,
+  "mb": 0.995,
+  "referenced_by": [
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\images\\about\\about_magic_ai_pipeline.png",
+  "size": 1000686,
+  "mb": 0.954,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\images\\about\\ChatGPT Image Sep 9, 2026, 01_35_58 AM.png",
+  "size": 1000686,
+  "mb": 0.954,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\test_f1.png",
+  "size": 977695,
+  "mb": 0.932,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "src\\assets\\check_0908.png",
+  "size": 964519,
+  "mb": 0.92,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\workflow\\step-2-ai-scan.jpg",
+  "size": 962371,
+  "mb": 0.918,
+  "referenced_by": [
+   "src\\components\\landing\\CinematicScrollZoom.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\images\\workflow\\step-2-ai-scan.jpg",
+  "size": 962371,
+  "mb": 0.918,
+  "referenced_by": [
+   "src\\components\\landing\\CinematicScrollZoom.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\workflow\\step-5-download-share.jpg",
+  "size": 939746,
+  "mb": 0.896,
+  "referenced_by": [
+   "src\\components\\landing\\CinematicScrollZoom.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\images\\workflow\\step-5-download-share.jpg",
+  "size": 939746,
+  "mb": 0.896,
+  "referenced_by": [
+   "src\\components\\landing\\CinematicScrollZoom.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\ezrab-hero.png",
+  "size": 896514,
+  "mb": 0.855,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\hero-building.jpg",
+  "size": 896514,
+  "mb": 0.855,
+  "referenced_by": [
+   "src\\assets\\landing\\backgrounds\\index.ts",
+   "src\\components\\landing\\CinematicConnectedData.tsx",
+   "src\\components\\landing\\CinematicFinalCta.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "src\\assets\\landing\\backgrounds\\hero-building.jpg",
+  "size": 896514,
+  "mb": 0.855,
+  "referenced_by": [
+   "src\\assets\\landing\\backgrounds\\index.ts",
+   "src\\components\\landing\\CinematicConnectedData.tsx",
+   "src\\components\\landing\\CinematicFinalCta.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "public\\images\\hero-building.jpg",
+  "size": 896514,
+  "mb": 0.855,
+  "referenced_by": [
+   "src\\assets\\landing\\backgrounds\\index.ts",
+   "src\\components\\landing\\CinematicConnectedData.tsx",
+   "src\\components\\landing\\CinematicFinalCta.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "public\\images\\landing\\backgrounds\\hero-building.jpg",
+  "size": 896514,
+  "mb": 0.855,
+  "referenced_by": [
+   "src\\assets\\landing\\backgrounds\\index.ts",
+   "src\\components\\landing\\CinematicConnectedData.tsx",
+   "src\\components\\landing\\CinematicFinalCta.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "src\\assets\\workflow\\step-3-qto-ahsp.jpg",
+  "size": 889663,
+  "mb": 0.848,
+  "referenced_by": [
+   "src\\components\\landing\\CinematicScrollZoom.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\images\\workflow\\step-3-qto-ahsp.jpg",
+  "size": 889663,
+  "mb": 0.848,
+  "referenced_by": [
+   "src\\components\\landing\\CinematicScrollZoom.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\cta-skyline-cranes.jpg",
+  "size": 861152,
+  "mb": 0.821,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\landing\\backgrounds\\cta-skyline-cranes.jpg",
+  "size": 861152,
+  "mb": 0.821,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\template-jembatan.jpg",
+  "size": 838669,
+  "mb": 0.8,
+  "referenced_by": [
+   "src\\components\\landing\\ProjectTemplatesSection.tsx",
+   "server\\test\\phase6_9_realVisionExtraction.test.ts"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\images\\ezrab-3d-scene.png",
+  "size": 811727,
+  "mb": 0.774,
+  "referenced_by": [
+   "src\\components\\landing\\CinematicFinalCta.tsx",
+   "scripts\\cleanup\\duplicates.json",
+   "scripts\\cleanup\\scan_result.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "src\\assets\\test_f3.png",
+  "size": 803198,
+  "mb": 0.766,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "src\\assets\\bowplank-technical.jpg",
+  "size": 796981,
+  "mb": 0.76,
+  "referenced_by": [
+   "src\\components\\qto\\QtoRekapVolumeView.tsx",
+   "server\\test\\phase6_8_realDedVisionBenchmark.test.ts",
+   "server\\test\\phase6_9_realVisionExtraction.test.ts",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "src\\assets\\workflow\\step-4-rab-boq.jpg",
+  "size": 784191,
+  "mb": 0.748,
+  "referenced_by": [
+   "src\\components\\landing\\CinematicScrollZoom.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\images\\workflow\\step-4-rab-boq.jpg",
+  "size": 784191,
+  "mb": 0.748,
+  "referenced_by": [
+   "src\\components\\landing\\CinematicScrollZoom.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\template-jalan.jpg",
+  "size": 769927,
+  "mb": 0.734,
+  "referenced_by": [
+   "src\\components\\landing\\ProjectTemplatesSection.tsx",
+   "server\\test\\phase6_9_realVisionExtraction.test.ts"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\ahsp-crane-building.jpg",
+  "size": 768096,
+  "mb": 0.733,
+  "referenced_by": [
+   "src\\components\\landing\\exact\\ExactAhsp.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\landing\\backgrounds\\ahsp-crane-building.jpg",
+  "size": 768096,
+  "mb": 0.733,
+  "referenced_by": [
+   "src\\components\\landing\\exact\\ExactAhsp.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\template-bangunan-air.jpg",
+  "size": 767133,
+  "mb": 0.732,
+  "referenced_by": [
+   "src\\components\\landing\\ProjectTemplatesSection.tsx",
+   "server\\test\\phase6_9_realVisionExtraction.test.ts"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\volume-foundation.jpg",
+  "size": 740820,
+  "mb": 0.707,
+  "referenced_by": [
+   "src\\components\\landing\\exact\\ExactVolumeCalculator.tsx",
+   "server\\test\\phase6_8_realDedVisionBenchmark.test.ts",
+   "server\\test\\phase6_9_realVisionExtraction.test.ts",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "src\\assets\\workflow\\step-1-upload.jpg",
+  "size": 733003,
+  "mb": 0.699,
+  "referenced_by": [
+   "src\\components\\landing\\CinematicScrollZoom.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\images\\workflow\\step-1-upload.jpg",
+  "size": 733003,
+  "mb": 0.699,
+  "referenced_by": [
+   "src\\components\\landing\\CinematicScrollZoom.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\proyek-magic-ai-scene.png",
+  "size": 731305,
+  "mb": 0.697,
+  "referenced_by": [
+   "src\\components\\projects\\AllProjectsView.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\magic-ai-isometric.webp",
+  "size": 718470,
+  "mb": 0.685,
+  "referenced_by": [
+   "src\\components\\landing\\MagicAiPlayground.tsx"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\template-perumahan.jpg",
+  "size": 702131,
+  "mb": 0.67,
+  "referenced_by": [
+   "src\\components\\landing\\ProjectTemplatesSection.tsx",
+   "server\\test\\phase6_9_realVisionExtraction.test.ts"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\assets\\materials\\batu_belah.jpg",
+  "size": 690800,
+  "mb": 0.659,
+  "referenced_by": [
+   "src\\components\\materials\\materialThumbnailHelper.ts",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\images\\about\\about_wireframe_philosophy.png",
+  "size": 683641,
+  "mb": 0.652,
+  "referenced_by": [
+   "src\\components\\about\\AboutCtaSection.tsx",
+   "src\\components\\about\\AboutPhilosophySection.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "public\\images\\about\\ChatGPT Image Sep 9, 2026, 01_37_09 AM.png",
+  "size": 683641,
+  "mb": 0.652,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\images\\about\\ai_section_bg.png",
+  "size": 682704,
+  "mb": 0.651,
+  "referenced_by": [
+   "src\\styles\\about-page.css",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\images\\magic-ai-core.png",
+  "size": 674820,
+  "mb": 0.644,
+  "referenced_by": [
+   "src\\components\\landing\\exact\\ExactMagicAi.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\magic-ai-blueprint-bg.png",
+  "size": 661917,
+  "mb": 0.631,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\landing\\backgrounds\\magic-ai-blueprint-bg.png",
+  "size": 661917,
+  "mb": 0.631,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\hero-hologram-platform-bg.png",
+  "size": 649647,
+  "mb": 0.62,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\landing\\backgrounds\\hero-hologram-platform-bg.png",
+  "size": 649647,
+  "mb": 0.62,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\magic-ai-orb.jpg",
+  "size": 640215,
+  "mb": 0.611,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "src\\assets\\template-bertingkat.jpg",
+  "size": 616496,
+  "mb": 0.588,
+  "referenced_by": [
+   "src\\components\\estimator\\ProjectContextHeader.tsx",
+   "src\\components\\landing\\ProjectTemplatesSection.tsx",
+   "src\\components\\landing\\exact\\ExactProjectManagement.tsx",
+   "server\\test\\phase6_9_realVisionExtraction.test.ts",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 5
+ },
+ {
+  "path": "public\\assets\\materials\\semen_tiga_roda.jpg",
+  "size": 603263,
+  "mb": 0.575,
+  "referenced_by": [
+   "src\\components\\materials\\materialThumbnailHelper.ts",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\assets\\materials\\semen_gresik.jpg",
+  "size": 597642,
+  "mb": 0.57,
+  "referenced_by": [
+   "src\\components\\materials\\materialThumbnailHelper.ts",
+   "src\\test\\phase9ConstructionAi.test.ts",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "src\\assets\\proyek-empty-blueprint.png",
+  "size": 590704,
+  "mb": 0.563,
+  "referenced_by": [
+   "src\\components\\projects\\AllProjectsView.tsx",
+   "src\\components\\workItems\\DaftarPekerjaanView.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "src\\assets\\workflow-blueprint-bg.png",
+  "size": 535615,
+  "mb": 0.511,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\landing\\backgrounds\\workflow-blueprint-bg.png",
+  "size": 535615,
+  "mb": 0.511,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\ezrab-robot-waving.jpg",
+  "size": 534543,
+  "mb": 0.51,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "public\\images\\about\\about_hero_cityscape.webp",
+  "size": 534200,
+  "mb": 0.509,
+  "referenced_by": [
+   "src\\components\\about\\AboutHeroSection.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\images\\about\\photoreal_cinematic_cityscape.webp",
+  "size": 534200,
+  "mb": 0.509,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\ezrab-robot-idea.jpg",
+  "size": 522603,
+  "mb": 0.498,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "src\\assets\\magic-ai-blueprint.webp",
+  "size": 492854,
+  "mb": 0.47,
+  "referenced_by": [
+   "src\\components\\landing\\MagicAiPlayground.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\ez-emblem.png",
+  "size": 371557,
+  "mb": 0.354,
+  "referenced_by": [
+   "src\\components\\landing\\exact\\ExactConnectedData.tsx",
+   "src\\components\\layout\\Sidebar.tsx",
+   "src\\export\\pdfAssets.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "index.html"
+  ],
+  "ref_count": 5
+ },
+ {
+  "path": "public\\favicon.ico",
+  "size": 371557,
+  "mb": 0.354,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\favicon.png",
+  "size": 371557,
+  "mb": 0.354,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\images\\ez-emblem.png",
+  "size": 371557,
+  "mb": 0.354,
+  "referenced_by": [
+   "src\\components\\landing\\exact\\ExactConnectedData.tsx",
+   "src\\components\\layout\\Sidebar.tsx",
+   "src\\export\\pdfAssets.ts",
+   "scripts\\cleanup\\duplicates.json",
+   "index.html"
+  ],
+  "ref_count": 5
+ },
+ {
+  "path": "public\\assets\\mascot\\master_eye_left.png",
+  "size": 351416,
+  "mb": 0.335,
+  "referenced_by": [
+   "src\\components\\mascot\\EZRABMascot3D.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\assets\\mascot\\master_eye_right.png",
+  "size": 351416,
+  "mb": 0.335,
+  "referenced_by": [
+   "src\\components\\mascot\\EZRABMascot3D.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\assets\\mascot\\master_eye_texture.png",
+  "size": 351416,
+  "mb": 0.335,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\proyek-doc-empty.png",
+  "size": 302959,
+  "mb": 0.289,
+  "referenced_by": [
+   "src\\components\\projects\\DraftProjectsView.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "src\\assets\\logo_magic_ai.svg",
+  "size": 289746,
+  "mb": 0.276,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\logo_magic_ai.svg",
+  "size": 289746,
+  "mb": 0.276,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\ezrab-bot-mascot.png",
+  "size": 283411,
+  "mb": 0.27,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\assets\\mascot\\white_crop.png",
+  "size": 263910,
+  "mb": 0.252,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\assets\\mascot\\albedo_thumb.png",
+  "size": 260333,
+  "mb": 0.248,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\animasi-building-poster.jpg",
+  "size": 246816,
+  "mb": 0.235,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "src\\assets\\frame6.jpg",
+  "size": 246783,
+  "mb": 0.235,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "public\\assets\\mascot\\extracted_albedo.jpg",
+  "size": 244118,
+  "mb": 0.233,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\ezrab-co-assistant-logo.jpg",
+  "size": 242509,
+  "mb": 0.231,
+  "referenced_by": [
+   "src\\components\\copilot\\EzrabAiAssistantFullView.tsx",
+   "src\\components\\magic-ai\\MagicAiSuperView.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "src\\assets\\logo_magic_ai.png",
+  "size": 242509,
+  "mb": 0.231,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\logo_magic_ai.png",
+  "size": 242509,
+  "mb": 0.231,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\frame3.jpg",
+  "size": 231469,
+  "mb": 0.221,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "src\\assets\\landpage-vid1-poster.jpg",
+  "size": 218721,
+  "mb": 0.209,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "src\\assets\\test_vp9_alpha.webm",
+  "size": 218420,
+  "mb": 0.208,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "src\\assets\\0908-poster.jpg",
+  "size": 212140,
+  "mb": 0.202,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "src\\assets\\0908fg-poster.jpg",
+  "size": 195281,
+  "mb": 0.186,
+  "referenced_by": [
+   "src\\components\\Hero.jsx",
+   "src\\components\\landing\\exact\\ExactHero.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "public\\videos\\0908fg-poster.jpg",
+  "size": 195281,
+  "mb": 0.186,
+  "referenced_by": [
+   "src\\components\\Hero.jsx",
+   "src\\components\\landing\\exact\\ExactHero.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "public\\images\\about\\about_workspace_converge.jpg",
+  "size": 153415,
+  "mb": 0.146,
+  "referenced_by": [
+   "src\\components\\about\\AboutWhySection.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\images\\about\\minimalist_ui_scene.jpg",
+  "size": 153415,
+  "mb": 0.146,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\ezrab-bot-mascot.svg",
+  "size": 132841,
+  "mb": 0.127,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\mascot-ezrab-new.png",
+  "size": 127231,
+  "mb": 0.121,
+  "referenced_by": [
+   "src\\components\\copilot\\EzrabAiAssistantFullView.tsx",
+   "src\\components\\copilot\\EzrabCoAssistantChatbox.tsx",
+   "src\\components\\magic-ai\\MagicAiSuperView.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "public\\images\\mascot-ezrab-new.png",
+  "size": 127231,
+  "mb": 0.121,
+  "referenced_by": [
+   "src\\components\\copilot\\EzrabAiAssistantFullView.tsx",
+   "src\\components\\copilot\\EzrabCoAssistantChatbox.tsx",
+   "src\\components\\magic-ai\\MagicAiSuperView.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "src\\assets\\ezrab-logo.png",
+  "size": 127225,
+  "mb": 0.121,
+  "referenced_by": [
+   "src\\components\\common\\Logo.tsx",
+   "src\\components\\landing\\exact\\ExactNavbar.tsx",
+   "src\\export\\pdfAssets.ts",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "public\\images\\ezrab-logo-original.png",
+  "size": 127225,
+  "mb": 0.121,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\images\\ezrab-logo.png",
+  "size": 127225,
+  "mb": 0.121,
+  "referenced_by": [
+   "src\\components\\common\\Logo.tsx",
+   "src\\components\\landing\\exact\\ExactNavbar.tsx",
+   "src\\export\\pdfAssets.ts",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 4
+ },
+ {
+  "path": "public\\videos\\roles-bg-poster.jpg",
+  "size": 109641,
+  "mb": 0.105,
+  "referenced_by": [
+   "src\\components\\landing\\exact\\ExactRoles.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\assets\\mascot\\adad.jpg",
+  "size": 108813,
+  "mb": 0.104,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\assets\\mascot\\maskot-lucu.svg",
+  "size": 102892,
+  "mb": 0.098,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\assets\\mascot\\matane.jpg",
+  "size": 90613,
+  "mb": 0.086,
+  "referenced_by": [
+   "src\\components\\mascot\\EZRABMascot3D.tsx",
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 2
+ },
+ {
+  "path": "public\\assets\\mascot\\ref_dashboard_mascot.png",
+  "size": 68975,
+  "mb": 0.066,
+  "referenced_by": [
+   "scripts\\cleanup\\duplicates.json"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "public\\assets\\mascot\\vector_eye_right.png",
+  "size": 44830,
+  "mb": 0.043,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "public\\assets\\mascot\\vector_eye_left.png",
+  "size": 44745,
+  "mb": 0.043,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "public\\videos\\roles\\kontraktor-poster.jpg",
+  "size": 43043,
+  "mb": 0.041,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "public\\videos\\roles\\konsultan-poster.jpg",
+  "size": 42116,
+  "mb": 0.04,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "public\\videos\\roles\\developer-poster.jpg",
+  "size": 34182,
+  "mb": 0.033,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "public\\videos\\roles\\estimator-poster.jpg",
+  "size": 33276,
+  "mb": 0.032,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "public\\models\\albedo_preview.jpg",
+  "size": 23818,
+  "mb": 0.023,
+  "referenced_by": [
+   "scripts\\inspect_texture.py"
+  ],
+  "ref_count": 1
+ },
+ {
+  "path": "src\\assets\\ezrab_avatar.png",
+  "size": 13565,
+  "mb": 0.013,
+  "referenced_by": [
+   "src\\components\\copilot\\EzrabAiAssistantFullView.tsx",
+   "src\\components\\copilot\\EzrabCoAssistantChatbox.tsx",
+   "src\\components\\magic-ai\\MagicAiSuperView.tsx"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "public\\assets\\mascot\\ezrab_avatar.png",
+  "size": 13565,
+  "mb": 0.013,
+  "referenced_by": [
+   "src\\components\\copilot\\EzrabAiAssistantFullView.tsx",
+   "src\\components\\copilot\\EzrabCoAssistantChatbox.tsx",
+   "src\\components\\magic-ai\\MagicAiSuperView.tsx"
+  ],
+  "ref_count": 3
+ },
+ {
+  "path": "src\\assets\\ezrab-building.svg",
+  "size": 9256,
+  "mb": 0.009,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "src\\assets\\ezrab-blueprint.svg",
+  "size": 2703,
+  "mb": 0.003,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "src\\assets\\logo.css",
+  "size": 2690,
+  "mb": 0.003,
+  "referenced_by": [
+   "src\\components\\about\\AboutPage.tsx",
+   "src\\components\\branding\\CompanyBrandingModal.tsx",
+   "src\\components\\common\\Logo.tsx",
+   "src\\components\\copilot\\EzrabAiAssistantFullView.tsx",
+   "src\\components\\export\\ExportProjectPackageModal.tsx",
+   "src\\components\\landing\\exact\\ExactConnectedData.tsx",
+   "src\\components\\landing\\exact\\ExactMagicAi.tsx",
+   "src\\components\\landing\\exact\\ExactNavbar.tsx",
+   "src\\components\\layout\\Sidebar.tsx",
+   "src\\components\\magic-ai\\EzrabEyesMascot.tsx",
+   "src\\components\\magic-ai\\MagicAiSuperView.tsx",
+   "src\\components\\mascot\\EZRABMascot3D.tsx"
+  ],
+  "ref_count": 42
+ },
+ {
+  "path": "src\\assets\\ezrab-mascot.svg",
+  "size": 2632,
+  "mb": 0.003,
+  "referenced_by": [
+   "src\\components\\mascot\\EZRABMascot3D.tsx",
+   "src\\components\\mascot\\EZRABMascotEyes.tsx",
+   "src\\components\\mascot\\EZRABMascotLucu.tsx",
+   "scripts\\export_flagship_glb.py",
+   "scripts\\export_mascot_glb.py",
+   "scripts\\export_upright_glb.py",
+   "scripts\\inspect_accessors.py",
+   "scripts\\inspect_glb.py",
+   "scripts\\inspect_gltf_bounds.py",
+   "scripts\\test_export_opt.py",
+   "scripts\\test_load_gltf.ts",
+   "scripts\\test_packed_export.py"
+  ],
+  "ref_count": 16
+ },
+ {
+  "path": "public\\ezrab-mascot.svg",
+  "size": 2632,
+  "mb": 0.003,
+  "referenced_by": [
+   "src\\components\\mascot\\EZRABMascot3D.tsx",
+   "src\\components\\mascot\\EZRABMascotEyes.tsx",
+   "src\\components\\mascot\\EZRABMascotLucu.tsx",
+   "scripts\\export_flagship_glb.py",
+   "scripts\\export_mascot_glb.py",
+   "scripts\\export_upright_glb.py",
+   "scripts\\inspect_accessors.py",
+   "scripts\\inspect_glb.py",
+   "scripts\\inspect_gltf_bounds.py",
+   "scripts\\test_export_opt.py",
+   "scripts\\test_load_gltf.ts",
+   "scripts\\test_packed_export.py"
+  ],
+  "ref_count": 16
+ },
+ {
+  "path": "src\\assets\\ezrab-excavator.svg",
+  "size": 2217,
+  "mb": 0.002,
+  "referenced_by": [],
+  "ref_count": 0
+ },
+ {
+  "path": "src\\assets\\landing\\backgrounds\\index.ts",
+  "size": 398,
+  "mb": 0.0,
+  "referenced_by": [
+   "src\\components\\about\\AboutWorkflowSection.tsx",
+   "src\\components\\copilot\\EzrabAiAssistantFullView.tsx",
+   "src\\components\\document\\DedRabWorkflowView.tsx",
+   "src\\components\\document\\RabReviewWorkspaceModalView.tsx",
+   "src\\components\\estimator\\EstimatorSpreadsheetTable.tsx",
+   "src\\components\\inspector\\WorkItemInspectorDrawer.tsx",
+   "src\\components\\landing\\exact\\ExactProjectManagement.tsx",
+   "src\\components\\landing\\exact\\ExactStackedShowcase.tsx",
+   "src\\components\\landing\\exact\\ExactWorkflow.tsx",
+   "src\\components\\magic-ai\\MagicAiSuperView.tsx",
+   "src\\components\\qto\\TechnicalReferenceViewer.tsx",
+   "src\\data\\nationalCostDatabase\\ahsp2026Canonical.generated.ts"
+  ],
+  "ref_count": 117
+ }
+]

@@ -1,0 +1,54 @@
+{
+  "timestamp": "2026-10-05T12:06:02.578Z",
+  "totalAhspChecked": 5768,
+  "pricedCount": 5296,
+  "unpricedCount": 472,
+  "bannedAiEstimatedCount": 0,
+  "hardcodedFallbackCount": 6,
+  "sourceCompliancePercent": 99.9,
+  "violationsCount": 6,
+  "violations": [
+    {
+      "code": "SMKK.0040",
+      "name": "Keterangan: Untuk penetapan gaji",
+      "price": 100000,
+      "issue": "Harga terindikasi bernilai konstan fallback (Rp 100k / Rp 75k)",
+      "severity": "WARNING"
+    },
+    {
+      "code": "SMKK.0077",
+      "name": "2) Pelindung mata (goggles, spectacles)",
+      "price": 75000,
+      "issue": "Harga terindikasi bernilai konstan fallback (Rp 100k / Rp 75k)",
+      "severity": "WARNING"
+    },
+    {
+      "code": "SMKK.0095",
+      "name": "Petugas tanggap darurat",
+      "price": 100000,
+      "issue": "Harga terindikasi bernilai konstan fallback (Rp 100k / Rp 75k)",
+      "severity": "WARNING"
+    },
+    {
+      "code": "SMKK.0096",
+      "name": "Petugas pemadam kebakaran",
+      "price": 100000,
+      "issue": "Harga terindikasi bernilai konstan fallback (Rp 100k / Rp 75k)",
+      "severity": "WARNING"
+    },
+    {
+      "code": "SMKK.0097",
+      "name": "Petugas P3K",
+      "price": 100000,
+      "issue": "Harga terindikasi bernilai konstan fallback (Rp 100k / Rp 75k)",
+      "severity": "WARNING"
+    },
+    {
+      "code": "SMKK.0098",
+      "name": "Petugas pengatur lalu lintas/flagman",
+      "price": 100000,
+      "issue": "Harga terindikasi bernilai konstan fallback (Rp 100k / Rp 75k)",
+      "severity": "WARNING"
+    }
+  ]
+}

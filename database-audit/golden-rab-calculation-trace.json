@@ -1,0 +1,206 @@
+{
+  "timestamp": "2026-10-05T12:06:02.583Z",
+  "grandTotalRAB": 182660550,
+  "traces": [
+    {
+      "workId": "W-01",
+      "workName": "Galian Tanah Pondasi Batu Gunung",
+      "ahspCode": "1.2.1.1.1",
+      "volume": 28.5,
+      "unit": "m3",
+      "ahspUnitPrice": 90860,
+      "lineTotal": 2589510,
+      "mathProof": "28.5 m3 × Rp 90.860/m3 = Rp 2.589.510"
+    },
+    {
+      "workId": "W-02",
+      "workName": "Pasir urug bawah pondasi dan lantai",
+      "ahspCode": "1.3.1.2",
+      "volume": 4.8,
+      "unit": "m3",
+      "ahspUnitPrice": 372504,
+      "lineTotal": 1788019,
+      "mathProof": "4.8 m3 × Rp 372.504/m3 = Rp 1.788.019"
+    },
+    {
+      "workId": "W-03",
+      "workName": "Cerucuk Ulin 80x80x2000-1500 mm",
+      "ahspCode": "2.6.2.1",
+      "volume": 120,
+      "unit": "m",
+      "ahspUnitPrice": 164749,
+      "lineTotal": 19769880,
+      "mathProof": "120 m × Rp 164.749/m = Rp 19.769.880"
+    },
+    {
+      "workId": "W-04",
+      "workName": "Cor Lantai Kerja T = 50 mm",
+      "ahspCode": "2.2.1.4.1",
+      "volume": 3.2,
+      "unit": "m3",
+      "ahspUnitPrice": 928002,
+      "lineTotal": 2969606,
+      "mathProof": "3.2 m3 × Rp 928.002/m3 = Rp 2.969.606"
+    },
+    {
+      "workId": "W-05",
+      "workName": "Pondasi Batu Gunung (1SP : 4PP)",
+      "ahspCode": "2.2.2.1.6",
+      "volume": 24.5,
+      "unit": "m3",
+      "ahspUnitPrice": 1046320,
+      "lineTotal": 25634840,
+      "mathProof": "24.5 m3 × Rp 1.046.320/m3 = Rp 25.634.840"
+    },
+    {
+      "workId": "W-06",
+      "workName": "Sloof 15x20 beton bertulang mutu sedang",
+      "ahspCode": "2.2.1.4.5",
+      "volume": 3,
+      "unit": "m3",
+      "ahspUnitPrice": 1325155,
+      "lineTotal": 3975465,
+      "mathProof": "3 m3 × Rp 1.325.155/m3 = Rp 3.975.465"
+    },
+    {
+      "workId": "W-07",
+      "workName": "Kolom praktis 15x15 beton bertulang",
+      "ahspCode": "2.2.1.4.5",
+      "volume": 2.5,
+      "unit": "m3",
+      "ahspUnitPrice": 1325155,
+      "lineTotal": 3312888,
+      "mathProof": "2.5 m3 × Rp 1.325.155/m3 = Rp 3.312.888"
+    },
+    {
+      "workId": "W-08",
+      "workName": "Ringbalk 15x20 beton bertulang mutu sedang",
+      "ahspCode": "2.2.1.4.5",
+      "volume": 2.8,
+      "unit": "m3",
+      "ahspUnitPrice": 1325155,
+      "lineTotal": 3710434,
+      "mathProof": "2.8 m3 × Rp 1.325.155/m3 = Rp 3.710.434"
+    },
+    {
+      "workId": "W-09",
+      "workName": "Pelat t = 100 mm dak beton",
+      "ahspCode": "2.2.1.4.5",
+      "volume": 4.5,
+      "unit": "m3",
+      "ahspUnitPrice": 1325155,
+      "lineTotal": 5963198,
+      "mathProof": "4.5 m3 × Rp 1.325.155/m3 = Rp 5.963.198"
+    },
+    {
+      "workId": "W-10",
+      "workName": "Pembesian Tulangan Utama Ringbalk (4 D12)",
+      "ahspCode": "2.2.1.1.3",
+      "volume": 177.92,
+      "unit": "kg",
+      "ahspUnitPrice": 22009,
+      "lineTotal": 3915841,
+      "mathProof": "177.92 kg × Rp 22.009/kg = Rp 3.915.841"
+    },
+    {
+      "workId": "W-11",
+      "workName": "Pasangan Dinding Bata Merah tebal 1/2 bata 1SP : 4PP",
+      "ahspCode": "3.6.1.8",
+      "volume": 185,
+      "unit": "m2",
+      "ahspUnitPrice": 125424,
+      "lineTotal": 23203440,
+      "mathProof": "185 m2 × Rp 125.424/m2 = Rp 23.203.440"
+    },
+    {
+      "workId": "W-12",
+      "workName": "Plesteran 1SP : 4PP tebal 15 mm",
+      "ahspCode": "3.7.4",
+      "volume": 370,
+      "unit": "m2",
+      "ahspUnitPrice": 56784,
+      "lineTotal": 21010080,
+      "mathProof": "370 m2 × Rp 56.784/m2 = Rp 21.010.080"
+    },
+    {
+      "workId": "W-13",
+      "workName": "Pemasangan Acian Dinding",
+      "ahspCode": "3.7.8",
+      "volume": 370,
+      "unit": "m2",
+      "ahspUnitPrice": 45248,
+      "lineTotal": 16741760,
+      "mathProof": "370 m2 × Rp 45.248/m2 = Rp 16.741.760"
+    },
+    {
+      "workId": "W-14",
+      "workName": "Kuda-kuda baja ringan profil C75",
+      "ahspCode": "2.1.1.1",
+      "volume": 68,
+      "unit": "m2",
+      "ahspUnitPrice": 187281,
+      "lineTotal": 12735108,
+      "mathProof": "68 m2 × Rp 187.281/m2 = Rp 12.735.108"
+    },
+    {
+      "workId": "W-15",
+      "workName": "Reng baja ringan",
+      "ahspCode": "2.1.1.3",
+      "volume": 68,
+      "unit": "m2",
+      "ahspUnitPrice": 24971,
+      "lineTotal": 1698028,
+      "mathProof": "68 m2 × Rp 24.971/m2 = Rp 1.698.028"
+    },
+    {
+      "workId": "W-16",
+      "workName": "Atap metal spandek lembaran",
+      "ahspCode": "3.1.3.7",
+      "volume": 74,
+      "unit": "m2",
+      "ahspUnitPrice": 188775,
+      "lineTotal": 13969350,
+      "mathProof": "74 m2 × Rp 188.775/m2 = Rp 13.969.350"
+    },
+    {
+      "workId": "W-17",
+      "workName": "Plafond gypsum board 9 mm",
+      "ahspCode": "3.5.2.1",
+      "volume": 48.5,
+      "unit": "m2",
+      "ahspUnitPrice": 51980,
+      "lineTotal": 2521030,
+      "mathProof": "48.5 m2 × Rp 51.980/m2 = Rp 2.521.030"
+    },
+    {
+      "workId": "W-18",
+      "workName": "Lantai Keramik 40x40 cm",
+      "ahspCode": "3.9.8.6",
+      "volume": 42,
+      "unit": "m2",
+      "ahspUnitPrice": 130245,
+      "lineTotal": 5470290,
+      "mathProof": "42 m2 × Rp 130.245/m2 = Rp 5.470.290"
+    },
+    {
+      "workId": "W-19",
+      "workName": "Kusen aluminium 4 inch",
+      "ahspCode": "3.11.3.1",
+      "volume": 36,
+      "unit": "m",
+      "ahspUnitPrice": 175583,
+      "lineTotal": 6320988,
+      "mathProof": "36 m × Rp 175.583/m = Rp 6.320.988"
+    },
+    {
+      "workId": "W-20",
+      "workName": "Kaca bening 5 mm",
+      "ahspCode": "3.11.2.1",
+      "volume": 14.5,
+      "unit": "m2",
+      "ahspUnitPrice": 369710,
+      "lineTotal": 5360795,
+      "mathProof": "14.5 m2 × Rp 369.710/m2 = Rp 5.360.795"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+# Phase 1.1 Hardcode Audit
+
+`defaultAhspCode`, `defaultAhspName`, and `defaultUnitPrice` remain optional deprecated legacy metadata for compatibility, but the auto-sync RAB path now requires explicit `options.unitPrice` and does not consume `spec.defaultUnitPrice`; AHSP defaults are not used as authoritative provenance. Status: PARTIALLY VERIFIED; all non-calculator price paths still require a broader audit.

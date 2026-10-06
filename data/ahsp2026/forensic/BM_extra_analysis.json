@@ -1,0 +1,268 @@
+{
+ "field": "BINA_MARGA",
+ "compared": "rendered analysis tables (Method C) vs DAFTAR ISI code index (Method A)",
+ "extra_count": 29,
+ "records": [
+  {
+   "serial": "A.7",
+   "code": "",
+   "name": "Sistem Manajemen Keselamatan Konstruksi (SMKK)",
+   "unit": "",
+   "headerPage": 40,
+   "analisaPage": null,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "G.51",
+   "code": "7.2.(7).65.50-60",
+   "name": "Unit Pracetak Gelagar Beton Pratekan fc’ 65 MPa, Tipe T bentang nominal 50-60 m, Penyediaan",
+   "unit": "Buah",
+   "headerPage": 1061,
+   "analisaPage": 1063,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "G.52",
+   "code": "7.2.(8).65.50-60",
+   "name": "Unit Pracetak Gelagar Beton Pratekan fc’ 65 MPa, Tipe T bentang nominal 50-60 m, Pemasangan",
+   "unit": "Buah",
+   "headerPage": 1064,
+   "analisaPage": 1065,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "G.120",
+   "code": "7.6.(10)",
+   "name": "Tambahan Biaya untuk Mata Pembayaran No.7.6.(9a) dan No.7.6.(9b) Jika Dikerjakan di Tempat Berair",
+   "unit": "M'",
+   "headerPage": 1224,
+   "analisaPage": 1225,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "G.121",
+   "code": "7.6.(11).400.400",
+   "name": "Tiang Pancang Beton Bertulang Pracetak Ukuran 400 mm x 400 mm, Penyediaan",
+   "unit": "M'",
+   "headerPage": 1226,
+   "analisaPage": 1227,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "G.122",
+   "code": "7.6.(12).400.400",
+   "name": "Tiang Pancang Beton Bertulang Pracetak Ukuran 400 mm x 400 mm, Pemancangan",
+   "unit": "M'",
+   "headerPage": 1228,
+   "analisaPage": 1230,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "G.137",
+   "code": "7.6 (21).500",
+   "name": "Tiang Uji Jenis Tiang Pancang Beton Pratekan Pracetak Bulat Berongga, Ukuran diameter 500 mm",
+   "unit": "M",
+   "headerPage": 1267,
+   "analisaPage": 1268,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "G.183",
+   "code": "7.12.(2).450.400.45",
+   "name": "Landasan Elastomerik Karet Alam Berlapis Baja Ukuran 450 mm x 400 mm x 45 mm",
+   "unit": "Buah",
+   "headerPage": 1357,
+   "analisaPage": 1358,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "G.184",
+   "code": "7.12.(2).300.200.50",
+   "name": "Landasan Elastomerik Karet Alam Berlapis Baja Ukuran 300 mm x 200 mm x 50 mm",
+   "unit": "Buah",
+   "headerPage": 1359,
+   "analisaPage": 1360,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "G.185",
+   "code": "7.12.(3).450.400.45",
+   "name": "Landasan Elastomerik Karet Sintetis Berlapis Baja Ukuran 450 mm x 400 mm x 45 mm",
+   "unit": "Buah",
+   "headerPage": 1361,
+   "analisaPage": 1362,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "G.186",
+   "code": "7.12.(3).200.300.40",
+   "name": "Landasan Elastomerik Karet Sintetis Berlapis Baja Ukuran 200 mm x 300 mm x 40 mm",
+   "unit": "Buah",
+   "headerPage": 1363,
+   "analisaPage": 1364,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "G.187",
+   "code": "7.12.(3).400.250.52",
+   "name": "Landasan Elastomerik Karet Sintetis Berlapis Baja Ukuran 400 mm x 250 mm x 52 mm",
+   "unit": "Buah",
+   "headerPage": 1365,
+   "analisaPage": 1366,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "G.188",
+   "code": "7.12.(3).400.350.52",
+   "name": "Landasan Elastomerik Karet Sintetis Berlapis Baja Ukuran 400 mm x 350 mm x 52 mm",
+   "unit": "Buah",
+   "headerPage": 1367,
+   "analisaPage": 1368,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "G.189",
+   "code": "7.12.(3).400.400.60",
+   "name": "Landasan Elastomerik Karet Sintetis Berlapis Baja Ukuran 400 mm x 400 mm x 60 mm",
+   "unit": "Buah",
+   "headerPage": 1369,
+   "analisaPage": 1370,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "G.190",
+   "code": "7.12.(3).450.400.73",
+   "name": "Landasan Elastomerik Karet Sintetis Berlapis Baja Ukuran 450 mm x 400 mm x 73 mm",
+   "unit": "Buah",
+   "headerPage": 1371,
+   "analisaPage": 1372,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "G.206",
+   "code": "7.15.(3)",
+   "name": "Pembongkaran dan Pengangkatan Gelagar Eksisting Bentang ….. m",
+   "unit": "M'",
+   "headerPage": 1406,
+   "analisaPage": 1408,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "H.78",
+   "code": "8.12.(2).450.400.45",
+   "name": "Penggantian Landasan Elastomer Karet Alam Berlapis Baja Ukuran 450 mm x 400 mm x 45 mm",
+   "unit": "Buah",
+   "headerPage": 1651,
+   "analisaPage": 1653,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "H.79",
+   "code": "8.12.(2).500.500.100",
+   "name": "Penggantian Landasan Elastomer Karet Alam Berlapis Baja Ukuran 500 mm x 500 mm x 100 mm",
+   "unit": "Buah",
+   "headerPage": 1654,
+   "analisaPage": 1656,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "H.80",
+   "code": "8.12.(3).450.400.45",
+   "name": "Penggantian Landasan Elastomer Sintetis Berlapis Baja Ukuran 450 mm x 400 mm x 45 mm",
+   "unit": "Buah",
+   "headerPage": 1657,
+   "analisaPage": 1659,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "H.81",
+   "code": "8.12.(3).150.250.50",
+   "name": "Penggantian Landasan Elastomer Sintetis Berlapis Baja Ukuran 150 mm x 250 mm x 50 mm",
+   "unit": "Buah",
+   "headerPage": 1660,
+   "analisaPage": 1662,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "H.82",
+   "code": "8.12.(3).300.300.40",
+   "name": "Penggantian Landasan Elastomer Sintetis Berlapis Baja Ukuran 300 mm x 300 mm x 40 mm",
+   "unit": "Buah",
+   "headerPage": 1663,
+   "analisaPage": 1665,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "H.83",
+   "code": "8.12.(3).300.300.100",
+   "name": "Penggantian Landasan Elastomer Sintetis Berlapis Baja Ukuran 300 mm x 300 mm x 100 mm",
+   "unit": "Buah",
+   "headerPage": 1666,
+   "analisaPage": 1668,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "H.84",
+   "code": "8.12.(3).380.380.102",
+   "name": "Penggantian Landasan Elastomer Sintetis Berlapis Baja Ukuran 380 mm x 380 mm x 102 mm",
+   "unit": "Buah",
+   "headerPage": 1669,
+   "analisaPage": 1671,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "H.85",
+   "code": "8.12.(3).380.450.45",
+   "name": "Penggantian Landasan Elastomer Sintetis Berlapis Baja Ukuran 380 mm x 450 mm x 45 mm",
+   "unit": "Buah",
+   "headerPage": 1672,
+   "analisaPage": 1674,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "H.86",
+   "code": "8.12.(3).400.200.50",
+   "name": "Penggantian Landasan Elastomer Sintetis Berlapis Baja Ukuran 400 mm x 200 mm x 50 mm",
+   "unit": "Buah",
+   "headerPage": 1675,
+   "analisaPage": 1677,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "H.87",
+   "code": "8.12.(3).400.350.52",
+   "name": "Penggantian Landasan Elastomer Sintetis Berlapis Baja Ukuran 400 mm x 350 mm x 52 mm",
+   "unit": "Buah",
+   "headerPage": 1678,
+   "analisaPage": 1680,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "H.88",
+   "code": "8.12.(3).400.450.50",
+   "name": "Penggantian Landasan Elastomer Sintetis Berlapis Baja Ukuran 400 mm x 450 mm x 50 mm",
+   "unit": "Buah",
+   "headerPage": 1681,
+   "analisaPage": 1683,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "H.89",
+   "code": "8.12.(3).500.500.100",
+   "name": "Penggantian Landasan Elastomer Sintetis Berlapis Baja Ukuran 500 mm x 500 mm x 100 mm",
+   "unit": "Buah",
+   "headerPage": 1684,
+   "analisaPage": 1686,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  },
+  {
+   "serial": "I.190",
+   "code": "9.2 (35)",
+   "name": "Jalur Penghentian Darurat",
+   "unit": "Buah",
+   "headerPage": 2231,
+   "analisaPage": null,
+   "reason": "analysis/header present in the body but absent from the DAFTAR ISI index"
+  }
+ ]
+}
