@@ -193,11 +193,14 @@ export function DedAiSplitAnalysisView(props: DedAiSplitAnalysisViewProps) {
                     <div className="ded-item-detail">
                       <div className="ded-evidence">
                         📄 Sumber:{' '}
-                        {(w.sourcePages ?? []).slice(0, 3).map((p) => (
-                          <span key={p} className="ded-src" onClick={() => highlightItem(w.id)}>
-                            Hal {p}
+                        {(w.sourcePages ?? []).slice(0, 3).map((p, idx) => (
+                          <span key={p}>
+                            {idx > 0 && ', '}
+                            <span className="ded-src" onClick={() => highlightItem(w.id)}>
+                              Hal {p}
+                            </span>
                           </span>
-                        )).reduce<React.ReactNode[]>((acc, el, i) => i === 0 ? [el] : [...acc, ', ', el], [])}
+                        ))}
                         {itemEvidences.length > 0 && (
                           <span style={{ color: '#64748B' }}> · {itemEvidences.length} bukti</span>
                         )}
