@@ -44,6 +44,7 @@ import { dedRabPipeline, PipelineExecutionOutput } from '../../ded-rab-v2/pipeli
 import { DedProcessingMode, PipelineProgressEvent, PipelineStage } from '../../ded-rab-v2/types';
 import { ExecutionMode, ProjectLocation } from '../../ded-rab-v2/resolution/providerContracts';
 import { DedRabV2ReviewView } from '../../ded-rab-v2/review/DedRabV2ReviewView';
+import { DedAiSplitAnalysisView } from './DedAiSplitAnalysisView';
 import { dedAnalysisPersistenceService } from '../../services/dedAnalysisPersistenceService';
 import { dedRabReviewService } from '../../ded-rab-v2/review/dedRabReviewService';
 import { dedSpreadsheetSync } from '../../ded-rab-v2/spreadsheet/dedSpreadsheetSync';
@@ -177,6 +178,8 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
   const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
   const [isCreatingProject, setIsCreatingProject] = useState<boolean>(false);
   const [projectCreatedSuccess, setProjectCreatedSuccess] = useState<boolean>(false);
+  // Results view mode: 'split' (new) | 'detail' (legacy)
+  const [resultsViewMode, setResultsViewMode] = useState<'split' | 'detail'>('split');
 
   // Selector mode toggle: when user clicks "Ganti Proyek" or "＋ Buat Proyek Baru"
   const [isSelectingProject, setIsSelectingProject] = useState<boolean>(() => !resolvedCurrentProject);
@@ -825,7 +828,42 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
           {/* Stepper */}
           {renderHorizontalStepper()}
 
+          {/* View toggle */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            <button
+              onClick={() => setResultsViewMode('split')}
+              style={{
+                padding: '9px 18px', borderRadius: 12, border: 'none', fontWeight: 700, fontSize: 13,
+                cursor: 'pointer', background: resultsViewMode === 'split' ? 'linear-gradient(135deg,#059669,#10B981)' : '#F1F5F9',
+                color: resultsViewMode === 'split' ? '#fff' : '#64748B',
+              }}
+            >
+              🖼️ Split View
+            </button>
+            <button
+              onClick={() => setResultsViewMode('detail')}
+              style={{
+                padding: '9px 18px', borderRadius: 12, border: 'none', fontWeight: 700, fontSize: 13,
+                cursor: 'pointer', background: resultsViewMode === 'detail' ? 'linear-gradient(135deg,#059669,#10B981)' : '#F1F5F9',
+                color: resultsViewMode === 'detail' ? '#fff' : '#64748B',
+              }}
+            >
+              📋 Detail
+            </button>
+          </div>
+
           {/* Review View */}
+          {resultsViewMode === 'split' ? (
+            <DedAiSplitAnalysisView
+              projectName={targetProjObj?.name || effectiveProjectName}
+              sourceDocuments={executionOutput.sourceDocuments}
+              workItems={executionOutput.workItems}
+              evidences={executionOutput.evidences}
+              grandTotal={executionOutput.grandTotal}
+              onCommitOfficialRab={() => handleCommitOfficialRab([])}
+              onRetry={() => handleStartAnalysis()}
+            />
+          ) : (
           <DedRabV2ReviewView
             projectId={activePid}
             projectName={targetProjObj?.name || effectiveProjectName}
@@ -845,6 +883,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
             onRetry={() => handleStartAnalysis()}
             onBackToUpload={handleClearActiveAnalysis}
           />
+          )}
         </div>
       </div>
     );
