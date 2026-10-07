@@ -15,7 +15,7 @@ export interface DedAiSplitAnalysisViewProps {
   workItems: DedWorkItem[];
   evidences: EvidenceRecord[];
   grandTotal?: number;
-  onCommitOfficialRab?: () => void;
+  onCommitOfficialRab?: (officialItems?: any[]) => void;
   onRetry?: () => void;
 }
 
