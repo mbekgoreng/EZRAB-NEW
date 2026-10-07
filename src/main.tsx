@@ -16,3 +16,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </ThemeProvider>
   </React.StrictMode>
 );
+
+// Hide the loading splash once React has mounted
+(window as unknown as { __reactMounted?: boolean; __hideLoading?: () => void }).__reactMounted = true;
+if (typeof (window as unknown as { __hideLoading?: () => void }).__hideLoading === 'function') {
+  // Small delay so the app has painted at least once
+  setTimeout(() => (window as unknown as { __hideLoading?: () => void }).__hideLoading?.(), 300);
+}
