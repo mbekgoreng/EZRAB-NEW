@@ -15,10 +15,42 @@
     <meta property="og:type" content="website" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      #loading-screen {
+        position: fixed; inset: 0; z-index: 9999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+        color: white; font-family: system-ui, sans-serif;
+        transition: opacity 0.4s ease;
+      }
+      #loading-screen.hide { opacity: 0; pointer-events: none; }
+      #loading-screen .logo { font-size: 42px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+      #loading-screen .tag { font-size: 14px; opacity: 0.85; margin-bottom: 24px; }
+      #loading-screen .bar { width: 200px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; }
+      #loading-screen .bar > div { height: 100%; width: 40%; background: white; border-radius: 2px; animation: slide 1.2s ease-in-out infinite; }
+      @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(500%); } }
+    </style>
   </head>
   <body>
+    <div id="loading-screen">
+      <div class="logo">EZRAB</div>
+      <div class="tag">RAB & Estimasi Konstruksi</div>
+      <div class="bar"><div></div></div>
+    </div>
     <div id="root"></div>
+    <script>
+      // Hide loading screen once React mounts
+      window.__hideLoading = function() {
+        var el = document.getElementById('loading-screen');
+        if (el) { el.classList.add('hide'); setTimeout(function() { el.remove(); }, 500); }
+      };
+      // Fallback: hide after 15s even if React fails
+      setTimeout(function() {
+        var el = document.getElementById('loading-screen');
+        if (el && !window.__reactMounted) { el.classList.add('hide'); setTimeout(function() { el.remove(); }, 500); }
+      }, 15000);
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
