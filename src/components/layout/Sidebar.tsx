@@ -211,34 +211,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     // Proyek is handled with dedicated dropdown (Portofolio, Volume/QTO, Jadwal/Manajemen)
     // RAB & Estimasi is handled with dedicated dropdown (Spreadsheet, Rekapitulasi, AHSP, Kurva S, Catatan, Pengaturan)
-    {
-      id: 'ded-rab',
-      label: 'DED → AI Estimate',
-      icon: FileCheck,
-      badge: 'AI',
-      badgeType: 'primary',
-      matchMenu: (menu) => menu === 'ded-rab' || menu === 'magic-ai' || menu === 'ai-assistant',
-    },
+    // AI section: exactly 3 items (per Director order 2026-10-08)
     {
       id: 'ezrab-ai',
-      label: 'EZRAB AI',
+      label: 'Ezrab Chat AI',
       icon: Sparkles,
       badge: 'AI',
       badgeType: 'primary',
-      matchMenu: (menu) => menu === 'ezrab-ai',
+      matchMenu: (menu) => menu === 'ezrab-ai' || menu === 'ai-assistant',
     },
     {
       id: 'ded-ai',
-      label: 'DED AI Estimate',
+      label: 'Ded Estimate AI',
       icon: FileCheck,
-      badge: 'NEW',
-      badgeType: 'success',
-      matchMenu: (menu) => menu === 'ded-ai',
+      badge: 'AI',
+      badgeType: 'primary',
+      matchMenu: (menu) => menu === 'ded-ai' || menu === 'ded-rab' || menu === 'magic-ai',
     },
     {
       id: 'dokumen-ai',
-      label: 'Dokumen AI',
+      label: 'AI Document',
       icon: FileText,
+      badge: 'AI',
       badgeType: 'primary',
       matchMenu: (menu) => menu === 'dokumen-ai',
     },
