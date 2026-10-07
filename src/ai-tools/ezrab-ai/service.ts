@@ -41,6 +41,7 @@ Kemudian lanjutkan jawabanmu. Kamu harus menjawab dalam Bahasa Indonesia.`;
 
     const result = await aiToolsProviderClient.execute<unknown>({
       productId: 'EZRAB_AI',
+      mode: request.mode ?? 'fast',
       prompt,
       systemPrompt: EZRAB_AI_SYSTEM_PROMPT,
       jsonMode: false,

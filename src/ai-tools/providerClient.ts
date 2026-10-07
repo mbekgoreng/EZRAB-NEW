@@ -22,6 +22,7 @@ export interface AiToolsRequest {
   imageDataBase64?: string;
   imageMimeType?: string;
   pdfDataBase64?: string;
+  mode?: 'fast' | 'advanced';
 }
 
 export interface AiToolsSuccess<T = unknown> {
@@ -43,9 +44,9 @@ export class AiToolsProviderClient {
 
     if (isNode) {
       try {
-        const { loadServerEnv } = await import('../../server/config/loadServerEnv');
+        const { loadServerEnv } = await import(/* @vite-ignore */ '../../server/config/loadServerEnv');
         loadServerEnv();
-        const { chatOpenAiCompatible, chatGemini } = await import('../../server/providers/multiProvider/adapters');
+        const { chatOpenAiCompatible, chatGemini } = await import(/* @vite-ignore */ '../../server/providers/multiProvider/adapters');
         const payload: any = {
           providerId: target.provider,
           modelId: target.model,
@@ -58,6 +59,7 @@ export class AiToolsProviderClient {
           imageDataBase64: request.imageDataBase64,
           imageMimeType: request.imageMimeType || 'image/png',
           pdfDataBase64: request.pdfDataBase64,
+          mode: request.mode,
         };
         const result =
           target.provider === 'gemini'
@@ -103,6 +105,7 @@ export class AiToolsProviderClient {
           imageDataBase64: request.imageDataBase64,
           imageMimeType: request.imageMimeType || 'image/png',
           pdfDataBase64: request.pdfDataBase64,
+          mode: request.mode,
         }),
       });
       globalThis.clearTimeout(timer);
