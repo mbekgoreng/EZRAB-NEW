@@ -1,14 +1,20 @@
 /**
  * Vercel Serverless Function: POST /api/ai/chat
  *
- * Production AI backend for EZRAB. Uses official Google Gemini API directly.
- * Replaces the Vite dev-middleware that only worked on localhost.
+ * Production AI backend for EZRAB.
  *
- * Env vars required:
- *   GEMINI_API_KEY_1 (primary), GEMINI_API_KEY_2..6 (fallbacks)
+ * Modes (per Director order 2026-10-08):
+ *   fast     → gemini-3.5-flash-lite (Google direct)
+ *   advanced → geminiflash-3.8 (ZyRouter gateway)
+ *   Fallback chain: fast → advanced → atria
  *
- * Request: { message, systemPrompt?, model?, temperature?, maxTokens?, jsonMode? }
- * Response: { success, content, model, requestId } or { success: false, error, code }
+ * Env vars:
+ *   GEMINI_API_KEY_1..6  (Google direct)
+ *   ZYROUTER_API_KEY / ZROUTER_API_KEY (ZyRouter gateway)
+ *   ATRIA_API_KEY_1..14 (Atria fallback)
+ *
+ * Request: { message, mode?: 'fast'|'advanced', systemPrompt?, temperature?, maxTokens?, jsonMode? }
+ * Response: { success, content, model, provider, requestId } or { success:false, error, code }
  */
 
 // Minimal Vercel types (avoid @vercel/node dependency)
@@ -22,36 +28,118 @@ interface VercelResponse {
 }
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+const ZYROUTER_BASE = 'https://api.zyrouter.com/v1';
+const ATRIA_BASE = 'https://api.atria-asi.ai/v1';
 
-// Official model names (NOT the invented zyrouter ids)
-const DEFAULT_MODEL = 'gemini-2.0-flash-lite';
-const ALLOWED_MODELS = new Set([
-  'gemini-2.0-flash-lite',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-1.5-pro',
-]);
+// Model routing per Director order
+const FAST_MODEL = 'gemini-3.5-flash-lite';       // Google direct
+const ADVANCED_MODEL = 'geminiflash-3.8';          // ZyRouter gateway
+const ATRIA_MODEL = 'Atria-Dawn-Preview';          // Atria fallback
 
-function getApiKeys(): string[] {
+function getEnvKeys(prefix: string, count: number): string[] {
   const keys: string[] = [];
-  for (let i = 1; i <= 6; i++) {
-    const k = process.env[`GEMINI_API_KEY_${i}`]?.trim();
+  for (let i = 1; i <= count; i++) {
+    const k = process.env[`${prefix}_${i}`]?.trim();
     if (k) keys.push(k);
   }
-  // Also support single-key convention
-  const single = process.env.GEMINI_API_KEY?.trim();
-  if (single && !keys.includes(single)) keys.unshift(single);
   return keys;
+}
+
+function getZyrouterKey(): string {
+  return process.env.ZYROUTER_API_KEY?.trim() || process.env.ZROUTER_API_KEY?.trim() || '';
 }
 
 function rid(): string {
   return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+interface ChatResult {
+  ok: boolean;
+  content?: string;
+  model?: string;
+  provider?: string;
+  error?: string;
+}
+
+/** Call Google Gemini direct API */
+async function callGemini(key: string, model: string, message: string, systemPrompt: string, temperature: number, maxTokens: number, jsonMode: boolean): Promise<ChatResult> {
+  const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+  if (systemPrompt) {
+    contents.push({ role: 'user', parts: [{ text: `[SYSTEM]\n${systemPrompt}` }] });
+    contents.push({ role: 'model', parts: [{ text: 'Baik, saya mengerti.' }] });
+  }
+  contents.push({ role: 'user', parts: [{ text: message }] });
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60000);
+  try {
+    const r = await fetch(`${GEMINI_API_BASE}/models/${model}:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents,
+        generationConfig: {
+          temperature,
+          maxOutputTokens: maxTokens,
+          ...(jsonMode ? { responseMimeType: 'application/json' } : {}),
+        },
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!r.ok) {
+      const t = await r.text().catch(() => '');
+      return { ok: false, error: `Gemini ${r.status}: ${t.slice(0, 150)}` };
+    }
+    const data = (await r.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+    const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
+    if (!text) return { ok: false, error: 'Empty response' };
+    return { ok: true, content: text, model, provider: 'gemini' };
+  } catch (e) {
+    clearTimeout(timeout);
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/** Call OpenAI-compatible endpoint (ZyRouter, Atria) */
+async function callOpenAICompatible(baseUrl: string, key: string, model: string, provider: string, message: string, systemPrompt: string, temperature: number, maxTokens: number, jsonMode: boolean): Promise<ChatResult> {
+  const messages: Array<{ role: string; content: string }> = [];
+  if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+  messages.push({ role: 'user', content: message });
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60000);
+  try {
+    const r = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature,
+        max_tokens: maxTokens,
+        ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!r.ok) {
+      const t = await r.text().catch(() => '');
+      return { ok: false, error: `${provider} ${r.status}: ${t.slice(0, 150)}` };
+    }
+    const data = (await r.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const text = data.choices?.[0]?.message?.content ?? '';
+    if (!text) return { ok: false, error: 'Empty response' };
+    return { ok: true, content: text, model, provider };
+  } catch (e) {
+    clearTimeout(timeout);
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const requestId = rid();
 
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -60,89 +148,70 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ success: false, error: 'Method not allowed', code: 'METHOD_NOT_ALLOWED', requestId });
   }
 
-  const keys = getApiKeys();
-  if (keys.length === 0) {
-    return res.status(500).json({
-      success: false,
-      error: 'AI belum dikonfigurasi. Hubungi administrator untuk memasang GEMINI_API_KEY.',
-      code: 'NO_API_KEY',
-      requestId,
-    });
-  }
-
-  const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+  const body = typeof req.body === 'string' ? JSON.parse(req.body) : ((req.body ?? {}) as Record<string, unknown>);
   const message = String(body.message ?? '').slice(0, 8000);
   if (!message.trim()) {
     return res.status(400).json({ success: false, error: 'message wajib diisi', code: 'BAD_REQUEST', requestId });
   }
 
-  const model = ALLOWED_MODELS.has(String(body.model)) ? String(body.model) : DEFAULT_MODEL;
+  const mode = body.mode === 'advanced' ? 'advanced' : 'fast';
   const systemPrompt = String(body.systemPrompt ?? '').slice(0, 4000);
   const temperature = Math.min(Math.max(Number(body.temperature ?? 0.3), 0), 1);
   const maxTokens = Math.min(Math.max(Number(body.maxTokens ?? 4000), 100), 8000);
   const jsonMode = Boolean(body.jsonMode);
 
-  const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
-  if (systemPrompt) {
-    contents.push({ role: 'user', parts: [{ text: `[SYSTEM]\n${systemPrompt}` }] });
-    contents.push({ role: 'model', parts: [{ text: 'Baik, saya mengerti.' }] });
+  const geminiKeys = getEnvKeys('GEMINI_API_KEY', 6);
+  const zyrouterKey = getZyrouterKey();
+  const atriaKeys = getEnvKeys('ATRIA_API_KEY', 14);
+
+  const errors: string[] = [];
+
+  // Build attempt chain based on mode
+  // fast: gemini fast → zyrouter advanced → atria
+  // advanced: zyrouter advanced → gemini fast → atria
+  const attempts: Array<() => Promise<ChatResult>> = [];
+
+  if (mode === 'advanced') {
+    if (zyrouterKey) attempts.push(() => callOpenAICompatible(ZYROUTER_BASE, zyrouterKey, ADVANCED_MODEL, 'zyrouter', message, systemPrompt, temperature, maxTokens, jsonMode));
+    for (const k of geminiKeys) attempts.push(() => callGemini(k, FAST_MODEL, message, systemPrompt, temperature, maxTokens, jsonMode));
+  } else {
+    for (const k of geminiKeys) attempts.push(() => callGemini(k, FAST_MODEL, message, systemPrompt, temperature, maxTokens, jsonMode));
+    if (zyrouterKey) attempts.push(() => callOpenAICompatible(ZYROUTER_BASE, zyrouterKey, ADVANCED_MODEL, 'zyrouter', message, systemPrompt, temperature, maxTokens, jsonMode));
   }
-  contents.push({ role: 'user', parts: [{ text: message }] });
+  // Atria as final fallback
+  for (const k of atriaKeys.slice(0, 3)) {
+    attempts.push(() => callOpenAICompatible(ATRIA_BASE, k, ATRIA_MODEL, 'atria', message, systemPrompt, temperature, maxTokens, jsonMode));
+  }
 
-  const payload: Record<string, unknown> = {
-    contents,
-    generationConfig: {
-      temperature,
-      maxOutputTokens: maxTokens,
-      ...(jsonMode ? { responseMimeType: 'application/json' } : {}),
-    },
-  };
+  if (attempts.length === 0) {
+    return res.status(500).json({
+      success: false,
+      error: 'AI belum dikonfigurasi. Hubungi administrator.',
+      code: 'NO_API_KEY',
+      requestId,
+    });
+  }
 
-  // Try keys in order (failover)
-  let lastError = '';
-  for (const key of keys) {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60000);
-      const r = await fetch(
-        `${GEMINI_API_BASE}/models/${model}:generateContent?key=${key}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: controller.signal,
-        }
-      );
-      clearTimeout(timeout);
-
-      if (!r.ok) {
-        const errText = await r.text().catch(() => '');
-        lastError = `Gemini ${r.status}: ${errText.slice(0, 200)}`;
-        // 429/5xx → try next key; 4xx → don't bother retrying other keys
-        if (r.status === 429 || r.status >= 500) continue;
-        break;
-      }
-
-      const data = (await r.json()) as {
-        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-      };
-      const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
-      if (!text) {
-        lastError = 'Empty response from model';
-        continue;
-      }
-      return res.status(200).json({ success: true, content: text, model, requestId });
-    } catch (e) {
-      lastError = e instanceof Error ? e.message : String(e);
-      continue;
+  for (const attempt of attempts) {
+    const result = await attempt();
+    if (result.ok) {
+      return res.status(200).json({
+        success: true,
+        content: result.content,
+        model: result.model,
+        provider: result.provider,
+        mode,
+        requestId,
+      });
     }
+    errors.push(result.error ?? 'unknown');
   }
 
   return res.status(502).json({
     success: false,
     error: 'AI sedang tidak tersedia. Coba lagi beberapa saat.',
     code: 'PROVIDER_ERROR',
-    detail: lastError.slice(0, 300),
+    detail: errors.slice(0, 3).join(' | ').slice(0, 300),
     requestId,
   });
 }
