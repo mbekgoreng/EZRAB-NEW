@@ -281,7 +281,7 @@ export function DedAiSplitAnalysisView(props: DedAiSplitAnalysisViewProps) {
             )}
             <div style={{ display: 'flex', gap: 8 }}>
               {onRetry && <button className="ded-btn-ghost" onClick={onRetry} style={{ flex: 1 }}>↻ Analisis ulang</button>}
-              {onCommitOfficialRab && <button className="ded-btn-primary" onClick={onCommitOfficialRab} style={{ flex: 2, padding: 12 }}>Lanjut ke AHSP & Harga →</button>}
+              {onCommitOfficialRab && <button className="ded-btn-primary" onClick={() => onCommitOfficialRab()} style={{ flex: 2, padding: 12 }}>Lanjut ke AHSP & Harga →</button>}
             </div>
           </div>
         </div>
