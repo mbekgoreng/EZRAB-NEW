@@ -135,7 +135,8 @@ export default async function handler(req, res) {
   const body = parseBody(req);
   const prompt = String(body.prompt || '');
   if (!prompt.trim()) return res.status(400).json({ success: false, error: 'prompt required' });
-  const r = await executeAI({ message: prompt, mode: productIdToMode(String(body.productId || 'EZRAB_AI')), systemPrompt: String(body.systemPrompt || ''), temperature: Number(body.temperature ?? 0.1), maxTokens: Math.min(Number(body.maxTokens ?? 6000), 8000), jsonMode: !!body.jsonMode });
+  const explicitMode = body.mode === 'advanced' ? 'advanced' : body.mode === 'fast' ? 'fast' : null;
+  const r = await executeAI({ message: prompt, mode: explicitMode || productIdToMode(String(body.productId || 'EZRAB_AI')), systemPrompt: String(body.systemPrompt || ''), temperature: Number(body.temperature ?? 0.1), maxTokens: Math.min(Number(body.maxTokens ?? 6000), 8000), jsonMode: !!body.jsonMode });
   if (r.ok) return res.status(200).json({ success: true, content: r.content, structured: null, model: r.model, provider: r.provider, requestId: r.requestId });
   return res.status(502).json({ success: false, error: 'AI tidak tersedia', requestId: r.requestId });
 };

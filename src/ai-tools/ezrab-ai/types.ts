@@ -31,6 +31,7 @@ export interface EzrabAiRequest {
   maxTokens?: number;
   timeoutMs?: number;
   projectSummary?: string;
+  mode?: 'fast' | 'advanced';
 }
 
 export interface EzrabAiResponse {
