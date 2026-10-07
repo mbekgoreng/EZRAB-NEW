@@ -87,7 +87,7 @@ export function DedAiSplitAnalysisView(props: DedAiSplitAnalysisViewProps) {
 
   const applyOverride = (id: string, val: string) => {
     const n = parseFloat(val.replace(',', '.'));
-    if (!Number.isNaN(n)) setOverrides((o) => ({ ...o, [id]: n }));
+    if (!Number.isNaN(n)) setOverrides((o: Record<string, number>) => ({ ...o, [id]: n }));
   };
 
   return (
@@ -219,7 +219,7 @@ export function DedAiSplitAnalysisView(props: DedAiSplitAnalysisViewProps) {
                             ⚠️ {a}
                             {!approved && (
                               <div className="ded-acts">
-                                <button className="ded-ok" onClick={() => setApprovedAssumptions((s) => ({ ...s, [key]: true }))}>✓ Setuju</button>
+                                <button className="ded-ok" onClick={() => setApprovedAssumptions((s: Record<string, boolean>) => ({ ...s, [key]: true }))}>✓ Setuju</button>
                               </div>
                             )}
                             {approved && <div style={{ color: '#059669', fontSize: 12, fontWeight: 700, marginTop: 6 }}>✓ Dikonfirmasi</div>}
@@ -260,7 +260,7 @@ export function DedAiSplitAnalysisView(props: DedAiSplitAnalysisViewProps) {
                     ⚠️ {a.text}
                     {!approved && (
                       <div className="ded-acts">
-                        <button className="ded-ok" onClick={() => setApprovedAssumptions((s) => ({ ...s, [a.key]: true }))}>✓ Setuju</button>
+                        <button className="ded-ok" onClick={() => setApprovedAssumptions((s: Record<string, boolean>) => ({ ...s, [a.key]: true }))}>✓ Setuju</button>
                       </div>
                     )}
                   </div>
