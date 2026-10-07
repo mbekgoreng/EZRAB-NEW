@@ -44,6 +44,7 @@ import { dedRabPipeline, PipelineExecutionOutput } from '../../ded-rab-v2/pipeli
 import { DedProcessingMode, PipelineProgressEvent, PipelineStage } from '../../ded-rab-v2/types';
 import { ExecutionMode, ProjectLocation } from '../../ded-rab-v2/resolution/providerContracts';
 import { DedRabV2ReviewView } from '../../ded-rab-v2/review/DedRabV2ReviewView';
+import { DedAiSplitAnalysisView } from './DedAiSplitAnalysisView';
 import { dedAnalysisPersistenceService } from '../../services/dedAnalysisPersistenceService';
 import { dedRabReviewService } from '../../ded-rab-v2/review/dedRabReviewService';
 import { dedSpreadsheetSync } from '../../ded-rab-v2/spreadsheet/dedSpreadsheetSync';
@@ -825,7 +826,18 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
           {/* Stepper */}
           {renderHorizontalStepper()}
 
-          {/* Review View */}
+          {/* Review View — new split-view UI */}
+          <DedAiSplitAnalysisView
+            projectName={targetProjObj?.name || effectiveProjectName}
+            sourceDocuments={executionOutput.sourceDocuments}
+            workItems={executionOutput.workItems}
+            evidences={executionOutput.evidences}
+            grandTotal={executionOutput.grandTotal}
+            onCommitOfficialRab={handleCommitOfficialRab}
+            onRetry={() => handleStartAnalysis()}
+          />
+          {/* Legacy detail view (hidden, kept for reference) */}
+          <div style={{ display: 'none' }}>
           <DedRabV2ReviewView
             projectId={activePid}
             projectName={targetProjObj?.name || effectiveProjectName}
@@ -845,6 +857,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
             onRetry={() => handleStartAnalysis()}
             onBackToUpload={handleClearActiveAnalysis}
           />
+          </div>
         </div>
       </div>
     );
