@@ -185,16 +185,21 @@ export class BrandingClient {
       } catch {}
     }
 
+    // P0-B data-integrity fix (2026-10-09): identity fields MUST be empty when
+    // the user has not filled them. Previously this returned a fabricated
+    // company ("PT EZRAB KONSTRUKSI DIGITAL", fake NPWP/phone/director),
+    // which flowed straight into PDF/Excel exports as if it were the user's
+    // real company. Empty = UI shows "Belum diisi" + warning banner.
     return {
       workspaceId,
-      companyName: 'PT EZRAB KONSTRUKSI DIGITAL',
-      address: 'SCBD District 8, Jakarta Selatan 12190',
-      phone: '+62 21 5088-9900',
-      email: 'kontak@ezrab.co.id',
-      website: 'https://ezrab.co.id',
-      taxNumber: '01.234.567.8-012.000',
-      directorName: 'Ir. Ahmad Yusuf, M.T.',
-      leadEstimatorName: 'Ahmad Yusuf (Super Admin)',
+      companyName: '',
+      address: '',
+      phone: '',
+      email: '',
+      website: '',
+      taxNumber: '',
+      directorName: '',
+      leadEstimatorName: '',
       subscriptionPlan: 'pro',
       isWatermarkRequired: false,
       canUploadLogo: true,

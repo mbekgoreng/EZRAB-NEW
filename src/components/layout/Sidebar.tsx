@@ -1075,7 +1075,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               const IconComp = item.icon;
               return (
                 <React.Fragment key={item.id}>
-                  {item.id === 'ded-rab' && (!sidebarCollapsed || isMobile) && (
+                  {item.id === 'ezrab-ai' && (!sidebarCollapsed || isMobile) && (
                     <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
                       AI TOOLS
                     </div>

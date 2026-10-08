@@ -83,6 +83,13 @@ export interface ReceiptAnalysisRequest {
   customSupplier?: string;
   customDate?: string;
   referenceMasterPrices?: MasterPriceReferenceItem[];
+  /**
+   * TEST-ONLY: explicitly allow the mock OCR fallback (used by unit tests).
+   * NEVER set this in production UI code — when the OCR endpoint is
+   * unavailable, analyzeReceipt must FAIL HONESTLY instead of fabricating
+   * receipt data (P0 data-integrity fix, 2026-10-09).
+   */
+  __allowMockFallback?: boolean;
 }
 
 export interface ReceiptAnalysisResponse {
@@ -294,6 +301,35 @@ export async function analyzeReceipt(request: ReceiptAnalysisRequest): Promise<R
       // Backend unavailable or running in offline / unit test environment
     }
 
+    // P0 data-integrity fix (2026-10-09): NEVER fabricate OCR results when the
+    // endpoint is unavailable. Previously this returned hardcoded mock supplier
+    // names, prices, and invoice numbers with confidence HIGH, which users
+    // could confirm straight into Keuangan Proyek as if they were real.
+    // Mock data is now ONLY available via explicit test opt-in.
+    if (request.__allowMockFallback !== true) {
+      return {
+        success: false,
+        error: 'Layanan OCR tidak tersedia saat ini. Silakan catat pengeluaran secara manual di menu Keuangan Proyek.',
+      };
+    }
+
+    return { success: true, result: buildMockReceiptResultForTests(request, fileSize, masterCatalog) };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Gagal memproses OCR nota / invoice.';
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * TEST-ONLY mock OCR result builder. Exported so unit tests can exercise the
+ * result structure WITHOUT going through analyzeReceipt's honest-failure path.
+ * MUST NEVER be called from production UI code.
+ */
+export function buildMockReceiptResultForTests(
+  request: ReceiptAnalysisRequest,
+  fileSize: number,
+  masterCatalog: MasterPriceReferenceItem[]
+): ReceiptOCRResult {
     // Offline / unit-test fallback processing
     const isUnreadableReceipt =
       request.fileName && (request.fileName.toLowerCase().includes('blur') || request.fileName.toLowerCase().includes('rusak') || request.fileName.toLowerCase().includes('buram'));
@@ -383,11 +419,7 @@ export async function analyzeReceipt(request: ReceiptAnalysisRequest): Promise<R
       warnings,
     };
 
-    return { success: true, result };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Gagal memproses OCR nota / invoice.';
-    return { success: false, error: message };
-  }
+    return result;
 }
 
 /**

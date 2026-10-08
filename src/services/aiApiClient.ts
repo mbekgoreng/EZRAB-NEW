@@ -424,7 +424,14 @@ export class AiApiClient {
   }
 
   /**
-   * Start an interactive assistant wizard session
+   * Start an interactive assistant wizard session.
+   *
+   * @deprecated SERVER ENDPOINT NEVER IMPLEMENTED (`/api/assistant/wizard/*`
+   * does not exist). The canonical wizard runs 100% client-side via
+   * `resolveClientWizardStep()` in coAssistantService.ts (see callers in
+   * EzrabAiAssistantFullView / EzrabCoAssistantChatbox, which catch the 404
+   * and use the local resolver). Kept for backward-compat; do not call in
+   * new code. If a server wizard is ever built, remove this notice.
    */
   public async startWizard(projectId: string, conversationId?: string, initialQuery?: string): Promise<any> {
     const headers = await this.getHeaders(projectId);
@@ -439,7 +446,10 @@ export class AiApiClient {
   }
 
   /**
-   * Submit an answer or choice to the wizard session
+   * Submit an answer or choice to the wizard session.
+   *
+   * @deprecated See startWizard: server endpoint never implemented; callers
+   * fall back to the client-side wizard resolver on 404.
    */
   public async answerWizard(sessionId: string, choiceId?: string, parameters?: Record<string, any>): Promise<any> {
     const headers = await this.getHeaders();

@@ -16,10 +16,14 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 
 // ---------------------------------------------------------------- CORS ---
+// SECURITY (P0 fix): the `*.vercel.app` wildcard was REMOVED from defaults.
+// Any Vercel deployment — including an attacker's — could previously make
+// credentialed browser calls to the gateway. Same-origin calls (the app calls
+// its own /api/...) do not need CORS at all. If a preview deployment genuinely
+// needs cross-origin access, allowlist its exact origin via CORS_ALLOWED_ORIGINS.
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://ezrab-site.vercel.app',
   'https://www.ezrab-site.vercel.app',
-  '*.vercel.app', // preview deployments (branch previews); tighten via CORS_ALLOWED_ORIGINS if needed
 ];
 
 function configuredOrigins() {
@@ -89,9 +93,23 @@ export function rateLimit(req, { limit = 30, windowMs = 60000, keyPrefix = 'rl',
   };
 }
 
+/**
+ * Client IP for rate limiting / logging.
+ * SECURITY (P0 fix): previously the FIRST x-forwarded-for entry was trusted,
+ * which any client can spoof (`X-Forwarded-For: victim-ip`) to evade per-IP
+ * rate limits or frame someone else. On Vercel the platform APPENDS the real
+ * client IP, so the LAST entry is the one the trusted proxy added. We also
+ * honor x-real-ip when present (set by the platform, not the client).
+ */
 export function clientIp(req) {
-  const xff = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-  return xff || (req.socket && req.socket.remoteAddress) || 'unknown';
+  const realIp = String(req.headers['x-real-ip'] || '').trim();
+  if (realIp) return realIp;
+  const xff = String(req.headers['x-forwarded-for'] || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (xff.length > 0) return xff[xff.length - 1];
+  return (req.socket && req.socket.remoteAddress) || 'unknown';
 }
 
 /** SHA-256 hash of the client IP — logged instead of the raw IP (privacy). */
@@ -213,8 +231,16 @@ export async function authenticateRequest(req, opts = {}) {
     // Fase pengembangan: login dimatikan (AUTH_ENABLED=false di frontend).
     // AI_ALLOW_ANONYMOUS=true mengizinkan akses AI tanpa JWT — tetap
     // rate-limit ketat per IP + origin check (degraded). Default: fail-closed.
-    if (!token && process.env.AI_ALLOW_ANONYMOUS === 'true') {
+    // SECURITY (P0 fix): the anonymous bypass can NEVER activate in
+    // production, even if the env var is set by accident. Vercel sets
+    // VERCEL_ENV=production on production deployments.
+    const vercelEnv = String(process.env.VERCEL_ENV || '').toLowerCase();
+    const isProd = vercelEnv === 'production' || String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+    if (!token && process.env.AI_ALLOW_ANONYMOUS === 'true' && !isProd) {
       return { ok: true, method: 'none', user: null, degraded: true };
+    }
+    if (!token && process.env.AI_ALLOW_ANONYMOUS === 'true' && isProd) {
+      console.error('[ai-gateway] REFUSED: AI_ALLOW_ANONYMOUS is set but VERCEL_ENV=production — anonymous AI access stays disabled.');
     }
     const v = await verifySupabaseJwt(token, opts.jwtVerifier);
     if (!v.ok) return { ok: false, method: 'jwt', reason: v.reason };

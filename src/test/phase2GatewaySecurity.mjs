@@ -30,9 +30,16 @@ test('CORS: production origin allowed', () => {
   eq(applyCors(mkReq({ origin: 'https://ezrab-site.vercel.app' }), res), true);
   eq(res.headers['access-control-allow-origin'], 'https://ezrab-site.vercel.app');
 });
-test('CORS: vercel preview subdomain allowed', () => {
+test('CORS: arbitrary vercel.app subdomain REJECTED by default (wildcard removed)', () => {
   const res = mkRes();
-  eq(applyCors(mkReq({ origin: 'https://ezrab-site-abc123-yf-arch.vercel.app' }), res), true);
+  eq(applyCors(mkReq({ origin: 'https://ezrab-site-abc123-yf-arch.vercel.app' }), res), false);
+});
+test('CORS: preview origin allowed when explicitly allowlisted via env', () => {
+  process.env.CORS_ALLOWED_ORIGINS = 'https://ezrab-site-abc123-yf-arch.vercel.app';
+  const res = mkRes();
+  try {
+    eq(applyCors(mkReq({ origin: 'https://ezrab-site-abc123-yf-arch.vercel.app' }), res), true);
+  } finally { delete process.env.CORS_ALLOWED_ORIGINS; }
 });
 test('CORS: no origin (same-origin/curl) passes through', () => {
   eq(applyCors(mkReq({}), mkRes()), true);

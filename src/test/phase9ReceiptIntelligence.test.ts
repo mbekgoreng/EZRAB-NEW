@@ -19,6 +19,7 @@ async function run() {
       projectId: 'PROJ-REC-001',
       fileName: 'nota.jpg',
       fileData: 'dummy_data',
+      __allowMockFallback: true, // TEST-ONLY opt-in: mock fallback dilarang di production UI
     });
     
     if (!result.success || !result.result) throw new Error('OCR should succeed');

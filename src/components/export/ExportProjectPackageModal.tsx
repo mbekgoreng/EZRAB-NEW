@@ -62,10 +62,13 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
 
   // Form toggles
   const [useLiveFormulas, setUseLiveFormulas] = useState(true);
+  // P0-B: signature fields start EMPTY — never pre-fill with fabricated names.
+  // The branding modal effect above fills these from real branding when available.
+  // approvedByName uses the project's real client when known.
   const [signatures, setSignatures] = useState({
-    preparedByName: 'Ahmad Yusuf (Lead Estimator)',
-    checkedByName: 'Ir. Hendra Kusuma (Direktur Teknik)',
-    approvedByName: (currentProject as any).client || currentProject.clientName || 'Owner Proyek',
+    preparedByName: '',
+    checkedByName: '',
+    approvedByName: (currentProject as any).client || currentProject.clientName || '',
   });
 
   // Sheet selections initialized from selected preset

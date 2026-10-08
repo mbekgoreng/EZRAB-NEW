@@ -75,9 +75,10 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
     setClientPhone(currentProject?.clientPhone || '');
     setStatus('DRAFT');
     setNotes('Pembayaran mohon ditransfer sesuai rincian rekening di atas.');
-    setBankName('BCA (Bank Central Asia)');
-    setBankAccount('8830-1234-5678');
-    setBankAccountHolder(company?.name || 'PT EZRAB KONSTRUKSI DIGITAL');
+    // P0-B: never pre-fill fabricated bank details. User fills their own.
+    setBankName('');
+    setBankAccount('');
+    setBankAccountHolder(company?.name || '');
     setErrorMessage('');
 
     if (terminPrefill) {

@@ -538,16 +538,19 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
     setIsExportingPdf(true);
     try {
       const branding = await brandingClient.getBranding('ws-default-ezrab');
+      // P0-B: never fabricate company identity. Empty branding => empty
+      // strings; the PDF exporter renders "-" and the UI shows a warning
+      // banner prompting the user to complete Branding.
       const company: Company = {
         id: 'comp-1',
-        name: branding.companyName || 'PT EZRAB KONSTRUKSI DIGITAL',
-        address: branding.address || 'SCBD District 8 Tower A Lt. 28, Jakarta Selatan',
-        phone: branding.phone || '021-5088-9900',
-        email: branding.email || 'info@ezrab.co.id',
-        website: branding.website || 'https://ezrab.co.id',
-        taxNumber: branding.taxNumber || '01.234.567.8-012.000',
-        directorName: branding.directorName || 'Ir. Ahmad Yusuf, M.T.',
-        leadEstimatorName: branding.leadEstimatorName || 'Ahmad Yusuf (Super Admin)',
+        name: branding.companyName || '',
+        address: branding.address || '',
+        phone: branding.phone || '',
+        email: branding.email || '',
+        website: branding.website || '',
+        taxNumber: branding.taxNumber || '',
+        directorName: branding.directorName || '',
+        leadEstimatorName: branding.leadEstimatorName || '',
         logo: branding.logoUrl || '',
         defaultOverheadPercent: 5,
         defaultProfitPercent: 5,

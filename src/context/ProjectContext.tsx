@@ -24,6 +24,7 @@ import {
 import { CONSTRUCTION_CALCULATORS, getCalculatorById } from '../engine/constructionCalculators/registry';
 import { SafeDecimalEngine } from '../engine/safeDecimalEngine';
 import { createRabItemRecord } from '../engine/rab/rabItemFactory';
+import { resolveQtoSyncPrice, resolveQtoSyncCode } from '../lib/qtoSyncPricing';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
 import { projectPriceEngine } from '../engine/pricing/projectPriceEngine';
 import { resolveInitialProjects } from '../lib/demoSeed';
@@ -1139,19 +1140,27 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       }
 
-      const defaultPrice = customUnitPrice !== undefined ? customUnitPrice : 125000;
+      // P1 PRICE-1 fix (2026-10-09): JANGAN PERNAH mengarang harga fallback.
+      // Sebelumnya: harga default Rp125.000 + kode 'AHSP.2026.01' palsu.
+      // Sekarang: tanpa harga dari pemanggil => item PRICE_UNRESOLVED,
+      // amount 0, NEEDS_VERIFICATION. Pengguna wajib mengisi harga nyata.
+      const priceRes = resolveQtoSyncPrice(customUnitPrice);
+      const unitPrice = priceRes.unitPrice;
       const rabId = `RAB-${Date.now().toString().slice(-6)}`;
       const newRabItem: RabItem = {
         id: rabId,
         projectId: currentProjectId,
         no: projectRabItems.length + 1,
-        code: ahspCode || qto.kode || 'AHSP.2026.01',
+        code: resolveQtoSyncCode(ahspCode, qto.kode),
         category: targetSectionName || qto.category || 'Pekerjaan Struktur',
         description: qto.uraian,
         volume: qto.quantity,
         unit: qto.unit,
-        unitPrice: defaultPrice,
-        amount: SafeDecimalEngine.safeMultiply(qto.quantity, defaultPrice, 0),
+        unitPrice,
+        amount: SafeDecimalEngine.safeMultiply(qto.quantity, unitPrice, 0),
+        priceStatus: priceRes.priceStatus,
+        verificationStatus: priceRes.verificationStatus,
+        notes: priceRes.notes,
         ahspCode: ahspCode || qto.kode,
         volumeSource: qto.source === 'CALCULATOR' ? 'CALCULATOR' : 'MANUAL',
         qtoItemId: qto.id,

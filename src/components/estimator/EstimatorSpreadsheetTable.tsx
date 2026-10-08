@@ -618,6 +618,15 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                               ) : (
                                 <div>
                                   <div>{item.description}</div>
+                                  {/* P1 PRICE-1: tampilkan item yang butuh verifikasi */}
+                                  {(item.priceStatus === 'PRICE_UNRESOLVED' || item.verificationStatus === 'NEEDS_VERIFICATION') && (
+                                    <span
+                                      title={item.priceStatus === 'PRICE_UNRESOLVED' ? 'Harga satuan belum diisi — bukan Rp0. Isi harga nyata.' : 'Item ini perlu diverifikasi.'}
+                                      style={{ display: 'inline-block', background: '#FEF3C7', color: '#92400E', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 600, marginTop: '3px' }}
+                                    >
+                                      ⚠ {item.priceStatus === 'PRICE_UNRESOLVED' ? 'Harga belum diisi' : 'Perlu verifikasi'}
+                                    </span>
+                                  )}
                                   <div
                                     className="mobile-only"
                                     style={{
