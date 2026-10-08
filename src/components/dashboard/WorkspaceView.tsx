@@ -91,6 +91,7 @@ import { RabTemplate } from '../../types/rabTemplate';
 import { CreateProjectModal } from '../projects/CreateProjectModal';
 import { TenderDocumentsView } from '../document/TenderDocumentsView';
 import { OnboardingTourModal } from './OnboardingTourModal';
+import { DashboardGuideModal, shouldShowDashboardGuide } from './DashboardGuideModal';
 import { Sidebar } from '../layout/Sidebar';
 import { EnterpriseEntryPage } from '../enterprise/EnterpriseEntryPage';
 import { ProjectFinanceView } from '../finance/ProjectFinanceView';
@@ -203,6 +204,10 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
   // single first-run/replayable tutorial. Kept mounted but never auto-opens.
   const [onboardingTourOpen, setOnboardingTourOpen] = useState(false);
 
+  // Panduan langkah pertama di dashboard — muncul otomatis saat pengguna
+  // masuk dashboard dan belum punya proyek sama sekali.
+  const [dashboardGuideOpen, setDashboardGuideOpen] = useState(false);
+
   // Sync activities to localStorage
   useEffect(() => {
     try {
@@ -211,6 +216,17 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
       console.error(e);
     }
   }, [activities]);
+
+  // Panduan langkah pertama: otomatis tampil saat masuk dashboard dan belum
+  // punya proyek. Delay 1,2 detik agar tidak bertumpuk dengan tur selamat
+  // datang di level App (jika sedang tampil di atasnya).
+  useEffect(() => {
+    if (activeMenu !== 'dashboard') return;
+    if (projects.length > 0) return;
+    if (!shouldShowDashboardGuide()) return;
+    const t = setTimeout(() => setDashboardGuideOpen(true), 1200);
+    return () => clearTimeout(t);
+  }, [activeMenu, projects.length]);
 
   // Dynamic calculations (100% genuine - 0 dummy data)
   const totalProjects = projects.length;
@@ -755,6 +771,18 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
         onNavigateToTab={(tab, projId) => setActiveMenu(tab, projId)}
         onOpenMagicAiWithPrompt={(prompt) => {
           setActiveMenu('magic-ai');
+        }}
+      />
+
+      {/* =========================================================================
+          PANDUAN LANGKAH PERTAMA DI DASHBOARD (auto saat belum ada proyek)
+         ========================================================================= */}
+      <DashboardGuideModal
+        open={dashboardGuideOpen}
+        onClose={() => setDashboardGuideOpen(false)}
+        onStartFirstProject={() => {
+          setDashboardGuideOpen(false);
+          setCreateModalOpen(true);
         }}
       />
 
