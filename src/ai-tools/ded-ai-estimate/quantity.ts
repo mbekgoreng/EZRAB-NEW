@@ -87,6 +87,20 @@ export function shapeForUnit(unit: string): QuantityShape {
   return UNIT_SHAPE[unit?.toLowerCase()] || 'COUNT';
 }
 
+/**
+ * Deteksi penanda satuan panjang eksplisit pada string dimensi.
+ * "12000 x 8000 mm" -> 0.001, "120 x 80 cm" -> 0.01, "12 x 8 m" -> 1.
+ * Tanpa penanda eksplisit, faktor 1 (meter, perilaku lama) + flag ambiguous.
+ */
+export function detectLengthUnitFactor(dimensionString: string): { factor: number; unit: string | null } {
+  const lower = ` ${dimensionString.toLowerCase()} `;
+  // Hindari false positive: "mm" jangan cocok di dalam kata lain.
+  if (/[^a-z]mm[^a-z]/.test(lower)) return { factor: 0.001, unit: 'mm' };
+  if (/[^a-z]cm[^a-z]/.test(lower)) return { factor: 0.01, unit: 'cm' };
+  if (/[^a-z]m[^a-z]/.test(lower)) return { factor: 1, unit: 'm' };
+  return { factor: 1, unit: null };
+}
+
 export function attemptQuantityFromDimensionString(
   unit: string,
   dimensionString: string | undefined
@@ -95,8 +109,16 @@ export function attemptQuantityFromDimensionString(
   const nums = parseDimensionsString(dimensionString);
   if (nums.length === 0) return { quantity: null, formula: dimensionString };
 
+  const { factor, unit: dimUnit } = detectLengthUnitFactor(dimensionString);
+  const scaled = nums.map((n) => n * factor);
+
   const shape = shapeForUnit(unit);
-  const [a, b, c] = nums;
+  const [a, b, c] = scaled;
   const res = computeQuantity(shape, { length: a, width: b, height: c }, dimensionString);
-  return { quantity: res.quantity, formula: res.formula || dimensionString };
+  const formula = res.formula || dimensionString;
+  // Catat konversi agar transparan di UI (provenance).
+  const annotated = dimUnit && dimUnit !== 'm'
+    ? `${formula} [konversi ${dimUnit}→m]`
+    : formula;
+  return { quantity: res.quantity, formula: annotated };
 }

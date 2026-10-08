@@ -508,7 +508,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           </main>
         ) : activeMenu === 'ded-ai' ? (
           <main style={{ minHeight: 'calc(100vh - 64px)', background: '#F2F7FF' }}>
-            <DedAiEstimateView />
+            <DedAiEstimateView onNavigateToTab={(tab) => setActiveMenu(tab)} />
           </main>
         ) : activeMenu === 'dokumen-ai' ? (
           <main style={{ minHeight: 'calc(100vh - 64px)', background: '#F2F7FF' }}>
