@@ -16,6 +16,13 @@ import {
 import { isAppPath, navigateTo, parseWorkspaceRoute, paths, routeForMenu, routeLabel } from './routing/routes';
 import { useBrowserLocation } from './routing/useBrowserLocation';
 
+/**
+ * AUTH_ENABLED = false → login dimatikan sementara.
+ * Semua CTA ("Masuk", "Coba Gratis", dsb.) langsung membuka workspace tanpa login.
+ * Nyalakan lagi (true) saat autentikasi siap dipakai.
+ */
+const AUTH_ENABLED = false;
+
 export const App: React.FC = () => {
   const location = useBrowserLocation();
   const workspaceRoute = parseWorkspaceRoute(location.pathname, location.search);
@@ -37,6 +44,11 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (location.pathname === paths.app()) navigateTo(paths.dashboard(), { replace: true });
   }, [location.pathname]);
+
+  // Saat auth dimatikan, halaman /masuk /daftar /masuk/role langsung ke dashboard.
+  useEffect(() => {
+    if (!AUTH_ENABLED && isAuthPage) navigateTo(paths.dashboard(), { replace: true });
+  }, [isAuthPage]);
 
   useEffect(() => {
     if (isWorkspace) document.title = workspaceRoute.status === 'not-found' ? 'Halaman Tidak Ditemukan — EZRAB' : `${routeLabel(workspaceRoute)} — EZRAB`;
@@ -115,7 +127,7 @@ export const App: React.FC = () => {
       />
     );
   } else if (isAuthPage) {
-    content = (
+    content = AUTH_ENABLED ? (
       <AuthPage
         mode={isRoleLoginPage ? 'role' : isSignupPage ? 'signup' : 'signin'}
         onLoginSuccess={() => {
@@ -125,7 +137,7 @@ export const App: React.FC = () => {
           if (shouldShowOnboarding()) setTourPending(true);
         }}
       />
-    );
+    ) : null;
   } else {
     content = (
       <div
@@ -140,7 +152,11 @@ export const App: React.FC = () => {
         {/* Exact Landing Page matching reference design */}
         <ExactLandingPage
           onOpenWorkspace={() => handleSetWorkspace(true)}
-          onOpenAuth={(tab) => navigateTo(tab === 'daftar' ? paths.signup() : paths.login())}
+          onOpenAuth={(tab) =>
+            AUTH_ENABLED
+              ? navigateTo(tab === 'daftar' ? paths.signup() : paths.login())
+              : handleSetWorkspace(true)
+          }
           onOpenDemo={() => setDemoModalOpen(true)}
           onOpenTheme={() => setThemeModalOpen(true)}
           onBackToLanding={handleReturnToLanding}
