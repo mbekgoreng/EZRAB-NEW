@@ -224,6 +224,8 @@ export const ExactAhsp: React.FC<ExactAhspProps> = ({ onOpenWorkspace }) => {
               src={ahspCraneImg}
               alt="AHSP 2026 Construction Building and Tower Crane"
               className="ez-ahsp-crane-img"
+              loading="lazy"
+              decoding="async"
             />
 
             {/* Subtle Blueprint Grid & CAD Layer */}
