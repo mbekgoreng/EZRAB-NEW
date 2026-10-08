@@ -7,6 +7,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Send, Sparkles, Loader2, AlertTriangle, Zap, Brain, Copy, Check } from 'lucide-react';
 import { ezrabAiService } from './service';
+import { renderMarkdown } from './markdown';
+import { Maskot3D } from '../../components/mascot/Maskot3D';
 import './ezrab-ai-chat.css';
 
 interface ChatEntry {
@@ -98,7 +100,7 @@ export const EzrabAiView: React.FC = () => {
       <div className="ezchat-body" ref={scrollRef}>
         {messages.length === 0 ? (
           <div className="ezchat-empty">
-            <div className="ezchat-avatar-xl">✨</div>
+            <Maskot3D size={132} />
             <h2 className="ezchat-greet">{greeting}</h2>
             <p className="ezchat-sub">Tanya apa saja soal RAB, AHSP, estimasi biaya, dan konstruksi</p>
             <div className="ezchat-chips">
@@ -117,7 +119,7 @@ export const EzrabAiView: React.FC = () => {
               <div key={i} className={`ezchat-row ai ${m.isError ? 'error' : ''}`}>
                 <div className="ezchat-ai-avatar">{m.isError ? <AlertTriangle size={15} /> : <Sparkles size={15} />}</div>
                 <div className="ezchat-bubble ai">
-                  <div className="ezchat-text">{m.content}</div>
+                  <div className="ezchat-text md-body">{renderMarkdown(m.content)}</div>
                   <div className="ezchat-meta">
                     {m.model && <span className="ezchat-model">{m.model}</span>}
                     <button className="ezchat-copy" onClick={() => copyMsg(i, m.content)} title="Salin">
