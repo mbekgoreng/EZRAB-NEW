@@ -2,6 +2,7 @@
  * DAFTAR HARGA SATUAN UPAH, BAHAN, DAN PERALATAN 2026
  * Sourced directly from SE Bina Konstruksi No. 47/SE/Dk/2026 Cipta Karya Workbook
  * Generated from Sheet Upah Bahan
+ * Formula clauses: see AHSP_2026_CIPTA_KARYA_FORMULA_CLAUSES.md
  */
 
 export interface CiptaKaryaPriceEntry {
@@ -12,12 +13,6 @@ export interface CiptaKaryaPriceEntry {
 }
 
 export const OFFICIAL_CK_2026_LABOR: CiptaKaryaPriceEntry[] = [
-  {
-    "code": "",
-    "name": "2",
-    "unit": "3",
-    "price": 4.0
-  },
   {
     "code": "L.01",
     "name": "Pekerja",
@@ -19326,79 +19321,79 @@ export const OFFICIAL_CK_2026_EQUIPMENT: CiptaKaryaPriceEntry[] = [
   },
   {
     "code": "",
-    "name": "#NAME?",
+    "name": "- Scaffolding Main frame T-190",
     "unit": "bulan",
     "price": 8800.0
   },
   {
     "code": "",
-    "name": "#NAME?",
+    "name": "- Scaffolding Main frame T-170",
     "unit": "bulan",
     "price": 8300.0
   },
   {
     "code": "",
-    "name": "#NAME?",
+    "name": "- Scaffolding Leader frame T-90",
     "unit": "bulan",
     "price": 5400.0
   },
   {
     "code": "",
-    "name": "#NAME?",
+    "name": "- Scaffolding Cross  brass  T-220",
     "unit": "bulan",
     "price": 4100.0
   },
   {
     "code": "",
-    "name": "#NAME?",
+    "name": "- Scaffolding Cross  brass  T-193",
     "unit": "bulan",
     "price": 3800.0
   },
   {
     "code": "",
-    "name": "#NAME?",
+    "name": "- Scaffolding Joint  pin",
     "unit": "bulan",
     "price": 1500.0
   },
   {
     "code": "",
-    "name": "#NAME?",
+    "name": "- Scaffolding Jack base T-40",
     "unit": "bulan",
     "price": 4100.0
   },
   {
     "code": "",
-    "name": "#NAME?",
+    "name": "- Scaffolding Jack base T-60",
     "unit": "bulan",
     "price": 4300.0
   },
   {
     "code": "",
-    "name": "#NAME?",
+    "name": "- Scaffolding U  head Jack   T-40",
     "unit": "bulan",
     "price": 4100.0
   },
   {
     "code": "",
-    "name": "#NAME?",
+    "name": "- Scaffolding U  head Jack   T-60",
     "unit": "bulan",
     "price": 4300.0
   },
   {
     "code": "",
-    "name": "#NAME?",
+    "name": "- Scaffolding Pipe support",
     "unit": "bulan",
     "price": 8500.0
   },
   {
     "code": "",
-    "name": "#NAME?",
+    "name": "- Scaffolding Horizontal frame",
     "unit": "bulan",
     "price": 7700.0
   },
   {
     "code": "",
-    "name": "#NAME?",
+    "name": "- Scaffolding Cat  walk",
     "unit": "bulan",
     "price": 26900.0
   },
@@ -19416,13 +19411,13 @@ export const OFFICIAL_CK_2026_EQUIPMENT: CiptaKaryaPriceEntry[] = [
   },
   {
     "code": "",
-    "name": "#NAME?",
+    "name": "- Scaffolding Swipel clamb",
     "unit": "bulan",
     "price": 5100.0
   },
   {
     "code": "",
-    "name": "#NAME?",
+    "name": "- Scaffolding Roda custer (satu set)",
     "unit": "bulan",
     "price": 64300.0
   },
@@ -20028,6 +20023,6 @@ export const OFFICIAL_CK_2026_EQUIPMENT: CiptaKaryaPriceEntry[] = [
   }
 ];
 
-export const CK_2026_TOTAL_LABOR_COUNT = 45;
+export const CK_2026_TOTAL_LABOR_COUNT = 44;
 export const CK_2026_TOTAL_MATERIAL_COUNT = 3075;
 export const CK_2026_TOTAL_EQUIPMENT_COUNT = 204;

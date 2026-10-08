@@ -17,6 +17,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { dedAiEstimateService } from './service';
+import { notificationBus } from '../../notifications/notificationBus';
 import { DedAiOutput, DedAiProjectType, DedAiMode } from './types';
 
 const PROJECT_TYPE_OPTIONS: Array<{ value: DedAiProjectType; label: string }> = [
@@ -68,12 +69,33 @@ export const DedAiEstimateView: React.FC = () => {
         onProgress: (e) => setProgress({ label: e.label, percent: e.percent, message: e.message }),
       });
       if (res && res.success) {
-        setResult(res as unknown as DedAiOutput);
+        const output = res as unknown as DedAiOutput;
+        setResult(output);
+        notificationBus.publish({
+          type: 'success',
+          title: 'Analisis DED selesai',
+          message: `${output.items.length} pekerjaan terdeteksi dari ${file.name} (${projectType}, mode ${mode === 'FAST' ? 'Cepat' : 'Detail'}).`,
+          link: 'ded-ai',
+        });
       } else {
-        setError(res as unknown as { errorCode: string; stage: string; message: string });
+        const failure = res as unknown as { errorCode: string; stage: string; message: string };
+        setError(failure);
+        notificationBus.publish({
+          type: 'error',
+          title: 'Analisis DED gagal',
+          message: failure?.message && failure.message.length > 140 ? `${failure.message.slice(0, 140)}…` : failure?.message || 'Analisis gambar DED tidak berhasil.',
+          link: 'ded-ai',
+        });
       }
     } catch (err: any) {
-      setError({ errorCode: 'INTERNAL', stage: 'ui', message: err?.message || 'Kesalahan tidak terduga.' });
+      const errMsg = err?.message || 'Kesalahan tidak terduga.';
+      setError({ errorCode: 'INTERNAL', stage: 'ui', message: errMsg });
+      notificationBus.publish({
+        type: 'error',
+        title: 'Analisis DED gagal',
+        message: errMsg.length > 140 ? `${errMsg.slice(0, 140)}…` : errMsg,
+        link: 'ded-ai',
+      });
     } finally {
       setIsRunning(false);
       setProgress(null);

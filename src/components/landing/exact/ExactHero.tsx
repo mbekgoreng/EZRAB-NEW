@@ -14,9 +14,6 @@ import {
   Check,
   Building2,
 } from 'lucide-react';
-import buildingVideoWebm from '../../../assets/0908fg-transparent.webm';
-import buildingVideoMp4 from '../../../assets/0908fg.mp4';
-import buildingPoster from '../../../assets/0908fg-poster.jpg';
 import { RibbonFieldBackground } from './RibbonFieldBackground';
 import { ChromaKeyVideo } from '../../common/ChromaKeyVideo';
 

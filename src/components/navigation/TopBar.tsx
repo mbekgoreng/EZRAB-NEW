@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
-  Bell,
   HelpCircle,
   User,
   Settings,
@@ -11,10 +10,6 @@ import {
   Building2,
   Users,
   ExternalLink,
-  CheckCircle2,
-  AlertCircle,
-  Info,
-  Clock,
   Menu as MenuIcon,
   ChevronRight,
   BookOpen,
@@ -22,8 +17,12 @@ import {
   LifeBuoy,
   MessageSquare,
 } from 'lucide-react';
+import { NotificationBell } from '../../notifications/NotificationBell';
+import type { NotificationItem } from '../../notifications/NotificationContext';
 import { ClientUserManagementService } from '../../services/userManagementService';
 import { UserRole } from '../../types';
+import { useI18n } from '../../i18n';
+import { useRole } from '../../auth/RoleContext';
 
 interface TopBarProps {
   isMobile: boolean;
@@ -36,16 +35,6 @@ interface TopBarProps {
   workspaceName?: string;
 }
 
-interface NotificationItem {
-  id: string;
-  category: 'PROJECT' | 'RAB' | 'QTO' | 'DED' | 'AI' | 'SYSTEM' | 'ACCOUNT';
-  title: string;
-  message: string;
-  time: string;
-  priority: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
-  read: boolean;
-}
-
 export const TopBar: React.FC<TopBarProps> = ({
   isMobile,
   isNarrowMobile,
@@ -56,54 +45,29 @@ export const TopBar: React.FC<TopBarProps> = ({
   onLogout,
   workspaceName = 'EZRAB Construction Workspace',
 }) => {
+  const { t } = useI18n();
+  const { activeRole, logoutRole } = useRole();
   const [currentUser, setCurrentUser] = useState(() => ClientUserManagementService.getCurrentUser());
-  const [notificationOpen, setNotificationOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  // Real Application Notifications
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: 'notif-1',
-      category: 'PROJECT',
-      title: 'RAB Selesai Diproses',
-      message: 'RAB Rumah Tinggal Type 36 selesai dihitung otomatis dengan standar AHSP 2026.',
-      time: '5 menit yang lalu',
-      priority: 'SUCCESS',
-      read: false,
-    },
-    {
-      id: 'notif-2',
-      category: 'DED',
-      title: 'Analisis Gambar DED Selesai',
-      message: 'Sistem vision AI telah mengekstraksi 14 item pekerjaan struktur beton dan pondasi.',
-      time: '30 menit yang lalu',
-      priority: 'INFO',
-      read: true,
-    },
-    {
-      id: 'notif-3',
-      category: 'SYSTEM',
-      title: 'Ekspor Dokumen Berhasil',
-      message: 'Format RAB Excel & BoQ terverifikasi siap diunduh.',
-      time: '1 jam yang lalu',
-      priority: 'SUCCESS',
-      read: true,
-    },
-  ]);
+  const handleNotificationItemClick = (item: NotificationItem) => {
+    if (item.link) {
+      const [menu, tab] = item.link.split(':');
+      onNavigate(menu, tab);
+    }
+  };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const handleNotificationSettings = () => {
+    onNavigate('pengaturan', 'notifications');
+  };
 
-  const notifRef = useRef<HTMLDivElement>(null);
   const helpRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
-        setNotificationOpen(false);
-      }
       if (helpRef.current && !helpRef.current.contains(event.target as Node)) {
         setHelpOpen(false);
       }
@@ -114,7 +78,6 @@ export const TopBar: React.FC<TopBarProps> = ({
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setNotificationOpen(false);
         setHelpOpen(false);
         setProfileOpen(false);
       }
@@ -127,10 +90,6 @@ export const TopBar: React.FC<TopBarProps> = ({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
-
-  const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
 
   const renderRoleBadge = (role: UserRole) => {
     const styles: Record<UserRole, { bg: string; color: string; border: string; label: string }> = {
@@ -267,7 +226,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           />
           <input
             type="text"
-            placeholder={isNarrowMobile ? 'Cari proyek...' : 'Cari proyek, material, AHSP, atau data estimasi...'}
+            placeholder={t('nav.search_placeholder')}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           aria-label="Pencarian Global"
@@ -321,220 +280,12 @@ export const TopBar: React.FC<TopBarProps> = ({
          ======================================================================= */}
       <div style={{ display: 'flex', alignItems: 'center', gap: isNarrowMobile ? '8px' : '12px', flexShrink: 0 }}>
         
-        {/* 1. NOTIFICATION BELL & POPOVER */}
-        <div style={{ position: 'relative' }} ref={notifRef}>
-          <button
-            onClick={() => {
-              setNotificationOpen(!notificationOpen);
-              setHelpOpen(false);
-              setProfileOpen(false);
-            }}
-            aria-label="Notifikasi"
-            aria-expanded={notificationOpen}
-            style={{
-              position: 'relative',
-              width: '38px',
-              height: '38px',
-              borderRadius: '9px',
-              background: notificationOpen ? '#EFF6FF' : 'transparent',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: notificationOpen ? '#2563EB' : '#64748B',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={(e) => {
-              if (!notificationOpen) {
-                e.currentTarget.style.background = '#F8FAFC';
-                e.currentTarget.style.color = '#0F172A';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!notificationOpen) {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = '#64748B';
-              }
-            }}
-          >
-            <Bell size={18} />
-            {unreadCount > 0 && (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: '6px',
-                  right: '6px',
-                  width: '15px',
-                  height: '15px',
-                  borderRadius: '50%',
-                  background: '#EF4444',
-                  color: '#FFFFFF',
-                  fontSize: '9.5px',
-                  fontWeight: 800,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px solid #FFFFFF',
-                }}
-              >
-                {unreadCount}
-              </span>
-            )}
-          </button>
-
-          {/* Notification Popover Menu */}
-          {notificationOpen && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 'calc(100% + 8px)',
-                right: isNarrowMobile ? '-60px' : '0',
-                width: isNarrowMobile ? '310px' : '360px',
-                background: '#FFFFFF',
-                borderRadius: '14px',
-                border: '1px solid #E5E7EB',
-                boxShadow: '0 12px 32px rgba(15,23,42,0.12)',
-                zIndex: 100,
-                overflow: 'hidden',
-                animation: 'ezrabFadeIn 0.18s ease-out',
-              }}
-            >
-              <div
-                style={{
-                  padding: '14px 16px',
-                  borderBottom: '1px solid #F1F5F9',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  background: '#FAFAFA',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A' }}>Notifikasi</span>
-                  {unreadCount > 0 && (
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        background: '#EFF6FF',
-                        color: '#2563EB',
-                        padding: '1px 7px',
-                        borderRadius: '999px',
-                      }}
-                    >
-                      {unreadCount} belum dibaca
-                    </span>
-                  )}
-                </div>
-                {unreadCount > 0 && (
-                  <button
-                    onClick={handleMarkAllRead}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      fontSize: '11.5px',
-                      fontWeight: 600,
-                      color: '#2563EB',
-                      cursor: 'pointer',
-                      padding: 0,
-                    }}
-                  >
-                    Tandai dibaca
-                  </button>
-                )}
-              </div>
-
-              <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
-                {notifications.length === 0 ? (
-                  <div style={{ padding: '32px 16px', textAlign: 'center', color: '#94A3B8', fontSize: '13px' }}>
-                    Tidak ada notifikasi baru
-                  </div>
-                ) : (
-                  notifications.map((item) => (
-                    <div
-                      key={item.id}
-                      style={{
-                        padding: '12px 16px',
-                        borderBottom: '1px solid #F1F5F9',
-                        display: 'flex',
-                        gap: '12px',
-                        background: item.read ? '#FFFFFF' : '#F8FAFC',
-                        transition: 'background 0.15s ease',
-                        cursor: 'pointer',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#F1F5F9';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = item.read ? '#FFFFFF' : '#F8FAFC';
-                      }}
-                    >
-                      <div style={{ marginTop: '2px', flexShrink: 0 }}>
-                        {item.priority === 'SUCCESS' ? (
-                          <CheckCircle2 size={16} color="#10B981" />
-                        ) : item.priority === 'WARNING' ? (
-                          <AlertCircle size={16} color="#F59E0B" />
-                        ) : (
-                          <Info size={16} color="#2563EB" />
-                        )}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                          <span
-                            style={{
-                              fontSize: '10px',
-                              fontWeight: 700,
-                              color: '#64748B',
-                              background: '#F1F5F9',
-                              padding: '1px 5px',
-                              borderRadius: '4px',
-                            }}
-                          >
-                            {item.category}
-                          </span>
-                          <span style={{ fontSize: '11px', color: '#94A3B8' }}>{item.time}</span>
-                        </div>
-                        <div style={{ fontSize: '12.5px', fontWeight: 650, color: '#0F172A', marginTop: '3px' }}>
-                          {item.title}
-                        </div>
-                        <div style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.4, marginTop: '2px' }}>
-                          {item.message}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div
-                style={{
-                  padding: '10px 16px',
-                  background: '#FAFAFA',
-                  borderTop: '1px solid #F1F5F9',
-                  textAlign: 'center',
-                }}
-              >
-                <button
-                  onClick={() => {
-                    setNotificationOpen(false);
-                    onNavigate('pengaturan', 'notifications');
-                  }}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    fontSize: '12px',
-                    fontWeight: 650,
-                    color: '#2563EB',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Lihat Semua Notifikasi & Pengaturan →
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* 1. NOTIFICATION BELL & POPOVER (real notification center) */}
+        <NotificationBell
+          isNarrowMobile={isNarrowMobile}
+          onItemClick={handleNotificationItemClick}
+          onOpenSettings={handleNotificationSettings}
+        />
 
         {/* 2. HELP MENU & POPOVER (DESKTOP) */}
         {!isNarrowMobile && (
@@ -542,7 +293,6 @@ export const TopBar: React.FC<TopBarProps> = ({
             <button
               onClick={() => {
                 setHelpOpen(!helpOpen);
-                setNotificationOpen(false);
                 setProfileOpen(false);
               }}
               aria-label="Bantuan"
@@ -676,7 +426,6 @@ export const TopBar: React.FC<TopBarProps> = ({
           <button
             onClick={() => {
               setProfileOpen(!profileOpen);
-              setNotificationOpen(false);
               setHelpOpen(false);
             }}
             aria-label="Menu akun"
@@ -721,7 +470,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   {currentUser.name.split(',')[0]}
                 </div>
                 <div style={{ fontSize: '11px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span>Super Admin</span>
+                  <span>{activeRole ? activeRole.name : 'Super Admin'}</span>
                 </div>
               </div>
             )}
@@ -772,8 +521,21 @@ export const TopBar: React.FC<TopBarProps> = ({
                     <div style={{ fontSize: '11.5px', color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '1px' }}>
                       {currentUser.email}
                     </div>
-                    <div style={{ marginTop: '6px' }}>
+                    <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                       {renderRoleBadge(currentUser.role)}
+                      {activeRole && (
+                        <span
+                          title={`${t('settings.role_aktif')}: ${activeRole.name}`}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '4px',
+                            fontSize: '10px', fontWeight: 800, letterSpacing: '0.04em',
+                            color: '#7C3AED', background: '#F5F3FF',
+                            border: '1px solid #DDD6FE', padding: '3px 8px', borderRadius: '999px',
+                          }}
+                        >
+                          {t('auth.mode_demo')} · {activeRole.name}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -803,7 +565,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               <div style={{ padding: '6px' }}>
                 {[
                   {
-                    label: 'Profil Saya',
+                    label: t('nav.menu_profil'),
                     icon: User,
                     action: () => {
                       setProfileOpen(false);
@@ -811,7 +573,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                     },
                   },
                   {
-                    label: 'Pengaturan Sistem',
+                    label: t('nav.menu_pengaturan'),
                     icon: Settings,
                     action: () => {
                       setProfileOpen(false);
@@ -819,7 +581,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                     },
                   },
                   {
-                    label: 'Manajemen Pengguna & Tim',
+                    label: t('nav.menu_tim'),
                     icon: Users,
                     action: () => {
                       setProfileOpen(false);
@@ -827,7 +589,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                     },
                   },
                   {
-                    label: 'Paket & Penggunaan',
+                    label: t('nav.menu_paket'),
                     icon: CreditCard,
                     action: () => {
                       setProfileOpen(false);
@@ -835,7 +597,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                     },
                   },
                   {
-                    label: 'Keamanan Akun',
+                    label: t('nav.menu_keamanan'),
                     icon: Shield,
                     action: () => {
                       setProfileOpen(false);
@@ -890,8 +652,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                   onClick={() => {
                     setProfileOpen(false);
                     if (onLogout) {
+                      logoutRole();
                       onLogout();
-                    } else if (window.confirm('Apakah Anda yakin ingin keluar dari akun?')) {
+                    } else if (window.confirm(t('nav.konfirmasi_keluar'))) {
+                      logoutRole();
                       onNavigate('landing');
                     }
                   }}
@@ -920,7 +684,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   }}
                 >
                   <LogOut size={15} color="#DC2626" />
-                  <span>Keluar Akun</span>
+                  <span>{t('nav.keluar_akun')}</span>
                 </button>
               </div>
             </div>

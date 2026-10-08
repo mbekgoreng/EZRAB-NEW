@@ -53,11 +53,22 @@ import {
   FileUp,
   MapPin,
   TrendingUp,
+  Globe,
+  Info,
+  Play,
+  LogOut,
 } from 'lucide-react';
 import { ClientUserManagementService, WorkspaceMember } from '../../services/userManagementService';
 import { AddUserModal } from './AddUserModal';
 import { UserRole, Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
+import { useI18n, LANG_OPTIONS, type Lang } from '../../i18n';
+import { useRole } from '../../auth/RoleContext';
+import { ONBOARDING_OPEN_EVENT } from '../onboarding/OnboardingTour';
+
+/** Versi aplikasi — tampil di section "Informasi Sistem". Sinkron dengan package.json. */
+const APP_VERSION = '2.0.0';
+const APP_BUILD = 'Production';
 import { settingsAuditService, SettingsAuditEntry, SettingsCategory, SettingsScope } from '../../services/settingsAuditService';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 
@@ -126,6 +137,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   onNavigateTab,
 }) => {
   const { currentProject, projects, setCurrentProjectId, updateProject } = useProject();
+  const { t, lang, setLang } = useI18n();
+  const { activeRole, logoutRole, hasCapability } = useRole();
 
   // Scope: 'GLOBAL' (Account & Workspace) vs 'PROJECT' (Project Configuration)
   const [scope, setScope] = useState<'GLOBAL' | 'PROJECT'>(() => {
@@ -187,7 +200,6 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   const [profileTitle, setProfileTitle] = useState(currentUser.title || 'Lead Cost Estimator & Super Admin');
   const [profileCompany, setProfileCompany] = useState(currentUser.company || 'PT Sinergi Konstruksi Nusantara');
 
-  const [language, setLanguage] = useState('id');
   const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
   const [systemCurrency, setSystemCurrency] = useState('IDR');
   const [systemTheme, setSystemTheme] = useState<'LIGHT' | 'DARK' | 'SYSTEM'>('LIGHT');
@@ -467,43 +479,69 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   // Grouped Navigation for Level 1 & 2 (Global Workspace Scope)
   const globalNavGroups = [
     {
-      group: 'AKUN PENGGUNA',
+      group: t('settings.grup_akun'),
       items: [
-        { id: 'profile' as SettingsTabId, label: 'Profil Saya', icon: User },
-        { id: 'preferences' as SettingsTabId, label: 'Preferensi & Bahasa', icon: SlidersHorizontal },
-        { id: 'notifications' as SettingsTabId, label: 'Notifikasi', icon: Bell },
-        { id: 'security' as SettingsTabId, label: 'Keamanan Akun', icon: Shield },
+        { id: 'profile' as SettingsTabId, label: t('settings.tab_profil'), icon: User },
+        { id: 'preferences' as SettingsTabId, label: t('settings.tab_preferensi'), icon: SlidersHorizontal },
+        { id: 'notifications' as SettingsTabId, label: t('settings.tab_notifikasi'), icon: Bell },
+        { id: 'security' as SettingsTabId, label: t('settings.tab_keamanan'), icon: Shield },
       ],
     },
     {
-      group: 'WORKSPACE & PERUSAHAAN',
+      group: t('settings.grup_workspace'),
       items: [
-        { id: 'company' as SettingsTabId, label: 'Profil Perusahaan', icon: Building2 },
-        { id: 'users' as SettingsTabId, label: 'Tim & Anggota', icon: Users },
-        { id: 'roles' as SettingsTabId, label: 'Role & Hak Akses', icon: Lock },
-        { id: 'subscription' as SettingsTabId, label: 'Paket & Billing', icon: CreditCard },
+        { id: 'company' as SettingsTabId, label: t('settings.tab_perusahaan'), icon: Building2 },
+        { id: 'users' as SettingsTabId, label: t('settings.tab_tim'), icon: Users },
+        { id: 'roles' as SettingsTabId, label: t('settings.tab_role'), icon: Lock },
+        { id: 'subscription' as SettingsTabId, label: t('settings.tab_paket'), icon: CreditCard },
       ],
     },
     {
-      group: 'STANDAR TEKNIS & ESTIMASI',
+      group: t('settings.grup_teknis'),
       items: [
-        { id: 'master-data' as SettingsTabId, label: 'Master Data & AHSP', icon: Database },
-        { id: 'estimator' as SettingsTabId, label: 'Standar Estimator & Pajak', icon: Coins },
-        { id: 'ded-volume' as SettingsTabId, label: 'DED, Presisi & Waste', icon: Calculator },
-        { id: 'documents' as SettingsTabId, label: 'Dokumen & Ekspor', icon: FileSpreadsheet },
-        { id: 'schedule' as SettingsTabId, label: 'Kalender & Jadwal', icon: Calendar },
-        { id: 'cost' as SettingsTabId, label: 'Cost Code & Biaya', icon: TrendingUp },
+        { id: 'master-data' as SettingsTabId, label: t('settings.tab_master'), icon: Database },
+        { id: 'estimator' as SettingsTabId, label: t('settings.tab_estimator'), icon: Coins },
+        { id: 'ded-volume' as SettingsTabId, label: t('settings.tab_ded'), icon: Calculator },
+        { id: 'documents' as SettingsTabId, label: t('settings.tab_dokumen'), icon: FileSpreadsheet },
+        { id: 'schedule' as SettingsTabId, label: t('settings.tab_jadwal'), icon: Calendar },
+        { id: 'cost' as SettingsTabId, label: t('settings.tab_biaya'), icon: TrendingUp },
       ],
     },
     {
-      group: 'SISTEM & INTEGRASI',
+      group: t('settings.grup_sistem'),
       items: [
-        { id: 'integrations' as SettingsTabId, label: 'Integrasi Eksternal', icon: RefreshCw },
-        { id: 'audit-log' as SettingsTabId, label: 'Audit Trail Riwayat', icon: History },
-        { id: 'help' as SettingsTabId, label: 'Bantuan & FAQ', icon: HelpCircle },
+        { id: 'integrations' as SettingsTabId, label: t('settings.tab_integrasi'), icon: RefreshCw },
+        { id: 'audit-log' as SettingsTabId, label: t('settings.tab_audit'), icon: History },
+        { id: 'help' as SettingsTabId, label: t('settings.tab_bantuan'), icon: HelpCircle },
       ],
     },
   ];
+
+  /**
+   * Pembatasan menu yang jelas-jelas sensitif untuk sesi role demo:
+   * - 'users' & 'roles'  → butuh capability 'manage-users'
+   * - 'security'         → butuh capability 'manage-security'
+   * Tanpa sesi role aktif, tidak ada pembatasan (perilaku existing).
+   */
+  const isTabAllowed = (tabId: SettingsTabId): boolean => {
+    if (tabId === 'users' || tabId === 'roles') return hasCapability('manage-users');
+    if (tabId === 'security') return hasCapability('manage-security');
+    return true;
+  };
+
+  const visibleGlobalNavGroups = globalNavGroups
+    .map((g) => ({ ...g, items: g.items.filter((item) => isTabAllowed(item.id)) }))
+    .filter((g) => g.items.length > 0);
+
+  // Jika tab aktif tidak diizinkan untuk role saat ini (mis. via pencarian),
+  // alihkan ke tab profil yang selalu tersedia.
+  useEffect(() => {
+    if (!isTabAllowed(activeTab)) {
+      setActiveTab('profile');
+      if (scope === 'PROJECT') setScope('GLOBAL');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, hasCapability]);
 
   // Grouped Navigation for Level 3 (Project Scope)
   const projectNavItems = [
@@ -588,7 +626,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
-                  Pengaturan & Konfigurasi Sistem
+                  {t('settings.judul')}
                 </h1>
                 <span
                   style={{
@@ -634,7 +672,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               }}
             >
               <Save size={15} />
-              <span>Simpan Perubahan</span>
+              <span>{t('common.simpan')}</span>
             </button>
           </div>
         </div>
@@ -854,7 +892,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           }}
         >
           {scope === 'GLOBAL' ? (
-            globalNavGroups.map((group) => (
+            visibleGlobalNavGroups.map((group) => (
               <div key={group.group} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', padding: '4px 10px', letterSpacing: '0.04em' }}>
                   {group.group}
@@ -960,10 +998,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
-                  Profil Pengguna
+                  {t('settings.profil_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
-                  Kelola informasi identitas pribadi, foto akun, dan detail kontak Anda.
+                  {t('settings.profil_desc')}
                 </p>
               </div>
 
@@ -994,7 +1032,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Nama Lengkap & Gelar</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>{t('settings.nama_lengkap')}</label>
                   <input
                     type="text"
                     value={profileName}
@@ -1004,7 +1042,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Email Akun</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>{t('settings.email_akun')}</label>
                   <input
                     type="email"
                     value={profileEmail}
@@ -1033,6 +1071,84 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   />
                 </div>
               </div>
+
+              {/* ============ ROLE AKTIF (sesi login per role) ============ */}
+              <div style={{ padding: '16px', background: '#FAFAFF', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <ShieldCheck size={16} color="#7C3AED" />
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#0F172A' }}>{t('settings.role_aktif')}</span>
+                </div>
+                {activeRole ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>{activeRole.name}</div>
+                      <div style={{ fontSize: '12px', color: '#64748B' }}>{activeRole.title} · {t('auth.mode_demo')}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={logoutRole}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        height: '34px', padding: '0 14px', borderRadius: '8px',
+                        border: '1px solid #FECACA', background: '#FFFFFF', color: '#DC2626',
+                        fontSize: '12.5px', fontWeight: 700, cursor: 'pointer',
+                      }}
+                    >
+                      <LogOut size={14} />
+                      {t('settings.keluar_role')}
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '12.5px', color: '#64748B' }}>{t('settings.tidak_ada_role')}</div>
+                )}
+              </div>
+
+              {/* ============ INFORMASI SISTEM ============ */}
+              <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <Info size={16} color="#2563EB" />
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#0F172A' }}>{t('settings.sistem_judul')}</span>
+                </div>
+                <p style={{ fontSize: '12px', color: '#64748B', margin: '0 0 10px' }}>{t('settings.sistem_desc')}</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                  <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{t('settings.versi_aplikasi')}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>v{APP_VERSION}</div>
+                  </div>
+                  <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{t('settings.versi_build')}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>{APP_BUILD}</div>
+                  </div>
+                  <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{t('common.bahasa')}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>
+                      {LANG_OPTIONS.find((o) => o.id === lang)?.nativeName ?? 'Indonesia'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ============ ULANGI TUTORIAL ============ */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '16px', background: '#EFF6FF', borderRadius: '12px', border: '1px solid #DBEAFE', flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0F172A' }}>{t('settings.ulangi_tutorial')}</div>
+                  <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>{t('settings.ulangi_tutorial_desc')}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent(ONBOARDING_OPEN_EVENT))}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    height: '38px', padding: '0 18px', borderRadius: '9px',
+                    background: '#2563EB', color: '#FFFFFF', border: 'none',
+                    fontSize: '13px', fontWeight: 700, cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(37,99,235,0.25)',
+                  }}
+                >
+                  <Play size={15} />
+                  {t('settings.ulangi_tutorial')}
+                </button>
+              </div>
             </div>
           )}
 
@@ -1043,23 +1159,30 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
-                  Preferensi & Bahasa Tampilan
+                  {t('settings.preferensi_judul')}
                 </h3>
                 <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
-                  Sesuaikan bahasa antarmuka, format tanggal, dan preferensi tampilan EZRAB.
+                  {t('settings.preferensi_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Bahasa Sistem (Language)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>{t('settings.pilih_bahasa')}</label>
                   <select
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
+                    value={lang}
+                    onChange={(e) => {
+                      setLang(e.target.value as Lang);
+                      setToastMessage(t('settings.tersimpan'));
+                      setSavedToast(true);
+                    }}
                     style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
-                    <option value="id">Bahasa Indonesia (Standar Konstruksi Indonesia)</option>
-                    <option value="en">English (US)</option>
+                    {LANG_OPTIONS.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.nativeName}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

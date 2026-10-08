@@ -325,6 +325,7 @@ export const ExactRoles: React.FC = () => {
                       src={role.imageSrc}
                       alt={role.title}
                       className="ez-role-card-bg-img"
+                      loading="lazy"
                       decoding="async"
                     />
                     <div className="ez-role-card-overlay" />

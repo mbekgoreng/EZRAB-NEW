@@ -2,6 +2,7 @@
  * OFFICIAL CIPTA KARYA DHSP 2026 (DAFTAR HARGA SATUAN PEKERJAAN)
  * Sourced directly from SE DJBK No. 47/SE/Dk/2026 (Workbook: ahsp bina kontruksi 2026.xlsx)
  * Evaluated from sheet 'Daftar Harga Satuan Pekerjaan' with formula traceability
+ * Formula clauses: see AHSP_2026_CIPTA_KARYA_FORMULA_CLAUSES.md
  */
 
 export interface OfficialCiptaKaryaDhspEntry {
@@ -37853,4 +37854,4 @@ export const OFFICIAL_CK_2026_DHSP_MAP = new Map<string, OfficialCiptaKaryaDhspE
 );
 
 export const CK_2026_DHSP_TOTAL_COUNT = 3148;
-export const CK_2026_DHSP_LEAF_COUNT = 2778;
+export const CK_2026_DHSP_LEAF_COUNT = 2776;

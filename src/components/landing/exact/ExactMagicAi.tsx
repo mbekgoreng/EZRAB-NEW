@@ -351,7 +351,7 @@ export const ExactMagicAi: React.FC<ExactMagicAiProps> = ({ onStart }) => {
               loop
               muted={isMuted}
               playsInline
-              preload="auto"
+              preload="metadata"
               onLoadedMetadata={handleLoadedMetadata}
               onTimeUpdate={handleTimeUpdate}
               aria-label="EZRAB Magic AI Flagship Showcase"
@@ -680,6 +680,8 @@ export const ExactMagicAi: React.FC<ExactMagicAiProps> = ({ onStart }) => {
                     src="/images/magic-ai-core.png"
                     alt="EZRAB Magic AI Core"
                     className="ez-flagship-core-img"
+                    loading="lazy"
+                    decoding="async"
                   />
 
                   {/* Optical Glass Lens Flare Refraction */}

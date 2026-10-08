@@ -8,6 +8,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Send, Sparkles, Loader2, AlertTriangle, Zap, Brain, Copy, Check } from 'lucide-react';
 import { ezrabAiService } from './service';
 import { renderMarkdown } from './markdown';
+import { notificationBus } from '../../notifications/notificationBus';
 import { Maskot3D } from '../../components/mascot/Maskot3D';
 import './ezrab-ai-chat.css';
 
@@ -62,12 +63,34 @@ export const EzrabAiView: React.FC = () => {
         isError: !res.success,
         model: (res as any).model,
       }]);
+      if (res.success) {
+        notificationBus.publish({
+          type: 'success',
+          title: 'Ezrab AI selesai menjawab',
+          message: msg.length > 90 ? `${msg.slice(0, 90)}…` : msg,
+          link: 'ezrab-ai',
+        });
+      } else {
+        notificationBus.publish({
+          type: 'error',
+          title: 'Ezrab AI gagal menjawab',
+          message: res.reply && res.reply.length > 140 ? `${res.reply.slice(0, 140)}…` : res.reply || 'Respons AI tidak berhasil.',
+          link: 'ezrab-ai',
+        });
+      }
     } catch (err: any) {
+      const errMsg = err?.message || 'Ups! Ada gangguan. Coba lagi ya 🥺';
       setMessages((prev) => [...prev, {
         role: 'assistant',
-        content: err?.message || 'Ups! Ada gangguan. Coba lagi ya 🥺',
+        content: errMsg,
         isError: true,
       }]);
+      notificationBus.publish({
+        type: 'error',
+        title: 'Ezrab AI mengalami gangguan',
+        message: errMsg.length > 140 ? `${errMsg.slice(0, 140)}…` : errMsg,
+        link: 'ezrab-ai',
+      });
     } finally {
       setBusy(false);
     }

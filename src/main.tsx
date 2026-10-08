@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ThemeProvider } from './context/ThemeContext';
+import { I18nProvider } from './i18n';
+import { RoleProvider } from './auth/RoleContext';
 import './styles/global.css';
 import './styles/magic-ai.css';
 import './styles/assistant-wizard.css';
@@ -12,7 +14,11 @@ import './styles/ded-rab-v3.css';
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider>
-      <App />
+      <I18nProvider>
+        <RoleProvider>
+          <App />
+        </RoleProvider>
+      </I18nProvider>
     </ThemeProvider>
   </React.StrictMode>
 );
