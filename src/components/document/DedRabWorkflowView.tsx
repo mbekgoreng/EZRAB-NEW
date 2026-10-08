@@ -44,7 +44,7 @@ import { dedRabPipeline, PipelineExecutionOutput } from '../../ded-rab-v2/pipeli
 import { DedProcessingMode, PipelineProgressEvent, PipelineStage } from '../../ded-rab-v2/types';
 import { ExecutionMode, ProjectLocation } from '../../ded-rab-v2/resolution/providerContracts';
 import { DedRabV2ReviewView } from '../../ded-rab-v2/review/DedRabV2ReviewView';
-import { DedAiSplitAnalysisView } from './DedAiSplitAnalysisView';
+import { DedAiRedesign } from './DedAiRedesign';
 import { dedAnalysisPersistenceService } from '../../services/dedAnalysisPersistenceService';
 import { dedRabReviewService } from '../../ded-rab-v2/review/dedRabReviewService';
 import { dedSpreadsheetSync } from '../../ded-rab-v2/spreadsheet/dedSpreadsheetSync';
@@ -854,7 +854,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
 
           {/* Review View */}
           {resultsViewMode === 'split' ? (
-            <DedAiSplitAnalysisView
+            <DedAiRedesign
               projectName={targetProjObj?.name || effectiveProjectName}
               sourceDocuments={executionOutput.sourceDocuments}
               workItems={executionOutput.workItems}
