@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ProjectProvider } from './context/ProjectContext';
 import { ExactLandingPage } from './components/landing/ExactLandingPage';
 import { AboutPage } from './components/about/AboutPage';
@@ -7,6 +7,13 @@ import { WorkspaceView } from './components/dashboard/WorkspaceView';
 import { DemoModal } from './components/common/DemoModal';
 import { ThemeModal } from './components/common/ThemeModal';
 import { EzrabCoAssistantLauncher } from './components/copilot/EzrabCoAssistantLauncher';
+import { NotificationProvider } from './notifications/NotificationContext';
+import { BootLoadingScreen } from './components/boot/BootLoadingScreen';
+import {
+  OnboardingTour,
+  shouldShowOnboarding,
+  useOnboardingTour,
+} from './components/onboarding/OnboardingTour';
 import { isAppPath, navigateTo, parseWorkspaceRoute, paths, routeForMenu, routeLabel } from './routing/routes';
 import { useBrowserLocation } from './routing/useBrowserLocation';
 
@@ -21,6 +28,12 @@ export const App: React.FC = () => {
   const [demoModalOpen, setDemoModalOpen] = useState(false);
   const [themeModalOpen, setThemeModalOpen] = useState(false);
 
+  // Boot sequence: loading screen -> (onboarding on first run) -> content.
+  const [booted, setBooted] = useState(false);
+  const [bootReady, setBootReady] = useState(false);
+  const { open: tourOpen, closeTour } = useOnboardingTour();
+  const [tourPending, setTourPending] = useState(false);
+
   useEffect(() => {
     if (location.pathname === paths.app()) navigateTo(paths.dashboard(), { replace: true });
   }, [location.pathname]);
@@ -30,6 +43,22 @@ export const App: React.FC = () => {
     else if (isAbout) document.title = 'Tentang EZRAB';
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
   }, [isAbout, isWorkspace, workspaceRoute]);
+
+  // App shell is ready as soon as React mounts; the boot screen enforces
+  // its own minimum display duration before calling onDone.
+  useEffect(() => {
+    setBootReady(true);
+  }, []);
+
+  const handleBootDone = useCallback(() => {
+    setBooted(true);
+    setTourPending(shouldShowOnboarding());
+  }, []);
+
+  const handleTourClose = useCallback(() => {
+    setTourPending(false);
+    closeTour();
+  }, [closeTour]);
 
   const handleSetWorkspace = (val: boolean) => {
     navigateTo(val ? paths.dashboard() : paths.home());
@@ -61,8 +90,10 @@ export const App: React.FC = () => {
     }, 150);
   };
 
+  let content: React.ReactNode = null;
+
   if (isWorkspace) {
-    return (
+    content = (
       <ProjectProvider>
         <WorkspaceView
           route={workspaceRoute}
@@ -71,67 +102,79 @@ export const App: React.FC = () => {
         />
       </ProjectProvider>
     );
-  }
-
-  if (isAbout) {
-    return (
+  } else if (isAbout) {
+    content = (
       <AboutPage
         onBackToLanding={handleReturnToLanding}
         onOpenWorkspace={() => handleSetWorkspace(true)}
         onOpenFeatures={handleOpenFeatures}
       />
     );
+  } else {
+    content = (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          background: 'var(--ezrab-bg, #f8fafc)',
+          color: 'var(--ezrab-text, #0f172a)',
+        }}
+      >
+        {/* Exact Landing Page matching reference design */}
+        <ExactLandingPage
+          onOpenWorkspace={() => handleSetWorkspace(true)}
+          onOpenAuth={(tab) => handleOpenAuth(tab || 'masuk')}
+          onOpenDemo={() => setDemoModalOpen(true)}
+          onOpenTheme={() => setThemeModalOpen(true)}
+          onBackToLanding={handleReturnToLanding}
+          onOpenAbout={handleOpenAbout}
+        />
+
+        {/* Modals */}
+        <AuthModal
+          isOpen={authModalOpen}
+          initialTab={authInitialTab}
+          onClose={() => setAuthModalOpen(false)}
+          onSuccessLogin={() => {
+            setAuthModalOpen(false);
+            handleSetWorkspace(true);
+          }}
+        />
+
+        <DemoModal
+          isOpen={demoModalOpen}
+          onClose={() => setDemoModalOpen(false)}
+          onOpenWorkspace={() => handleSetWorkspace(true)}
+        />
+
+        <ThemeModal
+          isOpen={themeModalOpen}
+          onClose={() => setThemeModalOpen(false)}
+        />
+
+        {/* Floating EZRAB AI Assistant Mascot on Landing Page */}
+        <EzrabCoAssistantLauncher
+          isOpen={demoModalOpen || authModalOpen}
+          onClick={() => handleSetWorkspace(true)}
+          hasActiveContext={false}
+        />
+      </div>
+    );
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'var(--ezrab-bg, #f8fafc)',
-        color: 'var(--ezrab-text, #0f172a)',
-      }}
-    >
-      {/* Exact Landing Page matching reference design */}
-      <ExactLandingPage
-        onOpenWorkspace={() => handleSetWorkspace(true)}
-        onOpenAuth={(tab) => handleOpenAuth(tab || 'masuk')}
-        onOpenDemo={() => setDemoModalOpen(true)}
-        onOpenTheme={() => setThemeModalOpen(true)}
-        onBackToLanding={handleReturnToLanding}
-        onOpenAbout={handleOpenAbout}
-      />
-
-      {/* Modals */}
-      <AuthModal
-        isOpen={authModalOpen}
-        initialTab={authInitialTab}
-        onClose={() => setAuthModalOpen(false)}
-        onSuccessLogin={() => {
-          setAuthModalOpen(false);
-          handleSetWorkspace(true);
-        }}
-      />
-
-      <DemoModal
-        isOpen={demoModalOpen}
-        onClose={() => setDemoModalOpen(false)}
-        onOpenWorkspace={() => handleSetWorkspace(true)}
-      />
-
-      <ThemeModal
-        isOpen={themeModalOpen}
-        onClose={() => setThemeModalOpen(false)}
-      />
-
-      {/* Floating EZRAB AI Assistant Mascot on Landing Page */}
-      <EzrabCoAssistantLauncher
-        isOpen={demoModalOpen || authModalOpen}
-        onClick={() => handleSetWorkspace(true)}
-        hasActiveContext={false}
-      />
-    </div>
+    <NotificationProvider>
+      {!booted && (
+        <BootLoadingScreen ready={bootReady} minDurationMs={1200} onDone={handleBootDone} />
+      )}
+      {booted && (
+        <>
+          {content}
+          <OnboardingTour open={tourOpen || tourPending} onClose={handleTourClose} />
+        </>
+      )}
+    </NotificationProvider>
   );
 };
 

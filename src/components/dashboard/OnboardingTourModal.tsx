@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   BookOpen,
 } from 'lucide-react';
+import { useI18n } from '../../i18n';
 
 interface OnboardingTourModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
   onClose,
   onStartFirstProject,
 }) => {
+  const { t } = useI18n();
   const [currentStep, setCurrentStep] = useState(0);
 
   if (!isOpen) return null;
@@ -29,26 +31,24 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
   const steps = [
     {
       stepNumber: 1,
-      badge: 'Selamat Datang',
-      title: 'Selamat datang di Platform EZRAB 👋',
-      description:
-        'EZRAB adalah platform kecerdasan konstruksi terintegrasi untuk menyusun Rencana Anggaran Biaya (RAB), menghitung volume QTO, dan memetakan analisa harga satuan (AHSP) secara akurat dan efisien.',
-      highlight: 'Kalkulasi deterministik berbasis standar PUPR 2026 dan SNI tanpa koefisien fiktif.',
+      badge: t('onboarding.badge_1'),
+      title: t('onboarding.judul_1'),
+      description: t('onboarding.desc_1'),
+      highlight: t('onboarding.highlight_1'),
       icon: Sparkles,
       iconColor: '#4F46E5',
       iconBg: '#EEF2FF',
     },
     {
       stepNumber: 2,
-      badge: 'Metode Fleksibel',
-      title: '4 Cara Mudah Memulai Proyek Anda',
-      description:
-        'Anda memiliki kebebasan penuh dalam memulai estimasi proyek sesuai data yang tersedia saat ini:',
+      badge: t('onboarding.badge_2'),
+      title: t('onboarding.judul_2'),
+      description: t('onboarding.desc_2'),
       items: [
-        '✨ Magic AI: Generate instan dari prompt, gambar kerja, atau dokumen DED.',
-        '📝 Manual RAB: Isi identitas proyek dan bangun struktur pekerjaan sendiri.',
-        '📐 Volume Calculation: Hitung dimensi galian, sloof, dinding, atap secara parametrik.',
-        '🏗️ Template RAB: Gunakan template standar Type 36 hingga Type 300 yang siap pakai.',
+        `✨ ${t('onboarding.item_2a')}`,
+        `📝 ${t('onboarding.item_2b')}`,
+        `📐 ${t('onboarding.item_2c')}`,
+        `🏗️ ${t('onboarding.item_2d')}`,
       ],
       icon: Layers,
       iconColor: '#2563EB',
@@ -56,22 +56,20 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
     },
     {
       stepNumber: 3,
-      badge: 'Standar Standar Nasional',
-      title: 'Database AHSP PUPR 2026 & Indeks Wilayah',
-      description:
-        'Setiap item pekerjaan terhubung ke analisa komponen upah tenaga kerja, material berspesifikasi resmi, dan sewa alat berat yang disesuaikan dengan indeks harga wilayah Indonesia.',
-      highlight: 'Riwayat modifikasi dan penyesuaian harga dapat diaudit kapan saja dengan aman.',
+      badge: t('onboarding.badge_3'),
+      title: t('onboarding.judul_3'),
+      description: t('onboarding.desc_3'),
+      highlight: t('onboarding.highlight_3'),
       icon: Calculator,
       iconColor: '#059669',
       iconBg: '#ECFDF5',
     },
     {
       stepNumber: 4,
-      badge: 'Spreadsheet & Ekspor',
-      title: 'Spreadsheet Interaktif, Kurva S, & Ekspor',
-      description:
-        'Kelola lembar RAB layaknya spreadsheet modern dengan auto-formula instan. Pantau jadwal pekerjaan melalui Kurva S dan ekspor laporan profesional berstandar institusi (Excel & PDF).',
-      highlight: 'Siap untuk langsung mulai? Buat proyek pertama Anda sekarang juga!',
+      badge: t('onboarding.badge_4'),
+      title: t('onboarding.judul_4'),
+      description: t('onboarding.desc_4'),
+      highlight: t('onboarding.highlight_4'),
       icon: FileSpreadsheet,
       iconColor: '#D97706',
       iconBg: '#FFFBEB',
@@ -137,7 +135,7 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
                 letterSpacing: '0.03em',
               }}
             >
-              {active.badge} • LANGKAH {active.stepNumber} DARI 4
+              {active.badge} • {t('onboarding.langkah_dari')} {active.stepNumber} {t('onboarding.dari')} 4
             </span>
           </div>
 
@@ -151,7 +149,7 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
               padding: '4px',
               borderRadius: '6px',
             }}
-            title="Tutup Panduan"
+            title={t('onboarding.tutup_panduan')}
           >
             <X size={20} />
           </button>
@@ -261,7 +259,7 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
                 cursor: 'pointer',
               }}
             >
-              Lewati
+              {t('common.lewati')}
             </button>
 
             {currentStep > 0 && (
@@ -282,7 +280,7 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
                 }}
               >
                 <ChevronLeft size={15} />
-                <span>Sebelumnya</span>
+                <span>{t('common.kembali')}</span>
               </button>
             )}
 
@@ -303,7 +301,7 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
                 boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
               }}
             >
-              <span>{currentStep === 3 ? 'Mulai Proyek Pertama' : 'Lanjut'}</span>
+              <span>{currentStep === 3 ? t('onboarding.mulai_proyek') : t('common.lanjut')}</span>
               <ArrowRight size={14} />
             </button>
           </div>
