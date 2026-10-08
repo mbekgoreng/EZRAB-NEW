@@ -14,7 +14,7 @@ ATURAN WAJIB:
 3. JANGAN menyebut nama penyedia model eksternal. Gunakan identitas "Dokumen AI".
 4. Jangan membuat atau mengarang data dari luar dokumen.`;
 
-export function systemForMode(mode: 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | 'CHAT'): string {
+export function systemForMode(mode: 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | 'CHAT' | 'CHECKLIST' | 'DRAFT'): string {
   const base = DOKUMEN_AI_SYSTEM_BASE;
   switch (mode) {
     case 'SUMMARY':
@@ -23,6 +23,10 @@ export function systemForMode(mode: 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | '
       return `${base}\n\nMODE: Kunjungi isi dokumen dan ekstrak tabel/specifikasi/referensi yang relevan ke dalam poin atau JSON bila diminta.`;
     case 'COMPARE':
       return `${base}\n\nMODE: Bandingkan bagian-bagian dokumen (mis. antar sheet) dan sajikan perbedaan persis berdasarkan teks.`;
+    case 'CHECKLIST':
+      return `${base}\n\nMODE: Periksa kelengkapan dokumen konstruksi. Untuk setiap aspek (identitas proyek, lingkup, spesifikasi, gambar acuan, jadwal, RAB/nilai, tanda tangan/pengesahan), nyatakan ADA (dengan kutipan halaman) atau TIDAK DITEMUKAN. Jangan mengarang.`;
+    case 'DRAFT':
+      return `${base}\n\nMODE DRAF: Buatkan draf dokumen sesuai instruksi. ATURAN KERAS: jangan mengarang nomor surat resmi, nama pihak, nilai kontrak, tanggal, atau persetujuan yang tidak diberikan. Tandai bagian yang perlu dilengkapi pengguna dengan [ISI: ...]. Hasilkan draf yang jelas berstatus DRAF.`;
     case 'QA':
     case 'CHAT':
     default:
