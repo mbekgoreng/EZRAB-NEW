@@ -11,7 +11,7 @@
  * - EZRAB Core (Internal orchestration & deterministic math)
  */
 
-import { aiGatewayHeaders } from '../../ai-tools/aiGatewayAuth';
+import { aiGatewayAuthHeaders } from '../../ai-tools/aiGatewayAuth';
 
 export type DedAiMode = 'quick' | 'advanced' | 'vision' | 'internal';
 
@@ -183,7 +183,7 @@ export class AiProviderClient {
 
           const resp = await fetch('/api/ai/multi-provider/execute', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...aiGatewayHeaders() },
+            headers: { 'Content-Type': 'application/json', ...(await aiGatewayAuthHeaders()) },
             body: JSON.stringify(payload),
           });
 

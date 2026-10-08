@@ -18,7 +18,7 @@
 
 import { RawAiTelemetryRecord, DedProcessingMode } from '../types';
 import { maskAiModelName, maskAiProviderName } from '../../services/aiModelMasking';
-import { aiGatewayHeaders } from '../../ai-tools/aiGatewayAuth';
+import { aiGatewayAuthHeaders } from '../../ai-tools/aiGatewayAuth';
 
 export interface ZyRouterChatRequest {
   prompt: string;
@@ -378,7 +378,7 @@ export class ZyrouterClient {
         headers: {
           'Content-Type': 'application/json',
           'x-request-id': requestId,
-          ...aiGatewayHeaders(),
+          ...(await aiGatewayAuthHeaders()),
         },
         signal: controller.signal,
         body: JSON.stringify({

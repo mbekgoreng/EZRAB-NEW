@@ -17,7 +17,7 @@ import {
 import { aiCostRouter } from './aiCostRouter';
 import { aiProviderRegistry } from './aiProviderRegistry';
 import { maskAiModelName, maskAiProviderName, sanitizeEvidenceBasis } from './aiModelMasking';
-import { aiGatewayHeaders } from '../ai-tools/aiGatewayAuth';
+import { aiGatewayAuthHeaders } from '../ai-tools/aiGatewayAuth';
 
 export interface AIExecutionRequest {
   criteria: ModelSelectionCriteria;
@@ -132,7 +132,7 @@ export class AIProviderRouter {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...aiGatewayHeaders(),
+            ...(await aiGatewayAuthHeaders()),
           },
           body: JSON.stringify({
             mode,
@@ -477,8 +477,8 @@ export class AIProviderRouter {
             'Content-Type': 'application/json',
             // NOTE (Phase 2 hardening): hardcoded x-user-id / x-user-role /
             // x-workspace-id removed — the gateway ignores client-supplied
-            // identity headers (spoofable). Auth travels via aiGatewayHeaders().
-            ...aiGatewayHeaders(),
+            // identity headers (spoofable). Auth travels via aiGatewayAuthHeaders().
+            ...(await aiGatewayAuthHeaders()),
           },
           body: JSON.stringify({
             providerId: route.providerId,
