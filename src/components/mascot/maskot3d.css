@@ -1,0 +1,4 @@
+/* Maskot3D */
+.maskot3d { display: inline-block; }
+.maskot3d canvas { display: block; border-radius: 50%; }
+.maskot3d-fallback { display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg,#EFF6FF,#DBEAFE); border-radius: 50%; }
