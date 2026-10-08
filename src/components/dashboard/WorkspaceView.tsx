@@ -503,7 +503,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             />
           </main>
         ) : activeMenu === 'ezrab-ai' ? (
-          <main style={{ minHeight: 'calc(100vh - 64px)', background: '#F2F7FF' }}>
+          <main style={{ height: `calc(100dvh - ${isMobile ? 56 : 64}px)`, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#F2F7FF' }}>
             <EzrabAiView />
           </main>
         ) : activeMenu === 'ded-ai' ? (

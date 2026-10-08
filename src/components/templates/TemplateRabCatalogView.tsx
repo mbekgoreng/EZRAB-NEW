@@ -91,6 +91,18 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'POPULAR' | 'NAME' | 'ITEMS'>('POPULAR');
 
+  // Layar sempit (HP/tablet): layout 2 kolom jadi 1 kolom agar tidak overflow ke samping
+  const [isNarrow, setIsNarrow] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 900
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 900px)');
+    const onChange = () => setIsNarrow(mq.matches);
+    onChange();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
   // Reset subcategory selection when category changes
   useEffect(() => {
     setSelectedSubcategory('ALL');
@@ -575,26 +587,31 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
       </div>
 
       {/* 3. TWO-COLUMN LAYOUT: SIDEBAR (240px) + CONTENT GRID */}
-      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexDirection: isNarrow ? 'column' : 'row' }}>
         
         {/* Left Category Sidebar (240px) */}
         <div
           style={{
-            width: '240px',
+            width: isNarrow ? '100%' : '240px',
             flexShrink: 0,
             background: '#FFFFFF',
             borderRadius: '12px',
             border: '1px solid #E2E8F0',
             padding: '12px',
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: isNarrow ? 'row' : 'column',
             gap: '4px',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+            overflowX: isNarrow ? 'auto' : 'visible',
+            alignItems: isNarrow ? 'center' : 'stretch',
+            scrollbarWidth: 'none'
           }}
         >
+          {!isNarrow && (
           <div style={{ padding: '4px 8px 8px', fontSize: '11px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Kategori Konstruksi
           </div>
+          )}
 
           {CATEGORY_ITEMS.map(cat => {
             const isSelected = selectedCategory === cat.id;
@@ -618,7 +635,8 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                   fontSize: '12.5px',
                   cursor: 'pointer',
                   textAlign: 'left',
-                  transition: 'background 0.15s ease'
+                  transition: 'background 0.15s ease',
+                  ...(isNarrow ? { whiteSpace: 'nowrap' as const, flexShrink: 0 } : {})
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -641,7 +659,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
             );
           })}
 
-          <div style={{ borderTop: '1px solid #F1F5F9', margin: '8px 0', paddingTop: '8px' }}>
+          {!isNarrow && <div style={{ borderTop: '1px solid #F1F5F9', margin: '8px 0', paddingTop: '8px' }}>
             <div style={{ padding: '0 8px 6px', fontSize: '10.5px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>
               Mulai Cepat
             </div>
@@ -672,11 +690,11 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
         </div>
 
         {/* Right Content Area: Template Grid */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
           
           {/* Active Category Heading & Stats */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
@@ -815,7 +833,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
+                gridTemplateColumns: `repeat(auto-fill, minmax(${isNarrow ? 160 : 290}px, 1fr))`,
                 gap: '12px'
               }}
             >
