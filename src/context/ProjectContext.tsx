@@ -26,6 +26,7 @@ import { SafeDecimalEngine } from '../engine/safeDecimalEngine';
 import { createRabItemRecord } from '../engine/rab/rabItemFactory';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
 import { projectPriceEngine } from '../engine/pricing/projectPriceEngine';
+import { resolveInitialProjects } from '../lib/demoSeed';
 
 export interface SourceTraceLineage {
   qto?: QTOItem;
@@ -480,18 +481,22 @@ const DEFAULT_FLAGSHIP_RAB_ITEMS: RabItem[] = [
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // 1. Projects Store
   const [projects, setProjects] = useState<Project[]>(() => {
+    // P0-B: data demo JANGAN muncul kembali setelah pengguna menghapusnya.
+    // Flag ezrab_prod_seeded_v1 menandai seed awal sudah pernah dilakukan;
+    // setelah itu, isi localStorage dihormati apa adanya (termasuk kosong).
+    const SEED_FLAG = 'ezrab_prod_seeded_v1';
     try {
+      const alreadySeeded = localStorage.getItem(SEED_FLAG) === '1';
       const saved = localStorage.getItem('ezrab_prod_projects');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length >= 5) return parsed;
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const existingIds = new Set(parsed.map((p: Project) => p.id));
-          const additions = DEFAULT_PORTFOLIO_PROJECTS.filter(p => !existingIds.has(p.id));
-          return [...parsed, ...additions];
+      const resolved = resolveInitialProjects(saved, alreadySeeded, DEFAULT_PORTFOLIO_PROJECTS);
+      if (resolved.shouldMarkSeeded) {
+        try {
+          localStorage.setItem(SEED_FLAG, '1');
+        } catch {
+          /* abaikan */
         }
       }
-      return DEFAULT_PORTFOLIO_PROJECTS;
+      return resolved.projects;
     } catch {
       return DEFAULT_PORTFOLIO_PROJECTS;
     }
