@@ -7,12 +7,16 @@ import {
   signInWithGoogleOAuth,
   isSupabaseConfigured,
 } from '../../services/supabaseClient';
+import { RoleLoginPanel } from './RoleLoginPanel';
+import { useI18n } from '../../i18n';
+
+export type AuthTabId = 'masuk' | 'daftar' | 'role';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccessLogin: () => void;
-  initialTab?: 'masuk' | 'daftar';
+  initialTab?: AuthTabId;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -21,7 +25,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onSuccessLogin,
   initialTab = 'masuk',
 }) => {
-  const [activeTab, setActiveTab] = useState<'masuk' | 'daftar'>(initialTab);
+  const { t } = useI18n();
+  const [activeTab, setActiveTab] = useState<AuthTabId>(initialTab);
   const [name, setName] = useState('');
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -432,7 +437,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 transition: 'color 0.2s',
               }}
             >
-              Masuk
+              {t('auth.masuk')}
               {activeTab === 'masuk' && (
                 <span
                   style={{
@@ -465,7 +470,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 transition: 'color 0.2s',
               }}
             >
-              Daftar
+              {t('auth.daftar')}
               {activeTab === 'daftar' && (
                 <span
                   style={{
@@ -480,8 +485,51 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 />
               )}
             </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('role')}
+              style={{
+                flex: 1,
+                textAlign: 'center',
+                paddingBottom: '12px',
+                fontSize: '15px',
+                fontWeight: activeTab === 'role' ? 700 : 500,
+                color: activeTab === 'role' ? '#7C3AED' : '#64748b',
+                position: 'relative',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'color 0.2s',
+              }}
+            >
+              {t('auth.masuk_per_role')}
+              {activeTab === 'role' && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    bottom: '-1px',
+                    left: 0,
+                    right: 0,
+                    height: '2.5px',
+                    background: '#7C3AED',
+                    borderRadius: '2px 2px 0 0',
+                  }}
+                />
+              )}
+            </button>
           </div>
 
+          {activeTab === 'role' ? (
+            <RoleLoginPanel
+              onSuccess={() => {
+                onSuccessLogin();
+                onClose();
+              }}
+              onBackToLogin={() => setActiveTab('masuk')}
+            />
+          ) : (
+            <>
           {/* Title and Subtitle */}
           <div style={{ marginBottom: '18px' }}>
             <h3
@@ -493,12 +541,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 marginBottom: '6px',
               }}
             >
-              {activeTab === 'masuk' ? 'Selamat Datang Kembali' : 'Buat Akun Baru'}
+              {activeTab === 'masuk' ? t('auth.selamat_datang') : t('auth.buat_akun')}
             </h3>
             <p style={{ fontSize: '13px', color: '#64748b' }}>
-              {activeTab === 'masuk'
-                ? 'Masuk ke akun Anda untuk melanjutkan'
-                : 'Daftar sekarang untuk memulai estimasi proyek Anda'}
+              {activeTab === 'masuk' ? t('auth.lanjutkan_desc') : t('auth.daftar_desc')}
             </p>
           </div>
 
@@ -559,11 +605,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     marginBottom: '6px',
                   }}
                 >
-                  Nama Lengkap
+                  {t('auth.nama_lengkap')}
                 </label>
                 <input
                   type="text"
-                  placeholder="Masukkan nama lengkap Anda"
+                  placeholder={t('auth.nama_placeholder')}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -602,11 +648,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   marginBottom: '6px',
                 }}
               >
-                Email atau nomor handphone
+                {t('auth.email_hp')}
               </label>
               <input
                 type="text"
-                placeholder="nama@perusahaan.com"
+                placeholder={t('auth.email_placeholder')}
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
@@ -644,12 +690,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   marginBottom: '6px',
                 }}
               >
-                Password
+                {t('auth.password')}
               </label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Masukkan password"
+                  placeholder={t('auth.password_placeholder')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -710,11 +756,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     marginBottom: '6px',
                   }}
                 >
-                  Konfirmasi Password
+                  {t('auth.konfirmasi_password')}
                 </label>
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Ulangi password Anda"
+                  placeholder={t('auth.konfirmasi_placeholder')}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -774,7 +820,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     cursor: 'pointer',
                   }}
                 />
-                <span>Ingat saya</span>
+                <span>{t('auth.ingat_saya')}</span>
               </label>
 
               {activeTab === 'masuk' && (
@@ -782,7 +828,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   href="#lupa-password"
                   onClick={(e) => {
                     e.preventDefault();
-                    alert('Silakan hubungi administrator atau masukkan email Anda untuk reset password.');
+                    alert(t('auth.lupa_password_alert'));
                   }}
                   style={{
                     color: '#2563eb',
@@ -790,7 +836,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     textDecoration: 'none',
                   }}
                 >
-                  Lupa password?
+                  {t('auth.lupa_password')}
                 </a>
               )}
             </div>
@@ -831,7 +877,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               }}
             >
               {loading && <Loader2 size={18} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />}
-              <span>{loading ? 'Memproses...' : activeTab === 'masuk' ? 'Masuk' : 'Daftar Sekarang'}</span>
+              <span>{loading ? t('auth.memproses') : activeTab === 'masuk' ? t('auth.masuk') : t('auth.daftar_sekarang')}</span>
             </button>
 
             {/* Divider */}
@@ -845,7 +891,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             >
               <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
               <span style={{ fontSize: '11.5px', color: '#94a3b8' }}>
-                {activeTab === 'masuk' ? 'atau masuk dengan' : 'atau daftar dengan'}
+                {activeTab === 'masuk' ? t('auth.atau_masuk_dengan') : t('auth.atau_daftar_dengan')}
               </span>
               <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
             </div>
@@ -886,7 +932,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
               </svg>
-              <span>Lanjutkan dengan Google</span>
+              <span>{t('auth.google')}</span>
             </button>
           </form>
 
@@ -901,7 +947,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           >
             {activeTab === 'masuk' ? (
               <span>
-                Belum punya akun?{' '}
+                {t('auth.belum_punya')}{' '}
                 <button
                   type="button"
                   onClick={() => setActiveTab('daftar')}
@@ -914,12 +960,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     padding: 0,
                   }}
                 >
-                  Daftar sekarang
+                  {t('auth.daftar_sekarang')}
                 </button>
               </span>
             ) : (
               <span>
-                Sudah punya akun?{' '}
+                {t('auth.sudah_punya')}{' '}
                 <button
                   type="button"
                   onClick={() => setActiveTab('masuk')}
@@ -932,11 +978,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     padding: 0,
                   }}
                 >
-                  Masuk di sini
+                  {t('auth.masuk_disini')}
                 </button>
               </span>
             )}
           </div>
+            </>
+          )}
         </div>
       </div>
 
