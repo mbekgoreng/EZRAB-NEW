@@ -8,6 +8,7 @@
 
 import { getModelTarget } from './aiModelRegistry';
 import { aiToolsError, AIToolsStructuredError, AIToolsErrorCode } from './types';
+import { aiGatewayHeaders } from './aiGatewayAuth';
 
 export type { AIProductId } from './aiModelRegistry';
 
@@ -93,7 +94,7 @@ export class AiToolsProviderClient {
       const timer = globalThis.setTimeout(() => controller.abort(), timeoutMs + 1000);
       const resp = await fetch('/api/ai/tools/execute', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...aiGatewayHeaders() },
         body: JSON.stringify({
           productId: request.productId,
           prompt: request.prompt,
