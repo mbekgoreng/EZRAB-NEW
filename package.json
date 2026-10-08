@@ -68,7 +68,9 @@
     "price:bm-audit": "python scripts/price2026/auditBinaMargaWorkbook.py",
     "price:bm-reconcile": "python scripts/price2026/reconcileBinaMargaExcel.py",
     "price:bm-coverage": "npx tsx scripts/price2026/coverageBinaMarga.ts",
-    "price:bm-forensic": "npx vitest run scripts/price2026/forensicBinaMarga10Items.test.ts"
+    "price:bm-forensic": "npx vitest run scripts/price2026/forensicBinaMarga10Items.test.ts",
+    "test:phase2-integrity": "npx tsx src/test/phase2RabIntegrity.test.ts",
+    "test:phase2-gateway": "node src/test/phase2GatewaySecurity.mjs && node src/test/phase2GatewayIntegration.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
