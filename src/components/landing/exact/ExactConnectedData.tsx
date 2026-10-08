@@ -181,6 +181,8 @@ export const ExactConnectedData: React.FC<ExactConnectedDataProps> = ({ onOpenWo
                 src="/images/ez-emblem.png"
                 alt="EZ"
                 className="ez-core-emblem-img"
+                loading="lazy"
+                decoding="async"
               />
               <span className="ez-core-logo-text">EZRAB</span>
               <div className="ez-core-pulse-ring" />
