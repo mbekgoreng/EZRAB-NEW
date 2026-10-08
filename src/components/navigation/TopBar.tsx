@@ -16,11 +16,12 @@ import {
   Keyboard,
   LifeBuoy,
   MessageSquare,
+  Plus,
 } from 'lucide-react';
 import { NotificationBell } from '../../notifications/NotificationBell';
 import type { NotificationItem } from '../../notifications/NotificationContext';
 import { ClientUserManagementService } from '../../services/userManagementService';
-import { UserRole } from '../../types';
+import { UserRole, type Project } from '../../types';
 import { useI18n } from '../../i18n';
 import { useRole } from '../../auth/RoleContext';
 
@@ -29,10 +30,40 @@ interface TopBarProps {
   isNarrowMobile: boolean;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  /** Proyek untuk hasil pencarian global. */
+  projects?: Project[];
+  onOpenProject?: (projectId: string) => void;
+  onCreateProject?: () => void;
   onOpenMobileDrawer?: () => void;
   onNavigate: (menu: string, tab?: string) => void;
   onLogout?: () => void;
   workspaceName?: string;
+}
+
+/** Indeks menu untuk pencarian global (label + kata kunci). */
+const MENU_SEARCH_INDEX: Array<{ id: string; label: string; keywords: string }> = [
+  { id: 'dashboard', label: 'Dashboard', keywords: 'beranda home utama ringkasan' },
+  { id: 'proyek', label: 'Proyek', keywords: 'projects daftar proyek portofolio' },
+  { id: 'qto-vc', label: 'Kalkulator Volume', keywords: 'volume kalkulator hitung qto' },
+  { id: 'rab-estimasi', label: 'RAB & Estimasi', keywords: 'rab estimasi anggaran biaya spreadsheet' },
+  { id: 'ezrab-ai', label: 'Ezrab Chat AI', keywords: 'chat ai asisten' },
+  { id: 'ded-ai', label: 'DED Estimate AI', keywords: 'ded estimate gambar ai' },
+  { id: 'dokumen-ai', label: 'AI Document', keywords: 'dokumen document ai' },
+  { id: 'template-rab', label: 'Template RAB', keywords: 'template' },
+  { id: 'keuangan-proyek', label: 'Keuangan Proyek', keywords: 'keuangan finance kas' },
+  { id: 'ahsp-2026', label: 'AHSP 2026', keywords: 'ahsp analisa harga satuan pupr' },
+  { id: 'database-material', label: 'Database Material', keywords: 'material bahan harga' },
+  { id: 'laporan', label: 'Laporan', keywords: 'laporan report boq rekap' },
+  { id: 'pengaturan', label: 'Pengaturan', keywords: 'pengaturan settings setelan' },
+];
+
+interface SearchResultItem {
+  key: string;
+  group: string;
+  label: string;
+  sub?: string;
+  icon: React.ReactNode;
+  run: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -40,6 +71,9 @@ export const TopBar: React.FC<TopBarProps> = ({
   isNarrowMobile,
   searchQuery,
   onSearchChange,
+  projects = [],
+  onOpenProject,
+  onCreateProject,
   onOpenMobileDrawer,
   onNavigate,
   onLogout,
@@ -50,6 +84,80 @@ export const TopBar: React.FC<TopBarProps> = ({
   const [currentUser, setCurrentUser] = useState(() => ClientUserManagementService.getCurrentUser());
   const [helpOpen, setHelpOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+
+  // ---------- Global search palette ----------
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [activeResultIdx, setActiveResultIdx] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchWrapRef = useRef<HTMLDivElement>(null);
+
+  const searchResults: SearchResultItem[] = React.useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+    const out: SearchResultItem[] = [];
+    // 1. Proyek (maks 4)
+    for (const p of projects) {
+      if (out.length >= 9) break;
+      const hay = `${p.name} ${p.clientName ?? ''} ${p.location ?? ''}`.toLowerCase();
+      if (!hay.includes(q)) continue;
+      out.push({
+        key: `project:${p.id}`,
+        group: 'Proyek',
+        label: p.name,
+        sub: [p.clientName, p.location].filter(Boolean).join(' • ') || undefined,
+        icon: <Building2 size={15} color="#2563EB" />,
+        run: () => onOpenProject?.(p.id),
+      });
+      if (out.filter((r) => r.group === 'Proyek').length >= 4) break;
+    }
+    // 2. Menu navigasi
+    for (const m of MENU_SEARCH_INDEX) {
+      if (out.length >= 9) break;
+      if (!`${m.label} ${m.keywords}`.toLowerCase().includes(q)) continue;
+      out.push({
+        key: `menu:${m.id}`,
+        group: 'Menu',
+        label: m.label,
+        icon: <ChevronRight size={15} color="#64748B" />,
+        run: () => onNavigate(m.id),
+      });
+    }
+    // 3. Aksi cepat
+    if ('buat proyek baru'.includes(q) || q.includes('proyek')) {
+      out.push({
+        key: 'action:create-project',
+        group: 'Aksi',
+        label: 'Buat proyek baru',
+        icon: <Plus size={15} color="#059669" />,
+        run: () => onCreateProject?.(),
+      });
+    }
+    return out.slice(0, 9);
+  }, [searchQuery, projects, onOpenProject, onNavigate, onCreateProject]);
+
+  const closeSearch = () => {
+    setSearchFocused(false);
+    setActiveResultIdx(0);
+  };
+
+  const pickResult = (r: SearchResultItem) => {
+    r.run();
+    onSearchChange('');
+    closeSearch();
+    searchInputRef.current?.blur();
+  };
+
+  // ⌘K / Ctrl+K fokus ke pencarian
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   const handleNotificationItemClick = (item: NotificationItem) => {
     if (item.link) {
@@ -211,6 +319,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         }}
       >
         <div
+          ref={searchWrapRef}
           style={{
             position: 'relative',
             display: 'flex',
@@ -225,10 +334,29 @@ export const TopBar: React.FC<TopBarProps> = ({
             style={{ position: 'absolute', left: '12px', pointerEvents: 'none' }}
           />
           <input
+            ref={searchInputRef}
             type="text"
             placeholder={t('nav.search_placeholder')}
           value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={(e) => { onSearchChange(e.target.value); setActiveResultIdx(0); setSearchFocused(true); }}
+          onFocus={() => setSearchFocused(true)}
+          onBlur={() => setTimeout(closeSearch, 120)}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown' && searchResults.length > 0) {
+              e.preventDefault();
+              setActiveResultIdx((i) => (i + 1) % searchResults.length);
+            } else if (e.key === 'ArrowUp' && searchResults.length > 0) {
+              e.preventDefault();
+              setActiveResultIdx((i) => (i - 1 + searchResults.length) % searchResults.length);
+            } else if (e.key === 'Enter' && searchResults.length > 0) {
+              e.preventDefault();
+              pickResult(searchResults[activeResultIdx] ?? searchResults[0]);
+            } else if (e.key === 'Escape') {
+              onSearchChange('');
+              closeSearch();
+              searchInputRef.current?.blur();
+            }
+          }}
           aria-label="Pencarian Global"
           style={{
             width: '100%',
@@ -243,12 +371,12 @@ export const TopBar: React.FC<TopBarProps> = ({
             outline: 'none',
             transition: 'border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease',
           }}
-          onFocus={(e) => {
+          onFocusCapture={(e) => {
             e.currentTarget.style.background = '#FFFFFF';
             e.currentTarget.style.borderColor = '#2563EB';
             e.currentTarget.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.1)';
           }}
-          onBlur={(e) => {
+          onBlurCapture={(e) => {
             e.currentTarget.style.background = '#F8FAFC';
             e.currentTarget.style.borderColor = '#E2E8F0';
             e.currentTarget.style.boxShadow = 'none';
@@ -271,6 +399,76 @@ export const TopBar: React.FC<TopBarProps> = ({
           >
             ⌘ K
           </span>
+        )}
+
+        {/* Hasil pencarian global */}
+        {searchFocused && searchQuery.trim() && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 8px)',
+              left: 0,
+              right: 0,
+              background: '#FFFFFF',
+              borderRadius: '14px',
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 16px 40px rgba(15,23,42,0.14)',
+              zIndex: 100,
+              overflow: 'hidden',
+              maxHeight: 'min(380px, 60vh)',
+              overflowY: 'auto',
+            }}
+          >
+            {searchResults.length === 0 ? (
+              <div style={{ padding: '18px 16px', fontSize: 13, color: '#94A3B8', textAlign: 'center' }}>
+                Tidak ada hasil untuk “{searchQuery.trim()}”.
+              </div>
+            ) : (
+              (() => {
+                let lastGroup = '';
+                return searchResults.map((r, i) => {
+                  const header = r.group !== lastGroup ? r.group : null;
+                  lastGroup = r.group;
+                  return (
+                    <div key={r.key}>
+                      {header && (
+                        <div style={{ padding: '10px 14px 4px', fontSize: 10.5, fontWeight: 800, letterSpacing: '0.06em', color: '#94A3B8' }}>
+                          {header.toUpperCase()}
+                        </div>
+                      )}
+                      <button
+                        onMouseDown={(e) => { e.preventDefault(); pickResult(r); }}
+                        onMouseEnter={() => setActiveResultIdx(i)}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: '9px 14px',
+                          background: i === activeResultIdx ? '#EFF6FF' : 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <span style={{ flexShrink: 0, display: 'flex' }}>{r.icon}</span>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {r.label}
+                          </span>
+                          {r.sub && (
+                            <span style={{ display: 'block', fontSize: 11.5, color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {r.sub}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    </div>
+                  );
+                });
+              })()
+            )}
+          </div>
         )}
         </div>
       </div>
