@@ -258,8 +258,8 @@ export const EzrabAiView: React.FC = () => {
         <div className="ezchat2-mascot">
           <EZRABMascot3D
             variant="chatbot"
-            width={52}
-            height={52}
+            width={44}
+            height={44}
             expression={mascotExpression}
             isThinking={busy}
             enableEyeTracking
@@ -298,8 +298,8 @@ export const EzrabAiView: React.FC = () => {
             <div className="ezchat2-hero">
               <EZRABMascot3D
                 variant="chatbot"
-                width={196}
-                height={196}
+                width={128}
+                height={128}
                 expression="happy"
                 enableEyeTracking
                 enableFloat
