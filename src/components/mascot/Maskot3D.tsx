@@ -89,25 +89,34 @@ export const Maskot3D: React.FC<Maskot3DProps> = ({
     mascot.add(eyesGroup);
 
     // ---- load GLB ----
-    new GLTFLoader().load(
+    // Primary: local public/maskot.glb | Fallback: CDN URL (if local missing)
+    const GLB_URLS = [
       '/maskot.glb',
-      (gltf) => {
-        const model = gltf.scene;
-        // normalize: center + scale to ~2.2 units tall
-        const box = new THREE.Box3().setFromObject(model);
-        const center = box.getCenter(new THREE.Vector3());
-        const sz = box.getSize(new THREE.Vector3());
-        const s = 2.2 / Math.max(sz.x, sz.y, sz.z);
-        model.scale.setScalar(s);
-        model.position.sub(center.clone().multiplyScalar(s));
-        model.position.y += 0.1;
-        mascot.add(model);
-        // eyes should sit slightly in front of the model surface along +Z
-        eyesGroup.position.z = (sz.z * s) / 2 * 0.92;
-      },
-      undefined,
-      () => setFailed(true)
-    );
+      'https://muse.ai/files/1385519504640631/1086519064148403/lwwz1y5c3x768iryoj1hsg99/maskot.glb',
+    ];
+    const loadGlb = (idx: number) => {
+      if (idx >= GLB_URLS.length) { setFailed(true); return; }
+      new GLTFLoader().load(
+        GLB_URLS[idx],
+        (gltf) => {
+          const model = gltf.scene;
+          // normalize: center + scale to ~2.2 units tall
+          const box = new THREE.Box3().setFromObject(model);
+          const center = box.getCenter(new THREE.Vector3());
+          const sz = box.getSize(new THREE.Vector3());
+          const s = 2.2 / Math.max(sz.x, sz.y, sz.z);
+          model.scale.setScalar(s);
+          model.position.sub(center.clone().multiplyScalar(s));
+          model.position.y += 0.1;
+          mascot.add(model);
+          // eyes should sit slightly in front of the model surface along +Z
+          eyesGroup.position.z = (sz.z * s) / 2 * 0.92;
+        },
+        undefined,
+        () => loadGlb(idx + 1) // try next URL on failure
+      );
+    };
+    loadGlb(0);
 
     // ---- cursor eye-tracking + blink + idle bob ----
     const pupils = [eyeL.userData.pupil as THREE.Mesh, eyeR.userData.pupil as THREE.Mesh];
