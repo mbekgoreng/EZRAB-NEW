@@ -148,17 +148,19 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
   }, [isOpen, workspaceId]);
 
   const effectiveCompany: Company = useMemo(() => {
+    // P0-B: rantai fallback memakai data branding/profil nyata. Jika tidak ada,
+    // kosongkan — JANGAN tampilkan identitas contoh sebagai identitas pengguna.
     if (workspaceBranding) {
       return {
         id: company?.id || 'comp-1',
-        name: workspaceBranding.companyName || company?.name || 'PT. EZRAB KONSTRUKSI INDONESIA',
-        address: workspaceBranding.address || company?.address || 'Jakarta, Indonesia',
-        phone: workspaceBranding.phone || company?.phone || '+62 21 555-7890',
-        email: workspaceBranding.email || company?.email || 'info@ezrab.co.id',
-        website: workspaceBranding.website || company?.website || 'https://ezrab.co.id',
-        taxNumber: workspaceBranding.taxNumber || company?.taxNumber || '01.234.567.8-012.000',
-        leadEstimatorName: signatures.preparedByName || workspaceBranding.leadEstimatorName || 'Lead Estimator',
-        directorName: signatures.checkedByName || workspaceBranding.directorName || 'Direktur Teknik',
+        name: workspaceBranding.companyName || company?.name || '',
+        address: workspaceBranding.address || company?.address || '',
+        phone: workspaceBranding.phone || company?.phone || '',
+        email: workspaceBranding.email || company?.email || '',
+        website: workspaceBranding.website || company?.website || '',
+        taxNumber: workspaceBranding.taxNumber || company?.taxNumber || '',
+        leadEstimatorName: signatures.preparedByName || workspaceBranding.leadEstimatorName || '',
+        directorName: signatures.checkedByName || workspaceBranding.directorName || '',
         logo: workspaceBranding.logoUrl || company?.logo || '',
         defaultOverheadPercent: company?.defaultOverheadPercent || 5,
         defaultProfitPercent: company?.defaultProfitPercent || 10,
@@ -170,12 +172,12 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
     return (
       company || {
         id: 'comp-1',
-        name: 'PT. EZRAB KONSTRUKSI INDONESIA',
-        address: 'Equity Tower Lt. 22, SCBD, Jakarta Selatan',
-        phone: '+62 21 555-7890',
-        email: 'info@ezrab.co.id',
-        website: 'https://ezrab.co.id',
-        taxNumber: '01.234.567.8-012.000',
+        name: '',
+        address: '',
+        phone: '',
+        email: '',
+        website: '',
+        taxNumber: '',
         leadEstimatorName: signatures.preparedByName,
         directorName: signatures.checkedByName,
         logo: '',
@@ -356,6 +358,24 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               </p>
             </div>
           </div>
+
+          {/* P0-B: peringatan jujur bila identitas perusahaan belum diisi —
+              dokumen resmi tidak boleh memakai nama/NPWP contoh. */}
+          {!effectiveCompany.name && (
+            <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '10px', background: '#FFFBEB', border: '1px solid #FDE68A', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '12.5px', color: '#92400E', flex: 1 }}>
+                Identitas perusahaan belum diisi — kop dokumen akan menampilkan strip (-).
+                Lengkapi di Branding agar dokumen resmi valid.
+              </span>
+              <button
+                type="button"
+                onClick={() => setBrandingModalOpen(true)}
+                style={{ height: '30px', padding: '0 12px', borderRadius: '6px', border: '1px solid #F59E0B', background: '#fff', color: '#92400E', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Lengkapi Branding
+              </button>
+            </div>
+          )}
 
           <button
             onClick={onClose}

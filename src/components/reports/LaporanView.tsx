@@ -54,6 +54,7 @@ import { UnifiedProjectEngine } from '../../engine/unifiedProjectEngine';
 import { MASTER_AHSP_DATABASE } from '../../data/indonesianAHSP';
 
 import { useProject } from '../../context/ProjectContext';
+import { buildGanttTasks, computeScheduleProgress, formatScheduleDuration } from '../../lib/scheduleHonesty';
 
 interface LaporanViewProps {
   projects?: Project[];
@@ -484,24 +485,29 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
     });
   }, [activeProject, initialRabItems, totalRekapValue, projectScheduleTasks]);
 
-  // Gantt Schedule 12-Week Dataset (Empty when no items)
-  const ganttTasks = useMemo(() => {
-    if (!initialRabItems || initialRabItems.length === 0) return [];
-    return initialRabItems.map((item, idx) => ({
-      id: idx + 1,
-      wbs: `${idx + 1}.0`,
-      name: item.description,
-      duration: 14,
-      start: 'W1',
-      end: 'W2',
-      startWeekIdx: 0,
-      weekSpan: 2,
-      weight: totalRekapValue > 0 ? Number(((item.amount || (item.volume * item.unitPrice)) / totalRekapValue * 100).toFixed(2)) : 0,
-      progress: 0,
-      status: 'Pending',
-      color: '#2563EB',
-    }));
-  }, [initialRabItems, totalRekapValue]);
+  // Gantt Schedule — HANYA dari data jadwal tersimpan (projectScheduleTasks).
+  // P0-B: jangan mengarang jadwal. Jika tidak ada data jadwal, kembalikan
+  // array kosong dan UI menampilkan empty state "Belum dijadwalkan".
+  const ganttTasks = useMemo(
+    () => buildGanttTasks(projectScheduleTasks),
+    [projectScheduleTasks]
+  );
+
+  // Progres keseluruhan dari data jadwal nyata (rata-rata berbobot).
+  // null = tidak ada data -> tampilkan "Belum tersedia", bukan angka karangan.
+  const scheduleProgress = useMemo(
+    () => computeScheduleProgress(projectScheduleTasks),
+    [projectScheduleTasks]
+  );
+
+  const displayProgress =
+    typeof activeProject?.progress === 'number' ? activeProject.progress : scheduleProgress;
+
+  // Label durasi dari jadwal nyata; null = belum ada data jadwal.
+  const scheduleDurationLabel = useMemo(
+    () => formatScheduleDuration(projectScheduleTasks),
+    [projectScheduleTasks]
+  );
 
   // Handle Photo File Upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1089,11 +1095,17 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                     <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748B' }}>Progress</span>
                     <div style={{ fontSize: '20px', fontWeight: 800, color: '#10B981', letterSpacing: '-0.02em' }}>
-                      {activeProject.progress || 35}%
+                      {displayProgress !== null ? `${displayProgress}%` : 'Belum tersedia'}
                     </div>
-                    <span style={{ fontSize: '11px', color: '#16A34A', fontWeight: 600 }}>
-                      +3.94% Ahead schedule
-                    </span>
+                    {displayProgress !== null ? (
+                      <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>
+                        Berdasarkan data jadwal tersimpan
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>
+                        Belum ada data progres
+                      </span>
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -2270,13 +2282,24 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#16A34A', background: '#DCFCE7', border: '1px solid #BBF7D0', padding: '4px 10px', borderRadius: '8px' }}>
-                    Total Durasi: 90 Hari Kalender (12 Minggu)
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: scheduleDurationLabel ? '#16A34A' : '#64748B', background: scheduleDurationLabel ? '#DCFCE7' : '#F1F5F9', border: `1px solid ${scheduleDurationLabel ? '#BBF7D0' : '#E2E8F0'}`, padding: '4px 10px', borderRadius: '8px' }}>
+                    {scheduleDurationLabel || 'Belum dijadwalkan'}
                   </span>
                 </div>
               </div>
 
-              {/* Gantt Interactive Board */}
+              {/* Gantt Interactive Board — empty state jujur bila tanpa data jadwal */}
+              {ganttTasks.length === 0 ? (
+                <div style={{ border: '1px dashed #CBD5E1', borderRadius: '14px', padding: '36px 20px', textAlign: 'center', background: '#F8FAFC' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', marginBottom: '6px' }}>
+                    Belum ada data jadwal
+                  </div>
+                  <div style={{ fontSize: '12.5px', color: '#64748B', maxWidth: '420px', margin: '0 auto' }}>
+                    Susun jadwal pelaksanaan di menu Penjadwalan agar Gantt chart, durasi, dan progres
+                    dihitung dari data nyata — bukan perkiraan.
+                  </div>
+                </div>
+              ) : (
               <div style={{ overflowX: 'auto', border: '1px solid #E2E8F0', borderRadius: '14px' }}>
                 <table style={{ width: '100%', minWidth: '920px', borderCollapse: 'collapse', fontSize: '11.5px' }}>
                   <thead>
@@ -2369,6 +2392,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   </tbody>
                 </table>
               </div>
+              )}
             </div>
           )}
 
