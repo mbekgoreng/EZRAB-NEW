@@ -130,6 +130,10 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
 
   const [coAssistantMode, setCoAssistantMode] = useState<ChatboxDisplayMode>('closed');
 
+  // AI Dokumen: workspace analisis aktif? (floating assistant disembunyikan
+  // HANYA saat analisis aktif; tampil di halaman utama AI Dokumen)
+  const [docAiAnalysisActive, setDocAiAnalysisActive] = useState(false);
+
 
 
   // Project Context Central State
@@ -172,6 +176,8 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
   // presentation state only; every user navigation is mirrored into browser history.
   const setActiveMenu = useCallback((menu: string, projectId: string | null = currentProjectId) => {
     setActiveMenuState(menu);
+    // Reset status workspace analisis AI Dokumen saat pindah menu
+    if (menu !== 'dokumen-ai') setDocAiAnalysisActive(false);
     setMobileDrawerOpen(false);
     onNavigateMenu(menu, projectId);
   }, [currentProjectId, onNavigateMenu]);
@@ -512,7 +518,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           </main>
         ) : activeMenu === 'dokumen-ai' ? (
           <main style={{ minHeight: 'calc(100vh - 64px)', background: '#F2F7FF' }}>
-            <DokumenAiView />
+            <DokumenAiView onAnalysisActiveChange={setDocAiAnalysisActive} />
           </main>
         ) : (activeMenu === 'rab-estimasi' ||
              activeMenu === 'rab-spreadsheet' ||
@@ -859,9 +865,12 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
 
 
       {/* EZRAB Floating Launcher — hidden in AI menus (Single-Mascot Rule):
-          each AI menu (Chat AI, DED Estimate AI, AI Document, Magic AI) has
-          its own mascot/interface, so the floating assistant stays out. */}
-      {!['magic-ai', 'ai-assistant', 'ezrab-ai', 'ded-ai', 'dokumen-ai'].includes(activeMenu) && (
+          each AI menu (Chat AI, DED Estimate AI, Magic AI) has its own
+          mascot/interface, so the floating assistant stays out.
+          AI Dokumen: visible on the main page, hidden ONLY while the
+          contextual analysis workspace is active. */}
+      {!['magic-ai', 'ai-assistant', 'ezrab-ai', 'ded-ai'].includes(activeMenu) &&
+        !(activeMenu === 'dokumen-ai' && docAiAnalysisActive) && (
         <>
           <EzrabCoAssistantLauncher
             isOpen={coAssistantMode !== 'closed' && coAssistantMode !== 'minimized'}

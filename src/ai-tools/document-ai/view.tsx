@@ -6,10 +6,13 @@
  * 3. Buat Dokumen   — template → draf → review → ekspor
  * 4. Riwayat        — jejak analisis & draf
  *
- * Floating assistant global disembunyikan di menu ini oleh WorkspaceView
- * (single-mascot rule) — tidak ada dua chatbot bersamaan.
+ * Aturan assistant (master prompt):
+ * - Floating assistant global TAMPIL di halaman utama AI Dokumen.
+ * - Disembunyikan HANYA saat workspace analisis aktif (ada dokumen dibuka).
+ * - Tidak ada dua chatbot bersamaan; riwayat chat tidak dicampur.
+ * DokumenAiView melaporkan status workspace via onAnalysisActiveChange.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FolderOpen, ScanSearch, FilePlus2, History } from 'lucide-react';
 import { DocLibrary } from './components/DocLibrary';
 import { DocAnalyzer } from './components/DocAnalyzer';
@@ -20,11 +23,22 @@ import './document-ai.css';
 
 type Tab = 'library' | 'analyze' | 'create' | 'history';
 
-export const DokumenAiView: React.FC = () => {
+interface DokumenAiViewProps {
+  /** Dipanggil saat workspace analisis aktif/nonaktif — WorkspaceView memakai ini untuk menyembunyikan floating assistant. */
+  onAnalysisActiveChange?: (active: boolean) => void;
+}
+
+export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveChange }) => {
   const [tab, setTab] = useState<Tab>('library');
   const [activeDoc, setActiveDoc] = useState<DocRecord | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const bump = () => setRefreshKey((k) => k + 1);
+
+  const analysisActive = tab === 'analyze' && activeDoc !== null;
+
+  useEffect(() => {
+    onAnalysisActiveChange?.(analysisActive);
+  }, [analysisActive, onAnalysisActiveChange]);
 
   const openAnalyze = (doc: DocRecord) => {
     setActiveDoc(doc);
