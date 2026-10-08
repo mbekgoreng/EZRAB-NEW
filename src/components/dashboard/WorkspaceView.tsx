@@ -78,8 +78,10 @@ import {
 } from 'lucide-react';
 
 import { useProject } from '../../context/ProjectContext';
+import { useI18n } from '../../i18n';
 import { routeLabel, navigateTo, routeForMenu, type WorkspaceRoute } from '../../routing/routes';
 import '../../styles/dashboard-refined.css';
+import '../../styles/workspace-mobile-fixes.css';
 import { UnifiedBreadcrumb } from '../navigation/UnifiedBreadcrumb';
 import { TopBar } from '../navigation/TopBar';
 import { TemplateRabCatalogView } from '../templates/TemplateRabCatalogView';
@@ -104,6 +106,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
   // Navigation active tab (Default: 'dashboard' as requested)
   const [activeMenu, setActiveMenuState] = useState<string>(route.menu);
   const [searchQuery, setSearchQuery] = useState('');
+  const { t } = useI18n();
 
   // Project status filter ('Semua Proyek', 'Draft', 'Sedang Dikerjakan', 'Selesai', 'Arsip')
   const [projectFilter, setProjectFilter] = useState<string>('Semua Proyek');
@@ -195,14 +198,10 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
   // Modals state
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [magicAiModalOpen, setMagicAiModalOpen] = useState(false);
-  const [onboardingTourOpen, setOnboardingTourOpen] = useState(() => {
-    try {
-      if (typeof window !== 'undefined' && window.location.search.includes('skip_tour=true')) return false;
-      return localStorage.getItem('ezrab_onboarding_completed') !== 'true';
-    } catch {
-      return false;
-    }
-  });
+  // Legacy in-workspace onboarding modal — superseded by the App-level
+  // OnboardingTour (src/components/onboarding/OnboardingTour.tsx), which is the
+  // single first-run/replayable tutorial. Kept mounted but never auto-opens.
+  const [onboardingTourOpen, setOnboardingTourOpen] = useState(false);
 
   // Sync activities to localStorage
   useEffect(() => {
@@ -252,6 +251,10 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
       console.error(e);
     }
   };
+
+  // "Ulangi Tutorial" dari Pengaturan me-dispatch `ezrab:open-onboarding`;
+  // event tersebut ditangkap oleh useOnboardingTour() di App (tur baru).
+  // Listener lama untuk modal legacy sengaja dihapus agar tidak dobel.
 
   // Reset to pure 0 state
   const handleResetData = () => {
@@ -765,33 +768,33 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           MOBILE BOTTOM NAVIGATION BAR (< 768px)
          ========================================================================= */}
       {isNarrowMobile && (
-        <nav className="ezrab-bottom-nav" aria-label="Navigasi Bawah Mobile">
+        <nav className="ezrab-bottom-nav" aria-label={t('nav.bottom_nav')}>
           <button
             type="button"
             className={`ezrab-bottom-nav-item ${activeMenu === 'proyek' || activeMenu === 'dashboard' || activeMenu === 'manajemen-proyek' ? 'is-active' : ''}`}
             onClick={() => setActiveMenu('proyek')}
-            aria-label="Proyek"
+            aria-label={t('nav.bottom_proyek')}
           >
             <FolderKanban size={18} />
-            <span>Proyek</span>
+            <span>{t('nav.bottom_proyek')}</span>
           </button>
 
           <button
             type="button"
             className={`ezrab-bottom-nav-item ${activeMenu === 'rab-estimasi' ? 'is-active' : ''}`}
             onClick={() => setActiveMenu('rab-estimasi')}
-            aria-label="Estimator Spreadsheet"
+            aria-label={t('nav.bottom_estimator')}
           >
             <Coins size={18} />
-            <span>Estimator</span>
+            <span>{t('nav.bottom_estimator')}</span>
           </button>
 
           <button
             type="button"
             className="ezrab-bottom-nav-ai-btn"
             onClick={() => setActiveMenu('magic-ai')}
-            title="EZRAB Magic AI"
-            aria-label="EZRAB Magic AI"
+            title={t('nav.bottom_magic_ai')}
+            aria-label={t('nav.bottom_magic_ai')}
           >
             <Sparkles size={19} />
           </button>
@@ -800,7 +803,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             type="button"
             className={`ezrab-bottom-nav-item ${activeMenu === 'qto' || activeMenu === 'qto-vc' || activeMenu === 'qto-rekap' ? 'is-active' : ''}`}
             onClick={() => setActiveMenu('qto')}
-            aria-label="QTO Volume"
+            aria-label={t('nav.bottom_qto')}
           >
             <Calculator size={18} />
             <span>QTO</span>
@@ -810,7 +813,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             type="button"
             className={`ezrab-bottom-nav-item ${activeMenu === 'ahsp-2026' || activeMenu === 'ahsp' || activeMenu === 'analisa-ahsp' ? 'is-active' : ''}`}
             onClick={() => setActiveMenu('ahsp-2026')}
-            aria-label="AHSP 2026"
+            aria-label={t('nav.bottom_ahsp')}
           >
             <Database size={18} />
             <span>AHSP</span>
