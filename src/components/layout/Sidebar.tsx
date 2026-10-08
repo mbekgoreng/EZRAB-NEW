@@ -31,6 +31,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { Project } from '../../types';
+import { useI18n } from '../../i18n';
 
 export interface SidebarProps {
   activeMenu: string;
@@ -72,6 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onBackToLanding,
   onOpenSettingsTab,
 }) => {
+  const { t } = useI18n();
   const [proyekSubmenuOpen, setProyekSubmenuOpen] = useState(true);
   const [volumeSubmenuOpen, setVolumeSubmenuOpen] = useState(true);
   const [rabSubmenuOpen, setRabSubmenuOpen] = useState(true);
@@ -84,13 +86,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const volumeSubItems = [
     {
       id: 'qto-vc',
-      label: 'Kalkulator Volume',
+      label: t('nav.volume_kalkulator'),
       icon: Calculator,
       match: (m: string) => m === 'qto-vc' || m === 'volume-calculation',
     },
     {
       id: 'qto',
-      label: 'Rekapitulasi QTO',
+      label: t('nav.rekap_qto'),
       icon: Ruler,
       match: (m: string) => m === 'qto' || m === 'qto-rekap',
     },
@@ -102,37 +104,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const rabSubItems = [
     {
       id: 'rab-spreadsheet',
-      label: 'Spreadsheet RAB',
+      label: t('nav.rab_spreadsheet'),
       icon: FileSpreadsheet,
       match: (m: string) => m === 'rab-spreadsheet' || m === 'rab-estimasi',
     },
     {
       id: 'rab-rekapitulasi',
-      label: 'Rekapitulasi RAB',
+      label: t('nav.rekap_rab'),
       icon: FileCheck,
       match: (m: string) => m === 'rab-rekapitulasi',
     },
     {
       id: 'rab-analisa-harga',
-      label: 'Analisa Harga Satuan',
+      label: t('nav.analisa_harga'),
       icon: Calculator,
       match: (m: string) => m === 'rab-analisa-harga',
     },
     {
       id: 'rab-kurva-s',
-      label: 'Kurva S & Jadwal',
+      label: t('nav.kurva_s'),
       icon: LineChart,
       match: (m: string) => m === 'rab-kurva-s',
     },
     {
       id: 'rab-catatan',
-      label: 'Catatan Estimasi',
+      label: t('nav.catatan'),
       icon: FileText,
       match: (m: string) => m === 'rab-catatan',
     },
     {
       id: 'rab-pengaturan',
-      label: 'Pengaturan RAB',
+      label: t('nav.pengaturan_rab'),
       icon: Settings,
       match: (m: string) => m === 'rab-pengaturan',
     },
@@ -144,31 +146,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const databaseSubItems = [
     {
       id: 'database-material',
-      label: 'Material & Harga',
+      label: t('nav.material'),
       icon: Package,
       match: (m: string) => m === 'database-material' || m === 'material' || m === 'material-harga',
     },
     {
       id: 'ahsp-2026',
-      label: 'AHSP',
+      label: t('nav.ahsp'),
       icon: Database,
       match: (m: string) => m === 'ahsp-2026' || m === 'ahsp' || m === 'analisa-ahsp',
     },
     {
       id: 'database-upah',
-      label: 'Upah',
+      label: t('nav.upah'),
       icon: HardHat,
       match: (m: string) => m === 'database-upah' || m === 'upah',
     },
     {
       id: 'database-alat',
-      label: 'Peralatan',
+      label: t('nav.alat'),
       icon: Truck,
       match: (m: string) => m === 'database-alat' || m === 'alat',
     },
     {
       id: 'harga-proyek',
-      label: 'Harga Proyek',
+      label: t('nav.harga_proyek'),
       icon: Tag,
       match: (m: string) => m === 'harga-proyek' || m === 'project-price',
     },
@@ -206,7 +208,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const mainNavItems: NavItemDef[] = [
     {
       id: 'dashboard',
-      label: 'Home',
+      label: t('nav.home'),
       icon: LayoutDashboard,
     },
     // Proyek is handled with dedicated dropdown (Portofolio, Volume/QTO, Jadwal/Manajemen)
@@ -214,7 +216,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     // AI section: exactly 3 items (per Director order 2026-10-08)
     {
       id: 'ezrab-ai',
-      label: 'Ezrab Chat AI',
+      label: t('nav.chat_ai'),
       icon: Sparkles,
       badge: 'AI',
       badgeType: 'primary',
@@ -222,7 +224,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'ded-ai',
-      label: 'Ded Estimate AI',
+      label: t('nav.ded_ai'),
       icon: FileCheck,
       badge: 'AI',
       badgeType: 'primary',
@@ -230,7 +232,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'dokumen-ai',
-      label: 'AI Document',
+      label: t('nav.doc_ai'),
       icon: FileText,
       badge: 'AI',
       badgeType: 'primary',
@@ -238,7 +240,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'template-rab',
-      label: 'Template RAB',
+      label: t('nav.template_rab'),
       icon: Layers,
       badge: '36-300',
       badgeType: 'success',
@@ -246,19 +248,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
     // Database handled with dedicated expandable dropdown!
     {
       id: 'laporan',
-      label: 'Laporan',
+      label: t('nav.laporan'),
       icon: FileText,
       matchMenu: (menu) => menu === 'laporan' || menu === 'boq' || menu === 'rekapitulasi',
     },
     {
       id: 'dokumen-tender',
-      label: 'Dokumen Proyek',
+      label: t('nav.dokumen_proyek'),
       icon: Files,
       matchMenu: (menu) => menu === 'dokumen-tender',
     },
     {
       id: 'keuangan-proyek',
-      label: 'Keuangan Proyek',
+      label: t('nav.keuangan_proyek'),
       icon: Receipt,
       matchMenu: (menu) =>
         menu === 'keuangan-proyek' ||
@@ -274,6 +276,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       <aside
+        className="ezrab-workspace-sidebar"
         style={
           isMobile
             ? {
@@ -331,7 +334,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 if (isMobile) onCloseMobileDrawer();
                 if (onBackToLanding) onBackToLanding();
               }}
-              title="EZRAB — Kembali ke Beranda"
+              title={`EZRAB — ${t('nav.back_landing')}`}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -383,7 +386,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 type="button"
                 onClick={onCloseMobileDrawer}
-                aria-label="Tutup Menu Navigasi"
+                aria-label={t('common.tutup')}
                 style={{
                   width: '32px',
                   height: '32px',
@@ -403,8 +406,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 type="button"
                 onClick={onToggleCollapse}
-                title={sidebarCollapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'}
-                aria-label={sidebarCollapsed ? 'Perluas Sidebar' : 'Ciutkan Sidebar'}
+                title={sidebarCollapsed ? t('nav.expand') : t('nav.collapse')}
+                aria-label={sidebarCollapsed ? t('nav.expand') : t('nav.collapse')}
                 style={{
                   width: '28px',
                   height: '28px',
@@ -695,7 +698,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, height: '100%' }}
                 >
                   <FolderKanban size={18} color={(activeMenu === 'proyek' || activeMenu === 'manajemen-proyek') ? '#2563EB' : '#64748B'} />
-                  {(!sidebarCollapsed || isMobile) && <span>Proyek</span>}
+                  {(!sidebarCollapsed || isMobile) && <span>{t('nav.proyek')}</span>}
                 </div>
 
                 {(!sidebarCollapsed || isMobile) && (
@@ -751,11 +754,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }}
                 >
                   {[
-                    { label: 'Semua Proyek', filter: 'Semua Proyek', count: totalProjects },
-                    { label: 'Draft', filter: 'Draft', count: draftCount },
-                    { label: 'Sedang Dikerjakan', filter: 'Sedang Dikerjakan', count: inProgressCount },
-                    { label: 'Selesai', filter: 'Selesai', count: completedCount },
-                    { label: 'Arsip', filter: 'Arsip', count: archivedCount },
+                    { label: t('nav.f_semua'), filter: 'Semua Proyek', count: totalProjects },
+                    { label: t('nav.f_draft'), filter: 'Draft', count: draftCount },
+                    { label: t('nav.f_aktif'), filter: 'Sedang Dikerjakan', count: inProgressCount },
+                    { label: t('nav.f_selesai'), filter: 'Selesai', count: completedCount },
+                    { label: t('nav.f_arsip'), filter: 'Arsip', count: archivedCount },
                   ].map((sub) => {
                     const isSubActive = activeMenu === 'proyek' && projectFilter === sub.filter;
                     return (
@@ -879,7 +882,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   width: '100%',
                   transition: 'all 0.15s ease',
                 }}
-                onMouseEnter={(e) => handleMouseEnterItem(e, 'Volume Calculation', 'volume-parent')}
+                onMouseEnter={(e) => handleMouseEnterItem(e, t('nav.volume_kalkulator'), 'volume-parent')}
                 onMouseLeave={handleMouseLeaveItem}
               >
                 <div
@@ -887,7 +890,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, height: '100%' }}
                 >
                   <Calculator size={18} color={isVolumeActive ? '#2563EB' : '#64748B'} />
-                  {(!sidebarCollapsed || isMobile) && <span>Volume Calculation</span>}
+                  {(!sidebarCollapsed || isMobile) && <span>{t('nav.volume_kalkulator')}</span>}
                 </div>
 
                 {(!sidebarCollapsed || isMobile) && (
@@ -982,7 +985,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   width: '100%',
                   transition: 'all 0.15s ease',
                 }}
-                onMouseEnter={(e) => handleMouseEnterItem(e, 'RAB & Estimasi', 'rab-parent')}
+                onMouseEnter={(e) => handleMouseEnterItem(e, t('nav.rab_estimasi'), 'rab-parent')}
                 onMouseLeave={handleMouseLeaveItem}
               >
                 <div
@@ -990,7 +993,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, height: '100%' }}
                 >
                   <Coins size={18} color={isRabActive ? '#2563EB' : '#64748B'} />
-                  {(!sidebarCollapsed || isMobile) && <span>RAB & Estimasi</span>}
+                  {(!sidebarCollapsed || isMobile) && <span>{t('nav.rab_estimasi')}</span>}
                 </div>
 
                 {(!sidebarCollapsed || isMobile) && (
@@ -1177,7 +1180,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, height: '100%' }}
                       >
                         <Database size={18} color={isDatabaseActive ? '#2563EB' : '#64748B'} />
-                        {(!sidebarCollapsed || isMobile) && <span>Database</span>}
+                        {(!sidebarCollapsed || isMobile) && <span>{t('nav.database')}</span>}
                       </div>
 
                       {(!sidebarCollapsed || isMobile) && (
@@ -1277,7 +1280,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => onSelectMenu('pengaturan')}
               onMouseEnter={(e) => handleMouseEnterItem(e, 'Pengaturan', 'pengaturan')}
               onMouseLeave={handleMouseLeaveItem}
-              aria-label="Pengaturan"
+              aria-label={t('nav.pengaturan')}
               style={{
                 height: '40px',
                 display: 'flex',
@@ -1306,7 +1309,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 size={18}
                 color={activeMenu === 'pengaturan' || activeMenu === 'subscription' ? '#2563EB' : '#64748B'}
               />
-              {(!sidebarCollapsed || isMobile) && <span>Pengaturan</span>}
+              {(!sidebarCollapsed || isMobile) && <span>{t('nav.pengaturan')}</span>}
             </button>
           </nav>
         </div>
@@ -1391,8 +1394,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             onMouseEnter={(e) => handleMouseEnterItem(e, 'Keluar / Beranda', 'logout')}
             onMouseLeave={handleMouseLeaveItem}
-            title="Keluar ke Beranda Landing Page"
-            aria-label="Keluar ke Beranda Landing Page"
+            title={t('nav.back_landing')}
+            aria-label={t('nav.back_landing')}
             style={{
               width: '100%',
               height: '36px',
