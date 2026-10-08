@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
+import { useI18n } from '../../i18n';
 import { EZRABMascot3D } from '../mascot/EZRABMascot3D';
 
 interface EzrabAiDashboardViewProps {
@@ -51,18 +52,19 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
   onOpenMagicAi,
 }) => {
   const { currentProject, setCurrentProjectId } = useProject();
+  const { t } = useI18n();
 
-  // Dynamic Indonesian time-based greeting
-  const getIndonesianGreeting = (): string => {
+  // Dynamic time-based greeting (localized)
+  const getLocalizedGreeting = (): string => {
     const hour = new Date().getHours();
     if (hour >= 4 && hour < 11) {
-      return 'Selamat pagi';
+      return t('dashboard.pagi');
     } else if (hour >= 11 && hour < 15) {
-      return 'Selamat siang';
+      return t('dashboard.siang');
     } else if (hour >= 15 && hour < 18) {
-      return 'Selamat sore';
+      return t('dashboard.sore');
     } else {
-      return 'Selamat malam';
+      return t('dashboard.malam');
     }
   };
 
@@ -82,7 +84,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
     switch (status) {
       case 'in_progress':
         return {
-          label: 'Sedang Dikerjakan',
+          label: t('dashboard.status_aktif'),
           bg: '#EFF6FF',
           color: '#2563EB',
           border: '#DBEAFE',
@@ -91,21 +93,21 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
       case 'approved':
       case 'COMPLETED':
         return {
-          label: 'Selesai',
+          label: t('dashboard.status_selesai'),
           bg: '#F0FDF4',
           color: '#16A34A',
           border: '#DCFCE7',
         };
       case 'archived':
         return {
-          label: 'Arsip',
+          label: t('dashboard.status_arsip'),
           bg: '#F1F5F9',
           color: '#64748B',
           border: '#E2E8F0',
         };
       default:
         return {
-          label: 'Draft',
+          label: t('dashboard.status_draft'),
           bg: '#FFFBEB',
           color: '#D97706',
           border: '#FEF3C7',
@@ -131,6 +133,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
           1. HERO AREA — COMMAND CENTER WITH 3D MASCOT & HANDWRITTEN ANNOTATION
          ========================================================================= */}
       <section
+        className="ezrab-dashboard-hero"
         style={{
           background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 55%, #EFF6FF 100%)',
           borderRadius: '20px',
@@ -170,7 +173,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
         </div>
 
         {/* LEFT: Text & CTA Buttons */}
-        <div style={{ flex: 1, maxWidth: '580px', position: 'relative', zIndex: 2 }}>
+        <div className="ezrab-dashboard-hero-text" style={{ flex: 1, maxWidth: '580px', position: 'relative', zIndex: 2 }}>
           <div
             style={{
               fontSize: '13.5px',
@@ -179,7 +182,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
               marginBottom: '10px',
             }}
           >
-            <span style={{ color: '#0F172A' }}>{getIndonesianGreeting()}, </span>
+            <span style={{ color: '#0F172A' }}>{getLocalizedGreeting()}, </span>
             <span style={{ color: '#2563EB' }}>Ahmad</span>
           </div>
 
@@ -193,7 +196,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
               margin: '0 0 14px 0',
             }}
           >
-            Bangun estimasi proyek dengan lebih cepat.
+            {t('dashboard.hero_title')}
           </h1>
 
           <p
@@ -205,7 +208,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
               maxWidth: '520px',
             }}
           >
-            EZRAB membantu Anda menyusun RAB, menghitung volume, memetakan AHSP, dan menganalisis biaya proyek dalam satu sistem presisi.
+            {t('dashboard.hero_sub')}
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
@@ -238,7 +241,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
               }}
             >
               <Plus size={16} strokeWidth={2.5} />
-              <span>Buat Proyek Baru</span>
+              <span>{t('dashboard.buat_proyek_baru')}</span>
             </button>
 
             <button
@@ -276,7 +279,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
                 e.currentTarget.style.borderColor = '#E2E8F0';
               }}
             >
-              <span>Buka Proyek</span>
+              <span>{t('dashboard.buka_proyek')}</span>
               <ChevronRight size={15} />
             </button>
           </div>
@@ -638,7 +641,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
               Proyek Anda
             </h2>
             <span style={{ fontSize: '12px', color: '#64748B' }}>
-              Ringkasan status proyek yang sedang aktif
+              {t('dashboard.ringkasan_aktif')}
             </span>
           </div>
           <button
@@ -822,6 +825,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
           4. SPLIT GRID: DAFTAR PROYEK TERKINI (LEFT) + EZRAB INSIGHT (RIGHT)
          ========================================================================= */}
       <section
+        className="ezrab-dashboard-split"
         style={{
           display: 'grid',
           gridTemplateColumns: 'minmax(0, 1fr) 350px',

@@ -7,6 +7,7 @@ import { defaultAiProvider } from './aiProviderEngine';
 import { HOUSE_TYPE_CATALOG } from '../data/houseTypeCatalog';
 import { getRegionalFactor, REGIONAL_WIZARD_OPTIONS } from '../data/regionalCostFactors';
 import { unifiedConversationStore } from './ai/conversation/unifiedConversationStore';
+import { notificationBus } from '../notifications/notificationBus';
 
 export interface CoAssistantMessage {
   id: string;
@@ -308,6 +309,14 @@ class CoAssistantService {
         };
 
         this.syncAiResponseToStore(request.currentProject?.id, errMsg);
+
+        notificationBus.publish({
+          type: 'error',
+          title: 'Co-Assistant gagal memproses',
+          message: coreErr?.message && coreErr.message.length > 140
+            ? `${coreErr.message.slice(0, 140)}…`
+            : coreErr?.message || 'Maaf, terjadi kendala saat menganalisis data proyek. Silakan coba kembali.',
+        });
 
         return {
           message: errMsg,
