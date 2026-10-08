@@ -54,7 +54,8 @@ export async function parseDocument(
           .join(' ')
           .replace(/\s+/g, ' ')
           .trim();
-        pages.push(t);
+        // Marker halaman untuk traceability jawaban AI ke sumber.
+        pages.push(`[Halaman ${p}]\n${t}`);
       }
       return { fileName, kind: 'pdf', text: pages.join('\n\n'), pages: max };
     }

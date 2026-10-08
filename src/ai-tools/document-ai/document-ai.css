@@ -1,44 +1,138 @@
-/* Dokumen AI — EZRAB emerald theme */
-.docai { max-width: 920px; margin: 0 auto; padding: 8px 16px 40px; font-family: 'Plus Jakarta Sans','Inter',system-ui,sans-serif; }
-.docai-hero { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
-.docai-hero-icon { width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(135deg,#1D4ED8,#2563EB 60%,#3B82F6); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px -4px rgba(37,99,235,.5); flex-shrink: 0; }
-.docai-hero h2 { margin: 0; font-size: 21px; font-weight: 800; color: #0F172A; }
-.docai-hero p { margin: 3px 0 0; font-size: 13px; color: #64748B; }
-.docai-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
-.docai-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 18px; padding: 16px; box-shadow: 0 4px 18px -4px rgba(15,23,42,.05); }
-.docai-step { font-size: 11px; font-weight: 800; color: #1D4ED8; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
-.docai-drop { position: relative; border: 2px dashed #CBD5E1; border-radius: 14px; background: #F8FAFC; padding: 26px 14px; text-align: center; cursor: pointer; color: #64748B; font-size: 13.5px; transition: all .2s; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.docai-drop:hover, .docai-drop.over { border-color: #2563EB; background: #EFF6FF; }
-.docai-drop.filled { border-style: solid; border-color: #BFDBFE; background: #EFF6FF; }
-.docai-fname { font-weight: 700; color: #0F172A; font-size: 13.5px; word-break: break-all; }
-.docai-fmeta { font-size: 11.5px; color: #94A3B8; }
-.docai-remove { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; border: none; background: #FEE2E2; color: #DC2626; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.docai-modes { display: flex; flex-direction: column; gap: 8px; }
-.docai-mode { display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: 13px; border: 1.5px solid #E2E8F0; background: #fff; cursor: pointer; text-align: left; font-family: inherit; transition: all .18s; color: #94A3B8; position: relative; }
-.docai-mode:hover { border-color: #BFDBFE; transform: translateX(2px); }
-.docai-mode.active { border-color: #2563EB; background: #EFF6FF; color: #1D4ED8; box-shadow: 0 4px 14px -4px rgba(37,99,235,.3); }
-.docai-mode-label { font-size: 13.5px; font-weight: 700; color: #0F172A; }
-.docai-mode-desc { font-size: 11.5px; color: #94A3B8; }
-.docai-mode-check { margin-left: auto; width: 22px; height: 22px; border-radius: 50%; background: #2563EB; color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
-.docai-qa-row { display: flex; gap: 9px; margin-bottom: 14px; }
-.docai-qa-row input { flex: 1; padding: 13px 18px; border-radius: 999px; border: 1.5px solid #E2E8F0; background: #fff; font-size: 14px; font-family: inherit; outline: none; }
-.docai-qa-row input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
-.docai-qa-row button { padding: 0 24px; border-radius: 999px; border: none; background: linear-gradient(135deg,#1D4ED8,#2563EB); color: #fff; font-weight: 700; font-size: 13.5px; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 7px; box-shadow: 0 4px 14px -3px rgba(37,99,235,.5); }
-.docai-qa-row button.disabled { background: #CBD5E1; box-shadow: none; cursor: not-allowed; }
-.docai-run { width: 100%; padding: 15px; border-radius: 16px; border: none; background: linear-gradient(135deg,#1D4ED8,#2563EB); color: #fff; font-size: 15px; font-weight: 800; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 9px; box-shadow: 0 8px 22px -6px rgba(37,99,235,.5); transition: all .2s; margin-bottom: 14px; }
-.docai-run:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 28px -6px rgba(37,99,235,.6); }
-.docai-run:disabled { background: #CBD5E1; box-shadow: none; cursor: not-allowed; }
-.docai-error { background: #FEF2F2; border: 1.5px solid #FECACA; border-radius: 14px; padding: 15px 17px; margin-bottom: 14px; color: #991B1B; font-size: 13.5px; }
-.docai-result { background: #fff; border: 1px solid #E2E8F0; border-radius: 18px; overflow: hidden; box-shadow: 0 8px 28px -8px rgba(15,23,42,.1); animation: docFadeUp .4s ease; }
-@keyframes docFadeUp { from { opacity: 0; transform: translateY(12px); } }
-.docai-result-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; background: linear-gradient(135deg,#EFF6FF,#EFF6FF); border-bottom: 1px solid #E2E8F0; font-weight: 800; font-size: 14px; color: #1E40AF; }
-.docai-result-head button { display: flex; align-items: center; gap: 6px; border: 1.5px solid #BFDBFE; background: #fff; color: #1D4ED8; border-radius: 10px; padding: 7px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; }
-.docai-result-body { padding: 18px 20px; white-space: pre-wrap; font-size: 14px; line-height: 1.75; color: #1E293B; max-height: 480px; overflow-y: auto; }
+/* AI DOKUMEN — workspace premium minimal (navy #0F172A, blue #2563EB, bg #F3F7FF, border #DFE8F5) */
+.docai-shell { max-width: 1200px; margin: 0 auto; padding: 16px 20px 48px; font-family: 'Plus Jakarta Sans','Inter',system-ui,sans-serif; color: #0F172A; }
+.docai-tabs { display: flex; gap: 6px; background: #fff; border: 1px solid #DFE8F5; border-radius: 14px; padding: 6px; margin-bottom: 18px; box-shadow: 0 2px 10px -4px rgba(15,23,42,.06); overflow-x: auto; }
+.docai-tabbtn { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border: none; background: transparent; border-radius: 10px; font-size: 13.5px; font-weight: 700; color: #64748B; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.docai-tabbtn:hover:not(:disabled) { background: #F1F5F9; color: #0F172A; }
+.docai-tabbtn.active { background: #2563EB; color: #fff; box-shadow: 0 4px 12px -3px rgba(37,99,235,.5); }
+.docai-tabbtn:disabled { opacity: .4; cursor: not-allowed; }
+.docai-content { min-height: 400px; }
+.docai-tab { animation: docFadeUp .3s ease; }
+@keyframes docFadeUp { from { opacity: 0; transform: translateY(8px); } }
+
+.docai-pagehead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+.docai-crumb { font-size: 11px; font-weight: 800; color: #2563EB; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+.docai-pagehead h2 { margin: 0; font-size: 22px; font-weight: 800; }
+.docai-pagehead p { margin: 4px 0 0; font-size: 13.5px; color: #64748B; }
+
+.docai-btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border: none; border-radius: 12px; background: #2563EB; color: #fff; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 4px 14px -4px rgba(37,99,235,.5); }
+.docai-btn-primary:hover:not(:disabled) { background: #1D4ED8; }
+.docai-btn-primary:disabled { background: #CBD5E1; box-shadow: none; cursor: not-allowed; }
+.docai-btn-ghost { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border: 1.5px solid #DFE8F5; border-radius: 12px; background: #fff; color: #334155; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.docai-btn-ghost:hover { border-color: #2563EB; color: #1D4ED8; }
+.docai-runbtn { width: 100%; justify-content: center; margin-top: 4px; }
+
+.docai-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+.docai-stat { background: #fff; border: 1px solid #DFE8F5; border-radius: 14px; padding: 14px 18px; }
+.docai-stat-v { font-size: 24px; font-weight: 800; color: #0F172A; }
+.docai-stat-l { font-size: 12px; color: #64748B; margin-top: 2px; }
+
+.docai-card { background: #fff; border: 1px solid #DFE8F5; border-radius: 16px; padding: 18px; box-shadow: 0 2px 12px -4px rgba(15,23,42,.05); }
+.docai-step { font-size: 11px; font-weight: 800; color: #2563EB; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+
+.docai-toolbar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.docai-search { display: flex; align-items: center; gap: 8px; background: #fff; border: 1.5px solid #DFE8F5; border-radius: 12px; padding: 0 14px; flex: 1; min-width: 200px; }
+.docai-search input { border: none; outline: none; padding: 11px 0; font-size: 13.5px; font-family: inherit; width: 100%; background: transparent; }
+.docai-select { padding: 11px 14px; border: 1.5px solid #DFE8F5; border-radius: 12px; font-size: 13px; font-family: inherit; background: #fff; color: #334155; }
+.docai-select.docai-full { width: 100%; margin-bottom: 10px; }
+.docai-input { width: 100%; padding: 11px 14px; border: 1.5px solid #DFE8F5; border-radius: 12px; font-size: 13.5px; font-family: inherit; margin-bottom: 10px; box-sizing: border-box; }
+.docai-textarea { width: 100%; padding: 12px 14px; border: 1.5px solid #DFE8F5; border-radius: 12px; font-size: 13.5px; font-family: inherit; resize: vertical; box-sizing: border-box; margin-bottom: 10px; }
+.docai-textarea:focus, .docai-input:focus, .docai-select:focus { border-color: #2563EB; outline: none; box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+
+.docai-empty { text-align: center; padding: 56px 20px; background: #fff; border: 1px dashed #CBD5E1; border-radius: 16px; }
+.docai-empty h3 { margin: 12px 0 6px; font-size: 16px; }
+.docai-empty p { color: #64748B; font-size: 13.5px; margin: 0 0 18px; }
+
+.docai-tablewrap { background: #fff; border: 1px solid #DFE8F5; border-radius: 16px; overflow-x: auto; }
+.docai-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 720px; }
+.docai-table th { text-align: left; padding: 12px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #64748B; border-bottom: 1px solid #DFE8F5; background: #F8FAFC; }
+.docai-table td { padding: 13px 16px; border-bottom: 1px solid #F1F5F9; vertical-align: middle; }
+.docai-table tr:last-child td { border-bottom: none; }
+.docai-frow { display: flex; align-items: center; gap: 10px; }
+.docai-fname2 { font-weight: 600; word-break: break-all; }
+.docai-ferr { font-size: 11.5px; color: #991B1B; margin-top: 3px; }
+.docai-actions { display: flex; gap: 4px; align-items: center; }
+.docai-actions button { width: 32px; height: 32px; border: none; background: transparent; border-radius: 8px; cursor: pointer; color: #64748B; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.docai-actions button:hover:not(:disabled) { background: #EFF6FF; color: #1D4ED8; }
+.docai-actions button:disabled { opacity: .35; cursor: not-allowed; }
+.docai-actions button.danger { color: #DC2626; width: auto; padding: 0 10px; }
+.docai-note { font-size: 11.5px; color: #94A3B8; margin-top: 12px; }
+
+/* Analisis layout */
+.docai-anabar { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+.docai-anatitle strong { font-size: 16px; display: block; }
+.docai-anatitle span { font-size: 12px; color: #64748B; }
+.docai-anatabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; background: #fff; border: 1px solid #DFE8F5; border-radius: 12px; padding: 5px; }
+.docai-anatabs button { display: flex; align-items: center; gap: 7px; padding: 9px 15px; border: none; background: transparent; border-radius: 9px; font-size: 13px; font-weight: 700; color: #64748B; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.docai-anatabs button.active { background: #EFF6FF; color: #1D4ED8; }
+.docai-analayout { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+.docai-viewer { background: #fff; border: 1px solid #DFE8F5; border-radius: 16px; overflow: hidden; }
+.docai-viewer-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #DFE8F5; font-size: 12.5px; font-weight: 700; color: #475569; }
+.docai-pagenav { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748B; }
+.docai-pagenav button { width: 26px; height: 26px; border: 1px solid #DFE8F5; background: #fff; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: #475569; }
+.docai-pagenav button:disabled { opacity: .35; }
+.docai-viewer-body { max-height: 560px; overflow-y: auto; padding: 18px 20px; background: #F8FAFC; }
+.docai-viewer-body pre { margin: 0; white-space: pre-wrap; font-family: inherit; font-size: 13px; line-height: 1.7; color: #334155; }
+.docai-panel { background: #fff; border: 1px solid #DFE8F5; border-radius: 16px; padding: 18px; }
+.docai-hint { font-size: 13px; color: #64748B; line-height: 1.6; margin: 12px 0 0; }
+.docai-comparepick { margin-bottom: 12px; }
+.docai-comparepick label { font-size: 12.5px; font-weight: 700; color: #475569; display: block; margin-bottom: 6px; }
+
+.docai-chat { display: flex; flex-direction: column; gap: 10px; max-height: 420px; overflow-y: auto; margin-bottom: 12px; padding: 4px; }
+.docai-chat-empty { text-align: center; color: #64748B; font-size: 13px; padding: 30px 16px; background: #F8FAFC; border-radius: 12px; line-height: 1.6; }
+.docai-msg { display: flex; }
+.docai-msg.user { justify-content: flex-end; }
+.docai-msg-b { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; }
+.docai-msg.user .docai-msg-b { background: #2563EB; color: #fff; border-bottom-right-radius: 4px; }
+.docai-msg.ai .docai-msg-b { background: #F1F5F9; color: #1E293B; border-bottom-left-radius: 4px; }
+.docai-qarow { display: flex; gap: 8px; }
+.docai-qarow input { flex: 1; padding: 12px 16px; border: 1.5px solid #DFE8F5; border-radius: 999px; font-size: 13.5px; font-family: inherit; outline: none; }
+.docai-qarow input:focus { border-color: #2563EB; }
+.docai-qarow button { width: 44px; height: 44px; border: none; border-radius: 50%; background: #2563EB; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.docai-qarow button:disabled { background: #CBD5E1; cursor: not-allowed; }
+
+.docai-error { display: flex; align-items: center; gap: 8px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px; padding: 12px 14px; margin: 12px 0; color: #991B1B; font-size: 13px; }
+.docai-warn { background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px; padding: 10px 14px; margin: 12px 0; color: #92400E; font-size: 12.5px; }
+.docai-result { border: 1px solid #DFE8F5; border-radius: 14px; overflow: hidden; margin-top: 12px; }
+.docai-result-head { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; background: #EFF6FF; border-bottom: 1px solid #DFE8F5; font-weight: 800; font-size: 13.5px; color: #1E40AF; }
+.docai-result-head button { display: flex; align-items: center; gap: 6px; border: 1px solid #BFDBFE; background: #fff; color: #1D4ED8; border-radius: 9px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.docai-result-body { padding: 16px 18px; white-space: pre-wrap; font-size: 13.5px; line-height: 1.75; color: #1E293B; max-height: 440px; overflow-y: auto; }
+
+/* Buat Dokumen */
+.docai-createlayout { display: grid; grid-template-columns: 1fr 1.2fr; gap: 14px; align-items: start; }
+.docai-tmplgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.docai-tmpl { text-align: left; padding: 12px 14px; border: 1.5px solid #DFE8F5; border-radius: 12px; background: #fff; cursor: pointer; font-family: inherit; }
+.docai-tmpl:hover { border-color: #BFDBFE; }
+.docai-tmpl.active { border-color: #2563EB; background: #EFF6FF; }
+.docai-tmpl-n { font-size: 13px; font-weight: 800; color: #0F172A; }
+.docai-tmpl-d { font-size: 11.5px; color: #64748B; margin-top: 2px; }
+.docai-draftwarn { background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; font-size: 12px; font-weight: 700; border-radius: 10px; padding: 9px 13px; margin-bottom: 12px; }
+.docai-draftarea { font-family: inherit; line-height: 1.7; }
+.docai-btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+.docai-draftlist { display: flex; flex-direction: column; gap: 6px; }
+.docai-draftitem { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; text-align: left; padding: 10px 14px; border: 1px solid #DFE8F5; border-radius: 10px; background: #fff; cursor: pointer; font-family: inherit; font-size: 13px; }
+.docai-draftitem:hover { border-color: #BFDBFE; background: #F8FAFC; }
+.docai-draftst { font-size: 10px; font-weight: 800; background: #FFFBEB; color: #92400E; border-radius: 6px; padding: 2px 7px; margin-left: 8px; }
+
+/* Riwayat */
+.docai-histlist { display: flex; flex-direction: column; gap: 10px; }
+.docai-histitem { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; background: #fff; border: 1px solid #DFE8F5; border-radius: 14px; padding: 14px 18px; }
+.docai-histmain strong { font-size: 13.5px; display: block; margin: 4px 0; }
+.docai-histmain p { font-size: 12.5px; color: #64748B; margin: 0 0 6px; line-height: 1.5; }
+.docai-histtype { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #1D4ED8; background: #EFF6FF; padding: 3px 9px; border-radius: 999px; }
+.docai-histdate { font-size: 11.5px; color: #94A3B8; }
+.docai-modalback { position: fixed; inset: 0; background: rgba(15,23,42,.45); display: flex; align-items: center; justify-content: center; z-index: 60; padding: 20px; }
+.docai-modal { background: #fff; border-radius: 18px; max-width: 640px; width: 100%; max-height: 80vh; display: flex; flex-direction: column; overflow: hidden; }
+.docai-modalbody { max-height: 60vh; }
+
 .spin { animation: ezSpin 1s linear infinite; }
 @keyframes ezSpin { to { transform: rotate(360deg); } }
-@media (max-width: 720px) {
-  .docai-grid { grid-template-columns: 1fr; }
-  .docai-hero h2 { font-size: 18px; }
-  .docai-qa-row { flex-direction: column; }
-  .docai-qa-row button { padding: 13px; border-radius: 14px; justify-content: center; }
+
+@media (max-width: 900px) {
+  .docai-analayout, .docai-createlayout { grid-template-columns: 1fr; }
+  .docai-stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .docai-shell { padding: 12px 12px 40px; }
+  .docai-pagehead h2 { font-size: 19px; }
+  .docai-tmplgrid { grid-template-columns: 1fr; }
 }
