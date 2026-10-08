@@ -210,6 +210,12 @@ import { isSupabaseConfigured, extractBearerToken, verifySupabaseJwt } from './s
 export async function authenticateRequest(req, opts = {}) {
   if (isSupabaseConfigured()) {
     const token = extractBearerToken(req);
+    // Fase pengembangan: login dimatikan (AUTH_ENABLED=false di frontend).
+    // AI_ALLOW_ANONYMOUS=true mengizinkan akses AI tanpa JWT — tetap
+    // rate-limit ketat per IP + origin check (degraded). Default: fail-closed.
+    if (!token && process.env.AI_ALLOW_ANONYMOUS === 'true') {
+      return { ok: true, method: 'none', user: null, degraded: true };
+    }
     const v = await verifySupabaseJwt(token, opts.jwtVerifier);
     if (!v.ok) return { ok: false, method: 'jwt', reason: v.reason };
     return { ok: true, method: 'jwt', user: v.user };
