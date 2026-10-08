@@ -140,7 +140,8 @@ export class ClientUserManagementService {
       role: input.role,
       status: 'ACTIVE',
       title: input.title?.trim() || (input.role === 'ESTIMATOR' ? 'Cost Estimator' : input.role === 'DIREKSI' ? 'Direksi' : 'Client Representative'),
-      company: input.company?.trim() || 'PT Sinergi Konstruksi Nusantara',
+      // P2 UI-2: jangan isi perusahaan palsu untuk anggota baru.
+      company: input.company?.trim() || '',
       createdAt: nowIso,
       updatedAt: nowIso,
     };

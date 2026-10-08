@@ -93,17 +93,36 @@ export const EzrabAiView: React.FC = () => {
   const sttBaseRef = useRef('');
   const sttFinalRef = useRef('');
 
+  /* P2 UI-1 fix: kelola lifecycle object URL dengan benar.
+   * Bug lama: URL di-revoke saat submit, padahal URL yang SAMA disimpan di
+   * pesan (imageUrl) -> thumbnail selalu rusak. Sekarang: URL hidup selama
+   * pemiliknya (attachment / pesan chat) hidup; di-revoke saat pemiliknya
+   * dibuang / chat dibersihkan / komponen unmount. */
+  const liveUrlsRef = useRef<Set<string>>(new Set());
+  const trackUrl = (url: string) => { liveUrlsRef.current.add(url); return url; };
+  const revokeUrl = (url?: string | null) => {
+    if (!url) return;
+    if (liveUrlsRef.current.has(url)) {
+      liveUrlsRef.current.delete(url);
+      try { URL.revokeObjectURL(url); } catch { /* abaikan */ }
+    }
+  };
+  const revokeAllUrls = () => {
+    liveUrlsRef.current.forEach((u) => { try { URL.revokeObjectURL(u); } catch { /* abaikan */ } });
+    liveUrlsRef.current.clear();
+  };
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, busy]);
 
-  /* Bersihkan sesi STT + object URL saat unmount */
+  /* Bersihkan sesi STT + SEMUA object URL saat unmount (termasuk thumbnail di pesan) */
   useEffect(() => {
     return () => {
       const rec = recognitionRef.current;
       recognitionRef.current = null;
       if (rec) { try { rec.abort(); } catch { /* abaikan */ } }
-      if (attached) URL.revokeObjectURL(attached.url);
+      revokeAllUrls();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -116,7 +135,8 @@ export const EzrabAiView: React.FC = () => {
   const newChat = () => {
     setMessages([]);
     setInput('');
-    if (attached) { URL.revokeObjectURL(attached.url); setAttached(null); }
+    revokeAllUrls();
+    setAttached(null);
     autoresize();
   };
 
@@ -131,7 +151,9 @@ export const EzrabAiView: React.FC = () => {
         ? `${msg}\n\n🖼️ (pengguna juga melampirkan gambar "${img.name}" — saya tidak dapat melihat gambar)`
         : msg;
     setInput('');
-    if (img) { URL.revokeObjectURL(img.url); setAttached(null); }
+    /* P2 UI-1: JANGAN revoke di sini — URL dipakai thumbnail di pesan.
+     * Kepemilikan URL pindah ke pesan; di-revoke saat chat dibersihkan/unmount. */
+    if (img) { setAttached(null); }
     autoresize();
     const entry: ChatEntry = {
       role: 'user', content: msg || '(gambar terlampir)', ts: Date.now(),
@@ -244,8 +266,8 @@ export const EzrabAiView: React.FC = () => {
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f) return;
-    if (attached) URL.revokeObjectURL(attached.url);
-    setAttached({ url: URL.createObjectURL(f), name: f.name });
+    if (attached) revokeUrl(attached.url);
+    setAttached({ url: trackUrl(URL.createObjectURL(f)), name: f.name });
   };
 
   const mascotExpression: 'idle' | 'thinking' | 'happy' =
@@ -370,7 +392,7 @@ export const EzrabAiView: React.FC = () => {
           <div className="ezchat2-attchip">
             <img src={attached.url} alt={attached.name} />
             <span>{attached.name}</span>
-            <button onClick={() => { URL.revokeObjectURL(attached.url); setAttached(null); }} title="Hapus">
+            <button onClick={() => { revokeUrl(attached.url); setAttached(null); }} title="Hapus">
               <X size={13} />
             </button>
           </div>

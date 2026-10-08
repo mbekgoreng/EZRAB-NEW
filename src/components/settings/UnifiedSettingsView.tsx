@@ -183,9 +183,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   // -------------------------------------------------------------
   const [profileName, setProfileName] = useState(currentUser.name);
   const [profileEmail, setProfileEmail] = useState(currentUser.email);
-  const [profilePhone, setProfilePhone] = useState(currentUser.phone || '+62 812-3456-7890');
-  const [profileTitle, setProfileTitle] = useState(currentUser.title || 'Lead Cost Estimator & Super Admin');
-  const [profileCompany, setProfileCompany] = useState(currentUser.company || 'PT Sinergi Konstruksi Nusantara');
+  // P2 UI-2: jangan tampilkan profil/contoh palsu seolah data pengguna.
+  const [profilePhone, setProfilePhone] = useState(currentUser.phone || '');
+  const [profileTitle, setProfileTitle] = useState(currentUser.title || '');
+  const [profileCompany, setProfileCompany] = useState(currentUser.company || '');
 
   const [language, setLanguage] = useState('id');
   const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
@@ -255,11 +256,12 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   // -------------------------------------------------------------
   // FORM STATES: LEVEL 2 (WORKSPACE DEFAULTS)
   // -------------------------------------------------------------
-  const [workspaceName, setWorkspaceName] = useState('PT Sinergi Konstruksi Nusantara');
-  const [companyAddress, setCompanyAddress] = useState('Gedung Graha Konstruksi Lt. 4, Jl. TB Simatupang No. 88, Jakarta Selatan');
-  const [companyPhone, setCompanyPhone] = useState('+62 21 7890 1234');
-  const [companyEmail, setCompanyEmail] = useState('admin@sinergikonstruksi.co.id');
-  const [companyNpwp, setCompanyNpwp] = useState('01.234.567.8-012.000');
+  // P2 UI-2: workspace defaults kosong — bukan identitas contoh.
+  const [workspaceName, setWorkspaceName] = useState('');
+  const [companyAddress, setCompanyAddress] = useState('');
+  const [companyPhone, setCompanyPhone] = useState('');
+  const [companyEmail, setCompanyEmail] = useState('');
+  const [companyNpwp, setCompanyNpwp] = useState('');
   const [companyDirector, setCompanyDirector] = useState('Ir. Hendra Kusuma, MT.');
   const [companyLeadEstimator, setCompanyLeadEstimator] = useState('Ahmad Yusuf, ST.');
 
