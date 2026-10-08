@@ -11,7 +11,7 @@ import {
   Archive,
 } from 'lucide-react';
 import { Project } from '../../types';
-import { AllProjectsView } from './AllProjectsView';
+import { AllProjectsView, type ActivityItem } from './AllProjectsView';
 import { DraftProjectsView } from './DraftProjectsView';
 import { InProgressProjectsView } from './InProgressProjectsView';
 import { CompletedProjectsView } from './CompletedProjectsView';
@@ -19,6 +19,7 @@ import { ArchivedProjectsView } from './ArchivedProjectsView';
 
 interface ProjectsViewProps {
   projects: Project[];
+  activities?: ActivityItem[];
   onCreateProject: () => void;
   onOpenMagicAi: () => void;
   onNavigateToTab?: (tab: string) => void;
@@ -29,6 +30,7 @@ interface ProjectsViewProps {
 
 export const ProjectsView: React.FC<ProjectsViewProps> = ({
   projects,
+  activities,
   onCreateProject,
   onOpenMagicAi,
   onNavigateToTab,
@@ -326,6 +328,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
       ) : (
         <AllProjectsView
           projects={projects}
+          activities={activities}
           onCreateProject={onCreateProject}
           onOpenMagicAi={onOpenMagicAi}
           onNavigateToTab={onNavigateToTab}

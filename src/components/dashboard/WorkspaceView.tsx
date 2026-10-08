@@ -455,6 +455,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           <main style={{ padding: '20px 24px', background: '#F2F7FF', minHeight: 'calc(100vh - 64px)' }}>
             <ProjectsView
               projects={projects}
+              activities={activities}
               initialFilter={projectFilter}
               onFilterChange={(f) => setProjectFilter(f)}
               onCreateProject={() => setCreateModalOpen(true)}
