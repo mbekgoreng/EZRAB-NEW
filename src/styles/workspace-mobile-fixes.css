@@ -1,0 +1,39 @@
+/* =========================================================================
+   EZRAB Workspace — Mobile layout fixes (viewport 375–430px)
+   -------------------------------------------------------------------------
+   MOBILE ONLY: every rule below sits inside a max-width media query, so the
+   desktop layout is untouched. Do not add rules here that alter desktop.
+   ========================================================================= */
+
+@media (max-width: 767px) {
+  /* --- Dashboard hero: stack headline + mascot vertically ---------------- */
+  .ezrab-dashboard-hero {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 24px 20px !important;
+    gap: 16px !important;
+    min-height: 0 !important;
+  }
+
+  .ezrab-dashboard-hero-text {
+    max-width: 100% !important;
+  }
+
+  /* Mascot stage: shrink to fit narrow screens, centered above text fold */
+  .ezrab-dashboard-hero .mascot-stage {
+    width: min(100%, 230px) !important;
+    height: 190px !important;
+    margin: 0 auto;
+  }
+
+  /* --- Dashboard split grid (Daftar Proyek + Insight): single column ---- */
+  .ezrab-dashboard-split {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* --- Sidebar slide-over drawer: notch-safe + dynamic viewport height -- */
+  .ezrab-workspace-sidebar {
+    height: 100dvh !important;
+    padding-top: env(safe-area-inset-top, 0px) !important;
+  }
+}

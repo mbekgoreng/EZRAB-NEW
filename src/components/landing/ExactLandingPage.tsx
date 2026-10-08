@@ -1,16 +1,36 @@
-import React from 'react';
-import '../../styles/exact-landing.css';
+import React, { Suspense, useEffect } from 'react';
+import '../../styles/landing-critical.css';
 import '../../styles/exact-landing-flagship-mobile.css';
 import { ExactNavbar } from './exact/ExactNavbar';
 import { ExactHero } from './exact/ExactHero';
-import { ExactWorkflow } from './exact/ExactWorkflow';
-import { ExactMagicAi } from './exact/ExactMagicAi';
-import { ExactStackedShowcase } from './exact/ExactStackedShowcase';
-import { ExactRoles } from './exact/ExactRoles';
-import { DrawingsToDecisionsSection } from './exact/DrawingsToDecisionsSection';
-import { ExactPricing } from './exact/ExactPricing';
-import { ExactFinalCta } from './exact/ExactFinalCta';
-import { ExactFooter } from './exact/ExactFooter';
+
+// Below-the-fold sections are code-split so the initial bundle only contains
+// the navbar + hero (above-the-fold). framer-motion and the heavy showcase
+// components are excluded from the first-paint JS.
+const ExactWorkflow = React.lazy(() =>
+  import('./exact/ExactWorkflow').then((m) => ({ default: m.ExactWorkflow })),
+);
+const ExactMagicAi = React.lazy(() =>
+  import('./exact/ExactMagicAi').then((m) => ({ default: m.ExactMagicAi })),
+);
+const ExactStackedShowcase = React.lazy(() =>
+  import('./exact/ExactStackedShowcase').then((m) => ({ default: m.ExactStackedShowcase })),
+);
+const ExactRoles = React.lazy(() =>
+  import('./exact/ExactRoles').then((m) => ({ default: m.ExactRoles })),
+);
+const DrawingsToDecisionsSection = React.lazy(() =>
+  import('./exact/DrawingsToDecisionsSection').then((m) => ({ default: m.DrawingsToDecisionsSection })),
+);
+const ExactPricing = React.lazy(() =>
+  import('./exact/ExactPricing').then((m) => ({ default: m.ExactPricing })),
+);
+const ExactFinalCta = React.lazy(() =>
+  import('./exact/ExactFinalCta').then((m) => ({ default: m.ExactFinalCta })),
+);
+const ExactFooter = React.lazy(() =>
+  import('./exact/ExactFooter').then((m) => ({ default: m.ExactFooter })),
+);
 
 interface ExactLandingPageProps {
   onOpenWorkspace: () => void;
@@ -29,6 +49,13 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
   onBackToLanding,
   onOpenAbout,
 }) => {
+  // Defer non-critical landing CSS: only the navbar/hero styles above are
+  // bundled synchronously (landing-critical.css). The full stylesheet is
+  // fetched as a separate chunk after mount so it never blocks first paint.
+  useEffect(() => {
+    void import('../../styles/exact-landing.css');
+  }, []);
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#ffffff' }}>
       {/* 1. Fixed Dark Navbar */}
@@ -49,32 +76,48 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
         />
 
         {/* 3. Satu Workflow (2-row connected nodes) */}
-        <ExactWorkflow />
+        <Suspense fallback={null}>
+          <ExactWorkflow />
+        </Suspense>
 
         {/* 4. EZRAB Magic AI (Dark with floating modal preview) */}
-        <ExactMagicAi onStart={onOpenWorkspace} />
+        <Suspense fallback={null}>
+          <ExactMagicAi onStart={onOpenWorkspace} />
+        </Suspense>
 
         {/* 5-10. Stacked Scrolling Product Story (6-Workspace Physical Stack) */}
-        <ExactStackedShowcase onOpenWorkspace={onOpenWorkspace} />
+        <Suspense fallback={null}>
+          <ExactStackedShowcase onOpenWorkspace={onOpenWorkspace} />
+        </Suspense>
 
         {/* 11. Untuk Profesional di Bidang Konstruksi (Deep Navy 4-cards) */}
-        <ExactRoles />
+        <Suspense fallback={null}>
+          <ExactRoles />
+        </Suspense>
 
         {/* 11.5 Flagship Architectural Transition: FROM DRAWINGS TO DECISIONS */}
-        <DrawingsToDecisionsSection />
+        <Suspense fallback={null}>
+          <DrawingsToDecisionsSection />
+        </Suspense>
 
         {/* 12. Harga / Pricing (Free, Pro, Enterprise) */}
-        <ExactPricing onSelectPlan={() => onOpenWorkspace()} />
+        <Suspense fallback={null}>
+          <ExactPricing onSelectPlan={() => onOpenWorkspace()} />
+        </Suspense>
 
         {/* 13. Final CTA Banner (Dusk skyline with cranes) */}
-        <ExactFinalCta
-          onStartFree={onOpenWorkspace}
-          onOpenDemo={onOpenDemo}
-        />
+        <Suspense fallback={null}>
+          <ExactFinalCta
+            onStartFree={onOpenWorkspace}
+            onOpenDemo={onOpenDemo}
+          />
+        </Suspense>
       </main>
 
       {/* 14. Clean Modern Footer */}
-      <ExactFooter onOpenAbout={onOpenAbout} />
+      <Suspense fallback={null}>
+        <ExactFooter onOpenAbout={onOpenAbout} />
+      </Suspense>
     </div>
   );
 };
