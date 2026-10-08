@@ -101,8 +101,8 @@ export async function exportRABToProfessionalExcel(
   const useLiveFormulas = options.useLiveFormulas !== false;
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = `${company.name} (via EZRAB PRO)`;
-  wb.lastModifiedBy = company.leadEstimatorName || 'Lead Estimator';
+  wb.creator = company.name ? `${company.name} (via EZRAB PRO)` : 'EZRAB PRO';
+  wb.lastModifiedBy = company.leadEstimatorName || '';
   wb.created = new Date();
   wb.modified = new Date();
   wb.properties.date1904 = false;
@@ -291,11 +291,11 @@ export async function exportRABToProfessionalExcel(
 
     // Top Brand Sub-header
     wsCover.mergeCells('B2:E2');
-    wsCover.getCell('B2').value = (company.name || 'EZRAB CONSTRUCTION MANAGEMENT').toUpperCase();
+    wsCover.getCell('B2').value = (company.name || '-').toUpperCase();
     wsCover.getCell('B2').font = { name: FONT_FAMILY, size: 11, bold: true, color: { argb: EXCEL_COLORS.PRIMARY_BLUE } };
 
     wsCover.mergeCells('B3:E3');
-    wsCover.getCell('B3').value = `${company.address || 'Jakarta, Indonesia'} • Telp: ${company.phone || '-'} • NPWP: ${company.taxNumber || '-'}`;
+    wsCover.getCell('B3').value = `${company.address || '-'} • Telp: ${company.phone || '-'} • NPWP: ${company.taxNumber || '-'}`;
     wsCover.getCell('B3').font = { name: FONT_FAMILY, size: 8.5, color: { argb: EXCEL_COLORS.SLATE_MUTED } };
 
     // Divider Line
