@@ -5,6 +5,7 @@ import {
   ChevronDown,
   FileText,
   Maximize2,
+  Mic,
   Minimize2,
   Minus,
   RotateCcw,
@@ -31,6 +32,8 @@ import { EZRABMascotLucu } from '../mascot/EZRABMascotLucu';
 import ezrabAvatarImg from '../../assets/ezrab_avatar.png';
 import mascotNewImg from '../../assets/mascot-ezrab-new.png';
 import { unifiedConversationStore } from '../../services/ai/conversation/unifiedConversationStore';
+import { useI18n } from '../../i18n/I18nContext';
+import { STT_LOCALES } from '../../i18n/dictionaries';
 
 export type ChatboxDisplayMode = 'closed' | 'compact' | 'expanded' | 'minimized';
 
@@ -125,6 +128,54 @@ const QUICK_ACTIONS = [
   },
 ] as const;
 
+/**
+ * Tipe minimal Web Speech API (SpeechRecognition belum distandardisasi penuh
+ * di lib.dom TypeScript, dan Chrome menyediakannya sebagai webkitSpeechRecognition).
+ * Didefinisikan lokal agar tidak bergantung pada @types tambahan.
+ */
+interface EzrabSpeechAlternative {
+  transcript: string;
+  confidence: number;
+}
+interface EzrabSpeechRecognitionResult {
+  readonly isFinal: boolean;
+  readonly length: number;
+  [index: number]: EzrabSpeechAlternative;
+}
+interface EzrabSpeechRecognitionResultList {
+  readonly length: number;
+  [index: number]: EzrabSpeechRecognitionResult;
+}
+interface EzrabSpeechRecognitionEvent {
+  readonly resultIndex: number;
+  readonly results: EzrabSpeechRecognitionResultList;
+}
+interface EzrabSpeechRecognitionErrorEvent {
+  readonly error: string;
+}
+interface EzrabSpeechRecognition {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onresult: ((event: EzrabSpeechRecognitionEvent) => void) | null;
+  onerror: ((event: EzrabSpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+/** Ambil konstruktor SpeechRecognition bawaan browser, atau null jika tidak didukung. */
+const getSpeechRecognitionCtor = (): (new () => EzrabSpeechRecognition) | null => {
+  if (typeof window === 'undefined') return null;
+  const w = window as unknown as Record<string, unknown>;
+  const Ctor = (w.SpeechRecognition ?? w.webkitSpeechRecognition) as
+    | (new () => EzrabSpeechRecognition)
+    | undefined;
+  return Ctor ?? null;
+};
+
 export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = ({
   mode,
   onModeChange,
@@ -149,10 +200,170 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
   const [contextChipVisible, setContextChipVisible] = useState(true);
   const [appliedProposalIds, setAppliedProposalIds] = useState<Set<string>>(new Set());
 
+  // i18n (hook aman tanpa provider — default bahasa Indonesia)
+  const { lang, t } = useI18n();
+
+  // --- Speech-to-Text (Web Speech API, bawaan browser) ---
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<EzrabSpeechRecognition | null>(null);
+  /** Teks yang sudah ada di input sebelum sesi dikte dimulai. */
+  const sttBaseTextRef = useRef('');
+  /** Akumulasi transkrip FINAL selama sesi berjalan. */
+  const sttFinalRef = useRef('');
+
+  /** Tampilkan pemberitahuan inline di area chat (mekanisme pesan yang sudah ada). */
+  const pushSttNotice = (text: string) => {
+    const notice: CoAssistantMessage = {
+      id: `stt-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      role: 'ai',
+      text,
+      timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+      isError: true,
+    };
+    setMessages((prev) => [...prev, notice]);
+  };
+
+  /** Hentikan sesi STT yang sedang berjalan (jika ada). */
+  const stopListening = () => {
+    const rec = recognitionRef.current;
+    recognitionRef.current = null;
+    sttFinalRef.current = '';
+    setIsListening(false);
+    if (rec) {
+      try {
+        rec.abort();
+      } catch {
+        /* abaikan — sesi mungkin sudah berakhir */
+      }
+    }
+  };
+
+  const handleMicClick = () => {
+    // Klik ulang saat merekam = berhenti.
+    if (isListening) {
+      stopListening();
+      return;
+    }
+    const Ctor = getSpeechRecognitionCtor();
+    if (!Ctor) {
+      pushSttNotice(t('chat.stt_unsupported'));
+      return;
+    }
+    const rec = new Ctor();
+    rec.lang = STT_LOCALES[lang];
+    rec.continuous = false;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    sttBaseTextRef.current = inputQuery;
+    sttFinalRef.current = '';
+    recognitionRef.current = rec;
+
+    rec.onresult = (event) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i];
+        const text = result[0]?.transcript ?? '';
+        if (result.isFinal) {
+          sttFinalRef.current += text;
+        } else {
+          interim += text;
+        }
+      }
+      // Gabungkan: teks lama + hasil final + interim (live) dengan spasi.
+      const parts = [sttBaseTextRef.current, sttFinalRef.current, interim].filter(
+        (p) => p.trim().length > 0,
+      );
+      setInputQuery(parts.join(' '));
+      // Sesuaikan tinggi textarea seperti saat mengetik manual.
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 100)}px`;
+      }
+    };
+
+    rec.onerror = (event) => {
+      const err = event?.error ?? '';
+      if (err === 'not-allowed' || err === 'service-not-allowed') {
+        pushSttNotice(t('chat.stt_permission_denied'));
+      } else if (err === 'no-speech') {
+        pushSttNotice(t('chat.stt_no_speech'));
+      } else if (err === 'audio-capture') {
+        pushSttNotice(t('chat.stt_audio_capture'));
+      } else if (err !== 'aborted') {
+        pushSttNotice(t('chat.stt_service_error'));
+      }
+    };
+
+    rec.onend = () => {
+      recognitionRef.current = null;
+      sttFinalRef.current = '';
+      setIsListening(false);
+    };
+
+    try {
+      rec.start();
+      setIsListening(true);
+    } catch {
+      recognitionRef.current = null;
+      setIsListening(false);
+      pushSttNotice(t('chat.stt_service_error'));
+    }
+  };
+
+  // Bersihkan sesi STT saat komponen unmount agar tidak bocor.
+  useEffect(() => {
+    return () => {
+      const rec = recognitionRef.current;
+      recognitionRef.current = null;
+      if (rec) {
+        try {
+          rec.abort();
+        } catch {
+          /* abaikan */
+        }
+      }
+    };
+  }, []);
+
+  // Hentikan sesi STT yang berjalan saat bahasa antarmuka diganti
+  // (SpeechRecognition.lang tidak bisa diubah di tengah sesi).
+  useEffect(() => {
+    if (recognitionRef.current) {
+      const rec = recognitionRef.current;
+      recognitionRef.current = null;
+      sttFinalRef.current = '';
+      setIsListening(false);
+      try {
+        rec.abort();
+      } catch {
+        /* abaikan */
+      }
+    }
+  }, [lang]);
+
   // Viewport & Mobile responsiveness
   const [isMobile, setIsMobile] = useState(() => {
     return typeof window !== 'undefined' ? window.innerWidth < 768 : false;
   });
+
+  // Soft-keyboard offset (mobile): keeps the composer visible above the
+  // on-screen keyboard. Desktop is unaffected (offset stays 0).
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+  useEffect(() => {
+    if (!isMobile) {
+      setKeyboardOffset(0);
+      return;
+    }
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      const gap = window.innerHeight - vv.height - vv.offsetTop;
+      setKeyboardOffset(Math.max(0, Math.round(gap)));
+    };
+    vv.addEventListener('resize', onResize);
+    onResize();
+    return () => vv.removeEventListener('resize', onResize);
+  }, [isMobile]);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesScrollRef = useRef<HTMLDivElement>(null);
@@ -708,11 +919,11 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
       style={{
         position: 'fixed',
         right: isMobile ? '0' : '16px',
-        bottom: isMobile ? '0' : '16px',
+        bottom: isMobile ? `${keyboardOffset}px` : '16px',
         left: isMobile ? '0' : 'auto',
         top: isMobile ? 'auto' : 'auto',
         width: isMobile ? '100vw' : desktopWidth,
-        height: isMobile ? 'min(100dvh - 16px, 640px)' : desktopHeight,
+        height: isMobile ? `min(calc(100dvh - 16px - ${keyboardOffset}px), 640px)` : desktopHeight,
         maxHeight: isMobile ? '100dvh' : 'calc(100dvh - 24px)',
         zIndex: 9995,
         backgroundColor: '#FFFFFF',
@@ -1568,6 +1779,35 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
           </div>
         )}
 
+        {/* Indikator STT: tampil saat sedang mendengarkan */}
+        {isListening && (
+          <div
+            role="status"
+            aria-live="polite"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: '8px',
+              fontSize: '12px',
+              color: '#DC2626',
+              fontWeight: 600,
+            }}
+          >
+            <span
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: '#EF4444',
+                animation: 'ezrabMicPulse 1.4s ease-in-out infinite',
+                flexShrink: 0,
+              }}
+            />
+            {t('chat.stt_listening')}
+          </div>
+        )}
+
         {/* Composer Pill Input Box (Compact ~52px) */}
         <div
           style={{
@@ -1588,6 +1828,8 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
             rows={1}
             value={inputQuery}
             onChange={handleTextareaChange}
+            enterKeyHint="send"
+            inputMode="text"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -1610,6 +1852,32 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
               fontFamily: 'inherit',
             }}
           />
+
+          {/* Mic Button (Speech-to-Text / dikte suara) */}
+          <button
+            type="button"
+            onClick={handleMicClick}
+            title={isListening ? t('chat.stt_stop') : t('chat.stt_mic')}
+            aria-label={isListening ? t('chat.stt_stop') : t('chat.stt_mic')}
+            aria-pressed={isListening}
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              backgroundColor: isListening ? '#EF4444' : '#FFFFFF',
+              border: isListening ? 'none' : '1.5px solid #E2E8F0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: isListening ? '#FFFFFF' : '#475569',
+              cursor: 'pointer',
+              flexShrink: 0,
+              boxShadow: isListening ? '0 2px 8px rgba(239, 68, 68, 0.35)' : 'none',
+              animation: isListening ? 'ezrabMicPulse 1.4s ease-in-out infinite' : 'none',
+            }}
+          >
+            <Mic size={16} />
+          </button>
 
           {/* Stop Generation Button when thinking */}
           {isThinking ? (
@@ -1699,6 +1967,10 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
           50% {
             transform: translateY(-4px) rotate(2deg);
           }
+        }
+        @keyframes ezrabMicPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); }
+          50% { box-shadow: 0 0 0 9px rgba(239, 68, 68, 0); }
         }
       `}</style>
     </div>
