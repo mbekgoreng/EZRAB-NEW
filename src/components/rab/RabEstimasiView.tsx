@@ -42,6 +42,7 @@ import { NationalAHSPItem } from '../../data/nationalCostDatabase/types';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { exportProjectToExcel } from '../../export/excelExportEngine';
 import { useProject } from '../../context/ProjectContext';
+import { ProjectHistory } from '../../lib/projectHistory';
 import { WorkItemInspectorDrawer } from '../inspector/WorkItemInspectorDrawer';
 import { IntelligentExcelImportModal } from '../import/IntelligentExcelImportModal';
 import { EstimateVersionAndScenarioModal } from '../versioning/EstimateVersionAndScenarioModal';
@@ -96,16 +97,19 @@ const WBS_LETTER_MAP: Record<string, { letter: string; bg: string; text: string;
   'Pekerjaan Finishing & Eksterior': { letter: 'L', bg: '#F1F5F9', text: '#334155', border: '#E2E8F0' },
 };
 
+// P0-B: JANGAN isi identitas perusahaan palsu. Kosongkan field identitas;
+// exporter menampilkan '-' bila belum diisi. Persentase default tetap karena
+// itu parameter perhitungan, bukan identitas.
 const DEFAULT_COMPANY: Company = {
   id: 'comp-1',
-  name: 'EZRAB Construction Estimator',
-  address: 'Jakarta, Indonesia',
-  phone: '+62 21 555-0199',
-  email: 'info@ezrab.id',
-  website: 'www.ezrab.id',
-  taxNumber: '01.234.567.8-901.000',
-  directorName: 'Direktur Utama',
-  leadEstimatorName: 'Lead Estimator',
+  name: '',
+  address: '',
+  phone: '',
+  email: '',
+  website: '',
+  taxNumber: '',
+  directorName: '',
+  leadEstimatorName: '',
   defaultOverheadPercent: 5,
   defaultProfitPercent: 10,
   defaultContingencyPercent: 5,
@@ -398,8 +402,14 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
   };
 
   // Utility Actions from Menu (...)
+  // P0-B: "refresh" menghitung ulang ringkasan dari data tersimpan dan
+  // melaporkan hasil AKTUAL — bukan sekadar toast.
   const handleRefreshData = () => {
-    showToast('Data spreadsheet RAB berhasil dimuat ulang');
+    const total = projectRabItems.reduce(
+      (s, i) => s + (i.amount || (i.volume || 0) * (i.unitPrice || 0) || 0),
+      0
+    );
+    showToast(`Data termutakhir: ${projectRabItems.length} item, total ${formatCurrencyIDR(total)}`);
   };
 
   const handleValidateIntegrity = () => {
@@ -584,11 +594,14 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
   const ahspLinkedCount = projectRabItems.filter((i) => i.ahspCode && i.ahspCode.trim() !== '').length;
 
   // ---------------------------------------------------------------------------
-  // UNDO / REDO HISTORY ENGINE
+  // UNDO / REDO HISTORY ENGINE — terisolasi per proyek (P0-A fix).
+  // Setiap entry terikat projectId + docKey; undo/redo TIDAK PERNAH
+  // menerapkan snapshot milik proyek/dokumen lain (return null).
   // ---------------------------------------------------------------------------
-  const [history, setHistory] = useState<RabItem[][]>([]);
-  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const historyRef = useRef<ProjectHistory<RabItem>>(new ProjectHistory<RabItem>());
+  const [historyVersion, setHistoryVersion] = useState(0);
   const isUndoRedoAction = useRef(false);
+  const RAB_DOC_KEY = 'rab-items';
 
   useEffect(() => {
     if (!currentProjectId) return;
@@ -596,40 +609,46 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       isUndoRedoAction.current = false;
       return;
     }
-    setHistory((prev) => {
-      const trimmed = prev.slice(0, historyIndex + 1);
-      const snapshot = JSON.parse(JSON.stringify(projectRabItems));
-      return [...trimmed, snapshot];
-    });
-    setHistoryIndex((prev) => prev + 1);
+    historyRef.current.push(currentProjectId, RAB_DOC_KEY, projectRabItems);
+    setHistoryVersion((v) => v + 1);
   }, [projectRabItems, currentProjectId]);
 
-  const canUndo = historyIndex > 0;
-  const canRedo = historyIndex >= 0 && historyIndex < history.length - 1;
+  const canUndo = currentProjectId
+    ? historyRef.current.canUndo(currentProjectId, RAB_DOC_KEY)
+    : false;
+  const canRedo = currentProjectId
+    ? historyRef.current.canRedo(currentProjectId, RAB_DOC_KEY)
+    : false;
 
   const handleUndo = useCallback(() => {
-    if (!canUndo) return;
-    const targetIdx = historyIndex - 1;
-    const targetItems = history[targetIdx];
-    if (targetItems && currentProjectId) {
-      isUndoRedoAction.current = true;
-      setHistoryIndex(targetIdx);
-      replaceProjectRabItems(targetItems);
-      showToast('Undo berhasil: Perubahan dibatalkan');
+    // Capture projectId di awal: lindungi dari callback tertunda/keyboard
+    // yang fire setelah user pindah proyek.
+    const pid = currentProjectId;
+    if (!pid) return;
+    const targetItems = historyRef.current.undo(pid, RAB_DOC_KEY);
+    if (!targetItems) {
+      // Tidak ada history valid untuk proyek ini — JANGAN sentuh data.
+      return;
     }
-  }, [canUndo, historyIndex, history, currentProjectId, replaceProjectRabItems]);
+    isUndoRedoAction.current = true;
+    // Eksplisit targetProjectId = pid: snapshot hanya dipulihkan ke proyek asalnya.
+    replaceProjectRabItems(targetItems, pid);
+    setHistoryVersion((v) => v + 1);
+    showToast('Undo berhasil: Perubahan dibatalkan');
+  }, [currentProjectId, replaceProjectRabItems]);
 
   const handleRedo = useCallback(() => {
-    if (!canRedo) return;
-    const targetIdx = historyIndex + 1;
-    const targetItems = history[targetIdx];
-    if (targetItems && currentProjectId) {
-      isUndoRedoAction.current = true;
-      setHistoryIndex(targetIdx);
-      replaceProjectRabItems(targetItems);
-      showToast('Redo berhasil: Perubahan diterapkan kembali');
+    const pid = currentProjectId;
+    if (!pid) return;
+    const targetItems = historyRef.current.redo(pid, RAB_DOC_KEY);
+    if (!targetItems) {
+      return;
     }
-  }, [canRedo, historyIndex, history, currentProjectId, replaceProjectRabItems]);
+    isUndoRedoAction.current = true;
+    replaceProjectRabItems(targetItems, pid);
+    setHistoryVersion((v) => v + 1);
+    showToast('Redo berhasil: Perubahan diterapkan kembali');
+  }, [currentProjectId, replaceProjectRabItems]);
 
   useEffect(() => {
     const handleGlobalKeys = (e: KeyboardEvent) => {
@@ -794,10 +813,15 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
   // ---------------------------------------------------------------------------
   // EXPORT & IMPORT HANDLERS
   // ---------------------------------------------------------------------------
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (!currentProject) return;
-    exportProjectToExcel(currentProject, DEFAULT_COMPANY);
-    showToast('Spreadsheet RAB berhasil diexport ke Excel (.xlsx)');
+    // P0-B: toast sukses HANYA setelah ekspor benar-benar berhasil.
+    try {
+      await exportProjectToExcel(currentProject, DEFAULT_COMPANY);
+      showToast('Spreadsheet RAB berhasil diexport ke Excel (.xlsx)');
+    } catch (err) {
+      showToast(`Gagal mengexport Excel: ${err instanceof Error ? err.message : 'kesalahan tidak dikenal'}`);
+    }
   };
 
   const handleExcelImportCompleted = (
