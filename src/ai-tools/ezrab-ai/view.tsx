@@ -1,15 +1,22 @@
 /**
- * EzrabAiView — Gemini-style cute chat UI (EZRAB theme).
- * - Gradient greeting, suggestion chips, rounded input pill
- * - User: right bubble (emerald). AI: left with sparkle avatar, cute bubble.
- * - Fast/Advanced mode toggle.
+ * EzrabAiView — Ezrab Chat AI v2 (total overhaul).
+ * - 3D mascot "beranda" (EZRABMascot3D, variant chatbot): hero besar saat kosong +
+ *   mini di header. Ekspresi idle / thinking / happy mengikuti status chat.
+ *   Eye-tracking + blink + float + glow seperti di dashboard.
+ * - Royal-blue brand theme (#2563EB), bubble Gemini-style.
+ * - Mic voice input (Web Speech API, id-ID), lampir gambar (thumbnail di bubble
+ *   user + catatan jujur ke AI bahwa gambar tak bisa dilihat model teks),
+ *   timestamp, mode Cepat/Mendalam, tombol chat baru, salin jawaban.
  */
 import React, { useRef, useState, useEffect } from 'react';
-import { Send, Sparkles, Loader2, AlertTriangle, Zap, Brain, Copy, Check } from 'lucide-react';
+import {
+  Send, Sparkles, Loader2, Zap, Brain,
+  Copy, Check, Mic, Paperclip, X, Plus, ImagePlus,
+} from 'lucide-react';
 import { ezrabAiService } from './service';
 import { renderMarkdown } from './markdown';
 import { notificationBus } from '../../notifications/notificationBus';
-import { Maskot3D } from '../../components/mascot/Maskot3D';
+import { EZRABMascot3D } from '../../components/mascot/EZRABMascot3D';
 import './ezrab-ai-chat.css';
 
 interface ChatEntry {
@@ -17,7 +24,40 @@ interface ChatEntry {
   content: string;
   isError?: boolean;
   model?: string;
+  ts: number;
+  imageUrl?: string;
+  imageName?: string;
 }
+
+/* ---- Tipe minimal Web Speech API (Chrome: webkitSpeechRecognition) ---- */
+interface EzrabSpeechAlternative { transcript: string; confidence: number }
+interface EzrabSpeechRecognitionResult {
+  readonly isFinal: boolean; readonly length: number;
+  [index: number]: EzrabSpeechAlternative;
+}
+interface EzrabSpeechRecognitionResultList {
+  readonly length: number;
+  [index: number]: EzrabSpeechRecognitionResult;
+}
+interface EzrabSpeechRecognitionEvent {
+  readonly resultIndex: number;
+  readonly results: EzrabSpeechRecognitionResultList;
+}
+interface EzrabSpeechRecognitionErrorEvent { readonly error: string }
+interface EzrabSpeechRecognition {
+  lang: string; continuous: boolean; interimResults: boolean; maxAlternatives: number;
+  onresult: ((event: EzrabSpeechRecognitionEvent) => void) | null;
+  onerror: ((event: EzrabSpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start(): void; stop(): void; abort(): void;
+}
+const getSpeechRecognitionCtor = (): (new () => EzrabSpeechRecognition) | null => {
+  if (typeof window === 'undefined') return null;
+  const w = window as unknown as Record<string, unknown>;
+  const Ctor = (w.SpeechRecognition ?? w.webkitSpeechRecognition) as
+    | (new () => EzrabSpeechRecognition) | undefined;
+  return Ctor ?? null;
+};
 
 const SUGGESTIONS = [
   '🏠 Apa itu RAB?',
@@ -27,10 +67,15 @@ const SUGGESTIONS = [
 ];
 
 const GREETINGS = [
-  'Halo! 👋 Ada yang bisa saya bantu?',
-  'Hai! ✨ Mau tanya soal RAB?',
-  'Halo! 🏗️ Siap bantu estimasi proyekmu!',
+  'Halo! 👋 Mau estimasi apa hari ini?',
+  'Hai! ✨ Siap bantu hitung RAB kamu.',
+  'Halo! 🏗️ Tanya apa saja soal konstruksi.',
 ];
+
+const MASCOT_PNG = '/images/ezrab-mascot-greeting.png';
+
+const fmtTime = (ts: number) =>
+  new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
 export const EzrabAiView: React.FC = () => {
   const [messages, setMessages] = useState<ChatEntry[]>([]);
@@ -39,22 +84,65 @@ export const EzrabAiView: React.FC = () => {
   const [mode, setMode] = useState<'fast' | 'advanced'>('fast');
   const [greeting] = useState(() => GREETINGS[Math.floor(Math.random() * GREETINGS.length)]);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [attached, setAttached] = useState<{ url: string; name: string } | null>(null);
+  const [listening, setListening] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<EzrabSpeechRecognition | null>(null);
+  const sttBaseRef = useRef('');
+  const sttFinalRef = useRef('');
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, busy]);
 
+  /* Bersihkan sesi STT + object URL saat unmount */
+  useEffect(() => {
+    return () => {
+      const rec = recognitionRef.current;
+      recognitionRef.current = null;
+      if (rec) { try { rec.abort(); } catch { /* abaikan */ } }
+      if (attached) URL.revokeObjectURL(attached.url);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const autoresize = () => {
+    const ta = taRef.current;
+    if (ta) { ta.style.height = 'auto'; ta.style.height = `${Math.min(ta.scrollHeight, 120)}px`; }
+  };
+
+  const newChat = () => {
+    setMessages([]);
+    setInput('');
+    if (attached) { URL.revokeObjectURL(attached.url); setAttached(null); }
+    autoresize();
+  };
+
   const submit = async (text?: string) => {
     const msg = (text ?? input).trim();
-    if (!msg || busy) return;
+    if ((!msg && !attached) || busy) return;
+    const img = attached;
+    /* Catatan jujur ke model teks: ia tidak bisa melihat gambar */
+    const content = img && !msg
+      ? `🖼️ (pengguna melampirkan gambar "${img.name}" — saya tidak dapat melihat gambar, mohon minta deskripsi atau lanjutkan tanpa gambar)`
+      : img
+        ? `${msg}\n\n🖼️ (pengguna juga melampirkan gambar "${img.name}" — saya tidak dapat melihat gambar)`
+        : msg;
     setInput('');
-    const next: ChatEntry[] = [...messages, { role: 'user', content: msg }];
+    if (img) { URL.revokeObjectURL(img.url); setAttached(null); }
+    autoresize();
+    const entry: ChatEntry = {
+      role: 'user', content: msg || '(gambar terlampir)', ts: Date.now(),
+      imageUrl: img?.url, imageName: img?.name,
+    };
+    const next: ChatEntry[] = [...messages, entry];
     setMessages(next);
     setBusy(true);
     try {
       const res = await ezrabAiService.send({
-        messages: next.map((m) => ({ role: m.role, content: m.content })),
+        messages: next.map((m) => ({ role: m.role, content: m.role === 'user' && m.imageName ? content : m.content })),
         mode,
       } as any);
       setMessages((prev) => [...prev, {
@@ -62,29 +150,17 @@ export const EzrabAiView: React.FC = () => {
         content: res.reply,
         isError: !res.success,
         model: (res as any).model,
+        ts: Date.now(),
       }]);
-      if (res.success) {
-        notificationBus.publish({
-          type: 'success',
-          title: 'Ezrab AI selesai menjawab',
-          message: msg.length > 90 ? `${msg.slice(0, 90)}…` : msg,
-          link: 'ezrab-ai',
-        });
-      } else {
-        notificationBus.publish({
-          type: 'error',
-          title: 'Ezrab AI gagal menjawab',
-          message: res.reply && res.reply.length > 140 ? `${res.reply.slice(0, 140)}…` : res.reply || 'Respons AI tidak berhasil.',
-          link: 'ezrab-ai',
-        });
-      }
+      notificationBus.publish({
+        type: res.success ? 'success' : 'error',
+        title: res.success ? 'Ezrab AI selesai menjawab' : 'Ezrab AI gagal menjawab',
+        message: msg.length > 90 ? `${msg.slice(0, 90)}…` : msg,
+        link: 'ezrab-ai',
+      });
     } catch (err: any) {
       const errMsg = err?.message || 'Ups! Ada gangguan. Coba lagi ya 🥺';
-      setMessages((prev) => [...prev, {
-        role: 'assistant',
-        content: errMsg,
-        isError: true,
-      }]);
+      setMessages((prev) => [...prev, { role: 'assistant', content: errMsg, isError: true, ts: Date.now() }]);
       notificationBus.publish({
         type: 'error',
         title: 'Ezrab AI mengalami gangguan',
@@ -106,57 +182,181 @@ export const EzrabAiView: React.FC = () => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
   };
 
+  /* ---------- Voice input (Web Speech API) ---------- */
+  const stopListening = () => {
+    const rec = recognitionRef.current;
+    recognitionRef.current = null;
+    sttFinalRef.current = '';
+    setListening(false);
+    if (rec) { try { rec.abort(); } catch { /* abaikan */ } }
+  };
+
+  const toggleMic = () => {
+    if (listening) { stopListening(); return; }
+    const Ctor = getSpeechRecognitionCtor();
+    if (!Ctor) {
+      setMessages((prev) => [...prev, {
+        role: 'assistant', ts: Date.now(), isError: true,
+        content: '🎤 Browser ini tidak mendukung voice input. Coba buka di Chrome Android/desktop ya.',
+      }]);
+      return;
+    }
+    const rec = new Ctor();
+    rec.lang = 'id-ID';
+    rec.continuous = false;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    sttBaseRef.current = input;
+    sttFinalRef.current = '';
+    recognitionRef.current = rec;
+    rec.onresult = (event) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const r = event.results[i];
+        const t = r[0]?.transcript ?? '';
+        if (r.isFinal) sttFinalRef.current += t; else interim += t;
+      }
+      const parts = [sttBaseRef.current, sttFinalRef.current, interim].filter((p) => p.trim());
+      setInput(parts.join(' '));
+      requestAnimationFrame(autoresize);
+    };
+    rec.onerror = (event) => {
+      const err = event?.error ?? '';
+      if (err === 'not-allowed' || err === 'service-not-allowed') {
+        setMessages((prev) => [...prev, {
+          role: 'assistant', ts: Date.now(), isError: true,
+          content: '🎤 Izin mikrofon ditolak. Izinkan akses mic di pengaturan browser ya.',
+        }]);
+      } else if (err !== 'aborted' && err !== 'no-speech') {
+        setMessages((prev) => [...prev, {
+          role: 'assistant', ts: Date.now(), isError: true,
+          content: '🎤 Voice input gagal. Coba ketik manual ya.',
+        }]);
+      }
+    };
+    rec.onend = () => { recognitionRef.current = null; sttFinalRef.current = ''; setListening(false); };
+    try { rec.start(); setListening(true); }
+    catch { recognitionRef.current = null; setListening(false); }
+  };
+
+  /* ---------- Attach image ---------- */
+  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    if (attached) URL.revokeObjectURL(attached.url);
+    setAttached({ url: URL.createObjectURL(f), name: f.name });
+  };
+
+  const mascotExpression: 'idle' | 'thinking' | 'happy' =
+    busy ? 'thinking' : messages.length > 0 ? 'happy' : 'idle';
+
   return (
-    <div className="ezchat">
-      <div className="ezchat-header">
-        <div className="ezchat-logo"><Sparkles size={18} /> Ezrab Chat AI</div>
-        <div className="ezchat-modes">
-          <button className={mode === 'fast' ? 'active' : ''} onClick={() => setMode('fast')}>
-            <Zap size={13} /> Cepat
-          </button>
-          <button className={mode === 'advanced' ? 'active' : ''} onClick={() => setMode('advanced')}>
-            <Brain size={13} /> Mendalam
-          </button>
+    <div className="ezchat2">
+      {/* ===== Header ===== */}
+      <div className="ezchat2-header">
+        <div className="ezchat2-mascot">
+          <EZRABMascot3D
+            variant="chatbot"
+            width={52}
+            height={52}
+            expression={mascotExpression}
+            isThinking={busy}
+            enableEyeTracking
+            enableBlink
+            enableGlow
+          />
+        </div>
+        <div className="ezchat2-title">
+          <div className="ezchat2-name">Ezrab Chat AI</div>
+          <div className="ezchat2-status">
+            <span className={`ezdot ${busy ? 'busy' : ''}`} />
+            {busy ? 'Sedang berpikir…' : 'Online — menjawab dari AHSP 2026 & data EZRAB'}
+          </div>
+        </div>
+        <div className="ezchat2-actions">
+          <div className="ezchat2-modes">
+            <button className={mode === 'fast' ? 'active' : ''} onClick={() => setMode('fast')}>
+              <Zap size={13} /> Cepat
+            </button>
+            <button className={mode === 'advanced' ? 'active' : ''} onClick={() => setMode('advanced')}>
+              <Brain size={13} /> Mendalam
+            </button>
+          </div>
+          {messages.length > 0 && (
+            <button className="ezchat2-new" onClick={newChat} title="Percakapan baru">
+              <Plus size={15} /> Baru
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="ezchat-body" ref={scrollRef}>
+      {/* ===== Body ===== */}
+      <div className="ezchat2-body" ref={scrollRef}>
         {messages.length === 0 ? (
-          <div className="ezchat-empty">
-            <Maskot3D size={132} />
-            <h2 className="ezchat-greet">{greeting}</h2>
-            <p className="ezchat-sub">Tanya apa saja soal RAB, AHSP, estimasi biaya, dan konstruksi</p>
-            <div className="ezchat-chips">
+          <div className="ezchat2-empty">
+            <div className="ezchat2-hero">
+              <EZRABMascot3D
+                variant="chatbot"
+                width={196}
+                height={196}
+                expression="happy"
+                enableEyeTracking
+                enableFloat
+                enableBlink
+                enableGlow
+              />
+            </div>
+            <h2 className="ezchat2-greet">{greeting}</h2>
+            <p className="ezchat2-sub">Tanya apa saja soal RAB, AHSP 2026, volume, dan estimasi biaya konstruksi</p>
+            <div className="ezchat2-chips">
               {SUGGESTIONS.map((s) => (
-                <button key={s} className="ezchat-chip" onClick={() => submit(s)}>{s}</button>
+                <button key={s} className="ezchat2-chip" onClick={() => submit(s)}>{s}</button>
               ))}
+            </div>
+            <div className="ezchat2-trust">
+              <span>📖 AHSP 2026 resmi</span><i>•</i>
+              <span>🧮 Hitung volume</span><i>•</i>
+              <span>📋 Bantu susun RAB</span>
             </div>
           </div>
         ) : (
-          <div className="ezchat-list">
+          <div className="ezchat2-list">
             {messages.map((m, i) => m.role === 'user' ? (
-              <div key={i} className="ezchat-row user">
-                <div className="ezchat-bubble user">{m.content}</div>
+              <div key={i} className="ezchat2-row user">
+                <div className="ezchat2-col">
+                  <div className="ezchat2-bubble user">
+                    {m.imageUrl && (
+                      <img src={m.imageUrl} alt={m.imageName} className="ezchat2-attimg" />
+                    )}
+                    <div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>
+                  </div>
+                  <div className="ezchat2-ts">{fmtTime(m.ts)}</div>
+                </div>
               </div>
             ) : (
-              <div key={i} className={`ezchat-row ai ${m.isError ? 'error' : ''}`}>
-                <div className="ezchat-ai-avatar">{m.isError ? <AlertTriangle size={15} /> : <Sparkles size={15} />}</div>
-                <div className="ezchat-bubble ai">
-                  <div className="ezchat-text md-body">{renderMarkdown(m.content)}</div>
-                  <div className="ezchat-meta">
-                    {m.model && <span className="ezchat-model">{m.model}</span>}
-                    <button className="ezchat-copy" onClick={() => copyMsg(i, m.content)} title="Salin">
-                      {copiedIdx === i ? <Check size={13} /> : <Copy size={13} />}
-                    </button>
+              <div key={i} className={`ezchat2-row ai ${m.isError ? 'error' : ''}`}>
+                <img src={MASCOT_PNG} alt="Ezrab" className="ezchat2-avatar" />
+                <div className="ezchat2-col">
+                  <div className="ezchat2-bubble ai">
+                    <div className="ezchat2-text md-body">{renderMarkdown(m.content)}</div>
+                    <div className="ezchat2-meta">
+                      {m.model && <span className="ezchat2-model"><Sparkles size={11} /> {m.model}</span>}
+                      <button className="ezchat2-copy" onClick={() => copyMsg(i, m.content)} title="Salin jawaban">
+                        {copiedIdx === i ? <Check size={13} /> : <Copy size={13} />}
+                      </button>
+                    </div>
                   </div>
+                  <div className="ezchat2-ts">{fmtTime(m.ts)}</div>
                 </div>
               </div>
             ))}
             {busy && (
-              <div className="ezchat-row ai">
-                <div className="ezchat-ai-avatar"><Sparkles size={15} /></div>
-                <div className="ezchat-bubble ai typing">
+              <div className="ezchat2-row ai">
+                <img src={MASCOT_PNG} alt="Ezrab" className="ezchat2-avatar thinking" />
+                <div className="ezchat2-bubble ai typing">
                   <span className="tdot" /><span className="tdot" /><span className="tdot" />
+                  <span className="ezchat2-thinking">Ezrab sedang berpikir…</span>
                 </div>
               </div>
             )}
@@ -164,26 +364,66 @@ export const EzrabAiView: React.FC = () => {
         )}
       </div>
 
-      <div className="ezchat-input-wrap">
-        <div className="ezchat-input-pill">
+      {/* ===== Composer ===== */}
+      <div className="ezchat2-input-wrap">
+        {attached && (
+          <div className="ezchat2-attchip">
+            <img src={attached.url} alt={attached.name} />
+            <span>{attached.name}</span>
+            <button onClick={() => { URL.revokeObjectURL(attached.url); setAttached(null); }} title="Hapus">
+              <X size={13} />
+            </button>
+          </div>
+        )}
+        {listening && (
+          <div className="ezchat2-listening"><span className="ezdot busy pulse" /> Mendengarkan… bicara sekarang 🎤</div>
+        )}
+        <div className="ezchat2-pill">
+          <button
+            className="ezchat2-tool"
+            onClick={() => fileRef.current?.click()}
+            title="Lampirkan gambar"
+            disabled={busy}
+          >
+            <Paperclip size={17} />
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={onPickFile}
+          />
           <textarea
+            ref={taRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => { setInput(e.target.value); autoresize(); }}
             onKeyDown={onKey}
-            placeholder="Tanya Ezrab AI…"
+            placeholder={listening ? 'Mendengarkan…' : 'Tanya Ezrab AI…'}
             rows={1}
             disabled={busy}
           />
           <button
-            className={`ezchat-send ${input.trim() && !busy ? 'ready' : ''}`}
+            className={`ezchat2-tool ${listening ? 'listening' : ''}`}
+            onClick={toggleMic}
+            title={listening ? 'Berhenti merekam' : 'Voice input (id-ID)'}
+            disabled={busy}
+          >
+            <Mic size={17} />
+          </button>
+          <button
+            className={`ezchat2-send ${input.trim() || attached ? 'ready' : ''}`}
             onClick={() => submit()}
-            disabled={busy || !input.trim()}
+            disabled={busy || (!input.trim() && !attached)}
             title="Kirim"
           >
             {busy ? <Loader2 size={17} className="spin" /> : <Send size={17} />}
           </button>
         </div>
-        <div className="ezchat-foot">Ezrab AI bisa salah — cek ulang angka penting ya 😉</div>
+        <div className="ezchat2-foot">
+          <ImagePlus size={11} /> Gambar dilampirkan sebagai catatan — model teks belum bisa "melihat" gambar
+          <span> • </span>Ezrab AI bisa salah, cek ulang angka penting 😉
+        </div>
       </div>
     </div>
   );
