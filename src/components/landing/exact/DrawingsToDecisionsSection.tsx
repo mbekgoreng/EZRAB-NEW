@@ -24,6 +24,9 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
     let targetY = 0;
     let currentX = 0;
     let currentY = 0;
+    // Only push mouse-parallax state while the section is near the viewport,
+    // so the 60fps loop never triggers re-renders while it is off-screen.
+    let sectionNearViewport = true;
 
     const handleMouseMove = (e: MouseEvent) => {
       const { innerWidth, innerHeight } = window;
@@ -34,15 +37,26 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
     const animateMouse = () => {
       currentX += (targetX - currentX) * 0.06;
       currentY += (targetY - currentY) * 0.06;
-      setMousePos({ x: currentX, y: currentY });
+      if (sectionNearViewport) {
+        setMousePos({ x: currentX, y: currentY });
+      }
       rafId = requestAnimationFrame(animateMouse);
     };
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     rafId = requestAnimationFrame(animateMouse);
 
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        sectionNearViewport = entry ? entry.isIntersecting : true;
+      },
+      { rootMargin: '200px 0px' },
+    );
+    if (containerRef.current) io.observe(containerRef.current);
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
+      io.disconnect();
       cancelAnimationFrame(rafId);
     };
   }, []);
