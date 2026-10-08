@@ -75,10 +75,8 @@ export class PdfPageService {
     maxPages?: number
   ): Promise<DocumentPage[]> {
     try {
-      const pdfjs = await import('pdfjs-dist');
-      if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version || '4.10.38'}/pdf.worker.min.mjs`;
-      }
+      const { loadPdfjs } = await import('../../lib/pdfjsSetup');
+      const pdfjs = await loadPdfjs();
 
       const cleanUint8 = new Uint8Array(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
       const loadingTask = pdfjs.getDocument({

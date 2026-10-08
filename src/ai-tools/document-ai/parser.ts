@@ -12,6 +12,8 @@ export interface ParsedDocument {
   tables?: Array<Array<Array<string>>>;
 }
 
+import { loadPdfjs } from '../../lib/pdfjsSetup';
+
 function toUint8Array(buffer: ArrayBuffer | Uint8Array | Buffer | string): Uint8Array {
   if (typeof buffer === 'string') return new TextEncoder().encode(buffer);
   if (typeof Buffer !== 'undefined' && Buffer.isBuffer(buffer)) {
@@ -39,10 +41,7 @@ export async function parseDocument(
 
   try {
     if (isPdf) {
-      const isNode = typeof window === 'undefined';
-      const pdfjs = isNode
-        ? await import('pdfjs-dist/legacy/build/pdf.mjs')
-        : await import('pdfjs-dist');
+      const pdfjs = await loadPdfjs();
 
       const doc = await (pdfjs.getDocument({ data: bytes, useSystemFonts: true }) as any).promise;
       const pages: string[] = [];

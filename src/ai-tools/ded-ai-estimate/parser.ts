@@ -6,6 +6,7 @@
  */
 
 import { aiToolsError, AIToolsStructuredError } from '../types';
+import { loadPdfjs } from '../../lib/pdfjsSetup';
 
 export interface DedParsedPage {
   page: number;
@@ -57,10 +58,8 @@ export async function parseDedPdf(
   }
 
   try {
+    const pdfjs = await loadPdfjs();
     const isNode = typeof window === 'undefined';
-    const pdfjs = isNode
-      ? await import('pdfjs-dist/legacy/build/pdf.mjs')
-      : await import('pdfjs-dist');
 
     if (isNode) {
       try {
