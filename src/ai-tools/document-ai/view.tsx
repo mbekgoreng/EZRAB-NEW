@@ -97,7 +97,7 @@ export const DokumenAiView: React.FC = () => {
             onDrop={onDrop}
           >
             {doc ? (
-              <><FileCheck size={30} color="#059669" /><div className="docai-fname">{fileName}</div>
+              <><FileCheck size={30} color="#1D4ED8" /><div className="docai-fname">{fileName}</div>
               <div className="docai-fmeta">{doc.kind} · {doc.text.length.toLocaleString('id-ID')} karakter</div>
               <button className="docai-remove" onClick={(e) => { e.stopPropagation(); setDoc(null); setFileName(''); }}><X size={14} /></button></>
             ) : (
@@ -109,7 +109,7 @@ export const DokumenAiView: React.FC = () => {
             <>
               <input ref={inputRef2} type="file" accept=".pdf,.docx,.xlsx,.txt,.csv" style={{ display: 'none' }} onChange={(e) => onPick(e.target.files?.[0] || null, 2)} />
               <div className={`docai-drop ${doc2 ? 'filled' : ''}`} style={{ marginTop: 10 }} onClick={() => inputRef2.current?.click()}>
-                {doc2 ? (<><FileCheck size={26} color="#059669" /><div className="docai-fname">{fileName2}</div></>)
+                {doc2 ? (<><FileCheck size={26} color="#1D4ED8" /><div className="docai-fname">{fileName2}</div></>)
                 : (<><FileText size={24} color="#94A3B8" /><div>Dokumen pembanding ke-2</div></>)}
               </div>
             </>

@@ -156,7 +156,7 @@ export function DedAiSplitAnalysisView(props: DedAiSplitAnalysisViewProps) {
                 );
               })}
               <div className="ded-legend">
-                <span><i style={{ background: '#10B981' }} />Yakin</span>
+                <span><i style={{ background: '#2563EB' }} />Yakin</span>
                 <span><i style={{ background: '#F59E0B' }} />Ragu</span>
                 <span><i style={{ background: '#EF4444' }} />Tak terbaca</span>
               </div>
@@ -168,7 +168,7 @@ export function DedAiSplitAnalysisView(props: DedAiSplitAnalysisViewProps) {
         <div className="ded-panel">
           <div className="ded-panel-tabs">
             <button className={`ded-ptab ${activeTab === 'hasil' ? 'active' : ''}`} onClick={() => setActiveTab('hasil')}>
-              📋 Hasil <span className="ded-badge" style={{ background: '#10B981' }}>{workItems.length}</span>
+              📋 Hasil <span className="ded-badge" style={{ background: '#2563EB' }}>{workItems.length}</span>
             </button>
             <button className={`ded-ptab ${activeTab === 'asumsi' ? 'active' : ''}`} onClick={() => setActiveTab('asumsi')}>
               ⚠️ Asumsi <span className="ded-badge" style={{ background: '#F59E0B' }}>{allAssumptions.length}</span>
@@ -222,7 +222,7 @@ export function DedAiSplitAnalysisView(props: DedAiSplitAnalysisViewProps) {
                                 <button className="ded-ok" onClick={() => setApprovedAssumptions((s: Record<string, boolean>) => ({ ...s, [key]: true }))}>✓ Setuju</button>
                               </div>
                             )}
-                            {approved && <div style={{ color: '#059669', fontSize: 12, fontWeight: 700, marginTop: 6 }}>✓ Dikonfirmasi</div>}
+                            {approved && <div style={{ color: '#1D4ED8', fontSize: 12, fontWeight: 700, marginTop: 6 }}>✓ Dikonfirmasi</div>}
                           </div>
                         );
                       })}
