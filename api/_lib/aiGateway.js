@@ -7,6 +7,12 @@
  *   - api/ai/multi-provider/execute.js
  * A model/key/timeout change is now made ONCE, here.
  *
+ * AUTH MODEL (Phase 3): the browser sends the USER's Supabase Auth JWT
+ * (`Authorization: Bearer`). The gateway verifies it server-side — no shared
+ * secret ever lives in the browser bundle. When Supabase is not configured,
+ * falls back to the static AI_GATEWAY_TOKEN (service-to-service), else
+ * degraded mode (strict per-IP rate limit + origin check).
+ *
  * Responsibilities:
  *  - CORS allowlist, token auth (fail-closed when AI_GATEWAY_TOKEN is set),
  *    per-IP rate limiting, bounded body parsing, strict input validation
@@ -22,7 +28,8 @@
 import {
   applyCors,
   rateLimit,
-  checkApiToken,
+  authenticateRequest,
+  rateLimitIdentity,
   readJsonBody,
   validateAiInput,
   logAiUsage,
@@ -185,18 +192,32 @@ export async function handleAiRequest(req, res, opts = {}) {
     return res.status(405).json({ success: false, error: 'Method not allowed', requestId });
   }
 
-  // 2. Token auth (fail-closed when AI_GATEWAY_TOKEN is configured)
-  const auth = checkApiToken(req);
-  if (auth.enforced && !auth.ok) {
-    logAiUsage({ requestId, event: 'auth_rejected', reason: auth.reason, ipHash: ipHash(req) });
-    return res
-      .status(401)
-      .json({ success: false, error: 'Unauthorized', errorCode: 'AUTH_REQUIRED', requestId });
+  // 2. Authentication — Phase 3: Supabase JWT (fail-closed when configured),
+  //    else static service token (fail-closed when configured), else degraded.
+  //    The browser never holds a shared secret: it sends the user's own JWT.
+  const auth = await authenticateRequest(req, { jwtVerifier: opts.jwtVerifier });
+  if (!auth.ok) {
+    logAiUsage({
+      requestId,
+      event: 'auth_rejected',
+      authMethod: auth.method,
+      reason: auth.reason,
+      ipHash: ipHash(req),
+    });
+    const status = auth.method === 'jwt' && auth.reason === 'missing_token' ? 401 : 401;
+    return res.status(status).json({
+      success: false,
+      error: auth.method === 'jwt' ? 'Login diperlukan.' : 'Unauthorized',
+      errorCode: 'AUTH_REQUIRED',
+      requestId,
+    });
   }
+  const authEnforced = auth.method !== 'none';
 
-  // 3. Rate limiting — stricter when token auth is NOT enforced (degraded mode)
-  const limit = Number(process.env.AI_RATE_LIMIT_PER_MIN || (auth.enforced ? 60 : 20));
-  const rl = rateLimit(req, { limit });
+  // 3. Rate limiting — per verified user when JWT, else per IP.
+  //    Stricter when no auth is enforced (degraded mode).
+  const limit = Number(process.env.AI_RATE_LIMIT_PER_MIN || (authEnforced ? 60 : 20));
+  const rl = rateLimit(req, { limit, key: 'rl:' + rateLimitIdentity(req, auth) });
   res.setHeader('X-RateLimit-Limit', String(limit));
   res.setHeader('X-RateLimit-Remaining', String(rl.remaining));
   if (!rl.allowed) {
@@ -243,14 +264,15 @@ export async function handleAiRequest(req, res, opts = {}) {
     promptChars: input.message.length,
     promptHash: sha256hex(input.message).slice(0, 16),
     ipHash: ipHash(req),
-    authEnforced: auth.enforced,
-    degradedMode: !auth.enforced,
+    authMethod: auth.method,
+    userId: auth.user ? auth.user.id : null,
+    degradedMode: !authEnforced,
     attempts: attemptLog,
     error: r.ok ? undefined : r.error,
   });
-  if (!auth.enforced) {
+  if (!authEnforced) {
     console.warn(
-      '[ai-gateway] DEGRADED MODE: AI_GATEWAY_TOKEN is not set — endpoints are rate-limited and origin-checked only, not authenticated. Set AI_GATEWAY_TOKEN in Vercel env to enforce token auth.'
+      '[ai-gateway] DEGRADED MODE: no Supabase and no AI_GATEWAY_TOKEN — endpoints are rate-limited and origin-checked only, not authenticated.'
     );
   }
 

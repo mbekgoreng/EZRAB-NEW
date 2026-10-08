@@ -70,8 +70,8 @@ export function applyCors(req, res) {
 // stops naive abuse and accidental loops. Tune via AI_RATE_LIMIT_PER_MIN.
 const buckets = new Map();
 
-export function rateLimit(req, { limit = 30, windowMs = 60000, keyPrefix = 'rl' } = {}) {
-  const id = keyPrefix + ':' + clientIp(req);
+export function rateLimit(req, { limit = 30, windowMs = 60000, keyPrefix = 'rl', key = null } = {}) {
+  const id = key || keyPrefix + ':' + clientIp(req);
   const now = Date.now();
   let b = buckets.get(id);
   if (!b || now >= b.reset) {
@@ -190,4 +190,40 @@ export function logAiUsage(evt) {
   } catch {
     /* logging must never break the request */
   }
+}
+
+// ------------------------------------------------- unified authentication ---
+// Phase 3: Supabase JWT is the primary method. The browser sends the USER's
+// own JWT (Authorization: Bearer) — no shared secret ever lives in the
+// browser bundle. Static AI_GATEWAY_TOKEN remains as a legacy fallback for
+// service-to-service callers only when Supabase is not configured.
+import { isSupabaseConfigured, extractBearerToken, verifySupabaseJwt } from './supabaseAuth.js';
+
+/**
+ * Authenticate an incoming request. Returns:
+ *  { ok:true,  method:'jwt'|'token'|'none', user:{id,email}|null, degraded?:boolean }
+ *  { ok:false, method:'jwt'|'token', reason }
+ *
+ * Order: Supabase JWT (if configured, fail-closed) -> static token (if
+ * configured, fail-closed) -> degraded (strict rate limit + origin check).
+ */
+export async function authenticateRequest(req, opts = {}) {
+  if (isSupabaseConfigured()) {
+    const token = extractBearerToken(req);
+    const v = await verifySupabaseJwt(token, opts.jwtVerifier);
+    if (!v.ok) return { ok: false, method: 'jwt', reason: v.reason };
+    return { ok: true, method: 'jwt', user: v.user };
+  }
+  const t = checkApiToken(req);
+  if (t.enforced) {
+    if (!t.ok) return { ok: false, method: 'token', reason: t.reason };
+    return { ok: true, method: 'token', user: null };
+  }
+  return { ok: true, method: 'none', user: null, degraded: true };
+}
+
+/** Rate-limit identity: verified user id when available, else client IP. */
+export function rateLimitIdentity(req, auth) {
+  if (auth && auth.ok && auth.user && auth.user.id) return 'user:' + auth.user.id;
+  return 'ip:' + clientIp(req);
 }
