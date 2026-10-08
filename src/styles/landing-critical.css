@@ -1,0 +1,1218 @@
+/* ==========================================================================
+   EZRAB EXACT LANDING PAGE STYLES
+   Custom Background: D:\software\ezrab web\uiux\ChatGPT Image Sep 7, 2026, 07_55_15 PM.png
+   Font: 'Inter' (clean, simple, premium, timeless) & 'JetBrains Mono' (numbers)
+   Larger typography, enlarged video & 3D scene
+   ========================================================================== */
+
+:root {
+  --ez-dark-bg: #030712;
+  --ez-dark-surface: #060c1b;
+  --ez-dark-card: rgba(6, 16, 38, 0.88);
+  --ez-dark-border: rgba(56, 189, 248, 0.32);
+  --ez-neon-blue: #38bdf8;
+  --ez-primary-blue: #2563eb;
+  --ez-vibrant-blue: #1d4ed8;
+  --ez-accent-cyan: #06b6d4;
+  --ez-light-bg: #ffffff;
+  --ez-light-surface: #f8fafc;
+  --ez-light-border: #e2e8f0;
+  --ez-text-dark: #0f172a;
+  --ez-text-muted: #64748b;
+  --ez-text-light: #f8fafc;
+  --ez-text-light-muted: #94a3b8;
+}
+
+/* Global Typography - Plus Jakarta Sans & Inter: Modern, Clean, High-Tech */
+body,
+.ez-nav-dark,
+.ez-hero-exact,
+.ez-wf-pipeline-section,
+.ez-workflow-section,
+.ez-magic-section,
+.ez-volume-section,
+.ez-rab-section,
+.ez-ahsp-section,
+.ez-connected-section,
+.ez-pm-section,
+.ez-reports-section,
+.ez-roles-section,
+.ez-pricing-section,
+.ez-final-cta-section,
+.ez-luxury-cta-section,
+.ez-footer-exact,
+.ez-minimal-footer {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-mono,
+.ez-mono,
+.ez-wf-step-num {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* ==========================================================================
+   1. EXACT NAVBAR (DARK THEME)
+   ========================================================================== */
+.ez-nav-dark {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 1px solid transparent;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  transition: background 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ez-nav-dark.is-scrolled {
+  background: rgba(2, 6, 23, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.ez-nav-inner {
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ez-nav-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+.ez-nav-logo:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.ez-nav-brand-logo {
+  height: 27px;
+  width: auto;
+  max-width: 155px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(56, 189, 248, 0.2));
+}
+
+.ez-nav-logo-icon {
+  width: 30px;
+  height: 30px;
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.45);
+}
+
+.ez-nav-logo-text {
+  font-size: 19px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+}
+
+.ez-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.ez-nav-link {
+  color: #94a3b8;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  position: relative;
+  padding: 4px 0;
+}
+
+.ez-nav-link:hover {
+  color: #ffffff;
+}
+
+.ez-nav-link.active {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.ez-nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 2.5px;
+  background: #38bdf8;
+  border-radius: 999px;
+  box-shadow: 0 0 8px #38bdf8;
+}
+
+.ez-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ez-theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ez-theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.ez-btn-ghost-dark {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.ez-btn-ghost-dark:hover {
+  opacity: 0.8;
+}
+
+.ez-nav-actions .ez-btn-primary-pill {
+  padding: 6.5px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  gap: 6px;
+  box-shadow: 0 2px 14px rgba(37, 99, 235, 0.45);
+}
+
+@media (max-width: 767px) {
+  .ez-nav-links {
+    display: none !important;
+  }
+  .ez-nav-inner {
+    padding: 0 14px !important;
+  }
+  .ez-nav-actions .ez-btn-ghost-dark {
+    display: none !important;
+  }
+  .ez-nav-actions .ez-btn-primary-pill {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+}
+
+.ez-btn-primary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  padding: 13px 28px;
+  border-radius: 999px;
+  font-size: 15.5px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 22px rgba(37, 99, 235, 0.5);
+  transition: all 0.25s ease;
+  text-decoration: none;
+}
+
+.ez-btn-primary-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(37, 99, 235, 0.65);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.ez-btn-outline-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  padding: 13px 28px;
+  border-radius: 999px;
+  font-size: 15.5px;
+  font-weight: 650;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.25s ease;
+  text-decoration: none;
+}
+
+.ez-btn-outline-pill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.45);
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   2. HERO SECTION WITH LOCKED BACKGROUND & SYNCHRONIZED DYNAMIC POPUPS
+   ========================================================================== */
+.ez-hero-exact {
+  position: relative;
+  background-color: #020617;
+  color: #ffffff;
+  min-height: 880px;
+  padding-top: 82px;
+  padding-bottom: 55px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+/* Locked Permanent Background Layer (Full coverage, zero crop during browser zoom) */
+.ez-hero-locked-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* ================= RIBBON FIELD WEBGL BACKGROUND ================= */
+.ez-ribbon-bg-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #020617;
+  pointer-events: auto;
+  z-index: 0;
+}
+
+.ez-ribbon-bg-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Left & center vignette to keep hero typography 100% crisp & readable */
+.ez-ribbon-bg-vignette-left {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(2, 6, 23, 0.95) 0%, rgba(2, 6, 23, 0.82) 35%, rgba(2, 6, 23, 0.25) 65%, transparent 100%),
+    radial-gradient(120% 120% at 18% 48%, rgba(2, 6, 23, 0.6) 0%, transparent 50%);
+  z-index: 1;
+}
+
+/* Bottom fade to transition smoothly into the workflow section */
+.ez-ribbon-bg-bottom-gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 140px;
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(2, 6, 23, 1) 0%, rgba(2, 6, 23, 0.6) 40%, transparent 100%);
+  z-index: 2;
+}
+
+.ez-hero-bg-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('../assets/landing/backgrounds/land-page-awal.png');
+  background-size: cover;
+  background-position: right top;
+  background-repeat: no-repeat;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.ez-hero-bg-gradient-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(2, 6, 23, 0.98) 0%,
+    rgba(2, 6, 23, 0.92) 36%,
+    rgba(2, 6, 23, 0.52) 64%,
+    rgba(2, 6, 23, 0.15) 88%,
+    transparent 100%
+  );
+}
+
+.ez-hero-bg-circuits-layer {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 72% 46%, rgba(56, 189, 248, 0.22) 0%, transparent 65%);
+}
+
+.ez-hero-grid-lines-layer {
+  position: absolute;
+  inset: 0;
+  background-size: 56px 56px;
+  background-image:
+    linear-gradient(to right, rgba(56, 189, 248, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+  mask-image: radial-gradient(circle at 68% 50%, black 50%, transparent 90%);
+  -webkit-mask-image: radial-gradient(circle at 68% 50%, black 50%, transparent 90%);
+}
+
+.ez-hero-bg-bottom-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(to top, #020617 0%, transparent 100%);
+}
+
+.ez-hero-container {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 32px;
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 40px;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+  width: 100%;
+}
+
+.ez-hero-tag-wrap {
+  margin-bottom: 22px;
+}
+
+.ez-hero-tag {
+  color: #38bdf8;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.6);
+}
+
+.ez-hero-tag-icon {
+  animation: pulseGlow 2s infinite;
+}
+
+.ez-hero-h1 {
+  font-size: clamp(46px, 5vw, 68px);
+  font-weight: 850;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  color: #ffffff;
+  margin: 0 0 24px;
+}
+
+.ez-hero-h1-gradient {
+  background: linear-gradient(135deg, #38bdf8 0%, #60a5fa 50%, #93c5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: block;
+}
+
+.ez-hero-desc {
+  font-size: 18px;
+  line-height: 1.7;
+  color: #94a3b8;
+  max-width: 530px;
+  margin-bottom: 38px;
+}
+
+.ez-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 38px;
+}
+
+.ez-hero-features-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  padding-top: 22px;
+  max-width: 600px;
+}
+
+.ez-hero-feat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ez-hero-feat-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1.5px solid rgba(56, 189, 248, 0.35);
+  display: grid;
+  place-items: center;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.ez-hero-feat-text b {
+  display: block;
+  font-size: 13.5px;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.ez-hero-feat-text span {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   HERO RIGHT: VIDEO PLATFORM & 5 DYNAMIC ENLARGED POPUP CARDS
+   ========================================================================== */
+.ez-hero-visual-stage {
+  position: relative;
+  min-height: 760px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ez-hero-visual-center {
+  width: 100%;
+  max-width: 1250px;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  margin-top: 15px;
+}
+
+/* Video Container - Frameless, Extra Large (1.1x scale) & Firmly Anchored in Bottom-Right Corner */
+.ez-building-platform-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  overflow: visible;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  margin-left: auto;
+  margin-top: 10px;
+  transform: translate(85px, 55px) scale(1.1);
+  transform-origin: bottom right;
+  z-index: 3;
+}
+
+.ez-hero-video-render {
+  width: 100%;
+  height: auto;
+  max-height: 960px;
+  object-fit: contain;
+  display: block;
+  background: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  border-radius: 0;
+  mix-blend-mode: normal;
+  filter: drop-shadow(0 35px 70px rgba(0, 0, 0, 0.85));
+}
+
+.ez-hero-video-play-btn {
+  position: absolute;
+  top: 48%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 26px;
+  background: rgba(14, 165, 233, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  color: #ffffff;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 20;
+  box-shadow: 0 10px 30px rgba(14, 165, 233, 0.5), 0 0 25px rgba(56, 189, 248, 0.6);
+  transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+  animation: ezHeroBtnPulse 2.5s infinite;
+}
+
+.ez-hero-video-play-btn:hover {
+  transform: translate(-50%, -50%) scale(1.05);
+  background: rgba(2, 132, 199, 0.96);
+  box-shadow: 0 14px 38px rgba(14, 165, 233, 0.7), 0 0 35px rgba(56, 189, 248, 0.8);
+}
+
+@keyframes ezHeroBtnPulse {
+  0%, 100% {
+    box-shadow: 0 10px 30px rgba(14, 165, 233, 0.5), 0 0 25px rgba(56, 189, 248, 0.4);
+  }
+  50% {
+    box-shadow: 0 14px 40px rgba(14, 165, 233, 0.75), 0 0 45px rgba(56, 189, 248, 0.85);
+  }
+}
+
+/* Holographic Laser Scan & Ground Glow (Adjusted for bottom-right enlarged video) */
+.ez-blueprint-scan-beam {
+  position: absolute;
+  bottom: 2%;
+  left: 25%;
+  width: 75%;
+  height: 2.5px;
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.9), #ffffff, rgba(56, 189, 248, 0.9), transparent);
+  box-shadow: 0 0 22px #38bdf8, 0 0 40px rgba(56, 189, 248, 0.6);
+  transform: rotate(-5deg);
+  animation: scanPlatform 4.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.8;
+}
+
+@keyframes scanPlatform {
+  0% {
+    transform: translateY(-40px) rotate(-5deg);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.9;
+  }
+  75% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(40px) rotate(-5deg);
+    opacity: 0;
+  }
+}
+
+.ez-platform-ground-glow {
+  position: absolute;
+  bottom: -2%;
+  left: 30%;
+  right: -5%;
+  height: 70px;
+  background: radial-gradient(ellipse at center, rgba(56, 189, 248, 0.55) 0%, rgba(37, 99, 235, 0.2) 50%, transparent 75%);
+  filter: blur(28px);
+  pointer-events: none;
+  z-index: 2;
+  animation: glowPulse 5s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.12);
+  }
+}
+
+/* Neon Connecting Lines SVG */
+.ez-neon-svg-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.ez-neon-svg-overlay path {
+  stroke-dasharray: 6 5;
+  animation: pulseNeonDash 24s linear infinite;
+}
+
+@keyframes pulseNeonDash {
+  to {
+    stroke-dashoffset: -220;
+  }
+}
+
+/* ==========================================================================
+   DYNAMIC POP-UP CARDS — ENLARGED, SILKY-SMOOTH ANIMATED & SYNCHRONIZED
+   ========================================================================== */
+.ez-popup-card {
+  position: absolute;
+  background: rgba(4, 14, 36, 0.94);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1.5px solid rgba(56, 189, 248, 0.42);
+  border-radius: 18px;
+  padding: 16px 20px;
+  color: #ffffff;
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.75),
+    0 0 28px rgba(56, 189, 248, 0.2);
+  z-index: 10;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(18px) scale(0.94);
+  pointer-events: none;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.85s,
+              border-color 0.4s ease,
+              box-shadow 0.4s ease;
+}
+
+.ez-popup-card.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0px) scale(1);
+}
+
+.ez-popup-card:hover {
+  transform: translateY(-7px) scale(1.03) !important;
+  animation-play-state: paused !important;
+  box-shadow:
+    0 26px 55px rgba(0, 0, 0, 0.88),
+    0 0 40px rgba(56, 189, 248, 0.45) !important;
+  border-color: rgba(56, 189, 248, 0.75);
+}
+
+/* Card Specific Positions & Smooth Floating Animations */
+/* Card 1: Total Estimasi RAB (Top Left) */
+.ez-card-rab-total {
+  top: -4%;
+  left: -8%;
+  width: 240px;
+}
+
+.ez-card-rab-total.is-visible {
+  animation: softFloat1 6.5s ease-in-out infinite 0.85s;
+}
+
+/* Card 2: Magic AI Detection (Top Right) */
+.ez-card-ai-detect {
+  top: -10%;
+  right: 2%;
+  width: 245px;
+}
+
+.ez-card-ai-detect.is-visible {
+  animation: softFloat2 7.0s ease-in-out infinite 0.85s;
+}
+
+/* Card 3: AHSP PUPR 2026 (Middle Right) */
+.ez-card-ahsp-sync {
+  top: 34%;
+  right: -6%;
+  width: 235px;
+}
+
+.ez-card-ahsp-sync.is-visible {
+  animation: softFloat3 6.2s ease-in-out infinite 0.85s;
+}
+
+/* Card 4: QTO & Volume (Bottom Left) */
+.ez-card-qto-calc {
+  bottom: 4%;
+  left: -6%;
+  width: 240px;
+}
+
+.ez-card-qto-calc.is-visible {
+  animation: softFloat4 6.8s ease-in-out infinite 0.85s;
+}
+
+/* Card 5: BOQ & Export (Bottom Right) */
+.ez-card-boq-export {
+  bottom: -6%;
+  right: 6%;
+  width: 240px;
+}
+
+.ez-card-boq-export.is-visible {
+  animation: softFloat5 6.0s ease-in-out infinite 0.85s;
+}
+
+/* Ultra-Smooth Levitating Keyframes (Seamless Zero-Jump Oscillation) */
+@keyframes softFloat1 {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-7px) scale(1.01);
+  }
+}
+
+@keyframes softFloat2 {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.01);
+  }
+}
+
+@keyframes softFloat3 {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.01);
+  }
+}
+
+@keyframes softFloat4 {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-7px) scale(1.01);
+  }
+}
+
+@keyframes softFloat5 {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.01);
+  }
+}
+
+/* Card Internal Micro-Components */
+.ez-card-header-flex {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.ez-card-icon-bubble {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.ez-card-icon-bubble.green {
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.ez-card-icon-bubble.cyan {
+  background: rgba(6, 182, 212, 0.18);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  color: #22d3ee;
+}
+
+.ez-card-icon-bubble.blue {
+  background: rgba(56, 189, 248, 0.18);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+
+.ez-card-icon-bubble.amber {
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+
+.ez-card-icon-bubble.purple {
+  background: rgba(168, 85, 247, 0.18);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+}
+
+.ez-card-header-text {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 6px;
+}
+
+.ez-card-cat-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.ez-card-chip-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.ez-card-chip-tag.green {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.ez-card-chip-tag.cyan {
+  background: rgba(6, 182, 212, 0.18);
+  color: #22d3ee;
+  border: 1px solid rgba(6, 182, 212, 0.35);
+}
+
+.ez-card-chip-tag.blue {
+  background: rgba(56, 189, 248, 0.18);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.ez-card-chip-tag.amber {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.ez-card-chip-tag.purple {
+  background: rgba(168, 85, 247, 0.18);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+.ez-card-amount-display {
+  font-size: 21px;
+  font-weight: 850;
+  color: #ffffff;
+  margin: 4px 0 6px;
+  letter-spacing: -0.02em;
+}
+
+.ez-card-highlight-title {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 3px 0 5px;
+}
+
+.ez-card-sub-price {
+  font-size: 18px;
+  font-weight: 800;
+  color: #38bdf8;
+  margin: 3px 0 2px;
+}
+
+.ez-card-sub-price small {
+  font-size: 12px;
+  color: #94a3b8;
+  font-family: 'Inter', sans-serif;
+}
+
+.ez-card-meta-text {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.ez-card-mini-tags {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin: 4px 0 6px;
+}
+
+.ez-mini-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+
+.ez-card-export-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 5px 0 7px;
+}
+
+.ez-export-format-tag {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.ez-export-format-tag.xlsx {
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+}
+
+.ez-export-format-tag.pdf {
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+}
+
+.ez-export-format-tag.scurve {
+  background: rgba(56, 189, 248, 0.16);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+.ez-card-footer-meta {
+  margin-top: 4px;
+}
+
+.ez-card-meta-stat {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: #94a3b8;
+  margin-bottom: 5px;
+}
+
+.ez-card-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.ez-card-dot.success {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.ez-card-sub-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.ez-card-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.ez-card-status-pill.blue {
+  background: rgba(56, 189, 248, 0.14);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.ez-card-progress-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.ez-card-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+
+.ez-card-progress-bar.green {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.ez-card-progress-bar.amber {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+
+/* ==========================================================================
+   CRITICAL RESPONSIVE QUERIES (nav + hero) — extracted from exact-landing.css
+   ========================================================================== */
+@media (max-width: 1024px) {
+
+  .ez-hero-container,
+  .ez-workflow-container,
+  .ez-magic-container,
+  .ez-volume-split,
+  .ez-rab-container,
+  .ez-ahsp-container,
+  .ez-connected-container,
+  .ez-pm-container,
+  .ez-reports-container {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+
+  .ez-hero-visual-stage {
+    min-height: auto;
+    margin-top: 20px;
+  }
+
+  .ez-card-rab-total {
+    left: 2%;
+    top: -2%;
+  }
+
+  .ez-card-ai-detect {
+    right: 2%;
+    top: -2%;
+  }
+
+  .ez-card-ahsp-sync {
+    right: 0%;
+    top: 45%;
+  }
+
+  .ez-card-qto-calc {
+    left: 2%;
+    bottom: -2%;
+  }
+
+  .ez-card-boq-export {
+    right: 2%;
+    bottom: -2%;
+  }
+
+  .ez-roles-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .ez-pricing-cards-grid {
+    grid-template-columns: 1fr;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .ez-price-card.featured {
+    transform: none;
+  }
+
+  .ez-footer-top {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .ez-hero-exact {
+    min-height: auto;
+    padding-top: 82px;
+    padding-bottom: 60px;
+  }
+
+  .ez-hero-features-bar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ez-popup-card {
+    padding: 12px 14px;
+    border-radius: 14px;
+  }
+
+  .ez-card-rab-total {
+    width: 200px;
+    left: 0;
+    top: -4%;
+  }
+
+  .ez-card-ai-detect {
+    width: 200px;
+    right: 0;
+    top: -4%;
+  }
+
+  .ez-card-ahsp-sync {
+    display: none;
+  }
+
+  .ez-card-qto-calc {
+    width: 200px;
+    left: 0;
+    bottom: -4%;
+  }
+
+  .ez-card-boq-export {
+    width: 200px;
+    right: 0;
+    bottom: -4%;
+  }
+
+  .ez-card-amount-display {
+    font-size: 17px;
+  }
+
+  .ez-roles-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ez-footer-top {
+    grid-template-columns: 1fr;
+  }
+
+  .ez-footer-bottom {
+    flex-direction: column;
+    gap: 18px;
+    text-align: center;
+  }
+}

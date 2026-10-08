@@ -246,6 +246,8 @@ export const ExactProjectManagement: React.FC<ExactProjectManagementProps> = ({ 
                   src={villaThumb}
                   alt="Pembangunan Villa Modern 2 Lantai"
                   className="ez-pm-thumb"
+                  loading="lazy"
+                  decoding="async"
                 />
                 <div className="ez-pm-thumb-overlay" />
                 <div className="ez-pm-thumb-hover-label">
