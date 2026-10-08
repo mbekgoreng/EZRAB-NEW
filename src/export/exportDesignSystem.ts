@@ -219,9 +219,9 @@ export function applySignatureBlock(
   signatures?: ExportSignaturesConfig
 ) {
   const prepTitle = signatures?.preparedByTitle || 'Disusun Oleh,';
-  const prepName = signatures?.preparedByName || 'Ahmad Yusuf (Lead Estimator)';
+  const prepName = signatures?.preparedByName || '-';
   const checkTitle = signatures?.checkedByTitle || 'Diperiksa Oleh,';
-  const checkName = signatures?.checkedByName || 'Ir. Hendra Kusuma (Direktur Teknik)';
+  const checkName = signatures?.checkedByName || '-';
   const appTitle = signatures?.approvedByTitle || 'Disetujui Oleh,';
   const appName = signatures?.approvedByName || 'Owner / Klien';
 

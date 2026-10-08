@@ -366,8 +366,8 @@ export async function exportProjectToPDF(
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(...DOC_COLORS.SLATE_MUTED);
-  const compName = company.name || 'EZRAB Construction';
-  const compAddress = company.address || 'Jakarta, Indonesia';
+  const compName = company.name || '-';
+  const compAddress = company.address || '-';
   const compPhone = company.phone || '-';
   const compTax = company.taxNumber || '-';
   doc.text(compName, pageWidth - 20, logoTopY + 4, { align: 'right' });
@@ -409,7 +409,7 @@ export async function exportProjectToPDF(
     [{ content: 'Nomor Dokumen', styles: { fontStyle: 'bold', textColor: DOC_COLORS.NAVY_PRIMARY } }, `: ${documentNumber}`],
     [{ content: 'Status / Revisi', styles: { fontStyle: 'bold', textColor: DOC_COLORS.NAVY_PRIMARY } }, `: ${revisionNumber} (${(project.status || 'DRAFT').toUpperCase()})`],
     [{ content: 'Tanggal Dokumen', styles: { fontStyle: 'bold', textColor: DOC_COLORS.NAVY_PRIMARY } }, `: ${dateFormatted}`],
-    [{ content: 'Penyusun (Lead Estimator)', styles: { fontStyle: 'bold', textColor: DOC_COLORS.NAVY_PRIMARY } }, `: ${options?.leadEstimatorName || company.leadEstimatorName || 'Ahmad Yusuf'}`],
+    [{ content: 'Penyusun (Lead Estimator)', styles: { fontStyle: 'bold', textColor: DOC_COLORS.NAVY_PRIMARY } }, `: ${options?.leadEstimatorName || company.leadEstimatorName || '-'}`],
   ];
 
   safeAutoTable(doc, {
@@ -666,14 +666,14 @@ export async function exportProjectToPDF(
   doc.text('Lead Estimator', col1X, sigY + 4, { align: 'center' });
   doc.line(col1X - 22, sigY + 22, col1X + 22, sigY + 22);
   doc.setFont('helvetica', 'bold');
-  doc.text(options?.leadEstimatorName || company.leadEstimatorName || 'Ahmad Yusuf', col1X, sigY + 26, { align: 'center' });
+  doc.text(options?.leadEstimatorName || company.leadEstimatorName || '-', col1X, sigY + 26, { align: 'center' });
 
   doc.setFont('helvetica', 'normal');
   doc.text('Direview & Disetujui,', col2X, sigY, { align: 'center' });
   doc.text('Direktur Teknik', col2X, sigY + 4, { align: 'center' });
   doc.line(col2X - 22, sigY + 22, col2X + 22, sigY + 22);
   doc.setFont('helvetica', 'bold');
-  doc.text(options?.directorName || company.directorName || 'Ir. Hendra Kusuma', col2X, sigY + 26, { align: 'center' });
+  doc.text(options?.directorName || company.directorName || '-', col2X, sigY + 26, { align: 'center' });
 
   doc.setFont('helvetica', 'normal');
   doc.text('Disetujui Oleh,', col3X, sigY, { align: 'center' });
@@ -877,7 +877,8 @@ export async function exportProjectToPDF(
 
   // 9. Multi-tier cross-browser PDF download execution
   if (typeof window !== 'undefined') {
-    const cleanDocNum = (documentNumber || 'PRJ-2026-001').replace(/[^a-zA-Z0-9_-]/g, '_');
+    // P0-B: jangan pakai nomor dokumen contoh sebagai identitas resmi.
+    const cleanDocNum = (documentNumber || project.projectNumber || project.id || 'TANPA-NOMOR').replace(/[^a-zA-Z0-9_-]/g, '_');
     const cleanProjName = (project.name || 'Proyek').replace(/[^a-zA-Z0-9_-]/g, '_');
     const fileName = `RAB_${cleanDocNum}_${cleanProjName}_Resmi.pdf`;
 
