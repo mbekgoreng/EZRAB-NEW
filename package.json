@@ -70,7 +70,8 @@
     "price:bm-coverage": "npx tsx scripts/price2026/coverageBinaMarga.ts",
     "price:bm-forensic": "npx vitest run scripts/price2026/forensicBinaMarga10Items.test.ts",
     "test:phase2-integrity": "npx tsx src/test/phase2RabIntegrity.test.ts",
-    "test:phase2-gateway": "node src/test/phase2GatewaySecurity.mjs && node src/test/phase2GatewayIntegration.mjs"
+    "test:phase2-gateway": "node src/test/phase2GatewaySecurity.mjs && node src/test/phase2GatewayIntegration.mjs",
+    "test:phase3-auth": "node src/test/phase3GatewayAuth.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
