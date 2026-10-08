@@ -834,7 +834,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               onClick={() => setResultsViewMode('split')}
               style={{
                 padding: '9px 18px', borderRadius: 12, border: 'none', fontWeight: 700, fontSize: 13,
-                cursor: 'pointer', background: resultsViewMode === 'split' ? 'linear-gradient(135deg,#059669,#10B981)' : '#F1F5F9',
+                cursor: 'pointer', background: resultsViewMode === 'split' ? 'linear-gradient(135deg,#1D4ED8,#2563EB)' : '#F1F5F9',
                 color: resultsViewMode === 'split' ? '#fff' : '#64748B',
               }}
             >
@@ -844,7 +844,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               onClick={() => setResultsViewMode('detail')}
               style={{
                 padding: '9px 18px', borderRadius: 12, border: 'none', fontWeight: 700, fontSize: 13,
-                cursor: 'pointer', background: resultsViewMode === 'detail' ? 'linear-gradient(135deg,#059669,#10B981)' : '#F1F5F9',
+                cursor: 'pointer', background: resultsViewMode === 'detail' ? 'linear-gradient(135deg,#1D4ED8,#2563EB)' : '#F1F5F9',
                 color: resultsViewMode === 'detail' ? '#fff' : '#64748B',
               }}
             >
