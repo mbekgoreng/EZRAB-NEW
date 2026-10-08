@@ -23,6 +23,7 @@ import {
 } from '../types';
 import { CONSTRUCTION_CALCULATORS, getCalculatorById } from '../engine/constructionCalculators/registry';
 import { SafeDecimalEngine } from '../engine/safeDecimalEngine';
+import { createRabItemRecord } from '../engine/rab/rabItemFactory';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
 import { projectPriceEngine } from '../engine/pricing/projectPriceEngine';
 
@@ -1314,31 +1315,11 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const createRabItemDirect = useCallback(
     (itemData: Partial<RabItem> & { description: string; volume: number; unit: string }): RabItem => {
       if (!currentProjectId) throw new Error('Tidak ada proyek aktif.');
-      const newItemId = `rab-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substr(2, 4)}`;
-      const vol = itemData.volume || 0;
-      const up = itemData.unitPrice || 0;
-      const amt = SafeDecimalEngine.safeMultiply(vol, up, 0);
-
-      const newItem: RabItem = {
-        id: newItemId,
-        projectId: currentProjectId,
-        no: itemData.no || 1,
-        code: itemData.code || '',
-        category: itemData.category || itemData.sectionName || '01. PEKERJAAN PERSIAPAN',
-        sectionName: itemData.sectionName || itemData.category || '01. PEKERJAAN PERSIAPAN',
-        description: itemData.description,
-        volume: vol,
-        unit: itemData.unit,
-        materialPrice: itemData.materialPrice || 0,
-        laborPrice: itemData.laborPrice || 0,
-        equipmentPrice: itemData.equipmentPrice || 0,
-        unitPrice: up,
-        amount: amt,
-        totalPrice: amt,
-        volumeSource: itemData.volumeSource || 'MANUAL',
-        ahspCode: itemData.ahspCode || '',
-        verificationStatus: itemData.verificationStatus || 'VERIFIED',
-      };
+      // Phase 2 hardening: item construction (price-integrity rules) lives in
+      // the pure, unit-tested factory — never inline coercions here.
+      const newItem = createRabItemRecord(itemData, currentProjectId, {
+        defaultVolumeSource: 'MANUAL',
+      });
 
       setAllRabItems((prev) => {
         const next = [...prev, newItem];
@@ -1359,34 +1340,14 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const pid = targetProjectId || currentProjectId;
       if (!pid) throw new Error('Tidak ada proyek aktif untuk menambahkan item RAB.');
 
-      const newItems: RabItem[] = items.map((itemData, idx) => {
-        const newItemId =
-          itemData.id ||
-          `rab-${Date.now().toString().slice(-6)}-${idx}-${Math.random().toString(36).substr(2, 4)}`;
-        const vol = Number(itemData.volume) || 0;
-        const up = Number(itemData.unitPrice) || 0;
-        const amt = SafeDecimalEngine.safeMultiply(vol, up, 0);
-        return {
-          id: newItemId,
-          projectId: pid,
-          no: itemData.no || (idx + 1),
-          code: itemData.code || (itemData as any).wbsCode || '',
-          category: itemData.category || itemData.sectionName || '01. PEKERJAAN PERSIAPAN',
-          sectionName: itemData.sectionName || itemData.category || '01. PEKERJAAN PERSIAPAN',
-          description: itemData.description,
-          volume: vol,
-          unit: itemData.unit || 'ls',
-          materialPrice: itemData.materialPrice || 0,
-          laborPrice: itemData.laborPrice || 0,
-          equipmentPrice: itemData.equipmentPrice || 0,
-          unitPrice: up,
-          amount: amt,
-          totalPrice: amt,
-          volumeSource: itemData.volumeSource || 'AI_GENERATED',
-          ahspCode: itemData.ahspCode || '',
-          verificationStatus: itemData.verificationStatus || 'VERIFIED',
-        };
-      });
+      const newItems: RabItem[] = items.map((itemData, idx) =>
+        // Phase 2 hardening: same pure factory as createRabItemDirect.
+        createRabItemRecord(itemData, pid, {
+          defaultVolumeSource: 'AI_GENERATED',
+          defaultUnit: 'ls',
+          index: idx,
+        })
+      );
 
       setAllRabItems((prev) => {
         const next = [...prev, ...newItems];

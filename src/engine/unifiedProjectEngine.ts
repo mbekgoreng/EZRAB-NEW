@@ -21,7 +21,13 @@ export class UnifiedProjectEngine {
     items: RabItem[],
     currentSummary?: Partial<ProjectCostSummary>
   ): ProjectCostSummary {
-    const directCost = items.reduce((acc, itm) => acc + (itm.amount || 0), 0);
+    // Phase 2 hardening: items whose price is unresolved must NOT silently
+    // enter totals as Rp0. They are excluded from directCost and counted
+    // separately. Legacy items without priceStatus are treated as resolved
+    // (backward compatible).
+    const unresolved = items.filter((itm) => itm.priceStatus === 'PRICE_UNRESOLVED');
+    const pricedItems = items.filter((itm) => itm.priceStatus !== 'PRICE_UNRESOLVED');
+    const directCost = pricedItems.reduce((acc, itm) => acc + (itm.amount || 0), 0);
     const overheadPercent = currentSummary?.overheadPercent ?? 5;
     const profitPercent = currentSummary?.profitPercent ?? 5;
     const taxPercent = currentSummary?.taxPercent ?? 11;
@@ -56,6 +62,8 @@ export class UnifiedProjectEngine {
       taxAmount,
       grandTotal,
       costPerM2: 0,
+      unresolvedItems: unresolved.length,
+      unresolvedItemIds: unresolved.map((i) => i.id),
     };
   }
 
