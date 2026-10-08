@@ -50,9 +50,23 @@ export const App: React.FC = () => {
     setBootReady(true);
   }, []);
 
+  // Setelah redirect balik dari Google OAuth, buka kembali modal auth agar
+  // pengguna yang baru login langsung melihat status loginnya.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('ezrab_after_oauth') === '1') {
+        sessionStorage.removeItem('ezrab_after_oauth');
+        setAuthModalOpen(true);
+      }
+    } catch {
+      /* abaikan jika storage tidak tersedia */
+    }
+  }, []);
+
   const handleBootDone = useCallback(() => {
     setBooted(true);
-    setTourPending(shouldShowOnboarding());
+    // Tur selamat datang TIDAK lagi muncul saat boot landing page —
+    // ia muncul setelah login/daftar berhasil (lihat onSuccessLogin).
   }, []);
 
   const handleTourClose = useCallback(() => {
@@ -139,6 +153,9 @@ export const App: React.FC = () => {
           onSuccessLogin={() => {
             setAuthModalOpen(false);
             handleSetWorkspace(true);
+            // Tur selamat datang muncul setelah login/daftar — kecuali
+            // pengguna sudah memilih "Jangan tampilkan lagi".
+            if (shouldShowOnboarding()) setTourPending(true);
           }}
         />
 

@@ -25,45 +25,11 @@
 -- never a client-supplied userId.
 -- ============================================================================
 
--- ---------------------------------------------------------------- helpers --
-create or replace function public.ezrab_is_workspace_member(ws_id uuid)
-returns boolean
-language sql stable security definer set search_path = public
-as $$ select exists (
-  select 1 from public.workspace_members
-  where workspace_id = ws_id and user_id = auth.uid()
-) $$;
-
-create or replace function public.ezrab_workspace_role(ws_id uuid)
-returns text
-language sql stable security definer set search_path = public
-as $$ select role from public.workspace_members
-  where workspace_id = ws_id and user_id = auth.uid() limit 1 $$;
-
-create or replace function public.ezrab_is_project_member(p_id uuid)
-returns boolean
-language sql stable security definer set search_path = public
-as $$ select exists (
-  select 1 from public.project_members
-  where project_id = p_id and user_id = auth.uid()
-) $$;
-
-create or replace function public.ezrab_can_write_project(p_id uuid)
-returns boolean
-language sql stable security definer set search_path = public
-as $$
-  select exists (
-    select 1
-    from public.project_members pm
-    join public.workspace_members wm
-      on wm.workspace_id = pm.workspace_id and wm.user_id = pm.user_id
-    where pm.project_id = p_id
-      and pm.user_id = auth.uid()
-      and wm.role in ('SUPER_ADMIN', 'ESTIMATOR', 'EDITOR')
-  )
-$$;
-
 -- ---------------------------------------------------------------- tables --
+-- NOTE (fix 2026-10-08): tables MUST come before the helper functions below.
+-- PostgreSQL validates LANGUAGE sql function bodies at CREATE time, so a
+-- function querying public.workspace_members fails with 42P01 if the table
+-- does not exist yet.
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text,
@@ -250,6 +216,45 @@ create index if not exists rab_items_project_idx on public.rab_items(workspace_i
 create index if not exists rab_components_item_idx on public.rab_item_components(rab_item_id);
 create index if not exists audit_logs_actor_idx on public.audit_logs(user_id, created_at desc);
 
+-- ---------------------------------------------------------------- helpers --
+-- (Moved after tables: PostgreSQL validates LANGUAGE sql bodies at CREATE.)
+create or replace function public.ezrab_is_workspace_member(ws_id uuid)
+returns boolean
+language sql stable security definer set search_path = public
+as $$ select exists (
+  select 1 from public.workspace_members
+  where workspace_id = ws_id and user_id = auth.uid()
+) $$;
+
+create or replace function public.ezrab_workspace_role(ws_id uuid)
+returns text
+language sql stable security definer set search_path = public
+as $$ select role from public.workspace_members
+  where workspace_id = ws_id and user_id = auth.uid() limit 1 $$;
+
+create or replace function public.ezrab_is_project_member(p_id uuid)
+returns boolean
+language sql stable security definer set search_path = public
+as $$ select exists (
+  select 1 from public.project_members
+  where project_id = p_id and user_id = auth.uid()
+) $$;
+
+create or replace function public.ezrab_can_write_project(p_id uuid)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.project_members pm
+    join public.workspace_members wm
+      on wm.workspace_id = pm.workspace_id and wm.user_id = pm.user_id
+    where pm.project_id = p_id
+      and pm.user_id = auth.uid()
+      and wm.role in ('SUPER_ADMIN', 'ESTIMATOR', 'EDITOR')
+  )
+$$;
+
 -- ------------------------------------------------------- profile trigger --
 create or replace function public.handle_new_auth_user()
 returns trigger language plpgsql security definer set search_path = public
@@ -313,6 +318,19 @@ create policy "workspace_members_self_select" on public.workspace_members for se
   using (user_id = auth.uid() or public.ezrab_is_workspace_member(workspace_id));
 create policy "workspace_members_admin_write" on public.workspace_members for insert to authenticated
   with check (public.ezrab_workspace_role(workspace_id) = 'SUPER_ADMIN');
+-- Bootstrap (pre-apply review 2026-10-08): the very first membership of a
+-- workspace may only be the creating user as SUPER_ADMIN. Without this, the
+-- admin_write policy above is circular (it requires an existing admin
+-- membership) and the initial bootstrap insert can never succeed.
+create policy "workspace_members_bootstrap" on public.workspace_members for insert to authenticated
+  with check (
+    user_id = auth.uid()
+    and role = 'SUPER_ADMIN'
+    and not exists (
+      select 1 from public.workspace_members wm
+      where wm.workspace_id = workspace_members.workspace_id
+    )
+  );
 create policy "workspace_members_admin_delete" on public.workspace_members for delete to authenticated
   using (public.ezrab_workspace_role(workspace_id) = 'SUPER_ADMIN');
 
@@ -332,6 +350,18 @@ create policy "project_members_member_select" on public.project_members for sele
   using (user_id = auth.uid() or public.ezrab_is_project_member(project_id));
 create policy "project_members_writer_insert" on public.project_members for insert to authenticated
   with check (public.ezrab_can_write_project(project_id));
+-- Bootstrap (pre-apply review 2026-10-08): the first project membership may be
+-- inserted by the user themself when they hold a workspace write role and the
+-- project has no members yet. Same circularity fix as workspace bootstrap.
+create policy "project_members_bootstrap" on public.project_members for insert to authenticated
+  with check (
+    user_id = auth.uid()
+    and public.ezrab_workspace_role(workspace_id) in ('SUPER_ADMIN', 'ESTIMATOR', 'EDITOR')
+    and not exists (
+      select 1 from public.project_members pm
+      where pm.project_id = project_members.project_id
+    )
+  );
 create policy "project_members_writer_delete" on public.project_members for delete to authenticated
   using (public.ezrab_can_write_project(project_id));
 
@@ -373,11 +403,23 @@ create policy "rab_components_writer_write" on public.rab_item_components for al
   ));
 
 -- DED / QTO / work items / versions / overrides / schedule: same pattern
+-- DED analyses (pre-apply review 2026-10-08): rows with a NULL project_id were
+-- previously readable/writable by ANY authenticated user. They are now
+-- isolated by workspace membership instead — never visible across workspaces.
 create policy "ded_analyses_member_select" on public.ded_analyses for select to authenticated
-  using (project_id is null or public.ezrab_is_project_member(project_id));
+  using (
+    (project_id is null and public.ezrab_is_workspace_member(workspace_id))
+    or (project_id is not null and public.ezrab_is_project_member(project_id))
+  );
 create policy "ded_analyses_writer_write" on public.ded_analyses for all to authenticated
-  using (project_id is null or public.ezrab_can_write_project(project_id))
-  with check (project_id is null or public.ezrab_can_write_project(project_id));
+  using (
+    (project_id is null and public.ezrab_workspace_role(workspace_id) in ('SUPER_ADMIN', 'ESTIMATOR', 'EDITOR'))
+    or (project_id is not null and public.ezrab_can_write_project(project_id))
+  )
+  with check (
+    (project_id is null and public.ezrab_workspace_role(workspace_id) in ('SUPER_ADMIN', 'ESTIMATOR', 'EDITOR'))
+    or (project_id is not null and public.ezrab_can_write_project(project_id))
+  );
 
 create policy "qto_items_member_select" on public.qto_items for select to authenticated
   using (public.ezrab_is_project_member(project_id));

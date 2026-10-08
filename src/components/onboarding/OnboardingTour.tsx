@@ -6,7 +6,10 @@
  *   2. Fitur utama (RAB & estimasi, AI, database AHSP 2026)
  *   3. Cara mulai (buat proyek / buka dashboard)
  *
- * - Muncul sekali per pengguna via flag localStorage `ezrab_onboarding_done_v1`.
+ * - Muncul SETELAH login/daftar berhasil (bukan saat boot landing page).
+ * - "Lewati" = lewati kali ini saja (muncul lagi saat login berikutnya).
+ * - "Jangan tampilkan lagi" / menyelesaikan tur = tidak muncul lagi,
+ *   via flag localStorage `ezrab_onboarding_done_v1`.
  * - Bisa dibuka ulang dari pengaturan: panggil `openOnboarding()` atau
  *   dispatch CustomEvent `ezrab:open-onboarding`, lalu hubungkan dengan
  *   `useOnboardingTour()` di parent.
@@ -14,7 +17,7 @@
  *
  * Contoh integrasi di App.tsx:
  *   const { open, closeTour } = useOnboardingTour();
- *   {!booted && <BootLoadingScreen ... onDone={...} />}
+ *   const handleLoginSuccess = () => { if (shouldShowOnboarding()) setTourPending(true); };
  *   {booted && <OnboardingTour open={open} onClose={closeTour} />}
  */
 import { useCallback, useEffect, useState } from 'react';
@@ -180,29 +183,40 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
     if (open) setStep(0);
   }, [open ]);
 
-  const handleClose = useCallback(() => {
+  const handleFinish = useCallback(() => {
+    markOnboardingDone();
+    onClose();
+  }, [onClose]);
+
+  /** "Lewati" — tutup kali ini saja, tur boleh muncul lagi di login berikutnya. */
+  const handleSkipOnce = useCallback(() => {
+    onClose();
+  }, [onClose]);
+
+  /** "Jangan tampilkan lagi" — tutup permanen. */
+  const handleDontShowAgain = useCallback(() => {
     markOnboardingDone();
     onClose();
   }, [onClose]);
 
   const next = useCallback(() => {
-    if (isLast) handleClose();
+    if (isLast) handleFinish();
     else setStep((s) => s + 1);
-  }, [isLast, handleClose]);
+  }, [isLast, handleFinish]);
 
   const back = useCallback(() => setStep((s) => Math.max(0, s - 1)), []);
 
-  // Tutup dengan tombol Escape
+  // Tutup dengan tombol Escape (dianggap "lewati sekali")
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleClose();
+      if (e.key === 'Escape') handleSkipOnce();
       else if (e.key === 'ArrowRight') next();
       else if (e.key === 'ArrowLeft') back();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, handleClose, next, back]);
+  }, [open, handleSkipOnce, next, back]);
 
   if (!open) return null;
 
@@ -257,7 +271,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
             ))}
           </div>
           <button
-            onClick={handleClose}
+            onClick={handleSkipOnce}
             style={{
               fontSize: 13,
               fontWeight: 600,
@@ -492,6 +506,25 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
             style={{ height: 44, padding: '0 24px', minWidth: 140 }}
           >
             {isLast ? 'Mulai Sekarang' : 'Lanjut'}
+          </button>
+        </div>
+
+        {/* Opsi permanen: jangan tampilkan lagi di login berikutnya */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+          <button
+            onClick={handleDontShowAgain}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: 12.5,
+              color: 'var(--ezrab-text-muted, #94a3b8)',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              textUnderlineOffset: 3,
+              padding: '6px 10px',
+            }}
+          >
+            Jangan tampilkan lagi
           </button>
         </div>
       </div>

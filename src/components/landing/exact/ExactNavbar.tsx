@@ -114,7 +114,7 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
             className="ez-btn-primary-pill"
             onClick={onOpenWorkspace}
           >
-            <span>Mulai Gratis</span>
+            <span>Coba Gratis</span>
             <ArrowRight size={13.5} />
           </button>
           <button

@@ -141,7 +141,7 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
 
           <div className="ez-hero-actions">
             <button onClick={onStartFree} className="ez-btn-primary-pill">
-              <span>Mulai Gratis</span>
+              <span>Buat RAB Gratis</span>
               <ArrowRight size={17} />
             </button>
 

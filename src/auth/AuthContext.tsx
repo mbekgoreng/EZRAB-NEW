@@ -19,7 +19,9 @@ interface AuthState {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
-  signUp: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
+  signUp: (email: string, password: string, name?: string) => Promise<{ ok: boolean; error?: string }>;
+  /** Redirects the browser to Google; resolves false only when the redirect cannot start. */
+  signInWithGoogle: () => Promise<{ ok: boolean; error?: string }>;
   signOut: () => Promise<void>;
   /** Fresh access token for API calls (null when logged out/disabled) */
   getAccessToken: () => Promise<string | null>;
@@ -32,6 +34,7 @@ const AuthContext = createContext<AuthState>({
   loading: false,
   signIn: async () => ({ ok: false, error: 'Auth tidak dikonfigurasi' }),
   signUp: async () => ({ ok: false, error: 'Auth tidak dikonfigurasi' }),
+  signInWithGoogle: async () => ({ ok: false, error: 'Auth tidak dikonfigurasi' }),
   signOut: async () => {},
   getAccessToken: async () => null,
 });
@@ -78,10 +81,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { ok: true };
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string) => {
+  const signUp = useCallback(async (email: string, password: string, name?: string) => {
     const sb = getSupabaseClient();
     if (!sb) return { ok: false, error: 'Auth tidak dikonfigurasi' };
-    const { error } = await sb.auth.signUp({ email: email.trim(), password });
+    const cleanName = (name ?? '').trim();
+    const { error } = await sb.auth.signUp({
+      email: email.trim(),
+      password,
+      options: cleanName ? { data: { full_name: cleanName, display_name: cleanName } } : undefined,
+    });
+    if (error) return { ok: false, error: friendlyAuthError(error.message) };
+    return { ok: true };
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    const sb = getSupabaseClient();
+    if (!sb) return { ok: false, error: 'Auth tidak dikonfigurasi' };
+    try {
+      sessionStorage.setItem('ezrab_after_oauth', '1');
+    } catch {
+      /* storage unavailable — OAuth still works, modal just won't auto-open */
+    }
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
     if (error) return { ok: false, error: friendlyAuthError(error.message) };
     return { ok: true };
   }, []);
@@ -101,8 +125,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const value = useMemo(
-    () => ({ enabled, user, session, loading, signIn, signUp, signOut, getAccessToken }),
-    [enabled, user, session, loading, signIn, signUp, signOut, getAccessToken]
+    () => ({ enabled, user, session, loading, signIn, signUp, signInWithGoogle, signOut, getAccessToken }),
+    [enabled, user, session, loading, signIn, signUp, signInWithGoogle, signOut, getAccessToken]
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
@@ -113,6 +137,8 @@ function friendlyAuthError(message: string): string {
   if (m.includes('email not confirmed')) return 'Email belum dikonfirmasi. Cek kotak masuk Anda.';
   if (m.includes('user already registered') || m.includes('already exists'))
     return 'Email sudah terdaftar. Silakan masuk.';
+  if (m.includes('provider is not enabled') || m.includes('unsupported provider'))
+    return 'Login Google belum diaktifkan. Hubungi admin.';
   if (m.includes('password')) return 'Kata sandi tidak memenuhi syarat (min. 6 karakter).';
   return 'Gagal autentikasi. Coba lagi.';
 }
