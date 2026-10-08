@@ -15,6 +15,8 @@ import {
 import { ROLE_ACCOUNTS, type RoleId } from '../../auth/roleAccounts';
 import { useRole } from '../../auth/RoleContext';
 import { useI18n } from '../../i18n';
+import { isSupabaseAuthEnabled } from '../../lib/supabase';
+import { SupabaseLoginPanel } from './SupabaseLoginPanel';
 
 const ROLE_ICONS: Record<RoleId, React.ReactNode> = {
   qs: <Ruler size={20} />,
@@ -38,6 +40,13 @@ interface RoleLoginPanelProps {
 }
 
 export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBackToLogin }) => {
+  // Phase 3: when real Supabase Auth is configured, demo PINs are REPLACED
+  // by verified login — never shown side by side. Without Supabase config,
+  // the legacy demo flow stays so the owner is never locked out.
+  if (isSupabaseAuthEnabled()) {
+    return <SupabaseLoginPanel onSuccess={onSuccess} onBackToLogin={onBackToLogin} />;
+  }
+
   const { t } = useI18n();
   const { loginWithPin } = useRole();
   const [selectedRole, setSelectedRole] = useState<RoleId | null>(null);

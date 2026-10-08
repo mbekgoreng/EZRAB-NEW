@@ -4,6 +4,7 @@ import App from './App';
 import { ThemeProvider } from './context/ThemeContext';
 import { I18nProvider } from './i18n';
 import { RoleProvider } from './auth/RoleContext';
+import { AuthProvider } from './auth/AuthContext';
 import './styles/global.css';
 import './styles/magic-ai.css';
 import './styles/assistant-wizard.css';
@@ -16,7 +17,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <ThemeProvider>
       <I18nProvider>
         <RoleProvider>
-          <App />
+          <AuthProvider>
+            <App />
+          </AuthProvider>
         </RoleProvider>
       </I18nProvider>
     </ThemeProvider>
