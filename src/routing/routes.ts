@@ -23,6 +23,9 @@ const projectRoot = (projectId: string) => `${PROJECTS_PREFIX}/${encodeURICompon
 export const paths = {
   home: () => '/',
   about: () => '/about',
+  login: () => '/masuk',
+  signup: () => '/daftar',
+  loginRole: () => '/masuk/role',
   app: () => APP_PREFIX,
   projects: (status?: string) => `${PROJECTS_PREFIX}${status ? `?status=${encodeURIComponent(status)}` : ''}`,
   dashboard: () => `${APP_PREFIX}/dashboard`,

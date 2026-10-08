@@ -60,8 +60,7 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#ffffff' }}>
       {/* 1. Fixed Dark Navbar */}
       <ExactNavbar
-        onOpenWorkspace={onOpenWorkspace}
-        onOpenAuth={() => onOpenAuth('masuk')}
+        onOpenAuth={onOpenAuth}
         onOpenTheme={onOpenTheme}
         onBackToLanding={onBackToLanding}
         onOpenAbout={onOpenAbout}
@@ -71,7 +70,7 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
       <main style={{ flexGrow: 1 }}>
         {/* 2. Dark Hero Section with 3D Building & 5 Floating Neon Cards */}
         <ExactHero
-          onStartFree={onOpenWorkspace}
+          onStartFree={() => onOpenAuth('daftar')}
           onOpenDemo={onOpenDemo}
         />
 
@@ -102,13 +101,13 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
 
         {/* 12. Harga / Pricing (Free, Pro, Enterprise) */}
         <Suspense fallback={null}>
-          <ExactPricing onSelectPlan={() => onOpenWorkspace()} />
+          <ExactPricing onSelectPlan={() => onOpenAuth('daftar')} />
         </Suspense>
 
         {/* 13. Final CTA Banner (Dusk skyline with cranes) */}
         <Suspense fallback={null}>
           <ExactFinalCta
-            onStartFree={onOpenWorkspace}
+            onStartFree={() => onOpenAuth('daftar')}
             onOpenDemo={onOpenDemo}
           />
         </Suspense>

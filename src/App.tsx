@@ -6,9 +6,8 @@ import { AuthModal } from './components/auth/AuthModal';
 import { WorkspaceView } from './components/dashboard/WorkspaceView';
 import { DemoModal } from './components/common/DemoModal';
 import { ThemeModal } from './components/common/ThemeModal';
-import { EzrabCoAssistantLauncher } from './components/copilot/EzrabCoAssistantLauncher';
 import { NotificationProvider } from './notifications/NotificationContext';
-import { BootLoadingScreen } from './components/boot/BootLoadingScreen';
+import { AuthPage } from './AuthPage';
 import {
   OnboardingTour,
   shouldShowOnboarding,
@@ -22,15 +21,16 @@ export const App: React.FC = () => {
   const workspaceRoute = parseWorkspaceRoute(location.pathname, location.search);
   const isWorkspace = isAppPath(location.pathname);
   const isAbout = location.pathname === '/about' || location.hash === '#tentang';
+  const cleanPath = location.pathname.replace(/\/+$/, '') || '/';
+  const isLoginPage = cleanPath === paths.login();
+  const isSignupPage = cleanPath === paths.signup();
+  const isRoleLoginPage = cleanPath === paths.loginRole();
+  const isAuthPage = isLoginPage || isSignupPage || isRoleLoginPage;
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authInitialTab, setAuthInitialTab] = useState<'masuk' | 'daftar'>('daftar');
   const [demoModalOpen, setDemoModalOpen] = useState(false);
   const [themeModalOpen, setThemeModalOpen] = useState(false);
 
-  // Boot sequence: loading screen -> (onboarding on first run) -> content.
-  const [booted, setBooted] = useState(false);
-  const [bootReady, setBootReady] = useState(false);
   const { open: tourOpen, closeTour } = useOnboardingTour();
   const [tourPending, setTourPending] = useState(false);
 
@@ -41,32 +41,27 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (isWorkspace) document.title = workspaceRoute.status === 'not-found' ? 'Halaman Tidak Ditemukan — EZRAB' : `${routeLabel(workspaceRoute)} — EZRAB`;
     else if (isAbout) document.title = 'Tentang EZRAB';
+    else if (isLoginPage) document.title = 'Masuk — EZRAB';
+    else if (isSignupPage) document.title = 'Daftar — EZRAB';
+    else if (isRoleLoginPage) document.title = 'Masuk sebagai Peran — EZRAB';
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
-  }, [isAbout, isWorkspace, workspaceRoute]);
+  }, [isAbout, isWorkspace, isLoginPage, isSignupPage, isRoleLoginPage, workspaceRoute]);
 
-  // App shell is ready as soon as React mounts; the boot screen enforces
-  // its own minimum display duration before calling onDone.
-  useEffect(() => {
-    setBootReady(true);
-  }, []);
-
-  // Setelah redirect balik dari Google OAuth, buka kembali modal auth agar
-  // pengguna yang baru login langsung melihat status loginnya.
+  // Setelah redirect balik dari Google OAuth: jika sudah di halaman auth
+  // (/masuk//daftar), halaman menangani status login sendiri — jangan buka
+  // modal di atasnya. Jika di landing, buka modal auth.
   useEffect(() => {
     try {
       if (sessionStorage.getItem('ezrab_after_oauth') === '1') {
         sessionStorage.removeItem('ezrab_after_oauth');
-        setAuthModalOpen(true);
+        const p = window.location.pathname.replace(/\/+$/, '') || '/';
+        if (p !== paths.login() && p !== paths.signup() && p !== paths.loginRole()) {
+          setAuthModalOpen(true);
+        }
       }
     } catch {
       /* abaikan jika storage tidak tersedia */
     }
-  }, []);
-
-  const handleBootDone = useCallback(() => {
-    setBooted(true);
-    // Tur selamat datang TIDAK lagi muncul saat boot landing page —
-    // ia muncul setelah login/daftar berhasil (lihat onSuccessLogin).
   }, []);
 
   const handleTourClose = useCallback(() => {
@@ -81,11 +76,6 @@ export const App: React.FC = () => {
   const handleOpenAbout = () => {
     navigateTo(paths.about());
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleOpenAuth = (tab: 'masuk' | 'daftar' = 'masuk') => {
-    setAuthInitialTab(tab);
-    setAuthModalOpen(true);
   };
 
   const handleReturnToLanding = () => {
@@ -124,6 +114,18 @@ export const App: React.FC = () => {
         onOpenFeatures={handleOpenFeatures}
       />
     );
+  } else if (isAuthPage) {
+    content = (
+      <AuthPage
+        mode={isRoleLoginPage ? 'role' : isSignupPage ? 'signup' : 'signin'}
+        onLoginSuccess={() => {
+          handleSetWorkspace(true);
+          // Tur selamat datang muncul setelah login/daftar — kecuali
+          // pengguna sudah memilih "Jangan tampilkan lagi".
+          if (shouldShowOnboarding()) setTourPending(true);
+        }}
+      />
+    );
   } else {
     content = (
       <div
@@ -138,7 +140,7 @@ export const App: React.FC = () => {
         {/* Exact Landing Page matching reference design */}
         <ExactLandingPage
           onOpenWorkspace={() => handleSetWorkspace(true)}
-          onOpenAuth={(tab) => handleOpenAuth(tab || 'masuk')}
+          onOpenAuth={(tab) => navigateTo(tab === 'daftar' ? paths.signup() : paths.login())}
           onOpenDemo={() => setDemoModalOpen(true)}
           onOpenTheme={() => setThemeModalOpen(true)}
           onBackToLanding={handleReturnToLanding}
@@ -148,7 +150,7 @@ export const App: React.FC = () => {
         {/* Modals */}
         <AuthModal
           isOpen={authModalOpen}
-          initialTab={authInitialTab}
+          initialTab="masuk"
           onClose={() => setAuthModalOpen(false)}
           onSuccessLogin={() => {
             setAuthModalOpen(false);
@@ -169,28 +171,14 @@ export const App: React.FC = () => {
           isOpen={themeModalOpen}
           onClose={() => setThemeModalOpen(false)}
         />
-
-        {/* Floating EZRAB AI Assistant Mascot on Landing Page */}
-        <EzrabCoAssistantLauncher
-          isOpen={demoModalOpen || authModalOpen}
-          onClick={() => handleSetWorkspace(true)}
-          hasActiveContext={false}
-        />
       </div>
     );
   }
 
   return (
     <NotificationProvider>
-      {!booted && (
-        <BootLoadingScreen ready={bootReady} minDurationMs={1200} onDone={handleBootDone} />
-      )}
-      {booted && (
-        <>
-          {content}
-          <OnboardingTour open={tourOpen || tourPending} onClose={handleTourClose} />
-        </>
-      )}
+      {content}
+      <OnboardingTour open={tourOpen || tourPending} onClose={handleTourClose} />
     </NotificationProvider>
   );
 };

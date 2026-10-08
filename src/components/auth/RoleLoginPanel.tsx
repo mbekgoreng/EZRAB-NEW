@@ -37,14 +37,19 @@ const ROLE_COLORS: Record<RoleId, string> = {
 interface RoleLoginPanelProps {
   onSuccess: () => void;
   onBackToLogin: () => void;
+  /** Tab awal untuk SupabaseLoginPanel (dari route /masuk vs /daftar). */
+  initialMode?: 'signin' | 'signup';
+  /** Paksa tampilkan role demo + PIN walau Supabase aktif (route /masuk/role). */
+  forceDemoRoles?: boolean;
 }
 
-export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBackToLogin }) => {
+export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBackToLogin, initialMode = 'signin', forceDemoRoles = false }) => {
   // Phase 3: when real Supabase Auth is configured, demo PINs are REPLACED
   // by verified login — never shown side by side. Without Supabase config,
   // the legacy demo flow stays so the owner is never locked out.
-  if (isSupabaseAuthEnabled()) {
-    return <SupabaseLoginPanel onSuccess={onSuccess} onBackToLogin={onBackToLogin} />;
+  // forceDemoRoles bypasses this for the dedicated /masuk/role route.
+  if (isSupabaseAuthEnabled() && !forceDemoRoles) {
+    return <SupabaseLoginPanel onSuccess={onSuccess} onBackToLogin={onBackToLogin} initialMode={initialMode} />;
   }
 
   const { t } = useI18n();

@@ -10,6 +10,8 @@ import { useAuth } from '../../auth/AuthContext';
 interface Props {
   onSuccess: () => void;
   onBackToLogin: () => void;
+  /** Tab awal — dari route /masuk atau /daftar. */
+  initialMode?: 'signin' | 'signup';
 }
 
 function GoogleIcon() {
@@ -23,9 +25,9 @@ function GoogleIcon() {
   );
 }
 
-export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin }) => {
+export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, initialMode = 'signin' }) => {
   const { user, loading, signIn, signUp, signInWithGoogle, signOut } = useAuth();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
