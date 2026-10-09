@@ -65,6 +65,10 @@ Kemudian lanjutkan jawabanmu. Kamu harus menjawab dalam Bahasa Indonesia.`;
 
     const toolCalls: EzrabAiToolCall[] = [];
     const toolResults: EzrabAiToolResult[] = [];
+    // FASE 5A fix: when the model calls a tool, the DETERMINISTIC tool output
+    // becomes the reply — never leak the raw tool-call JSON to the user, and
+    // never let the model replace tool figures with its own arithmetic.
+    let toolReply: string | null = null;
     try {
       const toolPattern = /\{"tool"\s*:\s*"([^"]+)"\s*,\s*"args"\s*:\s*(\{[\s\S]*?\})\s*\}/;
       const toolMatch = result.content.match(toolPattern);
@@ -79,13 +83,14 @@ Kemudian lanjutkan jawabanmu. Kamu harus menjawab dalam Bahasa Indonesia.`;
         toolCalls.push({ toolName, args });
         if (EZRAB_AI_TOOL_MAP[toolName]) {
           const out = runTool(toolName, args);
-          toolResults.push({
-            toolName,
-            ok: typeof out === 'string',
-            output: typeof out === 'string' ? out : out.message,
-          });
+          const output = typeof out === 'string' ? out : out.message;
+          toolResults.push({ toolName, ok: typeof out === 'string', output });
+          // Deterministic: tool output IS the answer.
+          toolReply = output;
         } else {
-          toolResults.push({ toolName, ok: false, output: `Alat tidak dikenal: ${toolName}` });
+          const output = `Alat tidak dikenal: ${toolName}`;
+          toolResults.push({ toolName, ok: false, output });
+          toolReply = output;
         }
       }
     } finally {
@@ -93,9 +98,10 @@ Kemudian lanjutkan jawabanmu. Kamu harus menjawab dalam Bahasa Indonesia.`;
       setActiveProjectSnapshot(null);
     }
 
+    const reply = toolReply ?? result.content;
     return {
       success: true,
-      reply: result.content,
+      reply,
       rawContent: result.content,
       requestId: result.requestId,
       toolCalls: toolCalls.length ? toolCalls : undefined,
