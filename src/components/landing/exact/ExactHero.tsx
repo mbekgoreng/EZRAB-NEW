@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowRight,
   Play,
@@ -15,7 +15,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { RibbonFieldBackground } from './RibbonFieldBackground';
-import { ChromaKeyVideo } from '../../common/ChromaKeyVideo';
+import { FeatureShowcase } from './FeatureShowcase';
 
 interface ExactHeroProps {
   onStartFree?: () => void;
@@ -23,9 +23,6 @@ interface ExactHeroProps {
 }
 
 export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoTime, setVideoTime] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [cardsReady, setCardsReady] = useState<boolean>(false);
 
   // Stagger reveal of all 5 floating cards so all assets immediately render and stay visible
@@ -35,77 +32,6 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
     }, 200);
     return () => clearTimeout(timer);
   }, []);
-
-  // Bulletproof video autoplay handling for modern browsers (Chrome/Edge/Safari/Firefox)
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const playVideo = () => {
-      video.defaultMuted = true;
-      video.muted = true;
-      const promise = video.play();
-      if (promise !== undefined) {
-        promise
-          .then(() => setIsPlaying(true))
-          .catch(() => {
-            setIsPlaying(false);
-            // Fallback: start video on first user interaction if autoplay was blocked by browser policy
-            const onFirstGesture = () => {
-              if (video.paused) {
-                video.defaultMuted = true;
-                video.muted = true;
-                video.play().then(() => setIsPlaying(true)).catch(() => {});
-              }
-              window.removeEventListener('click', onFirstGesture);
-              window.removeEventListener('touchstart', onFirstGesture);
-              window.removeEventListener('scroll', onFirstGesture);
-              window.removeEventListener('pointerdown', onFirstGesture);
-            };
-            window.addEventListener('click', onFirstGesture, { once: true });
-            window.addEventListener('touchstart', onFirstGesture, { once: true });
-            window.addEventListener('scroll', onFirstGesture, { once: true });
-            window.addEventListener('pointerdown', onFirstGesture, { once: true });
-          });
-      }
-    };
-
-    playVideo();
-    video.addEventListener('loadedmetadata', playVideo);
-    video.addEventListener('canplay', playVideo);
-
-    // Watchdog check: ensure video is running within first 2 seconds
-    const watchdog = setInterval(() => {
-      if (video.paused) {
-        playVideo();
-      }
-    }, 800);
-
-    const clearWatchdog = setTimeout(() => {
-      clearInterval(watchdog);
-    }, 4000);
-
-    return () => {
-      clearInterval(watchdog);
-      clearTimeout(clearWatchdog);
-      video.removeEventListener('loadedmetadata', playVideo);
-      video.removeEventListener('canplay', playVideo);
-    };
-  }, []);
-
-  const handleManualPlay = () => {
-    if (videoRef.current) {
-      videoRef.current.defaultMuted = true;
-      videoRef.current.muted = true;
-      videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
-    }
-  };
-
-  const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      setVideoTime(videoRef.current.currentTime);
-    }
-  };
 
   // All 5 cards are guaranteed to render and stay visible!
   const showCard1 = true;
@@ -141,7 +67,7 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
 
           <div className="ez-hero-actions">
             <button onClick={onStartFree} className="ez-btn-primary-pill">
-              <span>Mulai Gratis</span>
+              <span>Buat RAB Gratis</span>
               <ArrowRight size={17} />
             </button>
 
@@ -202,65 +128,9 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
             <div className="ez-blueprint-scan-beam" />
             <div className="ez-platform-ground-glow" />
 
-            {/* Video Container positioned over the blueprint area (frameless) */}
-            <div 
-              className="ez-building-platform-wrapper"
-              onClick={handleManualPlay}
-              style={{ cursor: isPlaying ? 'default' : 'pointer' }}
-              title={isPlaying ? 'Simulasi 3D Berjalan' : 'Klik untuk memutar video'}
-            >
-              <ChromaKeyVideo
-                videoRef={(el) => {
-                  videoRef.current = el;
-                  if (el) {
-                    el.defaultMuted = true;
-                    el.muted = true;
-                    el.playsInline = true;
-                    el.setAttribute('playsinline', '');
-                    el.setAttribute('webkit-playsinline', '');
-                    el.play().then(() => setIsPlaying(true)).catch(() => {});
-                  }
-                }}
-                src="/videos/0908fg.mp4"
-                poster="/videos/0908fg-poster.jpg"
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="auto"
-                threshold={0.065}
-                smoothness={0.055}
-                keyMode="black"
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                onCanPlay={(e) => {
-                  const v = e.currentTarget;
-                  v.defaultMuted = true;
-                  v.muted = true;
-                  v.play().then(() => setIsPlaying(true)).catch(() => {});
-                }}
-                onLoadedMetadata={(e) => {
-                  const v = e.currentTarget;
-                  v.defaultMuted = true;
-                  v.muted = true;
-                  v.play().then(() => setIsPlaying(true)).catch(() => {});
-                }}
-                onTimeUpdate={handleTimeUpdate}
-                className="ez-hero-video-render"
-              />
-
-              {/* Status Indicator & Click-to-Play Overlay if Browser paused */}
-              {!isPlaying && (
-                <button
-                  type="button"
-                  onClick={handleManualPlay}
-                  className="ez-hero-video-play-btn"
-                  aria-label="Putar Video Simulasi 3D"
-                >
-                  <Play size={20} fill="#ffffff" />
-                  <span>Putar Simulasi 3D</span>
-                </button>
-              )}
+            {/* Feature Showcase — menggantikan video bangunan: demonstrasi 6 fitur unggulan EZRAB */}
+            <div className="ez-feature-stage-wrapper">
+              <FeatureShowcase />
             </div>
 
             {/* Neon Connection Circuit Lines SVG Overlay */}
