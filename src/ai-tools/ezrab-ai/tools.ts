@@ -170,17 +170,23 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
   // ── Project data tools (read-only, active project only) ──
   {
     name: 'get_project_total',
-    description: 'Total RAB proyek aktif (deterministik dari data aplikasi). Tanpa argumen. Mengembalikan total langsung, jumlah item, dan item yang belum punya harga.',
+    description: 'Total RAB proyek aktif (deterministik dari engine kanonis). Tanpa argumen. Mengembalikan subtotal langsung DAN total akhir (grand total + overhead/PPN), serta item yang belum punya harga.',
     invoke: () => {
       const snap = requireSnapshot();
       if (typeof snap === 'string') return snap;
       const lines = [
-        `Total RAB proyek "${snap.projectName}": ${formatIDR(snap.totalDirect)}`,
+        `Subtotal langsung proyek "${snap.projectName}": ${formatIDR(snap.totalDirect)}`,
         `Jumlah item: ${snap.itemCount}`,
       ];
+      const cb = snap.costBreakdown;
+      if (cb) {
+        lines.push(
+          `Rincian kanonis: overhead ${cb.overheadPercent}% (${formatIDR(cb.overheadAmount)}) + profit ${cb.profitPercent}% (${formatIDR(cb.profitAmount)}) → subtotal sebelum pajak ${formatIDR(cb.subtotalBeforeTax)} + PPN ${cb.taxPercent}% (${formatIDR(cb.taxAmount)}) = TOTAL AKHIR ${formatIDR(cb.grandTotal)}`,
+        );
+      }
       if (snap.unresolvedCount > 0) {
         lines.push(
-          `Catatan: ${snap.unresolvedCount} item belum memiliki harga dan TIDAK termasuk dalam total (bukan Rp0).`,
+          `Catatan: ${snap.unresolvedCount} item belum memiliki harga dan TIDAK termasuk dalam subtotal maupun total akhir (bukan Rp0).`,
         );
       }
       return lines.join('\n');

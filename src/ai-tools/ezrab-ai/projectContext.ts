@@ -31,6 +31,18 @@ export interface ProjectSnapshot {
   unresolvedItems: ProjectItemSnapshot[];
   items: ProjectItemSnapshot[];
   truncated: boolean;
+  /** Canonical cost breakdown from UnifiedProjectEngine.recalculateCostSummary. */
+  costBreakdown: {
+    directCost: number;
+    overheadPercent: number;
+    overheadAmount: number;
+    profitPercent: number;
+    profitAmount: number;
+    taxPercent: number;
+    taxAmount: number;
+    subtotalBeforeTax: number;
+    grandTotal: number;
+  } | null;
 }
 
 const MAX_ITEMS = 25;
@@ -40,8 +52,10 @@ function toNumber(v: unknown): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+import { recalculateCostSummary } from '../../engine/unifiedProjectEngine';
+
 export function buildProjectSnapshot(
-  project: { id: string; name: string } | null | undefined,
+  project: { id: string; name: string; costSummary?: Record<string, unknown> } | null | undefined,
   rabItems: Array<Record<string, unknown>> | null | undefined,
 ): ProjectSnapshot | null {
   if (!project?.id) return null;
@@ -78,6 +92,37 @@ export function buildProjectSnapshot(
   const unresolvedItems = snapshots.filter((i) => i.priceStatus === 'PRICE_UNRESOLVED');
   const truncated = snapshots.length > MAX_ITEMS;
 
+  // Canonical breakdown: use the SAME engine as the spreadsheet.
+  // Map snapshot items to the minimal RabItem shape the engine reads.
+  let costBreakdown: ProjectSnapshot['costBreakdown'] = null;
+  try {
+    const engineItems = snapshots.map((s) => ({
+      id: s.id,
+      priceStatus: s.priceStatus,
+      amount: s.totalPrice,
+    }));
+    const cs = (project?.costSummary ?? {}) as Record<string, unknown>;
+    const summary = recalculateCostSummary(engineItems as never, {
+      overheadPercent: typeof cs.overheadPercent === 'number' ? cs.overheadPercent : undefined,
+      profitPercent: typeof cs.profitPercent === 'number' ? cs.profitPercent : undefined,
+      taxPercent: typeof cs.taxPercent === 'number' ? cs.taxPercent : undefined,
+      contingencyPercent: typeof cs.contingencyPercent === 'number' ? cs.contingencyPercent : undefined,
+    } as never);
+    costBreakdown = {
+      directCost: summary.directCost,
+      overheadPercent: summary.overheadPercent,
+      overheadAmount: summary.overheadAmount,
+      profitPercent: summary.profitPercent,
+      profitAmount: summary.profitAmount,
+      taxPercent: summary.taxPercent,
+      taxAmount: summary.taxAmount,
+      subtotalBeforeTax: summary.subtotalBeforeTax,
+      grandTotal: summary.grandTotal,
+    };
+  } catch {
+    costBreakdown = null;
+  }
+
   return {
     projectId: project.id,
     projectName: project.name,
@@ -87,6 +132,7 @@ export function buildProjectSnapshot(
     unresolvedItems: unresolvedItems.slice(0, MAX_ITEMS),
     items: snapshots.slice(0, MAX_ITEMS),
     truncated,
+    costBreakdown,
   };
 }
 
@@ -100,8 +146,14 @@ export function formatProjectSummary(snap: ProjectSnapshot | null): string {
   const lines: string[] = [
     `Proyek aktif: ${snap.projectName} (ID: ${snap.projectId})`,
     `Jumlah item pekerjaan: ${snap.itemCount}`,
-    `Total RAB (langsung, deterministik): ${formatIDR(snap.totalDirect)}`,
+    `Subtotal langsung (deterministik): ${formatIDR(snap.totalDirect)}`,
   ];
+  const cb = snap.costBreakdown;
+  if (cb) {
+    lines.push(
+      `Total akhir (grand total): ${formatIDR(cb.grandTotal)} = subtotal ${formatIDR(snap.totalDirect)} + overhead ${cb.overheadPercent}% + profit ${cb.profitPercent}% + PPN ${cb.taxPercent}%`,
+    );
+  }
   if (snap.unresolvedCount > 0) {
     lines.push(
       `Item belum memiliki harga: ${snap.unresolvedCount} (tidak termasuk dalam total — BUKAN Rp0)`,

@@ -112,7 +112,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   // Prefer live context; fall back to props (keeps standalone usage working).
   const effProject = currentProject ?? activeProject;
   const projectSnapshot: ProjectSnapshot | null = buildProjectSnapshot(
-    effProject ? { id: effProject.id, name: effProject.name } : null,
+    effProject ? { id: effProject.id, name: effProject.name, costSummary: (effProject as unknown as { costSummary?: Record<string, unknown> }).costSummary } : null,
     projectRabItems as unknown as Array<Record<string, unknown>>,
   );
   // Conversation store is keyed by project; use a stable key when none is active.
@@ -243,9 +243,17 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           currentMenu,
           activeProject,
           projects,
-          // FASE 5A: use the deterministic direct total from the live RAB snapshot
+          // FASE 5A/5B: use the deterministic direct total from the live RAB snapshot
           // (same source as get_project_total tool), not the stored grand total.
           projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
+          projectCostBreakdown: projectSnapshot?.costBreakdown
+            ? {
+                grandTotal: projectSnapshot.costBreakdown.grandTotal,
+                overheadPercent: projectSnapshot.costBreakdown.overheadPercent,
+                profitPercent: projectSnapshot.costBreakdown.profitPercent,
+                taxPercent: projectSnapshot.costBreakdown.taxPercent,
+              }
+            : null,
         };
         let reply: string;
         if (routed.intent === 'GREETING') reply = localGreeting();

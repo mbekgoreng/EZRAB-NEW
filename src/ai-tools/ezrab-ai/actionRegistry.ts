@@ -19,8 +19,15 @@ export interface ChatActionContext {
   activeProject: { id: string; name: string } | null;
   /** All projects visible to the user (for listing) */
   projects: Array<{ id: string; name: string }>;
-  /** Project RAB total (null if unknown) */
+  /** Project RAB direct total (null if unknown) */
   projectTotal: number | null;
+  /** Canonical cost breakdown (null if unknown) */
+  projectCostBreakdown?: {
+    grandTotal: number;
+    overheadPercent: number;
+    profitPercent: number;
+    taxPercent: number;
+  } | null;
 }
 
 export interface ActionResult {
@@ -105,9 +112,14 @@ export function executeIntent(
           message: `Total RAB "${ctx.activeProject.name}" belum tersedia atau belum dihitung.`,
         };
       }
+      const cb = ctx.projectCostBreakdown;
+      const subtotalMsg = `Subtotal langsung "${ctx.activeProject.name}": ${fmtIDR(ctx.projectTotal)}.`;
+      if (!cb) return { ok: true, message: subtotalMsg };
       return {
         ok: true,
-        message: `Total RAB "${ctx.activeProject.name}": ${fmtIDR(ctx.projectTotal)}.`,
+        message:
+          `${subtotalMsg} Total akhir (grand total): ${fmtIDR(cb.grandTotal)} ` +
+          `(sudah termasuk overhead ${cb.overheadPercent}%, profit ${cb.profitPercent}%, PPN ${cb.taxPercent}%).`,
       };
     }
 
