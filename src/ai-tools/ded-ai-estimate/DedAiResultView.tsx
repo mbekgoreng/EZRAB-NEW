@@ -301,9 +301,9 @@ export const DedAiResultView: React.FC<Props> = ({
                           {it.priceAssumptionNote && <div className="dl-row"><span className="dl-k">Catatan harga</span><span>{it.priceAssumptionNote}</span></div>}
                           {it.sourceEvidence && <div className="dl-row"><span className="dl-k">Bukti DED</span><span>{it.sourceEvidence}</span></div>}
                           <div className="dl-row"><span className="dl-k">Halaman</span><span>{it.sourcePages.length ? it.sourcePages.map((p) => `hlm. ${p}`).join(', ') : '—'}</span></div>
-                          {status === 'blocked' && <div className="dl-row"><span className="dl-k">Alasan</span><span style={{ color: '#DC2626', fontWeight: 600 }}>Kuantitas tidak dapat ditentukan — item ini dikecualikan dari total.</span></div>}
+                          {status === 'blocked' && <div className="dl-row"><span className="dl-k">Alasan</span><span style={{ color: '#DC2626', fontWeight: 600 }}>{it.quantityNote || 'Kuantitas tidak dapat ditentukan — item ini dikecualikan dari total.'}</span></div>}
                           {status === 'no-price' && <div className="dl-row"><span className="dl-k">Alasan</span><span style={{ color: '#B45309', fontWeight: 600 }}>Harga satuan belum tersedia — tidak dihitung sebagai Rp0.</span></div>}
-                          {status === 'review' && <div className="dl-row"><span className="dl-k">Alasan</span><span style={{ color: '#B45309', fontWeight: 600 }}>Kuantitas dari inferensi/asumsi AI — periksa dan koreksi bila perlu.</span></div>}
+                          {status === 'review' && <div className="dl-row"><span className="dl-k">Alasan</span><span style={{ color: '#B45309', fontWeight: 600 }}>{it.quantityNote || 'Kuantitas dari inferensi/asumsi AI — periksa dan koreksi bila perlu.'}</span></div>}
                         </div>
                       </td>
                     </tr>

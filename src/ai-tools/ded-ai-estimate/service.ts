@@ -46,22 +46,38 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode): DedAiItem {
 
   const fromDim = attemptQuantityFromDimensionString(units, dims || undefined);
   const rawAIQuantity = typeof raw.quantity === 'number' && Number.isFinite(raw.quantity) ? raw.quantity : null;
-  let quantity: number | null = fromDim.quantity;
-  if (quantity === null && rawAIQuantity !== null && rawAIQuantity > 0) {
-    quantity = rawAIQuantity;
-  }
-  if (quantity !== null && quantity <= 0) quantity = null;
 
-  const quantitySource: DedAiQuantitySource =
-    raw.quantitySource === 'DED_EXPLICIT'
-      ? 'DED_EXPLICIT'
-      : raw.quantitySource === 'ASSUMPTION'
-        ? 'ASSUMPTION'
-        : quantity === null
-          ? 'UNRESOLVED'
-          : fromDim.quantity !== null
-            ? 'DED_GEOMETRIC'
-            : 'AI_INFERENCE';
+  // FASE DED-FIX TASK 1: dimensi tanpa satuan eksplisit -> unresolved, bukan meter.
+  // FASE DED-FIX TASK 2: fallback rawAIQuantity HANYA bila model menyatakan
+  // quantitySource eksplisit dari DED. Inferensi/asumsi tidak boleh dianggap terverifikasi.
+  const rawSourceIsExplicit = raw.quantitySource === 'DED_EXPLICIT';
+  let quantity: number | null = fromDim.quantity;
+  let quantitySource: DedAiQuantitySource;
+  if (fromDim.ambiguousUnit) {
+    quantity = null;
+    quantitySource = 'UNRESOLVED';
+  } else if (quantity !== null) {
+    quantitySource =
+      raw.quantitySource === 'DED_EXPLICIT'
+        ? 'DED_EXPLICIT'
+        : raw.quantitySource === 'ASSUMPTION'
+          ? 'ASSUMPTION'
+          : 'DED_GEOMETRIC';
+  } else if (rawAIQuantity !== null && rawAIQuantity > 0 && rawSourceIsExplicit) {
+    quantity = rawAIQuantity;
+    quantitySource = 'DED_EXPLICIT';
+  } else if (rawAIQuantity !== null && rawAIQuantity > 0) {
+    // Inferensi AI tanpa evidence dimensi: tandai asumsi, JANGAN hitung subtotal final.
+    quantity = rawAIQuantity;
+    quantitySource = 'AI_INFERENCE';
+  } else {
+    quantity = null;
+    quantitySource = 'UNRESOLVED';
+  }
+  if (quantity !== null && quantity <= 0) {
+    quantity = null;
+    quantitySource = 'UNRESOLVED';
+  }
 
   const price = applyAiEstimatePrice(raw.estimatedUnitPrice ?? raw.unitPrice, raw.unitPriceNote);
 
@@ -75,6 +91,18 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode): DedAiItem {
     quantity,
     quantitySource,
     quantityFormula: fromDim.formula || raw.quantityFormula || undefined,
+    // FASE DED-FIX: alasan unresolved untuk ditampilkan ke pengguna.
+    quantityNote:
+      quantitySource === 'UNRESOLVED'
+        ? fromDim.ambiguousUnit
+          ? 'Satuan dimensi tidak jelas; perlu verifikasi.'
+          : 'Kuantitas tidak dapat dihitung dari dimensi; perlu verifikasi.'
+        : quantitySource === 'AI_INFERENCE'
+          ? 'Kuantitas dari inferensi AI; perlu ditinjau sebelum finalisasi.'
+          : quantitySource === 'ASSUMPTION'
+            ? 'Kuantitas dari asumsi; perlu ditinjau sebelum finalisasi.'
+            : undefined,
+    rawDimensions: fromDim.rawDimensions || undefined,
     rawAIQuantity,
     unitPrice: price.unitPrice,
     priceSource: price.priceSource,

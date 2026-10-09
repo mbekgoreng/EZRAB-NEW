@@ -41,6 +41,10 @@ export interface DedAiItem {
   quantity: number | null;
   quantitySource: DedAiQuantitySource;
   quantityFormula?: string;
+  /** FASE DED-FIX: alasan user-facing bila quantity unresolved/inferensi/asumsi */
+  quantityNote?: string;
+  /** FASE DED-FIX: dimensi mentah sebagai evidence audit */
+  rawDimensions?: string;
   rawAIQuantity?: number | null;
   unitPrice: number | null;
   priceSource: DedAiPriceSource;

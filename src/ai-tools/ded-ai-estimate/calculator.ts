@@ -6,12 +6,60 @@
 
 import { DedAiItem, DedAiCategorySummary, DedAiOutput } from './types';
 import { isSaneEstimate } from './pricing';
+import { shapeForUnit } from './quantity';
+
+/**
+ * FASE DED-FIX TASK 3 — validasi kuantitas sebelum masuk RAB.
+ * Batas absolut sebagai perlindungan tambahan; bukan satu-satunya validasi.
+ * Volume besar bisa valid untuk infrastruktur — batas ini hanya memblokir
+ * nilai yang secara fisik tidak masuk akal untuk satu item pekerjaan.
+ */
+const ABSOLUTE_QUANTITY_CAP: Record<string, number> = {
+  VOLUME: 1_000_000, // 1 juta m³ per item — di atas ini pasti salah input/satuan
+  AREA: 10_000_000, // 10 juta m²
+  LENGTH: 1_000_000, // 1 juta m
+  COUNT: 10_000_000,
+};
+
+export type QuantityVerdict =
+  | { ok: true }
+  | { ok: false; reason: string };
+
+export function validateQuantity(item: Pick<DedAiItem, 'quantity' | 'units' | 'quantitySource'>): QuantityVerdict {
+  const q = item.quantity;
+  if (q === null || q === undefined) return { ok: false, reason: 'Kuantitas belum terhitung.' };
+  if (!Number.isFinite(q)) return { ok: false, reason: 'Kuantitas tidak valid (non-finite).' };
+  if (q <= 0) return { ok: false, reason: 'Kuantitas harus lebih dari nol.' };
+  // Kuantitas dari inferensi/asumsi AI tidak boleh dianggap terverifikasi.
+  if (item.quantitySource === 'AI_INFERENCE' || item.quantitySource === 'ASSUMPTION') {
+    return { ok: false, reason: 'Kuantitas dari inferensi/asumsi AI; perlu ditinjau.' };
+  }
+  if (item.quantitySource === 'UNRESOLVED') {
+    return { ok: false, reason: 'Kuantitas unresolved; perlu verifikasi.' };
+  }
+  const shape = shapeForUnit(item.units);
+  const cap = ABSOLUTE_QUANTITY_CAP[shape] ?? 1_000_000;
+  if (q > cap) {
+    return { ok: false, reason: `Kuantitas ${q} melebihi batas wajar (${cap}) untuk satuan ${item.units}; kemungkinan salah satuan.` };
+  }
+  return { ok: true };
+}
 
 export class DedAiCalculator {
   public static finalizeItems(items: DedAiItem[]): DedAiItem[] {
     return items.map((it) => {
       const q = it.quantity;
       const p = it.unitPrice;
+      const verdict = validateQuantity(it);
+      // FASE DED-FIX: kuantitas ditolak -> subtotal null, stage REJECTED, tidak disamarkan jadi Rp0.
+      if (!verdict.ok) {
+        return {
+          ...it,
+          subtotal: null,
+          stage: 'REJECTED' as const,
+          quantityNote: it.quantityNote || verdict.reason,
+        };
+      }
       if (q !== null && p !== null && isSaneEstimate(p) && q > 0) {
         return { ...it, subtotal: Math.round(q * p), stage: 'CALCULATED' as const };
       }

@@ -17,10 +17,44 @@ export interface QtyInputs {
   factor?: number;
 }
 
+/**
+ * FASE DED-FIX TASK 4 — parsing angka Indonesia vs internasional.
+ * - "1.200 mm" (titik + tepat 3 digit, konteks ID) -> 1200
+ * - "1,2 m" -> 1.2 ; "0,15 m" -> 0.15
+ * - "1.200,50" -> 1200.50
+ * - "1.5" (titik + bukan 3 digit) -> 1.5 (desimal internasional)
+ * - "1.200.000" -> 1200000
+ * Aturan: bila ada koma, titik = pemisah ribuan. Bila pola \d\.\d{3}\b (tepat 3 digit
+ * setelah titik dan tidak diikuti digit/koma lain), titik = pemisah ribuan Indonesia.
+ * Selain itu titik = desimal.
+ */
+function parseIndonesianNumber(token: string): number | null {
+  const t = token.trim();
+  if (!t) return null;
+  let normalized: string;
+  if (t.includes(',')) {
+    // Koma = desimal Indonesia; semua titik adalah pemisah ribuan.
+    normalized = t.replace(/\./g, '').replace(',', '.');
+  } else if (/^\d{1,3}(\.\d{3})+$/.test(t)) {
+    // Pola ribuan Indonesia murni: 1.200, 1.200.000, 12.345
+    normalized = t.replace(/\./g, '');
+  } else {
+    // Desimal internasional atau bilangan bulat: 1.5, 0.15, 1200
+    normalized = t;
+  }
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : null;
+}
+
 export function parseDimensionsString(input: string | undefined): number[] {
   if (!input) return [];
-  const nums = (input.match(/-?\d+(?:[,.]\d+)?/g) || []).map((n) => Number(n.replace(',', '.')));
-  return nums.filter((n) => Number.isFinite(n));
+  const tokens = input.match(/-?\d+(?:[.,]\d+)*/g) || [];
+  const out: number[] = [];
+  for (const tok of tokens) {
+    const n = parseIndonesianNumber(tok);
+    if (n !== null) out.push(n);
+  }
+  return out;
 }
 
 export type QuantityShape = 'VOLUME' | 'AREA' | 'LENGTH' | 'COUNT';
@@ -90,7 +124,7 @@ export function shapeForUnit(unit: string): QuantityShape {
 /**
  * Deteksi penanda satuan panjang eksplisit pada string dimensi.
  * "12000 x 8000 mm" -> 0.001, "120 x 80 cm" -> 0.01, "12 x 8 m" -> 1.
- * Tanpa penanda eksplisit, faktor 1 (meter, perilaku lama) + flag ambiguous.
+ * Tanpa penanda eksplisit -> unit null. FASE DED-FIX: JANGAN asumsikan meter.
  */
 export function detectLengthUnitFactor(dimensionString: string): { factor: number; unit: string | null } {
   const lower = ` ${dimensionString.toLowerCase()} `;
@@ -101,15 +135,36 @@ export function detectLengthUnitFactor(dimensionString: string): { factor: numbe
   return { factor: 1, unit: null };
 }
 
+export interface DimensionParseResult {
+  quantity: number | null;
+  formula: string;
+  /** true bila satuan dimensi tidak jelas — kuantitas tidak boleh dianggap final */
+  ambiguousUnit: boolean;
+  /** dimensi mentah sebagai evidence untuk audit */
+  rawDimensions: string;
+}
+
 export function attemptQuantityFromDimensionString(
   unit: string,
   dimensionString: string | undefined
-): { quantity: number | null; formula: string } {
-  if (!dimensionString) return { quantity: null, formula: '' };
+): DimensionParseResult {
+  const raw = dimensionString || '';
+  if (!dimensionString) return { quantity: null, formula: '', ambiguousUnit: false, rawDimensions: raw };
   const nums = parseDimensionsString(dimensionString);
-  if (nums.length === 0) return { quantity: null, formula: dimensionString };
+  if (nums.length === 0) return { quantity: null, formula: dimensionString, ambiguousUnit: false, rawDimensions: raw };
 
   const { factor, unit: dimUnit } = detectLengthUnitFactor(dimensionString);
+
+  // FASE DED-FIX TASK 1: tanpa penanda satuan eksplisit -> unresolved, bukan meter.
+  if (dimUnit === null) {
+    return {
+      quantity: null,
+      formula: `${dimensionString} [satuan dimensi tidak jelas; perlu verifikasi]`,
+      ambiguousUnit: true,
+      rawDimensions: raw,
+    };
+  }
+
   const scaled = nums.map((n) => n * factor);
 
   const shape = shapeForUnit(unit);
@@ -117,8 +172,8 @@ export function attemptQuantityFromDimensionString(
   const res = computeQuantity(shape, { length: a, width: b, height: c }, dimensionString);
   const formula = res.formula || dimensionString;
   // Catat konversi agar transparan di UI (provenance).
-  const annotated = dimUnit && dimUnit !== 'm'
+  const annotated = dimUnit !== 'm'
     ? `${formula} [konversi ${dimUnit}→m]`
     : formula;
-  return { quantity: res.quantity, formula: annotated };
+  return { quantity: res.quantity, formula: annotated, ambiguousUnit: false, rawDimensions: raw };
 }

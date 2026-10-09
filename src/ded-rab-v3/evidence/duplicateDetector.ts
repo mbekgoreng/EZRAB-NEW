@@ -70,6 +70,18 @@ export class DuplicateDetector {
     return matches / maxLen;
   }
 
+  /**
+   * FASE DED-FIX TASK 5: bandingkan dimensi dua item.
+   * Dua elemen berbeda boleh punya dimensi sama -> bukan bukti duplikat.
+   * Fungsi ini hanya dipakai sebagai syarat TAMBAHAN (bukan satu-satunya).
+   */
+  private dimensionsEqual(a: any, b: any): boolean {
+    const da = a.dimensions || a.quantityFormula || '';
+    const db = b.dimensions || b.quantityFormula || '';
+    if (!da || !db) return false;
+    return String(da).trim().toLowerCase() === String(db).trim().toLowerCase();
+  }
+
   public deduplicate(items: FullAiWorkItem[]): DeduplicationResult {
     const result: FullAiWorkItem[] = [];
     const mergeActions: DuplicateMergeAction[] = [];
@@ -103,7 +115,12 @@ export class DuplicateDetector {
         const pages2 = potentialDuplicate.sourcePages ? potentialDuplicate.sourcePages : [];
         const hasOverlappingPage = pages1.some(p => pages2.includes(p));
 
-        if (similarity >= 0.6 || (similarity >= 0.5 && hasOverlappingPage)) {
+        // FASE DED-FIX TASK 5: jangan merge hanya karena nama mirip.
+        // Syarat merge: similarity tinggi (>= 0.8) ATAU (similarity >= 0.6 DAN
+        // halaman sumber tumpang tindih DAN dimensi identik).
+        // "Balok lantai 1" vs "Balok lantai 2" (sim ~0.67, halaman beda) -> TIDAK merge.
+        const dimsMatch = this.dimensionsEqual(keptItem, potentialDuplicate);
+        if (similarity >= 0.8 || (similarity >= 0.6 && hasOverlappingPage && dimsMatch)) {
           duplicatesToMerge.push(potentialDuplicate);
           processed.add(potentialDuplicate.id);
         }

@@ -172,21 +172,23 @@ KEMBALIKAN HANYA OBJEK JSON DENGAN STRUKTUR BERIKUT:
         notes: el.notes,
       }));
 
-      const normalizeDim = (rawVal: number, declaredUnit?: string): { value: number; unit: string } => {
-        if (!rawVal || isNaN(rawVal) || rawVal <= 0) return { value: 0, unit: 'm' };
+      // FASE DED-FIX TASK 5: hilangkan tebakan satuan dari besar angka.
+      // Tanpa declaredUnit eksplisit -> tandai ambiguous, JANGAN asumsikan.
+      const normalizeDim = (rawVal: number, declaredUnit?: string): { value: number; unit: string; ambiguous: boolean } => {
+        if (!rawVal || isNaN(rawVal) || rawVal <= 0) return { value: 0, unit: 'm', ambiguous: true };
         const u = (declaredUnit || '').toLowerCase().trim();
-        if (u === 'mm' || u === 'millimeter') return { value: +(rawVal / 1000).toFixed(4), unit: 'm' };
-        if (u === 'cm' || u === 'centimeter') return { value: +(rawVal / 100).toFixed(4), unit: 'm' };
-        if (rawVal >= 500) return { value: +(rawVal / 1000).toFixed(4), unit: 'm' }; // architectural mm
-        if (rawVal >= 25 && rawVal < 500) return { value: +(rawVal / 100).toFixed(4), unit: 'm' }; // architectural cm
-        return { value: +rawVal.toFixed(4), unit: 'm' };
+        if (u === 'mm' || u === 'millimeter') return { value: +(rawVal / 1000).toFixed(4), unit: 'm', ambiguous: false };
+        if (u === 'cm' || u === 'centimeter') return { value: +(rawVal / 100).toFixed(4), unit: 'm', ambiguous: false };
+        if (u === 'm' || u === 'meter' || u === 'meters') return { value: +rawVal.toFixed(4), unit: 'm', ambiguous: false };
+        // Satuan tidak dinyatakan: JANGAN tebak dari besar angka.
+        return { value: +rawVal.toFixed(4), unit: 'm', ambiguous: true };
       };
 
       const rawDims = Array.isArray(data.dimensions) ? data.dimensions : (data.dimensions && typeof data.dimensions === 'object' ? Object.values(data.dimensions) : []);
       const dimensions: DimensionConstraint[] = rawDims.map((d: any, idx: number) => {
         const rawVal = typeof d.value === 'number' ? d.value : parseFloat(d.value) || 0;
         const declaredUnit = d.unit || 'm';
-        let norm = { value: rawVal, unit: declaredUnit };
+        let norm: { value: number; unit: string; ambiguous: boolean } = { value: rawVal, unit: declaredUnit, ambiguous: true };
         if (['LENGTH', 'WIDTH', 'HEIGHT', 'DEPTH', 'THICKNESS'].includes(d.dimensionType || 'LENGTH')) {
           norm = normalizeDim(rawVal, declaredUnit);
         }
@@ -198,8 +200,9 @@ KEMBALIKAN HANYA OBJEK JSON DENGAN STRUKTUR BERIKUT:
           dimensionType: d.dimensionType || 'LENGTH',
           value: norm.value,
           unit: norm.unit,
-          rawText: d.rawText || `${d.value} ${d.unit || 'm'} (norm: ${norm.value}m)`,
-          confidence: 'HIGH',
+          rawText: d.rawText || `${d.value} ${d.unit || '?'} (norm: ${norm.value}m)`,
+          // FASE DED-FIX: satuan ambigu -> confidence LOW, bukan HIGH.
+          confidence: norm.ambiguous ? 'LOW' : 'HIGH',
         };
       });
 

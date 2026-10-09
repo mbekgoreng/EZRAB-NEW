@@ -218,7 +218,13 @@ export class QuantitySanityGate {
     }
 
     // 5. Apply gating decision
+    // FASE DED-FIX TASK 5: jangan auto-block kuantitas besar yang masih mungkin valid
+    // untuk proyek infrastruktur. Blokir hanya nilai yang benar-benar katastrofik
+    // (> 10x batas). Sisanya -> SUSPICIOUS (perlu tinjau, tidak otomatis masuk total).
     if (isCatastrophic) {
+      const isTrulyAbsurd = rawQty > 100_000 ||
+        (matchedThreshold && rawQty > matchedThreshold.catastrophicLimit * 10);
+      if (isTrulyAbsurd) {
       item.quantityStatus = 'BLOCKED_FROM_TOTAL';
       item.status = 'BLOCKED';
       item.acceptedQuantity = null;
@@ -248,6 +254,29 @@ export class QuantitySanityGate {
         formula: item.assumptions?.join('; ') || 'Perhitungan geometri visual DED',
         result: `BLOCKED_FROM_TOTAL: ${reason}`,
       };
+      } else {
+        // FASE DED-FIX: besar tapi belum tentu salah (proyek infrastruktur) ->
+        // SUSPICIOUS, bukan BLOCKED. Tidak otomatis masuk total tanpa tinjauan.
+        item.quantityStatus = 'SUSPICIOUS';
+        item.status = 'WARNING';
+        item.acceptedQuantity = null;
+        item.blockingReason = `${reason} Nilai besar masih mungkin valid untuk proyek infrastruktur — perlu tinjauan manual sebelum masuk total.`;
+        item.confidence = 'LOW';
+        item.warnings.push({
+          type: 'EXTREME_QUANTITY',
+          level: 'WARNING',
+          message: `[SUSPICIOUS] "${item.workName}": ${item.blockingReason}`,
+          itemId: item.id,
+          itemName: item.workName,
+          suggestedAction: 'Verifikasi dimensi dengan gambar kerja detail; konfirmasi skala proyek.',
+        });
+        item.quantityTrace = {
+          raw: `${rawQty} ${item.unit}`,
+          normalized: `${rawQty} (LARGE, NEEDS REVIEW)`,
+          formula: item.assumptions?.join('; ') || 'Perhitungan geometri visual DED',
+          result: `SUSPICIOUS: ${reason}`,
+        };
+      }
     } else {
       // Check if suspicious (between normalMax and catastrophicLimit)
       const isSuspicious = matchedThreshold && rawQty > matchedThreshold.normalMax;

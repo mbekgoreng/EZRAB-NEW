@@ -249,8 +249,11 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const handleDeleteDraft = (id: string) => persistDrafts(drafts.filter((d) => d.id !== id));
 
   const handleFinalize = async (items: DedAiItem[]): Promise<{ ok: boolean; message: string }> => {
-    // Hanya item yang bisa dihitung (valid + perlu ditinjau) yang disimpan.
-    const savable = items.filter((it) => it.quantity != null && it.unitPrice != null);
+    // FASE DED-FIX TASK 3: hanya item yang lolos validasi kuantitas (stage CALCULATED,
+    // subtotal terhitung) yang boleh masuk RAB. Item REJECTED/UNRESOLVED tidak lolos
+    // jalur finalisasi apa pun — tidak disamarkan menjadi angka.
+    const savable = items.filter((it) => it.stage === 'CALCULATED' && it.subtotal != null && it.unitPrice != null);
+    const blocked = items.length - savable.length;
     if (savable.length === 0) {
       return { ok: false, message: 'Tidak ada item yang bisa disimpan (semua diblokir / tanpa harga).' };
     }
@@ -290,7 +293,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         message: `${added.length} item RAB tersimpan ke "${projectName}".`,
         link: 'rab-estimasi',
       });
-      return { ok: true, message: `${added.length} item berhasil disimpan ke proyek "${projectName}". Buka Spreadsheet RAB untuk melihatnya.` };
+      return { ok: true, message: `${added.length} item berhasil disimpan ke proyek "${projectName}".${blocked > 0 ? ` ${blocked} item ditahan (perlu tinjau/ditolak) dan tidak masuk RAB.` : ''} Buka Spreadsheet RAB untuk melihatnya.` };
     } catch (e: any) {
       return { ok: false, message: e?.message || 'Gagal menyimpan ke proyek.' };
     }

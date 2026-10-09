@@ -1327,11 +1327,13 @@ export class DedQuantityReasoningEngine {
     crossPageSources: Array<{ pageNumber: number; evidence: string }>,
     evidence: DedEvidence[]
   ): QuantityTakeoffResult {
-    const confidence = evidence.length > 0 ? 'HIGH' : 'MEDIUM';
+    // FASE DED-FIX TASK 5: input dari asumsi standar -> confidence LOW, bukan HIGH/MEDIUM.
+    const hasAssumption = inputs.some((i) => i.source === 'Standar');
+    const confidence = hasAssumption ? 'LOW' : evidence.length > 0 ? 'HIGH' : 'MEDIUM';
     return {
       value,
       unit,
-      formula,
+      formula: hasAssumption ? `${formula} [sebagian dimensi asumsi standar — perlu ditinjau]` : formula,
       parameters: Object.fromEntries(inputs.map(i => [i.name, i.value])),
       semantics,
       confidence,
