@@ -107,9 +107,9 @@ body,
 }
 
 .ez-nav-brand-logo {
-  height: 27px;
+  height: 30px;
   width: auto;
-  max-width: 155px;
+  max-width: 185px;
   object-fit: contain;
   display: block;
   filter: drop-shadow(0 2px 8px rgba(56, 189, 248, 0.2));
