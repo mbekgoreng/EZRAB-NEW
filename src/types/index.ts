@@ -31,6 +31,18 @@ export type VerificationStatus =
   | 'REJECTED'
   | 'LOCKED';
 
+/**
+ * Phase 2 hardening — explicit price provenance status for RAB line items.
+ * A missing/unresolvable price must NEVER silently become Rp0 in totals:
+ * items flagged PRICE_UNRESOLVED are excluded from cost summaries and counted
+ * separately (see UnifiedProjectEngine.recalculateCostSummary).
+ */
+export type PriceStatus =
+  | 'PRICE_RESOLVED'
+  | 'PRICE_UNRESOLVED'
+  | 'PRICE_ESTIMATED'
+  | 'PRICE_MANUAL';
+
 export type ItemOriginType = 
   | 'AI_GENERATED'
   | 'MANUAL'
@@ -415,6 +427,9 @@ export interface ProjectCostSummary {
   pphAmount?: number;
   grandTotal: number;
   costPerM2: number;
+  /** Phase 2: items excluded from totals because their price is unresolved. */
+  unresolvedItems?: number;
+  unresolvedItemIds?: string[];
 }
 
 export interface KurvaSDataPoint {
@@ -851,6 +866,8 @@ export interface RabItem {
   unitPrice: number;
   amount: number;
   totalPrice?: number;
+  /** Phase 2: explicit price status. Absent (legacy items) => treated as resolved. */
+  priceStatus?: PriceStatus;
   itemNumber?: string;
   wbsCode?: string;
   status?: string;
