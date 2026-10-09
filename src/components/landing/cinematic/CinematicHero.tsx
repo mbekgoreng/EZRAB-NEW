@@ -17,7 +17,7 @@ export const CinematicHero: React.FC<CinematicHeroProps> = ({ onStartFree, onOpe
     {/* Monumental architecture backdrop (GPU-friendly slow drift) */}
     <div className="ch-hero-bg" aria-hidden="true">
       <img
-        src="/images/landing/ezrab-monumental-hero.webp"
+        src="/images/landing/ezrab-rab-blueprint-hero.webp"
         alt=""
         className="ch-hero-bg-img"
         loading="eager"
@@ -29,6 +29,12 @@ export const CinematicHero: React.FC<CinematicHeroProps> = ({ onStartFree, onOpe
 
     <div className="ch-hero-inner">
       <div className="ch-hero-copy">
+        <img
+          src="/images/landing/ezrab-logo-hero.png"
+          alt="EZRAB — AI Construction Estimator"
+          className="ch-hero-logo"
+          loading="eager"
+        />
         <p className="ch-eyebrow">
           <span className="ch-eyebrow-line" aria-hidden="true" />
           Platform Konstruksi Berbasis AI
