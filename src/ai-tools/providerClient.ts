@@ -112,8 +112,17 @@ export class AiToolsProviderClient {
       globalThis.clearTimeout(timer);
 
       if (!resp.ok) {
-        const text = await resp.text();
-        return aiToolsError('MODEL_ERROR', `${stage}:http`, `HTTP ${resp.status}: ${text.slice(0, 240)}`, {
+        /* Phase 3: jangan bocorkan raw JSON / detail internal ke user.
+         * Pesan ramah; detail diagnostik tetap di log server via requestId. */
+        const friendlyHttpMsg =
+          resp.status === 403
+            ? 'AI Online sementara tidak dapat diakses. Silakan coba lagi nanti.'
+            : resp.status === 429
+              ? 'Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.'
+              : resp.status >= 500
+                ? 'Layanan AI sedang gangguan. Silakan coba lagi nanti.'
+                : 'Layanan AI gagal memproses permintaan.';
+        return aiToolsError('MODEL_ERROR', `${stage}:http`, friendlyHttpMsg, {
           retryable: resp.status >= 500 || resp.status === 429,
         });
       }
