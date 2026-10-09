@@ -34,7 +34,9 @@ ATURAN WAJIB:
       "quantityFormula": "rumus/dimensi yang mendasari mis. 10m x 0.15m x 0.3m",
       "dimensions": "10m x 0.15m x 0.3m",
       "specification": "spesifikasi ringkas",
-      "confidence": "HIGH|MEDIUM|LOW"
+      "confidence": "HIGH|MEDIUM|LOW",
+      "estimatedUnitPrice": 950000,
+      "unitPriceNote": "alasan singkat estimasi harga"
     }
   ]
 }
@@ -42,6 +44,18 @@ ATURAN WAJIB:
 ATURAN PENDEKATAN KUANTITAS:
 - quantity = null SAAT TIDAK ADA dasar geometri/eksplisit yang dapat kamu yakini. BUKAN 0.
 - JANGAN menghitung total/subtotal — itu tugas aplikasi, bukan kamu.
+
+ATURAN ESTIMASI HARGA:
+- estimatedUnitPrice = estimasi harga satuan (Rupiah) berdasarkan pengetahuan pasar konstruksi Indonesia 2026.
+- estimatedUnitPrice = null SAAT TIDAK ADA dasar harga yang wajar. BUKAN 0.
+- unitPriceNote = alasan singkat dasar estimasi harga (mis. "pasaran Jakarta 2026").
+- Harga adalah ESTIMASI AI, bukan harga resmi — aplikasi akan menandainya dengan jelas.
+
+ATURAN SATUAN DIMENSI (WAJIB):
+- Setiap dimensi WAJIB menyertakan penanda satuan eksplisit: mm, cm, atau m.
+- Contoh benar: "4000 x 150 x 200 mm", "400 x 15 x 20 cm", "4 x 0.15 x 0.20 m".
+- Contoh SALAH: "4000 x 150 x 200" (tanpa satuan) — JANGAN lakukan ini.
+- Bila satuan tidak diketahui dari DED, tulis dimensions = null dan quantity = null.
 
 Keluarkan JSON murni.`;
 }
@@ -78,5 +92,7 @@ export interface DedFastOutput {
     dimensions?: string;
     specification?: string;
     confidence?: 'HIGH' | 'MEDIUM' | 'LOW';
+    estimatedUnitPrice?: number | null;
+    unitPriceNote?: string;
   }>;
 }
