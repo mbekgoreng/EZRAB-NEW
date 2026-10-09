@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { ezrabAiService } from './service';
 import { renderMarkdown } from './markdown';
+import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
+import { executeIntent, ChatActionContext } from './actionRegistry';
 import { notificationBus } from '../../notifications/notificationBus';
 import { EZRABMascot3D } from '../../components/mascot/EZRABMascot3D';
 import './ezrab-ai-chat.css';
@@ -77,7 +79,22 @@ const MASCOT_PNG = '/images/ezrab-mascot-greeting.png';
 const fmtTime = (ts: number) =>
   new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-export const EzrabAiView: React.FC = () => {
+interface EzrabAiViewProps {
+  /** Navigate to a workspace menu (injected by WorkspaceView) */
+  onNavigate?: (menu: string) => void;
+  /** Current menu id for contextual responses */
+  currentMenu?: string;
+  /** Active project snapshot (null when none selected) */
+  activeProject?: { id: string; name: string } | null;
+  /** All projects visible to the user */
+  projects?: Array<{ id: string; name: string }>;
+  /** Active project RAB total (null when unknown) */
+  projectTotal?: number | null;
+}
+
+export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
+  onNavigate, currentMenu = 'ezrab-ai', activeProject = null, projects = [], projectTotal = null,
+}) => {
   const [messages, setMessages] = useState<ChatEntry[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -162,6 +179,36 @@ export const EzrabAiView: React.FC = () => {
     const next: ChatEntry[] = [...messages, entry];
     setMessages(next);
     setBusy(true);
+    /* ---- Phase 1: local intent router runs BEFORE any AI provider call ---- */
+    const routed = routeIntent(msg);
+    if (routed.localOnly && routed.intent !== 'UNKNOWN') {
+      try {
+        const ctx: ChatActionContext = {
+          navigate: onNavigate ?? (() => {}),
+          currentMenu,
+          activeProject,
+          projects,
+          projectTotal,
+        };
+        let reply: string;
+        if (routed.intent === 'GREETING') reply = localGreeting();
+        else if (routed.intent === 'HELP') reply = HELP_TEXT;
+        else if (routed.needsClarification && routed.clarificationPrompt) reply = routed.clarificationPrompt;
+        else {
+          const res = executeIntent(routed.intent, routed.param, ctx);
+          reply = res.message;
+        }
+        setMessages((prev) => [...prev, { role: 'assistant', content: reply, ts: Date.now() }]);
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+    if (routed.needsClarification && routed.clarificationPrompt) {
+      setMessages((prev) => [...prev, { role: 'assistant', content: routed.clarificationPrompt!, ts: Date.now() }]);
+      setBusy(false);
+      return;
+    }
     try {
       const res = await ezrabAiService.send({
         messages: next.map((m) => ({ role: m.role, content: m.role === 'user' && m.imageName ? content : m.content })),
@@ -421,7 +468,7 @@ export const EzrabAiView: React.FC = () => {
             value={input}
             onChange={(e) => { setInput(e.target.value); autoresize(); }}
             onKeyDown={onKey}
-            placeholder={listening ? 'Mendengarkan…' : 'Tanya Ezrab AI…'}
+            placeholder={listening ? 'Mendengarkan…' : 'Ketik pesan atau perintah, misalnya /template'}
             rows={1}
             disabled={busy}
           />

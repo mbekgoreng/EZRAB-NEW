@@ -510,7 +510,13 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           </main>
         ) : activeMenu === 'ezrab-ai' ? (
           <main style={{ height: `calc(100dvh - ${isMobile ? 56 : 64}px)`, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#F2F7FF' }}>
-            <EzrabAiView />
+            <EzrabAiView
+              onNavigate={(menu) => setActiveMenu(menu)}
+              currentMenu={activeMenu}
+              activeProject={currentProject ? { id: currentProject.id, name: currentProject.name } : null}
+              projects={projects.map((p) => ({ id: p.id, name: p.name }))}
+              projectTotal={currentProject ? (currentProject.totalRab ?? null) : null}
+            />
           </main>
         ) : activeMenu === 'ded-ai' ? (
           <main style={{ minHeight: 'calc(100vh - 64px)', background: '#F2F7FF' }}>
