@@ -59,12 +59,6 @@ export const CinematicHero: React.FC<CinematicHeroProps> = ({ onStartFree, onOpe
 
     <div className="ch-hero-inner">
       <div className="ch-hero-copy">
-        <img
-          src="/images/landing/ezrab-logo-hero.png"
-          alt="EZRAB — AI Construction Estimator"
-          className="ch-hero-logo"
-          loading="eager"
-        />
         <h1 className="ch-headline">
           Dari Perencanaan.
           <br />

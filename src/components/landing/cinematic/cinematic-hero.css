@@ -82,14 +82,7 @@
 }
 
 /* ---- Copy ------------------------------------------------------------ */
-.ch-hero-logo {
-  display: block;
-  width: min(240px, 62vw);
-  height: auto;
-  margin: 0 0 22px;
-  filter: drop-shadow(0 6px 24px rgba(37, 99, 235, 0.35));
-}
-
+.ch-headline {
 .ch-eyebrow {
   display: flex;
   align-items: center;
@@ -983,7 +976,6 @@
   .ch-stage-frame { transform: none; animation: none; }
   .ch-stage-frame::after { display: none; }
   .ch-stage-orbit { display: none; }
-  .ch-hero-logo { width: min(200px, 58vw); margin-bottom: 18px; }
   .ch-feature-icons { gap: 12px 16px; margin-top: 22px; }
   .ch-dash-sidebar { display: none; }
   .ch-dash-topbar-title { display: inline; }
