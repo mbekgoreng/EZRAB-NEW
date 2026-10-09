@@ -2,15 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight, Menu, X } from 'lucide-react';
 
 interface ExactNavbarProps {
-  onOpenWorkspace: () => void;
-  onOpenAuth: () => void;
+  onOpenAuth: (tab: 'masuk' | 'daftar') => void;
   onOpenTheme?: () => void;
   onBackToLanding?: () => void;
   onOpenAbout?: () => void;
 }
 
 export const ExactNavbar: React.FC<ExactNavbarProps> = ({
-  onOpenWorkspace,
   onOpenAuth,
   onBackToLanding,
   onOpenAbout,
@@ -105,16 +103,16 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
         <div className="ez-nav-actions">
           <button
             className="ez-btn-ghost-dark"
-            onClick={onOpenAuth}
+            onClick={() => onOpenAuth('masuk')}
           >
             Masuk
           </button>
 
           <button
             className="ez-btn-primary-pill"
-            onClick={onOpenWorkspace}
+            onClick={() => onOpenAuth('daftar')}
           >
-            <span>Mulai Gratis</span>
+            <span>Coba Gratis</span>
             <ArrowRight size={13.5} />
           </button>
           <button
@@ -147,7 +145,7 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
             handleScrollTo('tentang')(event);
           }
         }}><span>04</span> Tentang</a>
-        <button type="button" onClick={() => { setMobileMenuOpen(false); onOpenAuth(); }}>
+        <button type="button" onClick={() => { setMobileMenuOpen(false); onOpenAuth('masuk'); }}>
           Masuk ke Workspace <ArrowRight size={16} />
         </button>
       </nav>
