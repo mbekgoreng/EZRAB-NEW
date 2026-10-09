@@ -6,7 +6,6 @@ import { AuthModal } from './components/auth/AuthModal';
 import { WorkspaceView } from './components/dashboard/WorkspaceView';
 import { DemoModal } from './components/common/DemoModal';
 import { ThemeModal } from './components/common/ThemeModal';
-import { EzrabCoAssistantLauncher } from './components/copilot/EzrabCoAssistantLauncher';
 import { NotificationProvider } from './notifications/NotificationContext';
 import { BootLoadingScreen } from './components/boot/BootLoadingScreen';
 import {
@@ -151,13 +150,6 @@ export const App: React.FC = () => {
         <ThemeModal
           isOpen={themeModalOpen}
           onClose={() => setThemeModalOpen(false)}
-        />
-
-        {/* Floating EZRAB AI Assistant Mascot on Landing Page */}
-        <EzrabCoAssistantLauncher
-          isOpen={demoModalOpen || authModalOpen}
-          onClick={() => handleSetWorkspace(true)}
-          hasActiveContext={false}
         />
       </div>
     );
