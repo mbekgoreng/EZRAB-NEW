@@ -901,9 +901,15 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
               totalVolume={totalVolumeSum}
               lastSavedText="Tersinkronisasi Otomatis"
               isSaving={saveStatus === 'saving'}
-              progressPercent={68}
-              completedItemsCount={7}
-              inProgressItemsCount={0}
+              // FASE F: hitung dari data aktual, bukan angka hardcoded.
+              progressPercent={(() => {
+                const total = projectRabItems.length;
+                if (total === 0) return 0;
+                const done = projectRabItems.filter((i) => i.priceStatus === 'PRICE_RESOLVED' || (i.unitPrice || 0) > 0).length;
+                return Math.round((done / total) * 100);
+              })()}
+              completedItemsCount={projectRabItems.filter((i) => i.priceStatus === 'PRICE_RESOLVED' || (i.unitPrice || 0) > 0).length}
+              inProgressItemsCount={projectRabItems.filter((i) => i.priceStatus === 'PRICE_UNRESOLVED').length}
               pendingItemsCount={0}
             />
 

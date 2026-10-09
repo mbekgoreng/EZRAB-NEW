@@ -58,6 +58,8 @@ import { ClientUserManagementService, WorkspaceMember } from '../../services/use
 import { AddUserModal } from './AddUserModal';
 import { UserRole, Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
+import { useTheme } from '../../context/ThemeContext';
+import { useI18n } from '../../i18n/I18nContext';
 import { settingsAuditService, SettingsAuditEntry, SettingsCategory, SettingsScope } from '../../services/settingsAuditService';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 
@@ -188,10 +190,12 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   const [profileTitle, setProfileTitle] = useState(currentUser.title || '');
   const [profileCompany, setProfileCompany] = useState(currentUser.company || '');
 
-  const [language, setLanguage] = useState('id');
+  // FASE F: hubungkan ke sistem bahasa & tema yang sebenarnya (sebelumnya
+  // state lokal yang tidak pernah disimpan/diterapkan — pengaturan palsu).
+  const { lang, setLang } = useI18n();
+  const { theme, setTheme } = useTheme();
   const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
   const [systemCurrency, setSystemCurrency] = useState('IDR');
-  const [systemTheme, setSystemTheme] = useState<'LIGHT' | 'DARK' | 'SYSTEM'>('LIGHT');
 
   const [notifProject, setNotifProject] = useState(true);
   const [notifRab, setNotifRab] = useState(true);
@@ -1056,8 +1060,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Bahasa Sistem (Language)</label>
                   <select
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
+                    value={lang}
+                    onChange={(e) => setLang(e.target.value as 'id' | 'en')}
                     style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
                     <option value="id">Bahasa Indonesia (Standar Konstruksi Indonesia)</option>
@@ -1092,12 +1096,13 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Tema Tampilan (Theme)</label>
                   <select
-                    value={systemTheme}
-                    onChange={(e) => setSystemTheme(e.target.value as any)}
+                    value={theme}
+                    onChange={(e) => setTheme(e.target.value as 'light' | 'dark' | 'system')}
                     style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
-                    <option value="LIGHT">Light Clean Mode (Standar Kontras Tinggi)</option>
-                    <option value="SYSTEM">Ikuti Preferensi Perangkat</option>
+                    <option value="light">Light Clean Mode (Standar Kontras Tinggi)</option>
+                    <option value="dark">Dark Mode</option>
+                    <option value="system">Ikuti Preferensi Perangkat</option>
                   </select>
                 </div>
               </div>
