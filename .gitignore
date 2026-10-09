@@ -101,3 +101,4 @@ tmp_diag_*
 extract_full.py
 extracted_component.js
 inspect_html.py
+.tmp_test/
