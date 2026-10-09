@@ -30,10 +30,9 @@ export function validateQuantity(item: Pick<DedAiItem, 'quantity' | 'units' | 'q
   if (q === null || q === undefined) return { ok: false, reason: 'Kuantitas belum terhitung.' };
   if (!Number.isFinite(q)) return { ok: false, reason: 'Kuantitas tidak valid (non-finite).' };
   if (q <= 0) return { ok: false, reason: 'Kuantitas harus lebih dari nol.' };
-  // Kuantitas dari inferensi/asumsi AI tidak boleh dianggap terverifikasi.
-  if (item.quantitySource === 'AI_INFERENCE' || item.quantitySource === 'ASSUMPTION') {
-    return { ok: false, reason: 'Kuantitas dari inferensi/asumsi AI; perlu ditinjau.' };
-  }
+  // FASE DED-FIX: AI_INFERENCE/ASSUMPTION BOLEH lolos dengan badge "Perlu Ditinjau"
+  // di UI (bukan ditolak total) — mode Cepat memang bekerja dari estimasi model.
+  // Yang ditolak: UNRESOLVED (tidak ada dasar sama sekali).
   if (item.quantitySource === 'UNRESOLVED') {
     return { ok: false, reason: 'Kuantitas unresolved; perlu verifikasi.' };
   }

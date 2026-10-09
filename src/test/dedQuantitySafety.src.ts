@@ -62,8 +62,9 @@ check('T3 negative rejected', validateQuantity({ quantity: -5, units: 'm3', quan
 check('T3 NaN rejected', validateQuantity({ quantity: NaN, units: 'm3', quantitySource: 'DED_GEOMETRIC' }).ok === false);
 check('T3 Infinity rejected', validateQuantity({ quantity: Infinity, units: 'm3', quantitySource: 'DED_GEOMETRIC' }).ok === false);
 check('T3 null rejected', validateQuantity({ quantity: null, units: 'm3', quantitySource: 'UNRESOLVED' }).ok === false);
-check('T3 AI_INFERENCE rejected', validateQuantity({ quantity: 5, units: 'm3', quantitySource: 'AI_INFERENCE' }).ok === false);
-check('T3 ASSUMPTION rejected', validateQuantity({ quantity: 5, units: 'm3', quantitySource: 'ASSUMPTION' }).ok === false);
+// AI_INFERENCE/ASSUMPTION: lolos validasi dengan badge "Perlu Ditinjau" di UI (bukan ditolak)
+check('T3 AI_INFERENCE passes with review badge', validateQuantity({ quantity: 5, units: 'm3', quantitySource: 'AI_INFERENCE' }).ok === true);
+check('T3 ASSUMPTION passes with review badge', validateQuantity({ quantity: 5, units: 'm3', quantitySource: 'ASSUMPTION' }).ok === true);
 check('T3 extreme volume rejected', validateQuantity({ quantity: 120_000_000, units: 'm3', quantitySource: 'DED_GEOMETRIC' }).ok === false);
 check('T3 valid passes', validateQuantity({ quantity: 0.12, units: 'm3', quantitySource: 'DED_GEOMETRIC' }).ok === true);
 check('T3 large infra valid passes', validateQuantity({ quantity: 50000, units: 'm3', quantitySource: 'DED_GEOMETRIC' }).ok === true);
@@ -77,7 +78,8 @@ const items: any[] = [
 ];
 const fin = DedAiCalculator.finalizeItems(items);
 check('T3 finalize: valid CALCULATED', fin[0].stage === 'CALCULATED' && fin[0].subtotal === 120000, `got ${fin[0].stage}/${fin[0].subtotal}`);
-check('T3 finalize: inference REJECTED', fin[1].stage === 'REJECTED' && fin[1].subtotal === null);
+// Inference: CALCULATED tapi pertahankan source AI_INFERENCE agar UI tampilkan badge "Perlu Ditinjau"
+check('T3 finalize: inference CALCULATED with review source', fin[1].stage === 'CALCULATED' && fin[1].quantitySource === 'AI_INFERENCE', `got ${fin[1].stage}/${fin[1].quantitySource}`);
 check('T3 finalize: extreme REJECTED', fin[2].stage === 'REJECTED' && fin[2].subtotal === null);
 check('T3 finalize: unresolved REJECTED', fin[3].stage === 'REJECTED' && fin[3].subtotal === null);
 

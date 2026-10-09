@@ -254,6 +254,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     // jalur finalisasi apa pun — tidak disamarkan menjadi angka.
     const savable = items.filter((it) => it.stage === 'CALCULATED' && it.subtotal != null && it.unitPrice != null);
     const blocked = items.length - savable.length;
+    const needsReview = savable.filter((it) => it.quantitySource === 'AI_INFERENCE' || it.quantitySource === 'ASSUMPTION').length;
     if (savable.length === 0) {
       return { ok: false, message: 'Tidak ada item yang bisa disimpan (semua diblokir / tanpa harga).' };
     }
@@ -293,7 +294,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         message: `${added.length} item RAB tersimpan ke "${projectName}".`,
         link: 'rab-estimasi',
       });
-      return { ok: true, message: `${added.length} item berhasil disimpan ke proyek "${projectName}".${blocked > 0 ? ` ${blocked} item ditahan (perlu tinjau/ditolak) dan tidak masuk RAB.` : ''} Buka Spreadsheet RAB untuk melihatnya.` };
+      return { ok: true, message: `${added.length} item berhasil disimpan ke proyek "${projectName}".${blocked > 0 ? ` ${blocked} item ditahan (perlu tinjau/ditolak) dan tidak masuk RAB.` : ''}${needsReview > 0 ? ` ${needsReview} item dari inferensi AI — periksa badge "Perlu Ditinjau" di spreadsheet.` : ''} Buka Spreadsheet RAB untuk melihatnya.` };
     } catch (e: any) {
       return { ok: false, message: e?.message || 'Gagal menyimpan ke proyek.' };
     }
