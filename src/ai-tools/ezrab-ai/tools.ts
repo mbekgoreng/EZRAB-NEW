@@ -9,6 +9,29 @@ import { aiToolsError, AIToolsStructuredError } from '../types';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
 import { masterBuildingTemplateRegistry } from '../../data/buildingTemplates/masterTemplateRegistry';
+import { ProjectSnapshot, formatIDR } from './projectContext';
+
+/**
+ * Active-project snapshot for read-only project tools.
+ * Set per-request by the service layer from real app state; cleared after.
+ * Tools return an honest "no project" message when unset — never fabricated data.
+ */
+let activeProjectSnapshot: ProjectSnapshot | null = null;
+
+export function setActiveProjectSnapshot(snap: ProjectSnapshot | null): void {
+  activeProjectSnapshot = snap;
+}
+
+export function getActiveProjectSnapshot(): ProjectSnapshot | null {
+  return activeProjectSnapshot;
+}
+
+function requireSnapshot(): ProjectSnapshot | string {
+  if (!activeProjectSnapshot) {
+    return 'Tidak ada proyek aktif yang terhubung. Minta pengguna memilih proyek terlebih dahulu, atau jawab tanpa data proyek.';
+  }
+  return activeProjectSnapshot;
+}
 
 export interface EzrabAiToolDef {
   name: string;
@@ -142,6 +165,103 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
       } catch (e: any) {
         return 'ERROR: gagal mencari template: ' + (e?.message ?? e);
       }
+    },
+  },
+  // ── Project data tools (read-only, active project only) ──
+  {
+    name: 'get_project_total',
+    description: 'Total RAB proyek aktif (deterministik dari data aplikasi). Tanpa argumen. Mengembalikan total langsung, jumlah item, dan item yang belum punya harga.',
+    invoke: () => {
+      const snap = requireSnapshot();
+      if (typeof snap === 'string') return snap;
+      const lines = [
+        `Total RAB proyek "${snap.projectName}": ${formatIDR(snap.totalDirect)}`,
+        `Jumlah item: ${snap.itemCount}`,
+      ];
+      if (snap.unresolvedCount > 0) {
+        lines.push(
+          `Catatan: ${snap.unresolvedCount} item belum memiliki harga dan TIDAK termasuk dalam total (bukan Rp0).`,
+        );
+      }
+      return lines.join('\n');
+    },
+  },
+  {
+    name: 'get_project_items',
+    description: 'Mencari item RAB di proyek aktif. Argumen: kata_kunci (opsional — kosongkan untuk semua, maks 25), hanya_belum_berharga (opsional boolean).',
+    invoke: (args) => {
+      const snap = requireSnapshot();
+      if (typeof snap === 'string') return snap;
+      const q = String(args.kata_kunci ?? args.query ?? '').trim().toLowerCase();
+      const onlyUnresolved = args.hanya_belum_berharga === true || args.onlyUnresolved === true;
+      let pool = onlyUnresolved ? snap.unresolvedItems : snap.items;
+      if (q) {
+        const words = q.split(/\s+/).filter((w) => w.length > 1);
+        pool = pool.filter((it) => {
+          const hay = `${it.description} ${it.code} ${it.sectionName}`.toLowerCase();
+          return words.every((w) => hay.includes(w));
+        });
+      }
+      if (pool.length === 0) {
+        return q
+          ? `Tidak ditemukan item RAB yang cocok dengan "${q}" di proyek "${snap.projectName}".`
+          : `Proyek "${snap.projectName}" belum memiliki item RAB.`;
+      }
+      return pool.slice(0, 25).map((it, i) => {
+        const price =
+          it.priceStatus === 'PRICE_UNRESOLVED'
+            ? 'harga belum tersedia'
+            : `${formatIDR(it.unitPrice ?? 0)}/${it.unit}`;
+        return `${i + 1}. ${it.description} — ${it.volume} ${it.unit} × ${price} = ${formatIDR(it.totalPrice)}`;
+      }).join('\n');
+    },
+  },
+  {
+    name: 'get_item_detail',
+    description: 'Detail satu item RAB di proyek aktif. Argumen: nama (wajib — nama atau kode item). Jika ambigu, kembalikan kandidat.',
+    invoke: (args) => {
+      const snap = requireSnapshot();
+      if (typeof snap === 'string') return snap;
+      const q = String(args.nama ?? args.name ?? args.kode ?? '').trim().toLowerCase();
+      if (!q) return 'ERROR: argumen "nama" wajib diisi.';
+      const words = q.split(/\s+/).filter((w) => w.length > 1);
+      const matches = snap.items.filter((it) => {
+        const hay = `${it.description} ${it.code}`.toLowerCase();
+        return words.every((w) => hay.includes(w));
+      });
+      if (matches.length === 0) {
+        return `Item "${q}" tidak ditemukan di proyek "${snap.projectName}". Jangan mengarang data item ini.`;
+      }
+      if (matches.length > 1) {
+        return (
+          `Ditemukan ${matches.length} kandidat untuk "${q}" — minta klarifikasi:\n` +
+          matches.slice(0, 5).map((it, i) => `${i + 1}. ${it.description} (${it.volume} ${it.unit})`).join('\n')
+        );
+      }
+      const it = matches[0];
+      return [
+        `Item: ${it.description}`,
+        `Kode: ${it.code || '-'}`,
+        `Kelompok: ${it.sectionName || '-'}`,
+        `Volume: ${it.volume} ${it.unit}`,
+        `Harga satuan: ${it.priceStatus === 'PRICE_UNRESOLVED' ? 'belum tersedia (BUKAN Rp0)' : `${formatIDR(it.unitPrice ?? 0)}/${it.unit}`}`,
+        `Subtotal: ${formatIDR(it.totalPrice)}`,
+      ].join('\n');
+    },
+  },
+  {
+    name: 'get_unresolved_items',
+    description: 'Daftar item RAB proyek aktif yang belum memiliki harga. Tanpa argumen.',
+    invoke: () => {
+      const snap = requireSnapshot();
+      if (typeof snap === 'string') return snap;
+      if (snap.unresolvedItems.length === 0) {
+        return `Semua ${snap.itemCount} item di proyek "${snap.projectName}" sudah memiliki harga.`;
+      }
+      return (
+        `${snap.unresolvedCount} item belum memiliki harga (tidak termasuk dalam total RAB):\n` +
+        snap.unresolvedItems.map((it, i) => `${i + 1}. ${it.description} — ${it.volume} ${it.unit}`).join('\n')
+      );
     },
   },
 ];

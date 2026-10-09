@@ -31,6 +31,8 @@ export interface EzrabAiRequest {
   maxTokens?: number;
   timeoutMs?: number;
   projectSummary?: string;
+  /** Structured active-project snapshot (drives read-only project tools). */
+  projectSnapshot?: import('./projectContext').ProjectSnapshot | null;
   mode?: 'fast' | 'advanced';
 }
 

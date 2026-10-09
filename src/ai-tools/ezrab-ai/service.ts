@@ -7,7 +7,8 @@
 
 import { aiToolsProviderClient } from '../providerClient';
 import { EZRAB_AI_SYSTEM_PROMPT } from './prompt';
-import { getToolListText, runTool, EZRAB_AI_TOOL_MAP } from './tools';
+import { getToolListText, runTool, EZRAB_AI_TOOL_MAP, setActiveProjectSnapshot } from './tools';
+import { ProjectSnapshot, formatProjectSummary } from './projectContext';
 import { EzrabAiRequest, EzrabAiResponse, EzrabAiToolCall, EzrabAiToolResult } from './types';
 import { aiToolsError } from '../types';
 
@@ -21,9 +22,17 @@ export class EzrabAiService {
       if (m.role === 'user') lines.push(`PENGGUNA: ${m.content}`);
       else lines.push(`EZRAB AI: ${m.content}`);
     }
-    const contextBlock = request.projectSummary
-      ? `\n\nKONTEKS PROYEK (ringkas):\n${request.projectSummary}`
-      : '';
+    // Project snapshot: prefer the structured snapshot (drives tools),
+    // fall back to the legacy free-text projectSummary.
+    const snapshot: ProjectSnapshot | null = (request as any).projectSnapshot ?? null;
+    const contextBlock = snapshot
+      ? `\n\nKONTEKS PROYEK (data aktual aplikasi — gunakan tool proyek untuk angka pasti):\n${formatProjectSummary(snapshot)}`
+      : request.projectSummary
+        ? `\n\nKONTEKS PROYEK (ringkas):\n${request.projectSummary}`
+        : '';
+
+    // Scope read-only project tools to this request's snapshot; always clear after.
+    setActiveProjectSnapshot(snapshot);
 
     const lastUser = history.length ? history[history.length - 1].content : '';
     const prompt = `${contextBlock}
@@ -56,27 +65,32 @@ Kemudian lanjutkan jawabanmu. Kamu harus menjawab dalam Bahasa Indonesia.`;
 
     const toolCalls: EzrabAiToolCall[] = [];
     const toolResults: EzrabAiToolResult[] = [];
-    const toolPattern = /\{"tool"\s*:\s*"([^"]+)"\s*,\s*"args"\s*:\s*(\{[\s\S]*?\})\s*\}/;
-    const toolMatch = result.content.match(toolPattern);
-    if (toolMatch) {
-      const toolName = toolMatch[1];
-      let args: Record<string, unknown> = {};
-      try {
-        args = JSON.parse(toolMatch[2]);
-      } catch {
-        /* ignore malformed tool args */
+    try {
+      const toolPattern = /\{"tool"\s*:\s*"([^"]+)"\s*,\s*"args"\s*:\s*(\{[\s\S]*?\})\s*\}/;
+      const toolMatch = result.content.match(toolPattern);
+      if (toolMatch) {
+        const toolName = toolMatch[1];
+        let args: Record<string, unknown> = {};
+        try {
+          args = JSON.parse(toolMatch[2]);
+        } catch {
+          /* ignore malformed tool args */
+        }
+        toolCalls.push({ toolName, args });
+        if (EZRAB_AI_TOOL_MAP[toolName]) {
+          const out = runTool(toolName, args);
+          toolResults.push({
+            toolName,
+            ok: typeof out === 'string',
+            output: typeof out === 'string' ? out : out.message,
+          });
+        } else {
+          toolResults.push({ toolName, ok: false, output: `Alat tidak dikenal: ${toolName}` });
+        }
       }
-      toolCalls.push({ toolName, args });
-      if (EZRAB_AI_TOOL_MAP[toolName]) {
-        const out = runTool(toolName, args);
-        toolResults.push({
-          toolName,
-          ok: typeof out === 'string',
-          output: typeof out === 'string' ? out : out.message,
-        });
-      } else {
-        toolResults.push({ toolName, ok: false, output: `Alat tidak dikenal: ${toolName}` });
-      }
+    } finally {
+      // Never leak one request's project into the next.
+      setActiveProjectSnapshot(null);
     }
 
     return {

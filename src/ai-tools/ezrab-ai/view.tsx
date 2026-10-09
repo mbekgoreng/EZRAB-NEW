@@ -19,6 +19,9 @@ import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { executeIntent, ChatActionContext } from './actionRegistry';
 import { notificationBus } from '../../notifications/notificationBus';
 import { EZRABMascot3D } from '../../components/mascot/EZRABMascot3D';
+import { useProject } from '../../context/ProjectContext';
+import { buildProjectSnapshot, ProjectSnapshot } from './projectContext';
+import { unifiedConversationStore } from '../../services/ai/conversation/unifiedConversationStore';
 import './ezrab-ai-chat.css';
 
 interface ChatEntry {
@@ -103,6 +106,50 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [attached, setAttached] = useState<{ url: string; name: string } | null>(null);
   const [listening, setListening] = useState(false);
+
+  /* ---- FASE 5A: project grounding + conversation persistence ---- */
+  const { currentProject, projectRabItems } = useProject();
+  // Prefer live context; fall back to props (keeps standalone usage working).
+  const effProject = currentProject ?? activeProject;
+  const projectSnapshot: ProjectSnapshot | null = buildProjectSnapshot(
+    effProject ? { id: effProject.id, name: effProject.name } : null,
+    projectRabItems as unknown as Array<Record<string, unknown>>,
+  );
+  // Conversation store is keyed by project; use a stable key when none is active.
+  const storeProjectId = effProject?.id ?? '__ezrab_ai_global__';
+  const convIdRef = useRef<string | null>(null);
+
+  // Load persisted conversation on mount / project change.
+  useEffect(() => {
+    try {
+      const conv = unifiedConversationStore.getOrCreateActiveConversation(storeProjectId);
+      convIdRef.current = conv.id;
+      const restored: ChatEntry[] = (conv.messages ?? [])
+        .filter((m) => m.role === 'user' || m.role === 'assistant')
+        .map((m) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          ts: m.createdAt ? Date.parse(m.createdAt) || Date.now() : Date.now(),
+        }));
+      setMessages(restored);
+    } catch {
+      /* storage failure is non-fatal — chat still works in-memory */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeProjectId]);
+
+  const persistMessage = (role: 'user' | 'assistant', content: string) => {
+    try {
+      const convId = convIdRef.current;
+      if (!convId) return;
+      unifiedConversationStore.appendMessage(convId, storeProjectId, {
+        role,
+        content,
+      });
+    } catch {
+      /* honest degradation: in-memory only */
+    }
+  };
   const scrollRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -155,6 +202,13 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     revokeAllUrls();
     setAttached(null);
     autoresize();
+    try {
+      const conv = unifiedConversationStore.createConversation(storeProjectId, 'Percakapan baru');
+      unifiedConversationStore.setActiveConversationId(storeProjectId, conv.id);
+      convIdRef.current = conv.id;
+    } catch {
+      /* non-fatal */
+    }
   };
 
   const submit = async (text?: string) => {
@@ -178,6 +232,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     };
     const next: ChatEntry[] = [...messages, entry];
     setMessages(next);
+    persistMessage('user', entry.content);
     setBusy(true);
     /* ---- Phase 1: local intent router runs BEFORE any AI provider call ---- */
     const routed = routeIntent(msg);
@@ -199,6 +254,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           reply = res.message;
         }
         setMessages((prev) => [...prev, { role: 'assistant', content: reply, ts: Date.now() }]);
+        persistMessage('assistant', reply);
       } finally {
         setBusy(false);
       }
@@ -206,6 +262,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
     if (routed.needsClarification && routed.clarificationPrompt) {
       setMessages((prev) => [...prev, { role: 'assistant', content: routed.clarificationPrompt!, ts: Date.now() }]);
+      persistMessage('assistant', routed.clarificationPrompt!);
       setBusy(false);
       return;
     }
@@ -213,14 +270,17 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const res = await ezrabAiService.send({
         messages: next.map((m) => ({ role: m.role, content: m.role === 'user' && m.imageName ? content : m.content })),
         mode,
+        projectSnapshot,
       } as any);
-      setMessages((prev) => [...prev, {
+      const assistantEntry: ChatEntry = {
         role: 'assistant',
         content: res.reply,
         isError: !res.success,
         model: (res as any).model,
         ts: Date.now(),
-      }]);
+      };
+      setMessages((prev) => [...prev, assistantEntry]);
+      persistMessage('assistant', res.reply);
       notificationBus.publish({
         type: res.success ? 'success' : 'error',
         title: res.success ? 'Ezrab AI selesai menjawab' : 'Ezrab AI gagal menjawab',
