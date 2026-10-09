@@ -2,7 +2,7 @@ import React, { Suspense, useEffect } from 'react';
 import '../../styles/landing-critical.css';
 import '../../styles/exact-landing-flagship-mobile.css';
 import { ExactNavbar } from './exact/ExactNavbar';
-import { ExactHero } from './exact/ExactHero';
+import { CinematicHero } from './cinematic/CinematicHero';
 
 // Below-the-fold sections are code-split so the initial bundle only contains
 // the navbar + hero (above-the-fold). framer-motion and the heavy showcase
@@ -60,8 +60,7 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#ffffff' }}>
       {/* 1. Fixed Dark Navbar */}
       <ExactNavbar
-        onOpenWorkspace={onOpenWorkspace}
-        onOpenAuth={() => onOpenAuth('masuk')}
+        onOpenAuth={onOpenAuth}
         onOpenTheme={onOpenTheme}
         onBackToLanding={onBackToLanding}
         onOpenAbout={onOpenAbout}
@@ -69,9 +68,9 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
 
       {/* Main Sections */}
       <main style={{ flexGrow: 1 }}>
-        {/* 2. Dark Hero Section with 3D Building & 5 Floating Neon Cards */}
-        <ExactHero
-          onStartFree={onOpenWorkspace}
+        {/* 2. Cinematic Hero — monumental architecture × live product stage */}
+        <CinematicHero
+          onStartFree={() => onOpenAuth('daftar')}
           onOpenDemo={onOpenDemo}
         />
 
@@ -102,13 +101,13 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
 
         {/* 12. Harga / Pricing (Free, Pro, Enterprise) */}
         <Suspense fallback={null}>
-          <ExactPricing onSelectPlan={() => onOpenWorkspace()} />
+          <ExactPricing onSelectPlan={() => onOpenAuth('daftar')} />
         </Suspense>
 
         {/* 13. Final CTA Banner (Dusk skyline with cranes) */}
         <Suspense fallback={null}>
           <ExactFinalCta
-            onStartFree={onOpenWorkspace}
+            onStartFree={() => onOpenAuth('daftar')}
             onOpenDemo={onOpenDemo}
           />
         </Suspense>
