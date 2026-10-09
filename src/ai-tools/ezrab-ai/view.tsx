@@ -243,7 +243,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           currentMenu,
           activeProject,
           projects,
-          projectTotal,
+          // FASE 5A: use the deterministic direct total from the live RAB snapshot
+          // (same source as get_project_total tool), not the stored grand total.
+          projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
         };
         let reply: string;
         if (routed.intent === 'GREETING') reply = localGreeting();
