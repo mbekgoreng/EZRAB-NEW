@@ -235,7 +235,11 @@ export async function authenticateRequest(req, opts = {}) {
     // production, even if the env var is set by accident. Vercel sets
     // VERCEL_ENV=production on production deployments.
     const vercelEnv = String(process.env.VERCEL_ENV || '').toLowerCase();
-    const isProd = vercelEnv === 'production' || String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+    // SECURITY: hanya VERCEL_ENV yang menentukan production. NODE_ENV=production
+    // diset Vercel untuk SEMUA deployment (termasuk preview), jadi tidak boleh
+    // dipakai sebagai penanda production — kalau dipakai, AI_ALLOW_ANONYMOUS
+    // tidak akan pernah aktif di preview dan AI Online mati total (401).
+    const isProd = vercelEnv === 'production';
     if (!token && process.env.AI_ALLOW_ANONYMOUS === 'true' && !isProd) {
       return { ok: true, method: 'none', user: null, degraded: true };
     }

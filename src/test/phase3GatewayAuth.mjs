@@ -119,4 +119,28 @@ await test('pipeline JWT: valid token -> 200, per-user rate limit key', async ()
 });
 
 console.log(failures === 0 ? '\nALL PHASE 3 AUTH TESTS PASSED' : `\n${failures} TEST(S) FAILED`);
+
+// --- Regression: AI_ALLOW_ANONYMOUS on Vercel preview ---
+// Vercel sets NODE_ENV=production on ALL deployments (incl. preview).
+// Only VERCEL_ENV may decide production; otherwise anonymous preview
+// access breaks with 401 and AI Online dies completely.
+await test('anonymous: allowed on preview even when NODE_ENV=production', async () => {
+  process.env.SUPABASE_URL = 'https://xyz.supabase.co'; process.env.SUPABASE_ANON_KEY = 'anon';
+  process.env.AI_ALLOW_ANONYMOUS = 'true';
+  process.env.VERCEL_ENV = 'preview'; process.env.NODE_ENV = 'production';
+  const r = await authenticateRequest(mockReq(), {});
+  eq(r.ok, true, 'anonymous preview must be allowed (degraded)');
+  eq(r.method, 'none');
+  delete process.env.AI_ALLOW_ANONYMOUS; delete process.env.VERCEL_ENV; delete process.env.NODE_ENV; clearEnv();
+});
+await test('anonymous: still refused on real production', async () => {
+  process.env.SUPABASE_URL = 'https://xyz.supabase.co'; process.env.SUPABASE_ANON_KEY = 'anon';
+  process.env.AI_ALLOW_ANONYMOUS = 'true';
+  process.env.VERCEL_ENV = 'production'; process.env.NODE_ENV = 'production';
+  const r = await authenticateRequest(mockReq(), { jwtVerifier: jwtVerifierOk });
+  eq(r.ok, false, 'anonymous must stay disabled on production');
+  delete process.env.AI_ALLOW_ANONYMOUS; delete process.env.VERCEL_ENV; delete process.env.NODE_ENV; clearEnv();
+});
+
+console.log(failures === 0 ? 'ALL ANONYMOUS-REGRESSION TESTS PASSED' : `${failures} TEST(S) FAILED`);
 process.exit(failures === 0 ? 0 : 1);
