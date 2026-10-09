@@ -307,61 +307,61 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
             style={{
               position: 'absolute',
               top: '36%',
-              left: '-145px',
+              left: '-181px',
               transform: 'translateY(-50%)',
-              width: '175px',
-              height: '110px',
+              width: '220px',
+              height: '138px',
               pointerEvents: 'none',
               zIndex: 10,
             }}
           >
-            <svg width="175" height="110" viewBox="0 0 175 110" fill="none">
+            <svg width="220" height="138" viewBox="0 0 220 138" fill="none">
               <text
-                x="65"
-                y="28"
+                x="81"
+                y="35"
                 textAnchor="middle"
                 fill="#2563EB"
                 fontFamily="'Caveat', 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive"
-                fontSize="16"
+                fontSize="20"
                 fontWeight="700"
-                transform="rotate(-3 65 28)"
+                transform="rotate(-3 81 35)"
               >
                 Membangun
               </text>
               <text
-                x="68"
-                y="48"
+                x="85"
+                y="60"
                 textAnchor="middle"
                 fill="#2563EB"
                 fontFamily="'Caveat', 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive"
-                fontSize="15"
+                fontSize="19"
                 fontWeight="600"
-                transform="rotate(-3 68 48)"
+                transform="rotate(-3 85 60)"
               >
                 lebih baik bersama
               </text>
               <text
-                x="72"
-                y="70"
+                x="90"
+                y="87"
                 textAnchor="middle"
                 fill="#2563EB"
                 fontFamily="'Caveat', 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive"
-                fontSize="17"
+                fontSize="21"
                 fontWeight="800"
-                transform="rotate(-3 72 70)"
+                transform="rotate(-3 90 87)"
               >
                 EZRAB
               </text>
               {/* Playful curved arrow pointing right toward the mascot */}
               <path
-                d="M 108 68 C 124 70, 138 76, 150 84"
+                d="M 135 85 C 155 87, 172 95, 187 105"
                 stroke="#2563EB"
                 strokeWidth="2.2"
                 strokeLinecap="round"
                 fill="none"
               />
               <path
-                d="M 140 85 L 151 84 L 148 74"
+                d="M 175 106 L 189 105 L 185 92"
                 stroke="#2563EB"
                 strokeWidth="2.2"
                 strokeLinecap="round"

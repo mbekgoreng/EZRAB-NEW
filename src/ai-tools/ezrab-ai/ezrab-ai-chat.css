@@ -62,6 +62,9 @@
 
 /* ===== Composer ===== */
 .ezchat2-input-wrap { padding: 6px 0 12px; }
+/* Composer di tengah (saat chat kosong): di bawah trust badges */
+.ezchat2-input-wrap.middle { margin-top: 22px; padding-bottom: 0; text-align: left; }
+.ezchat2-input-wrap.middle .ezchat2-foot { text-align: center; }
 .ezchat2-attchip { display: inline-flex; align-items: center; gap: 8px; background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 12px; padding: 6px 10px 6px 6px; margin-bottom: 8px; font-size: 12.5px; font-weight: 600; color: #1E40AF; }
 .ezchat2-attchip img { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; }
 .ezchat2-attchip button { border: none; background: none; cursor: pointer; color: #64748B; display: flex; padding: 2px; }
