@@ -132,5 +132,16 @@ const projCtx: ChatActionContext = {
   assert(routeIntent('Buka QTO').intent === 'OPEN_QTO', 'bonus: case-insensitive');
 }
 
+// Regresi bug keyword AHSP: "cari ahsp pondasi batu kali" harus ekstrak
+// "pondasi batu kali", BUKAN kata pemicu "cari"
+{
+  const r = routeIntent('cari ahsp pondasi batu kali');
+  assert(r.intent === 'SEARCH_AHSP' && r.param === 'pondasi batu kali',
+    `regression: keyword extraction (got "${r.param}")`);
+  const res = executeIntent('SEARCH_AHSP', r.param, emptyCtx);
+  assert(res.ok && !res.message.includes('untuk **cari**'),
+    'regression: AHSP search uses real keyword');
+}
+
 console.log(`\nchatAiContextAware: ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

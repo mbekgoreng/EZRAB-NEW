@@ -20,21 +20,21 @@
       #loading-screen {
         position: fixed; inset: 0; z-index: 9999;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
-        background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
-        color: white; font-family: system-ui, sans-serif;
+        background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+        color: #111827; font-family: system-ui, sans-serif;
         transition: opacity 0.4s ease;
       }
       #loading-screen.hide { opacity: 0; pointer-events: none; }
-      #loading-screen .logo { font-size: 42px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
-      #loading-screen .tag { font-size: 14px; opacity: 0.85; margin-bottom: 24px; }
-      #loading-screen .bar { width: 200px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; }
-      #loading-screen .bar > div { height: 100%; width: 40%; background: white; border-radius: 2px; animation: slide 1.2s ease-in-out infinite; }
+      #loading-screen .logo-img { height: 64px; width: auto; object-fit: contain; margin-bottom: 12px; }
+      #loading-screen .tag { font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 24px; }
+      #loading-screen .bar { width: 200px; height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden; }
+      #loading-screen .bar > div { height: 100%; width: 40%; background: #2563eb; border-radius: 2px; animation: slide 1.2s ease-in-out infinite; }
       @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(500%); } }
     </style>
   </head>
   <body>
     <div id="loading-screen">
-      <div class="logo">EZRAB</div>
+      <img class="logo-img" src="/images/ezrab-logo.png" alt="Logo EZRAB" />
       <div class="tag">RAB & Estimasi Konstruksi</div>
       <div class="bar"><div></div></div>
     </div>

@@ -90,8 +90,8 @@ const PATTERNS: Pattern[] = [
   // AHSP search without keyword → clarification (never silently Rp0)
   { intent: 'SEARCH_AHSP', re: /^(cari|carikan|search)\s+(ahsp|harga satuan)\s*$/ },
 
-  // Queries with params
-  { intent: 'SEARCH_AHSP', re: /\b(cari|search|carikan)\b.*\bahsp\b\s+(.+)/, paramGroup: true },
+  // Queries with params — trigger words are non-capturing so m[1] is always the keyword
+  { intent: 'SEARCH_AHSP', re: /\b(?:cari|search|carikan)\b.*\bahsp\b\s+(.+)/, paramGroup: true },
   { intent: 'SEARCH_AHSP', re: /\bahsp\b\s+(.+)/, paramGroup: true },
   { intent: 'QUERY_PROJECT_TOTAL', re: /\b(berapa|total|jumlah)\b.*\b(biaya|total|anggaran)\b.*\bproyek\b/ },
   { intent: 'QUERY_PROJECT_LIST', re: /\b(daftar|list|semua)\b.*\bproyek\b/ },
