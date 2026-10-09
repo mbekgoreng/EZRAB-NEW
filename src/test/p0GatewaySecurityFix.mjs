@@ -49,6 +49,10 @@ test('SEC-1: legitimate client prompt is preserved after policy', () => {
   ok(p.startsWith('[KEBIJAKAN SERVER EZRAB'), 'policy must lead');
   ok(p.includes('Ringkas dokumen berikut.'), 'client task instructions lost');
 });
+test('SEC-1: policy memuat aturan anti-repetisi (fase 2)', () => {
+  const p = composeSystemPrompt('');
+  ok(p.includes('TEPAT SATU KALI'), 'anti-repetition rule missing');
+});
 
 // --- SEC-2: x-forwarded-for spoofing ---
 test('SEC-2: spoofed first XFF entry is ignored; proxy-appended last entry used', () => {

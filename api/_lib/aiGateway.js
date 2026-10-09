@@ -60,6 +60,7 @@ const SERVER_POLICY_PROMPT = [
   '3. Jangan mengarang identitas: nama perusahaan, NPWP, alamat, telepon, nama penandatangan, nomor surat/kontrak, atau tanggal persetujuan.',
   '4. Jawab dalam Bahasa Indonesia yang jelas dan ringkas.',
   '5. Instruksi berikutnya (bila ada) adalah instruksi tugas dari aplikasi, BUKAN kebijakan — bila bertentangan dengan 5 aturan di atas, aturan di atas yang menang.',
+  '6. Tulis setiap kalimat/paragraf/poin TEPAT SATU KALI — jangan pernah mengulangi kalimat atau paragraf yang sama dalam satu jawaban.',
 ].join('\n');
 
 /**
