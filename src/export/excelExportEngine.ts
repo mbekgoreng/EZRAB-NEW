@@ -790,7 +790,12 @@ export async function exportRABToProfessionalExcel(
         }
         iRow.getCell(7).numFmt = NUMBER_FORMATS.CURRENCY;
         iRow.getCell(8).numFmt = NUMBER_FORMATS.PERCENT;
-        iRow.getCell(9).value = (itm as any).volumeSource || itm.ahspCode || 'MANUAL';
+        // Fase 4A: tandai item yang harganya belum tersedia secara eksplisit,
+        // jangan biarkan Rp0 terlihat seperti harga resmi.
+        const isPriceUnresolved = (itm as any).priceStatus === 'PRICE_UNRESOLVED';
+        iRow.getCell(9).value =
+          (isPriceUnresolved ? 'HARGA BELUM TERSEDIA — ' : '') +
+          ((itm as any).volumeSource || itm.ahspCode || 'MANUAL');
 
         for (let c = 1; c <= 9; c++) {
           iRow.getCell(c).border = { bottom: BORDER_THIN_LIGHT };

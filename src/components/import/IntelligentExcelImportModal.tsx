@@ -29,6 +29,7 @@ import {
 } from '../../engine/excelImportEngine';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import * as XLSX from 'xlsx';
+import { honestVolume } from '../../engine/honestVolume';
 
 interface IntelligentExcelImportModalProps {
   isOpen: boolean;
@@ -149,7 +150,8 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
       code: item.code || `ITEM.${idx + 1}`,
       description: item.description,
       category: item.groupName || '01. PEKERJAAN PERSIAPAN',
-      volume: item.volume || 1,
+      // Fase 4A: volume kosong/tidak valid -> 0 (jangan fabrikasi 1).
+      volume: honestVolume(item.volume),
       unit: item.unit || 'ls',
       unitPrice: item.unitPrice || 0,
       amount: item.amount || item.calculatedAmount || 0,

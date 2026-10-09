@@ -26,6 +26,7 @@ import {
 import { useProject } from '../../context/ProjectContext';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
+import { honestVolume } from '../../engine/honestVolume';
 import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
 import { getPriceDatabase } from '../../data/indonesianPrices';
 
@@ -66,7 +67,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
         code: rabItem.code || rabItem.ahspCode || 'ITEM-01',
         description: rabItem.description || 'Pekerjaan Konstruksi',
         category: rabItem.category || rabItem.sectionName || '01. PEKERJAAN PERSIAPAN',
-        volume: Number(rabItem.volume) || 1,
+        volume: honestVolume(rabItem.volume),
         unit: rabItem.unit || 'ls',
         unitPrice: Number(rabItem.unitPrice) || 0,
         totalPrice: Number(rabItem.amount) || Number(rabItem.totalPrice) || (Number(rabItem.volume) * Number(rabItem.unitPrice)) || 0,
@@ -85,7 +86,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
         code: workItem.code || workItem.ahspCode || 'ITEM-01',
         description: workItem.name || workItem.ahspDescription || 'Pekerjaan Konstruksi',
         category: workItem.category || '01. PEKERJAAN PERSIAPAN',
-        volume: Number(workItem.volume) || 1,
+        volume: honestVolume(workItem.volume),
         unit: workItem.unit || 'ls',
         unitPrice: Number(workItem.unitPrice) || 0,
         totalPrice: Number(workItem.totalAmount) || (Number(workItem.volume) * Number(workItem.unitPrice)) || 0,
@@ -304,7 +305,8 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
   );
 
   const calculatedTotalItemPrice = useMemo(
-    () => Math.round(calculatedUnitPrice * (initialData?.volume || 1)),
+    // Fase 4A: pakai volume aktual; 0 tetap 0 (jangan fabrikasi 1).
+    () => Math.round(calculatedUnitPrice * honestVolume(initialData?.volume)),
     [calculatedUnitPrice, initialData?.volume]
   );
 

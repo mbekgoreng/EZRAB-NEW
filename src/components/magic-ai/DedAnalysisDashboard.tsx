@@ -33,6 +33,7 @@ import {
 } from '../../ai-estimate';
 import { DocumentViewer } from './DocumentViewer';
 import { useProject } from '../../context/ProjectContext';
+import { honestVolume } from '../../engine/honestVolume';
 
 export interface DedAnalysisDashboardProps {
   currentProject?: Project | null;
@@ -370,10 +371,11 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
       const itemsToAdd = outputResult.workItems.map((it) => ({
         description: it.item || it.workName,
         category: it.category,
-        volume: it.quantity || 1,
+        // Fase 4A: quantity kosong/tidak valid -> 0, jangan fabrikasi 1.
+        volume: honestVolume(it.quantity),
         unit: it.unit || 'ls',
         unitPrice: it.unitPrice || it.estimatedUnitPrice || 0,
-        amount: (it.quantity || 1) * (it.unitPrice || it.estimatedUnitPrice || 0),
+        amount: honestVolume(it.quantity) * (it.unitPrice || it.estimatedUnitPrice || 0),
         ahspCode: (it as any).ahspCode || '',
         notes: it.specification || '',
       }));

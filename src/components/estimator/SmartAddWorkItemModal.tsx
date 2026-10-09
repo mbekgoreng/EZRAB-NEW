@@ -28,6 +28,7 @@ import { masterBuildingTemplateRegistry } from '../../data/buildingTemplates/mas
 import { MasterBuildingTemplate, TemplateWorkItem } from '../../data/buildingTemplates/schema/types';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
+import { honestVolume } from '../../engine/honestVolume';
 
 export type AddItemMode = 'selector' | 'ahsp' | 'manual' | 'ai' | 'template' | 'duplicate';
 
@@ -76,7 +77,11 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
   const [manualDescription, setManualDescription] = useState<string>('');
   const [manualVolume, setManualVolume] = useState<number>(1);
   const [manualUnit, setManualUnit] = useState<string>('m²');
-  const [manualUnitPrice, setManualUnitPrice] = useState<number>(0);
+  // Fase 4A: simpan input mentah agar "kosong" bisa dibedakan dari "nol eksplisit".
+  // Kosong -> NaN -> factory menetapkan PRICE_UNRESOLVED ("Harga belum diisi").
+  // Nol eksplisit -> 0 -> PRICE_RESOLVED (nol adalah harga nyata).
+  const [manualUnitPriceRaw, setManualUnitPriceRaw] = useState<string>('');
+  const manualUnitPrice = manualUnitPriceRaw.trim() === '' ? NaN : Number(manualUnitPriceRaw);
   const [manualNotes, setManualNotes] = useState<string>('');
 
   // AI State
@@ -160,7 +165,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
       setManualDescription('');
       setManualVolume(1);
       setManualUnit('m²');
-      setManualUnitPrice(0);
+      setManualUnitPriceRaw('');
       setManualNotes('');
 
       setAiPrompt('');
@@ -308,7 +313,8 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
     setErrorMessage(null);
 
     try {
-      const amount = Math.round(manualVolume * manualUnitPrice);
+      const hasPrice = Number.isFinite(manualUnitPrice);
+      const amount = hasPrice ? Math.round(manualVolume * manualUnitPrice) : 0;
       await onAddItem({
         no: existingItems.length + 1,
         sectionName: targetCategory,
@@ -497,7 +503,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
   const handleSelectDuplicateItem = (item: RabItem) => {
     setSelectedDuplicateItem(item);
     setDuplicateNewDescription(`${item.description} (Salinan)`);
-    setDuplicateNewVolume(item.volume || 1);
+    setDuplicateNewVolume(honestVolume(item.volume));
     setDuplicateNewCategory(item.sectionName || item.category || targetCategory);
   };
 
@@ -1422,8 +1428,8 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   <input
                     type="number"
                     placeholder="0"
-                    value={manualUnitPrice}
-                    onChange={(e) => setManualUnitPrice(parseFloat(e.target.value) || 0)}
+                    value={manualUnitPriceRaw}
+                    onChange={(e) => setManualUnitPriceRaw(e.target.value)}
                     style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px', fontVariantNumeric: 'tabular-nums' }}
                   />
                 </div>
@@ -1483,7 +1489,9 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                 <div>
                   <div style={{ fontSize: '11px', color: '#64748B' }}>Total Nilai Pekerjaan:</div>
                   <div style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
-                    {formatCurrencyIDR(Math.round(manualVolume * manualUnitPrice))}
+                    {Number.isFinite(manualUnitPrice)
+                      ? formatCurrencyIDR(Math.round(manualVolume * manualUnitPrice))
+                      : 'Belum diisi'}
                   </div>
                 </div>
                 <button

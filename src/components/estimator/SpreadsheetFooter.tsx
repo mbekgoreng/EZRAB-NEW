@@ -91,7 +91,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
               letterSpacing: '-0.02em',
             }}
           >
-            {formatCurrencyIDR(totalRab || 660638840)}
+            {formatCurrencyIDR(totalRab)}
           </span>
         </div>
       </div>

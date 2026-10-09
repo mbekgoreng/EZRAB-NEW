@@ -48,6 +48,7 @@ import { DedAiSplitAnalysisView } from './DedAiSplitAnalysisView';
 import { dedAnalysisPersistenceService } from '../../services/dedAnalysisPersistenceService';
 import { dedRabReviewService } from '../../ded-rab-v2/review/dedRabReviewService';
 import { dedSpreadsheetSync } from '../../ded-rab-v2/spreadsheet/dedSpreadsheetSync';
+import { honestVolume } from '../../engine/honestVolume';
 
 export function deriveProjectNameFromFileName(fileName?: string): string {
   if (!fileName) return 'Proyek Konstruksi Baru';
@@ -619,7 +620,8 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
           code: it.code || it.ahspCode || `ITM-${idx + 1}.${itemIdx + 1}`,
           description: it.description || '',
           specification: it.notes || it.description || '',
-          volume: it.volume || 1,
+          // Fase 4A: jangan fabrikasi volume 1 untuk data kosong/tidak valid.
+          volume: honestVolume(it.volume),
           unit: it.unit || 'm2',
           materialPrice: it.materialPrice || 0,
           laborPrice: it.laborPrice || 0,

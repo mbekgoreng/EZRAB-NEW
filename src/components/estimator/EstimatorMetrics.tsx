@@ -82,7 +82,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
 
         <div>
           <div style={{ fontSize: '17px', fontWeight: 850, color: '#0F172A', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-            {formatCurrencyIDR(totalRab || 660638840)}
+            {formatCurrencyIDR(totalRab)}
           </div>
 
           {/* Subtext + Sparkline */}
@@ -139,10 +139,10 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
 
         <div>
           <div style={{ fontSize: '20px', fontWeight: 850, color: '#0F172A', letterSpacing: '-0.02em' }}>
-            {totalItems || 7}
+            {totalItems}
           </div>
           <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '4px' }}>
-            dari {ahspCount || 7} AHSP
+            dari {ahspCount} AHSP
           </div>
         </div>
       </div>

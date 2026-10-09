@@ -767,6 +767,9 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       totalPrice: item.totalPrice || item.volume * item.unitPrice,
       volumeSource: item.volumeSource,
       ahspCode: item.ahspCode,
+      // Fase 4A: warisi status harga agar duplikat item tanpa harga
+      // tidak berubah menjadi "resolved" diam-diam.
+      priceStatus: item.priceStatus,
     });
     showToast('Item berhasil diduplikasi');
   };
@@ -785,7 +788,8 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       description: 'Item Pekerjaan Baru',
       volume: 1,
       unit: 'm¹',
-      unitPrice: 0,
+      // Fase 4A: baris kosong baru -> harga belum diisi (NaN), bukan nol eksplisit.
+      unitPrice: NaN,
       amount: 0,
       totalPrice: 0,
       volumeSource: 'MANUAL',
