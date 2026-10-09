@@ -1069,6 +1069,9 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         selectedCount={selectedItemIds.size}
         onClearSelection={() => setSelectedItemIds(new Set())}
         onBulkDelete={() => {
+          const count = selectedItemIds.size;
+          // FASE F: konfirmasi sebelum hapus massal (aksi destruktif).
+          if (!window.confirm(`Hapus ${count} item pekerjaan yang dipilih? Tindakan ini tidak dapat dibatalkan.`)) return;
           bulkDeleteRabItems(Array.from(selectedItemIds));
           setSelectedItemIds(new Set());
           showToast('Item terpilih berhasil dihapus');

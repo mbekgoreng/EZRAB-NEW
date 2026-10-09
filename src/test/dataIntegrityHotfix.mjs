@@ -82,6 +82,12 @@ test('priceStatus eksplisit dari caller dihormati (duplikat)', () => {
     { description: 'X (Salinan)', volume: 10, unit: 'm3', unitPrice: 0, priceStatus: 'PRICE_UNRESOLVED' }, 'p1');
   eq(it.priceStatus, 'PRICE_UNRESOLVED', 'priceStatus preserved');
 });
+test('duplikat via SmartAdd: priceStatus diteruskan (cek kode)', () => {
+  const src = readFileSync(`${P}/src/components/estimator/SmartAddWorkItemModal.tsx`, 'utf8');
+  if (!src.includes('priceStatus: selectedDuplicateItem.priceStatus')) {
+    throw new Error('SmartAdd duplicate tidak mewariskan priceStatus');
+  }
+});
 test('resolvePriceStatus: string kosong/null/undefined/NaN -> UNRESOLVED', () => {
   eq(resolvePriceStatus(''), 'PRICE_UNRESOLVED', 'empty string');
   eq(resolvePriceStatus(null), 'PRICE_UNRESOLVED', 'null');

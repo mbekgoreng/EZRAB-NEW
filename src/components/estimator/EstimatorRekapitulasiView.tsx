@@ -92,7 +92,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
         {/* Card 2: Overhead & Profit */}
         <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "#64748B" }}>Overhead & Keuntungan (10%)</span>
+            <span style={{ fontSize: "12px", fontWeight: 600, color: "#64748B" }}>Overhead & Keuntungan ({(currentProject as any)?.overheadPercent ?? 10}%)</span>
             <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#F0FDF4", color: "#16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <TrendingUp size={16} />
             </div>

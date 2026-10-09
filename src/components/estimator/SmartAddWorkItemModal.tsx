@@ -537,6 +537,9 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
         volumeSource: selectedDuplicateItem.volumeSource || 'MANUAL',
         ahspCode: selectedDuplicateItem.ahspCode,
         verificationStatus: selectedDuplicateItem.verificationStatus || 'VERIFIED',
+        // Fase 4A: warisi status harga agar duplikat item tanpa harga
+        // tidak berubah menjadi "resolved" diam-diam.
+        priceStatus: selectedDuplicateItem.priceStatus,
       });
       onClose();
     } catch (err: any) {
