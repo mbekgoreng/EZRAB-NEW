@@ -9,6 +9,8 @@
   background: #071426;
   color: #f8fafc;
   isolation: isolate;
+  /* Simple, neutral typeface for the whole hero (user preference) */
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* ---- Backdrop -------------------------------------------------------- */
@@ -84,9 +86,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 12px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.08em;
   color: #38bdf8;
   margin: 0 0 20px;
   font-weight: 600;
@@ -102,9 +103,9 @@
 .ch-headline {
   margin: 0 0 20px;
   font-size: clamp(34px, 6vw, 60px);
-  line-height: 1.06;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: #f8fafc;
   text-wrap: balance;
 }
@@ -344,7 +345,7 @@
   border-radius: 8px;
   background: #2563eb;
   color: #fff;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 14px;
   flex: 0 0 auto;
 }
@@ -352,7 +353,7 @@
 .ch-dash-logo-mark--sm { display: none; }
 
 .ch-dash-logo-text {
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
   font-size: 13px;
   color: #0f172a;
@@ -394,7 +395,7 @@
 .ch-dash-aibadge {
   margin-left: auto;
   font-size: 8.5px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.06em;
   color: #fff;
   background: #7c3aed;
@@ -421,7 +422,7 @@
 }
 
 .ch-dash-topbar-title {
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.06em;
   font-size: 12px;
   display: none;
@@ -472,7 +473,7 @@
 .ch-scene-head h3 {
   margin: 0;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
   color: #0f172a;
 }
 
@@ -577,7 +578,7 @@
 .ch-kpi-value {
   display: block;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   color: #1d4ed8;
   margin-bottom: 2px;
 }
