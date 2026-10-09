@@ -123,7 +123,7 @@ export function renderMarkdown(md: string): React.ReactNode[] {
       buf.push(lines[i]);
       i++;
     }
-    out.push(<p key={key++} className="md-p" dangerouslySetInnerHTML={{ __html: inline(buf.join('<br/>')) }} />);
+    out.push(<p key={key++} className="md-p" dangerouslySetInnerHTML={{ __html: buf.map((b) => inline(b)).join('<br/>') }} />);
   }
 
   return out;

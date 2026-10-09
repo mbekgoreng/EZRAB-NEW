@@ -586,7 +586,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
     const itemsToSave = officialItems.map((item) => ({
       ...item,
       projectId: activePid,
-      verificationStatus: 'VERIFIED' as const,
+      verificationStatus: 'NEEDS_VERIFICATION' as const,
       volumeSource: 'AI_GENERATED' as const,
     }));
 
@@ -628,7 +628,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
           equipmentPrice: it.equipmentPrice || 0,
           unitPrice: it.unitPrice || 0,
           totalPrice: it.totalPrice || 0,
-          verificationStatus: 'VERIFIED',
+          verificationStatus: 'NEEDS_VERIFICATION',
           ahspCode: it.ahspCode,
         })),
         subtotal: items.reduce((sum, it) => sum + (it.totalPrice || 0), 0),

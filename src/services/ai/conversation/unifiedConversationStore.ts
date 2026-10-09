@@ -12,6 +12,7 @@
  */
 
 import { ProjectIsolationError } from '../../unifiedProjectContext';
+import { safeSetJSON } from '../../../utils/safeStorage';
 import type {
   AIConversation,
   AIMessage,
@@ -406,7 +407,11 @@ export class UnifiedConversationStore {
     try {
       if (typeof window === 'undefined') return;
       const serializable = Array.from(this.conversations.values());
-      localStorage.setItem(UNIFIED_CONVERSATIONS_KEY, JSON.stringify(serializable));
+      const result = safeSetJSON(UNIFIED_CONVERSATIONS_KEY, serializable);
+      if (!result.ok) {
+        // Honest failure: keep in-memory data, warn (do NOT delete old data).
+        console.warn('[UnifiedConversationStore] Save failed:', result.reason, result.message);
+      }
     } catch (err) {
       console.warn('[UnifiedConversationStore] Failed to save conversations to localStorage:', err);
     }
