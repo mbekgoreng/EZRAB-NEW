@@ -1032,10 +1032,10 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                     <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748B' }}>Total Item Pekerjaan</span>
                     <div style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
-                      19 Item
+                      {initialRabItems.length} Item
                     </div>
                     <span style={{ fontSize: '11px', color: '#94A3B8' }}>
-                      5 Kategori aktif
+                      {new Set(initialRabItems.map((i) => i.sectionName || i.category)).size} Kategori aktif
                     </span>
                   </div>
 
@@ -1065,7 +1065,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                     <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748B' }}>Total Volume</span>
                     <div style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
-                      124,00 <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B' }}>m³</span>
+                      {initialRabItems.reduce((s, i) => s + (Number(i.volume) || 0), 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B' }}>m³</span>
                     </div>
                     <span style={{ fontSize: '11px', color: '#94A3B8' }}>
                       Akumulasi volume pekerjaan
@@ -1390,7 +1390,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '12px 16px' }}>
                   <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Total Item Pekerjaan</div>
                   <div style={{ fontSize: '18px', fontWeight: 800, color: '#10B981', marginTop: '2px' }}>
-                    19 Item Rinci
+                    {initialRabItems.length} Item Rinci
                   </div>
                 </div>
               </div>
