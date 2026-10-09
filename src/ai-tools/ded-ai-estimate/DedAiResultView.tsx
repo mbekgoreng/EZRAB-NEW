@@ -32,8 +32,14 @@ const STATUS_META: Record<ItemStatus, { label: string; icon: React.ReactNode }> 
 
 const fmtRp = (n: number | null) =>
   n == null ? '—' : 'Rp' + Math.round(n).toLocaleString('id-ID');
-const fmtQty = (n: number | null) =>
-  n == null ? '—' : Number.isInteger(n) ? n.toLocaleString('id-ID') : n.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+const fmtQty = (n: number | null) => {
+  if (n == null) return '—';
+  // Tampilkan presisi cukup agar cocok dengan subtotal (q × p).
+  // Nilai kecil (< 0.1) butuh 4 desimal, selebihnya 2 desimal.
+  if (Number.isInteger(n)) return n.toLocaleString('id-ID');
+  const digits = Math.abs(n) < 0.1 ? 4 : 2;
+  return n.toLocaleString('id-ID', { maximumFractionDigits: digits });
+};
 
 const FILTERS: Array<{ id: ItemStatus | 'all'; label: string }> = [
   { id: 'all', label: 'Semua' },

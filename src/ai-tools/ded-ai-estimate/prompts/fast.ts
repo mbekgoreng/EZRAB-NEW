@@ -44,6 +44,10 @@ ATURAN WAJIB:
 ATURAN PENDEKATAN KUANTITAS:
 - quantity = null SAAT TIDAK ADA dasar geometri/eksplisit yang dapat kamu yakini. BUKAN 0.
 - JANGAN menghitung total/subtotal — itu tugas aplikasi, bukan kamu.
+- PENTING: quantity adalah TOTAL VOLUME/LUAS/JUMLAH untuk seluruh pekerjaan, BUKAN spesifikasi per unit material.
+  Contoh SALAH: keramik 40×40cm → quantity 0.16 (itu luas 1 keping!).
+  Contoh BENAR: lantai 4m × 5m → quantity 20 (total luas lantai dalam m²).
+- Untuk pintu/jendela: quantity = jumlah total unit (mis. 3), bukan dimensi per daun pintu.
 
 ATURAN ESTIMASI HARGA:
 - estimatedUnitPrice = estimasi harga satuan (Rupiah) berdasarkan pengetahuan pasar konstruksi Indonesia 2026.

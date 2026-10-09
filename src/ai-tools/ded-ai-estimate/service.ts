@@ -91,12 +91,15 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode): DedAiItem {
     quantity,
     quantitySource,
     quantityFormula: fromDim.formula || raw.quantityFormula || undefined,
-    // FASE DED-FIX: alasan unresolved untuk ditampilkan ke pengguna.
+    // FASE DED-FIX: alasan unresolved spesifik untuk ditampilkan ke pengguna.
+    // Bedakan "tidak tercantum di DED" vs "gagal membaca".
     quantityNote:
       quantitySource === 'UNRESOLVED'
         ? fromDim.ambiguousUnit
-          ? 'Satuan dimensi tidak jelas; perlu verifikasi.'
-          : 'Kuantitas tidak dapat dihitung dari dimensi; perlu verifikasi.'
+          ? 'Satuan dimensi tidak jelas; perlu verifikasi manual.'
+          : dims && dims.trim()
+            ? 'Dimensi ditemukan tetapi gagal diparse; periksa manual.'
+            : 'Kuantitas tidak tercantum di DED; perlu input manual atau asumsi terdokumentasi.'
         : quantitySource === 'AI_INFERENCE'
           ? 'Kuantitas dari inferensi AI; perlu ditinjau sebelum finalisasi.'
           : quantitySource === 'ASSUMPTION'
