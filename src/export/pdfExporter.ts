@@ -730,15 +730,25 @@ export async function exportProjectToPDF(
     (section.items || []).forEach((item) => {
       const itemTotalPrice = Number(item.totalPrice) || (Number(item.volume) * Number(item.unitPrice)) || 0;
       const itemWeight = costs.directCost > 0 ? (itemTotalPrice / costs.directCost) * 100 : 0;
+      // FASE 5D: bedakan harga belum tersedia dari harga nol yang valid.
+      // priceStatus kanonis — bukan sekadar unitPrice === 0.
+      const isUnresolved = (item as any).priceStatus === 'PRICE_UNRESOLVED';
+      const unitPriceCell = isUnresolved
+        ? { content: 'HARGA BELUM TERSEDIA', styles: { halign: 'center' as const, textColor: [180, 83, 9] } }
+        : formatRupiah(item.unitPrice);
+      const totalPriceCell = isUnresolved
+        ? { content: '-', styles: { halign: 'center' as const, textColor: [180, 83, 9] } }
+        : formatRupiah(itemTotalPrice);
 
       detailRows.push([
         globalItemIndex.toString(),
         item.code || '-',
-        item.description + (item.specification ? `\nSpesifikasi: ${item.specification}` : ''),
+        item.description + (item.specification ? `\nSpesifikasi: ${item.specification}` : '') +
+          (isUnresolved ? '\n(Harga belum tersedia — bukan Rp0)' : ''),
         item.unit || 'ls',
         item.volume.toLocaleString('id-ID', { maximumFractionDigits: 2 }),
-        formatRupiah(item.unitPrice),
-        formatRupiah(itemTotalPrice),
+        unitPriceCell,
+        totalPriceCell,
         `${formatNumberId(itemWeight, 2)} %`,
       ]);
       globalItemIndex++;
@@ -795,6 +805,12 @@ export async function exportProjectToPDF(
       },
     },
   ]);
+
+  // FASE 5D: hitung item unresolved untuk catatan peringatan (dari field kanonis).
+  const unresolvedCount = sections.reduce(
+    (n, s) => n + (s.items || []).filter((it: any) => it.priceStatus === 'PRICE_UNRESOLVED').length,
+    0
+  );
 
   // Landscape Table Widths: Total 273 mm (fits in 297 mm with 12 mm margins)
   safeAutoTable(doc, {
@@ -883,6 +899,19 @@ export async function exportProjectToPDF(
     const fileName = `RAB_${cleanDocNum}_${cleanProjName}_Resmi.pdf`;
 
     try {
+      // FASE 5D: peringatan unresolved — estimasi belum final bila ada item tanpa harga.
+      if (unresolvedCount > 0) {
+        const warnY = (doc as any).lastAutoTable.finalY + 8;
+        doc.setFontSize(8);
+        doc.setTextColor(180, 83, 9);
+        doc.text(
+          `PERINGATAN: ${unresolvedCount} item belum memiliki harga (HARGA BELUM TERSEDIA) dan tidak termasuk dalam total. Estimasi ini belum final.`,
+          12,
+          warnY,
+          { maxWidth: 273 }
+        );
+        doc.setTextColor(0, 0, 0);
+      }
       // Tier 1: Blob-based download via file-saver
       const blob = doc.output('blob');
       if (typeof saveAs === 'function') {
