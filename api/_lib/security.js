@@ -24,6 +24,10 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://ezrab-site.vercel.app',
   'https://www.ezrab-site.vercel.app',
+  // Preview deployments under the verified yf-arch team.
+  // Vercel preview hostnames: <project>-<hash>-yf-arch.vercel.app
+  // (hyphen-separated team slug, hence '*-' not '*.').
+  '*-yf-arch.vercel.app',
 ];
 
 function configuredOrigins() {
@@ -39,6 +43,14 @@ function originAllowed(origin, allowed) {
     if (a.startsWith('*.')) {
       // "*.vercel.app" matches any vercel.app subdomain (covers preview deploys)
       if (origin.endsWith(a.slice(1)) && origin.length > a.length - 1) return true;
+    } else if (a.startsWith('*-')) {
+      // "*-yf-arch.vercel.app" matches Vercel team deployments:
+      // <project>[-<hash>]-yf-arch.vercel.app (hyphen-separated team slug).
+      // Security boundary is the Vercel team: only yf-arch team members can
+      // deploy under *-yf-arch.vercel.app. Attacker subdomains like
+      // "yf-arch.vercel.app.attacker.example" do not end with the suffix.
+      const suffix = a.slice(1); // "-yf-arch.vercel.app"
+      if (origin.endsWith(suffix) && origin.length > a.length - 1) return true;
     } else if (origin === a) {
       return true;
     }

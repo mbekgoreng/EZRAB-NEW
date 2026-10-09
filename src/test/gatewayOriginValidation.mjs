@@ -72,13 +72,18 @@ test('4b: prefix trick rejected (evil-ezrab-site.vercel.app)', () => {
     ok(applyCors(mkReq('https://evil-ezrab-site.vercel.app'), mkRes()) === false, 'should reject');
   });
 });
-test('4c: hyphenated preview URL not matched by dot-wildcard', () => {
-  withEnv('*.yf-arch.vercel.app', () => {
-    // This is the REAL 403 cause: Vercel preview URLs embed the team slug
-    // with hyphens (…-yf-arch.vercel.app), not as a DNS label.
+test('4c: hyphenated preview URL matched by hyphen-wildcard', () => {
+  withEnv('*-yf-arch.vercel.app', () => {
+    // Vercel preview URLs embed the team slug with hyphens (…-yf-arch.vercel.app).
+    // The '*-' pattern correctly matches these.
     ok(
-      applyCors(mkReq('https://ezrab-site-q2guko5nm-yf-arch.vercel.app'), mkRes()) === false,
-      'dot-wildcard must NOT match hyphenated URL'
+      applyCors(mkReq('https://ezrab-site-q2guko5nm-yf-arch.vercel.app'), mkRes()) === true,
+      'hyphen-wildcard MUST match hyphenated team URL'
+    );
+    // But dot-wildcard still must NOT match (documents why '*-' was needed)
+    ok(
+      applyCors(mkReq('https://yf-arch.vercel.app.attacker.example'), mkRes()) === false,
+      'attacker subdomain must NOT match'
     );
   });
 });
