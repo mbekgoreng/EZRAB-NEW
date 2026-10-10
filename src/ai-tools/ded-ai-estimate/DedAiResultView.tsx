@@ -69,6 +69,8 @@ export const DedAiResultView: React.FC<Props> = ({
   const [editVals, setEditVals] = useState<{ name: string; quantity: string; units: string }>({ name: '', quantity: '', units: '' });
   const [finalizing, setFinalizing] = useState(false);
   const [finalMsg, setFinalMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [bulkFill, setBulkFill] = useState(false);
+  const [bulkVals, setBulkVals] = useState<Record<string, string>>({});
 
   const withStatus = useMemo(
     () => items.map((it) => ({ it, status: getItemStatus(it) })),
@@ -112,7 +114,7 @@ export const DedAiResultView: React.FC<Props> = ({
     setItems((prev) => prev.map((it) => {
       if (it.id !== id) return it;
       const unitPrice = it.unitPrice;
-      const subtotal = quantity != null && unitPrice != null ? quantity * unitPrice : null;
+      const subtotal = quantity != null && unitPrice != null ? Math.round(quantity * unitPrice) : null;
       return {
         ...it,
         name: editVals.name.trim() || it.name,
@@ -125,6 +127,27 @@ export const DedAiResultView: React.FC<Props> = ({
       };
     }));
     setEditing(null);
+  };
+
+  const commitBulkFill = () => {
+    setItems((prev) => prev.map((it) => {
+      const val = bulkVals[it.id];
+      if (val === undefined || val.trim() === '') return it;
+      const q = Number(val.replace(',', '.'));
+      const quantity = Number.isFinite(q) && q > 0 ? q : null;
+      if (quantity == null) return it;
+      const subtotal = it.unitPrice != null ? Math.round(quantity * it.unitPrice) : null;
+      return {
+        ...it,
+        quantity,
+        quantitySource: 'DED_EXPLICIT' as const,
+        quantityFormula: `input manual: ${fmtQty(quantity)} ${it.units}`,
+        subtotal,
+        provenance: [...it.provenance, 'bulk-fill'],
+      };
+    }));
+    setBulkFill(false);
+    setBulkVals({});
   };
 
   const handleFinalize = async () => {
@@ -238,6 +261,64 @@ export const DedAiResultView: React.FC<Props> = ({
           </button>
         ))}
       </div>
+
+      {/* ---- Tombol Isi Cepat untuk item terblokir ---- */}
+      {counts.blocked > 0 && (
+        <div style={{ margin: '0 0 16px', padding: '12px 16px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8 }}>
+          <div style={{ fontSize: 13.5, color: '#991B1B', marginBottom: 8 }}>
+            <b>{counts.blocked} item terblokir</b> karena kuantitas tidak ditemukan di DED. AI tidak mengarang angka — silakan isi manual berdasarkan gambar/BOQ Anda.
+          </div>
+          <button
+            onClick={() => setBulkFill(true)}
+            style={{ padding: '8px 16px', background: '#DC2626', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13.5, fontWeight: 600 }}
+          >
+            ✏️ Isi Cepat {counts.blocked} Item
+          </button>
+        </div>
+      )}
+
+      {/* ---- Modal Isi Cepat ---- */}
+      {bulkFill && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 12, maxWidth: 600, width: '100%', maxHeight: '80vh', overflow: 'auto', padding: 24 }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: 16 }}>Isi Cepat Volume</h3>
+            <p style={{ fontSize: 12.5, color: '#64748B', margin: '0 0 16px' }}>
+              Masukkan volume untuk setiap item berdasarkan DED/gambar Anda. Kosongkan jika tidak tahu.
+            </p>
+            {withStatus.filter(({ status }) => status === 'blocked').map(({ it }) => (
+              <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid #F1F5F9' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 600 }}>{it.name}</div>
+                  <div style={{ fontSize: 11.5, color: '#94A3B8' }}>{it.quantityNote || 'Tanpa kuantitas'}</div>
+                </div>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0"
+                  value={bulkVals[it.id] || ''}
+                  onChange={(e) => setBulkVals({ ...bulkVals, [it.id]: e.target.value })}
+                  style={{ width: 100, padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: 14, textAlign: 'right' }}
+                />
+                <span style={{ fontSize: 13, color: '#64748B', width: 40 }}>{it.units}</span>
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => { setBulkFill(false); setBulkVals({}); }}
+                style={{ padding: '8px 16px', background: '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13.5 }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={commitBulkFill}
+                style={{ padding: '8px 16px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13.5, fontWeight: 600 }}
+              >
+                Simpan Semua
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ---- Tabel ---- */}
       <div className="dedai-table-wrap">

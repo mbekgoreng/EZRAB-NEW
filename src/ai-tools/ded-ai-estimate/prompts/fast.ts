@@ -43,6 +43,9 @@ ATURAN WAJIB:
 
 ATURAN PENDEKATAN KUANTITAS:
 - quantity = null SAAT TIDAK ADA dasar geometri/eksplisit yang dapat kamu yakini. BUKAN 0.
+- CARI DIMENSI DI MANA SAJA: nama item ("Sloof 15×20" → 0.15m × 0.20m), spesifikasi ("t=100mm" → 0.1m), tabel BOQ, maupun teks deskripsi.
+- Jika DED memuat TABEL BOQ/RAB dengan kolom volume/kuantitas, PAKAI angka dari tabel tersebut langsung (quantitySource: "DED_EXPLICIT").
+- Jika hanya ada dimensi parsial (mis. penampang 15×20 tanpa panjang), cari panjang di denah/potongan. Jika tidak ketemu, quantity=null dengan catatan spesifik.
 - JANGAN menghitung total/subtotal — itu tugas aplikasi, bukan kamu.
 - PENTING: quantity adalah TOTAL VOLUME/LUAS/JUMLAH untuk seluruh pekerjaan, BUKAN spesifikasi per unit material.
   Contoh SALAH: keramik 40×40cm → quantity 0.16 (itu luas 1 keping!).
