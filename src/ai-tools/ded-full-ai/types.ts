@@ -12,7 +12,8 @@ export type FullAiProvenance =
   | 'DERIVED'            // Turunan dari dimensi/informasi tersedia
   | 'ASSUMPTION'         // Estimasi berdasarkan asumsi
   | 'NEEDS_CONFIRMATION' // Informasi penting belum jelas
-  | 'UNRESOLVED';        // Belum dapat ditentukan
+  | 'UNRESOLVED'         // Belum dapat ditentukan
+  | 'USER_INPUT';        // Diedit/dimasukkan oleh pengguna
 
 export type FullAiPriceSource =
   | 'VERIFIED_SOURCE'    // Dari AHSP/database terverifikasi

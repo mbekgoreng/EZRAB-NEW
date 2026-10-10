@@ -149,6 +149,9 @@ export class FullAiDedService {
           status = 'UNRESOLVED';
         } else if (q.provenance === 'NEEDS_CONFIRMATION' || q.provenance === 'ASSUMPTION') {
           status = 'NEEDS_CONFIRMATION';
+        } else if (p.unitPrice == null || p.source === 'UNRESOLVED') {
+          // Harga belum ada — item tidak siap masuk RAB
+          status = 'NEEDS_CONFIRMATION';
         }
 
         // Item UNRESOLVED tidak masuk total tapi tetap ditampilkan
