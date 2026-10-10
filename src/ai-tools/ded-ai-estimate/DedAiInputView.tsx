@@ -24,6 +24,8 @@ export interface DedAiSession {
   mode: DedAiMode;
   /** null = buat proyek baru saat finalisasi; string = pakai proyek existing */
   targetProjectId: string | null;
+  /** true = gunakan pipeline Full AI (terisolasi), false = pipeline lama */
+  fullAi?: boolean;
 }
 
 interface Props {
@@ -57,6 +59,7 @@ export const DedAiInputView: React.FC<Props> = ({
   const [projectName, setProjectName] = useState(initialSession.projectName);
   const [projectType, setProjectType] = useState<DedAiProjectType>(initialSession.projectType);
   const [mode, setMode] = useState<DedAiMode>(initialSession.mode);
+  const [fullAi, setFullAi] = useState(initialSession.fullAi ?? false);
   const [targetProjectId, setTargetProjectId] = useState<string | null>(initialSession.targetProjectId);
   const [useExisting, setUseExisting] = useState(initialSession.targetProjectId !== null);
   const [dragOver, setDragOver] = useState(false);
@@ -97,6 +100,7 @@ export const DedAiInputView: React.FC<Props> = ({
       projectType,
       mode,
       targetProjectId: chosenProjectId,
+      fullAi,
     });
   };
 
@@ -224,6 +228,22 @@ export const DedAiInputView: React.FC<Props> = ({
               </button>
             </div>
             <div className="hint">{mode === 'FAST' ? 'Hasil cepat untuk estimasi awal.' : 'Analisis lebih teliti, butuh waktu lebih lama.'}</div>
+          </div>
+          <div className="dedai-field">
+            <label>
+              <input
+                type="checkbox"
+                checked={fullAi}
+                onChange={(e) => setFullAi(e.target.checked)}
+                style={{ marginRight: 8 }}
+              />
+              Full AI Estimate (eksperimental)
+            </label>
+            <div className="hint">
+              {fullAi
+                ? 'AI sebagai mesin estimasi utama. Hasil tidak di-recalculate pipeline lama.'
+                : 'Gunakan pipeline standar.'}
+            </div>
           </div>
         </div>
       </div>

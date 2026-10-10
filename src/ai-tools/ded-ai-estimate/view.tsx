@@ -12,6 +12,9 @@ import {
 import { DedAiInputView, DedAiSession } from './DedAiInputView';
 import { DedAiProgressView, DedAiStage, STAGE_DEFS, ProgressSummary } from './DedAiProgressView';
 import { DedAiResultView } from './DedAiResultView';
+import { fullAiDedService } from '../ded-full-ai/service';
+import { FullAiOutput, FullAiItem } from '../ded-full-ai/types';
+import { FullAiResultView } from '../ded-full-ai/FullAiResultView';
 import { notificationBus } from '../../notifications/notificationBus';
 import { useProject } from '../../context/ProjectContext';
 
@@ -58,6 +61,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const [error, setError] = useState<{ message: string; errorCode?: string; stage?: string; retryable?: boolean } | null>(null);
   const [result, setResult] = useState<DedAiOutput | null>(null);
   const [resultReady, setResultReady] = useState(false);
+  const [fullAiOutput, setFullAiOutput] = useState<FullAiOutput | null>(null);
   const [drafts, setDrafts] = useState<DraftRecord[]>(loadDrafts);
   const [draftSaved, setDraftSaved] = useState(false);
   const [finalized, setFinalized] = useState(false);
@@ -81,10 +85,138 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     }));
   };
 
+  /**
+   * FULL AI: jalur terisolasi. AI sebagai mesin estimasi utama.
+   * Tidak me-recalculate kuantitas AI. Validasi struktur + verifikasi aritmetika saja.
+   */
+  const runFullAiAnalysis = async (sess: DedAiSession) => {
+    try {
+      markUpTo('received', 'done');
+      setPercent(5);
+      setStatusLine('Full AI: Dokumen diterima — memulai pembacaan…');
+
+      // Gabungkan buffer dari semua file (Full AI v1: proses file pertama + catat sisanya)
+      // Untuk multi-file, proses per file dan gabungkan items.
+      const allItems: FullAiItem[] = [];
+      const allWarnings: string[] = [];
+      let projectInfo: FullAiOutput['projectInfo'] | null = null;
+      let totalPages = 0;
+      let totalChars = 0;
+      let lastOutput: FullAiOutput | null = null;
+
+      for (let fi = 0; fi < sess.files.length; fi += 1) {
+        if (cancelRef.current) return;
+        const f = sess.files[fi];
+        setSummary((s) => ({ ...s, currentFile: f.file.name }));
+        markUpTo('reading', 'active');
+        setStatusLine(`Full AI: Membaca ${f.file.name}…`);
+        setPercent(5 + (fi / sess.files.length) * 20);
+
+        const buffer = await f.file.arrayBuffer();
+        markUpTo('extract', 'done');
+        markUpTo('identify', 'active');
+        setStatusLine(`Full AI: Menganalisis ${f.file.name}…`);
+
+        const out = await fullAiDedService.execute({
+          fileName: f.file.name,
+          buffer,
+          projectType: sess.projectType,
+          mode: sess.mode === 'FAST' ? 'FAST' : 'ADVANCED',
+          projectName: sess.projectName,
+          onProgress: (stage, pct, msg) => {
+            if (cancelRef.current) return;
+            setStatusLine(`Full AI: ${msg}`);
+            const base = 25 + (fi / sess.files.length) * 70;
+            setPercent(base + (pct / 100) * (70 / sess.files.length));
+            if (stage === 'ANALYZE') markUpTo('identify', 'active');
+            if (stage === 'VALIDATE') { markUpTo('identify', 'done'); markUpTo('validate', 'active'); }
+            if (stage === 'FINALIZE') { markUpTo('validate', 'done'); markUpTo('prepare', 'active'); }
+          },
+        });
+
+        if (!out.success) {
+          markUpTo('identify', 'failed');
+          setError({
+            message: out.error?.message || `Full AI gagal menganalisis ${f.file.name}.`,
+            errorCode: out.error?.code,
+            retryable: out.error?.retryable,
+          });
+          setStatusLine('Full AI: Analisis gagal');
+          return;
+        }
+
+        // Gabungkan items dengan renumbering
+        const offset = allItems.length;
+        out.items.forEach((it, idx) => {
+          allItems.push({ ...it, id: `fullai-f${fi + 1}-${idx + 1}`, no: offset + idx + 1 });
+        });
+        allWarnings.push(...out.warnings.map((w) => `[${f.file.name}] ${w}`));
+        totalPages += out.provenance.documentPages;
+        totalChars += out.provenance.documentChars;
+        if (!projectInfo) projectInfo = out.projectInfo;
+        lastOutput = out;
+      }
+
+      // Hitung ulang summary & total gabungan
+      const grandTotal = allItems
+        .filter((it) => it.subtotal != null && it.subtotal > 0)
+        .reduce((sum, it) => sum + (it.subtotal || 0), 0);
+
+      const summary = {
+        totalItems: allItems.length,
+        itemsWithQuantity: allItems.filter((it) => it.quantity.value != null).length,
+        itemsWithAssumption: allItems.filter((it) => it.quantity.provenance === 'ASSUMPTION').length,
+        itemsNeedConfirmation: allItems.filter((it) => it.status === 'NEEDS_CONFIRMATION').length,
+        itemsWithAiPrice: allItems.filter((it) => it.price.source === 'AI_ESTIMATE').length,
+        itemsWithVerifiedPrice: allItems.filter((it) => it.price.source === 'VERIFIED_SOURCE').length,
+        itemsUnresolved: allItems.filter((it) => it.status === 'UNRESOLVED').length,
+        excludedFromTotal: allItems.filter((it) => it.subtotal == null).length,
+      };
+
+      const excluded = summary.excludedFromTotal;
+      const combined: FullAiOutput = {
+        success: true,
+        mode: sess.mode === 'FAST' ? 'FAST' : 'ADVANCED',
+        projectInfo: projectInfo || { projectType: sess.projectType, scopeSummary: '' },
+        items: allItems,
+        grandTotal,
+        grandTotalNote: excluded > 0
+          ? `Total Rp${grandTotal.toLocaleString('id-ID')} mengecualikan ${excluded} item yang belum lengkap.`
+          : undefined,
+        summary,
+        warnings: allWarnings,
+        provenance: {
+          model: lastOutput?.provenance.model || '',
+          timestamp: new Date().toISOString(),
+          documentPages: totalPages,
+          documentChars: totalChars,
+        },
+      };
+
+      markUpTo('prepare', 'done');
+      setPercent(100);
+      setStatusLine('Full AI: Analisis selesai');
+      setFullAiOutput(combined);
+      setResultReady(true);
+      notificationBus.publish({
+        type: 'success',
+        title: 'Full AI selesai',
+        message: `${allItems.length} pekerjaan dari ${sess.files.length} dokumen (${sess.mode === 'FAST' ? 'Cepat' : 'Mendalam'}).`,
+        link: 'ded-ai',
+      });
+      setTimeout(() => { if (!cancelRef.current) setScreen('result'); }, 900);
+    } catch (e: any) {
+      markUpTo('reading', 'failed');
+      setError({ message: e?.message || 'Full AI: Kesalahan tidak terduga.', retryable: true });
+      setStatusLine('Full AI: Analisis gagal');
+    }
+  };
+
   const runAnalysis = useCallback(async (sess: DedAiSession) => {
     cancelRef.current = false;
     setError(null);
     setResult(null);
+    setFullAiOutput(null);
     setResultReady(false);
     setDraftSaved(false);
     setFinalized(false);
@@ -97,6 +229,12 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       totalSize, mode: sess.mode, startedAt, currentFile: sess.files[0]?.file.name,
     });
     setScreen('progress');
+
+    // FULL AI: jalur terisolasi — AI sebagai mesin estimasi utama
+    if (sess.fullAi) {
+      await runFullAiAnalysis(sess);
+      return;
+    }
 
     // Tahap 1: dokumen diterima (validasi sudah di input)
     markUpTo('received', 'done');
@@ -304,6 +442,65 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     if (onNavigateToTab) onNavigateToTab('rab-estimasi');
   };
 
+  /**
+   * FULL AI finalize: hanya item READY dengan subtotal valid yang masuk RAB.
+   * Item UNRESOLVED/NEEDS_CONFIRMATION tidak disamarkan menjadi angka.
+   */
+  const handleFullAiFinalize = async (items: FullAiItem[]): Promise<{ ok: boolean; message: string }> => {
+    const savable = items.filter(
+      (it) => it.status === 'READY' && it.subtotal != null && it.subtotal > 0 && it.price.unitPrice != null
+    );
+    const blocked = items.length - savable.length;
+    if (savable.length === 0) {
+      return { ok: false, message: 'Tidak ada item yang bisa disimpan (semua belum lengkap / tanpa harga).' };
+    }
+    try {
+      let projectId = session.targetProjectId;
+      let projectName = session.projectName || 'Proyek Full AI DED';
+      if (!projectId) {
+        const created = createProject({
+          name: projectName,
+          buildingType: 'Rumah Tinggal',
+          status: 'draft',
+          creationMethod: 'ai-ded-full',
+          description: session.description || `Hasil Full AI DED (${savable.length} item)`,
+        } as any);
+        projectId = created.id;
+        projectName = created.name;
+      } else {
+        const existing = projects.find((p) => p.id === projectId);
+        if (existing) projectName = existing.name;
+      }
+      const added = bulkAddRabItems(
+        savable.map((it) => ({
+          description: it.name,
+          volume: it.quantity.value as number,
+          unit: it.quantity.unit,
+          unitPrice: it.price.unitPrice as number,
+          category: it.category,
+          notes: `FullAI · ${it.quantity.provenance}${it.quantity.formula ? ` · ${it.quantity.formula}` : ''} · Harga: ${it.price.source}`,
+        })),
+        projectId
+      );
+      setCurrentProjectId(projectId);
+      setFinalized(true);
+      notificationBus.publish({
+        type: 'success',
+        title: 'Full AI tersimpan ke proyek',
+        message: `${added.length} item RAB tersimpan ke "${projectName}".`,
+        link: 'rab-estimasi',
+      });
+      return {
+        ok: true,
+        message: `${added.length} item berhasil disimpan ke proyek "${projectName}".` +
+          (blocked > 0 ? ` ${blocked} item ditahan dan tidak masuk RAB.` : '') +
+          ' Buka Spreadsheet RAB untuk melihatnya.',
+      };
+    } catch (e: any) {
+      return { ok: false, message: e?.message || 'Gagal menyimpan ke proyek.' };
+    }
+  };
+
   // Bersihkan flag cancel saat unmount
   useEffect(() => () => { cancelRef.current = true; }, []);
 
@@ -319,6 +516,16 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         onBack={handleBack}
         onSeeResult={handleSeeResult}
         resultReady={resultReady}
+      />
+    );
+  }
+
+  if (screen === 'result' && fullAiOutput) {
+    return (
+      <FullAiResultView
+        output={fullAiOutput}
+        onFinalize={handleFullAiFinalize}
+        onBack={() => setScreen('input')}
       />
     );
   }
