@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useEffect, useMemo } from 'react';
 import { Pause, Play } from 'lucide-react';
 import './cinematic-hero.css';
 import { useSceneMachine, type SceneDef } from './sceneMachine';
@@ -37,7 +37,8 @@ const TRANSITION_MS = 450;
  *
  * `flat` renders without the 3D perspective tilt (for the classic hero).
  */
-export const ProductStage: React.FC<{ flat?: boolean }> = memo(({ flat = false }) => {
+export const ProductStage: React.FC<{ flat?: boolean; onSceneChange?: (index: number) => void }> = memo(
+  ({ flat = false, onSceneChange }) => {
   const scenes = useMemo(() => SCENES, []);
   const { sceneIndex, sceneProgress, elapsed, playing, reducedMotion, totalMs, play, pause, goTo } =
     useSceneMachine(scenes, true);
@@ -47,6 +48,12 @@ export const ProductStage: React.FC<{ flat?: boolean }> = memo(({ flat = false }
 
   const ActiveScene = SceneComponents[sceneIndex];
   const PrevScene = SceneComponents[prevIndex];
+
+  // Report the active demo scene so the architectural background (Layer A)
+  // can respond visually. Purely visual — no technical-integration claim.
+  useEffect(() => {
+    onSceneChange?.(sceneIndex);
+  }, [sceneIndex, onSceneChange]);
 
   return (
     <div className="ch-stage">

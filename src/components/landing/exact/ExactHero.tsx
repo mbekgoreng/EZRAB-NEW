@@ -14,7 +14,7 @@ import {
   Building2,
   FileText,
 } from 'lucide-react';
-import { RibbonFieldBackground } from './RibbonFieldBackground';
+import { ArchitecturalBackground } from '../architectural/ArchitecturalBackground';
 import { ProductStage } from '../cinematic/ProductStage';
 
 interface ExactHeroProps {
@@ -24,6 +24,8 @@ interface ExactHeroProps {
 
 export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo }) => {
   const [cardsReady, setCardsReady] = useState<boolean>(false);
+  // Active demo scene (Layer B) → drives the architectural background (Layer A)
+  const [demoScene, setDemoScene] = useState<number>(0);
 
   // Stagger reveal of all 5 floating cards so all assets immediately render and stay visible
   useEffect(() => {
@@ -43,8 +45,8 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
 
   return (
     <section id="beranda" className="ez-hero-exact">
-      {/* 1. WebGL Ribbon Field Background (Pure Blue Gradients + Deep Navy Base) */}
-      <RibbonFieldBackground speed={1} pointerAmount={1} smoothing={0.035} />
+      {/* Layer A — living architectural ambience (Three.js), reacts to the demo */}
+      <ArchitecturalBackground mode={demoScene} />
 
       <div className="ez-hero-container">
         {/* Left Column: Copy & Actions */}
@@ -131,7 +133,7 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
 
             {/* Demo animasi produk — miring perspektif seperti iPad Pro */}
             <div className="ez-feature-stage-wrapper">
-              <ProductStage />
+              <ProductStage onSceneChange={setDemoScene} />
             </div>
 
             {/* Neon Connection Circuit Lines SVG Overlay */}
