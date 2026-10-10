@@ -127,7 +127,28 @@ export class FullAiDedService {
 
       for (let i = 0; i < rawItems.length; i++) {
         const raw = rawItems[i];
-        const validation = validateFullAiItem(raw, i);
+
+        // NORMALISASI: dukung format sederhana (flat) dan format lama (nested)
+        const normalized = {
+          ...raw,
+          quantity: raw.quantity || {
+            value: typeof raw.qty === 'number' ? raw.qty : null,
+            unit: raw.unit || '',
+            formula: raw.formula || undefined,
+            provenance: raw.provenance || 'UNRESOLVED',
+            confidence: 'MEDIUM',
+            assumptions: raw.assumptions ? [String(raw.assumptions)] : undefined,
+          },
+          price: raw.price || {
+            unitPrice: typeof raw.price === 'number' ? raw.price : null,
+            unit: raw.priceUnit || raw.unit || '',
+            source: raw.priceSource || 'AI_ESTIMATE',
+            region: 'Jakarta',
+            period: '2026',
+          },
+        };
+
+        const validation = validateFullAiItem(normalized, i);
 
         if (!validation.valid) {
           allErrors.push(...validation.errors);
@@ -136,8 +157,8 @@ export class FullAiDedService {
           // Jangan buang diam-diam
         }
 
-        const q = raw.quantity || {};
-        const p = raw.price || {};
+        const q = normalized.quantity || {};
+        const p = normalized.price || {};
         const { subtotal } = verifySubtotal(
           typeof q.value === 'number' ? q.value : null,
           typeof p.unitPrice === 'number' ? p.unitPrice : null

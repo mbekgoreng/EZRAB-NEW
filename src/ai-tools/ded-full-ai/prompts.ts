@@ -64,59 +64,46 @@ ATURAN HARGA:
 - Jika item tidak ada di referensi, pakai yang paling dekat dan jelaskan di notes
 - unitPrice = null HANYA untuk item yang benar-benar tidak ada acuan sama sekali
 
-STRUKTUR OUTPUT:
+STRUKTUR OUTPUT (SEDERHANA - PENTING!):
 {
   "projectInfo": {
-    "projectType": "string",
-    "buildingFunction": "string atau null",
-    "floorCount": "number atau null",
-    "mainDimensions": "string atau null (contoh: 6x6m)",
-    "structuralSystem": "string atau null",
-    "scopeSummary": "ringkasan 2-3 kalimat",
-    "missingInfo": ["info yang tidak ditemukan tapi diasumsikan"],
-    "ambiguities": ["hal yang ambigu"]
+    "projectType": "BANGUNAN",
+    "mainDimensions": "6x6m",
+    "scopeSummary": "ringkasan singkat"
   },
   "items": [
     {
       "no": 1,
-      "wbsCode": "BGN-04-B atau null",
-      "wbsGroup": "nama kelompok atau null",
-      "name": "nama pekerjaan",
-      "description": "deskripsi singkat atau null",
-      "category": "kategori",
-      "quantity": {
-        "value": 0.81,
-        "unit": "m3",
-        "formula": "12 × 0.15 × 0.15 × 3",
-        "steps": ["langkah 1", "langkah 2"],
-        "dimensions": "0.15×0.15×3m per kolom",
-        "sourcePages": [1, 3],
-        "provenance": "EXPLICIT|DERIVED|ASSUMPTION|NEEDS_CONFIRMATION|UNRESOLVED",
-        "confidence": "HIGH|MEDIUM|LOW",
-        "assumptions": ["asumsi yang dipakai, WAJIB diisi jika ASSUMPTION"],
-        "notes": "catatan ketidakpastian"
-      },
-      "price": {
-        "unitPrice": 4500000,
-        "unit": "m3",
-        "source": "AI_ESTIMATE",
-        "region": "Jakarta",
-        "period": "2026",
-        "ahspCode": null,
-        "notes": "referensi harga Jakarta 2026"
-      },
-      "sourcePages": [1, 3]
+      "name": "Galian tanah pondasi",
+      "category": "Tanah",
+      "wbsGroup": "Pekerjaan Tanah dan Pondasi",
+      "qty": 9.6,
+      "unit": "m3",
+      "formula": "30 x 0.32",
+      "provenance": "DERIVED",
+      "assumptions": "panjang pondasi 30m dari keliling",
+      "price": 85000,
+      "priceUnit": "m3",
+      "priceSource": "AI_ESTIMATE"
     }
-  ],
-  "warnings": ["peringatan jika ada"]
+  ]
 }
 
+ATURAN JSON (WAJIB DIPATUHI):
+- Hanya field di atas. JANGAN tambah field lain.
+- "qty" = angka saja (contoh: 9.6), bukan object
+- "price" = angka saja (contoh: 85000), bukan object
+- "provenance": salah satu dari EXPLICIT, DERIVED, ASSUMPTION
+- "priceSource": selalu "AI_ESTIMATE"
+- Jika tidak bisa estimasi qty, isi "qty": null
+- Jika tidak bisa estimasi harga, isi "price": null
+- JANGAN pakai koma di angka (tulis 85000 bukan 85,000)
+- JANGAN pakai teks di luar JSON
+
 PENTING:
-- Target: MINIMAL 15-20 item untuk rumah tinggal, JANGAN kurang dari 10
-- Setiap item HARUS punya quantity.value dan price.unitPrice (kecuali benar-benar tidak mungkin)
-- "assumptions" WAJIB diisi untuk setiap ASSUMPTION — jelaskan dasar perkiraanmu
-- Jangan hitung subtotal — aplikasi yang memverifikasi.
-- WBS: gunakan kode yang sesuai jenis proyek.`;
+- Target: MINIMAL 15 item untuk rumah tinggal
+- Setiap item HARUS punya qty dan price (kecuali benar-benar tidak mungkin)
+- Jangan hitung subtotal — aplikasi yang memverifikasi.`;
 }
 
 export function buildFullAiPrompt(input: FullAiPromptInput): { system: string; prompt: string } {
