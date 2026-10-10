@@ -340,6 +340,7 @@ export class ArchitecturalScene {
     const rad = 26.5 + Math.sin((t % LOOP_S) * TAU / LOOP_S) * 1.1;
     const y = 10.5 + Math.sin(t * 0.11) * 0.55;
     this.camera.position.set(Math.sin(ang) * rad, y, Math.cos(ang) * rad);
-    this.camera.lookAt(0, 4.6, 0);
+    // lookAt shifted left so the architecture sits right-of-center ("agak ke kanan")
+    this.camera.lookAt(-3.5, 4.6, 0);
   }
 }

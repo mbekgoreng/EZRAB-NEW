@@ -12,7 +12,6 @@ import {
   Zap,
   Check,
   Building2,
-  FileText,
 } from 'lucide-react';
 import { ArchitecturalBackground } from '../architectural/ArchitecturalBackground';
 import { ProductStage } from '../cinematic/ProductStage';
@@ -35,13 +34,11 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
     return () => clearTimeout(timer);
   }, []);
 
-  // All 6 cards are guaranteed to render and stay visible!
+  // Cards are guaranteed to render and stay visible!
   const showCard1 = true;
   const showCard2 = cardsReady;
-  const showCard3 = cardsReady;
   const showCard4 = cardsReady;
   const showCard5 = cardsReady;
-  const showCard6 = cardsReady;
 
   return (
     <section id="beranda" className="ez-hero-exact">
@@ -252,36 +249,6 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
               </div>
             </div>
 
-            {/* Card 3: AI Dokumen (Middle Right) — sesuai scene demo "AI Dokumen" */}
-            <div
-              className={`ez-popup-card ez-card-scene-dokumen ${showCard3 ? 'is-visible' : ''}`}
-            >
-              <div className="ez-card-header-flex">
-                <div className="ez-card-icon-bubble blue">
-                  <FileText size={16} />
-                </div>
-                <div className="ez-card-header-text">
-                  <span className="ez-card-cat-label">AI DOKUMEN</span>
-                  <span className="ez-card-chip-tag blue">Dianalisis</span>
-                </div>
-              </div>
-
-              <div className="ez-card-highlight-title font-mono" style={{ fontSize: '14px' }}>
-                DED_Rumah-Tipe120.pdf
-              </div>
-
-              <div className="ez-card-meta-text">
-                12 halaman terurai otomatis
-              </div>
-
-              <div className="ez-card-footer-meta">
-                <span className="ez-card-status-pill blue">
-                  <Check size={12} />
-                  Data demonstrasi
-                </span>
-              </div>
-            </div>
-
             {/* Card 4: QTO Volume (Bottom Left) — sesuai scene demo "QTO Volume" */}
             <div
               className={`ez-popup-card ez-card-scene-qto ${showCard4 ? 'is-visible' : ''}`}
@@ -339,36 +306,6 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
                 <div className="ez-card-progress-track">
                   <div className="ez-card-progress-bar green" style={{ width: '68%' }} />
                 </div>
-              </div>
-            </div>
-
-            {/* Card 6: AHSP & RAB (Middle Left) — sesuai scene demo "AHSP & RAB" */}
-            <div
-              className={`ez-popup-card ez-card-scene-ahsp ${showCard6 ? 'is-visible' : ''}`}
-            >
-              <div className="ez-card-header-flex">
-                <div className="ez-card-icon-bubble green">
-                  <Database size={16} />
-                </div>
-                <div className="ez-card-header-text">
-                  <span className="ez-card-cat-label">AHSP & RAB</span>
-                  <span className="ez-card-chip-tag green">4 Item</span>
-                </div>
-              </div>
-
-              <div className="ez-card-amount-display font-mono">
-                Rp 8.341.130
-              </div>
-
-              <div className="ez-card-meta-text">
-                Subtotal contoh • AHSP 2026
-              </div>
-
-              <div className="ez-card-footer-meta">
-                <span className="ez-card-sub-info">
-                  <CheckCircle2 size={13} className="text-emerald-400" />
-                  <span>Harga contoh (bukan resmi)</span>
-                </span>
               </div>
             </div>
 
