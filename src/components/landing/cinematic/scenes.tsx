@@ -69,7 +69,7 @@ export const SceneProjectIntelligence: React.FC<SceneProps> = memo(({ progress, 
         <div className="ch-kpi-row">
           {[
             { label: 'Item RAB', value: String(demoRabRows.length) },
-            { label: 'Volume beton', value: formatVolume(demoRabRows[2].volume, 'm³') },
+            { label: 'Volume beton', value: formatVolume(demoRabRows[1].volume, 'm³') },
             { label: 'Subtotal contoh', value: formatRupiah(demoSubtotal) },
           ].map((kpi, i) => (
             <div key={kpi.label} className="ch-kpi" style={fade(p, 0.6 + i * 0.1, 0.72 + i * 0.1)}>
@@ -178,7 +178,7 @@ export const SceneDedDokumen: React.FC<SceneProps> = memo(({ progress, reduced }
       </div>
       <div className="ch-doc-layout">
         <div className="ch-doc-viewer" style={fade(p, 0.05, 0.2)}>
-          <p className="ch-muted">DED_Rumah-Tipe120.pdf — {DEMO_BADGE.toLowerCase()}</p>
+          <p className="ch-muted">DED_Rumah-Tipe36.pdf — {DEMO_BADGE.toLowerCase()}</p>
           <div className="ch-doc-thumbs">
             {[1, 2, 3].map((page) => (
               <BlueprintThumb key={page} page={page} active={page === activePage} />
@@ -187,8 +187,8 @@ export const SceneDedDokumen: React.FC<SceneProps> = memo(({ progress, reduced }
         </div>
         <div className="ch-doc-analysis">
           {[
-            { page: 1, text: 'Denah lantai 1 — 3 kamar tidur, 2 kamar mandi.' },
-            { page: 2, text: 'Detail pondasi batu kali, sloof 25/40, kolom 25/25.' },
+            { page: 1, text: 'Denah tipe 36 — 2 kamar tidur, 1 kamar mandi.' },
+            { page: 2, text: 'Pondasi batu kali, sloof 15/30, kolom 15/15.' },
             { page: 3, text: 'Rencana atap pelana, rangka baja ringan.' },
           ].map((item, i) => (
             <div
@@ -213,11 +213,11 @@ SceneDedDokumen.displayName = 'SceneDedDokumen';
 /* ------------------------------------------------------------------ */
 export const SceneQtoVolume: React.FC<SceneProps> = memo(({ progress, reduced }) => {
   const p = reduced ? 1 : progress;
-  // Animate dimensions: panjang 10 → 12.5, lebar 0.30 → 0.25, tinggi 0.40 tetap
+  // Animate pondasi dims: panjang 16 → 18.75, lebar 0.50 → 0.60, tinggi 0.80 tetap
   const dimT = seg(p, 0.1, 0.55);
-  const panjang = 10 + (12.5 - 10) * dimT;
-  const lebar = 0.3 + (0.25 - 0.3) * dimT;
-  const tinggi = 0.4;
+  const panjang = 16 + (18.75 - 16) * dimT;
+  const lebar = 0.5 + (0.6 - 0.5) * dimT;
+  const tinggi = 0.8;
   const volume = panjang * lebar * tinggi;
   const sent = seg(p, 0.7, 0.9) > 0.5;
   const sentFlash = seg(p, 0.7, 0.85);
@@ -228,7 +228,7 @@ export const SceneQtoVolume: React.FC<SceneProps> = memo(({ progress, reduced })
         <span className="ch-demo-chip">{DEMO_BADGE}</span>
       </div>
       <div className="ch-qto-panel" style={fade(p, 0.05, 0.2)}>
-        <p className="ch-muted">Beton sloof K-225 — dimensi (m)</p>
+        <p className="ch-muted">Pondasi batu kali — dimensi (m)</p>
         <div className="ch-qto-inputs">
           {[
             { label: 'Panjang', value: panjang },

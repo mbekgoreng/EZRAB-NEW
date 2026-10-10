@@ -37,7 +37,6 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
   // Cards are guaranteed to render and stay visible!
   const showCard1 = true;
   const showCard2 = cardsReady;
-  const showCard4 = cardsReady;
   const showCard5 = cardsReady;
 
   return (
@@ -183,7 +182,8 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
                 5 DYNAMIC ENLARGED POP-UP CARDS (Synchronized to Video)
                 ======================================================= */}
 
-            {/* Card 1: Proyek (Top Left) — sesuai scene demo "Proyek" */}
+            {/* ======= 3 POPUP CARDS — berjejer di atas, demo terlihat penuh ======= */}
+            {/* Card 1: Proyek (kiri atas) — sesuai scene demo "Proyek" */}
             <div
               className={`ez-popup-card ez-card-scene-proyek ${showCard1 ? 'is-visible' : ''}`}
             >
@@ -198,7 +198,7 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
               </div>
 
               <div className="ez-card-highlight-title">
-                Rumah Tinggal Tipe 120
+                Rumah Tipe 36
               </div>
 
               <div className="ez-card-meta-text">
@@ -216,7 +216,7 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
               </div>
             </div>
 
-            {/* Card 2: AI Estimate (Top Right) — sesuai scene demo "AI Estimate" */}
+            {/* Card 2: AI Estimate (tengah atas) — sesuai scene demo "AI Estimate" */}
             <div
               className={`ez-popup-card ez-card-scene-estimate ${showCard2 ? 'is-visible' : ''}`}
             >
@@ -231,52 +231,24 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
               </div>
 
               <div className="ez-card-highlight-title">
-                4 Item Tersusun
+                10 Item Tersusun
               </div>
 
               <div className="ez-card-mini-tags">
-                <span className="ez-mini-badge">Galian</span>
                 <span className="ez-mini-badge">Pondasi</span>
-                <span className="ez-mini-badge">Sloof</span>
-                <span className="ez-mini-badge">Besi</span>
+                <span className="ez-mini-badge">Struktur</span>
+                <span className="ez-mini-badge">Atap</span>
               </div>
 
               <div className="ez-card-footer-meta">
                 <span className="ez-card-sub-info">
                   <Zap size={13} className="text-amber-400" />
-                  <span>Estimasi: <b>Rp 8.341.130</b></span>
+                  <span>Estimasi: <b>Rp 135.723.000</b></span>
                 </span>
               </div>
             </div>
 
-            {/* Card 4: QTO Volume (Bottom Left) — sesuai scene demo "QTO Volume" */}
-            <div
-              className={`ez-popup-card ez-card-scene-qto ${showCard4 ? 'is-visible' : ''}`}
-            >
-              <div className="ez-card-header-flex">
-                <div className="ez-card-icon-bubble amber">
-                  <Layers size={16} />
-                </div>
-                <div className="ez-card-header-text">
-                  <span className="ez-card-cat-label">QTO VOLUME</span>
-                  <span className="ez-card-chip-tag amber">15,00 m³</span>
-                </div>
-              </div>
-
-              <div className="ez-card-highlight-title">
-                Kalkulasi Otomatis
-              </div>
-
-              <div className="ez-card-meta-text">
-                Galian tanah: 1,50 × 0,80 × 12,50
-              </div>
-
-              <div className="ez-card-progress-track">
-                <div className="ez-card-progress-bar amber" style={{ width: '88%' }} />
-              </div>
-            </div>
-
-            {/* Card 5: Kurva S (Bottom Right) — sesuai scene demo "Kurva S" */}
+            {/* Card 3: Kurva S (kanan atas) — sesuai scene demo "Kurva S" */}
             <div
               className={`ez-popup-card ez-card-scene-kurva ${showCard5 ? 'is-visible' : ''}`}
             >

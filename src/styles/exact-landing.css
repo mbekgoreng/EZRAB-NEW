@@ -730,10 +730,11 @@ body,
 }
 
 /* Card Specific Positions & Smooth Floating Animations */
-/* Card 1: Total Estimasi RAB (Top Left) */
+/* 3 cards — berjejer di ATAS, demo terlihat penuh */
+/* Card 1: Proyek (kiri atas) */
 .ez-card-scene-proyek {
-  top: -4%;
-  left: -8%;
+  top: 0;
+  left: 0;
   width: 240px;
 }
 
@@ -741,10 +742,10 @@ body,
   animation: softFloat1 6.5s ease-in-out infinite 0.85s;
 }
 
-/* Card 2: Magic AI Detection (Top Right) */
+/* Card 2: AI Estimate (tengah atas) */
 .ez-card-scene-estimate {
-  top: -10%;
-  right: 2%;
+  top: -2%;
+  left: calc(50% - 122px);
   width: 245px;
 }
 
@@ -752,48 +753,15 @@ body,
   animation: softFloat2 7.0s ease-in-out infinite 0.85s;
 }
 
-/* Card 3: AHSP PUPR 2026 (Middle Right) */
-.ez-card-scene-dokumen {
-  top: 34%;
-  right: -6%;
-  width: 235px;
-}
-
-.ez-card-scene-dokumen.is-visible {
-  animation: softFloat3 6.2s ease-in-out infinite 0.85s;
-}
-
-/* Card 4: QTO & Volume (Bottom Left) */
-.ez-card-scene-qto {
-  bottom: 4%;
-  left: -6%;
-  width: 240px;
-}
-
-.ez-card-scene-qto.is-visible {
-  animation: softFloat4 6.8s ease-in-out infinite 0.85s;
-}
-
-/* Card 5: BOQ & Export (Bottom Right) */
+/* Card 3: Kurva S (kanan atas) */
 .ez-card-scene-kurva {
-  bottom: -6%;
-  right: 6%;
+  top: 0;
+  right: 0;
   width: 240px;
 }
 
 .ez-card-scene-kurva.is-visible {
   animation: softFloat5 6.0s ease-in-out infinite 0.85s;
-}
-
-/* Card 6: AHSP & RAB (Middle Left) */
-.ez-card-scene-ahsp {
-  top: 34%;
-  left: -6%;
-  width: 235px;
-}
-
-.ez-card-scene-ahsp.is-visible {
-  animation: softFloat6 6.4s ease-in-out infinite 0.85s;
 }
 
 /* Ultra-Smooth Levitating Keyframes (Seamless Zero-Jump Oscillation) */
@@ -9661,28 +9629,20 @@ body,
   }
 
   .ez-card-scene-proyek {
-    left: 2%;
-    top: -2%;
+    left: 0;
+    top: 0;
   }
 
   .ez-card-scene-estimate {
-    right: 2%;
+    left: calc(50% - 122px);
+    right: auto;
     top: -2%;
   }
 
-  .ez-card-scene-dokumen {
-    right: 0%;
-    top: 45%;
-  }
-
-  .ez-card-scene-qto {
-    left: 2%;
-    bottom: -2%;
-  }
-
   .ez-card-scene-kurva {
-    right: 2%;
-    bottom: -2%;
+    right: 0;
+    top: 0;
+    bottom: auto;
   }
 
   .ez-roles-grid {
@@ -9721,31 +9681,38 @@ body,
   }
 
   .ez-card-scene-proyek {
-    width: 200px;
+    width: 31%;
     left: 0;
-    top: -4%;
+    top: -3%;
   }
 
   .ez-card-scene-estimate {
-    width: 200px;
-    right: 0;
+    width: 34%;
+    left: 33%;
+    right: auto;
     top: -4%;
   }
 
-  .ez-card-scene-dokumen {
+  .ez-card-scene-dokumen,
+  .ez-card-scene-qto,
+  .ez-card-scene-ahsp {
     display: none;
   }
 
-  .ez-card-scene-qto {
-    width: 200px;
-    left: 0;
-    bottom: -4%;
+  .ez-card-scene-kurva {
+    width: 31%;
+    right: 0;
+    left: auto;
+    top: -3%;
+    bottom: auto;
   }
 
-  .ez-card-scene-kurva {
-    width: 200px;
-    right: 0;
-    bottom: -4%;
+  .ez-card-highlight-title {
+    font-size: 13px;
+  }
+
+  .ez-card-mini-tags {
+    flex-wrap: wrap;
   }
 
   .ez-card-amount-display {
@@ -9774,7 +9741,7 @@ body,
 .ez-feature-stage-wrapper {
   position: relative;
   width: 100%;
-  max-width: 560px;
+  max-width: 700px;
   margin-left: auto;
   margin-top: 10px;
   z-index: 3;
