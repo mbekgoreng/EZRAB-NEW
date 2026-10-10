@@ -176,7 +176,7 @@ export class FullAiDedService {
         if (q.value == null) {
           status = 'UNRESOLVED';
           exclusionReason = 'MISSING_QUANTITY';
-        } else if (typeof q.value !== 'number' || q.value < 0) {
+        } else if (typeof q.value !== 'number' || !Number.isFinite(q.value) || q.value < 0) {
           status = 'UNRESOLVED';
           exclusionReason = 'INVALID_QUANTITY';
         } else if (!q.unit) {
@@ -191,6 +191,12 @@ export class FullAiDedService {
         } else if (p.unitPrice == null) {
           status = 'NEEDS_CONFIRMATION';
           exclusionReason = 'MISSING_UNIT_PRICE';
+        } else if (typeof p.unitPrice !== 'number' || !Number.isFinite(p.unitPrice)) {
+          status = 'NEEDS_CONFIRMATION';
+          exclusionReason = 'INVALID_UNIT_PRICE';
+        } else if (p.unitPrice < 0) {
+          status = 'NEEDS_CONFIRMATION';
+          exclusionReason = 'INVALID_UNIT_PRICE';
         } else if (p.source === 'UNRESOLVED') {
           status = 'NEEDS_CONFIRMATION';
           exclusionReason = 'PRICE_UNRESOLVED';
@@ -203,6 +209,7 @@ export class FullAiDedService {
           }
         }
         // ASSUMPTION/DERIVED/EXPLICIT dengan qty+harga valid → READY (masuk total)
+        // Label asumsi tetap terlihat jelas di UI — bukan status terverifikasi
 
         // Item UNRESOLVED tidak masuk total tapi tetap ditampilkan
         const includeInTotal = status === 'READY' && subtotal != null && subtotal > 0;

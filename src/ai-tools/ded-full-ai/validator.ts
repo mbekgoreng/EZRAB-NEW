@@ -111,6 +111,9 @@ export function verifySubtotal(
   if (unitPrice === null || unitPrice === undefined) {
     return { subtotal: null, verified: true, note: 'harga null — tidak dihitung sebagai Rp0' };
   }
+  if (!Number.isFinite(quantity) || !Number.isFinite(unitPrice)) {
+    return { subtotal: null, verified: true, note: 'nilai non-finite (NaN/Infinity) — ditolak' };
+  }
   if (quantity <= 0 || unitPrice <= 0) {
     return { subtotal: null, verified: true, note: 'nilai tidak positif' };
   }

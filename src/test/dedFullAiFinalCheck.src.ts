@@ -104,5 +104,12 @@ const n12 = normalizeItem({ qty: 1.8, unit: 'm3', price: 1150000, priceUnit: 'm3
 const s12 = verifySubtotal(n12.quantity.value, n12.price.unitPrice);
 t('1.8 × 1150000 = 2070000', s12.subtotal === 2070000);
 
+// 13. verifySubtotal tolak NaN/Infinity
+console.log('-- 13. verifySubtotal tolak non-finite --');
+t('NaN price → subtotal null', verifySubtotal(1.8, NaN).subtotal === null);
+t('Infinity price → subtotal null', verifySubtotal(1.8, Infinity).subtotal === null);
+t('NaN qty → subtotal null', verifySubtotal(NaN, 100).subtotal === null);
+t('negatif price → subtotal null', verifySubtotal(1.8, -5000).subtotal === null);
+
 console.log(`\n${passed} PASS, ${failed} FAIL`);
 if (fails.length) { console.log('Gagal:', fails.join(', ')); process.exit(1); }

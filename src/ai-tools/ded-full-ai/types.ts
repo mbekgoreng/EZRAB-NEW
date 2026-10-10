@@ -46,9 +46,10 @@ export interface FullAiPriceDetail {
 
 export type FullAiExclusionReason =
   | 'MISSING_QUANTITY'       // quantity.value null
-  | 'INVALID_QUANTITY'       // quantity negatif atau bukan angka
+  | 'INVALID_QUANTITY'       // quantity negatif, NaN, atau non-finite
   | 'MISSING_UNIT'           // satuan quantity kosong
   | 'MISSING_UNIT_PRICE'     // unitPrice null
+  | 'INVALID_UNIT_PRICE'     // unitPrice negatif, NaN, atau non-finite
   | 'INVALID_PRICE_UNIT'     // satuan harga tidak cocok dengan satuan quantity
   | 'UNRESOLVED_PROVENANCE'  // provenance UNRESOLVED
   | 'NEEDS_CONFIRMATION'     // butuh konfirmasi eksplisit
