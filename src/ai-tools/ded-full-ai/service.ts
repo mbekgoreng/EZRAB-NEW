@@ -132,8 +132,8 @@ export class FullAiDedService {
         // Format flat: { qty: 9.6, unit: "m3", price: 85000, priceUnit: "m3", ... }
         // Format nested: { quantity: { value, unit, ... }, price: { unitPrice, unit, ... } }
         const isFlatPrice = typeof raw.price === 'number';
-        const isNestedPrice = raw.price && typeof raw.price === 'object';
-        const isNestedQty = raw.quantity && typeof raw.quantity === 'object';
+        const isNestedPrice = raw.price && typeof raw.price === 'object' && !Array.isArray(raw.price);
+        const isNestedQty = raw.quantity && typeof raw.quantity === 'object' && !Array.isArray(raw.quantity);
         const normalized = {
           ...raw,
           quantity: isNestedQty ? raw.quantity : {
