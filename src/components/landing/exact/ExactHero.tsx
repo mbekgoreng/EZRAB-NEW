@@ -9,10 +9,10 @@ import {
   Sparkles,
   TrendingUp,
   CheckCircle2,
-  Cpu,
   Zap,
   Check,
   Building2,
+  FileText,
 } from 'lucide-react';
 import { RibbonFieldBackground } from './RibbonFieldBackground';
 import { ProductStage } from '../cinematic/ProductStage';
@@ -33,12 +33,13 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
     return () => clearTimeout(timer);
   }, []);
 
-  // All 5 cards are guaranteed to render and stay visible!
+  // All 6 cards are guaranteed to render and stay visible!
   const showCard1 = true;
   const showCard2 = cardsReady;
   const showCard3 = cardsReady;
   const showCard4 = cardsReady;
   const showCard5 = cardsReady;
+  const showCard6 = cardsReady;
 
   return (
     <section id="beranda" className="ez-hero-exact">
@@ -128,9 +129,9 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
             <div className="ez-blueprint-scan-beam" />
             <div className="ez-platform-ground-glow" />
 
-            {/* Demo animasi produk — menggantikan video: 6 scene demonstrasi EZRAB */}
+            {/* Demo animasi produk — miring perspektif seperti iPad Pro */}
             <div className="ez-feature-stage-wrapper">
-              <ProductStage flat />
+              <ProductStage />
             </div>
 
             {/* Neon Connection Circuit Lines SVG Overlay */}
@@ -183,109 +184,113 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
                 5 DYNAMIC ENLARGED POP-UP CARDS (Synchronized to Video)
                 ======================================================= */}
 
-            {/* Card 1: Total Estimasi RAB (Top Left) */}
+            {/* Card 1: Proyek (Top Left) — sesuai scene demo "Proyek" */}
             <div
-              className={`ez-popup-card ez-card-rab-total ${showCard1 ? 'is-visible' : ''}`}
+              className={`ez-popup-card ez-card-scene-proyek ${showCard1 ? 'is-visible' : ''}`}
             >
               <div className="ez-card-header-flex">
-                <div className="ez-card-icon-bubble green">
-                  <TrendingUp size={16} />
+                <div className="ez-card-icon-bubble blue">
+                  <Building2 size={16} />
                 </div>
                 <div className="ez-card-header-text">
-                  <span className="ez-card-cat-label">TOTAL ESTIMASI RAB</span>
-                  <span className="ez-card-chip-tag green">AI Otomatis</span>
+                  <span className="ez-card-cat-label">PROYEK</span>
+                  <span className="ez-card-chip-tag green">Aktif</span>
                 </div>
               </div>
 
-              <div className="ez-card-amount-display font-mono">
-                Rp 1.485.250.000
+              <div className="ez-card-highlight-title">
+                Rumah Tinggal Tipe 120
+              </div>
+
+              <div className="ez-card-meta-text">
+                Bekasi, Jawa Barat
               </div>
 
               <div className="ez-card-footer-meta">
                 <div className="ez-card-meta-stat">
                   <span className="ez-card-dot success" />
-                  <span>Akurasi 99.4% • <b>24 Item</b></span>
+                  <span>Progres <b>34%</b></span>
                 </div>
                 <div className="ez-card-progress-track">
-                  <div className="ez-card-progress-bar green" style={{ width: '100%' }} />
+                  <div className="ez-card-progress-bar green" style={{ width: '34%' }} />
                 </div>
               </div>
             </div>
 
-            {/* Card 2: Magic AI Detection (Top Right) */}
+            {/* Card 2: AI Estimate (Top Right) — sesuai scene demo "AI Estimate" */}
             <div
-              className={`ez-popup-card ez-card-ai-detect ${showCard2 ? 'is-visible' : ''}`}
+              className={`ez-popup-card ez-card-scene-estimate ${showCard2 ? 'is-visible' : ''}`}
             >
               <div className="ez-card-header-flex">
                 <div className="ez-card-icon-bubble cyan">
                   <Sparkles size={16} />
                 </div>
                 <div className="ez-card-header-text">
-                  <span className="ez-card-cat-label">MAGIC AI ENGINE</span>
-                  <span className="ez-card-chip-tag cyan">Terdeteksi</span>
+                  <span className="ez-card-cat-label">AI ESTIMATE</span>
+                  <span className="ez-card-chip-tag cyan">Selesai</span>
                 </div>
               </div>
 
               <div className="ez-card-highlight-title">
-                24 Pekerjaan Terurai
+                4 Item Tersusun
               </div>
 
               <div className="ez-card-mini-tags">
+                <span className="ez-mini-badge">Galian</span>
                 <span className="ez-mini-badge">Pondasi</span>
-                <span className="ez-mini-badge">Kolom</span>
-                <span className="ez-mini-badge">Balok</span>
-                <span className="ez-mini-badge">Atap</span>
+                <span className="ez-mini-badge">Sloof</span>
+                <span className="ez-mini-badge">Besi</span>
               </div>
 
               <div className="ez-card-footer-meta">
                 <span className="ez-card-sub-info">
                   <Zap size={13} className="text-amber-400" />
-                  <span>Waktu Analisis: <b>1.8 Detik</b></span>
+                  <span>Estimasi: <b>Rp 8.341.130</b></span>
                 </span>
               </div>
             </div>
 
-            {/* Card 3: AHSP PUPR 2026 Database (Middle Right) */}
+            {/* Card 3: AI Dokumen (Middle Right) — sesuai scene demo "AI Dokumen" */}
             <div
-              className={`ez-popup-card ez-card-ahsp-sync ${showCard3 ? 'is-visible' : ''}`}
+              className={`ez-popup-card ez-card-scene-dokumen ${showCard3 ? 'is-visible' : ''}`}
             >
               <div className="ez-card-header-flex">
                 <div className="ez-card-icon-bubble blue">
-                  <Database size={16} />
+                  <FileText size={16} />
                 </div>
                 <div className="ez-card-header-text">
-                  <span className="ez-card-cat-label">DATABASE AHSP 2026</span>
-                  <span className="ez-card-chip-tag blue">Permen PUPR</span>
+                  <span className="ez-card-cat-label">AI DOKUMEN</span>
+                  <span className="ez-card-chip-tag blue">Dianalisis</span>
                 </div>
               </div>
 
-              <div className="ez-card-sub-price font-mono">
-                Rp 820.000 <small>/ m³</small>
+              <div className="ez-card-highlight-title font-mono" style={{ fontSize: '14px' }}>
+                DED_Rumah-Tipe120.pdf
               </div>
 
               <div className="ez-card-meta-text">
-                Beton Bertulang K-300 SNI
+                12 halaman terurai otomatis
               </div>
 
               <div className="ez-card-footer-meta">
                 <span className="ez-card-status-pill blue">
                   <Check size={12} />
-                  Harga Terupdate 2026
+                  Data demonstrasi
                 </span>
               </div>
             </div>
 
-            {/* Card 4: QTO & Volume Kalkulasi (Bottom Left) */}
+            {/* Card 4: QTO Volume (Bottom Left) — sesuai scene demo "QTO Volume" */}
             <div
-              className={`ez-popup-card ez-card-qto-calc ${showCard4 ? 'is-visible' : ''}`}
+              className={`ez-popup-card ez-card-scene-qto ${showCard4 ? 'is-visible' : ''}`}
             >
               <div className="ez-card-header-flex">
                 <div className="ez-card-icon-bubble amber">
                   <Layers size={16} />
                 </div>
                 <div className="ez-card-header-text">
-                  <span className="ez-card-cat-label">QTO & VOLUME</span>
-                  <span className="ez-card-chip-tag amber">1.284 m³</span>
+                  <span className="ez-card-cat-label">QTO VOLUME</span>
+                  <span className="ez-card-chip-tag amber">15,00 m³</span>
                 </div>
               </div>
 
@@ -294,7 +299,7 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
               </div>
 
               <div className="ez-card-meta-text">
-                Pondasi Strauss + Pile Cap Selesai
+                Galian tanah: 1,50 × 0,80 × 12,50
               </div>
 
               <div className="ez-card-progress-track">
@@ -302,30 +307,65 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
               </div>
             </div>
 
-            {/* Card 5: BOQ & Export Siap Tender (Bottom Right) */}
+            {/* Card 5: Kurva S (Bottom Right) — sesuai scene demo "Kurva S" */}
             <div
-              className={`ez-popup-card ez-card-boq-export ${showCard5 ? 'is-visible' : ''}`}
+              className={`ez-popup-card ez-card-scene-kurva ${showCard5 ? 'is-visible' : ''}`}
             >
               <div className="ez-card-header-flex">
                 <div className="ez-card-icon-bubble purple">
-                  <FileSpreadsheet size={16} />
+                  <TrendingUp size={16} />
                 </div>
                 <div className="ez-card-header-text">
-                  <span className="ez-card-cat-label">BOQ & LAPORAN</span>
-                  <span className="ez-card-chip-tag purple">Siap Tender</span>
+                  <span className="ez-card-cat-label">KURVA S</span>
+                  <span className="ez-card-chip-tag purple">68%</span>
                 </div>
               </div>
 
-              <div className="ez-card-export-badges">
-                <span className="ez-export-format-tag xlsx">.XLSX</span>
-                <span className="ez-export-format-tag pdf">.PDF</span>
-                <span className="ez-export-format-tag scurve">Kurva S</span>
+              <div className="ez-card-highlight-title">
+                Minggu 8 dari 12
+              </div>
+
+              <div className="ez-card-meta-text">
+                Progres rencana vs realisasi
+              </div>
+
+              <div className="ez-card-footer-meta">
+                <div className="ez-card-meta-stat">
+                  <span className="ez-card-dot success" />
+                  <span>Sesuai <b>jadwal</b></span>
+                </div>
+                <div className="ez-card-progress-track">
+                  <div className="ez-card-progress-bar green" style={{ width: '68%' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Card 6: AHSP & RAB (Middle Left) — sesuai scene demo "AHSP & RAB" */}
+            <div
+              className={`ez-popup-card ez-card-scene-ahsp ${showCard6 ? 'is-visible' : ''}`}
+            >
+              <div className="ez-card-header-flex">
+                <div className="ez-card-icon-bubble green">
+                  <Database size={16} />
+                </div>
+                <div className="ez-card-header-text">
+                  <span className="ez-card-cat-label">AHSP & RAB</span>
+                  <span className="ez-card-chip-tag green">4 Item</span>
+                </div>
+              </div>
+
+              <div className="ez-card-amount-display font-mono">
+                Rp 8.341.130
+              </div>
+
+              <div className="ez-card-meta-text">
+                Subtotal contoh • AHSP 2026
               </div>
 
               <div className="ez-card-footer-meta">
                 <span className="ez-card-sub-info">
                   <CheckCircle2 size={13} className="text-emerald-400" />
-                  <span>1-Click Export Dokumen</span>
+                  <span>Harga contoh (bukan resmi)</span>
                 </span>
               </div>
             </div>

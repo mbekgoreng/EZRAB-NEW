@@ -731,58 +731,69 @@ body,
 
 /* Card Specific Positions & Smooth Floating Animations */
 /* Card 1: Total Estimasi RAB (Top Left) */
-.ez-card-rab-total {
+.ez-card-scene-proyek {
   top: -4%;
   left: -8%;
   width: 240px;
 }
 
-.ez-card-rab-total.is-visible {
+.ez-card-scene-proyek.is-visible {
   animation: softFloat1 6.5s ease-in-out infinite 0.85s;
 }
 
 /* Card 2: Magic AI Detection (Top Right) */
-.ez-card-ai-detect {
+.ez-card-scene-estimate {
   top: -10%;
   right: 2%;
   width: 245px;
 }
 
-.ez-card-ai-detect.is-visible {
+.ez-card-scene-estimate.is-visible {
   animation: softFloat2 7.0s ease-in-out infinite 0.85s;
 }
 
 /* Card 3: AHSP PUPR 2026 (Middle Right) */
-.ez-card-ahsp-sync {
+.ez-card-scene-dokumen {
   top: 34%;
   right: -6%;
   width: 235px;
 }
 
-.ez-card-ahsp-sync.is-visible {
+.ez-card-scene-dokumen.is-visible {
   animation: softFloat3 6.2s ease-in-out infinite 0.85s;
 }
 
 /* Card 4: QTO & Volume (Bottom Left) */
-.ez-card-qto-calc {
+.ez-card-scene-qto {
   bottom: 4%;
   left: -6%;
   width: 240px;
 }
 
-.ez-card-qto-calc.is-visible {
+.ez-card-scene-qto.is-visible {
   animation: softFloat4 6.8s ease-in-out infinite 0.85s;
 }
 
 /* Card 5: BOQ & Export (Bottom Right) */
-.ez-card-boq-export {
+.ez-card-scene-kurva {
   bottom: -6%;
   right: 6%;
   width: 240px;
 }
 
-.ez-card-boq-export.is-visible {
+.ez-card-scene-kurva.is-visible {
   animation: softFloat5 6.0s ease-in-out infinite 0.85s;
+}
+
+/* Card 6: AHSP & RAB (Middle Left) */
+.ez-card-scene-ahsp {
+  top: 34%;
+  left: -6%;
+  width: 235px;
+}
+
+.ez-card-scene-ahsp.is-visible {
+  animation: softFloat6 6.4s ease-in-out infinite 0.85s;
 }
 
 /* Ultra-Smooth Levitating Keyframes (Seamless Zero-Jump Oscillation) */
@@ -828,6 +839,15 @@ body,
   }
   50% {
     transform: translateY(-6px) scale(1.01);
+  }
+}
+
+@keyframes softFloat6 {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-7px) scale(1.01);
   }
 }
 
@@ -9640,27 +9660,27 @@ body,
     margin-top: 20px;
   }
 
-  .ez-card-rab-total {
+  .ez-card-scene-proyek {
     left: 2%;
     top: -2%;
   }
 
-  .ez-card-ai-detect {
+  .ez-card-scene-estimate {
     right: 2%;
     top: -2%;
   }
 
-  .ez-card-ahsp-sync {
+  .ez-card-scene-dokumen {
     right: 0%;
     top: 45%;
   }
 
-  .ez-card-qto-calc {
+  .ez-card-scene-qto {
     left: 2%;
     bottom: -2%;
   }
 
-  .ez-card-boq-export {
+  .ez-card-scene-kurva {
     right: 2%;
     bottom: -2%;
   }
@@ -9700,29 +9720,29 @@ body,
     border-radius: 14px;
   }
 
-  .ez-card-rab-total {
+  .ez-card-scene-proyek {
     width: 200px;
     left: 0;
     top: -4%;
   }
 
-  .ez-card-ai-detect {
+  .ez-card-scene-estimate {
     width: 200px;
     right: 0;
     top: -4%;
   }
 
-  .ez-card-ahsp-sync {
+  .ez-card-scene-dokumen {
     display: none;
   }
 
-  .ez-card-qto-calc {
+  .ez-card-scene-qto {
     width: 200px;
     left: 0;
     bottom: -4%;
   }
 
-  .ez-card-boq-export {
+  .ez-card-scene-kurva {
     width: 200px;
     right: 0;
     bottom: -4%;
