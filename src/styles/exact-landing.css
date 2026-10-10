@@ -529,6 +529,7 @@ body,
   align-items: flex-end;
   justify-content: flex-end;
   margin-top: 15px;
+  padding-top: 125px; /* ruang untuk 3 kartu kecil tepat di atas demo */
 }
 
 /* Video Container - Frameless, Extra Large (1.1x scale) & Firmly Anchored in Bottom-Right Corner */
@@ -730,38 +731,72 @@ body,
 }
 
 /* Card Specific Positions & Smooth Floating Animations */
-/* 3 cards — berjejer di ATAS, demo terlihat penuh */
-/* Card 1: Proyek (kiri atas) */
+/* 3 kartu KECIL — berjejer rapi tepat di ATAS demo, tidak menutupi */
+/* Card 1: Proyek (kiri) */
 .ez-card-scene-proyek {
   top: 0;
-  left: 0;
-  width: 240px;
+  right: 410px;
+  width: 190px;
+  padding: 12px 14px;
+  border-radius: 14px;
 }
 
 .ez-card-scene-proyek.is-visible {
   animation: softFloat1 6.5s ease-in-out infinite 0.85s;
 }
 
-/* Card 2: AI Estimate (tengah atas) */
+/* Card 2: AI Estimate (tengah) */
 .ez-card-scene-estimate {
-  top: -2%;
-  left: calc(50% - 122px);
-  width: 245px;
+  top: -1%;
+  right: 205px;
+  width: 190px;
+  padding: 12px 14px;
+  border-radius: 14px;
 }
 
 .ez-card-scene-estimate.is-visible {
   animation: softFloat2 7.0s ease-in-out infinite 0.85s;
 }
 
-/* Card 3: Kurva S (kanan atas) */
+/* Card 3: Kurva S (kanan) */
 .ez-card-scene-kurva {
   top: 0;
   right: 0;
-  width: 240px;
+  width: 190px;
+  padding: 12px 14px;
+  border-radius: 14px;
 }
 
 .ez-card-scene-kurva.is-visible {
   animation: softFloat5 6.0s ease-in-out infinite 0.85s;
+}
+
+/* Kompak: font & elemen dalam kartu kecil */
+.ez-card-scene-proyek .ez-card-highlight-title,
+.ez-card-scene-estimate .ez-card-highlight-title,
+.ez-card-scene-kurva .ez-card-highlight-title {
+  font-size: 12.5px;
+  margin: 2px 0 4px;
+}
+
+.ez-card-scene-proyek .ez-card-meta-text,
+.ez-card-scene-estimate .ez-card-meta-text,
+.ez-card-scene-kurva .ez-card-meta-text {
+  font-size: 10.5px;
+  margin-bottom: 4px;
+}
+
+.ez-card-scene-proyek .ez-mini-badge,
+.ez-card-scene-estimate .ez-mini-badge,
+.ez-card-scene-kurva .ez-mini-badge {
+  font-size: 9px;
+  padding: 1px 5px;
+}
+
+.ez-card-scene-proyek .ez-card-footer-meta,
+.ez-card-scene-estimate .ez-card-footer-meta,
+.ez-card-scene-kurva .ez-card-footer-meta {
+  font-size: 10.5px;
 }
 
 /* Ultra-Smooth Levitating Keyframes (Seamless Zero-Jump Oscillation) */
@@ -9629,14 +9664,15 @@ body,
   }
 
   .ez-card-scene-proyek {
-    left: 0;
+    right: 410px;
+    left: auto;
     top: 0;
   }
 
   .ez-card-scene-estimate {
-    left: calc(50% - 122px);
-    right: auto;
-    top: -2%;
+    right: 205px;
+    left: auto;
+    top: -1%;
   }
 
   .ez-card-scene-kurva {
@@ -9669,6 +9705,10 @@ body,
     min-height: auto;
     padding-top: 82px;
     padding-bottom: 60px;
+  }
+
+  .ez-hero-visual-center {
+    padding-top: 100px; /* ruang kartu kecil di atas demo */
   }
 
   .ez-hero-features-bar {
