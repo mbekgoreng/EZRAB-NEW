@@ -74,22 +74,22 @@ export const JAKARTA_2026_PRICES: PriceReference[] = [
 ];
 
 /**
- * Format referensi harga sebagai teks untuk prompt AI.
+ * Format referensi harga sebagai teks KOMPAK untuk prompt AI.
  */
 export function formatPriceReferenceForPrompt(): string {
-  const byCat = new Map<string, PriceReference[]>();
+  // Format kompak: nama:harga/satuan, dipisah koma per kategori
+  const byCat = new Map<string, string[]>();
   for (const p of JAKARTA_2026_PRICES) {
     if (!byCat.has(p.category)) byCat.set(p.category, []);
-    byCat.get(p.category)!.push(p);
+    byCat.get(p.category)!.push(`${p.name} Rp${p.price.toLocaleString('id-ID')}/${p.unit}`);
   }
 
-  let out = 'REFERENSI HARGA PASAR JAKARTA 2026 (estimasi, bukan HSPK resmi):\n';
+  let out = 'HARGA JAKARTA 2026 (estimasi, bukan HSPK): ';
+  const parts: string[] = [];
   for (const [cat, items] of byCat) {
-    out += `\n[${cat}]\n`;
-    for (const it of items) {
-      out += `- ${it.name}: Rp${it.price.toLocaleString('id-ID')}/${it.unit}\n`;
-    }
+    parts.push(`[${cat}] ${items.join('; ')}`);
   }
-  out += '\nGunakan harga di atas sebagai acuan. Jika item tidak ada di daftar, estimasi dari item terdekat dan beri label ASSUMPTION pada harga.';
+  out += parts.join(' | ');
+  out += '. Pakai sebagai acuan, label AI_ESTIMATE.';
   return out;
 }

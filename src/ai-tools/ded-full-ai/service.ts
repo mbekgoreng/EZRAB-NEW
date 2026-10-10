@@ -96,7 +96,7 @@ export class FullAiDedService {
         prompt,
         systemPrompt: system,
         jsonMode: true,
-        maxTokens: mode === 'FAST' ? 8000 : 16000,
+        maxTokens: mode === 'FAST' ? 16000 : 32000,
         timeoutMs: mode === 'FAST' ? 120000 : 240000,
       });
 
