@@ -380,11 +380,14 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack }
             marginBottom: 16,
           }}>
             <div>
-              <div style={{ fontSize: 13, opacity: 0.7 }}>Total RAB</div>
+              <div style={{ fontSize: 13, opacity: 0.7 }}>Total Estimasi Sementara</div>
               <div style={{ fontSize: 24, fontWeight: 700 }}>{fmtRp(grandTotal)}</div>
+              <div style={{ fontSize: 11, color: '#fbbf24', marginTop: 4 }}>
+                Termasuk {s.itemsWithAssumption} item asumsi berlabel — bukan total final terverifikasi.
+              </div>
               {s.excludedFromTotal > 0 && (
                 <div style={{ fontSize: 12, color: '#fbbf24', marginTop: 4 }}>
-                  Total Rp{grandTotal.toLocaleString('id-ID')} mengecualikan {s.excludedFromTotal} item yang belum lengkap.
+                  Mengecualikan {s.excludedFromTotal} item yang belum lengkap.
                 </div>
               )}
             </div>
