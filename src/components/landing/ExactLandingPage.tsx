@@ -10,9 +10,6 @@ import { ExactHero } from './exact/ExactHero';
 const ExactWorkflow = React.lazy(() =>
   import('./exact/ExactWorkflow').then((m) => ({ default: m.ExactWorkflow })),
 );
-const ExactMagicAi = React.lazy(() =>
-  import('./exact/ExactMagicAi').then((m) => ({ default: m.ExactMagicAi })),
-);
 const ExactStackedShowcase = React.lazy(() =>
   import('./exact/ExactStackedShowcase').then((m) => ({ default: m.ExactStackedShowcase })),
 );
@@ -77,11 +74,6 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
         {/* 3. Satu Workflow (2-row connected nodes) */}
         <Suspense fallback={null}>
           <ExactWorkflow />
-        </Suspense>
-
-        {/* 4. EZRAB Magic AI (Dark with floating modal preview) */}
-        <Suspense fallback={null}>
-          <ExactMagicAi onStart={onOpenWorkspace} />
         </Suspense>
 
         {/* 5-10. Stacked Scrolling Product Story (6-Workspace Physical Stack) */}
