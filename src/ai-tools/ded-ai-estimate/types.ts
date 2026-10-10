@@ -23,13 +23,19 @@ export type DedAiProjectType =
 export type DedAiMode = 'FAST' | 'DETAIL';
 
 export type DedAiQuantitySource =
-  | 'DED_EXPLICIT'
-  | 'DED_GEOMETRIC'
-  | 'AI_INFERENCE'
-  | 'ASSUMPTION'
-  | 'UNRESOLVED';
+  | 'DED_EXPLICIT'   // Nilai dan satuan benar-benar dinyatakan di dokumen sumber dan terverifikasi
+  | 'DED_GEOMETRIC'  // Dihitung dari dimensi/geometri yang ditemukan di DED
+  | 'DERIVED'        // Hasil rumus deterministik dengan semua input tersedia dan terverifikasi
+  | 'USER_INPUT'     // Nilai yang dimasukkan/diubah secara eksplisit oleh pengguna
+  | 'AI_INFERENCE'   // Hasil inferensi AI tanpa bukti eksplisit memadai
+  | 'ASSUMPTION'     // Nilai asumsi yang perlu disetujui pengguna
+  | 'UNRESOLVED';    // Nilai atau satuan belum dapat dipastikan
 
-export type DedAiPriceSource = 'AI_ESTIMATE' | 'UNRESOLVED';
+export type DedAiPriceSource =
+  | 'AI_ESTIMATE'  // Estimasi dari model AI — perlu verifikasi, bukan harga resmi
+  | 'AHSP_2026'    // Dari database AHSP 2026 terverifikasi (belum aktif — reserved)
+  | 'USER_INPUT'   // Dimasukkan/diubah oleh pengguna
+  | 'UNRESOLVED';  // Harga belum tersedia — bukan Rp0
 
 export interface DedAiItem {
   id: string;
@@ -45,6 +51,24 @@ export interface DedAiItem {
   quantityNote?: string;
   /** FASE DED-FIX: dimensi mentah sebagai evidence audit */
   rawDimensions?: string;
+  /**
+   * PHASE 3C: Jejak derivasi terstruktur untuk kuantitas turunan.
+   * Diisi ketika quantitySource = DERIVED atau DED_GEOMETRIC.
+   */
+  derivation?: {
+    formulaType: string;        // mis. "kolom_volume", "dinding_netto", "plester_2_sisi"
+    inputs: Array<{             // input dimensi dengan satuan dan sumber
+      name: string;             // mis. "jumlah_kolom", "lebar", "tinggi"
+      value: number;
+      unit: string;             // satuan asli sebelum normalisasi
+      source: string;           // "DED" | "USER" | "ASSUMPTION"
+    }>;
+    normalizedInputs?: Array<{ name: string; value: number; unit: string }>;
+    result: number | null;
+    resultUnit: string;
+    validationStatus: string;   // "ok" | "rejected: <alasan>"
+    notes?: string;
+  };
   rawAIQuantity?: number | null;
   unitPrice: number | null;
   priceSource: DedAiPriceSource;

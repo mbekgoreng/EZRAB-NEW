@@ -26,6 +26,21 @@ export type QuantityVerdict =
   | { ok: false; reason: string };
 
 /**
+ * Fungsi kanonis untuk menghitung subtotal.
+ * SATU-SATUNYA tempat perhitungan subtotal yang boleh dipakai.
+ * - quantity null → subtotal null (bukan 0)
+ * - unitPrice null → subtotal null (bukan 0)
+ * - Pembulatan: Math.round (konsisten di semua tempat)
+ */
+export function calcSubtotal(quantity: number | null, unitPrice: number | null): number | null {
+  if (quantity === null || quantity === undefined) return null;
+  if (unitPrice === null || unitPrice === undefined) return null;
+  if (!Number.isFinite(quantity) || !Number.isFinite(unitPrice)) return null;
+  if (quantity <= 0 || unitPrice <= 0) return null;
+  return Math.round(quantity * unitPrice);
+}
+
+/**
  * Elemen struktural yang WAJIB dihitung sebagai VOLUME (m³), bukan panjang/luas.
  * Jika AI mengembalikan satuan panjang untuk elemen ini, itu adalah kesalahan fatal.
  */
@@ -124,7 +139,7 @@ export class DedAiCalculator {
         };
       }
       if (q !== null && p !== null && isSaneEstimate(p) && q > 0) {
-        return { ...it, subtotal: Math.round(q * p), stage: 'CALCULATED' as const };
+        return { ...it, subtotal: calcSubtotal(q, p), stage: 'CALCULATED' as const };
       }
       return { ...it, subtotal: null, stage: 'PARSE' as const };
     });

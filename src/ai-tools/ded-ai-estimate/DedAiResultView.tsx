@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { DedAiItem, DedAiOutput } from './types';
-import { validateQuantity } from './calculator';
+import { validateQuantity, calcSubtotal } from './calculator';
 import './dedAi.css';
 
 export type ItemStatus = 'valid' | 'review' | 'blocked' | 'no-price';
@@ -118,14 +118,16 @@ export const DedAiResultView: React.FC<Props> = ({
       const newUnits = editVals.units.trim() || it.units;
       const newName = editVals.name.trim() || it.name;
       // Re-validasi setelah edit manual — pakai nama baru untuk cek kategori
-      const verdict = validateQuantity({ quantity, units: newUnits, quantitySource: 'DED_EXPLICIT', name: newName });
-      const subtotal = verdict.ok && quantity != null && unitPrice != null ? Math.round(quantity * unitPrice) : null;
+      // Sumber: USER_INPUT (bukan DED_EXPLICIT — ini input pengguna, bukan dari dokumen)
+      const verdict = validateQuantity({ quantity, units: newUnits, quantitySource: 'USER_INPUT', name: newName });
+      // Subtotal via fungsi kanonis — perubahan harga tidak ubah provenance kuantitas
+      const subtotal = verdict.ok ? calcSubtotal(quantity, unitPrice) : null;
       return {
         ...it,
         name: newName,
         quantity,
         units: newUnits,
-        quantitySource: 'DED_EXPLICIT' as const,
+        quantitySource: 'USER_INPUT' as const,
         quantityFormula: `${quantity != null ? `koreksi manual: ${fmtQty(quantity)} ${newUnits}` : 'dikosongkan manual'}`,
         quantityNote: verdict.ok ? undefined : verdict.reason,
         subtotal,
@@ -143,13 +145,13 @@ export const DedAiResultView: React.FC<Props> = ({
       const q = Number(val.replace(',', '.'));
       const quantity = Number.isFinite(q) && q > 0 ? q : null;
       if (quantity == null) return it;
-      // Re-validasi setelah bulk fill
-      const verdict = validateQuantity({ quantity, units: it.units, quantitySource: 'DED_EXPLICIT', name: it.name });
-      const subtotal = verdict.ok && it.unitPrice != null ? Math.round(quantity * it.unitPrice) : null;
+      // Re-validasi setelah bulk fill — sumber USER_INPUT, bukan DED_EXPLICIT
+      const verdict = validateQuantity({ quantity, units: it.units, quantitySource: 'USER_INPUT', name: it.name });
+      const subtotal = verdict.ok ? calcSubtotal(quantity, it.unitPrice) : null;
       return {
         ...it,
         quantity,
-        quantitySource: 'DED_EXPLICIT' as const,
+        quantitySource: 'USER_INPUT' as const,
         quantityFormula: `input manual: ${fmtQty(quantity)} ${it.units}`,
         quantityNote: verdict.ok ? it.quantityNote : verdict.reason,
         subtotal,
