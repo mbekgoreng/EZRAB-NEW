@@ -81,6 +81,98 @@ class CoAssistantService {
   }
 
   /**
+   * Deteksi intent dengan pola regex yang presisi.
+   * Mengembalikan kode intent atau null jika tidak dikenali.
+   */
+  private detectIntent(normalizedLower: string, original: string): string | null {
+    // Percakapan santai — pola eksak, bukan substring umum
+    if (/^(hai|halo|hi|hello|pagi|siang|sore|malam)\b/.test(normalizedLower)) return 'CONVERSATIONAL';
+    if (/apa kabar|apakabar/.test(normalizedLower)) return 'CONVERSATIONAL';
+    if (/terima kasih|makasih|thanks|thank you/.test(normalizedLower)) return 'CONVERSATIONAL';
+    if (/kamu siapa|siapa kamu|nama kamu/.test(normalizedLower)) return 'CONVERSATIONAL';
+    if (/kamu bisa apa|bantuan|help\b/.test(normalizedLower)) return 'HELP';
+    if (/ezrab (itu|adalah) apa|tentang ezrab/.test(normalizedLower)) return 'CONVERSATIONAL';
+
+    // Perintah RAB — butuh kata kerja + objek yang jelas
+    if (/\b(buatkan|buatin|bikin|buat|susun)\b.*\b(rab|estimasi)\b/.test(normalizedLower)) return 'CREATE_RAB';
+    if (/\b(tambah|tambahkan|input)\b.*(item|pekerjaan|material)/.test(normalizedLower)) return 'ADD_ITEM';
+    if (/\b(hapus|delete|buang)\b.*(item|pekerjaan|baris|nomor)/.test(normalizedLower)) return 'DELETE_ITEM';
+    if (/\b(ubah|ganti|update|edit|koreksi)\b.*(harga|volume|item|pekerjaan)/.test(normalizedLower)) return 'UPDATE_ITEM';
+    if (/\b(berapa|hitung|kalkulasi)\b.*\btotal\b/.test(normalizedLower)) return 'TOTAL_QUERY';
+    if (/\b(cari|tampilkan|lihat|tunjukkan)\b/.test(normalizedLower)) return 'SEARCH_QUERY';
+
+    // Analisis spesifik proyek
+    if (/\baudit\b/.test(normalizedLower)) return 'AUDIT';
+    if (/kurva\s*s/.test(normalizedLower)) return 'KURVA_S';
+    if (/\bprogres\b|\bprogress\b/.test(normalizedLower)) return 'PROGRESS';
+    if (/\bded\b/.test(normalizedLower)) return 'DED_QUERY';
+
+    // Dokumen
+    if (/\b(dokumen|tender|surat penawaran|rks|pakta integritas)\b/.test(normalizedLower) &&
+        !/baca nota|baca denah/.test(normalizedLower)) return 'DOCUMENT';
+
+    // RAB umum (fallback)
+    if (/\brab\b|\bestimasi\b/.test(normalizedLower)) return 'RAB_QUERY';
+
+    return null;
+  }
+
+  /**
+   * Tangani slash command eksplisit.
+   * Mengembalikan hasil atau null jika bukan command yang dikenal.
+   */
+  private handleSlashCommand(cmd: string, args: string, request: CoAssistantContextRequest): CoAssistantSendResult | null {
+    const ts = () => new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const mkMsg = (text: string, extra: Partial<CoAssistantMessage> = {}): CoAssistantSendResult => ({
+      message: { id: `ai-cmd-${Date.now()}`, role: 'ai', text, timestamp: ts(), ...extra },
+      conversationId: this.activeConversationId,
+    });
+
+    switch (cmd) {
+      case 'help':
+      case 'bantuan':
+        return mkMsg(
+          `### 🤖 Perintah Ezrab CoAssistant\n\n` +
+          `**Perintah cepat:**\n` +
+          `- \`/tambah Nama | Volume | Satuan | Harga\` — tambah item RAB\n` +
+          `- \`/hapus [nomor]\` — hapus item\n` +
+          `- \`/ubah [nomor] [volume/harga] [nilai]\` — ubah item\n` +
+          `- \`/cari [kata kunci]\` — cari item\n` +
+          `- \`/total\` — tampilkan total RAB\n` +
+          `- \`/help\` — tampilkan bantuan ini\n\n` +
+          `**Contoh natural:**\n` +
+          `- "Tambahkan pondasi batu kali 5 m3 harga 750000"\n` +
+          `- "Berapa total RAB proyek ini?"\n` +
+          `- "Hapus item nomor 3"`
+        );
+
+      case 'total':
+        const items = request.projectRabItems || [];
+        const total = items.reduce((s, it) => s + (it.amount || it.totalPrice || (it.volume * it.unitPrice) || 0), 0);
+        return mkMsg(
+          `### 💰 Total RAB\n\n` +
+          `**${items.length} item** — Total: **Rp${total.toLocaleString('id-ID')}**\n\n` +
+          (items.length === 0 ? 'Belum ada item RAB di proyek ini.' : 'Gunakan `/cari [kata kunci]` untuk melihat item spesifik.')
+        );
+
+      case 'cari':
+        if (!args) return mkMsg('Gunakan: `/cari [kata kunci]` — contoh: `/cari pondasi`');
+        const found = (request.projectRabItems || []).filter((it) =>
+          (it.description || '').toLowerCase().includes(args.toLowerCase())
+        );
+        if (found.length === 0) return mkMsg(`Tidak ditemukan item dengan kata kunci "${args}".`);
+        return mkMsg(
+          `### 🔍 Ditemukan ${found.length} item\n\n` +
+          found.map((it, i) => `${i + 1}. **${it.description}** — ${it.volume} ${it.unit} × Rp${it.unitPrice.toLocaleString('id-ID')}`).join('\n'),
+          { table: { headers: ['Uraian', 'Volume', 'Harga'], rows: found.map((it) => [it.description, `${it.volume} ${it.unit}`, `Rp${it.unitPrice.toLocaleString('id-ID')}`]) } }
+        );
+
+      default:
+        return null; // Command tidak dikenal, lanjut ke flow normal
+    }
+  }
+
+  /**
    * Send a query to the real EZRAB AI backend with seamless fallback to construction copilot engine.
    */
   public async sendMessage(request: CoAssistantContextRequest): Promise<CoAssistantSendResult> {
@@ -115,34 +207,31 @@ class CoAssistantService {
     const isClient = role === 'CLIENT';
 
     const normalizedLower = trimmedMessage.toLowerCase();
-    const isConversational = 
-      normalizedLower.includes('apa kabar') ||
-      normalizedLower.includes('apakabar') ||
-      normalizedLower.includes('hai') ||
-      normalizedLower.includes('halo') ||
-      normalizedLower.includes('terima kasih') ||
-      normalizedLower.includes('makasih') ||
-      normalizedLower.includes('kamu siapa') ||
-      normalizedLower.includes('siapa kamu') ||
-      normalizedLower.includes('kamu bisa apa') ||
-      normalizedLower.includes('ezrab itu apa') ||
-      normalizedLower.includes('selamat');
 
-    const isAutomaticRab =
-      normalizedLower.includes('rab') ||
-      normalizedLower.includes('estimasi') ||
-      normalizedLower.includes('hitung') ||
-      normalizedLower.includes('buat') ||
-      normalizedLower.includes('bikin') ||
-      normalizedLower.includes('susun');
+    // === PERINTAH EKPLISIT (slash commands) ===
+    // Format: /perintah [argumen]
+    // Contoh: /tambah Pondasi | 5 | m3 | 750000
+    //        /hapus 3
+    //        /ubah 2 volume 10
+    //        /cari pondasi
+    //        /help
+    const slashMatch = trimmedMessage.match(/^\/(\w+)\s*(.*)$/);
+    if (slashMatch) {
+      const cmd = slashMatch[1].toLowerCase();
+      const args = slashMatch[2].trim();
+      const cmdResult = this.handleSlashCommand(cmd, args, request);
+      if (cmdResult) return cmdResult;
+    }
+
+    // === DETEKSI INTENT DENGAN POLA REGEX (lebih presisi dari includes) ===
+    const intent = this.detectIntent(normalizedLower, trimmedMessage);
+
+    const isConversational = intent === 'CONVERSATIONAL';
+    const isAutomaticRab = intent === 'CREATE_RAB' || intent === 'RAB_QUERY';
 
     // Verify Active Project for specific domain-tied queries (Audit, DED, Kurva S of existing project)
     const isProjectSpecificAnalysis =
-      (normalizedLower.includes('audit') ||
-       normalizedLower.includes('kurva s') ||
-       normalizedLower.includes('progres') ||
-       normalizedLower.includes('ded') ||
-       normalizedLower.includes('item ini')) &&
+      (intent === 'AUDIT' || intent === 'KURVA_S' || intent === 'PROGRESS' || intent === 'DED_QUERY') &&
       !isAutomaticRab;
 
     if (!request.currentProject && isProjectSpecificAnalysis) {
@@ -157,15 +246,8 @@ class CoAssistantService {
       };
     }
 
-    // Detect Document Package Wizard request ("Buatkan semua dokumen tender untuk proyek ini", dsb)
-    const isDocumentPackageRequest =
-      (normalizedLower.includes('dokumen') ||
-       normalizedLower.includes('tender') ||
-       normalizedLower.includes('surat penawaran') ||
-       normalizedLower.includes('rks') ||
-       normalizedLower.includes('pakta integritas')) &&
-      !normalizedLower.includes('baca nota') &&
-      !normalizedLower.includes('baca denah');
+    // Detect Document Package Wizard request — pakai intent yang sudah terdeteksi
+    const isDocumentPackageRequest = intent === 'DOCUMENT';
 
     if (isDocumentPackageRequest) {
       const projName = request.currentProject?.name || 'Proyek Aktif';
