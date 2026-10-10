@@ -169,17 +169,40 @@ export class FullAiDedService {
           typeof p.unitPrice === 'number' ? p.unitPrice : null
         );
 
-        // Tentukan status
+        // Tentukan status dan alasan eksklusi (diagnostik spesifik)
         let status: FullAiItem['status'] = 'READY';
-        if (q.value == null || q.provenance === 'UNRESOLVED') {
+        let exclusionReason: FullAiItem['exclusionReason'] = null;
+
+        if (q.value == null) {
           status = 'UNRESOLVED';
+          exclusionReason = 'MISSING_QUANTITY';
+        } else if (typeof q.value !== 'number' || q.value < 0) {
+          status = 'UNRESOLVED';
+          exclusionReason = 'INVALID_QUANTITY';
+        } else if (!q.unit) {
+          status = 'UNRESOLVED';
+          exclusionReason = 'MISSING_UNIT';
+        } else if (q.provenance === 'UNRESOLVED') {
+          status = 'UNRESOLVED';
+          exclusionReason = 'UNRESOLVED_PROVENANCE';
         } else if (q.provenance === 'NEEDS_CONFIRMATION') {
           status = 'NEEDS_CONFIRMATION';
-        } else if (p.unitPrice == null || p.source === 'UNRESOLVED') {
-          // Harga belum ada — item tidak siap masuk RAB
+          exclusionReason = 'NEEDS_CONFIRMATION';
+        } else if (p.unitPrice == null) {
           status = 'NEEDS_CONFIRMATION';
+          exclusionReason = 'MISSING_UNIT_PRICE';
+        } else if (p.source === 'UNRESOLVED') {
+          status = 'NEEDS_CONFIRMATION';
+          exclusionReason = 'PRICE_UNRESOLVED';
+        } else if (p.unit && q.unit) {
+          // Cek kesesuaian satuan
+          const norm = (u: string) => u.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (norm(p.unit) !== norm(q.unit)) {
+            status = 'NEEDS_CONFIRMATION';
+            exclusionReason = 'INVALID_PRICE_UNIT';
+          }
         }
-        // ASSUMPTION tetap READY — masuk total dengan label jelas
+        // ASSUMPTION/DERIVED/EXPLICIT dengan qty+harga valid → READY (masuk total)
 
         // Item UNRESOLVED tidak masuk total tapi tetap ditampilkan
         const includeInTotal = status === 'READY' && subtotal != null && subtotal > 0;
@@ -216,11 +239,12 @@ export class FullAiDedService {
           subtotal: includeInTotal ? subtotal : null,
           subtotalVerified: true,
           status: includeInTotal ? 'READY' : status,
+          exclusionReason: includeInTotal ? null : exclusionReason,
           sourcePages: Array.isArray(raw.sourcePages) ? raw.sourcePages : undefined,
         });
 
-        if (!includeInTotal && status !== 'READY') {
-          warnings.push(`Item "${raw.name}" tidak masuk total (${status})`);
+        if (!includeInTotal && exclusionReason) {
+          warnings.push(`Item "${raw.name}" tidak masuk total [${exclusionReason}]`);
         }
       }
 

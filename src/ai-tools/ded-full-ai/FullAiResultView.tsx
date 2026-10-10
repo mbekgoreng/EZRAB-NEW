@@ -126,7 +126,9 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
                 {fmtRp(item.subtotal)}
               </span>
               {item.subtotal == null && item.status !== 'UNRESOLVED' && (
-                <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 8 }}>tidak masuk total</span>
+                <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 8 }}>
+                  tidak masuk total{item.exclusionReason ? ` [${item.exclusionReason}]` : ''}
+                </span>
               )}
               {isEdited && (
                 <span style={{ fontSize: 11, color: '#2563EB', marginLeft: 8, fontWeight: 600 }}>
@@ -190,10 +192,11 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
                   const newSubtotal = (validQty != null && validPrice != null && validQty > 0 && validPrice > 0)
                     ? Math.round(validQty * validPrice) : null;
 
-                  // Tentukan status baru
+                  // Tentukan status baru dan alasan eksklusi
                   let newStatus: FullAiItem['status'] = 'READY';
-                  if (validQty == null) newStatus = 'UNRESOLVED';
-                  else if (validPrice == null) newStatus = 'NEEDS_CONFIRMATION';
+                  let newExclusion: FullAiItem['exclusionReason'] = null;
+                  if (validQty == null) { newStatus = 'UNRESOLVED'; newExclusion = 'MISSING_QUANTITY'; }
+                  else if (validPrice == null) { newStatus = 'NEEDS_CONFIRMATION'; newExclusion = 'MISSING_UNIT_PRICE'; }
 
                   const includeInTotal = newStatus === 'READY' && newSubtotal != null && newSubtotal > 0;
 
@@ -216,6 +219,7 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
                     },
                     subtotal: includeInTotal ? newSubtotal : null,
                     status: includeInTotal ? 'READY' : newStatus,
+                    exclusionReason: includeInTotal ? null : newExclusion,
                   });
                   setEditing(false);
                 }}

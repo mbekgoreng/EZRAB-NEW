@@ -44,6 +44,17 @@ export interface FullAiPriceDetail {
   notes?: string;
 }
 
+export type FullAiExclusionReason =
+  | 'MISSING_QUANTITY'       // quantity.value null
+  | 'INVALID_QUANTITY'       // quantity negatif atau bukan angka
+  | 'MISSING_UNIT'           // satuan quantity kosong
+  | 'MISSING_UNIT_PRICE'     // unitPrice null
+  | 'INVALID_PRICE_UNIT'     // satuan harga tidak cocok dengan satuan quantity
+  | 'UNRESOLVED_PROVENANCE'  // provenance UNRESOLVED
+  | 'NEEDS_CONFIRMATION'     // butuh konfirmasi eksplisit
+  | 'PRICE_UNRESOLVED'       // sumber harga UNRESOLVED
+  | null;                    // null = tidak ada alasan eksklusi (masuk total)
+
 export interface FullAiItem {
   id: string;
   no: number;
@@ -58,6 +69,7 @@ export interface FullAiItem {
   subtotalVerified: boolean;  // Apakah subtotal AI cocok dengan hitungan aplikasi
   subtotalDiscrepancy?: string; // Jika tidak cocok, jelaskan selisihnya
   status: 'READY' | 'NEEDS_CONFIRMATION' | 'UNRESOLVED' | 'EXCLUDED';
+  exclusionReason: FullAiExclusionReason; // Alasan spesifik tidak masuk total
   sourcePages?: number[];
 }
 
