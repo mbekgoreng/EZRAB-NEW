@@ -36,10 +36,24 @@ ATURAN WAJIB:
       "specification": "spesifikasi ringkas",
       "confidence": "HIGH|MEDIUM|LOW",
       "estimatedUnitPrice": 950000,
-      "unitPriceNote": "alasan singkat estimasi harga"
+      "unitPriceNote": "alasan singkat estimasi harga",
+      "derivation": {
+        "formulaType": "kolom_volume|dinding_netto|plester|balok_volume|sloof_volume",
+        "inputs": [
+          {"name": "jumlah_kolom", "value": 12, "unit": "bh", "source": "DED"},
+          {"name": "lebar", "value": 0.15, "unit": "m", "source": "DED"}
+        ]
+      }
     }
   ]
 }
+
+CATATAN DERIVATION (opsional tapi dianjurkan untuk item compound):
+- Untuk kolom/balok/sloof: sertakan jumlah, dimensi penampang, dan panjang/tinggi sebagai inputs terpisah.
+- Untuk dinding: sertakan panjang, tinggi, dan luas bukaan (jika diketahui) sebagai inputs terpisah.
+- Untuk plester: sertakan luas bidang dan jumlah sisi sebagai inputs terpisah.
+- Source: "DED" (dari dokumen), "ASSUMPTION" (asumsi), "USER" (input pengguna).
+- Jika inputs tidak lengkap, JANGAN sertakan derivation — biarkan quantity=null.
 
 ATURAN PENDEKATAN KUANTITAS:
 - Prioritas 1: Pakai angka eksplisit dari DED (tabel BOQ, dimensi tertulis).
@@ -61,14 +75,30 @@ ATURAN PENDEKATAN KUANTITAS:
 - Untuk DINDING: kurangi luas bukaan (pintu/jendela) ~15-20% dari luas bruto.
   Contoh: keliling 34m × tinggi 3.2m = 108.8 m² bruto → netto ≈ 92 m².
 
+ATURAN KHUSUS PROYEK JALAN:
+- Cari STATIONING: "STA 0+000" sampai "STA 1+595" = panjang 1595 meter.
+- Lapis perkerasan: quantity = panjang × lebar (m2). Cari lebar di potongan melintang.
+- Urugan: quantity = panjang × lebar × tebal (m3).
+- Jika lebar tidak ada, estimasi dari tipe jalan dengan asumsi jelas di quantityFormula.
+- JANGAN biarkan item perkerasan kosong — estimasi dengan asumsi yang transparan.
+
 CONTOH ESTIMASI YANG BAIK:
 - "Pondasi Batu Gunung": quantity 8.5, quantityFormula: "Estimasi: keliling 34m × 0.5m × 0.5m (asumsi rumah 36m²)", confidence: "MEDIUM"
 - "Sloof 15×20": quantity 1.02, quantityFormula: "15×20cm × 34m keliling (dari nama item + estimasi panjang)", confidence: "MEDIUM"
 
 ATURAN ESTIMASI HARGA:
 - estimatedUnitPrice = estimasi harga satuan (Rupiah) berdasarkan pengetahuan pasar konstruksi Indonesia 2026.
-- estimatedUnitPrice = null SAAT TIDAK ADA dasar harga yang wajar. BUKAN 0.
-- unitPriceNote = alasan singkat dasar estimasi harga (mis. "pasaran Jakarta 2026").
+- WAJIB isi estimatedUnitPrice untuk SEMUA item yang umum. Jangan biarkan kosong untuk item standar.
+- Referensi harga tipikal 2026:
+  * Lapis aus / AC-WC: Rp120.000-180.000/m2
+  * Aspal lapen: Rp100.000-150.000/m2
+  * Urugan sirtu: Rp200.000-300.000/m3
+  * Urugan tanah: Rp50.000-100.000/m3
+  * Gorong-gorong pelat beton: Rp15.000.000-25.000.000/unit
+  * Gorong-gorong buis beton: Rp8.000.000-15.000.000/unit
+  * Jembatan kecil: estimasi berdasarkan bentang
+- estimatedUnitPrice = null HANYA untuk item sangat kustom tanpa referensi pasar sama sekali.
+- unitPriceNote = alasan singkat (mis. "pasaran Jawa 2026", "estimasi dimensi").
 - Harga adalah ESTIMASI AI, bukan harga resmi — aplikasi akan menandainya dengan jelas.
 
 ATURAN SATUAN DIMENSI (WAJIB):

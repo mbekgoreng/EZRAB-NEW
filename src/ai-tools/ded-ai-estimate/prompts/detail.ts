@@ -48,7 +48,10 @@ ATURAN WAJIB:
 
 ATURAN KUANTITAS & HARGA:
 - quantity = null SAAT TIDAK ADA dasar yang dapat kamu yakini. BUKAN 0.
-- estimatedUnitPrice = null SAAT TIDAK ADA dasar harga. BUKAN 0.
+- estimatedUnitPrice: WAJIB diisi untuk semua item umum. Jangan biarkan kosong untuk item standar.
+  Referensi 2026: lapis aus Rp120-180rb/m2, aspal lapen Rp100-150rb/m2, sirtu Rp200-300rb/m3,
+  urugan tanah Rp50-100rb/m3, gorong-gorong pelat Rp15-25jt/unit, buis beton Rp8-15jt/unit.
+- estimatedUnitPrice = null HANYA untuk item sangat kustom tanpa referensi pasar.
 - Harga SEMUANYA adalah AI_ESTIMATE (bukan harga resmi AHSP / database).
 - JANGAN menghitung subtotal/total — aplikasi yang melakukannya secara deterministik.
 - Untuk KOLOM: quantity = TOTAL VOLUME semua kolom dalam m³, BUKAN panjang.
@@ -56,6 +59,19 @@ ATURAN KUANTITAS & HARGA:
   Contoh SALAH: quantity = 0.15, units = "m'".
 - Untuk DINDING: kurangi luas bukaan (pintu/jendela) ~15-20% dari luas bruto.
 - Untuk pintu/jendela: quantity = jumlah total unit, bukan dimensi per daun.
+
+ATURAN KHUSUS PROYEK JALAN:
+- Cari STATIONING: format "STA 0+000" sampai "STA 1+595" berarti panjang 1595 meter.
+  Contoh: STA P. 0+004 ke STA P. 1+595 → panjang ≈ 1591 m.
+- Cari LEBAR JALAN di potongan melintang (tipikal 4-7 m untuk jalan kabupaten).
+- Lapis perkerasan (Lapis Aus, Aspal, Levelling): quantity = panjang × lebar, units = "m2".
+  Contoh: 1591 m × 5 m = 7955 m².
+- Urugan/timbunan: quantity = panjang × lebar × tebal, units = "m3".
+  Cari tebal urugan di potongan melintang (tipikal 0.1-0.3 m).
+- Jika lebar tidak ditemukan, ESTIMASI dari tipe jalan dan nyatakan asumsi di quantityFormula.
+  Contoh: "1591 × 5 (asumsi lebar jalan kabupaten)" dengan confidence LOW.
+- Gorong-gorong/jembatan: quantity = jumlah unit, units = "unit".
+- JANGAN biarkan item perkerasan kosong hanya karena lebar tidak eksplisit — estimasi dengan asumsi yang jelas.
 
 Keluarkan JSON murni.`;
 }

@@ -17,6 +17,7 @@ import { parseDedPdf, DedParsedDocument } from './parser';
 import { attemptQuantityFromDimensionString } from './quantity';
 import { applyAiEstimatePrice } from './pricing';
 import { DedAiCalculator } from './calculator';
+import { deriveKolomVolume, deriveDindingNetto, derivePlester, DerivationTrail } from './derivation';
 import {
   DedAiServiceOptions,
   DedAiOutput,
@@ -52,8 +53,68 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode): DedAiItem {
   // quantitySource eksplisit dari DED. Inferensi/asumsi tidak boleh dianggap terverifikasi.
   const rawSourceIsExplicit = raw.quantitySource === 'DED_EXPLICIT';
   let quantity: number | null = fromDim.quantity;
-  let quantitySource: DedAiQuantitySource;
-  if (fromDim.ambiguousUnit) {
+  let quantitySource: DedAiQuantitySource = 'UNRESOLVED';
+  let derivation: DerivationTrail | undefined;
+
+  // PHASE 4B: Derivasi terstruktur — hanya jika AI menyediakan inputs lengkap.
+  // Helper derivation.ts dipanggil dengan data aktual dari model, bukan mock.
+  if (raw.derivation && typeof raw.derivation === 'object') {
+    const d = raw.derivation;
+    const inputs = Array.isArray(d.inputs) ? d.inputs : [];
+    const getInput = (name: string): number | null => {
+      const found = inputs.find((i: any) => i && i.name === name && typeof i.value === 'number' && Number.isFinite(i.value));
+      return found ? found.value : null;
+    };
+    const getSource = (name: string): 'DED' | 'USER' | 'ASSUMPTION' => {
+      const found = inputs.find((i: any) => i && i.name === name);
+      const s = found?.source;
+      return s === 'DED' || s === 'USER' ? s : 'ASSUMPTION';
+    };
+
+    if (d.formulaType === 'kolom_volume') {
+      const trail = deriveKolomVolume(
+        getInput('jumlah_kolom') ?? getInput('jumlah') ?? getInput('count'),
+        getInput('lebar') ?? getInput('width'),
+        getInput('panjang') ?? getInput('length'),
+        getInput('tinggi') ?? getInput('height'),
+        getSource('jumlah_kolom')
+      );
+      if (trail.result !== null && trail.validationStatus === 'ok') {
+        quantity = trail.result;
+        quantitySource = 'DERIVED';
+        derivation = trail;
+      }
+    } else if (d.formulaType === 'dinding_netto' || d.formulaType === 'dinding_bruto') {
+      const trail = deriveDindingNetto(
+        getInput('panjang') ?? getInput('length'),
+        getInput('tinggi') ?? getInput('height'),
+        getInput('luas_bukaan') ?? getInput('bukaan'),
+        getSource('luas_bukaan')
+      );
+      if (trail.result !== null && trail.validationStatus.startsWith('ok')) {
+        quantity = trail.result;
+        quantitySource = 'DERIVED';
+        derivation = trail;
+      }
+    } else if (d.formulaType === 'plester') {
+      const trail = derivePlester(
+        getInput('luas_bidang') ?? getInput('luas'),
+        getInput('jumlah_sisi') ?? getInput('sisi'),
+        getSource('jumlah_sisi')
+      );
+      if (trail.result !== null && trail.validationStatus === 'ok') {
+        quantity = trail.result;
+        quantitySource = 'DERIVED';
+        derivation = trail;
+      }
+    }
+    // Jika derivasi gagal (input tidak lengkap), lanjut ke logika fallback normal.
+    // Jangan paksa — quantity tetap null/UNRESOLVED jika tidak ada dasar lain.
+  }
+
+  if (derivation && quantity !== null) {
+    // Derivasi berhasil — quantitySource sudah DERIVED, skip fallback.
+  } else if (fromDim.ambiguousUnit) {
     quantity = null;
     quantitySource = 'UNRESOLVED';
   } else if (quantity !== null) {
@@ -106,6 +167,7 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode): DedAiItem {
             ? 'Kuantitas dari asumsi; perlu ditinjau sebelum finalisasi.'
             : undefined,
     rawDimensions: fromDim.rawDimensions || undefined,
+    derivation,
     rawAIQuantity,
     unitPrice: price.unitPrice,
     priceSource: price.priceSource,
