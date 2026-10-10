@@ -129,9 +129,14 @@ export class FullAiDedService {
         const raw = rawItems[i];
 
         // NORMALISASI: dukung format sederhana (flat) dan format lama (nested)
+        // Format flat: { qty: 9.6, unit: "m3", price: 85000, priceUnit: "m3", ... }
+        // Format nested: { quantity: { value, unit, ... }, price: { unitPrice, unit, ... } }
+        const isFlatPrice = typeof raw.price === 'number';
+        const isNestedPrice = raw.price && typeof raw.price === 'object';
+        const isNestedQty = raw.quantity && typeof raw.quantity === 'object';
         const normalized = {
           ...raw,
-          quantity: raw.quantity || {
+          quantity: isNestedQty ? raw.quantity : {
             value: typeof raw.qty === 'number' ? raw.qty : null,
             unit: raw.unit || '',
             formula: raw.formula || undefined,
@@ -139,8 +144,8 @@ export class FullAiDedService {
             confidence: 'MEDIUM',
             assumptions: raw.assumptions ? [String(raw.assumptions)] : undefined,
           },
-          price: raw.price || {
-            unitPrice: typeof raw.price === 'number' ? raw.price : null,
+          price: isNestedPrice ? raw.price : {
+            unitPrice: isFlatPrice ? raw.price : null,
             unit: raw.priceUnit || raw.unit || '',
             source: raw.priceSource || 'AI_ESTIMATE',
             region: 'Jakarta',
