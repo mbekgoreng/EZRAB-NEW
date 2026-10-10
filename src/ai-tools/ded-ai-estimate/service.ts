@@ -194,7 +194,18 @@ export class DedAiEstimateService {
       totalPages: parsed.pages.length,
     });
 
-    const pageSummaries = parsed.pages.map((p) => ({ page: p.page, title: p.title, text: p.text }));
+    // Batasi total teks agar prompt tidak melebihi limit API (20000 karakter).
+    // Prioritaskan halaman awal; potong teks per halaman jika perlu.
+    const MAX_PROMPT_CHARS = 15000;
+    const MAX_PAGE_TEXT = 2000;
+    let totalChars = 0;
+    const pageSummaries = [];
+    for (const p of parsed.pages) {
+      if (totalChars >= MAX_PROMPT_CHARS) break;
+      const text = (p.text || '').slice(0, MAX_PAGE_TEXT);
+      totalChars += text.length;
+      pageSummaries.push({ page: p.page, title: p.title, text });
+    }
     const buildingType = options.projectType;
 
     let systemPrompt: string;
