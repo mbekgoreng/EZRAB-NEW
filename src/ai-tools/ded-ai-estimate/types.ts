@@ -78,6 +78,10 @@ export interface DedAiItem {
   sourceEvidence?: string;
   provenance: string[];
   stage: 'PARSE' | 'QUANTITY' | 'PRICING' | 'CALCULATED' | 'REJECTED';
+  /** WBS: kode klasifikasi (diisi oleh wbsClassifier, tidak mengubah data asli) */
+  wbsCode?: string;
+  wbsName?: string;
+  wbsStatus?: 'IDENTIFIED' | 'DERIVED' | 'NEEDS_CONFIRM' | 'OPTIONAL';
 }
 
 export interface DedAiCategorySummary {

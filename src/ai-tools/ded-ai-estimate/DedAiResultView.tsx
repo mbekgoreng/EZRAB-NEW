@@ -13,6 +13,7 @@ import {
 import * as XLSX from 'xlsx';
 import { DedAiItem, DedAiOutput } from './types';
 import { validateQuantity, calcSubtotal } from './calculator';
+import { groupByWbs, WbsGroup } from './wbsClassifier';
 import './dedAi.css';
 
 export type ItemStatus = 'valid' | 'review' | 'blocked' | 'no-price';
@@ -72,6 +73,14 @@ export const DedAiResultView: React.FC<Props> = ({
   const [finalMsg, setFinalMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [bulkFill, setBulkFill] = useState(false);
   const [bulkVals, setBulkVals] = useState<Record<string, string>>({});
+  const [wbsExpanded, setWbsExpanded] = useState<Set<string>>(new Set());
+  const [showWbs, setShowWbs] = useState(false);
+
+  // WBS grouping — dihitung dari items aktual, tidak mengubah data
+  const wbsData = useMemo(
+    () => groupByWbs(items, output.projectType || 'BANGUNAN'),
+    [items, output.projectType]
+  );
 
   const withStatus = useMemo(
     () => items.map((it) => ({ it, status: getItemStatus(it) })),
@@ -261,6 +270,89 @@ export const DedAiResultView: React.FC<Props> = ({
           {volumeByUnit.map(([u, v]) => <b key={u} style={{ color: '#334155' }}>{fmtQty(v)} {u}</b>).reduce((a, b) => <>{a} · {b}</>)}
         </p>
       )}
+
+      {/* ---- WBS Kelompok Pekerjaan ---- */}
+      <div style={{ margin: '0 0 16px' }}>
+        <button
+          onClick={() => setShowWbs(!showWbs)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 16px', borderRadius: 8,
+            border: '1px solid #e2e8f0', background: showWbs ? '#eff6ff' : '#ffffff',
+            color: '#1e40af', fontSize: 13.5, fontWeight: 700, cursor: 'pointer',
+            width: '100%', justifyContent: 'space-between',
+          }}
+        >
+          <span>📊 Kelompok Pekerjaan (WBS) — {wbsData.groups.length} kelompok</span>
+          <span style={{ fontSize: 18 }}>{showWbs ? '▾' : '▸'}</span>
+        </button>
+
+        {showWbs && (
+          <div style={{ marginTop: 8, border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+            {wbsData.groups.map((g) => {
+              const isOpen = wbsExpanded.has(g.node.code);
+              return (
+                <div key={g.node.code} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <button
+                    onClick={() => {
+                      const next = new Set(wbsExpanded);
+                      if (isOpen) next.delete(g.node.code);
+                      else next.add(g.node.code);
+                      setWbsExpanded(next);
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      width: '100%', padding: '10px 14px', background: isOpen ? '#f8fafc' : '#ffffff',
+                      border: 'none', cursor: 'pointer', fontSize: 13.5,
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ color: '#64748b' }}>{isOpen ? '▾' : '▸'}</span>
+                      <code style={{ fontSize: 11.5, background: '#f1f5f9', padding: '2px 6px', borderRadius: 4, color: '#475569' }}>
+                        {g.node.code}
+                      </code>
+                      <b style={{ color: '#0f172a' }}>{g.node.name}</b>
+                      <span style={{ fontSize: 12, color: '#64748b' }}>({g.itemCount} item)</span>
+                      {g.issueCount > 0 && (
+                        <span style={{ fontSize: 11, background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: 10, fontWeight: 600 }}>
+                          {g.issueCount} bermasalah
+                        </span>
+                      )}
+                    </span>
+                    <b style={{ color: '#1d4ed8', fontSize: 13.5 }}>{fmtRp(g.subtotal)}</b>
+                  </button>
+                  {isOpen && (
+                    <div style={{ padding: '4px 14px 10px 38px', background: '#f8fafc' }}>
+                      {g.items.map((it) => (
+                        <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
+                          <span style={{ color: '#334155' }}>
+                            {it.name}
+                            <span style={{ color: '#94a3b8', fontSize: 11.5, marginLeft: 6 }}>
+                              {it.quantity != null ? `${fmtQty(it.quantity)} ${it.units}` : '—'}
+                            </span>
+                          </span>
+                          <span style={{ color: it.subtotal != null ? '#0f172a' : '#94a3b8', fontWeight: 600 }}>
+                            {fmtRp(it.subtotal)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {wbsData.unclassified.length > 0 && (
+              <div style={{ padding: '10px 14px', background: '#fffbeb', fontSize: 12.5, color: '#92400e' }}>
+                ⚠️ {wbsData.unclassified.length} item tidak terkategorisasi — periksa manual.
+              </div>
+            )}
+            <div style={{ padding: '8px 14px', background: '#f8fafc', fontSize: 11.5, color: '#64748b' }}>
+              Katalog WBS adalah referensi. Hanya kelompok dengan item aktual yang ditampilkan.
+              Kelompok kosong tidak masuk total.
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* ---- Filter ---- */}
       <div className="dedai-filters">
