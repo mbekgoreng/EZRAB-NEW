@@ -25,8 +25,8 @@ export function getItemStatus(it: DedAiItem): ItemStatus {
 
 const STATUS_META: Record<ItemStatus, { label: string; icon: React.ReactNode }> = {
   valid: { label: 'Valid', icon: <CheckCircle2 size={12} /> },
-  review: { label: 'Perlu Ditinjau', icon: <AlertTriangle size={12} /> },
-  blocked: { label: 'Diblokir', icon: <XCircle size={12} /> },
+  review: { label: 'Estimasi AI', icon: <AlertTriangle size={12} /> },
+  blocked: { label: 'Perlu Input', icon: <XCircle size={12} /> },
   'no-price': { label: 'Harga Blm Tersedia', icon: <MinusCircle size={12} /> },
 };
 
@@ -262,15 +262,15 @@ export const DedAiResultView: React.FC<Props> = ({
         ))}
       </div>
 
-      {/* ---- Tombol Isi Cepat untuk item terblokir ---- */}
+      {/* ---- Tombol Isi Cepat untuk item tanpa kuantitas ---- */}
       {counts.blocked > 0 && (
-        <div style={{ margin: '0 0 16px', padding: '12px 16px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8 }}>
-          <div style={{ fontSize: 13.5, color: '#991B1B', marginBottom: 8 }}>
-            <b>{counts.blocked} item terblokir</b> karena kuantitas tidak ditemukan di DED. AI tidak mengarang angka — silakan isi manual berdasarkan gambar/BOQ Anda.
+        <div style={{ margin: '0 0 16px', padding: '12px 16px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8 }}>
+          <div style={{ fontSize: 13.5, color: '#92400E', marginBottom: 8 }}>
+            <b>{counts.blocked} item perlu input manual</b> — AI tidak menemukan dasar yang cukup untuk estimasi. Klik untuk isi cepat berdasarkan DED Anda.
           </div>
           <button
             onClick={() => setBulkFill(true)}
-            style={{ padding: '8px 16px', background: '#DC2626', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13.5, fontWeight: 600 }}
+            style={{ padding: '8px 16px', background: '#D97706', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13.5, fontWeight: 600 }}
           >
             ✏️ Isi Cepat {counts.blocked} Item
           </button>

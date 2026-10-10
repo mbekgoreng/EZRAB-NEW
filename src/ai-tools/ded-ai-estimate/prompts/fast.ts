@@ -42,15 +42,23 @@ ATURAN WAJIB:
 }
 
 ATURAN PENDEKATAN KUANTITAS:
-- quantity = null SAAT TIDAK ADA dasar geometri/eksplisit yang dapat kamu yakini. BUKAN 0.
-- CARI DIMENSI DI MANA SAJA: nama item ("Sloof 15×20" → 0.15m × 0.20m), spesifikasi ("t=100mm" → 0.1m), tabel BOQ, maupun teks deskripsi.
-- Jika DED memuat TABEL BOQ/RAB dengan kolom volume/kuantitas, PAKAI angka dari tabel tersebut langsung (quantitySource: "DED_EXPLICIT").
-- Jika hanya ada dimensi parsial (mis. penampang 15×20 tanpa panjang), cari panjang di denah/potongan. Jika tidak ketemu, quantity=null dengan catatan spesifik.
+- Prioritas 1: Pakai angka eksplisit dari DED (tabel BOQ, dimensi tertulis).
+- Prioritas 2: Hitung dari dimensi yang ditemukan (nama item, spesifikasi, teks).
+- Prioritas 3: ESTIMASI CERDAS — jika tidak ada data eksplisit, berikan estimasi yang MASUK AKAL berdasarkan:
+  * Tipe bangunan dan ukuran tipikal (mis. rumah 36m², ruko 2 lantai, dll)
+  * Rasio konstruksi standar (mis. pondasi ~0.5m³ per m² bangunan)
+  * Dimensi parsial yang ditemukan (mis. sloof 15×20 → asumsikan panjang keliling bangunan)
+- Setiap estimasi WAJIB sertakan dasar yang jelas di quantityFormula dan confidence yang jujur.
+- quantity = null HANYA jika benar-benar tidak ada dasar sama sekali untuk estimasi.
 - JANGAN menghitung total/subtotal — itu tugas aplikasi, bukan kamu.
 - PENTING: quantity adalah TOTAL VOLUME/LUAS/JUMLAH untuk seluruh pekerjaan, BUKAN spesifikasi per unit material.
   Contoh SALAH: keramik 40×40cm → quantity 0.16 (itu luas 1 keping!).
   Contoh BENAR: lantai 4m × 5m → quantity 20 (total luas lantai dalam m²).
 - Untuk pintu/jendela: quantity = jumlah total unit (mis. 3), bukan dimensi per daun pintu.
+
+CONTOH ESTIMASI YANG BAIK:
+- "Pondasi Batu Gunung": quantity 8.5, quantityFormula: "Estimasi: keliling 34m × 0.5m × 0.5m (asumsi rumah 36m²)", confidence: "MEDIUM"
+- "Sloof 15×20": quantity 1.02, quantityFormula: "15×20cm × 34m keliling (dari nama item + estimasi panjang)", confidence: "MEDIUM"
 
 ATURAN ESTIMASI HARGA:
 - estimatedUnitPrice = estimasi harga satuan (Rupiah) berdasarkan pengetahuan pasar konstruksi Indonesia 2026.
