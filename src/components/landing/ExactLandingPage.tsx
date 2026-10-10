@@ -2,7 +2,7 @@ import React, { Suspense, useEffect } from 'react';
 import '../../styles/landing-critical.css';
 import '../../styles/exact-landing-flagship-mobile.css';
 import { ExactNavbar } from './exact/ExactNavbar';
-import { CinematicHero } from './cinematic/CinematicHero';
+import { ExactHero } from './exact/ExactHero';
 
 // Below-the-fold sections are code-split so the initial bundle only contains
 // the navbar + hero (above-the-fold). framer-motion and the heavy showcase
@@ -68,8 +68,8 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
 
       {/* Main Sections */}
       <main style={{ flexGrow: 1 }}>
-        {/* 2. Cinematic Hero — monumental architecture × live product stage */}
-        <CinematicHero
+        {/* 2. Hero klasik — video kanan diganti animasi demo produk */}
+        <ExactHero
           onStartFree={() => onOpenAuth('daftar')}
           onOpenDemo={onOpenDemo}
         />

@@ -15,7 +15,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { RibbonFieldBackground } from './RibbonFieldBackground';
-import { FeatureShowcase } from './FeatureShowcase';
+import { ProductStage } from '../cinematic/ProductStage';
 
 interface ExactHeroProps {
   onStartFree?: () => void;
@@ -128,9 +128,9 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
             <div className="ez-blueprint-scan-beam" />
             <div className="ez-platform-ground-glow" />
 
-            {/* Feature Showcase — menggantikan video bangunan: demonstrasi 6 fitur unggulan EZRAB */}
+            {/* Demo animasi produk — menggantikan video: 6 scene demonstrasi EZRAB */}
             <div className="ez-feature-stage-wrapper">
-              <FeatureShowcase />
+              <ProductStage flat />
             </div>
 
             {/* Neon Connection Circuit Lines SVG Overlay */}

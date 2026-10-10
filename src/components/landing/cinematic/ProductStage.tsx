@@ -1,5 +1,6 @@
 import React, { memo, useMemo } from 'react';
 import { Pause, Play } from 'lucide-react';
+import './cinematic-hero.css';
 import { useSceneMachine, type SceneDef } from './sceneMachine';
 import {
   SceneAiEstimate,
@@ -33,8 +34,10 @@ const TRANSITION_MS = 450;
 /**
  * Foreground product stage: a realistically framed dashboard demo driven by
  * the rAF scene machine. No backend calls — every figure is demo data.
+ *
+ * `flat` renders without the 3D perspective tilt (for the classic hero).
  */
-export const ProductStage: React.FC = memo(() => {
+export const ProductStage: React.FC<{ flat?: boolean }> = memo(({ flat = false }) => {
   const scenes = useMemo(() => SCENES, []);
   const { sceneIndex, sceneProgress, elapsed, playing, reducedMotion, totalMs, play, pause, goTo } =
     useSceneMachine(scenes, true);
@@ -47,7 +50,7 @@ export const ProductStage: React.FC = memo(() => {
 
   return (
     <div className="ch-stage">
-      <div className="ch-stage-frame">
+      <div className={`ch-stage-frame${flat ? ' ch-stage-frame--flat' : ''}`}>
         <div className="ch-stage-screen">
           {/* Crossfade: previous scene fades out beneath the incoming one. */}
           {!reducedMotion && inTransition && (

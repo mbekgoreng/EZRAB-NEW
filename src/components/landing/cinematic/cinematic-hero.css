@@ -211,6 +211,13 @@
 
 .ch-stage-frame { position: relative; }
 
+/* Flat variant — for embedding the demo in the classic hero (no 3D tilt) */
+.ch-stage-frame--flat {
+  transform: none;
+  animation: none;
+}
+.ch-stage-frame--flat::after { display: none; }
+
 .ch-stage-screen {
   position: relative;
   border-radius: 12px;
