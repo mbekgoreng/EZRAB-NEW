@@ -168,12 +168,13 @@ export class FullAiDedService {
         let status: FullAiItem['status'] = 'READY';
         if (q.value == null || q.provenance === 'UNRESOLVED') {
           status = 'UNRESOLVED';
-        } else if (q.provenance === 'NEEDS_CONFIRMATION' || q.provenance === 'ASSUMPTION') {
+        } else if (q.provenance === 'NEEDS_CONFIRMATION') {
           status = 'NEEDS_CONFIRMATION';
         } else if (p.unitPrice == null || p.source === 'UNRESOLVED') {
           // Harga belum ada — item tidak siap masuk RAB
           status = 'NEEDS_CONFIRMATION';
         }
+        // ASSUMPTION tetap READY — masuk total dengan label jelas
 
         // Item UNRESOLVED tidak masuk total tapi tetap ditampilkan
         const includeInTotal = status === 'READY' && subtotal != null && subtotal > 0;
