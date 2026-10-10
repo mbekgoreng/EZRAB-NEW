@@ -55,6 +55,11 @@ ATURAN PENDEKATAN KUANTITAS:
   Contoh SALAH: keramik 40×40cm → quantity 0.16 (itu luas 1 keping!).
   Contoh BENAR: lantai 4m × 5m → quantity 20 (total luas lantai dalam m²).
 - Untuk pintu/jendela: quantity = jumlah total unit (mis. 3), bukan dimensi per daun pintu.
+- Untuk KOLOM: quantity = TOTAL VOLUME semua kolom dalam m³, BUKAN panjang.
+  Contoh BENAR: 12 kolom @ 0.15×0.15×3m → quantity = 12 × 0.0675 = 0.81 m³, units = "m3".
+  Contoh SALAH: quantity = 0.15, units = "m'" (itu hanya satu dimensi!).
+- Untuk DINDING: kurangi luas bukaan (pintu/jendela) ~15-20% dari luas bruto.
+  Contoh: keliling 34m × tinggi 3.2m = 108.8 m² bruto → netto ≈ 92 m².
 
 CONTOH ESTIMASI YANG BAIK:
 - "Pondasi Batu Gunung": quantity 8.5, quantityFormula: "Estimasi: keliling 34m × 0.5m × 0.5m (asumsi rumah 36m²)", confidence: "MEDIUM"
