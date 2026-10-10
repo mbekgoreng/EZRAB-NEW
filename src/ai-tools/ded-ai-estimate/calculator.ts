@@ -25,7 +25,49 @@ export type QuantityVerdict =
   | { ok: true }
   | { ok: false; reason: string };
 
-export function validateQuantity(item: Pick<DedAiItem, 'quantity' | 'units' | 'quantitySource'>): QuantityVerdict {
+/**
+ * Elemen struktural yang WAJIB dihitung sebagai VOLUME (m³), bukan panjang/luas.
+ * Jika AI mengembalikan satuan panjang untuk elemen ini, itu adalah kesalahan fatal.
+ */
+const VOLUME_REQUIRED_KEYWORDS = [
+  'kolom', 'column',
+  'pondasi', 'footing',
+  'sloof', 'ringbalk', 'ring balk', 'balok', 'beam',
+  'pelat', 'slab', 'dak',
+  'pile cap', 'pilecap',
+];
+
+/**
+ * Elemen yang WAJIB dihitung sebagai LUAS (m²).
+ */
+const AREA_REQUIRED_KEYWORDS = [
+  'dinding', 'wall', 'pasangan bata',
+  'plester', 'aci', 'plaster',
+  'lantai', 'floor', 'keramik',
+  'atap', 'roof', 'genteng',
+  'plafon', 'ceiling',
+  'cat', 'paint',
+];
+
+/**
+ * Cek apakah nama item menunjukkan elemen yang butuh satuan volume.
+ */
+export function requiresVolumeUnit(name: string): boolean {
+  const lower = name.toLowerCase();
+  return VOLUME_REQUIRED_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
+/**
+ * Cek apakah nama item menunjukkan elemen yang butuh satuan luas.
+ */
+export function requiresAreaUnit(name: string): boolean {
+  const lower = name.toLowerCase();
+  return AREA_REQUIRED_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
+export function validateQuantity(
+  item: Pick<DedAiItem, 'quantity' | 'units' | 'quantitySource'> & { name?: string }
+): QuantityVerdict {
   const q = item.quantity;
   if (q === null || q === undefined) return { ok: false, reason: 'Kuantitas belum terhitung.' };
   if (!Number.isFinite(q)) return { ok: false, reason: 'Kuantitas tidak valid (non-finite).' };
@@ -37,6 +79,26 @@ export function validateQuantity(item: Pick<DedAiItem, 'quantity' | 'units' | 'q
     return { ok: false, reason: 'Kuantitas unresolved; perlu verifikasi.' };
   }
   const shape = shapeForUnit(item.units);
+
+  // REGRESSION FIX Type 36: elemen struktural dengan satuan salah → TOLAK
+  // Contoh: "Kolom Praktis" dengan 0.15 m' (seharusnya 0.81 m³)
+  if (item.name) {
+    if (requiresVolumeUnit(item.name) && shape !== 'VOLUME') {
+      return {
+        ok: false,
+        reason: `"${item.name}" adalah elemen volume tetapi satuannya "${item.units}" (${shape}). ` +
+          `Seharusnya dalam m³. Data ini tidak valid dan tidak masuk total.`,
+      };
+    }
+    if (requiresAreaUnit(item.name) && shape !== 'AREA') {
+      return {
+        ok: false,
+        reason: `"${item.name}" adalah elemen luas tetapi satuannya "${item.units}" (${shape}). ` +
+          `Seharusnya dalam m². Data ini tidak valid dan tidak masuk total.`,
+      };
+    }
+  }
+
   const cap = ABSOLUTE_QUANTITY_CAP[shape] ?? 1_000_000;
   if (q > cap) {
     return { ok: false, reason: `Kuantitas ${q} melebihi batas wajar (${cap}) untuk satuan ${item.units}; kemungkinan salah satuan.` };
