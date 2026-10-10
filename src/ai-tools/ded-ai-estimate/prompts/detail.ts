@@ -51,6 +51,11 @@ ATURAN KUANTITAS & HARGA:
 - estimatedUnitPrice = null SAAT TIDAK ADA dasar harga. BUKAN 0.
 - Harga SEMUANYA adalah AI_ESTIMATE (bukan harga resmi AHSP / database).
 - JANGAN menghitung subtotal/total — aplikasi yang melakukannya secara deterministik.
+- Untuk KOLOM: quantity = TOTAL VOLUME semua kolom dalam m³, BUKAN panjang.
+  Contoh BENAR: 12 kolom @ 0.15×0.15×3m → quantity = 0.81, units = "m3".
+  Contoh SALAH: quantity = 0.15, units = "m'".
+- Untuk DINDING: kurangi luas bukaan (pintu/jendela) ~15-20% dari luas bruto.
+- Untuk pintu/jendela: quantity = jumlah total unit, bukan dimensi per daun.
 
 Keluarkan JSON murni.`;
 }

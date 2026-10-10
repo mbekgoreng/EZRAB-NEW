@@ -66,7 +66,7 @@ export function requiresAreaUnit(name: string): boolean {
 }
 
 export function validateQuantity(
-  item: Pick<DedAiItem, 'quantity' | 'units' | 'quantitySource'> & { name?: string }
+  item: Pick<DedAiItem, 'quantity' | 'units' | 'quantitySource'> & { name?: string; category?: string }
 ): QuantityVerdict {
   const q = item.quantity;
   if (q === null || q === undefined) return { ok: false, reason: 'Kuantitas belum terhitung.' };
@@ -82,18 +82,20 @@ export function validateQuantity(
 
   // REGRESSION FIX Type 36: elemen struktural dengan satuan salah → TOLAK
   // Contoh: "Kolom Praktis" dengan 0.15 m' (seharusnya 0.81 m³)
-  if (item.name) {
-    if (requiresVolumeUnit(item.name) && shape !== 'VOLUME') {
+  // Cek nama DAN kategori untuk mengurangi false negative
+  const textToCheck = `${item.name || ''} ${item.category || ''}`;
+  if (textToCheck.trim()) {
+    if (requiresVolumeUnit(textToCheck) && shape !== 'VOLUME') {
       return {
         ok: false,
-        reason: `"${item.name}" adalah elemen volume tetapi satuannya "${item.units}" (${shape}). ` +
+        reason: `"${item.name || item.category}" adalah elemen volume tetapi satuannya "${item.units}" (${shape}). ` +
           `Seharusnya dalam m³. Data ini tidak valid dan tidak masuk total.`,
       };
     }
-    if (requiresAreaUnit(item.name) && shape !== 'AREA') {
+    if (requiresAreaUnit(textToCheck) && shape !== 'AREA') {
       return {
         ok: false,
-        reason: `"${item.name}" adalah elemen luas tetapi satuannya "${item.units}" (${shape}). ` +
+        reason: `"${item.name || item.category}" adalah elemen luas tetapi satuannya "${item.units}" (${shape}). ` +
           `Seharusnya dalam m². Data ini tidak valid dan tidak masuk total.`,
       };
     }

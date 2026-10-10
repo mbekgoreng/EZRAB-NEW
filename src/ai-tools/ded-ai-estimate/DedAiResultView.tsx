@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { DedAiItem, DedAiOutput } from './types';
+import { validateQuantity } from './calculator';
 import './dedAi.css';
 
 export type ItemStatus = 'valid' | 'review' | 'blocked' | 'no-price';
@@ -114,16 +115,22 @@ export const DedAiResultView: React.FC<Props> = ({
     setItems((prev) => prev.map((it) => {
       if (it.id !== id) return it;
       const unitPrice = it.unitPrice;
-      const subtotal = quantity != null && unitPrice != null ? Math.round(quantity * unitPrice) : null;
+      const newUnits = editVals.units.trim() || it.units;
+      const newName = editVals.name.trim() || it.name;
+      // Re-validasi setelah edit manual — pakai nama baru untuk cek kategori
+      const verdict = validateQuantity({ quantity, units: newUnits, quantitySource: 'DED_EXPLICIT', name: newName });
+      const subtotal = verdict.ok && quantity != null && unitPrice != null ? Math.round(quantity * unitPrice) : null;
       return {
         ...it,
-        name: editVals.name.trim() || it.name,
+        name: newName,
         quantity,
-        units: editVals.units.trim() || it.units,
+        units: newUnits,
         quantitySource: 'DED_EXPLICIT' as const,
-        quantityFormula: `${quantity != null ? `koreksi manual: ${fmtQty(quantity)} ${it.units}` : 'dikosongkan manual'}`,
+        quantityFormula: `${quantity != null ? `koreksi manual: ${fmtQty(quantity)} ${newUnits}` : 'dikosongkan manual'}`,
+        quantityNote: verdict.ok ? undefined : verdict.reason,
         subtotal,
-        provenance: [...it.provenance, 'user-edit'],
+        stage: verdict.ok && subtotal != null ? 'CALCULATED' as const : 'REJECTED' as const,
+        provenance: [...it.provenance, 'user-edit', `revalidated:${verdict.ok ? 'ok' : 'rejected'}`],
       };
     }));
     setEditing(null);
@@ -136,14 +143,18 @@ export const DedAiResultView: React.FC<Props> = ({
       const q = Number(val.replace(',', '.'));
       const quantity = Number.isFinite(q) && q > 0 ? q : null;
       if (quantity == null) return it;
-      const subtotal = it.unitPrice != null ? Math.round(quantity * it.unitPrice) : null;
+      // Re-validasi setelah bulk fill
+      const verdict = validateQuantity({ quantity, units: it.units, quantitySource: 'DED_EXPLICIT', name: it.name });
+      const subtotal = verdict.ok && it.unitPrice != null ? Math.round(quantity * it.unitPrice) : null;
       return {
         ...it,
         quantity,
         quantitySource: 'DED_EXPLICIT' as const,
         quantityFormula: `input manual: ${fmtQty(quantity)} ${it.units}`,
+        quantityNote: verdict.ok ? it.quantityNote : verdict.reason,
         subtotal,
-        provenance: [...it.provenance, 'bulk-fill'],
+        stage: verdict.ok && subtotal != null ? 'CALCULATED' as const : 'REJECTED' as const,
+        provenance: [...it.provenance, 'bulk-fill', `revalidated:${verdict.ok ? 'ok' : 'rejected'}`],
       };
     }));
     setBulkFill(false);
