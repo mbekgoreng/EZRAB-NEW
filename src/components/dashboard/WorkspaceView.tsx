@@ -569,8 +569,11 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
                     description: ahsp.name,
                     unit: ahsp.unit,
                     volume: volume,
-                    unitPrice: ahsp.unitPrice,
-                    totalPrice: ahsp.unitPrice * volume,
+                    // Harga null = PRICE_MISSING: teruskan sebagai undefined agar
+                    // factory membuat PRICE_UNRESOLVED (badge "Harga belum diisi"),
+                    // bukan diam-diam menjadi Rp 0.
+                    unitPrice: ahsp.unitPrice ?? undefined,
+                    totalPrice: ahsp.unitPrice == null ? 0 : ahsp.unitPrice * volume,
                     category: ahsp.category || 'Pekerjaan',
                     sectionName: ahsp.category || 'Pekerjaan',
                     laborPrice: ahsp.totalLabor || 0,

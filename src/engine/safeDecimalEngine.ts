@@ -37,9 +37,13 @@ export class SafeDecimalEngine {
   }
 
   /**
-   * Safe addition of multiple numbers with scaled precision
+   * Safe addition of multiple numbers with scaled precision.
+   * Null/undefined operands are tolerated (treated as 0 contribution via
+   * sanitize) — this mirrors the pre-existing runtime behaviour; callers
+   * that need to distinguish PRICE_MISSING must check for null themselves
+   * instead of relying on the sum.
    */
-  public static safeAdd(...numbers: number[]): number {
+  public static safeAdd(...numbers: (number | null | undefined)[]): number {
     let totalScaled = 0;
     for (const num of numbers) {
       const valid = this.sanitize(num);

@@ -345,7 +345,9 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
       if (field === 'coefficient') {
         const coeff = parseFloat(value) || 0;
         target.coefficient = coeff;
-        target.total = SafeDecimalEngine.safeMultiply(coeff, target.unitPrice, 2);
+        // Harga null (belum tersedia) bukan 0: total ikut null agar tidak
+        // disamarkan sebagai biaya nol.
+        target.total = target.unitPrice == null ? null : SafeDecimalEngine.safeMultiply(coeff, target.unitPrice, 2);
       } else if (field === 'unitPrice') {
         const price = parseFloat(value) || 0;
         target.unitPrice = price;
@@ -940,7 +942,8 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                         <td style={{ padding: '4px 6px', textAlign: 'right' }}>
                           <input
                             type="number"
-                            value={m.unitPrice}
+                            value={m.unitPrice ?? ''}
+                            placeholder="Belum diisi"
                             onChange={(e) => handleUpdateComponent('MATERIAL', idx, 'unitPrice', e.target.value)}
                             style={{
                               width: '95px',
@@ -1050,7 +1053,8 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                         <td style={{ padding: '4px 6px', textAlign: 'right' }}>
                           <input
                             type="number"
-                            value={l.unitPrice}
+                            value={l.unitPrice ?? ''}
+                            placeholder="Belum diisi"
                             onChange={(e) => handleUpdateComponent('LABOR', idx, 'unitPrice', e.target.value)}
                             style={{
                               width: '95px',
@@ -1167,7 +1171,8 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                           <td style={{ padding: '4px 6px', textAlign: 'right' }}>
                             <input
                               type="number"
-                              value={e.unitPrice}
+                              value={e.unitPrice ?? ''}
+                              placeholder="Belum diisi"
                               onChange={(eVal) => handleUpdateComponent('EQUIPMENT', idx, 'unitPrice', eVal.target.value)}
                               style={{
                                 width: '95px',

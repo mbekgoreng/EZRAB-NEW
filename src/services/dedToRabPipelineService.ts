@@ -596,7 +596,9 @@ export class DedToRabPipelineService {
           ahspCode: item.code,
           name: item.name,
           unit: item.unit,
-          baseUnitPrice: item.unitPrice,
+          // Harga null = belum tersedia: biarkan undefined agar downstream
+          // memperlakukannya sebagai PRICE_MISSING, bukan Rp 0.
+          baseUnitPrice: item.unitPrice ?? undefined,
           matchScore: Math.round(matchScore),
           reason: specMatch
             ? `Mutu spesifikasi ${specification} cocok dengan katalog resmi AHSP PUPR 2026.`
@@ -712,7 +714,7 @@ export class DedToRabPipelineService {
         ahspCode: refMatch.code,
         name: refMatch.name,
         unit: refMatch.unit,
-        baseUnitPrice: refMatch.unitPrice,
+        baseUnitPrice: refMatch.unitPrice ?? undefined,
         matchScore: 65,
         reason: 'Ditemukan pada referensi database nasional Bina Marga / Cipta Karya.',
         specificationMatch: false,

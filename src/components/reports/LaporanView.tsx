@@ -63,6 +63,32 @@ interface LaporanViewProps {
   onNavigateToTab?: (tab: string) => void;
 }
 
+/**
+ * Menampilkan harga komponen AHSP: nilai diformat id-ID, sedangkan
+ * null (PRICE_MISSING) ditampilkan sebagai badge "Belum tersedia" —
+ * tidak pernah disamarkan sebagai Rp 0.
+ */
+const PriceCell: React.FC<{ value: number | null }> = ({ value }) => {
+  if (value == null) {
+    return (
+      <span
+        style={{
+          fontSize: '10px',
+          fontWeight: 700,
+          color: '#B45309',
+          background: '#FEF3C7',
+          borderRadius: '6px',
+          padding: '2px 8px',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        Belum tersedia
+      </span>
+    );
+  }
+  return <>{value.toLocaleString('id-ID')}</>;
+};
+
 export const LaporanView: React.FC<LaporanViewProps> = ({
   onOpenMagicAi,
   onNavigateToTab,
@@ -195,7 +221,8 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
     return boqData.reduce((sum, cat) => sum + cat.items.reduce((cSum: number, it: any) => cSum + it.amount, 0), 0);
   }, [boqData]);
 
-  // Standardized AHSP Item interface for LaporanView
+  // Standardized AHSP Item interface for LaporanView.
+  // price/total boleh null (= harga belum tersedia, PRICE_MISSING) — bukan 0.
   interface AhspDetailViewItem {
     id: string;
     code: string;
@@ -204,9 +231,9 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
     unit: string;
     regulationSource?: string;
     overheadPct: number;
-    materials: Array<{ code: string; name: string; unit: string; coeff: number; price: number; total: number }>;
-    labors: Array<{ code: string; name: string; unit: string; coeff: number; price: number; total: number }>;
-    equipments: Array<{ code: string; name: string; unit: string; coeff: number; price: number; total: number }>;
+    materials: Array<{ code: string; name: string; unit: string; coeff: number; price: number | null; total: number | null }>;
+    labors: Array<{ code: string; name: string; unit: string; coeff: number; price: number | null; total: number | null }>;
+    equipments: Array<{ code: string; name: string; unit: string; coeff: number; price: number | null; total: number | null }>;
   }
 
   // Master & Project AHSP List
@@ -405,9 +432,15 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
     equipments: [],
   };
 
-  const matSum = (activeAhsp.materials || []).reduce((s, m) => s + m.total, 0);
-  const labSum = (activeAhsp.labors || []).reduce((s, l) => s + l.total, 0);
-  const eqSum = (activeAhsp.equipments || []).reduce((s, e) => s + e.total, 0);
+  // Jumlah komponen yang harganya belum tersedia: barisnya sudah diberi
+  // badge "Belum tersedia" via PriceCell, sehingga ?? 0 di sini eksplisit
+  // hanya untuk penjumlahan tampilan (bukan klaim harga).
+  const matSum = (activeAhsp.materials || []).reduce((s, m) => s + (m.total ?? 0), 0);
+  const labSum = (activeAhsp.labors || []).reduce((s, l) => s + (l.total ?? 0), 0);
+  const eqSum = (activeAhsp.equipments || []).reduce((s, e) => s + (e.total ?? 0), 0);
+  const hasMissingAhspPrice = (activeAhsp.materials || []).some((m) => m.total == null)
+    || (activeAhsp.labors || []).some((l) => l.total == null)
+    || (activeAhsp.equipments || []).some((e) => e.total == null);
   const baseHsp = matSum + labSum + eqSum;
   const overheadVal = (baseHsp * activeAhsp.overheadPct) / 100;
   const grandHsp = baseHsp + overheadVal;
@@ -1639,6 +1672,11 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   <div style={{ fontSize: '20px', fontWeight: 800, color: '#2563EB' }}>
                     {formatCurrencyIDR(grandHsp)}
                   </div>
+                  {hasMissingAhspPrice && (
+                    <div style={{ fontSize: '10.5px', fontWeight: 600, color: '#B45309', marginTop: '2px' }}>
+                      Sebagian harga belum tersedia — total belum final
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1676,8 +1714,8 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                             <td style={{ fontWeight: 500, color: '#0F172A', padding: '7px 12px' }}>{m.name}</td>
                             <td style={{ textAlign: 'center', color: '#64748B', padding: '7px 10px' }}>{m.unit}</td>
                             <td style={{ textAlign: 'right', color: '#0F172A', padding: '7px 10px' }}>{m.coeff.toFixed(3)}</td>
-                            <td style={{ textAlign: 'right', color: '#0F172A', padding: '7px 12px' }}>{m.price.toLocaleString('id-ID')}</td>
-                            <td style={{ textAlign: 'right', fontWeight: 700, color: '#0F172A', padding: '7px 12px' }}>{m.total.toLocaleString('id-ID')}</td>
+                            <td style={{ textAlign: 'right', color: '#0F172A', padding: '7px 12px' }}><PriceCell value={m.price} /></td>
+                            <td style={{ textAlign: 'right', fontWeight: 700, color: '#0F172A', padding: '7px 12px' }}><PriceCell value={m.total} /></td>
                           </tr>
                         ))}
                       </tbody>
@@ -1724,8 +1762,8 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                             <td style={{ fontWeight: 500, color: '#0F172A', padding: '7px 12px' }}>{l.name}</td>
                             <td style={{ textAlign: 'center', color: '#64748B', padding: '7px 10px' }}>{l.unit}</td>
                             <td style={{ textAlign: 'right', color: '#0F172A', padding: '7px 10px' }}>{l.coeff.toFixed(3)}</td>
-                            <td style={{ textAlign: 'right', color: '#0F172A', padding: '7px 12px' }}>{l.price.toLocaleString('id-ID')}</td>
-                            <td style={{ textAlign: 'right', fontWeight: 700, color: '#0F172A', padding: '7px 12px' }}>{l.total.toLocaleString('id-ID')}</td>
+                            <td style={{ textAlign: 'right', color: '#0F172A', padding: '7px 12px' }}><PriceCell value={l.price} /></td>
+                            <td style={{ textAlign: 'right', fontWeight: 700, color: '#0F172A', padding: '7px 12px' }}><PriceCell value={l.total} /></td>
                           </tr>
                         ))}
                       </tbody>
@@ -1772,8 +1810,8 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                             <td style={{ fontWeight: 500, color: '#0F172A', padding: '7px 12px' }}>{e.name}</td>
                             <td style={{ textAlign: 'center', color: '#64748B', padding: '7px 10px' }}>{e.unit}</td>
                             <td style={{ textAlign: 'right', color: '#0F172A', padding: '7px 10px' }}>{e.coeff.toFixed(3)}</td>
-                            <td style={{ textAlign: 'right', color: '#0F172A', padding: '7px 12px' }}>{e.price.toLocaleString('id-ID')}</td>
-                            <td style={{ textAlign: 'right', fontWeight: 700, color: '#0F172A', padding: '7px 12px' }}>{e.total.toLocaleString('id-ID')}</td>
+                            <td style={{ textAlign: 'right', color: '#0F172A', padding: '7px 12px' }}><PriceCell value={e.price} /></td>
+                            <td style={{ textAlign: 'right', fontWeight: 700, color: '#0F172A', padding: '7px 12px' }}><PriceCell value={e.total} /></td>
                           </tr>
                         ))}
                       </tbody>

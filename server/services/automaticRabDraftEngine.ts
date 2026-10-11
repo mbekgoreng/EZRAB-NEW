@@ -20,8 +20,10 @@ export interface RabDraftItem {
   description: string;
   volume: number;
   unit: string;
-  unitPrice: number;
-  totalPrice: number;
+  /** Null = harga satuan belum tersedia (PRICE_MISSING). Bukan 0. */
+  unitPrice: number | null;
+  /** Null = total belum dapat dihitung karena harga hilang. Bukan 0. */
+  totalPrice: number | null;
   sourceType: 'AHSP_DATABASE' | 'PRICE_DATABASE' | 'AI_ESTIMATE' | 'UNMAPPED';
   verificationStatus: 'VERIFIED' | 'NEEDS_VERIFICATION' | 'ESTIMATED';
   confidence: number;
@@ -110,8 +112,16 @@ export class AutomaticRabDraftEngine {
 
       if (match) {
         const unitPrice = match.unitPrice;
-        const lineTotal = SafeDecimalEngine.safeMultiply(qto.volume, unitPrice);
-        subtotal = SafeDecimalEngine.safeAdd(subtotal, lineTotal);
+        // Harga null (PRICE_MISSING): jangan samarkan sebagai Rp 0.
+        // Item ditandai NEEDS_VERIFICATION dan dihitung dalam
+        // itemsRequiringPriceVerification; subtotal tidak menelan total semu.
+        const lineTotal = unitPrice == null ? null : SafeDecimalEngine.safeMultiply(qto.volume, unitPrice);
+        const hasPrice = lineTotal != null;
+        if (hasPrice) {
+          subtotal = SafeDecimalEngine.safeAdd(subtotal, lineTotal);
+        } else {
+          priceVerificationCount++;
+        }
 
         items.push({
           itemId,
@@ -124,10 +134,12 @@ export class AutomaticRabDraftEngine {
           unitPrice,
           totalPrice: lineTotal,
           sourceType: 'AHSP_DATABASE',
-          verificationStatus: 'VERIFIED',
+          verificationStatus: hasPrice ? 'VERIFIED' : 'NEEDS_VERIFICATION',
           confidence: Math.min(qto.confidence, 0.95),
           qtoReference: qto.itemCode,
-          notes: `Dicocokkan dengan standar PUPR (${match.code})`
+          notes: hasPrice
+            ? `Dicocokkan dengan standar PUPR (${match.code})`
+            : `Dicocokkan dengan standar PUPR (${match.code}); harga satuan belum tersedia di database, mohon verifikasi harga.`
         });
       } else {
         unmappedCount++;

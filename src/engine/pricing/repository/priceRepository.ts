@@ -123,7 +123,9 @@ export class PriceRepository {
       ];
 
       for (const comp of allComps) {
-        if (!comp.code || comp.unitPrice === undefined || comp.unitPrice <= 0) continue;
+        // Komponen tanpa harga (null/undefined) atau harga tidak positif
+        // tidak di-ingest ke price DB — harga hilang bukan harga nol.
+        if (!comp.code || comp.unitPrice == null || comp.unitPrice <= 0) continue;
         const normCode = PriceNormalizationEngine.normalizeCode(comp.code);
         if (this.masterPricesByCode.has(normCode)) continue;
 

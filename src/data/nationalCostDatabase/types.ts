@@ -100,10 +100,12 @@ export interface NationalAHSPItem {
   laborComponents: AHSPComponent[];
   materialComponents: AHSPComponent[];
   equipmentComponents: AHSPComponent[];
-  totalLabor: number;
-  totalMaterial: number;
-  totalEquipment: number;
-  unitPrice: number;
+  /** Null = belum dapat dihitung karena ada harga komponen yang hilang. Bukan 0. */
+  totalLabor: number | null;
+  totalMaterial: number | null;
+  totalEquipment: number | null;
+  /** Null = harga item belum tersedia (PRICE_MISSING). Bukan 0. */
+  unitPrice: number | null;
   lastUpdated: string;
   dataQualityScore: number;      // 0 to 100
 
@@ -181,6 +183,7 @@ export interface AHSPProjectSnapshot {
   laborComponents: AHSPComponent[];
   materialComponents: AHSPComponent[];
   equipmentComponents: AHSPComponent[];
-  unitPrice: number;
+  /** Null = harga item belum tersedia (PRICE_MISSING). Bukan 0. */
+  unitPrice: number | null;
   snapshotTimestamp: string;
 }

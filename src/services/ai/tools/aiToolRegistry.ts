@@ -555,7 +555,9 @@ export class AIToolRegistry {
           name: m.item.name,
           unit: m.item.unit,
           unitPrice: m.item.unitPrice,
-          unitPriceFormatted: 'Rp ' + Math.round(m.item.unitPrice).toLocaleString('id-ID'),
+          unitPriceFormatted: m.item.unitPrice == null
+            ? 'Harga belum tersedia'
+            : 'Rp ' + Math.round(m.item.unitPrice).toLocaleString('id-ID'),
           domain: m.item.domain,
           category: m.item.category,
           matchType: m.matchType,

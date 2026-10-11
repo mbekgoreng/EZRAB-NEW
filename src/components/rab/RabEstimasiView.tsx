@@ -333,7 +333,9 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         description: item.description,
         volume: item.volume,
         unit: item.unit,
-        unitPrice: item.unitPrice,
+        // Harga null dari draft = PRICE_MISSING: teruskan sebagai undefined agar
+        // factory membuat PRICE_UNRESOLVED (badge "Harga belum diisi").
+        unitPrice: item.unitPrice ?? undefined,
         volumeSource: 'AI' as VolumeSourceType,
         ahspCode: item.ahspCode,
         verificationStatus: item.verificationStatus === 'VERIFIED' ? 'VERIFIED' : 'NEEDS_VERIFICATION',

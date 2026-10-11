@@ -122,6 +122,11 @@ export class AHSPCalculationEngine {
   static recalculateSnapshot(snapshot: AHSPProjectSnapshot): AHSPProjectSnapshot {
     const recalcComp = (c: AHSPComponent): AHSPComponent => {
       const coeff = SafeDecimalEngine.sanitize(c.coefficient, 0, false);
+      if (c.unitPrice == null) {
+        // Harga belum tersedia (PRICE_MISSING): jangan samarkan sebagai 0.
+        // Pertahankan null agar UI dapat menampilkan badge "Harga belum diisi".
+        return { ...c, coefficient: coeff, unitPrice: null, total: null };
+      }
       const price = SafeDecimalEngine.sanitize(c.unitPrice, 0, true);
       const total = SafeDecimalEngine.safeMultiply(coeff, price, 2);
       return { ...c, coefficient: coeff, unitPrice: price, total };

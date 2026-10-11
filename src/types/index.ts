@@ -159,8 +159,10 @@ export interface AHSPComponent {
   name: string;
   unit: string;
   coefficient: number;
-  unitPrice: number;
-  total: number;
+  /** Null = harga belum tersedia (PRICE_MISSING). Tidak sama dengan 0. */
+  unitPrice: number | null;
+  /** Null = total belum dapat dihitung karena harga komponen hilang. */
+  total: number | null;
   resourceId?: string;
   resourceType?: 'MATERIAL' | 'LABOR' | 'EQUIPMENT';
   originalCoefficient?: number;
@@ -249,10 +251,14 @@ export interface AHSPItem {
   laborComponents: AHSPComponent[];
   materialComponents: AHSPComponent[];
   equipmentComponents: AHSPComponent[];
-  totalLabor: number;
-  totalMaterial: number;
-  totalEquipment: number;
-  unitPrice: number;
+  /** Null = belum dapat dihitung karena ada harga komponen yang hilang. Bukan 0. */
+  totalLabor: number | null;
+  /** Null = belum dapat dihitung karena ada harga komponen yang hilang. Bukan 0. */
+  totalMaterial: number | null;
+  /** Null = belum dapat dihitung karena ada harga komponen yang hilang. Bukan 0. */
+  totalEquipment: number | null;
+  /** Null = harga item belum tersedia (PRICE_MISSING). Bukan 0. */
+  unitPrice: number | null;
   lastUpdated: string;
   isCustom?: boolean;
 }
