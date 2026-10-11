@@ -45,7 +45,7 @@ import { useProject } from '../../context/ProjectContext';
 import { WorkItem, WorkItemStatus, QTOItem, RabItem } from '../../types';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { ALL_CONSTRUCTION_CALCULATORS, CONSTRUCTION_CALCULATORS, getCalculatorById } from '../../engine/constructionCalculators/registry';
-import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
+import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
 import { WorkItemInspectorDrawer } from '../inspector/WorkItemInspectorDrawer';
 import { IntelligentExcelImportModal } from '../import/IntelligentExcelImportModal';
@@ -263,9 +263,10 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
     return groups;
   }, [filteredItems]);
 
-  // Filtered AHSP List for Linker Modal
+  // Filtered AHSP List for Linker Modal (active items only — quarantined excluded)
+  const activeAhspItems = useMemo(() => officialAhspRepository.getActiveOfficialAhsp(), []);
   const filteredAhspItems = useMemo(() => {
-    return ALL_OFFICIAL_AHSP_ITEMS.filter((item) => {
+    return activeAhspItems.filter((item) => {
       if (ahspCategoryFilter !== 'ALL' && item.category !== ahspCategoryFilter) return false;
       if (ahspSearch.trim()) {
         const q = ahspSearch.toLowerCase();

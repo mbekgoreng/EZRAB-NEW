@@ -6,7 +6,7 @@
  */
 
 import { GeneratedQtoItem } from './automaticQtoEngine';
-import { ALL_OFFICIAL_AHSP_ITEMS } from '../../src/data/nationalCostDatabase/masterRegistry';
+import { officialAhspRepository } from '../../src/data/nationalCostDatabase/officialAhspRepository';
 import { NationalAHSPItem } from '../../src/data/nationalCostDatabase/types';
 import { SafeDecimalEngine } from '../../src/engine/safeDecimalEngine';
 // PHASE 1 (audit §16): record every fabricated price. Recording only — no value is changed.
@@ -59,35 +59,38 @@ export class AutomaticRabDraftEngine {
    * Search official AHSP database for best match
    */
   public findBestAhspMatch(itemDescription: string, category: string, suggestedCode?: string): NationalAHSPItem | undefined {
+    // Exact code: alias-resolving, quarantine-blocking.
     if (suggestedCode) {
-      const exact = ALL_OFFICIAL_AHSP_ITEMS.find(a => a.code === suggestedCode);
+      const exact = officialAhspRepository.getOfficialAhsp(suggestedCode);
       if (exact) return exact;
     }
 
     const descLower = itemDescription.toLowerCase();
+    // Keyword rules over quarantine-filtered active items.
+    const activeItems = officialAhspRepository.getActiveOfficialAhsp();
 
     // Specific keyword rules
     if (descLower.includes('bowplank') || descLower.includes('pengukuran')) {
-      return ALL_OFFICIAL_AHSP_ITEMS.find(a => a.name.toLowerCase().includes('bowplank') || a.name.toLowerCase().includes('pengukuran'));
+      return activeItems.find(a => a.name.toLowerCase().includes('bowplank') || a.name.toLowerCase().includes('pengukuran'));
     }
     if (descLower.includes('galian')) {
-      return ALL_OFFICIAL_AHSP_ITEMS.find(a => a.name.toLowerCase().includes('galian') && a.name.toLowerCase().includes('tanah'));
+      return activeItems.find(a => a.name.toLowerCase().includes('galian') && a.name.toLowerCase().includes('tanah'));
     }
     if (descLower.includes('sloof') && descLower.includes('beton')) {
-      return ALL_OFFICIAL_AHSP_ITEMS.find(a => a.name.toLowerCase().includes('sloof') || (a.name.toLowerCase().includes('beton') && a.code.startsWith('A.4.1.1')));
+      return activeItems.find(a => a.name.toLowerCase().includes('sloof') || (a.name.toLowerCase().includes('beton') && a.code.startsWith('A.4.1.1')));
     }
     if (descLower.includes('kolom') && descLower.includes('beton')) {
-      return ALL_OFFICIAL_AHSP_ITEMS.find(a => a.name.toLowerCase().includes('kolom') || (a.name.toLowerCase().includes('beton') && a.code.startsWith('A.4.1.1')));
+      return activeItems.find(a => a.name.toLowerCase().includes('kolom') || (a.name.toLowerCase().includes('beton') && a.code.startsWith('A.4.1.1')));
     }
     if (descLower.includes('bata') || descLower.includes('dinding')) {
-      return ALL_OFFICIAL_AHSP_ITEMS.find(a => a.name.toLowerCase().includes('bata merah') || a.name.toLowerCase().includes('dinding'));
+      return activeItems.find(a => a.name.toLowerCase().includes('bata merah') || a.name.toLowerCase().includes('dinding'));
     }
     if (descLower.includes('lantai') || descLower.includes('keramik') || descLower.includes('tile')) {
-      return ALL_OFFICIAL_AHSP_ITEMS.find(a => a.name.toLowerCase().includes('keramik') || a.name.toLowerCase().includes('ubin') || a.name.toLowerCase().includes('granit'));
+      return activeItems.find(a => a.name.toLowerCase().includes('keramik') || a.name.toLowerCase().includes('ubin') || a.name.toLowerCase().includes('granit'));
     }
 
     // Generic match
-    return ALL_OFFICIAL_AHSP_ITEMS.find(a => descLower.includes(a.name.toLowerCase()) || a.name.toLowerCase().includes(descLower));
+    return activeItems.find(a => descLower.includes(a.name.toLowerCase()) || a.name.toLowerCase().includes(descLower));
   }
 
   /**

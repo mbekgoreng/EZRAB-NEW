@@ -8,7 +8,7 @@
  * - Flags AI estimates as NEEDS_VERIFICATION.
  */
 
-import { ALL_OFFICIAL_AHSP_ITEMS } from '../../src/data/nationalCostDatabase/masterRegistry';
+import { officialAhspRepository } from '../../src/data/nationalCostDatabase/officialAhspRepository';
 import { NationalAHSPItem } from '../../src/data/nationalCostDatabase/types';
 // PHASE 1 (audit §16): record every fabricated price. Recording only — no value is changed.
 import { recordFabricatedTotal } from '../../src/engine/pricing/telemetry/fabricatedPriceTelemetry';
@@ -37,14 +37,9 @@ export class AuthoritativeAhspPriceBridge {
    * Search authoritative AHSP database for an item.
    */
   public searchAhsp(description: string, suggestedCode?: string, category?: string): AhspMatchResult {
-    // 1. Exact Code Match
+    // 1. Exact Code Match (alias-resolving, quarantine-blocking)
     if (suggestedCode) {
-      const codeClean = suggestedCode.trim().toLowerCase();
-      const exact = ALL_OFFICIAL_AHSP_ITEMS.find(a =>
-        a.code.toLowerCase() === codeClean ||
-        a.codeNormalized.toLowerCase() === codeClean ||
-        a.id.toLowerCase() === codeClean
-      );
+      const exact = officialAhspRepository.getOfficialAhsp(suggestedCode);
       if (exact) {
         return this.formatAhspResult(exact, 'EXACT_MATCH', 1.0);
       }
@@ -53,31 +48,32 @@ export class AuthoritativeAhspPriceBridge {
     const descLower = (description || '').toLowerCase();
     const catLower = (category || '').toLowerCase();
 
-    // 2. Specialized Domain Keyword Match
+    // 2. Specialized Domain Keyword Match (quarantine-filtered candidate pool)
     let candidate: NationalAHSPItem | undefined;
+    const activeItems = officialAhspRepository.getActiveOfficialAhsp();
 
     if (descLower.includes('kolom') || descLower.includes('beton bertulang')) {
-      candidate = ALL_OFFICIAL_AHSP_ITEMS.find(a =>
+      candidate = activeItems.find(a =>
         a.name.toLowerCase().includes('kolom') ||
         (a.name.toLowerCase().includes('beton') && a.domain === 'CIPTA_KARYA') ||
         a.code === '1.1.1'
       );
     } else if (descLower.includes('dinding') || descLower.includes('bata')) {
-      candidate = ALL_OFFICIAL_AHSP_ITEMS.find(a =>
+      candidate = activeItems.find(a =>
         a.name.toLowerCase().includes('dinding') ||
         a.name.toLowerCase().includes('bata') ||
         a.name.toLowerCase().includes('pagar')
       );
     } else if (descLower.includes('pagar') || descLower.includes('persiapan') || descLower.includes('bowplank')) {
-      candidate = ALL_OFFICIAL_AHSP_ITEMS.find(a => a.code === '1.1.1' || a.name.toLowerCase().includes('pagar'));
+      candidate = activeItems.find(a => a.code === '1.1.1' || a.name.toLowerCase().includes('pagar'));
     } else if (descLower.includes('aspal') || descLower.includes('laston') || descLower.includes('ac-wc')) {
-      candidate = ALL_OFFICIAL_AHSP_ITEMS.find(a => a.domain === 'BINA_MARGA' || a.name.toLowerCase().includes('aspal'));
+      candidate = activeItems.find(a => a.domain === 'BINA_MARGA' || a.name.toLowerCase().includes('aspal'));
     } else if (descLower.includes('saluran') || descLower.includes('irigasi') || descLower.includes('pintu air')) {
-      candidate = ALL_OFFICIAL_AHSP_ITEMS.find(a => a.domain === 'SUMBER_DAYA_AIR');
+      candidate = activeItems.find(a => a.domain === 'SUMBER_DAYA_AIR');
     }
 
     if (!candidate && suggestedCode) {
-      candidate = ALL_OFFICIAL_AHSP_ITEMS.find(a => a.code.includes(suggestedCode) || suggestedCode.includes(a.code));
+      candidate = activeItems.find(a => a.code.includes(suggestedCode) || suggestedCode.includes(a.code));
     }
 
     if (candidate) {
@@ -85,8 +81,8 @@ export class AuthoritativeAhspPriceBridge {
       return this.formatAhspResult(candidate, matchType, 0.9);
     }
 
-    // 3. General Fuzzy Search across all official items
-    candidate = ALL_OFFICIAL_AHSP_ITEMS.find(a =>
+    // 3. General Fuzzy Search across active official items
+    candidate = activeItems.find(a =>
       descLower.includes(a.name.toLowerCase()) || a.name.toLowerCase().includes(descLower)
     );
 
@@ -146,9 +142,7 @@ export class AuthoritativeAhspPriceBridge {
 
     // 2. The EZRAB Price Database 2026 — the SAME resolver used by RAB and Magic AI.
     if (ahspResult.ahspCode) {
-      const item = ALL_OFFICIAL_AHSP_ITEMS.find(
-        (a) => a.code === ahspResult.ahspCode || a.codeNormalized === ahspResult.ahspCode
-      );
+      const item = officialAhspRepository.getOfficialAhsp(ahspResult.ahspCode);
       if (item) {
         const comp = priceResolver2026.resolveAhspUnitPrice(item, opts);
         if (comp.unitPrice !== null) {

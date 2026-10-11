@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Database, Search, ChevronRight, FileText, Layers, ShieldCheck, Tag, Waves } from 'lucide-react';
-import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
+import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { NationalAHSPItem } from '../../data/nationalCostDatabase/types';
 import { formatCurrencyIDR, formatNumberID } from '../../calculations/decimalEngine';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
@@ -8,11 +8,12 @@ import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
 export const AhspDatabaseExplorer: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDomain, setSelectedDomain] = useState<'ALL' | 'CIPTA_KARYA' | 'BINA_MARGA' | 'SUMBER_DAYA_AIR' | 'SMKK'>('ALL');
-  const [selectedItem, setSelectedItem] = useState<NationalAHSPItem>(ALL_OFFICIAL_AHSP_ITEMS[0]);
+  const activeAhspItems = useMemo(() => officialAhspRepository.getActiveOfficialAhsp(), []);
+  const [selectedItem, setSelectedItem] = useState<NationalAHSPItem>(activeAhspItems[0]);
 
   const filteredItems = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
-    return ALL_OFFICIAL_AHSP_ITEMS.filter((item) => {
+    return activeAhspItems.filter((item) => {
       if (selectedDomain !== 'ALL' && item.domain !== selectedDomain) return false;
       if (q) {
         return (

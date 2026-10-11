@@ -1,6 +1,6 @@
 import { KnowledgeCategory, KnowledgeSearchResult, ProvenanceValue } from './knowledgeTypes';
 import { knowledgeRegistry } from './knowledgeRegistry';
-import { ALL_OFFICIAL_AHSP_ITEMS } from '../../../src/data/nationalCostDatabase/masterRegistry';
+import { officialAhspRepository } from '../../../src/data/nationalCostDatabase/officialAhspRepository';
 
 export class KnowledgeRetriever {
   private static instance: KnowledgeRetriever;
@@ -68,13 +68,14 @@ export class KnowledgeRetriever {
   public resolveAhspItem(query: string): ProvenanceValue<any | null> {
     const cleanQuery = query.toLowerCase().trim();
     
-    // Search exact code or matching description in official database
-    const exactMatch = ALL_OFFICIAL_AHSP_ITEMS.find((item) => {
-      const code = (item.code || '').toLowerCase();
-      const codeNorm = (item.codeNormalized || '').toLowerCase();
-      const desc = (item.name || (item as any).description || '').toLowerCase();
-      return code === cleanQuery || codeNorm === cleanQuery || desc.includes(cleanQuery);
-    });
+    // Search exact code (alias-resolving, quarantine-blocking) then description
+    // in the official database. Quarantined items are never returned.
+    const exactMatch =
+      officialAhspRepository.getOfficialAhsp(query.trim()) ??
+      officialAhspRepository.getActiveOfficialAhsp().find((item) => {
+        const desc = (item.name || (item as any).description || '').toLowerCase();
+        return desc.includes(cleanQuery);
+      });
 
     if (exactMatch) {
       return {

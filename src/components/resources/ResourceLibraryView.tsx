@@ -34,7 +34,7 @@ import { PriceItem, WorkItem, RabItem } from '../../types';
 import { MASTER_PRICE_ITEMS } from '../../data/indonesianPrices';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { useProject } from '../../context/ProjectContext';
-import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
+import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { PriceRepository } from '../../engine/pricing/repository/priceRepository';
 
 export interface ExtendedPriceRecord extends PriceItem {
@@ -300,7 +300,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
     const cleanCode = (resource.code || '').toLowerCase();
     const cleanName = (resource.name || '').toLowerCase();
 
-    const affectedAhsp = ALL_OFFICIAL_AHSP_ITEMS.filter((ahsp) => {
+    const affectedAhsp = officialAhspRepository.getActiveOfficialAhsp().filter((ahsp) => {
       const allComps = [
         ...(ahsp.materialComponents || []),
         ...(ahsp.laborComponents || []),

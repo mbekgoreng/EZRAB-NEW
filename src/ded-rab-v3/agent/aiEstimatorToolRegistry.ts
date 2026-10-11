@@ -115,7 +115,7 @@ export class AiEstimatorToolRegistry {
    * Searches the official PUPR 2026 database (5,768 records) with strict validation.
    */
   public findAhsp(workItemName: string, specification: string, unit: string) {
-    const officialItems = officialAhspRepository.getAllOfficialAhsp();
+    const officialItems = officialAhspRepository.getActiveOfficialAhsp();
     const query = workItemName.toLowerCase();
 
     // 1. Exact match attempt

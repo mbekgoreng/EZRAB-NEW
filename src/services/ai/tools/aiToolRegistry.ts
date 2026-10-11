@@ -34,6 +34,7 @@ import {
 } from '../../unifiedProjectContext';
 import { priceResolver } from '../../../engine/pricing/resolver/priceResolver';
 import { CostDatabaseEngine, ALL_OFFICIAL_AHSP_ITEMS } from '../../../data/nationalCostDatabase/masterRegistry';
+import { officialAhspRepository } from '../../../data/nationalCostDatabase/officialAhspRepository';
 import { ProjectFinanceRepository } from '../../../domain/finance/repository';
 import { LocalDocumentRepository } from '../../../document-engine/repository';
 import { DOCUMENT_REGISTRY } from '../../../document-engine/registry';
@@ -607,7 +608,7 @@ export class AIToolRegistry {
       requiresApproval: false,
       mutation: false,
       execute: async (input: { code: string }) => {
-        const item = ALL_OFFICIAL_AHSP_ITEMS.find((a) => a.code.toLowerCase() === input.code.toLowerCase());
+        const item = officialAhspRepository.getOfficialAhsp(input.code);
         if (!item) {
           return {
             success: false,
@@ -650,7 +651,7 @@ export class AIToolRegistry {
           };
         }
 
-        const item = ALL_OFFICIAL_AHSP_ITEMS.find((a) => a.code.toLowerCase() === code.toLowerCase());
+        const item = officialAhspRepository.getOfficialAhsp(code);
         if (!item) {
           return {
             success: false,
@@ -690,7 +691,7 @@ export class AIToolRegistry {
       requiresApproval: false,
       mutation: false,
       execute: async (input: { code: string }) => {
-        const item = ALL_OFFICIAL_AHSP_ITEMS.find((a) => a.code.toLowerCase() === input.code.toLowerCase());
+        const item = officialAhspRepository.getOfficialAhsp(input.code);
         if (!item) {
           return {
             success: false,

@@ -27,7 +27,7 @@ import {
   FileText,
   ShieldCheck,
 } from 'lucide-react';
-import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
+import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { NationalAHSPItem, AHSPDomain } from '../../data/nationalCostDatabase/types';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { useProject } from '../../context/ProjectContext';
@@ -107,16 +107,17 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Domain Counts
+  // Domain Counts (active items only — quarantined records excluded)
+  const activeAhspItems = useMemo(() => officialAhspRepository.getActiveOfficialAhsp(), []);
   const domainCounts = useMemo(() => {
     const counts = {
-      ALL: ALL_OFFICIAL_AHSP_ITEMS.length,
+      ALL: activeAhspItems.length,
       SUMBER_DAYA_AIR: 0,
       BINA_MARGA: 0,
       CIPTA_KARYA: 0,
       SMKK: 0,
     };
-    ALL_OFFICIAL_AHSP_ITEMS.forEach((item) => {
+    activeAhspItems.forEach((item) => {
       if (item.domain === 'SUMBER_DAYA_AIR') counts.SUMBER_DAYA_AIR++;
       else if (item.domain === 'BINA_MARGA') counts.BINA_MARGA++;
       else if (item.domain === 'CIPTA_KARYA') counts.CIPTA_KARYA++;
@@ -128,8 +129,8 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
   // Available Categories for Selected Domain
   const availableCategories = useMemo(() => {
     const items = selectedDomain === 'ALL'
-      ? ALL_OFFICIAL_AHSP_ITEMS
-      : ALL_OFFICIAL_AHSP_ITEMS.filter((itm) => itm.domain === selectedDomain);
+      ? activeAhspItems
+      : activeAhspItems.filter((itm) => itm.domain === selectedDomain);
 
     const categoryMap = new Map<string, number>();
     items.forEach((item) => {
@@ -146,7 +147,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
   const filteredItems = useMemo(() => {
     const qClean = searchQuery.trim().toLowerCase();
 
-    const filtered = ALL_OFFICIAL_AHSP_ITEMS.filter((item) => {
+    const filtered = activeAhspItems.filter((item) => {
       // Domain filter
       if (selectedDomain !== 'ALL' && item.domain !== selectedDomain) return false;
 

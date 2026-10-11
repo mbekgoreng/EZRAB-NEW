@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Trash2, Edit2, Database, Search, Check, Layers, ExternalLink, Filter } from 'lucide-react';
 import { listProjectAhspItems, saveProjectAhspFromCatalog, saveCustomProjectAhsp, removeProjectAhspItem } from '../../project-data/ahspBridge';
 import type { ProjectAhspItem } from '../../project-data/types';
-import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
+import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import type { NationalAHSPItem } from '../../data/nationalCostDatabase/types';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
 
@@ -48,9 +48,10 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
     loadData();
   }, [projectId]);
 
-  // Filtered Catalog Items
+  // Filtered Catalog Items (active only — quarantined excluded)
+  const activeAhspItems = useMemo(() => officialAhspRepository.getActiveOfficialAhsp(), []);
   const filteredCatalog = useMemo(() => {
-    return ALL_OFFICIAL_AHSP_ITEMS.filter((item) => {
+    return activeAhspItems.filter((item) => {
       const matchSearch =
         !catalogSearch ||
         item.code.toLowerCase().includes(catalogSearch.toLowerCase()) ||
@@ -58,7 +59,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
       const matchDomain = catalogDomain === 'ALL' || item.domain === catalogDomain;
       return matchSearch && matchDomain;
     }).slice(0, 30);
-  }, [catalogSearch, catalogDomain]);
+  }, [catalogSearch, catalogDomain, activeAhspItems]);
 
   const handleSelectCatalogItem = (catItem: NationalAHSPItem) => {
     if (!projectId) return;

@@ -42,7 +42,7 @@ export interface DedRabPipelineReviewViewProps {
   projectName: string;
   existingProjectRabItems?: RabItem[];
   onCommitSuccess?: (sections: RABSection[], grandTotal: number) => void;
-  onAddRabItemDirect?: (item: Partial<RabItem> & { description: string; volume: number; unit: string; unitPrice?: number; ahspCode?: string; category?: string }) => void;
+  onAddRabItemDirect?: (item: Partial<RabItem> & { description: string; volume: number; unit: string; unitPrice?: number | null; amount?: number | null; ahspCode?: string; category?: string }) => void;
   onClose?: () => void;
 }
 

@@ -10,6 +10,7 @@ import { OFFICIAL_HSD_2026_ITEMS } from '../../../data/nationalCostDatabase/offi
 import { MASTER_PRICE_ITEMS } from '../../../data/indonesianPrices';
 import { MASTER_AHSP_DATABASE } from '../../../data/indonesianAHSP';
 import { ALL_OFFICIAL_AHSP_ITEMS } from '../../../data/nationalCostDatabase/masterRegistry';
+import { isQuarantined } from '../../../data/nationalCostDatabase/ahspQuarantine';
 import { MaterialLibraryService } from '../../../services/materialLibraryService';
 import { MaterialDatabaseService } from '../../../domain/material/materialDatabaseService';
 import { LaborDatabaseService } from '../../../domain/labor/laborDatabaseService';
@@ -156,7 +157,9 @@ export class PriceRepository {
     }
 
     // 4. Ingest Component Prices from National AHSP items
+    // Phase 2G: skip quarantined items — their components must not enter the price DB.
     for (const ahsp of ALL_OFFICIAL_AHSP_ITEMS) {
+      if (isQuarantined(ahsp.code)) continue;
       const allComps = [
         ...(ahsp.laborComponents || []).map((c) => ({ ...c, cat: 'LABOR' as const })),
         ...(ahsp.materialComponents || []).map((c) => ({ ...c, cat: 'MATERIAL' as const })),

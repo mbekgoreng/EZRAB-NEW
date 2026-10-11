@@ -120,7 +120,7 @@ export class DedAhspMatchingEngine {
     //    array, so a legacy-only code could be surfaced as an official candidate. Candidates
     //    now come exclusively from ALL_OFFICIAL_AHSP_ITEMS.
     if (candidates.length === 0) {
-      const allOfficial = [...(officialAhspRepository.getAllOfficialAhsp() || [])];
+      const allOfficial = [...(officialAhspRepository.getActiveOfficialAhsp() || [])];
       const queryWords = query.split(' ').filter((w) => w.length > 2);
 
       for (const off of allOfficial) {

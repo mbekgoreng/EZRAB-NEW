@@ -41,7 +41,7 @@ import {
 } from '../../domain/document/reviewApprovalTypes';
 import { SpreadsheetApprovalEngine } from '../../../server/services/spreadsheetApprovalEngine';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
-import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
+import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 // The canonical AHSP is price-free: an AHSP price may ONLY come from the price resolver.
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
 import { RABSection } from '../../types';
@@ -1479,7 +1479,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px' }}>
-              {ALL_OFFICIAL_AHSP_ITEMS.filter(a =>
+              {officialAhspRepository.getActiveOfficialAhsp().filter(a =>
                 !ahspSearch ||
                 a.code.toLowerCase().includes(ahspSearch.toLowerCase()) ||
                 a.name.toLowerCase().includes(ahspSearch.toLowerCase())

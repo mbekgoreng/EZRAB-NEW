@@ -2,6 +2,9 @@ import { ALL_OFFICIAL_AHSP_ITEMS } from '../../src/data/nationalCostDatabase/mas
 import { NationalAHSPItem } from '../../src/data/nationalCostDatabase/types';
 import { CostDatabaseEngine } from '../../src/data/nationalCostDatabase/masterRegistry';
 import { AHSPItem } from '../../src/types';
+import { officialAhspRepository } from '../../src/data/nationalCostDatabase/officialAhspRepository';
+import { isQuarantined } from '../../src/data/nationalCostDatabase/ahspQuarantine';
+import { resolveCodeAlias } from '../../src/data/nationalCostDatabase/ahspCodeAliases';
 
 /**
  * Server-side AHSP search service.
@@ -24,8 +27,12 @@ export class AhspDataService {
     const { query = '', category = '', limit = 10 } = params;
     const qLower = query.toLowerCase().trim();
     const catLower = category.toLowerCase().trim();
+    // Resolve alias so typo/variant codes find the canonical item.
+    const qResolved = resolveCodeAlias(query.trim()).toLowerCase();
 
     const matches: NationalAHSPItem[] = ALL_OFFICIAL_AHSP_ITEMS.filter((item) => {
+      // Quarantined items never appear in normal search results.
+      if (isQuarantined(item.code)) return false;
       const matchCat = !catLower || item.category.toLowerCase().includes(catLower);
       if (!matchCat) return false;
 
@@ -33,6 +40,7 @@ export class AhspDataService {
       return (
         item.name.toLowerCase().includes(qLower) ||
         item.code.toLowerCase().includes(qLower) ||
+        item.code.toLowerCase().includes(qResolved) ||
         item.category.toLowerCase().includes(qLower)
       );
     });
@@ -46,17 +54,21 @@ export class AhspDataService {
 
   /** Get a specific AHSP item with its full labour/material/equipment breakdown. */
   public getAhspDetail(idOrCode: string): AHSPItem | null {
+    // Repository resolves aliases and blocks quarantined codes.
+    const byCode = officialAhspRepository.getOfficialAhsp(idOrCode);
+    if (byCode) return CostDatabaseEngine.toLegacyAHSPItem(byCode);
+    // Fall back to id lookup on active items only (quarantine-safe).
     const target = idOrCode.toLowerCase().trim();
-    const found = ALL_OFFICIAL_AHSP_ITEMS.find(
-      (item) => item.id.toLowerCase() === target || item.code.toLowerCase() === target
-    );
+    const found = officialAhspRepository
+      .getActiveOfficialAhsp()
+      .find((item) => item.id.toLowerCase() === target);
     return found ? CostDatabaseEngine.toLegacyAHSPItem(found) : null;
   }
 
   /** List all AHSP categories available in the canonical catalog. */
   public listCategories(): string[] {
     const categories = new Set<string>();
-    for (const item of ALL_OFFICIAL_AHSP_ITEMS) {
+    for (const item of officialAhspRepository.getActiveOfficialAhsp()) {
       if (item.category) categories.add(item.category);
     }
     return Array.from(categories);

@@ -27,7 +27,7 @@ import { useProject } from '../../context/ProjectContext';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
 import { honestVolume } from '../../engine/honestVolume';
-import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
+import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { getPriceDatabase } from '../../data/indonesianPrices';
 
 export interface WorkItemInspectorDrawerProps {
@@ -158,15 +158,16 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
     const cleanCode = (initialData.ahspCode || initialData.code || '').trim().toLowerCase();
     const cleanDesc = (initialData.description || '').trim().toLowerCase();
 
-    const matchedNational = ALL_OFFICIAL_AHSP_ITEMS.find((item) => {
-      const itemCode = (item.code || '').trim().toLowerCase();
-      const itemName = (item.name || '').trim().toLowerCase();
-      return (
-        (cleanCode && itemCode === cleanCode) ||
-        (cleanDesc && itemName.includes(cleanDesc)) ||
-        (cleanDesc && cleanDesc.includes(itemName))
-      );
-    });
+    const matchedNational = cleanCode
+      ? officialAhspRepository.getOfficialAhsp(cleanCode)
+      : undefined;
+    const matchedByDesc = !matchedNational && cleanDesc
+      ? officialAhspRepository.getActiveOfficialAhsp().find((item) => {
+          const itemName = (item.name || '').trim().toLowerCase();
+          return itemName.includes(cleanDesc) || cleanDesc.includes(itemName);
+        })
+      : undefined;
+    const matchedNationalItem = matchedNational ?? matchedByDesc;
 
     const priceDb = getPriceDatabase();
     const resolvePrice = (name: string, fallback: number) => {
@@ -174,8 +175,8 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
       return match && match.price > 0 ? match.price : fallback;
     };
 
-    if (matchedNational) {
-      const mats: AHSPComponent[] = (matchedNational.materialComponents || []).map((c, i) => ({
+    if (matchedNationalItem) {
+      const mats: AHSPComponent[] = (matchedNationalItem.materialComponents || []).map((c, i) => ({
         id: `mat-${Date.now()}-${i}`,
         code: c.code || `MAT-${i + 1}`,
         name: c.name || 'Bahan',
@@ -186,7 +187,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
         resourceType: 'MATERIAL',
       }));
 
-      const labs: AHSPComponent[] = (matchedNational.laborComponents || []).map((c, i) => ({
+      const labs: AHSPComponent[] = (matchedNationalItem.laborComponents || []).map((c, i) => ({
         id: `lab-${Date.now()}-${i}`,
         code: c.code || `LAB-${i + 1}`,
         name: c.name || 'Tenaga',
@@ -197,7 +198,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
         resourceType: 'LABOR',
       }));
 
-      const eqps: AHSPComponent[] = (matchedNational.equipmentComponents || []).map((c, i) => ({
+      const eqps: AHSPComponent[] = (matchedNationalItem.equipmentComponents || []).map((c, i) => ({
         id: `eqp-${Date.now()}-${i}`,
         code: c.code || `EQP-${i + 1}`,
         name: c.name || 'Alat',
@@ -404,9 +405,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
   const handleResetToStandard = () => {
     if (!initialData) return;
     const cleanCode = (initialData.ahspCode || initialData.code || '').trim().toLowerCase();
-    const matchedNational = ALL_OFFICIAL_AHSP_ITEMS.find(
-      (item) => (item.code || '').trim().toLowerCase() === cleanCode
-    );
+    const matchedNational = cleanCode ? officialAhspRepository.getOfficialAhsp(cleanCode) : undefined;
 
     if (matchedNational) {
       setMaterials(

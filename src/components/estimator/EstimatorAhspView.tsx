@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Project, RabItem } from "../../types";
 import { formatCurrencyIDR, formatNumberID } from "../../calculations/decimalEngine";
-import { ALL_OFFICIAL_AHSP_ITEMS } from "../../data/nationalCostDatabase/masterRegistry";
+import { officialAhspRepository } from "../../data/nationalCostDatabase/officialAhspRepository";
 import { priceResolver2026 } from "../../data/priceDatabase2026/resolver";
 
 interface EstimatorAhspViewProps {
@@ -142,9 +142,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
             const snap = item.ahspSnapshot;
             const code = item.code || item.ahspCode || "A.HSP";
             
-            const matchOfficial = ALL_OFFICIAL_AHSP_ITEMS.find(
-              (a) => a.code.toLowerCase() === code.toLowerCase() || a.codeNormalized?.toLowerCase() === code.toLowerCase()
-            );
+            const matchOfficial = officialAhspRepository.getOfficialAhsp(code);
             const resolvedOfficial = matchOfficial ? priceResolver2026.resolveAhspUnitPrice(matchOfficial) : null;
             const unitPrice = (item.unitPrice && item.unitPrice > 0) ? item.unitPrice : (resolvedOfficial?.unitPrice ?? (item.unitPrice ?? null));
 
