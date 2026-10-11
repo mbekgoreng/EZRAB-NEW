@@ -81,7 +81,7 @@ export class AhspMatcher {
     //    NOTE: this previously searched getAHSPDatabase() (the legacy/localStorage view).
     //    It now searches ONLY ALL_OFFICIAL_AHSP_ITEMS, so a MATCHED code is guaranteed
     //    to exist in the official catalog (§2, §4, §14).
-    const officialItems = officialAhspRepository.getAllOfficialAhsp();
+    const officialItems = officialAhspRepository.getActiveOfficialAhsp();
     for (const a of officialItems) {
       const aName = String((a as any).title || a.name || '').toLowerCase();
       // Never report a demolition analysis as an EXACT match for a new-work item (§4).
@@ -228,7 +228,7 @@ export class AhspMatcher {
     const itemName = item.name.toLowerCase().trim();
     const materialSpec = item.materialSpec || '';
     // Official catalog only — candidates must all be real 2026 items (§4, §14).
-    const masterAhsp = officialAhspRepository.getAllOfficialAhsp();
+    const masterAhsp = officialAhspRepository.getActiveOfficialAhsp();
 
     // Collect all matches from the official catalog
     for (const a of masterAhsp) {
@@ -351,6 +351,19 @@ export class AhspMatcher {
     const lower = name.toLowerCase();
 
     /**
+     * RELEVANCE GATE (§15).
+     *
+     * If the input contains no recognizable construction subject keyword,
+     * do not force a semantic match. A nonsense/unknown work item must
+     * yield NOT_FOUND (price null), never a false-positive match.
+     * (Fixes: "Pekerjaan Tidak Dikenal XYZ" false-matching to concrete.)
+     */
+    const SUBJECT_RE = /galian|urug|pondasi|footplat|telapak|strauss|bore|pile|beton|kolom|sloof|balok|\bplat\b|dinding|bata|hebel|plester|\baci\b|keramik|granit|lantai|plafon|gypsum|\bcat\b|pengecatan|plamir|tembok|atap|genteng|baja ringan|spandek|pintu|jendela|kusen|kaca|kloset|wastafel|floor drain|pipa|lampu|kabel|tulangan|besi|wiremesh|kayu|batu|kali|pasir|semen|waterproof|talud|drainase|saluran|gorong|septictank|sumur|paving|kanstin|fence|pagar|tangga|railing|kuda-kuda|reng|kaso|listplank|nok|\bdak\b|\bcor\b|bekisting|scaffolding|perancah|bongkar/i;
+    if (!SUBJECT_RE.test(lower) && !SUBJECT_RE.test(String(materialSpec || ''))) {
+      return null;
+    }
+
+    /**
      * MATERIAL-CLASS GATE.
      *
      * The subject gate is not enough on its own: a mortared-stone item can never stand in
@@ -441,7 +454,10 @@ export class AhspMatcher {
         return c.includes('beton') || c.includes('rabat') || c.includes('fc') || c.includes('lantai kerja');
       }
 
-      if (has('pondasi', 'footplat', 'footplate', 'telapak')) {
+      // Foundation gate. Skipped when the primary activity is excavation/backfill:
+      // "Galian tanah untuk pondasi" is excavation work (purpose = pondasi),
+      // not foundation masonry. (Phase 2I.1 fix 2I-1.)
+      if (has('pondasi', 'footplat', 'footplate', 'telapak') && !has('galian', 'urug', 'urugan')) {
         if (has('footplat', 'footplate', 'telapak')) return c.includes('beton');
         const isKosong = has('kosong', 'aanstamping');
         if (isKosong) return need('batu', 'kosong');
@@ -453,13 +469,19 @@ export class AhspMatcher {
       if (has('kolom')) return c.includes('kolom');
       if (has('sloof', 'balok')) return c.includes('sloof') || c.includes('balok') || (c.includes('beton') && (c.includes('k-') || c.includes('fc') || c.includes('mutu')));
       if (has('plester', 'acian')) return c.includes('plester') || c.includes('acian');
+      // Painting intent checked before dinding: "Pengecatan dinding" is painting,
+      // not masonry. (Phase 2H P0-1 fix.)
+      if (has('cat', 'pengecatan')) return c.includes('cat') || c.includes('pengecatan');
       if (has('dinding', 'bata')) return (c.includes('dinding') || c.includes('bata')) && !c.includes('plester') && !c.includes('acian');
-      if (has('keramik', 'granit', 'homogeneous', 'homogen', 'lantai') && !has('atap', 'genteng') && !has('lantai kerja')) {
+      // Phase 2J P1-2J-1 fix: 'lantai' in "plat lantai/pelat/dak" is structural,
+      // not finishing. Exclude structural slab context from the keramik rule
+      // to prevent "Plat lantai beton" matching bekisting via 'lantai'.
+      const isStructuralSlab = has('plat lantai', 'pelat lantai', 'pelat beton', 'plat beton') || /\bdak\b/.test(lower);
+      if (has('keramik', 'granit', 'homogeneous', 'homogen', 'lantai') && !has('atap', 'genteng') && !has('lantai kerja') && !isStructuralSlab) {
         if (c.includes('atap') || c.includes('genteng')) return false;
         return c.includes('keramik') || c.includes('granit') || c.includes('homogeneous') || c.includes('homogen') || c.includes('ubin') || c.includes('lantai');
       }
       if (has('plafon', 'gypsum', 'langit-langit')) return c.includes('gypsum') || c.includes('langit-langit');
-      if (has('cat', 'pengecatan')) return c.includes('cat') || c.includes('pengecatan');
       if (has('atap', 'genteng', 'baja ringan', 'spandek')) return c.includes('atap') || c.includes('genteng') || c.includes('baja ringan') || c.includes('spandek');
       if (has('pintu', 'kusen', 'jendela')) return (c.includes('pintu') || c.includes('kusen') || c.includes('jendela')) && !c.includes('sorong') && !c.includes('pelumasan');
       if (has('kaca')) return c.includes('kaca') && !c.includes('gardenia') && !c.includes('piring') && !c.includes('arachis');
@@ -467,17 +489,25 @@ export class AhspMatcher {
       if (has('kloset', 'closet')) return c.includes('kloset') || c.includes('closet');
       if (has('wastafel')) return c.includes('wastafel');
       if (has('floor drain')) return c.includes('floor drain');
+      if (has('drainase', 'u-ditch', 'uditch', 'saluran')) return c.includes('drainase') || c.includes('u-ditch') || c.includes('uditch') || c.includes('saluran');
       if (has('galian')) return c.includes('galian');
       if (has('urugan', 'urug')) return c.includes('urug') || c.includes('uruk');
+      // Trade conflict: concrete-pour intent (beton/cor/K-grade/fc) without
+      // bekisting intent must not match formwork candidates.
+      // (Phase 2J P1-2J-1 fix: "Plat lantai beton t=12cm" → bekisting.)
+      if (has('beton', 'k-100', 'k-125', 'k-150', 'k-175', 'k-200', 'k-225', 'k-250', 'k-275', 'k-300', 'k-350', 'fc') && !has('bekisting') && c.includes('bekisting')) return false;
       return true;
     };
 
     const pick = (pred: (n: string) => boolean, conf: number): DedAhspMatch | null => {
-      const match = database.find(
-        (a) => pred(a.name.toLowerCase()) && isEligibleCandidate(a.name, a.unit)
-      );
-      if (match && this.isSpecCompatible(name, materialSpec || '', match.name) && subjectOk(match.name)) {
-        return this.buildMatch(match, conf);
+      // Phase 2I.1 fix (2I-2): try every candidate in order, not just the first.
+      // A gate failure on candidate #1 must not abort the search when a later
+      // candidate passes all gates.
+      for (const a of database) {
+        if (!(pred(a.name.toLowerCase()) && isEligibleCandidate(a.name, a.unit))) continue;
+        if (this.isSpecCompatible(name, materialSpec || '', a.name) && subjectOk(a.name)) {
+          return this.buildMatch(a, conf);
+        }
       }
       return null;
     };
@@ -612,7 +642,10 @@ export class AhspMatcher {
     }
 
     // 1. Excavation & Sitework
-    if (lower.includes('galian') || category === 'SITEWORK') {
+    // Category alone is NOT sufficient — the input name must mention excavation.
+    // (Prevents "Pekerjaan Tidak Dikenal XYZ" with category SITEWORK from
+    // false-matching to galian tanah.)
+    if (lower.includes('galian') || lower.includes('tanah') || lower.includes('urug')) {
       const m = pick((an) => an.includes('galian') && an.includes('tanah'), 0.92);
       if (m) return m;
     }
@@ -713,8 +746,14 @@ export class AhspMatcher {
     }
 
     // 3. Concrete Columns
+    // Pracetak (precast) only matches when explicitly requested; default is cor-setempat.
+    // (Phase 2H P1-1 fix: "Beton kolom K-250" must not match kolom pracetak 2.4.3.3.)
     if (category === 'STRUCTURE_COLUMN' || lower.includes('kolom')) {
-      const m = pick((an) => an.includes('kolom') && (an.includes('beton') || an.includes('praktis')), 0.92);
+      const wantsPracetak = lower.includes('pracetak') || lower.includes('precast') || lower.includes('pra cetak');
+      const m = pick(
+        (an) => an.includes('kolom') && (an.includes('beton') || an.includes('praktis')) && (wantsPracetak || !an.includes('pracetak')),
+        0.92
+      );
       if (m) return m;
     }
 
@@ -792,7 +831,11 @@ export class AhspMatcher {
     }
 
     // 7. Masonry Walls (strictly check red brick vs lightweight brick vs batako)
-    if ((category === 'WALL' || lower.includes('dinding') || lower.includes('bata')) && !lower.includes('plester') && !lower.includes('acian')) {
+    // Painting intent (pengecatan/cat/plamir) takes precedence over 'dinding':
+    // "Pengecatan dinding" must reach the Painting branch, not match as wall masonry.
+    // (Phase 2H P0-1 fix.)
+    const isPaintingIntent = lower.includes('pengecatan') || /\bcat\b/.test(lower) || lower.includes('plamir');
+    if ((category === 'WALL' || lower.includes('dinding') || lower.includes('bata')) && !lower.includes('plester') && !lower.includes('acian') && !isPaintingIntent) {
       const isRed = lower.includes('merah') || (materialSpec || '').toLowerCase().includes('merah');
       const isLight = lower.includes('ringan') || lower.includes('hebel') || (materialSpec || '').toLowerCase().includes('ringan');
       const isHalfBrick = lower.includes('1/2') || (materialSpec || '').includes('1/2') || !lower.includes('1 batu');
@@ -870,7 +913,9 @@ export class AhspMatcher {
     }
 
     // 9. Ceiling
-    if (category === 'CEILING' || lower.includes('plafon') || lower.includes('gypsum')) {
+    // Painting intent takes precedence: "Pengecatan plafon" is painting, not ceiling.
+    // (Phase 2J P0-2 fix — same class as P0-1.)
+    if ((category === 'CEILING' || lower.includes('plafon') || lower.includes('gypsum')) && !lower.includes('pengecatan') && !/\bcat\b/.test(lower) && !lower.includes('plamir')) {
       const m = pick((an) => an.includes('gypsum') || an.includes('langit-langit'), 0.94);
       if (m) return m;
     }
@@ -878,6 +923,11 @@ export class AhspMatcher {
     // 10. Painting
     if (category === 'PAINTING' || lower.includes('cat') || lower.includes('pengecatan')) {
       const isEksterior = lower.includes('eksterior') || lower.includes('luar');
+      // Substrate awareness (Phase 2H P1-2 fix): "Cat kayu dan besi" must not
+      // match cat tembok. Score candidates by requested substrate.
+      const wantsKayu = lower.includes('kayu');
+      const wantsBesi = lower.includes('besi') || lower.includes('baja');
+      const wantsTembok = lower.includes('tembok') || lower.includes('dinding') || lower.includes('plafon');
       const paintScore = (an: string): number => {
         let s = 0;
         if (an.includes('pengecatan') || an.includes('cat')) s += 4;
@@ -886,15 +936,35 @@ export class AhspMatcher {
         if (isEksterior && (an.includes('ekterior') || an.includes('eksterior'))) s += 6;
         if (!isEksterior && an.includes('interior')) s += 6;
         if (an.includes('lama') || an.includes('pencucian') || an.includes('jembatan')) s -= 20;
+        if (wantsKayu && an.includes('kayu')) s += 10;
+        if (wantsBesi && (an.includes('besi') || an.includes('baja'))) s += 10;
+        if ((wantsKayu || wantsBesi) && (an.includes('tembok') || an.includes('dinding'))) s -= 10;
+        if (wantsTembok && !(wantsKayu || wantsBesi) && (an.includes('kayu') || an.includes('besi'))) s -= 10;
         return s;
       };
-      const { match, ambiguous } = rankedPick(
-        (an) => (an.includes('pengecatan') || an.includes('cat')) && (an.includes('tembok') || an.includes('dinding')) && !an.includes('lama') && !an.includes('pencucian') && !an.includes('jembatan'),
-        paintScore,
-        0.92
-      );
-      if (match) return match;
-      if (ambiguous) return ambiguous;
+      const paintPred = (an: string): boolean => {
+        if (!(an.includes('pengecatan') || an.includes('cat'))) return false;
+        if (an.includes('lama') || an.includes('pencucian') || an.includes('jembatan')) return false;
+        // Substrate must be compatible with the request.
+        if (wantsKayu || wantsBesi) {
+          return an.includes('kayu') || an.includes('besi') || an.includes('baja');
+        }
+        return an.includes('tembok') || an.includes('dinding');
+      };
+      // Prefer priced building items: a generic painting request should not
+      // resolve to an unpriced Bina Marga bridge variant when a priced
+      // Cipta Karya equivalent exists. (Phase 2H P0-1 follow-up.)
+      const pricedPred = (an: string): boolean => {
+        if (!paintPred(an)) return false;
+        const it = database.find((d) => d.name.toLowerCase() === an);
+        const full = it ? officialAhspRepository.getOfficialAhsp(it.code) : undefined;
+        const price = (full as any)?.unitPrice;
+        return price != null && price > 0;
+      };
+      let res = rankedPick(pricedPred, paintScore, 0.92);
+      if (!res.match && !res.ambiguous) res = rankedPick(paintPred, paintScore, 0.92);
+      if (res.match) return res.match;
+      if (res.ambiguous) return res.ambiguous;
     }
 
     // 11. Roof Covering & Truss
@@ -943,6 +1013,27 @@ export class AhspMatcher {
           (wantsWastafel && an.includes('wastafel')),
         sanitaryScore,
         0.95
+      );
+      if (match) return match;
+      if (ambiguous) return ambiguous;
+    }
+
+    // 12b. Drainage (U-Ditch, Box Culvert, Saluran)
+    // (Phase 2J P1-2J-2 fix: DRAINAGE had no branch; u-ditch items were unreachable.)
+    if (category === 'DRAINAGE' || lower.includes('drainase') || lower.includes('u-ditch') || lower.includes('uditch') || lower.includes('saluran')) {
+      const drainScore = (an: string): number => {
+        let s = 0;
+        if (an.includes('u-ditch') || an.includes('uditch')) s += 8;
+        if (an.includes('drainase') || an.includes('saluran')) s += 6;
+        if (an.includes('precast') || an.includes('pracetak')) s += 4;
+        if (an.includes('beton')) s += 2;
+        if (an.includes('jembatan')) s -= 20;
+        return s;
+      };
+      const { match, ambiguous } = rankedPick(
+        (an) => (an.includes('u-ditch') || an.includes('uditch') || an.includes('drainase') || an.includes('saluran')) && !an.includes('jembatan'),
+        drainScore,
+        0.92
       );
       if (match) return match;
       if (ambiguous) return ambiguous;

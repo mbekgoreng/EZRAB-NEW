@@ -63,6 +63,7 @@ export const generateXlsx = async (
       { key: 'qty', width: 12 },
       { key: 'price', width: 18 },
       { key: 'total', width: 20 },
+      { key: 'note', width: 28 },
     ];
 
     const rows = data.boq;
@@ -70,6 +71,8 @@ export const generateXlsx = async (
 
     rows.forEach((x, idx) => {
       const rowNumber = startDataRow + idx;
+      // Phase 2H P1-3 fix: harga null ditandai eksplisit, tidak diam-diam jadi 0.
+      const isUnresolved = x.unitPrice == null || (x as any).priceStatus === 'PRICE_UNRESOLVED';
       const r = ws.addRow([
         idx + 1,
         x.code || '',
@@ -80,6 +83,7 @@ export const generateXlsx = async (
         Number(x.quantity ?? x.qty) || 0,
         Number(x.unitPrice) || 0,
         null,
+        isUnresolved ? 'HARGA BELUM TERSEDIA' : '',
       ]);
 
       // Row formula: QTY (G) * UNIT PRICE (H)
@@ -111,6 +115,7 @@ export const generateXlsx = async (
       { key: 'coef', width: 14 },
       { key: 'price', width: 18 },
       { key: 'amount', width: 20 },
+      { key: 'note', width: 28 },
     ];
 
     const rows = data.ahsp;
@@ -118,6 +123,8 @@ export const generateXlsx = async (
 
     rows.forEach((x, idx) => {
       const rowNumber = startDataRow + idx;
+      // Phase 2H P2: komponen dengan harga null ditandai, tidak diam-diam 0.
+      const isUnresolved = (x.unitPrice ?? x.price) == null;
       const r = ws.addRow([
         idx + 1,
         x.code || '',
@@ -126,6 +133,7 @@ export const generateXlsx = async (
         Number(x.coefficient ?? x.coef) || 0,
         Number(x.unitPrice ?? x.price) || 0,
         null,
+        isUnresolved ? 'HARGA BELUM TERSEDIA' : '',
       ]);
 
       // Row formula: KOEFISIEN (E) * HARGA SATUAN (F)
@@ -300,6 +308,7 @@ export const generateXlsx = async (
       { key: 'qty', width: 14 },
       { key: 'price', width: 18 },
       { key: 'amount', width: 20 },
+      { key: 'note', width: 28 },
     ];
 
     const rows = data.rab;
@@ -307,6 +316,8 @@ export const generateXlsx = async (
 
     rows.forEach((x, idx) => {
       const rowNumber = startDataRow + idx;
+      // Phase 2H P1-3 fix: harga null ditandai eksplisit, tidak diam-diam jadi 0.
+      const isUnresolved = x.unitPrice == null || (x as any).priceStatus === 'PRICE_UNRESOLVED';
       const r = ws.addRow([
         idx + 1,
         x.workItem || x.code || '',
@@ -315,6 +326,7 @@ export const generateXlsx = async (
         Number(x.quantity ?? x.qty) || 0,
         Number(x.unitPrice) || 0,
         null,
+        isUnresolved ? 'HARGA BELUM TERSEDIA' : '',
       ]);
 
       // Row formula: VOLUME (E) * HARGA SATUAN (F)

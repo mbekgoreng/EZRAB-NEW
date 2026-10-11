@@ -19,6 +19,8 @@ interface EstimatorMetricsProps {
   completedItemsCount?: number;
   inProgressItemsCount?: number;
   pendingItemsCount?: number;
+  // Phase 2I.2: jumlah item tanpa harga untuk label Estimasi Parsial.
+  unpricedCount?: number;
 }
 
 export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
@@ -32,6 +34,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
   completedItemsCount = 7,
   inProgressItemsCount = 0,
   pendingItemsCount = 0,
+  unpricedCount = 0,
 }) => {
   // Format volume Indonesian style (e.g. 15.431,70)
   const formattedVolume = totalVolume.toLocaleString('id-ID', {
@@ -84,6 +87,12 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
           <div style={{ fontSize: '17px', fontWeight: 850, color: '#0F172A', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
             {formatCurrencyIDR(totalRab)}
           </div>
+          {/* Phase 2I.2: label Estimasi Parsial bila ada harga belum tersedia. */}
+          {unpricedCount > 0 && (
+            <div style={{ fontSize: '10.5px', color: '#B45309', fontWeight: 700, marginTop: '2px' }}>
+              ⚠ Estimasi Parsial — {unpricedCount} item belum memiliki harga
+            </div>
+          )}
 
           {/* Subtext + Sparkline */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>

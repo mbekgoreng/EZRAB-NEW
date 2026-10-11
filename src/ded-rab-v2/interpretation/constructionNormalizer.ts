@@ -67,7 +67,9 @@ export class ConstructionNormalizer {
     const text = `${rawName} ${materialHint || ''}`.toLowerCase();
 
     // 1. FOUNDATION / PONDASI
-    if (text.includes('pondasi') || text.includes('footplat') || text.includes('batu kali') || text.includes('strauss') || categoryHint === 'FOUNDATION') {
+    // Excavation activity takes precedence: "Galian tanah untuk pondasi" is
+    // excavation, not foundation masonry. (Phase 2I.1 fix 2I-1.)
+    if ((text.includes('pondasi') || text.includes('footplat') || text.includes('batu kali') || text.includes('strauss') || categoryHint === 'FOUNDATION') && !text.includes('galian') && !text.includes('urug')) {
       if (text.includes('batu kali') || text.includes('belah')) {
         return {
           category: 'FOUNDATION',
@@ -109,7 +111,7 @@ export class ConstructionNormalizer {
     // 1b. REBAR / PEMBESIAN (Evaluated BEFORE concrete elements so "Pembesian Ringbalk" is NOT matched as concrete beam)
     if (text.includes('pembesian') || text.includes('tulangan') || text.includes('besi beton')) {
       const isDia12Plus = /d12|d13|d16|d19|dia\.?\s*≥?\s*12|≥\s*12/i.test(text);
-      const isSlab = text.includes('pelat') || text.includes('slab') || text.includes('dak');
+      const isSlab = text.includes('pelat') || text.includes('slab') || /\bdak\b/.test(text);
       const code = isSlab
         ? (isDia12Plus ? '2.2.1.1.2' : '2.2.1.1.1')
         : (isDia12Plus ? '2.2.1.1.4' : '2.2.1.1.3');
@@ -171,7 +173,7 @@ export class ConstructionNormalizer {
       };
     }
 
-    if (text.includes('plat') || text.includes('dak') || text.includes('slab') || categoryHint === 'STRUCTURE_SLAB') {
+    if (text.includes('plat') || /\bdak\b/.test(text) || text.includes('slab') || categoryHint === 'STRUCTURE_SLAB') {
       return {
         category: 'STRUCTURE_SLAB',
         constructionType: 'CONCRETE_FLOOR_SLAB',
@@ -211,7 +213,9 @@ export class ConstructionNormalizer {
     }
 
     // 4. WALLS / DINDING (Bata Ringan / Merah)
-    if ((text.includes('dinding') || text.includes('bata') || text.includes('hebel') || text.includes('partisi') || categoryHint === 'WALL') && !text.includes('plester') && !text.includes('acian')) {
+    // Painting intent takes precedence: "Pengecatan dinding" is painting, not masonry.
+    // (Phase 2H P0-1 fix.)
+    if ((text.includes('dinding') || text.includes('bata') || text.includes('hebel') || text.includes('partisi') || categoryHint === 'WALL') && !text.includes('plester') && !text.includes('acian') && !text.includes('pengecatan') && !/\bcat\b/.test(text) && !text.includes('plamir')) {
       if (text.includes('ringan') || text.includes('hebel') || text.includes('aac')) {
         return {
           category: 'WALL',
@@ -295,7 +299,8 @@ export class ConstructionNormalizer {
     }
 
     // 7. CEILING / PLAFON
-    if (text.includes('plafon') || text.includes('langit-langit') || text.includes('gypsum') || categoryHint === 'CEILING') {
+    // Painting intent takes precedence (Phase 2J P0-2 fix).
+    if ((text.includes('plafon') || text.includes('langit-langit') || text.includes('gypsum') || categoryHint === 'CEILING') && !text.includes('pengecatan') && !/\bcat\b/.test(text) && !text.includes('plamir')) {
       return {
         category: 'CEILING',
         constructionType: 'GYPSUM_BOARD_CEILING',
@@ -473,7 +478,7 @@ export class ConstructionNormalizer {
       };
     }
 
-    if (category === 'STRUCTURE_SLAB' || text.includes('plat') || text.includes('dak')) {
+    if (category === 'STRUCTURE_SLAB' || text.includes('plat') || /\bdak\b/.test(text)) {
       return {
         canonicalCategory: 'STRUCTURE',
         workPackage: 'Pekerjaan Plat Lantai',

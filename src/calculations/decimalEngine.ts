@@ -71,8 +71,17 @@ export const calculateAhspUnitPrice = (resources: AhspResource[]): number => {
 
 export const calculateRabTotals = (items: RabItem[]) => {
   try {
+    // Phase 2I.2: track unpriced items so the total can be labeled partial.
+    // An item is unpriced when amount is null/undefined (not when it is 0 —
+    // explicit zero is a valid resolved price).
+    let unpricedCount = 0;
     const subtotal = items.reduce((acc, item) => {
-      return acc.plus(new Decimal(item.amount || 0));
+      const amt = (item as any).amount;
+      if (amt == null) {
+        unpricedCount++;
+        return acc;
+      }
+      return acc.plus(new Decimal(amt || 0));
     }, new Decimal(0));
 
     // Standard Indonesian Construction Tax & Overhead
@@ -89,6 +98,9 @@ export const calculateRabTotals = (items: RabItem[]) => {
       overhead: overhead.toNumber(),
       ppn: ppn.toNumber(),
       grandTotal: grandTotal.toNumber(),
+      // Phase 2I.2: partial-estimate signaling.
+      unpricedCount,
+      isPartial: unpricedCount > 0,
     };
   } catch {
     return {
@@ -96,6 +108,8 @@ export const calculateRabTotals = (items: RabItem[]) => {
       overhead: 0,
       ppn: 0,
       grandTotal: 0,
+      unpricedCount: 0,
+      isPartial: false,
     };
   }
 };

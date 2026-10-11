@@ -892,6 +892,22 @@ export async function exportProjectToPDF(
   });
 
   // 9. Multi-tier cross-browser PDF download execution
+  // Phase 2I.2: peringatan unresolved digambar ke dokumen SEBELUM cek window,
+  // agar PDF headless/server-side tetap memuat warning.
+  if (unresolvedCount > 0) {
+    try {
+      const warnY = (doc as any).lastAutoTable.finalY + 8;
+      doc.setFontSize(8);
+      doc.setTextColor(180, 83, 9);
+      doc.text(
+        `PERINGATAN: ${unresolvedCount} item belum memiliki harga (HARGA BELUM TERSEDIA) dan tidak termasuk dalam total. Estimasi ini belum final.`,
+        12,
+        warnY,
+        { maxWidth: 273 }
+      );
+      doc.setTextColor(0, 0, 0);
+    } catch { /* abaikan bila layout belum siap */ }
+  }
   if (typeof window !== 'undefined') {
     // P0-B: jangan pakai nomor dokumen contoh sebagai identitas resmi.
     const cleanDocNum = (documentNumber || project.projectNumber || project.id || 'TANPA-NOMOR').replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -899,19 +915,7 @@ export async function exportProjectToPDF(
     const fileName = `RAB_${cleanDocNum}_${cleanProjName}_Resmi.pdf`;
 
     try {
-      // FASE 5D: peringatan unresolved — estimasi belum final bila ada item tanpa harga.
-      if (unresolvedCount > 0) {
-        const warnY = (doc as any).lastAutoTable.finalY + 8;
-        doc.setFontSize(8);
-        doc.setTextColor(180, 83, 9);
-        doc.text(
-          `PERINGATAN: ${unresolvedCount} item belum memiliki harga (HARGA BELUM TERSEDIA) dan tidak termasuk dalam total. Estimasi ini belum final.`,
-          12,
-          warnY,
-          { maxWidth: 273 }
-        );
-        doc.setTextColor(0, 0, 0);
-      }
+      // (Warning unresolved sudah digambar sebelum blok window — Phase 2I.2.)
       // Tier 1: Blob-based download via file-saver
       const blob = doc.output('blob');
       if (typeof saveAs === 'function') {

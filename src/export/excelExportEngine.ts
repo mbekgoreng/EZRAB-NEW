@@ -937,6 +937,9 @@ export async function exportRABToProfessionalExcel(
         r.getCell(2).value = itm.code || `${sec.code}.${idx + 1}`;
         r.getCell(3).value = itm.description || (itm as any).name;
         const bqVol = Number(itm.volume) || 0;
+        // Phase 2I.2: harga null ditandai eksplisit di kolom Keterangan,
+        // tidak diam-diam menjadi Rp0.
+        const isUnresolved = itm.unitPrice == null || (itm as any).priceStatus === 'PRICE_UNRESOLVED';
         const bqPrice = Number(itm.unitPrice) || 0;
         const bqTotal = Number(itm.totalPrice) || (bqVol * bqPrice);
 
@@ -951,7 +954,7 @@ export async function exportRABToProfessionalExcel(
           r.getCell(7).value = bqTotal;
         }
         r.getCell(7).numFmt = NUMBER_FORMATS.CURRENCY;
-        r.getCell(8).value = itm.notes || '';
+        r.getCell(8).value = (isUnresolved ? 'HARGA BELUM TERSEDIA — ' : '') + (itm.notes || '');
 
         for (let c = 1; c <= 8; c++) {
           r.getCell(c).border = { bottom: BORDER_THIN_LIGHT };
@@ -1032,7 +1035,11 @@ export async function exportRABToProfessionalExcel(
         r.getCell(6).value = (itm as any).location || 'Seluruh Area Bangunan';
         r.getCell(7).value = (itm as any).drawingRef || `DWG-${sec.code}-${idx + 1}`;
         r.getCell(8).value = itm.notes || 'Hasil Pengukuran Joint Survey MC-0';
-        r.getCell(9).value = 'Terverifikasi 100%';
+        // Phase 2I.2: status verifikasi dihitung dari data aktual, bukan hardcode 100%.
+        // Hanya "Terverifikasi" bila volume terukur valid dan harga tersedia.
+        const volOk = Number(itm.volume) > 0;
+        const priceOk = itm.unitPrice != null && (itm as any).priceStatus !== 'PRICE_UNRESOLVED';
+        r.getCell(9).value = volOk && priceOk ? 'Terverifikasi' : 'Belum Terverifikasi';
 
         for (let c = 1; c <= 9; c++) {
           r.getCell(c).border = { bottom: BORDER_THIN_LIGHT };
