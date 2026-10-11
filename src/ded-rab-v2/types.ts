@@ -372,6 +372,7 @@ export type ElementCategory =
   | 'SANITARY'
   | 'MEP'
   | 'SITEWORK'
+  | 'DRAINAGE'
   | 'OTHER';
 
 export interface DimensionValue {

@@ -21,7 +21,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { RabItem, VolumeSourceType } from '../../types';
-import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
+import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { NationalAHSPItem } from '../../data/nationalCostDatabase/types';
 import { WORK_CATEGORIES } from '../../data/mockData';
 import { masterBuildingTemplateRegistry } from '../../data/buildingTemplates/masterTemplateRegistry';
@@ -121,17 +121,18 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
   const [duplicateNewVolume, setDuplicateNewVolume] = useState<number>(1);
   const [duplicateNewCategory, setDuplicateNewCategory] = useState<string>(activeCategory || 'Pekerjaan Persiapan & Bowplank');
 
+  const activeAhspItems = useMemo(() => officialAhspRepository.getActiveOfficialAhsp(), []);
   const availableAhspCategories = useMemo(() => {
     const cats = new Set<string>();
-    for (const it of ALL_OFFICIAL_AHSP_ITEMS) {
+    for (const it of activeAhspItems) {
       if (it.category) cats.add(it.category);
     }
     return Array.from(cats).sort();
-  }, []);
+  }, [activeAhspItems]);
 
   // Filtered & Paginated AHSP Items
   const filteredAhsp = useMemo(() => {
-    return ALL_OFFICIAL_AHSP_ITEMS.filter((item) => {
+    return activeAhspItems.filter((item) => {
       const q = ahspSearch.toLowerCase();
       const matchSearch =
         !ahspSearch ||
@@ -255,7 +256,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
 
     try {
       const itemsToInsert: Omit<RabItem, 'id'>[] = [];
-      const selectedAhspList = ALL_OFFICIAL_AHSP_ITEMS.filter((i) => bulkSelectedAhspCodes.has(i.code));
+      const selectedAhspList = activeAhspItems.filter((i) => bulkSelectedAhspCodes.has(i.code));
 
       selectedAhspList.forEach((ahsp, idx) => {
         const comp = priceResolver2026.resolveAhspUnitPrice(ahsp);
@@ -459,9 +460,10 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
       const itemsToInsert: Omit<RabItem, 'id'>[] = [];
       (currentTemplate.workItems || []).forEach((item: TemplateWorkItem, idx: number) => {
         if (selectedTemplateItemIds.has(item.stableId)) {
-          const estPrice = item.ahspCandidates?.[0]?.unitPriceEstimate || 150000;
+          // Phase 2J P1 fix: no fabricated fallback price. Null stays null.
+          const estPrice = item.ahspCandidates?.[0]?.unitPriceEstimate ?? null;
           const defaultVol = 1;
-          const amount = Math.round(defaultVol * estPrice);
+          const amount = estPrice == null ? null : Math.round(defaultVol * estPrice);
           itemsToInsert.push({
             no: existingItems.length + itemsToInsert.length + 1,
             sectionName: targetCategory,
@@ -476,6 +478,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
             volumeSource: 'AHSP 2024' as any,
             ahspCode: item.defaultAhspCode || '',
             verificationStatus: 'VERIFIED',
+            priceStatus: estPrice == null ? 'PRICE_UNRESOLVED' : 'PRICE_RESOLVED',
           });
         }
       });
@@ -522,7 +525,9 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
     setErrorMessage(null);
 
     try {
-      const amount = Math.round(duplicateNewVolume * selectedDuplicateItem.unitPrice);
+      // Aturan Phase 2J: null price → null amount (jangan jadi 0 di storage).
+      const dupPrice = selectedDuplicateItem.unitPrice;
+      const amount = dupPrice == null ? null : Math.round(duplicateNewVolume * dupPrice);
       await onAddItem({
         no: existingItems.length + 1,
         sectionName: duplicateNewCategory,
@@ -1061,7 +1066,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     onChange={(e) => setAhspCategoryFilter(e.target.value)}
                     style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
                   >
-                    <option value="ALL">Semua Kategori AHSP ({ALL_OFFICIAL_AHSP_ITEMS.length} item)</option>
+                    <option value="ALL">Semua Kategori AHSP ({activeAhspItems.length} item)</option>
                     {availableAhspCategories.map((cat) => (
                       <option key={cat} value={cat}>
                         {cat}
@@ -1763,7 +1768,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                 ) : (
                   currentTemplate.workItems.map((item: TemplateWorkItem, idx: number) => {
                     const isChecked = selectedTemplateItemIds.has(item.stableId);
-                    const estPrice = item.ahspCandidates?.[0]?.unitPriceEstimate || 150000;
+                    const estPrice = item.ahspCandidates?.[0]?.unitPriceEstimate ?? null;
                     return (
                       <div
                         key={item.stableId + idx}
@@ -1798,7 +1803,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                         <div style={{ flex: 1, fontWeight: 550, color: '#334155' }}>{item.name}</div>
                         <div style={{ color: '#64748B', width: '70px' }}>1 {item.unit}</div>
                         <div style={{ fontWeight: 700, color: '#0F172A', width: '110px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                          {formatCurrencyIDR(estPrice)}
+                          {estPrice == null ? 'Belum ada harga' : formatCurrencyIDR(estPrice)}
                         </div>
                       </div>
                     );
@@ -1959,7 +1964,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
                     <div style={{ fontSize: '12px', color: '#64748B' }}>
-                      Total Biaya: <strong style={{ color: '#2563EB' }}>{formatCurrencyIDR(Math.round(duplicateNewVolume * selectedDuplicateItem.unitPrice))}</strong>
+                      Total Biaya: <strong style={{ color: '#2563EB' }}>{selectedDuplicateItem.unitPrice != null ? formatCurrencyIDR(Math.round(duplicateNewVolume * selectedDuplicateItem.unitPrice)) : 'Belum ada harga'}</strong>
                     </div>
                     <button
                       onClick={handleSaveDuplicate}

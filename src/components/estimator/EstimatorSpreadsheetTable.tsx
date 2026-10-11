@@ -508,7 +508,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                       group.items.map((item, index) => {
                         const isSelected = selectedItemIds.has(item.id);
                         const isRowActive = activeCell?.itemId === item.id;
-                        const itemTotal = (item.amount || item.totalPrice || item.volume * item.unitPrice) || 0;
+                        const itemTotal = item.amount ?? item.totalPrice ?? item.volume * (item.unitPrice ?? 0);
 
                         return (
                           <tr
@@ -645,7 +645,11 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                         {item.code || item.ahspCode}
                                       </span>
                                     )}
-                                    <span>@ Rp {item.unitPrice.toLocaleString('id-ID')}</span>
+                                    {item.unitPrice != null ? (
+                                      <span>@ Rp {item.unitPrice.toLocaleString('id-ID')}</span>
+                                    ) : (
+                                      <span style={{ color: '#DC2626', fontWeight: 600 }}>Belum ada harga</span>
+                                    )}
                                     {item.volumeSource && (
                                       <span style={{ background: '#EFF6FF', color: '#2563EB', padding: '1px 4px', borderRadius: '3px', fontSize: '10px' }}>
                                         {item.volumeSource}

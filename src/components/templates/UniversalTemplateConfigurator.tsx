@@ -1267,10 +1267,10 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       </td>
                       <td style={{ padding: '7px 10px', color: '#475569' }}>{item.unit}</td>
                       <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'monospace', color: '#475569' }}>
-                        {formatRupiah(item.unitPrice)}
+                        {item.unitPrice != null ? formatRupiah(item.unitPrice) : 'Belum ada harga'}
                       </td>
                       <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: '#0F172A' }}>
-                        {formatRupiah(item.amount)}
+                        {item.amount != null ? formatRupiah(item.amount) : 'Belum ada harga'}
                       </td>
                       <td style={{ padding: '7px 10px', fontSize: '10.5px', color: '#64748B', fontFamily: 'monospace' }}>
                         {item.ahspCode || 'SNI-2026'}

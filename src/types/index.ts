@@ -869,9 +869,11 @@ export interface RabItem {
   materialPrice?: number;
   laborPrice?: number;
   equipmentPrice?: number;
-  unitPrice: number;
-  amount: number;
-  totalPrice?: number;
+  /** Phase 2J: null = price not yet available (not Rp0). */
+  unitPrice: number | null;
+  /** Phase 2J: null = amount not yet calculable (price null). */
+  amount: number | null;
+  totalPrice?: number | null;
   /** Phase 2: explicit price status. Absent (legacy items) => treated as resolved. */
   priceStatus?: PriceStatus;
   itemNumber?: string;
@@ -1054,10 +1056,11 @@ export interface VersionDiffItem {
   status: 'ADDED' | 'REMOVED' | 'QTY_CHANGED' | 'PRICE_CHANGED' | 'AHSP_CHANGED' | 'UNCHANGED';
   baseVolume?: number;
   targetVolume?: number;
-  baseUnitPrice?: number;
-  targetUnitPrice?: number;
-  baseAmount?: number;
-  targetAmount?: number;
+  // (Phase 2J: null = harga belum tersedia, bukan Rp0.)
+  baseUnitPrice?: number | null;
+  targetUnitPrice?: number | null;
+  baseAmount?: number | null;
+  targetAmount?: number | null;
   deltaAmount: number;
   deltaPercent: number;
   notes?: string;

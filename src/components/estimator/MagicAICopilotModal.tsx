@@ -193,7 +193,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
 
     const lower = query.toLowerCase();
     const currentTotalRab = projectRabItems.reduce(
-      (sum, i) => sum + (i.amount || i.totalPrice || i.volume * i.unitPrice || 0),
+      (sum, i) => sum + (i.amount ?? i.totalPrice ?? i.volume * (i.unitPrice ?? 0)),
       0
     );
 
@@ -232,7 +232,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
         const targetList = matchingItems.length > 0 ? matchingItems : projectRabItems.slice(0, 2);
 
         const affectedWorkItems = targetList.map((item) => {
-          const oldUnitPrice = item.unitPrice;
+          const oldUnitPrice = item.unitPrice ?? 0;
           const newUnitPrice = Math.round(oldUnitPrice * multiplier);
           const oldAmount = item.amount || item.totalPrice || item.volume * oldUnitPrice;
           const newAmount = Math.round(item.volume * newUnitPrice);

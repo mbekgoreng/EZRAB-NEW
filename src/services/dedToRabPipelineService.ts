@@ -542,7 +542,7 @@ export class DedToRabPipelineService {
     const isSpecialtyFinish = query.includes('special') || query.includes('khusus') || query.includes('custom') || query.includes('artistic');
 
     // 1. Order 1: Latest Official AHSP (PUPR 2026 / SNI) — official catalog only (§2/§4).
-    const allOfficial = officialAhspRepository.getAllOfficialAhsp();
+    const allOfficial = officialAhspRepository.getActiveOfficialAhsp();
     const officialCandidates: AHSPMappingCandidate[] = [];
 
     for (const item of allOfficial) {
@@ -847,9 +847,9 @@ export class DedToRabPipelineService {
     }
 
     // 3. Priority 4: Reference Price in National DB
-    const matchNational = ALL_OFFICIAL_AHSP_ITEMS.find(
-      (a) => a.code.toLowerCase() === cleanCode || a.codeNormalized?.toLowerCase() === cleanCode
-    );
+    // Phase 2J P1 fix: use repository (quarantine-aware) instead of raw catalog.
+    // Quarantined codes (e.g. 6.1.3.7) must not resolve to a reference price.
+    const matchNational = officialAhspRepository.getOfficialAhsp(cleanCode);
     if (matchNational && matchNational.unitPrice && matchNational.unitPrice > 0) {
       return {
         unitPrice: matchNational.unitPrice,
@@ -1513,10 +1513,11 @@ export class DedToRabPipelineService {
           isCustomItem,
           customItemDetails: ahspRes.customItem,
           unitPrice: priceRes.unitPrice,
+          // Phase 2J P1 fix: null price → null total (not 0), so isPartial works.
           totalPrice:
             quantity && priceRes.unitPrice
               ? PrecisionEngine.applyPolicy(PrecisionEngine.multiply(quantity, priceRes.unitPrice), 'INTEGER_ROUND')
-              : 0,
+              : null,
           priceSource: priceRes,
           priceProvenance: priceRes.valueSourceType || (isCustomItem ? 'AI_ESTIMATE' : 'OFFICIAL_AHSP'),
           conflictDetails,
@@ -1559,9 +1560,10 @@ export class DedToRabPipelineService {
       if (vol > 0) calculatedCount++;
       if (wi.ahspCode) ahspMatchedCount++;
 
-      const price = wi.unitPrice || 0;
-      const amount = PrecisionEngine.applyPolicy(PrecisionEngine.multiply(vol, price), 'INTEGER_ROUND');
-      subtotal = PrecisionEngine.add(subtotal, amount);
+      // Phase 2J P1 fix: null price contributes null (not 0) to keep totals honest.
+      const price = wi.unitPrice;
+      const amount = price == null ? null : PrecisionEngine.applyPolicy(PrecisionEngine.multiply(vol, price), 'INTEGER_ROUND');
+      if (amount != null) subtotal = PrecisionEngine.add(subtotal, amount);
 
       if (wi.status === 'CONFLICT') {
         conflictCount++;
@@ -1782,23 +1784,21 @@ export class DedToRabPipelineService {
           itemChanged = true;
           filledCount++;
         } else if (wi.isCustomItem) {
-          // Propose AI estimated candidate price (clearly tagged)
-          wi.unitPrice = 125000;
+          // Phase 2J P0 fix: never fabricate prices. Custom items without
+          // a price source stay PRICE_UNRESOLVED (was: hardcoded Rp125.000,
+          // contradicting Phase 4A anti-fabrication remediation).
+          wi.unitPrice = null;
+          wi.totalPrice = null;
+          wi.priceStatus = 'PRICE_UNRESOLVED';
           wi.priceProvenance = 'AI_ESTIMATE';
           wi.priceSource = {
-            unitPrice: 125000,
+            unitPrice: null,
             priceSource: 'PRICE_NOT_FOUND',
             valueSourceType: 'AI_ESTIMATE',
-            sourceDetail: 'Estimasi Biaya AI untuk Item Kustom (Perlu Review)',
+            sourceDetail: 'Estimasi Biaya AI untuk Item Kustom (Perlu Review) — harga belum tersedia',
             currency: 'IDR',
             isOfficial: false,
           };
-          if (wi.quantity) {
-            wi.totalPrice = PrecisionEngine.applyPolicy(
-              PrecisionEngine.multiply(wi.quantity, 125000),
-              'INTEGER_ROUND'
-            );
-          }
           itemChanged = true;
           filledCount++;
         } else {
@@ -1946,7 +1946,8 @@ export class DedToRabPipelineService {
     wi.status = 'USER_OVERRIDDEN';
 
     if (wi.quantity !== undefined && wi.unitPrice !== undefined) {
-      wi.totalPrice = PrecisionEngine.applyPolicy(
+      // Aturan Phase 2J: null price → null total (jangan jadi 0 di storage).
+      wi.totalPrice = wi.unitPrice == null ? null : PrecisionEngine.applyPolicy(
         PrecisionEngine.multiply(wi.quantity, wi.unitPrice),
         'INTEGER_ROUND'
       );
@@ -1974,7 +1975,7 @@ export class DedToRabPipelineService {
     }
 
     // Recalculate totals
-    draft.subtotal = draft.rows.reduce((sum, r) => PrecisionEngine.add(sum, r.amount), 0);
+    draft.subtotal = draft.rows.reduce((sum, r) => PrecisionEngine.add(sum, r.amount ?? 0), 0);
     draft.ppnAmount = PrecisionEngine.applyPolicy(
       PrecisionEngine.divide(PrecisionEngine.multiply(draft.subtotal, draft.ppnPercent), 100),
       'INTEGER_ROUND'
@@ -1996,14 +1997,14 @@ export class DedToRabPipelineService {
       throw new Error(`Draft not found for project "${projectId}".`);
     }
 
-    const existingTotal = existingItems.reduce((acc, item) => acc + (item.volume * (item.unitPrice || 0)), 0);
+    const existingTotal = existingItems.reduce((acc, item) => acc + (item.volume * (item.unitPrice ?? 0)), 0);
     const newItems = draft.rows.map((row) => ({
       no: row.no,
       description: row.description,
       volume: row.volume,
       unit: row.unit,
-      unitPrice: row.unitPrice || 0,
-      amount: row.amount,
+      unitPrice: row.unitPrice ?? null,
+      amount: row.amount ?? null,
       ahspCode: row.ahspCode,
     }));
 
@@ -2028,7 +2029,7 @@ export class DedToRabPipelineService {
   public confirmAndCommitToRab(
     projectId: string,
     existingItems: RabItem[],
-    onAddRabItemDirect: (item: Partial<RabItem> & { description: string; volume: number; unit: string; unitPrice?: number; ahspCode?: string; category?: string }) => void
+    onAddRabItemDirect: (item: Partial<RabItem> & { description: string; volume: number; unit: string; unitPrice?: number | null; amount?: number | null; ahspCode?: string; category?: string }) => void
   ): {
     success: boolean;
     committedCount: number;
@@ -2048,7 +2049,8 @@ export class DedToRabPipelineService {
         description: string;
         volume: number;
         unit: string;
-        unitPrice?: number;
+        unitPrice?: number | null;
+        amount?: number | null;
         ahspCode?: string;
         category?: string;
       } = {

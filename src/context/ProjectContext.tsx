@@ -711,7 +711,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const list = estimateVersions.filter((v) => v.projectId === activePid);
     if (list.length === 0 && projectRabItems.length > 0) {
       const total = projectRabItems.reduce(
-        (acc, i) => acc + (i.amount || i.totalPrice || i.volume * i.unitPrice || 0),
+        (acc, i) => acc + (i.amount ?? i.totalPrice ?? i.volume * (i.unitPrice ?? 0)),
         0
       );
       return [
@@ -1033,7 +1033,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setAllRabItems((prev) => {
           const next = prev.map((item) => {
             if (item.id === existingMapping.rabItemId) {
-              const newAmount = SafeDecimalEngine.safeMultiply(result.primaryQuantity, item.unitPrice, 0);
+              const newAmount = item.unitPrice == null ? null : SafeDecimalEngine.safeMultiply(result.primaryQuantity, item.unitPrice, 0);
               const updatedItem: RabItem = {
                 ...item,
                 volume: result.primaryQuantity,
@@ -1127,7 +1127,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
             ...existingRab,
             volume: qto.quantity,
             unitPrice,
-            amount: SafeDecimalEngine.safeMultiply(qto.quantity, unitPrice, 0),
+            amount: unitPrice == null ? null : SafeDecimalEngine.safeMultiply(qto.quantity, unitPrice, 0),
             category: targetSectionName || existingRab.category,
             code: ahspCode || existingRab.code,
           };
@@ -1157,7 +1157,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         volume: qto.quantity,
         unit: qto.unit,
         unitPrice,
-        amount: SafeDecimalEngine.safeMultiply(qto.quantity, unitPrice, 0),
+        amount: unitPrice == null ? null : SafeDecimalEngine.safeMultiply(qto.quantity, unitPrice, 0),
         priceStatus: priceRes.priceStatus,
         verificationStatus: priceRes.verificationStatus,
         notes: priceRes.notes,
@@ -1289,7 +1289,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
             return {
               ...item,
               volume: newVolume,
-              amount: SafeDecimalEngine.safeMultiply(newVolume, item.unitPrice, 0),
+              amount: item.unitPrice == null ? null : SafeDecimalEngine.safeMultiply(newVolume, item.unitPrice, 0),
               volumeSource: 'MANUAL_OVERRIDE' as VolumeSourceType,
               manualOverrideAudit: audit,
             };
@@ -1384,7 +1384,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const updated = { ...item, ...updates };
             const vol = typeof updates.volume !== 'undefined' ? updates.volume : item.volume;
             const up = typeof updates.unitPrice !== 'undefined' ? updates.unitPrice : item.unitPrice;
-            const amt = SafeDecimalEngine.safeMultiply(vol, up, 0);
+            // Phase 2J P0 fix: null price → null amount (never 0).
+            const amt = up == null ? null : SafeDecimalEngine.safeMultiply(vol, up, 0);
             return {
               ...updated,
               volume: vol,
@@ -1865,7 +1866,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const pid = targetProjectId || currentProjectId || (projects.length > 0 ? projects[0].id : '');
       const currentItems = allRabItems.filter((i) => i.projectId === pid);
       const currentCost = currentItems.reduce(
-        (sum, i) => sum + (i.amount || i.totalPrice || i.volume * i.unitPrice || 0),
+        (sum, i) => sum + (i.amount ?? i.totalPrice ?? i.volume * (i.unitPrice ?? 0)),
         0
       );
 
@@ -2223,7 +2224,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         },
       ];
 
-      const direct = sampleRab.reduce((sum, i) => sum + i.amount, 0);
+      const direct = sampleRab.reduce((sum, i) => sum + (i.amount ?? 0), 0);
       const overhead = Math.round(direct * 0.05);
       const profit = Math.round(direct * 0.05);
       const subtotal = direct + overhead + profit;

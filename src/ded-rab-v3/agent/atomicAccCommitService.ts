@@ -87,7 +87,7 @@ export class AtomicAccCommitService {
     const sections: RABSection[] = Array.from(sectionMap.entries()).map(([secName, secItems], idx) => {
       const sectionId = `sec-${idx + 1}`;
       const letterCode = String.fromCharCode(65 + (idx % 26));
-      const subtotal = secItems.reduce((acc, it) => SafeDecimalEngine.safeAdd(acc, it.totalPrice || it.amount || 0), 0);
+      const subtotal = secItems.reduce((acc, it) => SafeDecimalEngine.safeAdd(acc, it.totalPrice ?? it.amount ?? 0), 0);
       grandTotal = SafeDecimalEngine.safeAdd(grandTotal, subtotal);
 
       return {
@@ -106,7 +106,7 @@ export class AtomicAccCommitService {
           materialPrice: it.materialPrice || 0,
           laborPrice: it.laborPrice || 0,
           equipmentPrice: it.equipmentPrice || 0,
-          unitPrice: it.unitPrice,
+          unitPrice: it.unitPrice ?? 0,
           totalPrice: it.totalPrice ?? it.amount ?? 0,
           verificationStatus: 'VERIFIED' as const,
         })),
@@ -142,7 +142,7 @@ export class AtomicAccCommitService {
           formula: it.quantityFormula,
         },
         price: {
-          unitPrice: it.unitPrice,
+          unitPrice: it.unitPrice ?? 0,
           totalPrice: it.subtotal,
           priceSource: it.priceSource,
           isOfficial: it.priceSource === 'OFFICIAL_AHSP',

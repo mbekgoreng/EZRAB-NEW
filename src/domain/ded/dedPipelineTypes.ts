@@ -222,7 +222,7 @@ export interface AICustomItem {
   sourceEvidence: AIEvidence[];
   generatedBy: 'AI';
   requiresUserConfirmation: boolean;
-  baseUnitPrice?: number;
+  baseUnitPrice?: number | null;
   components?: Array<{
     name: string;
     coefficient: number;
@@ -302,7 +302,7 @@ export interface AHSPMappingCandidate {
   ahspCode: string;
   name: string;
   unit: string;
-  baseUnitPrice?: number;
+  baseUnitPrice?: number | null;
   matchScore: number;
   reason: string;
   specificationMatch: boolean;
@@ -315,7 +315,8 @@ export interface AHSPMappingCandidate {
 }
 
 export interface PriceSourceResolution {
-  unitPrice?: number;
+  // (Phase 2J: null = harga belum tersedia, bukan Rp0.)
+  unitPrice?: number | null;
   priceSource: 'PROJECT_PRICE' | 'COMPANY_PRICE' | 'CONFIGURED_PRICE_DB' | 'REFERENCE_PRICE' | 'PRICE_NOT_FOUND';
   sourceDetail?: string;
   currency: string;
@@ -355,10 +356,12 @@ export interface DEDWorkItem {
   customItemDetails?: AICustomItem;
 
   // Price resolution
-  unitPrice?: number;
-  totalPrice?: number;
+  // (Phase 2J: null = price not available, never Rp0.)
+  unitPrice?: number | null;
+  totalPrice?: number | null;
   priceSource?: PriceSourceResolution;
   priceProvenance?: ValueSourceType;
+  priceStatus?: string;
 
   // User override tracking (Section 21)
   isUserOverridden?: boolean;
@@ -369,7 +372,7 @@ export interface DEDWorkItem {
     volume?: number;
     unit?: string;
     ahspCode?: string;
-    unitPrice?: number;
+    unitPrice?: number | null;
     specification?: string;
   };
 
@@ -392,8 +395,8 @@ export interface DEDRabDraftRow {
   unit: string;
   ahspCode?: string;
   ahspName?: string;
-  unitPrice?: number;
-  amount: number;
+  unitPrice?: number | null;
+  amount: number | null;
   priceSourceText?: string;
   evidence: AIEvidence;
   confidence: WorkItemConfidence;
@@ -406,7 +409,7 @@ export interface DEDRabDraftRow {
     volume?: number;
     unit?: string;
     ahspCode?: string;
-    unitPrice?: number;
+    unitPrice?: number | null;
     specification?: string;
   };
   conflictDetails?: {
@@ -484,8 +487,9 @@ export interface RabMutationDiff {
     description: string;
     volume: number;
     unit: string;
-    unitPrice: number;
-    amount: number;
+    // (Phase 2J: null = harga belum tersedia, bukan Rp0.)
+    unitPrice: number | null;
+    amount: number | null;
     ahspCode?: string;
   }>;
 }
@@ -556,7 +560,8 @@ export interface SheetRabRow {
   volume: number;
   unit: string;
   unitPrice: number;
-  total: number;
+  // (Phase 2J: null = harga belum tersedia, bukan Rp0.)
+  total: number | null;
   status: string;
 }
 

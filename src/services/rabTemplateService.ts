@@ -1511,8 +1511,9 @@ export class RabTemplateService {
     const traceability: TraceabilityRecord[] = [];
 
     for (const item of finalItems) {
-      const amt = SafeDecimalEngine.safeMultiply(item.volume, item.unitPrice || 0, 0);
-      totalEstimate = SafeDecimalEngine.safeAdd(totalEstimate, amt);
+      // Aturan Phase 2J: null price → null amount (audit trail, bukan 0).
+      const amt = item.unitPrice == null ? null : SafeDecimalEngine.safeMultiply(item.volume, item.unitPrice, 0);
+      totalEstimate = SafeDecimalEngine.safeAdd(totalEstimate, amt ?? 0);
       const cat = item.category || '01. PEKERJAAN PERSIAPAN';
       categorySummaries[cat] = SafeDecimalEngine.safeAdd(categorySummaries[cat] || 0, amt);
 

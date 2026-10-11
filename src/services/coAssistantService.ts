@@ -148,7 +148,7 @@ class CoAssistantService {
 
       case 'total':
         const items = request.projectRabItems || [];
-        const total = items.reduce((s, it) => s + (it.amount || it.totalPrice || (it.volume * it.unitPrice) || 0), 0);
+        const total = items.reduce((s, it) => s + (it.amount ?? it.totalPrice ?? (it.volume * (it.unitPrice ?? 0))), 0);
         return mkMsg(
           `### 💰 Total RAB\n\n` +
           `**${items.length} item** — Total: **Rp${total.toLocaleString('id-ID')}**\n\n` +
@@ -163,8 +163,8 @@ class CoAssistantService {
         if (found.length === 0) return mkMsg(`Tidak ditemukan item dengan kata kunci "${args}".`);
         return mkMsg(
           `### 🔍 Ditemukan ${found.length} item\n\n` +
-          found.map((it, i) => `${i + 1}. **${it.description}** — ${it.volume} ${it.unit} × Rp${it.unitPrice.toLocaleString('id-ID')}`).join('\n'),
-          { table: { headers: ['Uraian', 'Volume', 'Harga'], rows: found.map((it) => [it.description, `${it.volume} ${it.unit}`, `Rp${it.unitPrice.toLocaleString('id-ID')}`]) } }
+          found.map((it, i) => `${i + 1}. **${it.description}** — ${it.volume} ${it.unit} × ${it.unitPrice != null ? 'Rp' + it.unitPrice.toLocaleString('id-ID') : 'harga belum tersedia'}`).join('\n'),
+          { table: { headers: ['Uraian', 'Volume', 'Harga'], rows: found.map((it) => [it.description, `${it.volume} ${it.unit}`, it.unitPrice != null ? `Rp${it.unitPrice.toLocaleString('id-ID')}` : 'harga belum tersedia']) } }
         );
 
       default:

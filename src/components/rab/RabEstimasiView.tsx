@@ -469,8 +469,8 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       if (filters.source !== 'ALL' && item.volumeSource !== filters.source) return false;
 
       // Price range
-      if (filters.minPrice !== null && item.unitPrice < filters.minPrice) return false;
-      if (filters.maxPrice !== null && item.unitPrice > filters.maxPrice) return false;
+      if (filters.minPrice !== null && (item.unitPrice == null || item.unitPrice < filters.minPrice)) return false;
+      if (filters.maxPrice !== null && (item.unitPrice == null || item.unitPrice > filters.maxPrice)) return false;
 
       // Volume range
       if (filters.minVolume !== null && item.volume < filters.minVolume) return false;
@@ -499,8 +499,8 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         let valB: any = b[sortField as keyof RabItem] || '';
 
         if (sortField === 'amount') {
-          valA = a.amount || a.totalPrice || a.volume * a.unitPrice || 0;
-          valB = b.amount || b.totalPrice || b.volume * b.unitPrice || 0;
+          valA = a.amount ?? a.totalPrice ?? a.volume * (a.unitPrice ?? 0);
+          valB = b.amount ?? b.totalPrice ?? b.volume * (b.unitPrice ?? 0);
         }
 
         if (typeof valA === 'number' && typeof valB === 'number') {
@@ -520,7 +520,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
     if (!isGrouped) {
       // Flat list mode: single pseudo group
       const subtotal = filteredItems.reduce(
-        (sum, item) => sum + ((item.amount || item.totalPrice || item.volume * item.unitPrice) || 0),
+        (sum, item) => sum + (item.amount ?? item.totalPrice ?? item.volume * (item.unitPrice ?? 0)),
         0
       );
       const subtotalVolume = filteredItems.reduce((sum, item) => sum + (item.volume || 0), 0);
@@ -560,7 +560,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       };
 
       const subtotal = items.reduce(
-        (sum, item) => sum + ((item.amount || item.totalPrice || item.volume * item.unitPrice) || 0),
+        (sum, item) => sum + (item.amount ?? item.totalPrice ?? item.volume * (item.unitPrice ?? 0)),
         0
       );
       const subtotalVolume = items.reduce((sum, item) => sum + (item.volume || 0), 0);
@@ -583,9 +583,19 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
   // Overall Totals
   const totalRabNominal = useMemo(() => {
     return projectRabItems.reduce(
-      (acc, item) => acc + ((item.amount || item.totalPrice || item.volume * item.unitPrice) || 0),
+      (acc, item) => acc + (item.amount ?? item.totalPrice ?? item.volume * (item.unitPrice ?? 0)),
       0
     );
+  }, [projectRabItems]);
+
+  // Phase 2I.2: hitung item yang belum memiliki harga untuk label Estimasi Parsial.
+  const unpricedItemsCount = useMemo(() => {
+    return projectRabItems.filter(
+      (item: any) =>
+        item.amount == null &&
+        item.totalPrice == null &&
+        (item.unitPrice == null || item.priceStatus === 'PRICE_UNRESOLVED')
+    ).length;
   }, [projectRabItems]);
 
   const totalVolumeSum = useMemo(() => {
@@ -689,19 +699,26 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       return;
     }
 
-    const updates: Partial<RabItem> = {};
+    const updates: Partial<RabItem> = {} as any;
     if (column === 'code') updates.code = editValue.trim();
     if (column === 'description') updates.description = editValue.trim() || targetItem.description;
     if (column === 'volume') updates.volume = Math.max(0, parseFloat(editValue.replace(',', '.')) || 0);
     if (column === 'unit') updates.unit = editValue.trim() || targetItem.unit;
-    if (column === 'unitPrice') updates.unitPrice = Math.max(0, parseFloat(editValue.replace(/[^0-9.]/g, '')) || 0);
+    // Phase 2J P0/P2 fix: empty price field → null (UNRESOLVED), not 0.
+    // Distinguishes "belum diisi" (null) from explicit zero (0), per Phase 4A.
+    if (column === 'unitPrice') {
+      const raw = editValue.replace(/[^0-9.]/g, '').trim();
+      (updates as any).unitPrice = raw === '' ? null : Math.max(0, parseFloat(raw) || 0);
+      // Keep priceStatus in sync with the edit.
+      (updates as any).priceStatus = (updates as any).unitPrice == null ? 'PRICE_UNRESOLVED' : 'PRICE_RESOLVED';
+    }
     if (column === 'volumeSource') updates.volumeSource = editValue as VolumeSourceType;
 
-    // Recalculate amount
+    // Recalculate amount — null price stays null (never 0).
     const finalVol = updates.volume !== undefined ? updates.volume : targetItem.volume;
-    const finalPrice = updates.unitPrice !== undefined ? updates.unitPrice : targetItem.unitPrice;
-    updates.amount = Math.round(finalVol * finalPrice);
-    updates.totalPrice = updates.amount;
+    const finalPrice = (updates as any).unitPrice !== undefined ? (updates as any).unitPrice : (targetItem as any).unitPrice;
+    (updates as any).amount = finalPrice == null ? null : Math.round(finalVol * finalPrice);
+    (updates as any).totalPrice = (updates as any).amount;
 
     updateRabItemFull(itemId, updates);
     setEditingCell(null);
@@ -765,8 +782,8 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       volume: item.volume,
       unit: item.unit,
       unitPrice: item.unitPrice,
-      amount: item.amount || item.volume * item.unitPrice,
-      totalPrice: item.totalPrice || item.volume * item.unitPrice,
+      amount: item.amount ?? (item.unitPrice != null ? item.volume * item.unitPrice : null),
+      totalPrice: item.totalPrice ?? (item.unitPrice != null ? item.volume * item.unitPrice : null),
       volumeSource: item.volumeSource,
       ahspCode: item.ahspCode,
       // Fase 4A: warisi status harga agar duplikat item tanpa harga
@@ -913,6 +930,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
               completedItemsCount={projectRabItems.filter((i) => i.priceStatus === 'PRICE_RESOLVED' || (i.unitPrice || 0) > 0).length}
               inProgressItemsCount={projectRabItems.filter((i) => i.priceStatus === 'PRICE_UNRESOLVED').length}
               pendingItemsCount={0}
+              unpricedCount={unpricedItemsCount}
             />
 
             {/* 3B. SPREADSHEET TOOLBAR */}

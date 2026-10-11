@@ -228,8 +228,9 @@ export interface TraceabilityRecord {
   calculationTrace: string;
   ahspCode?: string;
   materialName?: string;
-  unitPrice: number;
-  amount: number;
+  // (Phase 2J: null = harga belum tersedia, bukan Rp0 — audit trail jujur.)
+  unitPrice: number | null;
+  amount: number | null;
   priceSource: string;
 }
 

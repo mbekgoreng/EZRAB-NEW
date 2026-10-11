@@ -102,7 +102,7 @@ export const EstimatingCopilotPanel: React.FC<EstimatingCopilotPanelProps> = ({
 
   // Total current RAB
   const currentTotalRab = projectRabItems.reduce(
-    (acc, it) => acc + (it.amount || it.totalPrice || it.volume * it.unitPrice || 0),
+    (acc, it) => acc + (it.amount ?? it.totalPrice ?? it.volume * (it.unitPrice ?? 0)),
     0
   );
 
@@ -469,7 +469,7 @@ export const EstimatingCopilotPanel: React.FC<EstimatingCopilotPanelProps> = ({
       const catTotals: Record<string, number> = {};
       projectRabItems.forEach((it) => {
         const cat = it.category || 'LAIN-LAIN';
-        const amt = it.amount || it.totalPrice || it.volume * it.unitPrice || 0;
+        const amt = it.amount ?? it.totalPrice ?? it.volume * (it.unitPrice ?? 0);
         catTotals[cat] = (catTotals[cat] || 0) + amt;
       });
 

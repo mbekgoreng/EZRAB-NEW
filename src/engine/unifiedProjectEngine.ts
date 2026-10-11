@@ -350,9 +350,9 @@ export class UnifiedProjectEngine {
    * Computes item weight % for all RAB items against direct cost
    */
   static computeItemWeights(items: RabItem[]): RabItem[] {
-    const directCost = items.reduce((acc, itm) => acc + (itm.amount || 0), 0);
+    const directCost = items.reduce((acc, itm) => acc + (itm.amount ?? 0), 0);
     return items.map((itm) => {
-      const weight = directCost > 0 ? (itm.amount / directCost) * 100 : 0;
+      const weight = directCost > 0 ? ((itm.amount ?? 0) / directCost) * 100 : 0;
       return {
         ...itm,
         weight: Number(weight.toFixed(2)),
@@ -394,7 +394,7 @@ export class UnifiedProjectEngine {
       let taskAmount = 0;
       if (t.rabItemId) {
         const matched = rabItems.find((r) => r.id === t.rabItemId);
-        if (matched) taskAmount = matched.amount;
+        if (matched) taskAmount = matched.amount ?? 0;
       }
       const weight = directCost > 0 && taskAmount > 0 ? Number(((taskAmount / directCost) * 100).toFixed(2)) : t.weightPercent;
       return {

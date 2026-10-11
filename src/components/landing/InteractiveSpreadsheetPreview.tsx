@@ -64,7 +64,8 @@ export const InteractiveSpreadsheetPreview: React.FC = () => {
     setItems((prev) =>
       prev.map((item) => {
         if (item.id === id) {
-          const newAmount = calculateItemAmount(num, item.unitPrice);
+          // Aturan Phase 2J: harga null → amount tetap null (jangan jadi 0).
+          const newAmount = item.unitPrice == null ? null : calculateItemAmount(num, item.unitPrice);
           return { ...item, volume: num, amount: newAmount };
         }
         return item;
@@ -73,11 +74,12 @@ export const InteractiveSpreadsheetPreview: React.FC = () => {
   };
 
   const handlePriceChange = (id: string, val: string) => {
-    const num = parseFloat(val) || 0;
+    // Phase 2J: empty → null (unpriced), not 0. Explicit 0 stays 0.
+    const num = val.trim() === '' ? null : Math.max(0, parseFloat(val) || 0);
     setItems((prev) =>
       prev.map((item) => {
         if (item.id === id) {
-          const newAmount = calculateItemAmount(item.volume, num);
+          const newAmount = num == null ? null : calculateItemAmount(item.volume, num);
           return { ...item, unitPrice: num, amount: newAmount };
         }
         return item;
@@ -208,7 +210,7 @@ export const InteractiveSpreadsheetPreview: React.FC = () => {
                     <td style={{ padding: '10px 16px', textAlign: 'right' }}>
                       <input
                         type="number"
-                        value={item.unitPrice}
+                        value={item.unitPrice ?? ''}
                         onChange={(e) => handlePriceChange(item.id, e.target.value)}
                         style={{
                           width: '130px',

@@ -91,7 +91,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
     const catMap = new Map<string, number>();
     projectRabItems.forEach((itm) => {
       const cat = itm.category || 'Pekerjaan Utama';
-      catMap.set(cat, (catMap.get(cat) || 0) + itm.amount);
+      catMap.set(cat, (catMap.get(cat) || 0) + (itm.amount ?? 0));
     });
 
     const categories = Array.from(catMap.entries());

@@ -47,7 +47,7 @@ export class VersionAndScenarioEngine {
       processedTargetIds.add(tItem.id);
       const bItem = baseMap.get(tItem.id) || (tItem.code ? baseMap.get(tItem.code) : undefined);
 
-      const tAmount = tItem.amount || tItem.totalPrice || tItem.volume * tItem.unitPrice || 0;
+      const tAmount = tItem.amount ?? tItem.totalPrice ?? (tItem.unitPrice != null ? tItem.volume * tItem.unitPrice : null);
 
       if (!bItem) {
         // Item is Added
@@ -61,17 +61,17 @@ export class VersionAndScenarioEngine {
           targetVolume: tItem.volume,
           targetUnitPrice: tItem.unitPrice,
           targetAmount: tAmount,
-          deltaAmount: tAmount,
+          deltaAmount: tAmount ?? 0,
           deltaPercent: 100,
           notes: 'Item baru ditambahkan pada versi ini',
         });
       } else {
-        const bAmount = bItem.amount || bItem.totalPrice || bItem.volume * bItem.unitPrice || 0;
-        const deltaAmt = tAmount - bAmount;
-        const deltaPct = bAmount > 0 ? (deltaAmt / bAmount) * 100 : 0;
+        const bAmount = bItem.amount ?? bItem.totalPrice ?? (bItem.unitPrice != null ? bItem.volume * bItem.unitPrice : null);
+        const deltaAmt = (tAmount ?? 0) - (bAmount ?? 0);
+        const deltaPct = (bAmount ?? 0) > 0 ? (deltaAmt / (bAmount ?? 0)) * 100 : 0;
 
         const isQtyDiff = Math.abs((tItem.volume || 0) - (bItem.volume || 0)) > 0.001;
-        const isPriceDiff = Math.abs((tItem.unitPrice || 0) - (bItem.unitPrice || 0)) > 1;
+        const isPriceDiff = Math.abs((tItem.unitPrice ?? 0) - (bItem.unitPrice ?? 0)) > 1;
         const isAhspDiff = (tItem.ahspCode || '') !== (bItem.ahspCode || '') || (tItem.unit || '') !== (bItem.unit || '');
 
         let status: VersionDiffItem['status'] = 'UNCHANGED';
@@ -113,7 +113,7 @@ export class VersionAndScenarioEngine {
       const existsInTarget = targetMap.has(bItem.id) || (bItem.code ? targetMap.has(bItem.code) : false);
       if (!existsInTarget) {
         removedCount++;
-        const bAmount = bItem.amount || bItem.totalPrice || bItem.volume * bItem.unitPrice || 0;
+        const bAmount = bItem.amount ?? bItem.totalPrice ?? (bItem.unitPrice != null ? bItem.volume * bItem.unitPrice : null);
         diffItems.push({
           id: bItem.id,
           code: bItem.code || 'ITEM.DEL',
@@ -123,15 +123,15 @@ export class VersionAndScenarioEngine {
           baseVolume: bItem.volume,
           baseUnitPrice: bItem.unitPrice,
           baseAmount: bAmount,
-          deltaAmount: -bAmount,
+          deltaAmount: -(bAmount ?? 0),
           deltaPercent: -100,
           notes: 'Item dihapus pada versi target',
         });
       }
     });
 
-    const baseTotal = baseItems.reduce((acc, i) => acc + (i.amount || i.totalPrice || i.volume * i.unitPrice || 0), 0);
-    const targetTotal = targetItems.reduce((acc, i) => acc + (i.amount || i.totalPrice || i.volume * i.unitPrice || 0), 0);
+    const baseTotal = baseItems.reduce((acc, i) => acc + (i.amount ?? i.totalPrice ?? i.volume * (i.unitPrice ?? 0)), 0);
+    const targetTotal = targetItems.reduce((acc, i) => acc + (i.amount ?? i.totalPrice ?? i.volume * (i.unitPrice ?? 0)), 0);
     const totalDelta = targetTotal - baseTotal;
     const percentageDelta = baseTotal > 0 ? (totalDelta / baseTotal) * 100 : 0;
 
@@ -156,7 +156,7 @@ export class VersionAndScenarioEngine {
     projectId: string,
     baselineItems: RabItem[]
   ): EstimateScenario[] {
-    const baselineDirect = baselineItems.reduce((acc, i) => acc + (i.amount || i.totalPrice || i.volume * i.unitPrice || 0), 0);
+    const baselineDirect = baselineItems.reduce((acc, i) => acc + (i.amount ?? i.totalPrice ?? i.volume * (i.unitPrice ?? 0)), 0);
     const baselineTotal = Math.round(baselineDirect * 1.15); // +5% overhead +10% profit
 
     // 1. BASELINE SCENARIO
@@ -186,8 +186,8 @@ export class VersionAndScenarioEngine {
       if (desc.includes('besi') || desc.includes('pembesian')) factor = 0.94; // 6% rebar optimization
       else if (desc.includes('beton') || desc.includes('cor')) factor = 0.93; // 7% batching plant direct
       else if (desc.includes('keramik') || desc.includes('dinding')) factor = 0.95; // 5% bulk distributor
-      const newPrice = Math.round(item.unitPrice * factor);
-      const newAmount = Math.round(item.volume * newPrice);
+      const newPrice = item.unitPrice == null ? null : Math.round(item.unitPrice * factor);
+      const newAmount = newPrice == null ? null : Math.round(item.volume * newPrice);
       return {
         ...item,
         unitPrice: newPrice,
@@ -224,8 +224,8 @@ export class VersionAndScenarioEngine {
       if (desc.includes('tanah') || desc.includes('galian')) factor = 0.82; // 18% excavation machinery
       else if (desc.includes('struktur') || desc.includes('balok') || desc.includes('kolom')) factor = 0.91; // 9% precast efficiency
       else if (desc.includes('plesteran') || desc.includes('acian')) factor = 0.88; // 12% spray mortar
-      const newPrice = Math.round(item.unitPrice * factor);
-      const newAmount = Math.round(item.volume * newPrice);
+      const newPrice = item.unitPrice == null ? null : Math.round(item.unitPrice * factor);
+      const newAmount = newPrice == null ? null : Math.round(item.volume * newPrice);
       return {
         ...item,
         unitPrice: newPrice,
@@ -258,8 +258,8 @@ export class VersionAndScenarioEngine {
     // High volume bidding with streamlined overhead
     const scenarioCItems: RabItem[] = baselineItems.map((item) => {
       const factor = 0.90; // Flat 10% direct negotiation
-      const newPrice = Math.round(item.unitPrice * factor);
-      const newAmount = Math.round(item.volume * newPrice);
+      const newPrice = item.unitPrice == null ? null : Math.round(item.unitPrice * factor);
+      const newAmount = newPrice == null ? null : Math.round(item.volume * newPrice);
       return {
         ...item,
         unitPrice: newPrice,
@@ -309,12 +309,12 @@ export class VersionAndScenarioEngine {
 
     baselineItems.forEach((it) => {
       const cat = it.category || 'Pekerjaan Lain-lain';
-      baseCatMap[cat] = (baseCatMap[cat] || 0) + (it.amount || it.totalPrice || it.volume * it.unitPrice || 0);
+      baseCatMap[cat] = (baseCatMap[cat] || 0) + (it.amount ?? it.totalPrice ?? it.volume * (it.unitPrice ?? 0));
     });
 
     scenarioItems.forEach((it) => {
       const cat = it.category || 'Pekerjaan Lain-lain';
-      scenCatMap[cat] = (scenCatMap[cat] || 0) + (it.amount || it.totalPrice || it.volume * it.unitPrice || 0);
+      scenCatMap[cat] = (scenCatMap[cat] || 0) + (it.amount ?? it.totalPrice ?? it.volume * (it.unitPrice ?? 0));
     });
 
     const allCategories = Array.from(new Set([...Object.keys(baseCatMap), ...Object.keys(scenCatMap)]));

@@ -424,10 +424,10 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                                   {it.volume} {it.unit}
                                 </td>
                                 <td style={{ padding: '5px 6px', textAlign: 'right', color: '#64748B' }}>
-                                  Rp {it.unitPrice.toLocaleString('id-ID')}
+                                  {it.unitPrice != null ? `Rp ${it.unitPrice.toLocaleString('id-ID')}` : <span style={{ color: '#DC2626' }}>Belum ada</span>}
                                 </td>
                                 <td style={{ padding: '5px 6px', textAlign: 'right', color: '#0F172A', fontWeight: 700 }}>
-                                  Rp {it.amount.toLocaleString('id-ID')}
+                                  {it.amount != null ? `Rp ${it.amount.toLocaleString('id-ID')}` : 'Belum ada harga'}
                                 </td>
                               </tr>
                             ))}
