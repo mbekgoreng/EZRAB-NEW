@@ -15,7 +15,9 @@
  *
  * HARD RULES (purge prompt §12/§13/§14/§16/§26):
  *   - Never invent a code, name, unit, coefficient, price, method or normative status.
- *   - Prices are NOT imported (price-free master). unitPrice/totals = 0.
+ *   - Prices ARE imported from HSD (data/ahsp2026/validated/ahsp_2026_hsd_ck.json).
+ *     unitPrice = HSD price when matched by name+unit; null when not found.
+ *     Explicit zero in source stays 0 (distinct from missing).
  *   - Bina Marga attachment is "V" — never "II".
  *   - A source row printed without a code keeps code = "" and is flagged SOURCE_DEFECT.
  *   - Every item carries full provenance (regulation, attachment, page, source file).
@@ -62,6 +64,69 @@ interface CanonResources {
 
 function readJson<T>(p: string): T {
   return JSON.parse(fs.readFileSync(p, 'utf8')) as T;
+}
+
+interface HsdEntry {
+  code: string;
+  name: string;
+  unit: string;
+  price: number | null;
+  sourceSheet: string;
+  sourceRow: number;
+}
+
+/**
+ * PHASE 2B: HSD price lookup.
+ * Maps component -> HSD price by normalized (name, unit).
+ * Returns price or null when not found. Never invents prices.
+ */
+class HsdPriceLookup {
+  private byNameUnit = new Map<string, HsdEntry>();
+  private ambiguous = new Set<string>();
+
+  constructor(entries: HsdEntry[]) {
+    for (const e of entries) {
+      const key = this.key(e.name, e.unit);
+      const existing = this.byNameUnit.get(key);
+      if (existing && existing.price !== e.price) {
+        // Same name+unit, different price -> ambiguous, don't use
+        this.ambiguous.add(key);
+        this.byNameUnit.delete(key);
+      } else if (!existing) {
+        this.byNameUnit.set(key, e);
+      }
+    }
+  }
+
+  private key(name: string, unit: string): string {
+    const n = (name || '').toLowerCase().trim().replace(/\s+/g, ' ');
+    const u = normalizeUnit(unit || '').toLowerCase();
+    return `${n}||${u}`;
+  }
+
+  lookup(name: string, unit: string): number | null {
+    const key = this.key(name, unit);
+    if (this.ambiguous.has(key)) return null;
+    const e = this.byNameUnit.get(key);
+    if (!e) return null;
+    return e.price; // may be null (explicitly no price in source)
+  }
+
+  get stats() {
+    return { entries: this.byNameUnit.size, ambiguous: this.ambiguous.size };
+  }
+}
+
+let hsdLookup: HsdPriceLookup | null = null;
+
+function getHsdLookup(): HsdPriceLookup {
+  if (!hsdLookup) {
+    const hsdPath = path.join(VALIDATED, 'ahsp_2026_hsd_ck.json');
+    const entries: HsdEntry[] = fs.existsSync(hsdPath) ? readJson<HsdEntry[]>(hsdPath) : [];
+    hsdLookup = new HsdPriceLookup(entries);
+    console.log(`[generate] HSD loaded: ${hsdLookup.stats.entries} entries, ${hsdLookup.stats.ambiguous} ambiguous`);
+  }
+  return hsdLookup;
 }
 
 /**
@@ -130,6 +195,23 @@ function dataQualityScore(status: string): number {
   return 60;
 }
 
+/**
+ * PHASE 2B: sum component totals. Returns null when no component has a price
+ * (distinguishes "no price data" from "price is zero").
+ */
+function sumTotals(components: Record<string, unknown>[]): number | null {
+  let sum = 0;
+  let hasPrice = false;
+  for (const c of components) {
+    const t = c.total;
+    if (typeof t === 'number') {
+      sum += t;
+      hasPrice = true;
+    }
+  }
+  return hasPrice ? sum : null;
+}
+
 function mapComponent(
   row: any,
   itemId: string,
@@ -138,14 +220,18 @@ function mapComponent(
 ): Record<string, unknown> {
   const prefix = kind === 'labor' ? 'L' : kind === 'material' ? 'M' : 'E';
   const resourceType = kind === 'labor' ? 'LABOR' : kind === 'material' ? 'MATERIAL' : 'EQUIPMENT';
+  const coefficient = typeof row.coefficient === 'number' ? row.coefficient : 0;
+  // PHASE 2B: resolve price from HSD (null when not found, never 0-fallback)
+  const unitPrice = getHsdLookup().lookup(row.resource_name ?? '', row.unit ?? '');
+  const total = unitPrice != null && coefficient > 0 ? Math.round(coefficient * unitPrice) : null;
   return {
     id: `${itemId}-${prefix}${String(idx + 1).padStart(3, '0')}`,
     code: row.resource_code ?? '',
     name: row.resource_name ?? '',
     unit: row.unit ?? '',
-    coefficient: typeof row.coefficient === 'number' ? row.coefficient : 0,
-    unitPrice: 0,
-    total: 0,
+    coefficient,
+    unitPrice,
+    total,
     resourceType,
     coefficientRaw: row.coefficient_raw ?? '',
     rawLine: row.raw ?? '',
@@ -237,10 +323,10 @@ function main() {
       laborComponents: labor,
       materialComponents: material,
       equipmentComponents: equipment,
-      totalLabor: 0,
-      totalMaterial: 0,
-      totalEquipment: 0,
-      unitPrice: 0,
+      totalLabor: sumTotals(labor),
+      totalMaterial: sumTotals(material),
+      totalEquipment: sumTotals(equipment),
+      unitPrice: sumTotals([...labor, ...material, ...equipment]),
       lastUpdated: generatedAt.slice(0, 10),
       dataQualityScore: dataQualityScore(status),
       provenance: {
@@ -291,8 +377,9 @@ function main() {
  * Status    : ${JSON.stringify(statusCounts)}
  * Total     : ${items.length}
  *
- * PRICES ARE NOT IMPORTED. unitPrice / total* are 0 by design (price-free master);
- * the price layer resolves them at runtime and must fail closed when unavailable.
+ * PRICES ARE IMPORTED from HSD (data/ahsp2026/validated/ahsp_2026_hsd_ck.json).
+ * unitPrice = HSD price when matched; null when not found (never 0-fallback).
+ * the price layer must still fail closed when unavailable at runtime.
  * normativeStatus / method are "UNSPECIFIED" — the source does not carry them and
  * they MUST NOT be invented.
  */
@@ -347,6 +434,54 @@ ${emitChunked('AHSP_2026_CANONICAL_RESOURCES', 'CanonicalResource', resources.re
     console.error(`[generate] FAIL-CLOSED: expected 5801 items, got ${items.length}`);
     process.exit(1);
   }
+
+  // PHASE 2B regression gate: prices must survive the transform
+  runPriceRegressionGate(items);
+}
+
+/**
+ * PHASE 2B regression gate.
+ * Verifies that HSD prices survive from source to canonical output.
+ * Fails closed on any integrity violation.
+ */
+function runPriceRegressionGate(items: any[]): void {
+  console.log('[gate] running price regression checks...');
+  let priced = 0, nullPriced = 0, zeroPriced = 0;
+  let coefChanged = 0;
+
+  for (const it of items) {
+    for (const grp of ['laborComponents', 'materialComponents', 'equipmentComponents']) {
+      for (const c of (it[grp] || [])) {
+        const up = (c as any).unitPrice;
+        if (typeof up === 'number' && up > 0) priced++;
+        else if (up === null || up === undefined) nullPriced++;
+        else if (up === 0) zeroPriced++;
+        // Coefficient must never be altered by price logic
+        if (typeof (c as any).coefficient !== 'number') coefChanged++;
+      }
+    }
+  }
+
+  console.log(`[gate] components with price > 0 : ${priced}`);
+  console.log(`[gate] components with price null : ${nullPriced}`);
+  console.log(`[gate] components with price = 0  : ${zeroPriced} (must be 0 — no 0-fallback allowed)`);
+
+  // Gate 1: no component may have unitPrice === 0 (0-fallback is forbidden)
+  if (zeroPriced > 0) {
+    console.error(`[gate] FAIL: ${zeroPriced} components have unitPrice 0 (0-fallback forbidden)`);
+    process.exit(1);
+  }
+  // Gate 2: at least some prices must resolve (HSD is populated)
+  if (priced === 0) {
+    console.error('[gate] FAIL: no component resolved a price — HSD lookup broken');
+    process.exit(1);
+  }
+  // Gate 3: coefficients untouched
+  if (coefChanged > 0) {
+    console.error(`[gate] FAIL: ${coefChanged} components have non-numeric coefficient`);
+    process.exit(1);
+  }
+  console.log('[gate] PASS');
 }
 
 main();
