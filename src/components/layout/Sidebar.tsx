@@ -31,6 +31,7 @@ import {
   Calendar,
   Search,
   LifeBuoy,
+  Pin,
 } from 'lucide-react';
 import { Project } from '../../types';
 import { useI18n } from '../../i18n';
@@ -70,7 +71,7 @@ interface RailDef {
   ai?: boolean;
   active: boolean;
   onClick: () => void;
-  anchor?: AnchorKey;
+  anchor?: FlyoutKey;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -98,6 +99,80 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Desktop flyout: only one open at a time ('picker' shares the anchor slot)
   const [openFlyout, setOpenFlyout] = useState<FlyoutKey | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; label: string } | null>(null);
+
+  // Auto-expand + pin: collapsed (80px) -> hover-expanded (264px overlay) -> pinned.
+  // Pin persists in localStorage, same convention as ThemeContext's ezrab_theme.
+  const [pinned, setPinned] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('ezrab_sidebar_pinned') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const [hoverOpen, setHoverOpen] = useState(false);
+  const expanded = pinned || hoverOpen;
+  const openTimer = useRef<number | null>(null);
+  const closeTimer = useRef<number | null>(null);
+  const pointerInside = useRef(false);
+
+  const clearHoverTimers = () => {
+    if (openTimer.current !== null) {
+      window.clearTimeout(openTimer.current);
+      openTimer.current = null;
+    }
+    if (closeTimer.current !== null) {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  };
+
+  const togglePin = () => {
+    const next = !pinned;
+    try {
+      localStorage.setItem('ezrab_sidebar_pinned', next ? '1' : '0');
+    } catch {
+      /* abaikan jika storage tidak tersedia */
+    }
+    setPinned(next);
+    // Unpin while the pointer is still inside: fall back to hover mode so the
+    // panel stays open until pointer leave (auto-collapse resumes naturally).
+    setHoverOpen(pointerInside.current && !next);
+  };
+
+  const handleRailPointerEnter = () => {
+    if (isMobile) return;
+    if (typeof window !== 'undefined' && window.matchMedia && !window.matchMedia('(hover: hover)').matches)
+      return;
+    pointerInside.current = true;
+    if (closeTimer.current !== null) {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    if (pinned || hoverOpen) return;
+    if (openTimer.current !== null) return;
+    openTimer.current = window.setTimeout(() => {
+      openTimer.current = null;
+      setOpenFlyout(null);
+      setProjectPickerOpen(false);
+      setHoverOpen(true);
+    }, 120);
+  };
+
+  const handleRailPointerLeave = () => {
+    pointerInside.current = false;
+    if (openTimer.current !== null) {
+      window.clearTimeout(openTimer.current);
+      openTimer.current = null;
+    }
+    if (pinned) return;
+    if (closeTimer.current !== null) return;
+    closeTimer.current = window.setTimeout(() => {
+      closeTimer.current = null;
+      setHoverOpen(false);
+    }, 150);
+  };
+
+  useEffect(() => clearHoverTimers, []);
 
   // Refs for white-pill + flyout positioning (absolute, relative to the rail)
   const railRef = useRef<HTMLElement | null>(null);
@@ -325,6 +400,279 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setProjectPickerOpen((v) => !v);
   };
 
+  /* ---------------- Expanded overlay panel (hover / pin) ---------------- */
+  const submenuOpenFor = (anchor: FlyoutKey): boolean => {
+    if (anchor === 'proyek') return proyekSubmenuOpen;
+    if (anchor === 'volume') return volumeSubmenuOpen;
+    if (anchor === 'rab') return rabSubmenuOpen;
+    return databaseSubmenuOpen;
+  };
+
+  const toggleSubmenu = (anchor: FlyoutKey) => {
+    if (anchor === 'proyek') setProyekSubmenuOpen((v) => !v);
+    else if (anchor === 'volume') setVolumeSubmenuOpen((v) => !v);
+    else if (anchor === 'rab') setRabSubmenuOpen((v) => !v);
+    else setDatabaseSubmenuOpen((v) => !v);
+  };
+
+  interface InlineSubRow {
+    id: string;
+    label: string;
+    icon?: React.ComponentType<{ size?: number }>;
+    count?: number;
+    active: boolean;
+    onClick: () => void;
+  }
+
+  // Same rows as the collapsed flyouts, reused for the expanded inline groups.
+  const submenuRows = (anchor: FlyoutKey): InlineSubRow[] => {
+    const closeFly = () => setOpenFlyout(null);
+    if (anchor === 'proyek') {
+      return [
+        ...proyekFilters.map((f) => ({
+          id: f.filter,
+          label: f.label,
+          count: f.count,
+          active: activeMenu === 'proyek' && projectFilter === f.filter,
+          onClick: () => {
+            onSelectProjectFilter(f.filter);
+            onSelectMenu('proyek', null);
+            closeFly();
+          },
+        })),
+        {
+          id: 'qto-x',
+          label: 'Volume & QTO',
+          icon: Ruler,
+          active: false,
+          onClick: () => {
+            onSelectMenu('qto');
+            closeFly();
+          },
+        },
+        {
+          id: 'manajemen-x',
+          label: 'Jadwal & Manajemen',
+          icon: Calendar,
+          active: activeMenu === 'manajemen-proyek',
+          onClick: () => {
+            onSelectMenu('manajemen-proyek');
+            closeFly();
+          },
+        },
+      ];
+    }
+    const mapSubs = (
+      subs: { id: string; label: string; icon: React.ComponentType<{ size?: number }>; match: (m: string) => boolean }[]
+    ): InlineSubRow[] =>
+      subs.map((sub) => ({
+        id: sub.id,
+        label: sub.label,
+        icon: sub.icon,
+        active: sub.match(activeMenu),
+        onClick: () => {
+          onSelectMenu(sub.id);
+          closeFly();
+        },
+      }));
+    if (anchor === 'volume') return mapSubs(volumeSubItems);
+    if (anchor === 'rab') return mapSubs(rabSubItems);
+    return mapSubs(databaseSubItems);
+  };
+
+  // Section labels for the expanded panel, aligned with railGroups indices.
+  const railGroupLabels: (string | null)[] = [null, null, null, 'AI', 'Data & Referensi', 'Lainnya'];
+
+  const pinLabel = pinned ? 'Lepas kunci sidebar' : 'Kunci sidebar';
+
+  const renderExpandedRow = (def: RailDef) => {
+    const anchor = def.anchor;
+    return (
+    <div className="pf-expand-navitem">
+      <button
+        type="button"
+        onClick={def.onClick}
+        aria-label={def.label}
+        aria-current={def.active ? 'page' : undefined}
+        className={`pf-expand-row${def.active ? ' is-active' : ''}`}
+      >
+        <def.icon size={19} />
+        <span className="pf-row-label">{def.label}</span>
+        {def.ai && <span className="pf-ai-dot" aria-hidden="true" />}
+      </button>
+      {anchor && (
+        <button
+          type="button"
+          className="pf-expand-chev"
+          aria-label={submenuOpenFor(anchor) ? `Tutup submenu ${def.label}` : `Buka submenu ${def.label}`}
+          aria-expanded={submenuOpenFor(anchor)}
+          onClick={() => toggleSubmenu(anchor)}
+        >
+          <ChevronDown
+            size={15}
+            style={{
+              transform: submenuOpenFor(anchor) ? 'rotate(180deg)' : 'none',
+              transition: 'transform 0.2s ease',
+            }}
+          />
+        </button>
+      )}
+    </div>
+    );
+  };
+
+  const renderExpandedSubmenu = (anchor: FlyoutKey) => (
+    <div className="pf-expand-sub">
+      {submenuRows(anchor).map((row) => (
+        <button
+          key={row.id}
+          type="button"
+          onClick={row.onClick}
+          aria-label={row.label}
+          aria-current={row.active ? 'page' : undefined}
+          className={`pf-expand-row${row.active ? ' is-active' : ''}`}
+        >
+          {row.icon && <row.icon size={16} />}
+          <span className="pf-row-label">{row.label}</span>
+          {typeof row.count === 'number' && row.count > 0 && (
+            <span className="pf-expand-count">{row.count}</span>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+
+  const renderExpandedPanel = () => (
+    <div className={`pf-expand${expanded ? ' is-open' : ''}`} aria-hidden={!expanded} inert={!expanded}>
+      <div className="pf-expand-head">
+        <span className="pf-logo-chip">
+          <img src="/images/ez-logo.png" alt="EZRAB" style={{ height: 22, width: 'auto' }} />
+        </span>
+        <span className="pf-expand-wordmark">EZRAB</span>
+        <button
+          type="button"
+          className="pf-pin-toggle"
+          aria-pressed={pinned}
+          aria-label={pinLabel}
+          title={pinLabel}
+          onClick={togglePin}
+        >
+          <Pin size={16} fill={pinned ? 'currentColor' : 'none'} />
+        </button>
+      </div>
+
+      <div className="pf-expand-search">
+        <button
+          type="button"
+          className="pf-search-field"
+          onClick={handleSearchClick}
+          aria-label={`${t('common.cari')} (Ctrl+K)`}
+        >
+          <Search size={16} />
+          <span>{t('common.cari')}…</span>
+          <kbd>⌘K</kbd>
+        </button>
+      </div>
+
+      <div className="pf-expand-scroll">
+        <button
+          type="button"
+          className="pf-expand-row"
+          onClick={() => setProjectPickerOpen((v) => !v)}
+          aria-expanded={projectPickerOpen}
+          aria-label={currentProject?.name || t('nav.proyek')}
+        >
+          <Building2 size={19} />
+          <span className="pf-row-label">{currentProject?.name || t('nav.proyek')}</span>
+          <ChevronDown
+            size={15}
+            style={{
+              transform: projectPickerOpen ? 'rotate(180deg)' : 'none',
+              transition: 'transform 0.2s ease',
+              flexShrink: 0,
+            }}
+          />
+        </button>
+        {projectPickerOpen && (
+          <div className="pf-expand-sub">
+            {projects.map((proj) => {
+              const isSelected = currentProject?.id === proj.id;
+              return (
+                <button
+                  key={proj.id}
+                  type="button"
+                  onClick={() => {
+                    onSelectProjectFilter('Semua Proyek');
+                    onSelectMenu('proyek', proj.id);
+                    setProjectPickerOpen(false);
+                  }}
+                  className={`pf-expand-row${isSelected ? ' is-active' : ''}`}
+                >
+                  <span className="pf-row-label">{proj.name}</span>
+                  {isSelected && <Check size={14} />}
+                </button>
+              );
+            })}
+            <button type="button" onClick={() => onSelectMenu('proyek')} className="pf-expand-row">
+              <Plus size={16} />
+              <span className="pf-row-label">+ {t('nav.buat_proyek_baru')}</span>
+            </button>
+          </div>
+        )}
+
+        {railGroups.map((group, gi) => (
+          <React.Fragment key={gi}>
+            {railGroupLabels[gi] && <div className="pf-expand-section">{railGroupLabels[gi]}</div>}
+            {group.map((def) => (
+              <React.Fragment key={def.key}>
+                {renderExpandedRow(def)}
+                {def.anchor && submenuOpenFor(def.anchor) && renderExpandedSubmenu(def.anchor)}
+              </React.Fragment>
+            ))}
+          </React.Fragment>
+        ))}
+      </div>
+
+      <div className="pf-expand-bottom">
+        <button
+          type="button"
+          className="pf-expand-row"
+          onClick={() => {
+            if (onOpenSettingsTab) onOpenSettingsTab('help');
+            else onSelectMenu('pengaturan');
+          }}
+          aria-label="Bantuan"
+        >
+          <LifeBuoy size={19} />
+          <span className="pf-row-label">Bantuan</span>
+        </button>
+        <button
+          type="button"
+          className="pf-expand-row"
+          onClick={() => onSelectMenu('pengaturan')}
+          aria-label="Profil"
+        >
+          <UserIcon size={19} />
+          <span className="pf-row-label">Profil</span>
+        </button>
+        <button
+          type="button"
+          className="pf-expand-row"
+          onClick={() => {
+            if (window.confirm('Apakah Anda yakin ingin keluar ke halaman beranda?')) {
+              onCloseMobileDrawer();
+              onBackToLanding?.();
+            }
+          }}
+          aria-label="Keluar"
+        >
+          <LogOut size={19} />
+          <span className="pf-row-label">Keluar</span>
+        </button>
+      </div>
+    </div>
+  );
+
   /* ---------------- Rail item definitions (keeps existing order & menu ids) ---------------- */
   const railGroups: RailDef[][] = [
     [
@@ -373,7 +721,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       },
       {
         key: 'manajemen',
-        label: t('nav.manajemen_proyek'),
+        label: 'Manajemen Proyek', // canonical label (routes.ts routeLabels); nav.manajemen_proyek tidak ada di kamus
         icon: Calendar,
         active: activeMenu === 'manajemen-proyek',
         onClick: () => onSelectMenu('manajemen-proyek'),
@@ -629,7 +977,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="pf-flyout-row"
           >
             <Plus size={15} />
-            <span>+ {t('nav.buat_proyek')}</span>
+            <span>+ {t('nav.buat_proyek_baru')}</span>
           </button>
         </div>
       );
@@ -759,7 +1107,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   if (!isMobile) {
     return (
       <>
-        <aside ref={railRef} className="pf-rail" aria-label="Navigasi utama EZRAB">
+        <aside
+          ref={railRef}
+          className="pf-railwrap"
+          aria-label="Navigasi utama EZRAB"
+          onPointerEnter={handleRailPointerEnter}
+          onPointerLeave={handleRailPointerLeave}
+        >
+          <div className="pf-rail">
           <div
             className="pf-rail-logo"
             onClick={logoClickHandler}
@@ -771,10 +1126,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
             title={`EZRAB — ${t('nav.back_landing')}`}
             aria-label={`EZRAB — ${t('nav.back_landing')}`}
           >
-            <img src="/images/ez-logo.png" alt="EZRAB" style={{ height: 26, width: 'auto', display: 'block' }} />
+            <span className="pf-logo-chip">
+              <img src="/images/ez-logo.png" alt="EZRAB" style={{ height: 22, width: 'auto' }} />
+            </span>
           </div>
 
           <div className="pf-rail-scroll" ref={navScrollRef}>
+            <button
+              type="button"
+              onClick={togglePin}
+              onMouseEnter={(e) => handleMouseEnterItem(e, pinLabel)}
+              onMouseLeave={handleMouseLeaveItem}
+              onFocus={(e) => handleMouseEnterItem(e, pinLabel)}
+              onBlur={handleMouseLeaveItem}
+              aria-label={pinLabel}
+              aria-pressed={pinned}
+              title={pinLabel}
+              className="pf-rail-btn pf-pin-btn"
+            >
+              <Pin size={17} fill={pinned ? 'currentColor' : 'none'} />
+            </button>
+            <div className="pf-rail-divider" aria-hidden="true" />
             <button
               ref={registerBtn('search')}
               type="button"
@@ -861,9 +1233,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <LogOut size={20} />
             </button>
           </div>
+          </div>{/* /.pf-rail */}
 
-          {/* White active capsule — outside the scroll column, never clipped */}
-          {pillGeom && (
+          {renderExpandedPanel()}
+
+          {/* White active capsule — outside the scroll column, never clipped.
+              Hidden while the expanded overlay covers the rail. */}
+          {pillGeom && !expanded && (
             <span
               className="pf-pill"
               aria-hidden="true"
@@ -871,28 +1247,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           )}
 
-          {renderFlyout()}
+          {!expanded && renderFlyout()}
         </aside>
 
-        {tooltipPos && (
+        {tooltipPos && !expanded && (
           <div
             role="tooltip"
+            className="pf-tooltip"
             style={{
-              position: 'fixed',
-              left: 84,
               top: tooltipPos.top,
-              transform: 'translateY(-50%)',
-              background: '#141926',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: '#f1f5f9',
-              fontSize: 12,
-              fontWeight: 600,
-              padding: '6px 10px',
-              borderRadius: 8,
-              whiteSpace: 'nowrap',
-              zIndex: 10000,
-              pointerEvents: 'none',
-              boxShadow: '0 8px 20px rgba(0,0,0,0.4)',
             }}
           >
             {tooltipPos.label}
@@ -921,7 +1284,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     >
       <Icon size={19} />
       <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
-      {ai && <span className="pf-ai-dot" style={{ position: 'static', boxShadow: 'none' }} aria-hidden="true" />}
+      {ai && <span className="pf-ai-dot" aria-hidden="true" />}
     </button>
   );
 
@@ -957,34 +1320,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         aria-hidden={!mobileDrawerOpen}
         inert={!mobileDrawerOpen}
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '14px 16px 8px',
-            flex: '0 0 auto',
-          }}
-        >
+        <div className="pf-drawer-head">
           <div onClick={logoClickHandler} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-            <img src="/images/ez-logo.png" alt="EZRAB" style={{ height: 30, width: 'auto', display: 'block' }} />
+            <span className="pf-logo-chip">
+              <img src="/images/ez-logo.png" alt="EZRAB" style={{ height: 24, width: 'auto' }} />
+            </span>
           </div>
           <button
             type="button"
             onClick={onCloseMobileDrawer}
             aria-label={t('common.tutup')}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              border: 'none',
-              background: 'rgba(255,255,255,0.06)',
-              color: '#9aa4b8',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
+            className="pf-drawer-close"
           >
             <X size={16} />
           </button>
@@ -1035,7 +1381,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               })}
               <button type="button" onClick={() => onSelectMenu('proyek')} className="pf-drawer-row">
                 <Plus size={16} />
-                <span style={{ flex: 1 }}>+ {t('nav.buat_proyek')}</span>
+                <span style={{ flex: 1 }}>+ {t('nav.buat_proyek_baru')}</span>
               </button>
             </div>
           )}
@@ -1044,18 +1390,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button type="button" onClick={handleSearchClick} className="pf-drawer-row">
             <Search size={19} />
             <span style={{ flex: 1 }}>{t('common.cari')}…</span>
-            <kbd
-              style={{
-                fontSize: 10,
-                padding: '2px 6px',
-                borderRadius: 6,
-                background: 'rgba(255,255,255,0.08)',
-                color: '#9aa4b8',
-                fontFamily: 'inherit',
-              }}
-            >
-              ⌘K
-            </kbd>
+            <kbd className="pf-drawer-kbd">⌘K</kbd>
           </button>
 
           <div className="pf-drawer-section">Menu</div>
@@ -1118,20 +1453,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     className={`pf-drawer-row${isSelected ? ' is-active' : ''}`}
                   >
                     <span style={{ flex: 1 }}>{f.label}</span>
-                    {f.count > 0 && (
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          padding: '1px 8px',
-                          borderRadius: 999,
-                          background: isSelected ? 'rgba(11,13,18,0.08)' : 'rgba(255,255,255,0.1)',
-                          color: isSelected ? '#0f172a' : '#c7d0e0',
-                        }}
-                      >
-                        {f.count}
-                      </span>
-                    )}
+                    {f.count > 0 && <span className="pf-count-badge">{f.count}</span>}
                   </button>
                 );
               })}
@@ -1218,7 +1540,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
           {rabSubmenuOpen && drawerSub(rabSubItems, (id) => rabSubItems.find((s) => s.id === id)?.match(activeMenu) ?? false)}
 
-          {drawerRow('manajemen-proyek', t('nav.manajemen_proyek'), Calendar, activeMenu === 'manajemen-proyek', () =>
+          {drawerRow('manajemen-proyek', 'Manajemen Proyek', Calendar, activeMenu === 'manajemen-proyek', () =>
             onSelectMenu('manajemen-proyek')
           )}
           {drawerRow('laporan', t('nav.laporan'), FileText, isItemActive(findNav('laporan')), () =>
@@ -1295,7 +1617,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        <div style={{ flex: '0 0 auto', padding: '8px 12px 16px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div className="pf-drawer-foot">
           <button
             type="button"
             onClick={() => {
