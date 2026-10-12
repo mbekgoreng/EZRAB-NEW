@@ -166,14 +166,14 @@ export const ProjectFinanceView: React.FC<ProjectFinanceViewProps> = ({
       <div
         style={{
           backgroundColor: '#FFFFFF',
-          borderRadius: '14px',
-          border: '1px solid #E2E8F0',
+          borderRadius: '22px',
+          border: '1px solid #EEF1F6',
           padding: '6px 8px',
           display: 'flex',
           alignItems: 'center',
           gap: '4px',
           overflowX: 'auto',
-          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
         }}
       >
         {subNavTabs.map((tab) => {
@@ -189,7 +189,7 @@ export const ProjectFinanceView: React.FC<ProjectFinanceViewProps> = ({
                 alignItems: 'center',
                 gap: '6px',
                 padding: '8px 12px',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 border: 'none',
                 backgroundColor: isActive ? '#2563EB' : 'transparent',
                 color: isActive ? '#FFFFFF' : '#475569',

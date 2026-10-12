@@ -252,14 +252,13 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 1: Nilai Kontrak */}
         <div
           style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '12px',
-            border: '1px solid #E2E8F0',
-            padding: '16px',
+            backgroundColor: '#FDF3D8',
+            borderRadius: '22px',
+            padding: '20px',
             display: 'flex',
             flexDirection: 'column',
             gap: '6px',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -288,14 +287,13 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 2: Total Budget / RAB */}
         <div
           style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '12px',
-            border: '1px solid #E2E8F0',
-            padding: '16px',
+            backgroundColor: '#E2F4D8',
+            borderRadius: '22px',
+            padding: '20px',
             display: 'flex',
             flexDirection: 'column',
             gap: '6px',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -324,14 +322,13 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 3: Actual Cost (Pengeluaran Riil) */}
         <div
           style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '12px',
-            border: '1px solid #E2E8F0',
-            padding: '16px',
+            backgroundColor: '#FFE9D6',
+            borderRadius: '22px',
+            padding: '20px',
             display: 'flex',
             flexDirection: 'column',
             gap: '6px',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -349,14 +346,13 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 4: Cash In (Penerimaan Riil) */}
         <div
           style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '12px',
-            border: '1px solid #E2E8F0',
-            padding: '16px',
+            backgroundColor: '#E3EEFB',
+            borderRadius: '22px',
+            padding: '20px',
             display: 'flex',
             flexDirection: 'column',
             gap: '6px',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -374,14 +370,13 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 5: Outstanding Piutang */}
         <div
           style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '12px',
-            border: '1px solid #E2E8F0',
-            padding: '16px',
+            backgroundColor: '#FDF3D8',
+            borderRadius: '22px',
+            padding: '20px',
             display: 'flex',
             flexDirection: 'column',
             gap: '6px',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -403,14 +398,13 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 6: Profit Sementara & Margin */}
         <div
           style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '12px',
-            border: '1px solid #E2E8F0',
-            padding: '16px',
+            backgroundColor: '#E2F4D8',
+            borderRadius: '22px',
+            padding: '20px',
             display: 'flex',
             flexDirection: 'column',
             gap: '6px',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

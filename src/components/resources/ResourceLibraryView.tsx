@@ -521,8 +521,8 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
               {activeTab === 'MATERIAL' ? 'Material & Harga' : activeTab === 'LABOR' ? 'Standar Upah' : activeTab === 'EQUIPMENT' ? 'Tarif Peralatan' : 'Supplier & Vendor'}
             </span>
           </div>
-          <h1 style={{ fontSize: '19px', fontWeight: 800, color: '#0F172A', margin: '3px 0 0 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Database size={20} color="#2563EB" />
+          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#141412', margin: '3px 0 0 0', display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '-0.3px', fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
+            <Database size={22} color="#2563EB" />
             {activeTab === 'MATERIAL' ? 'Material & Harga' : activeTab === 'LABOR' ? 'Database Standar Upah' : activeTab === 'EQUIPMENT' ? 'Database Sewa Peralatan' : 'Daftar Supplier & Vendor'}
           </h1>
           <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748B' }}>

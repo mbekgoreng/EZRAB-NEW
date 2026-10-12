@@ -79,7 +79,7 @@ export const DokumenAiView: React.FC = () => {
       <div className="docai-hero">
         <div className="docai-hero-icon"><Sparkles size={22} /></div>
         <div>
-          <h2>Dokumen AI 📄✨</h2>
+          <h2>Dokumen AI</h2>
           <p>Unggah PDF, DOCX, atau XLSX — AI membaca isinya untuk merangkum, menjawab, mengekstrak, dan membandingkan.</p>
         </div>
       </div>

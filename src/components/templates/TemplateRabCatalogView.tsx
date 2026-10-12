@@ -318,9 +318,9 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
       <div
         style={{
           background: '#FFFFFF',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
-          padding: '14px 20px',
+          borderRadius: '22px',
+          border: '1px solid #EEF1F6',
+          padding: '18px 24px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -346,7 +346,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+              <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#141412', margin: 0, letterSpacing: '-0.3px', fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
                 Template RAB Konstruksi
               </h1>
               <span
@@ -436,8 +436,8 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
       <div
         style={{
           background: '#FFFFFF',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
+          borderRadius: '22px',
+          border: '1px solid #EEF1F6',
           padding: '10px 16px',
           display: 'flex',
           alignItems: 'center',
@@ -583,8 +583,8 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
             width: '240px',
             flexShrink: 0,
             background: '#FFFFFF',
-            borderRadius: '12px',
-            border: '1px solid #E2E8F0',
+            borderRadius: '22px',
+            border: '1px solid #EEF1F6',
             padding: '12px',
             display: 'flex',
             flexDirection: 'column',
@@ -782,8 +782,8 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
             <div
               style={{
                 background: '#FFFFFF',
-                borderRadius: '12px',
-                border: '1px solid #E2E8F0',
+                borderRadius: '22px',
+                border: '1px solid #EEF1F6',
                 padding: '48px 24px',
                 textAlign: 'center'
               }}
@@ -838,8 +838,8 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                     key={tpl.id}
                     style={{
                       background: '#FFFFFF',
-                      borderRadius: '12px',
-                      border: isUser ? '1px solid #BFDBFE' : '1px solid #E2E8F0',
+                      borderRadius: '22px',
+                      border: isUser ? '1px solid #BFDBFE' : '1px solid #EEF1F6',
                       padding: '14px 16px',
                       display: 'flex',
                       flexDirection: 'column',

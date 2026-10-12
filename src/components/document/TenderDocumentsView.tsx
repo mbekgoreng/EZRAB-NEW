@@ -261,9 +261,9 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
   // 0. JOB SELECTION SCREEN (Section 2)
   if (!activeProject || isSelectingJob) {
     return (
-      <div style={{ fontFamily: "'Inter', system-ui", color: '#0F172A', maxWidth: 900, margin: '0 auto', padding: '24px 0' }}>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif", color: '#141412', maxWidth: 900, margin: '0 auto', padding: '24px 0' }}>
         <div style={{ marginBottom: 28, textAlign: 'center' }}>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', color: '#0F172A' }}>
+          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 800, letterSpacing: '-0.3px', color: '#141412', fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
             Pilih Pekerjaan
           </h1>
           <p style={{ margin: '8px 0 0', color: '#64748B', fontSize: 14 }}>

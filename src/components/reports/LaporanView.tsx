@@ -977,11 +977,10 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 {/* Card 1: Total Nilai RAB */}
                 <div
                   style={{
-                    background: '#ffffff',
-                    borderRadius: '16px',
-                    border: '1px solid #EEF2F7',
-                    padding: '16px 20px',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
+                    background: '#FDF3D8',
+                    borderRadius: '22px',
+                    padding: '20px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -1010,11 +1009,10 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 {/* Card 2: Total Item Pekerjaan */}
                 <div
                   style={{
-                    background: '#ffffff',
-                    borderRadius: '16px',
-                    border: '1px solid #EEF2F7',
-                    padding: '16px 20px',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
+                    background: '#E2F4D8',
+                    borderRadius: '22px',
+                    padding: '20px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -1043,11 +1041,10 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 {/* Card 3: Total Volume */}
                 <div
                   style={{
-                    background: '#ffffff',
-                    borderRadius: '16px',
-                    border: '1px solid #EEF2F7',
-                    padding: '16px 20px',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
+                    background: '#FFE9D6',
+                    borderRadius: '22px',
+                    padding: '20px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -1076,11 +1073,10 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 {/* Card 4: Progress */}
                 <div
                   style={{
-                    background: '#ffffff',
-                    borderRadius: '16px',
-                    border: '1px solid #EEF2F7',
-                    padding: '16px 20px',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
+                    background: '#E3EEFB',
+                    borderRadius: '22px',
+                    padding: '20px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',

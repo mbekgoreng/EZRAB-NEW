@@ -117,7 +117,7 @@ export const DedAiEstimateView: React.FC = () => {
     <div style={{ padding: '8px 24px 40px', maxWidth: 1100, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
         <span style={{ background: '#DCFCE7', color: '#15803D', fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 99 }}>BARU</span>
-        <h2 style={{ margin: 0, fontSize: 19, fontWeight: 800, color: '#0F172A' }}>DED AI Estimate</h2>
+        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 800, color: '#141412', letterSpacing: '-0.3px', fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>DED AI Estimate</h2>
       </div>
       <p style={{ margin: '0 0 16px', fontSize: 13, color: '#64748B' }}>
         Unggah gambar kerja (DED) → pilih tipe proyek &amp; mode → EZRAB menyusun daftar pekerjaan dengan estimasi volume &amp; harga satuan.
@@ -125,7 +125,7 @@ export const DedAiEstimateView: React.FC = () => {
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1.4fr 1fr', gap: 12, marginBottom: 14 }}>
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: 14 }}>
+        <div style={{ background: '#fff', border: '1px solid #EEF1F6', borderRadius: '22px', padding: '18px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em' }}>1 · File DED</div>
           <input ref={inputRef} type="file" accept=".pdf,application/pdf" style={{ display: 'none' }} onChange={(e) => onFileChange(e.target.files?.[0] || null)} />
           <button
@@ -145,7 +145,7 @@ export const DedAiEstimateView: React.FC = () => {
           </button>
         </div>
 
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: 14 }}>
+        <div style={{ background: '#fff', border: '1px solid #EEF1F6', borderRadius: '22px', padding: '18px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '.04em' }}>2 · Tipe Proyek &amp; Mode</div>
           <select
             value={projectType}

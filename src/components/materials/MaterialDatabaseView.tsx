@@ -490,7 +490,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <h1 style={{ fontSize: '20px', fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
+              <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#141412', margin: 0, letterSpacing: '-0.3px', fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
                 Material & Harga
               </h1>
               <span
@@ -859,10 +859,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           <div
             className="mat-kpi-card"
             style={{
-              backgroundColor: '#ffffff',
-              padding: '14px 16px',
-              borderRadius: '14px',
-              border: '1px solid #E2E8F0',
+              backgroundColor: '#FDF3D8',
+              padding: '18px',
+              borderRadius: '22px',
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
@@ -896,10 +895,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           <div
             className="mat-kpi-card"
             style={{
-              backgroundColor: '#ffffff',
-              padding: '14px 16px',
-              borderRadius: '14px',
-              border: '1px solid #E2E8F0',
+              backgroundColor: '#E2F4D8',
+              padding: '18px',
+              borderRadius: '22px',
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
@@ -933,10 +931,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           <div
             className="mat-kpi-card"
             style={{
-              backgroundColor: '#ffffff',
-              padding: '14px 16px',
-              borderRadius: '14px',
-              border: '1px solid #E2E8F0',
+              backgroundColor: '#FFE9D6',
+              padding: '18px',
+              borderRadius: '22px',
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
@@ -970,10 +967,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           <div
             className="mat-kpi-card"
             style={{
-              backgroundColor: '#ffffff',
-              padding: '14px 16px',
-              borderRadius: '14px',
-              border: '1px solid #E2E8F0',
+              backgroundColor: '#E3EEFB',
+              padding: '18px',
+              borderRadius: '22px',
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
@@ -1007,10 +1003,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           <div
             className="mat-kpi-card"
             style={{
-              backgroundColor: '#ffffff',
-              padding: '14px 16px',
-              borderRadius: '14px',
-              border: '1px solid #E2E8F0',
+              backgroundColor: '#FDF3D8',
+              padding: '18px',
+              borderRadius: '22px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
