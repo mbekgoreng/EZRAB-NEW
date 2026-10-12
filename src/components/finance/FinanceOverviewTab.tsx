@@ -250,7 +250,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
       {/* 2. Primary KPI Cards Grid (Section 6 & 7) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
         {/* KPI 1: Nilai Kontrak */}
-        <div
+        <div className="ez-stat"
           style={{
             backgroundColor: '#FDF3D8',
             borderRadius: '22px',
@@ -285,7 +285,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         </div>
 
         {/* KPI 2: Total Budget / RAB */}
-        <div
+        <div className="ez-stat"
           style={{
             backgroundColor: '#E2F4D8',
             borderRadius: '22px',
@@ -320,7 +320,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         </div>
 
         {/* KPI 3: Actual Cost (Pengeluaran Riil) */}
-        <div
+        <div className="ez-stat"
           style={{
             backgroundColor: '#FFE9D6',
             borderRadius: '22px',
@@ -344,7 +344,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         </div>
 
         {/* KPI 4: Cash In (Penerimaan Riil) */}
-        <div
+        <div className="ez-stat"
           style={{
             backgroundColor: '#E3EEFB',
             borderRadius: '22px',
@@ -368,7 +368,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         </div>
 
         {/* KPI 5: Outstanding Piutang */}
-        <div
+        <div className="ez-stat"
           style={{
             backgroundColor: '#FDF3D8',
             borderRadius: '22px',
@@ -396,7 +396,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         </div>
 
         {/* KPI 6: Profit Sementara & Margin */}
-        <div
+        <div className="ez-stat"
           style={{
             backgroundColor: '#E2F4D8',
             borderRadius: '22px',

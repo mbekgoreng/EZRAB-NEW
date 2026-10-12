@@ -975,7 +975,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 }}
               >
                 {/* Card 1: Total Nilai RAB */}
-                <div
+                <div className="ez-stat"
                   style={{
                     background: '#FDF3D8',
                     borderRadius: '22px',
@@ -1007,7 +1007,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 </div>
 
                 {/* Card 2: Total Item Pekerjaan */}
-                <div
+                <div className="ez-stat"
                   style={{
                     background: '#E2F4D8',
                     borderRadius: '22px',
@@ -1039,7 +1039,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 </div>
 
                 {/* Card 3: Total Volume */}
-                <div
+                <div className="ez-stat"
                   style={{
                     background: '#FFE9D6',
                     borderRadius: '22px',
@@ -1071,7 +1071,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 </div>
 
                 {/* Card 4: Progress */}
-                <div
+                <div className="ez-stat"
                   style={{
                     background: '#E3EEFB',
                     borderRadius: '22px',

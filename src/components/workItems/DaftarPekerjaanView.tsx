@@ -878,7 +878,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
          ========================================================================= */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
         {/* Card 1: Total Pekerjaan */}
-        <div style={{ background: '#FDF3D8', borderRadius: '22px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '6px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: '#FDF3D8', borderRadius: '22px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '6px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             TOTAL PEKERJAAN
           </span>
@@ -892,7 +892,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
         </div>
 
         {/* Card 2: Sudah Dihitung */}
-        <div style={{ background: '#E2F4D8', borderRadius: '22px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '6px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: '#E2F4D8', borderRadius: '22px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '6px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             SUDAH DIHITUNG
           </span>
@@ -906,7 +906,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
         </div>
 
         {/* Card 3: Terhubung AHSP */}
-        <div style={{ background: '#FFE9D6', borderRadius: '22px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '6px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: '#FFE9D6', borderRadius: '22px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '6px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             TERHUBUNG AHSP
           </span>
@@ -920,7 +920,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
         </div>
 
         {/* Card 4: Terhubung RAB */}
-        <div style={{ background: '#E3EEFB', borderRadius: '22px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '6px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: '#E3EEFB', borderRadius: '22px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '6px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             TERHUBUNG RAB
           </span>

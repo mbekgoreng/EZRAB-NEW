@@ -49,7 +49,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       }}
     >
       {/* 1. TOTAL RAB */}
-      <div
+      <div className="ez-stat"
         style={{
           background: '#FDF3D8',
           borderRadius: '20px',
@@ -105,7 +105,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       </div>
 
       {/* 2. TOTAL ITEM */}
-      <div
+      <div className="ez-stat"
         style={{
           background: '#E2F4D8',
           borderRadius: '20px',
@@ -146,7 +146,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       </div>
 
       {/* 3. TOTAL VOLUME */}
-      <div
+      <div className="ez-stat"
         style={{
           background: '#FFE9D6',
           borderRadius: '20px',
@@ -187,7 +187,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       </div>
 
       {/* 4. TERAKHIR DISIMPAN */}
-      <div
+      <div className="ez-stat"
         style={{
           background: '#E3EEFB',
           borderRadius: '20px',
@@ -236,7 +236,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       </div>
 
       {/* 5. PROGRESS ESTIMASI (Donut progress card) */}
-      <div
+      <div className="ez-stat"
         style={{
           background: '#FDF3D8',
           borderRadius: '20px',

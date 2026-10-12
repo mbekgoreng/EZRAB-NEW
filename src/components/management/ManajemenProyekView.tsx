@@ -269,7 +269,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-        <div style={{ background: '#FDF3D8', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: '#FDF3D8', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
               Target Rencana
@@ -284,7 +284,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
           </div>
         </div>
 
-        <div style={{ background: '#E2F4D8', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: '#E2F4D8', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
               Realisasi Lapangan
@@ -299,7 +299,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
           </div>
         </div>
 
-        <div style={{ background: '#FFE9D6', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: '#FFE9D6', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
               Total Nilai Proyek
@@ -314,7 +314,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
           </div>
         </div>
 
-        <div style={{ background: '#E3EEFB', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: '#E3EEFB', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
               Status Pelaksanaan

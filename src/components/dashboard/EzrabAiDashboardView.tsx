@@ -260,7 +260,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
         className="ezdb-stats"
         style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '18px' }}
       >
-        <div className="ezdb-anim" style={statCard('#FDF3D8', '0.05s')}>
+        <div className="ezdb-anim ez-stat" style={statCard('#FDF3D8', '0.05s')}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
             Total Nilai RAB
           </div>
@@ -272,7 +272,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
           </div>
         </div>
 
-        <div className="ezdb-anim" style={statCard('#E2F4D8', '0.12s')}>
+        <div className="ezdb-anim ez-stat" style={statCard('#E2F4D8', '0.12s')}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
             Proyek Aktif
           </div>
@@ -284,7 +284,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
           </div>
         </div>
 
-        <div className="ezdb-anim" style={statCard('#FFE9D6', '0.19s')}>
+        <div className="ezdb-anim ez-stat" style={statCard('#FFE9D6', '0.19s')}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
             Total Proyek
           </div>
@@ -296,7 +296,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
           </div>
         </div>
 
-        <div className="ezdb-anim" style={statCard('#E3EEFB', '0.26s')}>
+        <div className="ezdb-anim ez-stat" style={statCard('#E3EEFB', '0.26s')}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
             Selesai
           </div>

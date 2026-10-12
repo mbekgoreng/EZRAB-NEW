@@ -857,7 +857,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             >
           {/* Card 1: Material Terindeks */}
           <div
-            className="mat-kpi-card"
+            className="ez-stat mat-kpi-card"
             style={{
               backgroundColor: '#FDF3D8',
               padding: '18px',
@@ -893,7 +893,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
 
           {/* Card 2: Price Records */}
           <div
-            className="mat-kpi-card"
+            className="ez-stat mat-kpi-card"
             style={{
               backgroundColor: '#E2F4D8',
               padding: '18px',
@@ -929,7 +929,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
 
           {/* Card 3: Merek & Produsen */}
           <div
-            className="mat-kpi-card"
+            className="ez-stat mat-kpi-card"
             style={{
               backgroundColor: '#FFE9D6',
               padding: '18px',
@@ -965,7 +965,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
 
           {/* Card 4: Cakupan Wilayah */}
           <div
-            className="mat-kpi-card"
+            className="ez-stat mat-kpi-card"
             style={{
               backgroundColor: '#E3EEFB',
               padding: '18px',
@@ -1001,7 +1001,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
 
           {/* Card 5: Kualitas Data with Circular Ring */}
           <div
-            className="mat-kpi-card"
+            className="ez-stat mat-kpi-card"
             style={{
               backgroundColor: '#FDF3D8',
               padding: '18px',
