@@ -81,6 +81,7 @@ import { useProject } from '../../context/ProjectContext';
 import { useI18n } from '../../i18n';
 import { routeLabel, navigateTo, routeForMenu, type WorkspaceRoute } from '../../routing/routes';
 import '../layout/menu-animations.css';
+import '../layout/premium-frame.css';
 import '../../styles/dashboard-refined.css';
 import '../../styles/workspace-mobile-fixes.css';
 import { UnifiedBreadcrumb } from '../navigation/UnifiedBreadcrumb';
@@ -266,12 +267,11 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
 
   return (
     <div
+      className="pf-page"
       style={{
         minHeight: '100vh',
-        background: '#F2F7FF',
         fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif",
         color: '#0F172A',
-        display: 'flex',
       }}
     >
       {/* Mobile Drawer Backdrop Overlay */}
@@ -283,6 +283,9 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
         />
       )}
 
+      {/* PREMIUM FRAME — Layer 2 (outer dark frame) + Layer 3 (app panel) */}
+      <div className="pf-frame">
+        <div className="pf-panel">
       {/* =========================================================================
           LEFT SIDEBAR (DESKTOP) / SLIDE-OVER OFF-CANVAS DRAWER (MOBILE)
          ========================================================================= */}
@@ -309,6 +312,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           RIGHT MAIN AREA
          ========================================================================= */}
       <div
+        className="pf-main"
         style={{
           flexGrow: 1,
           display: 'flex',
@@ -858,6 +862,8 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           />
         </>
       )}
+        </div>
+      </div>
     </div>
   );
 };
