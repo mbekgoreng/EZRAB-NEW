@@ -15,8 +15,6 @@ import {
   PanelLeftOpen,
   X,
   ChevronDown,
-  LogOut,
-  User as UserIcon,
   Building2,
   Files,
   Check,
@@ -1317,107 +1315,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* =========================================================================
             BOTTOM: USER PROFILE & LOGOUT
            ========================================================================= */}
-        <div
-          style={{
-            padding: sidebarCollapsed && !isMobile ? '10px 8px' : '12px 14px',
-            borderTop: '1px solid #DCE4EE',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-            flexShrink: 0,
-            background: '#FFFFFF',
-          }}
-        >
-          {(!sidebarCollapsed || isMobile) && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '4px 6px',
-                borderRadius: '8px',
-              }}
-            >
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  background: '#FFFFFF',
-                  border: '1px solid #BFDBFE',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#2563EB',
-                  flexShrink: 0,
-                }}
-              >
-                <UserIcon size={16} />
-              </div>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div
-                  style={{
-                    fontSize: '12px',
-                    fontWeight: 650,
-                    color: '#0F172A',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  Estimator Pro
-                </div>
-                <div
-                  style={{
-                    fontSize: '10.5px',
-                    color: '#64748B',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  estimator@ezrab.id
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Logout button */}
-          <button
-            type="button"
-            onClick={() => {
-              if (onBackToLanding) {
-                if (window.confirm('Apakah Anda yakin ingin keluar ke halaman beranda?')) {
-                  onBackToLanding();
-                }
-              }
-            }}
-            onMouseEnter={(e) => handleMouseEnterItem(e, 'Keluar / Beranda', 'logout')}
-            onMouseLeave={handleMouseLeaveItem}
-            title={t('nav.back_landing')}
-            aria-label={t('nav.back_landing')}
-            style={{
-              width: '100%',
-              height: '36px',
-              borderRadius: '8px',
-              background: '#F8FAFC',
-              border: '1px solid #E2E8F0',
-              color: '#64748B',
-              fontSize: '12px',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
-              padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
-              gap: '10px',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            <LogOut size={16} />
-            {(!sidebarCollapsed || isMobile) && <span>Keluar / Beranda</span>}
-          </button>
-        </div>
       </aside>
 
       {/* Floating Tooltip when collapsed */}
