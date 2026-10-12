@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './menu-animations.css';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -416,10 +417,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <div
                   style={{
-                    width: '30px',
                     height: '30px',
-                    borderRadius: '9px',
-                    overflow: 'hidden',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -427,9 +425,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }}
                 >
                   <img
-                    src="/images/ez-emblem.png"
-                    alt="EZ"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                    src="/images/ez-logo.png"
+                    alt="EZRAB"
+                    style={{ height: '100%', width: 'auto', objectFit: 'contain', display: 'block' }}
                   />
                 </div>
               </div>
@@ -459,10 +457,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <div
                   style={{
-                    width: '34px',
-                    height: '34px',
-                    borderRadius: '10px',
-                    overflow: 'hidden',
+                    height: '40px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -470,27 +465,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }}
                 >
                   <img
-                    src="/images/ez-emblem.png"
-                    alt="EZ"
+                    src="/images/ez-logo.png"
+                    alt="EZRAB"
                     style={{
-                      width: '100%',
                       height: '100%',
+                      width: 'auto',
                       objectFit: 'contain',
                       display: 'block',
                     }}
                   />
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <span style={{ fontWeight: 800, fontSize: '16px', letterSpacing: '-0.025em', color: DK.text }}>
-                      EZRAB
-                    </span>
-                    <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: DK.active, display: 'inline-block' }} />
-                  </div>
-                  <span style={{ fontSize: '11px', color: DK.text2, fontWeight: 500, letterSpacing: '0.01em' }}>
-                    Construction Tech
-                  </span>
                 </div>
               </div>
 
@@ -912,6 +895,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {/* Sub-items Proyek */}
               {!collapsedRail && proyekSubmenuOpen && (
                 <div
+                  className="ezr-submenu-enter"
                   style={{
                     paddingLeft: '22px',
                     display: 'flex',
@@ -1108,6 +1092,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {/* Sub-items Volume Calculation */}
               {!collapsedRail && volumeSubmenuOpen && (
                 <div
+                  className="ezr-submenu-enter"
                   style={{
                     paddingLeft: '22px',
                     display: 'flex',
@@ -1231,6 +1216,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {/* Sub-items RAB & Estimasi */}
               {!collapsedRail && rabSubmenuOpen && (
                 <div
+                  className="ezr-submenu-enter"
                   style={{
                     paddingLeft: '22px',
                     display: 'flex',
@@ -1464,6 +1450,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {/* Expanded Database Submenu */}
                       {!collapsedRail && databaseSubmenuOpen && (
                         <div
+                          className="ezr-submenu-enter"
                           style={{
                             display: 'flex',
                             flexDirection: 'column',

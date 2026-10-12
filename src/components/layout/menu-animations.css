@@ -1,0 +1,57 @@
+/**
+ * menu-animations.css — animasi sidebar & transisi pindah menu workspace.
+ *
+ * - .ezr-submenu-enter : submenu sidebar meluncur turun saat dibuka
+ * - .ezr-menu-enter    : konten utama fade + geser naik saat pindah menu
+ * - Hormati prefers-reduced-motion
+ */
+
+@keyframes ezr-submenu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ezr-submenu-enter {
+  animation: ezr-submenu-enter 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: top center;
+}
+
+@keyframes ezr-menu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ezr-menu-enter {
+  animation: ezr-menu-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Active pill sidebar: transisi warna halus saat pindah item */
+.ezr-nav-item {
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.12s ease;
+}
+
+.ezr-nav-item:active {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ezr-submenu-enter,
+  .ezr-menu-enter {
+    animation: none;
+  }
+  .ezr-nav-item {
+    transition: none;
+  }
+}
