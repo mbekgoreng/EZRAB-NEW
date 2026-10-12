@@ -308,9 +308,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 top: 0,
                 height: '100%',
                 marginLeft: isHidden ? (sidebarCollapsed ? '-72px' : '-256px') : '0',
-                transition: 'margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 200ms ease-out',
                 zIndex: 40,
-                transition: 'width 200ms ease-out',
               }
         }
       >
