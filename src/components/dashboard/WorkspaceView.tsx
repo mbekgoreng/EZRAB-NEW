@@ -52,7 +52,7 @@ import { LaporanView } from '../reports/LaporanView';
 import { PengaturanView } from '../settings/PengaturanView';
 import { PricesExplorerView } from '../database/PricesExplorerView';
 import { ResourceLibraryView } from '../resources/ResourceLibraryView';
-import { EzrabAiDashboardView } from './EzrabAiDashboardView';
+import { DashboardViewSwitcher } from './DashboardViewSwitcher';
 import { PricingSection } from '../landing/PricingSection';
 import { EzrabAiAssistantFullView } from '../copilot/EzrabAiAssistantFullView';
 import { EzrabCoAssistantChatbox, ChatboxDisplayMode } from '../copilot/EzrabCoAssistantChatbox';
@@ -718,7 +718,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           </main>
         ) : (
           <main style={{ padding: isNarrowMobile ? '16px 14px' : '24px 28px', background: '#F8FAFC', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <EzrabAiDashboardView
+            <DashboardViewSwitcher
               projects={projects}
               onCreateProject={() => setCreateModalOpen(true)}
               onSelectProject={(projectId, menu = 'manajemen-proyek') => {
