@@ -1,0 +1,244 @@
+/* =========================================================================
+   ezrab-design-system.css — EZRAB Unified Design System
+   Visual source of truth: ~/workspace/your_files/ezrab-prototype/ezrab-v2-prototype.html
+   Additive only — defines tokens + reusable classes. Does not override
+   existing component styles. Light mode primary; dark via [data-theme="dark"].
+   ========================================================================= */
+
+:root {
+  /* ---- Canvas & surfaces ---- */
+  --ez-color-background: #F5F7FB;
+  --ez-color-surface: #FFFFFF;
+  --ez-color-surface-secondary: #F8FAFC;
+
+  /* ---- Sidebar & navigation ---- */
+  --ez-color-sidebar: #E9EEF5;
+  --ez-color-sidebar-border: #DCE4EE;
+  --ez-color-sidebar-text: #526176;
+  --ez-color-sidebar-active: #FFFFFF;
+  --ez-color-sidebar-hover: #DCE7F5;
+
+  /* ---- Text ---- */
+  --ez-color-text-primary: #26364B;
+  --ez-color-text-secondary: #526176;
+  --ez-color-text-muted: #7C899B;
+
+  /* ---- Borders & dividers ---- */
+  --ez-color-border: #DCE4EE;
+  --ez-color-border-soft: #EDF1F7;
+
+  /* ---- Primary / accent ---- */
+  --ez-color-primary: #2563EB;
+  --ez-color-primary-hover: #1D4ED8;
+  --ez-color-primary-soft: #DCE7F8;
+  --ez-color-accent: #d7f75b;
+
+  /* ---- Pastel category fills (from prototype) ---- */
+  --ez-pastel-cream: #fdf3d8;
+  --ez-pastel-mint: #e2f4d8;
+  --ez-pastel-peach: #ffe9d6;
+  --ez-pastel-sky: #e3eefb;
+
+  /* ---- Semantic ---- */
+  --ez-color-success: #27845B;
+  --ez-color-success-soft: #E3F3EA;
+  --ez-color-warning: #A66B12;
+  --ez-color-warning-soft: #FFF2D8;
+  --ez-color-danger: #B54747;
+  --ez-color-danger-soft: #FCE9E9;
+  --ez-color-info: #285DA8;
+  --ez-color-info-soft: #E5EEFC;
+
+  /* ---- Radius ---- */
+  --ez-radius-card: 22px;
+  --ez-radius-control: 12px;
+  --ez-radius-pill: 999px;
+
+  /* ---- Shadows ---- */
+  --ez-shadow-card: 0 4px 20px rgba(38, 54, 75, 0.045);
+  --ez-shadow-floating: 0 12px 36px rgba(38, 54, 75, 0.12);
+
+  /* ---- Spacing scale ---- */
+  --ez-spacing-xs: 8px;
+  --ez-spacing-sm: 12px;
+  --ez-spacing-md: 18px;
+  --ez-spacing-lg: 24px;
+  --ez-spacing-xl: 32px;
+
+  /* ---- Motion ---- */
+  --ez-motion-fast: 0.15s ease;
+  --ez-motion-medium: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---- Dark mode: soft slate blue-gray, never pure black ---- */
+[data-theme="dark"] {
+  --ez-color-background: #0F172A;
+  --ez-color-surface: #1A2438;
+  --ez-color-surface-secondary: #141D2E;
+  --ez-color-sidebar: #1B2433;
+  --ez-color-sidebar-border: #26334A;
+  --ez-color-sidebar-text: #9AA8BF;
+  --ez-color-sidebar-active: #243252;
+  --ez-color-sidebar-hover: #223052;
+  --ez-color-text-primary: #E6ECF5;
+  --ez-color-text-secondary: #9AA8BF;
+  --ez-color-text-muted: #8A99B0;
+  --ez-color-border: #26334A;
+  --ez-color-border-soft: #1E2A40;
+  --ez-shadow-card: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* =========================================================================
+   Reusable classes — stat cards with prototype's subtle patterns
+   ========================================================================= */
+
+/* Pastel stat card with dot-grid pattern + soft white circle accent */
+.ez-stat {
+  border-radius: var(--ez-radius-card);
+  padding: 22px;
+  box-shadow: var(--ez-shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+.ez-stat::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(38, 54, 75, 0.07) 1.2px, transparent 1.2px);
+  background-size: 18px 18px;
+  pointer-events: none;
+}
+.ez-stat::after {
+  content: '';
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  top: -70px;
+  right: -50px;
+  pointer-events: none;
+}
+.ez-stat > * {
+  position: relative;
+  z-index: 1;
+}
+.ez-stat-cream { background: var(--ez-pastel-cream); }
+.ez-stat-mint { background: var(--ez-pastel-mint); }
+.ez-stat-peach { background: var(--ez-pastel-peach); }
+.ez-stat-sky { background: var(--ez-pastel-sky); }
+.ez-stat .ez-stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b6b64;
+  margin-bottom: 8px;
+}
+.ez-stat .ez-stat-value {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: var(--ez-color-text-primary);
+}
+.ez-stat .ez-stat-sub {
+  font-size: 12px;
+  color: #6b6b64;
+  margin-top: 6px;
+}
+
+/* Mini highlight card with subtle dot pattern */
+.ez-mini {
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: var(--ez-shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+.ez-mini::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(38, 54, 75, 0.06) 1px, transparent 1px);
+  background-size: 16px 16px;
+  pointer-events: none;
+}
+.ez-mini > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Content card */
+.ez-card {
+  background: var(--ez-color-surface);
+  border-radius: var(--ez-radius-card);
+  padding: 24px;
+  box-shadow: var(--ez-shadow-card);
+}
+
+/* Status pills */
+.ez-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: var(--ez-radius-pill);
+  white-space: nowrap;
+  display: inline-block;
+}
+.ez-pill-ok { background: var(--ez-pastel-mint); color: #2c6e2c; }
+.ez-pill-run { background: var(--ez-pastel-sky); color: #2456a8; }
+.ez-pill-wait { background: var(--ez-pastel-cream); color: #a8780a; }
+.ez-pill-err { background: var(--ez-color-danger-soft); color: var(--ez-color-danger); }
+
+/* Buttons */
+.ez-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border-radius: var(--ez-radius-control);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: var(--ez-motion-fast);
+}
+.ez-btn-primary {
+  background: var(--ez-color-primary);
+  color: #fff;
+}
+.ez-btn-primary:hover { background: var(--ez-color-primary-hover); }
+.ez-btn-ghost {
+  background: var(--ez-color-surface);
+  border: 1px solid var(--ez-color-sidebar-border);
+  color: var(--ez-color-text-primary);
+}
+.ez-btn-ghost:hover {
+  border-color: var(--ez-color-primary);
+  color: var(--ez-color-primary);
+}
+
+/* Page header pattern */
+.ez-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 26px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.ez-page-header h1 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--ez-color-text-primary);
+  margin: 0;
+}
+.ez-page-header p {
+  font-size: 13px;
+  color: var(--ez-color-text-muted);
+  margin: 4px 0 0 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ez-stat, .ez-mini, .ez-card { animation: none !important; }
+}

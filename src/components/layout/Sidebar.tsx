@@ -11,8 +11,6 @@ import {
   LineChart,
   FileText,
   Settings,
-  PanelLeftClose,
-  PanelLeftOpen,
   X,
   ChevronDown,
   Building2,
@@ -73,6 +71,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { t } = useI18n();
   const [proyekSubmenuOpen, setProyekSubmenuOpen] = useState(true);
+  // Floating pill toggle: slides sidebar completely away (manual only, no auto-expand)
+  const [isHidden, setIsHidden] = useState(false);
   const [volumeSubmenuOpen, setVolumeSubmenuOpen] = useState(true);
   const [rabSubmenuOpen, setRabSubmenuOpen] = useState(true);
   const [projectPickerOpen, setProjectPickerOpen] = useState(false);
@@ -307,6 +307,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 position: 'sticky',
                 top: 0,
                 height: '100%',
+                marginLeft: isHidden ? (sidebarCollapsed ? '-72px' : '-256px') : '0',
+                transition: 'margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
                 zIndex: 40,
                 transition: 'width 200ms ease-out',
               }
@@ -379,8 +381,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
 
-            {/* Collapse toggle / Mobile close */}
-            {isMobile ? (
+            {/* Mobile drawer close (desktop uses floating pill toggle) */}
+            {isMobile && (
               <button
                 type="button"
                 onClick={onCloseMobileDrawer}
@@ -400,37 +402,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <X size={16} />
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={onToggleCollapse}
-                title={sidebarCollapsed ? t('nav.expand') : t('nav.collapse')}
-                aria-label={sidebarCollapsed ? t('nav.expand') : t('nav.collapse')}
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: '#F8FAFC',
-                  color: '#64748B',
-                  border: '1px solid #E2E8F0',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#F1F5F9';
-                  e.currentTarget.style.color = '#0F172A';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#F8FAFC';
-                  e.currentTarget.style.color = '#64748B';
-                }}
-              >
-                {sidebarCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
-              </button>
             )}
+
           </div>
 
           {/* Workspace Selector: Proyek Saat Ini Dropdown */}
@@ -1316,6 +1289,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
             BOTTOM: USER PROFILE & LOGOUT
            ========================================================================= */}
       </aside>
+
+      {/* Floating pill toggle — distinctive hide/show control on sidebar boundary.
+          NOT a conventional header chevron; NOT auto-expand on hover. */}
+      {!isMobile && (
+        <button
+          type="button"
+          onClick={() => setIsHidden((v) => !v)}
+          title={isHidden ? 'Tampilkan sidebar' : 'Sembunyikan sidebar'}
+          aria-label={isHidden ? 'Tampilkan sidebar' : 'Sembunyikan sidebar'}
+          aria-pressed={isHidden}
+          style={{
+            position: 'fixed',
+            left: isHidden ? '8px' : sidebarCollapsed ? '60px' : '244px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '28px',
+            height: '64px',
+            borderRadius: '99px',
+            background: '#FFFFFF',
+            border: '1px solid #DCE4EE',
+            boxShadow: '0 4px 16px rgba(38,54,75,0.12)',
+            cursor: 'pointer',
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'left 0.35s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, color 0.2s',
+            color: '#64748B',
+            fontSize: '14px',
+            fontWeight: 700,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#2563EB';
+            e.currentTarget.style.borderColor = '#2563EB';
+            e.currentTarget.style.color = '#FFFFFF';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#FFFFFF';
+            e.currentTarget.style.borderColor = '#DCE4EE';
+            e.currentTarget.style.color = '#64748B';
+          }}
+        >
+          {isHidden ? '›' : '‹'}
+        </button>
+      )}
 
       {/* Floating Tooltip when collapsed */}
       {!isMobile && sidebarCollapsed && tooltipPos && (
