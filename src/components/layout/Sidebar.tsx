@@ -32,7 +32,10 @@ import {
   Search,
   LifeBuoy,
   Pin,
+  Sun,
+  Moon,
 } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 import { Project } from '../../types';
 import { useI18n } from '../../i18n';
 
@@ -73,6 +76,32 @@ interface RailDef {
   onClick: () => void;
   anchor?: FlyoutKey;
 }
+
+/** Toggle light/dark via ThemeContext — membuat dark mode bisa diakses dari workspace. */
+const ThemeToggleButton: React.FC<{
+  handleMouseEnterItem: (e: { currentTarget: HTMLElement }, label: string) => void;
+  handleMouseLeaveItem: () => void;
+}> = ({ handleMouseEnterItem, handleMouseLeaveItem }) => {
+  const { effectiveTheme, setTheme } = useTheme();
+  const isDark = effectiveTheme === 'dark';
+  const label = isDark ? 'Mode terang' : 'Mode gelap';
+  return (
+    <button
+      type="button"
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+      onMouseEnter={(e) => handleMouseEnterItem(e, label)}
+      onMouseLeave={handleMouseLeaveItem}
+      onFocus={(e) => handleMouseEnterItem(e, label)}
+      onBlur={handleMouseLeaveItem}
+      aria-label={label}
+      aria-pressed={isDark}
+      title={label}
+      className="pf-rail-btn"
+    >
+      {isDark ? <Sun size={20} /> : <Moon size={20} />}
+    </button>
+  );
+};
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeMenu,
@@ -1201,6 +1230,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <LifeBuoy size={20} />
             </button>
+            <ThemeToggleButton
+              handleMouseEnterItem={handleMouseEnterItem}
+              handleMouseLeaveItem={handleMouseLeaveItem}
+            />
             <button
               ref={registerBtn('profil')}
               type="button"
