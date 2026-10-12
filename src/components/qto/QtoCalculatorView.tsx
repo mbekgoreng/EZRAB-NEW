@@ -1281,20 +1281,20 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       <div
         style={{
           background: '#ffffff',
-          borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          borderRadius: '20px',
+          border: '1px solid #EEF1F6',
           padding: '48px 24px',
           textAlign: 'center',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
         }}
       >
         <div
           style={{
             width: '64px',
             height: '64px',
-            borderRadius: '16px',
-            background: '#EFF6FF',
-            border: '1px solid #DBEAFE',
+            borderRadius: '20px',
+            background: '#E3EEFB',
+            border: '1px solid #C9DEF7',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1304,7 +1304,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         >
           <Ruler size={32} />
         </div>
-        <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', marginBottom: '8px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', marginBottom: '8px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           Belum ada proyek aktif
         </h2>
         <p style={{ fontSize: '13px', color: '#64748B', maxWidth: '460px', margin: '0 auto 24px', lineHeight: 1.6 }}>
@@ -1457,20 +1457,20 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '16px',
+              borderRadius: '20px',
               padding: '24px',
               maxWidth: '420px',
               width: '90%',
               boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid #EEF1F6',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#EF4444' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#EF4444' }}>
                 <RefreshCw size={20} />
               </div>
               <div>
-                <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                   Reset Parameter Kalkulator?
                 </h3>
                 <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>
@@ -1582,15 +1582,15 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       <div
         style={{
           background: '#ffffff',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
+          borderRadius: '20px',
+          border: '1px solid #EEF1F6',
           padding: '12px 20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '12px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -1598,13 +1598,13 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             style={{
               width: '38px',
               height: '38px',
-              borderRadius: '8px',
-              background: '#0F172A',
-              color: '#38BDF8',
+              borderRadius: '10px',
+              background: '#2563EB',
+              color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: '1px solid #1E293B',
+              boxShadow: '0 4px 10px rgba(37,99,235,0.25)',
               flexShrink: 0,
             }}
           >
@@ -1613,7 +1613,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.01em' }}>
+              <h1 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.01em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 Volume Calculator
               </h1>
               <span
@@ -1624,7 +1624,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   background: '#EFF6FF',
                   color: '#2563EB',
                   padding: '1px 6px',
-                  borderRadius: '4px',
+                  borderRadius: '999px',
                   border: '1px solid #DBEAFE',
                 }}
               >
@@ -1735,8 +1735,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       <div
         style={{
           background: '#F8FAFC',
-          borderRadius: '8px',
-          border: '1px solid #E2E8F0',
+          borderRadius: '20px',
+          border: '1px solid #EEF1F6',
           padding: '6px 14px',
           display: 'flex',
           alignItems: 'center',
@@ -2169,10 +2169,11 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                     className="ezrab-calc-group-card"
                     style={{
                       flexShrink: 0,
-                      border: '1px solid #E2E8F0',
-                      borderRadius: '8px',
+                      border: '1px solid #EEF1F6',
+                      borderRadius: '20px',
                       overflow: 'hidden',
                       background: '#ffffff',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
                     }}
                   >
                     {/* Collapsible Section Header */}
@@ -2186,7 +2187,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                       style={{
                         padding: '8px 10px',
                         background: '#F8FAFC',
-                        borderBottom: isCollapsed ? 'none' : '1px solid #E2E8F0',
+                        borderBottom: isCollapsed ? 'none' : '1px solid #EEF1F6',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -2197,7 +2198,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ fontSize: '13px' }}>{group.icon}</span>
-                        <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#1E293B', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#1E293B', textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                           {group.name.replace(/^[A-Z][.]\s*/, '')}
                         </span>
                       </div>
@@ -2293,8 +2294,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                                     color: '#475569',
                                     background: '#F1F5F9',
                                     padding: '2px 6px',
-                                    borderRadius: '4px',
-                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '999px',
+                                    border: '1px solid #EEF1F6',
                                   }}
                                 >
                                   {item.primaryUnit}
@@ -2342,13 +2343,13 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
           id="active-calculator-workbench"
           style={{
             background: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #E2E8F0',
+            borderRadius: '20px',
+            border: '1px solid #EEF1F6',
             padding: '18px 20px',
             display: 'flex',
             flexDirection: 'column',
             gap: '16px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           }}
         >
           {/* Workbench Header */}
@@ -2368,15 +2369,15 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 <span style={{ fontSize: '10.5px', fontWeight: 800, background: '#0F172A', color: '#ffffff', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>
                   {(activeSpec as any)?.code || selectedCalcId}
                 </span>
-                <span style={{ fontSize: '11px', background: '#EFF6FF', color: '#1D4ED8', padding: '2px 8px', borderRadius: '4px', fontWeight: 700, border: '1px solid #DBEAFE' }}>
+                <span style={{ fontSize: '11px', background: '#EFF6FF', color: '#1D4ED8', padding: '2px 8px', borderRadius: '999px', fontWeight: 700, border: '1px solid #DBEAFE' }}>
                   {activeSpec.category}
                 </span>
-                <span style={{ fontSize: '10.5px', color: '#15803D', background: '#DCFCE7', padding: '2px 8px', borderRadius: '4px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ fontSize: '10.5px', color: '#15803D', background: '#DCFCE7', padding: '2px 8px', borderRadius: '999px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                   <ShieldCheck size={12} /> SNI-STANDARDIZED
                 </span>
               </div>
 
-              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 {activeSpec.title}
               </h2>
               <p style={{ fontSize: '12px', color: '#64748B', margin: '4px 0 0', lineHeight: 1.4 }}>
@@ -2455,7 +2456,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
 
           {/* Technical CAD Diagram Viewer (Collapsible) */}
           {showCadDiagram && (
-            <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', overflow: 'hidden' }}>
+            <div style={{ border: '1px solid #EEF1F6', borderRadius: '20px', overflow: 'hidden' }}>
               <TechnicalReferenceViewer
                 workId={selectedCalcId}
                 categoryName={activeSpec.category}
@@ -2472,8 +2473,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             <div
               style={{
                 background: '#ffffff',
-                borderRadius: '10px',
-                border: '1px solid #E2E8F0',
+                borderRadius: '20px',
+                border: '1px solid #EEF1F6',
                 padding: '16px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -2481,7 +2482,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.03em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                   Formulir Parameter Geometris
                 </span>
                 <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>
@@ -2603,8 +2604,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             <div
               style={{
                 background: '#ffffff',
-                borderRadius: '10px',
-                border: '1px solid #E2E8F0',
+                borderRadius: '20px',
+                border: '1px solid #EEF1F6',
                 padding: '16px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -2614,35 +2615,35 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               {/* PRIMARY VOLUME RESULT BOX */}
               <div
                 style={{
-                  background: '#0F172A',
-                  borderRadius: '10px',
-                  padding: '14px 18px',
-                  color: '#ffffff',
-                  border: '1px solid #1E293B',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                  background: '#FDF3D8',
+                  borderRadius: '20px',
+                  padding: '18px 20px',
+                  color: '#0F172A',
+                  border: 'none',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     {activeSpec.primaryQuantityLabel}
                   </span>
-                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#4ADE80', background: 'rgba(74,222,128,0.15)', padding: '1px 6px', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#166534', background: '#E2F4D8', padding: '1px 6px', borderRadius: '999px' }}>
                     ✓ DETERMINISTIC
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '4px' }}>
-                  <span style={{ fontSize: '30px', fontWeight: 800, fontFamily: 'monospace', color: '#38BDF8', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                  <span style={{ fontSize: '30px', fontWeight: 800, fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#0F172A', letterSpacing: '-0.02em', lineHeight: 1 }}>
                     {formatNumberId(calculationResult.primaryQuantity, 2)}
                   </span>
-                  <span style={{ fontSize: '16px', fontWeight: 700, color: '#E2E8F0' }}>
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: '#475569' }}>
                     {calculationResult.primaryUnit}
                   </span>
                 </div>
 
-                <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: '#94A3B8' }}>
+                <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(15,23,42,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: '#64748B' }}>
                   <span>Rumus Dasar:</span>
-                  <span style={{ color: '#E2E8F0', fontFamily: 'monospace', fontWeight: 600 }}>
+                  <span style={{ color: '#0F172A', fontFamily: 'monospace', fontWeight: 600 }}>
                     {activeSpec.excelSheetName || 'SNI-AHSP Formulation'}
                   </span>
                 </div>
@@ -2651,13 +2652,13 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               {/* Intermediate Breakdown Table */}
               {Object.keys(calculationResult.breakdown).length > 0 && (
                 <div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '6px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                     Rincian Volume Teknis
                   </div>
-                  <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', overflow: 'hidden' }}>
+                  <div style={{ border: '1px solid #EEF1F6', borderRadius: '20px', overflow: 'hidden' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
                       <thead>
-                        <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+                        <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #EEF1F6', color: '#475569', fontWeight: 700 }}>
                           <th style={{ padding: '6px 8px' }}>Uraian Hasil Antara</th>
                           <th style={{ padding: '6px 8px', textAlign: 'right' }}>Nilai</th>
                           <th style={{ padding: '6px 8px', width: '40px' }}>Sat</th>
@@ -2721,7 +2722,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                         : scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL' ? '1px solid #FDE68A'
                           : scopeCost.status === 'AHSP_MISSING' ? '1px solid #FECACA'
                             : '1px solid #CBD5E1',
-                    borderRadius: '8px',
+                    borderRadius: '20px',
                     padding: '12px 14px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -2760,7 +2761,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                             : scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL' ? '#B45309'
                               : '#B91C1C',
                         padding: '1px 6px',
-                        borderRadius: '4px',
+                        borderRadius: '999px',
                       }}
                     >
                       {scopeCost.lineItems.length} Sub-Pekerjaan AHSP
@@ -2781,7 +2782,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                         <span>PPN (11%):</span>
                         <span>{formatRupiah(scopeCost.summary.taxAmount)}</span>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, color: '#0F172A', borderTop: '1px solid #E2E8F0', paddingTop: '4px', marginTop: '2px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, color: '#0F172A', borderTop: '1px solid #EEF1F6', paddingTop: '4px', marginTop: '2px' }}>
                         <span>Grand Total (Resmi):</span>
                         <span style={{ color: '#166534', fontFamily: 'monospace' }}>{formatRupiah(scopeCost.summary.grandTotal)}</span>
                       </div>
@@ -2795,7 +2796,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                         Namun data harga HSD (Upah/Bahan/Alat) untuk wilayah <em>{priceContext.location}</em> belum lengkap di database nasional.
                       </p>
                       {scopeCost.missingPrices.length > 0 && (
-                        <div style={{ background: '#FEF3C7', padding: '6px 8px', borderRadius: '4px', fontSize: '10.5px' }}>
+                        <div style={{ background: '#FEF3C7', padding: '6px 8px', borderRadius: '999px', fontSize: '10.5px' }}>
                           <span style={{ fontWeight: 700 }}>Komponen belum ada harga: </span>
                           <span>
                             {scopeCost.missingPrices.slice(0, 3).map((mp) => `${mp.componentName} (${mp.type})`).join(', ')}
@@ -2826,10 +2827,10 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               {!weirCostResult && (
               <div
                 style={{
-                  background: '#F8FAFC',
-                  borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
-                  padding: '10px 12px',
+                  background: '#E3EEFB',
+                  borderRadius: '20px',
+                  border: 'none',
+                  padding: '14px 16px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -2841,7 +2842,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                       ? 'Estimasi Biaya Resmi (CostPolicyEngine)'
                       : 'Estimasi Biaya Referensi (Bina Konstruksi)'}
                   </div>
-                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', fontFamily: 'monospace', marginTop: '2px' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', fontFamily: "'Plus Jakarta Sans', sans-serif", marginTop: '2px' }}>
                     {formatRupiah(scopeCost.hasMapping && scopeCost.summary?.grandTotal ? scopeCost.summary.grandTotal : priceBreakdown.grandTotal)}
                   </div>
                 </div>
@@ -2851,7 +2852,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                     background: scopeCost.hasMapping ? '#EFF6FF' : '#DCFCE7',
                     color: scopeCost.hasMapping ? '#1D4ED8' : '#15803D',
                     padding: '2px 6px',
-                    borderRadius: '4px',
+                    borderRadius: '999px',
                     fontWeight: 700,
                   }}
                 >
@@ -2911,7 +2912,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               </div>
 
               {/* Collapsible Formula Steps (Audit Calculation) */}
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', overflow: 'hidden' }}>
+              <div style={{ border: '1px solid #EEF1F6', borderRadius: '20px', overflow: 'hidden' }}>
                 <button
                   onClick={() => setShowFormulaDrawer(!showFormulaDrawer)}
                   style={{
@@ -2936,15 +2937,15 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 </button>
 
                 {showFormulaDrawer && (
-                  <div style={{ padding: '10px', background: '#ffffff', display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #E2E8F0' }}>
+                  <div style={{ padding: '10px', background: '#ffffff', display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #EEF1F6' }}>
                     {calculationResult.formulaSteps.map((step) => (
                       <div
                         key={step.stepNumber}
                         style={{
                           background: '#F8FAFC',
-                          borderRadius: '6px',
+                          borderRadius: '10px',
                           padding: '6px 8px',
-                          border: '1px solid #E2E8F0',
+                          border: '1px solid #EEF1F6',
                           fontSize: '11px',
                         }}
                       >
@@ -2971,20 +2972,20 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       <div
         style={{
           background: '#ffffff',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
+          borderRadius: '20px',
+          border: '1px solid #EEF1F6',
           padding: '16px 20px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           marginTop: '6px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 Daftar Volume Tersimpan ({effectiveProject.name})
               </h3>
-              <span style={{ fontSize: '11px', background: '#EFF6FF', color: '#2563EB', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
+              <span style={{ fontSize: '11px', background: '#EFF6FF', color: '#2563EB', padding: '1px 6px', borderRadius: '999px', fontWeight: 700 }}>
                 {projectQtoItems.length} Item QTO
               </span>
             </div>
@@ -3016,14 +3017,14 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         </div>
 
         {projectQtoItems.length === 0 ? (
-          <div style={{ padding: '24px', textAlign: 'center', color: '#94A3B8', fontSize: '12px', background: '#F8FAFC', borderRadius: '8px', border: '1px dashed #CBD5E1' }}>
+          <div style={{ padding: '24px', textAlign: 'center', color: '#94A3B8', fontSize: '12px', background: '#F8FAFC', borderRadius: '20px', border: '1px dashed #CBD5E1' }}>
             Belum ada item QTO yang disimpan. Klik <strong>Tambahkan ke QTO</strong> di atas untuk menyimpan volume pekerjaan aktif.
           </div>
         ) : (
-          <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', overflow: 'hidden' }}>
+          <div style={{ border: '1px solid #EEF1F6', borderRadius: '20px', overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
               <thead>
-                <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+                <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #EEF1F6', color: '#475569', fontWeight: 700 }}>
                   <th style={{ padding: '7px 10px', width: '36px' }}>No</th>
                   <th style={{ padding: '7px 10px' }}>Kode & Uraian Pekerjaan</th>
                   <th style={{ padding: '7px 10px', textAlign: 'right' }}>Volume QTO</th>
@@ -3051,7 +3052,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                     </td>
                     <td style={{ padding: '7px 10px', color: '#475569', fontWeight: 600 }}>{item.unit}</td>
                     <td style={{ padding: '7px 10px', fontSize: '10.5px', color: '#64748B' }}>
-                      <span style={{ background: '#F1F5F9', padding: '1px 5px', borderRadius: '4px', fontFamily: 'monospace' }}>
+                      <span style={{ background: '#F1F5F9', padding: '1px 5px', borderRadius: '999px', fontFamily: 'monospace' }}>
                         {item.calculationRunId || 'CALC-DIRECT'}
                       </span>
                     </td>

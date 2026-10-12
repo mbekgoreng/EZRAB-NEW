@@ -825,9 +825,10 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         display: 'flex',
         width: '100%',
         minHeight: 'calc(100vh - 64px)',
-        background: '#F8FAFC',
+        background: '#FAF9F6',
         position: 'relative',
         overflow: 'hidden',
+        fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
       {/* =====================================================================
@@ -1231,10 +1232,11 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
           <div
             style={{
               background: '#FFFFFF',
-              borderRadius: '14px',
+              borderRadius: '20px',
               width: '460px',
               maxWidth: '92vw',
               padding: '20px',
+              border: '1px solid #EEF1F6',
               boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.25)',
             }}
           >
@@ -1254,21 +1256,21 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: '#F8FAFC', borderRadius: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
                 <span style={{ color: '#334155' }}>Mulai Edit Sel</span>
-                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>Double Click / Enter</kbd>
+                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Double Click / Enter</kbd>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: '#F8FAFC', borderRadius: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
                 <span style={{ color: '#334155' }}>Simpan Perubahan Sel</span>
-                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>Enter</kbd>
+                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Enter</kbd>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: '#F8FAFC', borderRadius: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
                 <span style={{ color: '#334155' }}>Batal Edit Sel</span>
-                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>Escape</kbd>
+                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Escape</kbd>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: '#F8FAFC', borderRadius: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
                 <span style={{ color: '#334155' }}>Pilih Multi Item</span>
-                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>Shift + Click</kbd>
+                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Shift + Click</kbd>
               </div>
             </div>
 
@@ -1278,7 +1280,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
                 style={{
                   height: '32px',
                   padding: '0 16px',
-                  borderRadius: '6px',
+                  borderRadius: '10px',
                   background: '#2563EB',
                   color: '#FFFFFF',
                   border: 'none',
@@ -1318,7 +1320,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
             background: '#0F172A',
             color: '#FFFFFF',
             padding: '10px 18px',
-            borderRadius: '8px',
+            borderRadius: '12px',
             fontSize: '12.5px',
             fontWeight: 650,
             boxShadow: '0 10px 20px -3px rgba(0,0,0,0.3)',

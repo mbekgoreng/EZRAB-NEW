@@ -44,18 +44,17 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '12px',
-        marginBottom: '16px',
+        gap: '16px',
+        marginBottom: '20px',
       }}
     >
       {/* 1. TOTAL RAB */}
       <div
         style={{
-          background: '#FFFFFF',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
-          padding: '14px 16px',
-          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
+          background: '#FDF3D8',
+          borderRadius: '20px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
@@ -70,7 +69,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               width: '26px',
               height: '26px',
               borderRadius: '6px',
-              background: '#EFF6FF',
+              background: 'rgba(255,255,255,0.75)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -108,11 +107,10 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       {/* 2. TOTAL ITEM */}
       <div
         style={{
-          background: '#FFFFFF',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
-          padding: '14px 16px',
-          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
+          background: '#E2F4D8',
+          borderRadius: '20px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
@@ -127,7 +125,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               width: '26px',
               height: '26px',
               borderRadius: '6px',
-              background: '#EFF6FF',
+              background: 'rgba(255,255,255,0.75)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -150,11 +148,10 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       {/* 3. TOTAL VOLUME */}
       <div
         style={{
-          background: '#FFFFFF',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
-          padding: '14px 16px',
-          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
+          background: '#FFE9D6',
+          borderRadius: '20px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
@@ -169,7 +166,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               width: '26px',
               height: '26px',
               borderRadius: '6px',
-              background: '#EFF6FF',
+              background: 'rgba(255,255,255,0.75)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -192,11 +189,10 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       {/* 4. TERAKHIR DISIMPAN */}
       <div
         style={{
-          background: '#FFFFFF',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
-          padding: '14px 16px',
-          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
+          background: '#E3EEFB',
+          borderRadius: '20px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
@@ -211,7 +207,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               width: '26px',
               height: '26px',
               borderRadius: '6px',
-              background: '#EFF6FF',
+              background: 'rgba(255,255,255,0.75)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -242,11 +238,10 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       {/* 5. PROGRESS ESTIMASI (Donut progress card) */}
       <div
         style={{
-          background: '#FFFFFF',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
-          padding: '12px 16px',
-          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
+          background: '#FDF3D8',
+          borderRadius: '20px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           alignItems: 'center',
           gap: '14px',

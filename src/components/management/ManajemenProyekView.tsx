@@ -153,7 +153,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
 
   if (!currentProject) {
     return (
-      <div style={{ background: '#ffffff', borderRadius: '16px', padding: '48px 24px', textAlign: 'center', border: '1px solid #E2E8F0' }}>
+      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '48px 24px', textAlign: 'center', border: '1px solid #EEF1F6', boxShadow: '0 4px 20px rgba(0,0,0,0.045)', fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
         <FolderKanban size={36} color="#64748B" style={{ margin: '0 auto 12px' }} />
         <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px' }}>Belum Ada Proyek Aktif</h3>
         <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>Silakan buat atau pilih proyek di menu utama untuk melihat jadwal dan Kurva S.</p>
@@ -162,15 +162,15 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
       {/* Header Card */}
       <div
         style={{
           background: '#ffffff',
-          borderRadius: '16px',
-          border: '1px solid #E8EEF0',
+          borderRadius: '20px',
+          border: '1px solid #EEF1F6',
           padding: '20px 24px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
@@ -202,8 +202,8 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                 style={{
                   fontSize: '11px',
                   fontWeight: 700,
-                  background: '#DCFCE7',
-                  color: '#16A34A',
+                  background: '#E2F4D8',
+                  color: '#2c6e2c',
                   padding: '2px 8px',
                   borderRadius: '999px',
                 }}
@@ -269,7 +269,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-        <div style={{ background: '#ffffff', border: '1px solid #E8EEF0', borderRadius: '16px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+        <div style={{ background: '#FDF3D8', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
               Target Rencana
@@ -284,7 +284,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
           </div>
         </div>
 
-        <div style={{ background: '#ffffff', border: '1px solid #E8EEF0', borderRadius: '16px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+        <div style={{ background: '#E2F4D8', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
               Realisasi Lapangan
@@ -299,7 +299,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
           </div>
         </div>
 
-        <div style={{ background: '#ffffff', border: '1px solid #E8EEF0', borderRadius: '16px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+        <div style={{ background: '#FFE9D6', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
               Total Nilai Proyek
@@ -314,7 +314,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
           </div>
         </div>
 
-        <div style={{ background: '#ffffff', border: '1px solid #E8EEF0', borderRadius: '16px', padding: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+        <div style={{ background: '#E3EEFB', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
               Status Pelaksanaan
@@ -334,10 +334,10 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
       <div
         style={{
           background: '#ffffff',
-          borderRadius: '16px',
-          border: '1px solid #E8EEF0',
+          borderRadius: '20px',
+          border: '1px solid #EEF1F6',
           padding: '24px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',
@@ -369,7 +369,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
         </div>
 
         {/* Dynamic SVG Curve Display */}
-        <div style={{ position: 'relative', width: '100%', height: '240px', background: '#F8FAFC', borderRadius: '12px', padding: '16px', border: '1px solid #EEF2F7' }}>
+        <div style={{ position: 'relative', width: '100%', height: '240px', background: '#FFFFFF', borderRadius: '16px', padding: '16px', border: '1px solid #EEF1F6' }}>
           <svg viewBox="0 0 1000 200" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
             {/* Grid lines */}
             {[0, 25, 50, 75, 100].map((pct, i) => {
@@ -440,10 +440,10 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
       <div
         style={{
           background: '#ffffff',
-          borderRadius: '16px',
-          border: '1px solid #E8EEF0',
+          borderRadius: '20px',
+          border: '1px solid #EEF1F6',
           padding: '20px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -484,7 +484,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                   style={{
                     height: '36px',
                     padding: '0 16px',
-                    borderRadius: '8px',
+                    borderRadius: '10px',
                     background: '#F1F5F9',
                     color: '#1E293B',
                     fontSize: '12.5px',
@@ -505,7 +505,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                 style={{
                   height: '36px',
                   padding: '0 16px',
-                  borderRadius: '8px',
+                  borderRadius: '10px',
                   background: '#2563EB',
                   color: '#ffffff',
                   fontSize: '12.5px',
@@ -567,11 +567,11 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                           fontSize: '11px',
                           fontWeight: 700,
                           padding: '3px 8px',
-                          borderRadius: '6px',
+                          borderRadius: '999px',
                           background:
-                            task.status === 'COMPLETED' ? '#DCFCE7' : task.status === 'ON_TRACK' ? '#DBEAFE' : '#FEF3C7',
+                            task.status === 'COMPLETED' ? '#E2F4D8' : task.status === 'ON_TRACK' ? '#E3EEFB' : '#FDF3D8',
                           color:
-                            task.status === 'COMPLETED' ? '#16A34A' : task.status === 'ON_TRACK' ? '#2563EB' : '#D97706',
+                            task.status === 'COMPLETED' ? '#2c6e2c' : task.status === 'ON_TRACK' ? '#2456a8' : '#a8780a',
                         }}
                       >
                         {task.status}
@@ -586,11 +586,11 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                             setEditStatus(task.status);
                           }}
                           style={{
-                            padding: '4px 8px',
-                            background: '#EFF6FF',
-                            border: '1px solid #BFDBFE',
-                            borderRadius: '6px',
-                            color: '#2563EB',
+                            padding: '4px 10px',
+                            background: '#E3EEFB',
+                            border: 'none',
+                            borderRadius: '999px',
+                            color: '#2456a8',
                             fontSize: '11.5px',
                             fontWeight: 600,
                             cursor: 'pointer',
@@ -605,10 +605,10 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                         <button
                           onClick={() => deleteScheduleTask(task.id)}
                           style={{
-                            padding: '4px 6px',
+                            padding: '4px 8px',
                             background: '#FEE2E2',
-                            border: '1px solid #FECACA',
-                            borderRadius: '6px',
+                            border: 'none',
+                            borderRadius: '999px',
                             color: '#DC2626',
                             cursor: 'pointer',
                           }}
@@ -628,7 +628,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
       {/* Add Task Modal */}
       {isAddModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#ffffff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+          <div style={{ background: '#ffffff', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: '#0F172A' }}>Tambah Tahapan Proyek</h3>
               <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
@@ -644,7 +644,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                   placeholder="e.g. Pekerjaan Pondasi Tapak"
                   value={taskName}
                   onChange={(e) => setTaskName(e.target.value)}
-                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
                   required
                 />
               </div>
@@ -654,7 +654,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                 <select
                   value={taskCategory}
                   onChange={(e) => setTaskCategory(e.target.value)}
-                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
                 >
                   <option value="Pekerjaan Persiapan">Pekerjaan Persiapan</option>
                   <option value="Pekerjaan Tanah & Pondasi">Pekerjaan Tanah & Pondasi</option>
@@ -673,7 +673,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                     max="12"
                     value={taskStartWeek}
                     onChange={(e) => setTaskStartWeek(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box' }}
+                    style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
                   />
                 </div>
                 <div>
@@ -684,7 +684,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                     max="12"
                     value={taskEndWeek}
                     onChange={(e) => setTaskEndWeek(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box' }}
+                    style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
                   />
                 </div>
               </div>
@@ -698,7 +698,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                   max="100"
                   value={taskWeightInput}
                   onChange={(e) => setTaskWeightInput(Number(e.target.value))}
-                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
                 />
               </div>
 
@@ -706,13 +706,13 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  style={{ height: '36px', padding: '0 14px', borderRadius: '8px', background: '#F1F5F9', color: '#475569', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                  style={{ height: '36px', padding: '0 14px', borderRadius: '10px', background: '#F1F5F9', color: '#475569', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  style={{ height: '36px', padding: '0 16px', borderRadius: '8px', background: '#2563EB', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                  style={{ height: '36px', padding: '0 16px', borderRadius: '10px', background: '#2563EB', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
                 >
                   Simpan Tahapan
                 </button>
@@ -725,7 +725,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
       {/* Edit Progress Modal */}
       {editingTask && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#ffffff', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+          <div style={{ background: '#ffffff', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: '#0F172A' }}>Update Progres: {editingTask.name}</h3>
               <button onClick={() => setEditingTask(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
@@ -742,7 +742,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                   max="100"
                   value={editProgress}
                   onChange={(e) => setEditProgress(Number(e.target.value))}
-                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
                   required
                 />
               </div>
@@ -752,7 +752,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                 <select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value as any)}
-                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'inherit' }}
                 >
                   <option value="PENDING">PENDING</option>
                   <option value="ON_TRACK">ON_TRACK</option>
@@ -765,13 +765,13 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                 <button
                   type="button"
                   onClick={() => setEditingTask(null)}
-                  style={{ height: '36px', padding: '0 14px', borderRadius: '8px', background: '#F1F5F9', color: '#475569', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                  style={{ height: '36px', padding: '0 14px', borderRadius: '10px', background: '#F1F5F9', color: '#475569', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  style={{ height: '36px', padding: '0 16px', borderRadius: '8px', background: '#16A34A', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                  style={{ height: '36px', padding: '0 16px', borderRadius: '10px', background: '#16A34A', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
                 >
                   Simpan Perubahan
                 </button>

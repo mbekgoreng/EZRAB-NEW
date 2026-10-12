@@ -64,15 +64,15 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
       <div
         style={{
           background: '#FFFFFF',
-          borderRadius: '14px',
-          border: '1px solid #E2E8F0',
-          padding: '14px 20px',
+          borderRadius: '20px',
+          border: '1px solid #EEF1F6',
+          padding: '16px 20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '16px',
-          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
         }}
       >
         {/* Left: Thumbnail & Project Metadata */}
@@ -129,9 +129,8 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
                   borderRadius: '999px',
                   fontSize: '11px',
                   fontWeight: 700,
-                  background: isCompleted ? '#DCFCE7' : '#ECFDF5',
-                  color: isCompleted ? '#16A34A' : '#059669',
-                  border: `1px solid ${isCompleted ? '#BBF7D0' : '#A7F3D0'}`,
+                  background: '#E2F4D8',
+                  color: '#2c6e2c',
                 }}
               >
                 <span
@@ -167,11 +166,10 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
                 style={{
                   fontSize: '11px',
                   fontWeight: 600,
-                  background: '#F1F5F9',
-                  color: '#475569',
-                  padding: '1px 8px',
-                  borderRadius: '6px',
-                  border: '1px solid #E2E8F0',
+                  background: '#E3EEFB',
+                  color: '#2456a8',
+                  padding: '2px 10px',
+                  borderRadius: '999px',
                 }}
               >
                 {projectBuildingType}
@@ -290,11 +288,10 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               style={{
                 fontSize: '10px',
                 fontWeight: 800,
-                background: '#EFF6FF',
-                color: '#2563EB',
+                background: '#E3EEFB',
+                color: '#2456a8',
                 padding: '1px 6px',
                 borderRadius: '999px',
-                border: '1px solid #BFDBFE',
               }}
             >
               {latestVersionLabel}

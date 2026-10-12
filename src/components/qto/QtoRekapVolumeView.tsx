@@ -337,20 +337,20 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
       <div
         style={{
           background: '#ffffff',
-          borderRadius: '16px',
-          border: '1px solid #DCE8F7',
+          borderRadius: '20px',
+          border: '1px solid #EEF1F6',
           padding: '56px 24px',
           textAlign: 'center',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
         }}
       >
         <div
           style={{
             width: '64px',
             height: '64px',
-            borderRadius: '16px',
-            background: '#EFF6FF',
-            border: '1px solid #DBEAFE',
+            borderRadius: '20px',
+            background: '#E3EEFB',
+            border: '1px solid #C9DEF7',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -360,7 +360,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
         >
           <Ruler size={32} />
         </div>
-        <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', marginBottom: '8px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0F172A', marginBottom: '8px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           Silakan buat atau pilih proyek terlebih dahulu
         </h2>
         <p style={{ fontSize: '13px', color: '#64748B', maxWidth: '480px', margin: '0 auto 24px', lineHeight: 1.6 }}>
@@ -433,15 +433,15 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
       <div
         style={{
           background: '#ffffff',
-          borderRadius: '12px',
-          border: '1px solid #DCE8F7',
+          borderRadius: '20px',
+          border: '1px solid #EEF1F6',
           padding: '16px 20px',
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '16px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -461,7 +461,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             <FileSpreadsheet size={22} />
           </div>
           <div>
-            <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
+            <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.02em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               QTO — Rekap Volume
             </h1>
             <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>
@@ -545,8 +545,8 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   right: 0,
                   top: '42px',
                   background: '#ffffff',
-                  borderRadius: '10px',
-                  border: '1px solid #E2E8F0',
+                  borderRadius: '16px',
+                  border: '1px solid #EEF1F6',
                   boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
                   zIndex: 50,
                   width: '180px',
@@ -640,14 +640,14 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
         {/* Card 1: Total Item */}
         <div
           style={{
-            background: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #DCE8F7',
-            padding: '16px 20px',
+            background: '#FDF3D8',
+            borderRadius: '20px',
+            border: 'none',
+            padding: '20px',
             display: 'flex',
             alignItems: 'center',
             gap: '16px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           }}
         >
           <div
@@ -669,7 +669,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Total Item
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', lineHeight: 1.2, marginTop: '2px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', lineHeight: 1.2, marginTop: '2px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               {totalItemCount}
             </div>
             <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '1px' }}>
@@ -681,14 +681,14 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
         {/* Card 2: Total Volume */}
         <div
           style={{
-            background: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #DCE8F7',
-            padding: '16px 20px',
+            background: '#E2F4D8',
+            borderRadius: '20px',
+            border: 'none',
+            padding: '20px',
             display: 'flex',
             alignItems: 'center',
             gap: '16px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           }}
         >
           <div
@@ -710,7 +710,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Total Volume
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', lineHeight: 1.2, marginTop: '2px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', lineHeight: 1.2, marginTop: '2px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               {formatNumberId(totalVolumeSum, 2)}
             </div>
             <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '1px' }}>
@@ -722,14 +722,14 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
         {/* Card 3: Calculator */}
         <div
           style={{
-            background: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #DCE8F7',
-            padding: '16px 20px',
+            background: '#FFE9D6',
+            borderRadius: '20px',
+            border: 'none',
+            padding: '20px',
             display: 'flex',
             alignItems: 'center',
             gap: '16px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           }}
         >
           <div
@@ -751,7 +751,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Calculator
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', lineHeight: 1.2, marginTop: '2px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', lineHeight: 1.2, marginTop: '2px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               {distinctCalculators}
             </div>
             <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '1px' }}>
@@ -763,14 +763,14 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
         {/* Card 4: Terverifikasi */}
         <div
           style={{
-            background: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #DCE8F7',
-            padding: '16px 20px',
+            background: '#E3EEFB',
+            borderRadius: '20px',
+            border: 'none',
+            padding: '20px',
             display: 'flex',
             alignItems: 'center',
             gap: '16px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           }}
         >
           <div
@@ -792,7 +792,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Terverifikasi
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', lineHeight: 1.2, marginTop: '2px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', lineHeight: 1.2, marginTop: '2px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               {verifiedPercentage}%
             </div>
             <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '1px' }}>
@@ -854,14 +854,15 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
       <div
         style={{
           background: '#ffffff',
-          borderRadius: '12px',
-          border: '1px solid #DCE8F7',
+          borderRadius: '20px',
+          border: '1px solid #EEF1F6',
           padding: '12px 16px',
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '12px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
         }}
       >
         {/* Search Bar */}
@@ -972,10 +973,10 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #DCE8F7',
+            borderRadius: '20px',
+            border: '1px solid #EEF1F6',
             overflow: 'hidden',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           }}
         >
           {projectQtoItems.length === 0 ? (
@@ -985,7 +986,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                 style={{
                   width: '56px',
                   height: '56px',
-                  borderRadius: '14px',
+                  borderRadius: '16px',
                   background: '#F1F5F9',
                   display: 'flex',
                   alignItems: 'center',
@@ -996,7 +997,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
               >
                 <Ruler size={28} />
               </div>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', marginBottom: '6px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 QTO Anda masih kosong
               </h3>
               <p style={{ fontSize: '12.5px', color: '#64748B', maxWidth: '420px', margin: '0 auto 20px', lineHeight: 1.5 }}>
@@ -1046,7 +1047,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
                 {/* Table Header */}
                 <thead>
-                  <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #EEF1F6', color: '#475569', fontWeight: 700 }}>
                     <th style={{ padding: '10px 14px', width: '36px' }}>
                       <input
                         type="checkbox"
@@ -1078,7 +1079,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                           onClick={() => toggleGroupCollapse(groupName)}
                           style={{
                             background: '#F1F5F9',
-                            borderBottom: '1px solid #E2E8F0',
+                            borderBottom: '1px solid #EEF1F6',
                             cursor: 'pointer',
                             userSelect: 'none',
                           }}
@@ -1102,7 +1103,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                               >
                                 {groupIndex + 1}
                               </span>
-                              <span style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                              <span style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                                 {groupName}
                               </span>
                               <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>
@@ -1126,7 +1127,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                                 key={item.id}
                                 onClick={() => setSelectedQtoId(item.id)}
                                 style={{
-                                  borderBottom: '1px solid #E2E8F0',
+                                  borderBottom: '1px solid #EEF1F6',
                                   background: isSelected ? '#EFF6FF' : itemIdx % 2 === 0 ? '#ffffff' : '#FAFAFA',
                                   cursor: 'pointer',
                                   transition: 'background 0.1s ease',
@@ -1302,7 +1303,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                 style={{
                   padding: '12px 16px',
                   background: '#ffffff',
-                  borderTop: '1px solid #E2E8F0',
+                  borderTop: '1px solid #EEF1F6',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -1328,10 +1329,10 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '12px',
-              border: '1px solid #DCE8F7',
+              borderRadius: '20px',
+              border: '1px solid #EEF1F6',
               padding: '18px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
               display: 'flex',
               flexDirection: 'column',
               gap: '14px',
@@ -1343,7 +1344,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <FileText size={16} color="#2563EB" />
-                <h3 style={{ fontSize: '13.5px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                <h3 style={{ fontSize: '13.5px', fontWeight: 800, color: '#0F172A', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                   Detail QTO
                 </h3>
               </div>
@@ -1358,7 +1359,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             {/* Title & Badges */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '10.5px', background: '#EFF6FF', color: '#1D4ED8', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                <span style={{ fontSize: '10.5px', background: '#EFF6FF', color: '#1D4ED8', padding: '1px 6px', borderRadius: '999px', fontWeight: 700 }}>
                   {getSectionHeadingOfItem(activeSelectedItem)}
                 </span>
                 <span
@@ -1367,14 +1368,14 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                     background: activeSelectedItem.status === 'SYNCED_TO_RAB' ? '#DCFCE7' : '#EFF6FF',
                     color: activeSelectedItem.status === 'SYNCED_TO_RAB' ? '#16A34A' : '#2563EB',
                     padding: '1px 6px',
-                    borderRadius: '4px',
+                    borderRadius: '999px',
                     fontWeight: 700,
                   }}
                 >
                   {activeSelectedItem.status === 'SYNCED_TO_RAB' ? '✓ Terhubung' : 'Terhitung'}
                 </span>
               </div>
-              <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '2px 0 0' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '2px 0 0', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 {activeSelectedItem.uraian}
               </h2>
               <span style={{ fontSize: '11px', color: '#64748B', fontFamily: 'monospace' }}>
@@ -1385,9 +1386,9 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             {/* Technical Construction Illustration Thumbnail */}
             <div
               style={{
-                borderRadius: '10px',
+                borderRadius: '20px',
                 overflow: 'hidden',
-                border: '1px solid #E2E8F0',
+                border: '1px solid #EEF1F6',
                 position: 'relative',
                 background: '#0F172A',
                 cursor: 'pointer',
@@ -1420,10 +1421,10 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             </div>
 
             {/* Informasi Volume Box */}
-            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '12px' }}>
+            <div style={{ borderTop: '1px solid #EEF1F6', paddingTop: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                 <FileSpreadsheet size={14} color="#2563EB" />
-                <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#1E293B', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#1E293B', textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                   Informasi Volume
                 </span>
               </div>
@@ -1470,10 +1471,10 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             </div>
 
             {/* Parameter Box */}
-            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '12px' }}>
+            <div style={{ borderTop: '1px solid #EEF1F6', paddingTop: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                 <Sliders size={14} color="#2563EB" />
-                <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#1E293B', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#1E293B', textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                   Parameter Perhitungan
                 </span>
               </div>
@@ -1493,7 +1494,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             </div>
 
             {/* Button: Lihat di Volume Calculator */}
-            <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '12px' }}>
+            <div style={{ borderTop: '1px solid #EEF1F6', paddingTop: '12px' }}>
               <button
                 onClick={() => {
                   onNavigateToCalculator?.(activeSelectedItem.calculatorId, activeSelectedItem.id);
@@ -1546,7 +1547,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '16px',
+              borderRadius: '20px',
               maxWidth: '850px',
               width: '100%',
               overflow: 'hidden',
@@ -1557,14 +1558,14 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             <div
               style={{
                 padding: '14px 20px',
-                borderBottom: '1px solid #E2E8F0',
+                borderBottom: '1px solid #EEF1F6',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
               }}
             >
               <div>
-                <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0 }}>
+                <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                   Gambar Teknis: {activeSelectedItem?.uraian || 'Konstruksi'}
                 </h3>
                 <span style={{ fontSize: '11px', color: '#64748B' }}>
@@ -1618,7 +1619,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '16px',
+              borderRadius: '20px',
               maxWidth: '820px',
               width: '100%',
               maxHeight: '85vh',
@@ -1630,7 +1631,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#0F172A' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#0F172A', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                   Pilih Volume Calculator untuk Dihitung
                 </h3>
                 <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>
@@ -1662,8 +1663,8 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   }}
                   style={{
                     background: '#F8FAFC',
-                    borderRadius: '12px',
-                    border: '1px solid #E2E8F0',
+                    borderRadius: '20px',
+                    border: '1px solid #EEF1F6',
                     padding: '14px',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
@@ -1674,16 +1675,16 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = '#F8FAFC';
-                    e.currentTarget.style.borderColor = '#E2E8F0';
+                    e.currentTarget.style.borderColor = '#EEF1F6';
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '10px', background: '#DBEAFE', color: '#1D4ED8', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                    <span style={{ fontSize: '10px', background: '#DBEAFE', color: '#1D4ED8', padding: '1px 6px', borderRadius: '999px', fontWeight: 700 }}>
                       {calc.category.toUpperCase()}
                     </span>
                     <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{calc.primaryUnit}</span>
                   </div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginBottom: '4px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                     {calc.title}
                   </div>
                   <div style={{ fontSize: '11px', color: '#64748B', lineHeight: 1.4 }}>
@@ -1714,7 +1715,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '16px',
+              borderRadius: '20px',
               maxWidth: '520px',
               width: '100%',
               padding: '24px',
@@ -1724,7 +1725,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#0F172A' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#0F172A', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                   Tambah Item QTO Manual
                 </h3>
                 <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>
@@ -1853,7 +1854,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '16px',
+              borderRadius: '20px',
               maxWidth: '400px',
               width: '100%',
               padding: '20px',
@@ -1862,7 +1863,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0 }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 Pengaturan Kolom QTO Table
               </h3>
               <button onClick={() => setColumnsModalOpen(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>

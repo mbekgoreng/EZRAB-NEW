@@ -559,7 +559,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
         display: 'flex',
         flexDirection: 'column',
         gap: '18px',
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         maxWidth: '1680px',
         margin: '0 auto',
         width: '100%',
@@ -596,10 +596,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       <div
         style={{
           background: '#FFFFFF',
-          borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          borderRadius: '20px',
+          border: '1px solid #EEF1F6',
           padding: '18px 24px',
-          boxShadow: '0 1px 3px rgba(15,23,42,0.03)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',
@@ -633,7 +633,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     fontSize: '11px',
                     fontWeight: 800,
                     padding: '2px 8px',
-                    borderRadius: '6px',
+                    borderRadius: '999px',
                     background: scope === 'PROJECT' ? '#FEF3C7' : '#EFF6FF',
                     color: scope === 'PROJECT' ? '#92400E' : '#1D4ED8',
                     border: scope === 'PROJECT' ? '1px solid #FDE68A' : '1px solid #DBEAFE',
@@ -744,7 +744,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 }}
                 style={{
                   height: '34px',
-                  borderRadius: '8px',
+                  borderRadius: '10px',
                   border: '1px solid #CBD5E1',
                   background: '#FFFFFF',
                   color: '#0F172A',
@@ -767,7 +767,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 style={{
                   height: '34px',
                   padding: '0 12px',
-                  borderRadius: '8px',
+                  borderRadius: '10px',
                   border: '1px solid #DBEAFE',
                   background: '#EFF6FF',
                   color: '#1D4ED8',
@@ -797,7 +797,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 width: '100%',
                 height: '34px',
                 padding: '0 10px 0 32px',
-                borderRadius: '8px',
+                borderRadius: '10px',
                 border: '1px solid #CBD5E1',
                 fontSize: '12px',
                 outline: 'none',
@@ -825,8 +825,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   maxHeight: '360px',
                   overflowY: 'auto',
                   background: '#FFFFFF',
-                  borderRadius: '12px',
-                  border: '1px solid #E2E8F0',
+                  borderRadius: '16px',
+                  border: '1px solid #EEF1F6',
                   boxShadow: '0 10px 25px rgba(15,23,42,0.12)',
                   zIndex: 50,
                   padding: '6px',
@@ -847,7 +847,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       width: '100%',
                       textAlign: 'left',
                       padding: '8px 10px',
-                      borderRadius: '8px',
+                      borderRadius: '10px',
                       border: 'none',
                       background: 'transparent',
                       cursor: 'pointer',
@@ -882,13 +882,13 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
         <div
           style={{
             background: '#FFFFFF',
-            borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            borderRadius: '20px',
+            border: '1px solid #EEF1F6',
             padding: '14px 10px',
             display: 'flex',
             flexDirection: 'column',
             gap: '14px',
-            boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           }}
         >
           {scope === 'GLOBAL' ? (
@@ -984,10 +984,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
         <div
           style={{
             background: '#FFFFFF',
-            borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            borderRadius: '20px',
+            border: '1px solid #EEF1F6',
             padding: '24px 28px',
-            boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
             minHeight: '620px',
           }}
         >
@@ -1006,7 +1006,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               </div>
 
               {/* Avatar Row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: '#F8FAFC', borderRadius: '16px', border: '1px solid #EEF1F6' }}>
                 <div
                   style={{
                     width: '60px',
@@ -1026,7 +1026,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 <div>
                   <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>{profileName}</div>
                   <div style={{ fontSize: '12px', color: '#64748B' }}>{profileTitle}</div>
-                  <div style={{ marginTop: '6px' }}>{renderRoleBadge(currentUser.role)}</div>
+                  <div style={{ marginTop: '6px', fontFamily: 'inherit' }}>{renderRoleBadge(currentUser.role)}</div>
                 </div>
               </div>
 
@@ -1037,7 +1037,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="text"
                     value={profileName}
                     onChange={(e) => setProfileName(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -1047,7 +1047,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="email"
                     value={profileEmail}
                     onChange={(e) => setProfileEmail(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -1057,7 +1057,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="text"
                     value={profilePhone}
                     onChange={(e) => setProfilePhone(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -1067,13 +1067,13 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="text"
                     value={profileTitle}
                     onChange={(e) => setProfileTitle(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
               </div>
 
               {/* ============ ROLE AKTIF (sesi login per role) ============ */}
-              <div style={{ padding: '16px', background: '#FAFAFF', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+              <div style={{ padding: '16px', background: '#FAFAFF', borderRadius: '16px', border: '1px solid #EEF1F6' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                   <ShieldCheck size={16} color="#7C3AED" />
                   <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#0F172A' }}>{t('settings.role_aktif')}</span>
@@ -1089,7 +1089,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       onClick={logoutRole}
                       style={{
                         display: 'flex', alignItems: 'center', gap: '6px',
-                        height: '34px', padding: '0 14px', borderRadius: '8px',
+                        height: '34px', padding: '0 14px', borderRadius: '10px',
                         border: '1px solid #FECACA', background: '#FFFFFF', color: '#DC2626',
                         fontSize: '12.5px', fontWeight: 700, cursor: 'pointer',
                       }}
@@ -1104,22 +1104,22 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               </div>
 
               {/* ============ INFORMASI SISTEM ============ */}
-              <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+              <div style={{ padding: '16px', background: '#F8FAFC', borderRadius: '16px', border: '1px solid #EEF1F6' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                   <Info size={16} color="#2563EB" />
                   <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#0F172A' }}>{t('settings.sistem_judul')}</span>
                 </div>
                 <p style={{ fontSize: '12px', color: '#64748B', margin: '0 0 10px' }}>{t('settings.sistem_desc')}</p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                  <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px 12px' }}>
+                  <div style={{ background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '10px', padding: '10px 12px' }}>
                     <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{t('settings.versi_aplikasi')}</div>
                     <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>v{APP_VERSION}</div>
                   </div>
-                  <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px 12px' }}>
+                  <div style={{ background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '10px', padding: '10px 12px' }}>
                     <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{t('settings.versi_build')}</div>
                     <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>{APP_BUILD}</div>
                   </div>
-                  <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px 12px' }}>
+                  <div style={{ background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '10px', padding: '10px 12px' }}>
                     <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{t('common.bahasa')}</div>
                     <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>
                       {LANG_OPTIONS.find((o) => o.id === lang)?.nativeName ?? 'Indonesia'}
@@ -1129,7 +1129,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               </div>
 
               {/* ============ ULANGI TUTORIAL ============ */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '16px', background: '#EFF6FF', borderRadius: '12px', border: '1px solid #DBEAFE', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '16px', background: '#EFF6FF', borderRadius: '16px', border: '1px solid #DBEAFE', flexWrap: 'wrap' }}>
                 <div>
                   <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0F172A' }}>{t('settings.ulangi_tutorial')}</div>
                   <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>{t('settings.ulangi_tutorial_desc')}</div>
@@ -1176,7 +1176,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       setToastMessage(t('settings.tersimpan'));
                       setSavedToast(true);
                     }}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
                     {LANG_OPTIONS.map((opt) => (
                       <option key={opt.id} value={opt.id}>
@@ -1191,7 +1191,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <select
                     value={dateFormat}
                     onChange={(e) => setDateFormat(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
                     <option value="DD/MM/YYYY">DD/MM/YYYY (Contoh: 27/09/2026)</option>
                     <option value="YYYY-MM-DD">YYYY-MM-DD (Standar ISO)</option>
@@ -1203,7 +1203,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <select
                     value={systemCurrency}
                     onChange={(e) => setSystemCurrency(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
                     <option value="IDR">Rupiah Indonesia (IDR - Rp)</option>
                     <option value="USD">US Dollar (USD - $)</option>
@@ -1215,7 +1215,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <select
                     value={systemTheme}
                     onChange={(e) => setSystemTheme(e.target.value as any)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
                     <option value="LIGHT">Light Clean Mode (Standar Kontras Tinggi)</option>
                     <option value="SYSTEM">Ikuti Preferensi Perangkat</option>
@@ -1254,7 +1254,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       padding: '14px 16px',
                       borderRadius: '10px',
                       background: '#F8FAFC',
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid #EEF1F6',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -1299,7 +1299,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="••••••••"
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -1310,7 +1310,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Minimal 8 karakter"
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -1321,11 +1321,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Ulangi kata sandi baru"
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
-                <div style={{ padding: '12px 14px', background: '#EFF6FF', borderRadius: '8px', border: '1px solid #DBEAFE', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ padding: '12px 14px', background: '#EFF6FF', borderRadius: '16px', border: '1px solid #DBEAFE', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <ShieldCheck size={18} color="#2563EB" />
                   <span style={{ fontSize: '12px', color: '#1E40AF', fontWeight: 500 }}>
                     Autentikasi dua faktor (2FA) aktif untuk akun Super Admin ini.
@@ -1356,7 +1356,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="text"
                     value={workspaceName}
                     onChange={(e) => setWorkspaceName(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -1366,7 +1366,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="text"
                     value={companyNpwp}
                     onChange={(e) => setCompanyNpwp(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -1376,7 +1376,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="text"
                     value={companyDirector}
                     onChange={(e) => setCompanyDirector(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -1386,7 +1386,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="text"
                     value={companyLeadEstimator}
                     onChange={(e) => setCompanyLeadEstimator(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -1396,7 +1396,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="text"
                     value={companyPhone}
                     onChange={(e) => setCompanyPhone(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -1406,7 +1406,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="email"
                     value={companyEmail}
                     onChange={(e) => setCompanyEmail(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -1416,7 +1416,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     rows={2}
                     value={companyAddress}
                     onChange={(e) => setCompanyAddress(e.target.value)}
-                    style={{ width: '100%', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '8px 12px', marginTop: '6px', fontFamily: 'inherit' }}
+                    style={{ width: '100%', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '8px 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
               </div>
@@ -1443,7 +1443,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   style={{
                     height: '36px',
                     padding: '0 16px',
-                    borderRadius: '8px',
+                    borderRadius: '10px',
                     background: '#2563EB',
                     color: '#FFFFFF',
                     border: 'none',
@@ -1462,7 +1462,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               </div>
 
               {/* User Table */}
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ border: '1px solid #EEF1F6', borderRadius: '16px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
                   <thead>
                     <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
@@ -1529,7 +1529,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                             onClick={() => alert(`Detail Pengguna: ${user.name} (${user.role})`)}
                             style={{
                               padding: '4px 10px',
-                              borderRadius: '6px',
+                              borderRadius: '10px',
                               border: '1px solid #CBD5E1',
                               background: '#FFFFFF',
                               color: '#334155',
@@ -1563,7 +1563,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </p>
               </div>
 
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ border: '1px solid #EEF1F6', borderRadius: '16px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                   <thead>
                     <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
@@ -1624,7 +1624,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       Masa aktif sampai 31 Desember 2026 • Unlimited Proyek & Export PDF/Excel
                     </p>
                   </div>
-                  <div style={{ padding: '8px 16px', background: '#2563EB', color: '#FFFFFF', borderRadius: '8px', fontSize: '12.5px', fontWeight: 700 }}>
+                  <div style={{ padding: '8px 16px', background: '#2563EB', color: '#FFFFFF', borderRadius: '10px', fontSize: '12.5px', fontWeight: 700 }}>
                     Status: Aktif Terverifikasi
                   </div>
                 </div>
@@ -1652,7 +1652,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <select
                     value={defaultAhspSource}
                     onChange={(e) => setDefaultAhspSource(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
                     <option value="pupr-2026">Permen PUPR No. 28/PRT/M/2026 (Terbaru)</option>
                     <option value="pupr-2022">Permen PUPR No. 1/PRT/M/2022</option>
@@ -1665,7 +1665,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <select
                     value={defaultRegion}
                     onChange={(e) => setDefaultRegion(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
                     <option value="DKI Jakarta (Indeks 1.00)">DKI Jakarta (Indeks 1.00)</option>
                     <option value="Jawa Barat / Bandung (Indeks 0.95)">Jawa Barat / Bandung (Indeks 0.95)</option>
@@ -1695,7 +1695,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                         style={{
                           padding: '12px',
                           borderRadius: '10px',
-                          border: '1px solid #E2E8F0',
+                          border: '1px solid #EEF1F6',
                           background: '#F8FAFC',
                           display: 'flex',
                           alignItems: 'center',
@@ -1741,7 +1741,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     step={0.5}
                     value={defaultOverhead}
                     onChange={(e) => setDefaultOverhead(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                   <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Rekomendasi PU: 5% - 15%</span>
                 </div>
@@ -1755,7 +1755,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     step={0.5}
                     value={defaultProfit}
                     onChange={(e) => setDefaultProfit(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                   <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Margin keuntungan standar proyek</span>
                 </div>
@@ -1768,7 +1768,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     max={25}
                     value={defaultPpn}
                     onChange={(e) => setDefaultPpn(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                   <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Tarif PPN UU HPP saat ini (11% / 12%)</span>
                 </div>
@@ -1778,7 +1778,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <select
                     value={defaultRounding}
                     onChange={(e) => setDefaultRounding(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
                     <option value="RIBUAN">Pembulatan ke Ribuan Terdekat (Rp 1.000)</option>
                     <option value="RATUSAN">Pembulatan ke Ratusan Terdekat (Rp 100)</option>
@@ -1810,7 +1810,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="number"
                     value={defaultWaste}
                     onChange={(e) => setDefaultWaste(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                   <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Standar overlap & potongan: 5%</span>
                 </div>
@@ -1820,7 +1820,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <select
                     value={2}
                     disabled
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#F8FAFC' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#F8FAFC' }}
                   >
                     <option value={2}>2 Angka di Belakang Koma (0.00)</option>
                   </select>
@@ -1849,7 +1849,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <select
                     value={pdfPaperSize}
                     onChange={(e) => setPdfPaperSize(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
                     <option value="A4">A4 (210 x 297 mm) - Standar Umum</option>
                     <option value="F4">F4 / Folio (215 x 330 mm) - Standar PUPR</option>
@@ -1861,7 +1861,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <select
                     value={pdfOrientation}
                     onChange={(e) => setPdfOrientation(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
                     <option value="landscape">Landscape (Lebar - Rekomendasi RAB & BOQ)</option>
                     <option value="portrait">Portrait (Tegak - Surat Penawaran)</option>
@@ -1874,7 +1874,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="text"
                     value={docPrefix}
                     onChange={(e) => setDocPrefix(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                   <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Format nomor: {docPrefix}/PROYEK/2026</span>
                 </div>
@@ -1902,7 +1902,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <select
                     value={defaultWorkingDays}
                     onChange={(e) => setDefaultWorkingDays(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
                     <option value={6}>6 Hari Kerja (Senin - Sabtu) - Standar Lapangan</option>
                     <option value={5}>5 Hari Kerja (Senin - Jumat)</option>
@@ -1916,7 +1916,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="number"
                     value={workingHoursPerDay}
                     onChange={(e) => setWorkingHoursPerDay(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                   <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Standar PUPR: 7 Jam/Hari Kerja</span>
                 </div>
@@ -1944,7 +1944,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <select
                     value={costCodeFormat}
                     onChange={(e) => setCostCodeFormat(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
                     <option value="WBS_STANDARD">WBS Hierarkis (1.1, 1.2, 1.3)</option>
                     <option value="CSI_MASTERFORMAT">CSI MasterFormat (Divisi 01 - 33)</option>
@@ -1971,7 +1971,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {/* 1. Live Spreadsheet Sync */}
-                <div style={{ padding: '16px', borderRadius: '12px', background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ padding: '16px', borderRadius: '16px', background: '#F8FAFC', border: '1px solid #EEF1F6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <FileSpreadsheet size={24} color="#059669" />
                     <div>
@@ -1979,7 +1979,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       <div style={{ fontSize: '11.5px', color: '#64748B' }}>Sinkronisasi real-time dua arah antara tabel aplikasi dengan format spreadsheet</div>
                     </div>
                   </div>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', background: '#ECFDF5', padding: '3px 8px', borderRadius: '6px', border: '1px solid #A7F3D0' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', background: '#E2F4D8', padding: '3px 10px', borderRadius: '999px' }}>
                     Tersambung (Active)
                   </span>
                 </div>
@@ -2014,7 +2014,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                         alignItems: 'center',
                         gap: '6px',
                         padding: '8px 16px',
-                        borderRadius: '8px',
+                        borderRadius: '10px',
                         background: '#2563EB',
                         color: '#FFFFFF',
                         border: 'none',
@@ -2032,7 +2032,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
                   {/* Audit Metrics Grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginTop: '14px', marginBottom: '16px' }}>
-                    <div style={{ padding: '12px', borderRadius: '10px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                    <div style={{ padding: '12px', borderRadius: '10px', background: '#F8FAFC', border: '1px solid #EEF1F6' }}>
                       <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Status Engine Cluster</div>
                       <div style={{ fontSize: '14px', fontWeight: 800, color: '#059669', marginTop: '4px' }}>
                         Aktif & Siap Operasi
@@ -2040,7 +2040,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>Server Isolation Guard</div>
                     </div>
 
-                    <div style={{ padding: '12px', borderRadius: '10px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                    <div style={{ padding: '12px', borderRadius: '10px', background: '#F8FAFC', border: '1px solid #EEF1F6' }}>
                       <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Asistensi Cepat (Quick)</div>
                       <div style={{ fontSize: '14px', fontWeight: 800, color: '#2563EB', marginTop: '4px' }}>
                         EZRAB AI 1.3
@@ -2048,7 +2048,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>Tanya Jawab & Bantuan Kilat</div>
                     </div>
 
-                    <div style={{ padding: '12px', borderRadius: '10px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                    <div style={{ padding: '12px', borderRadius: '10px', background: '#F8FAFC', border: '1px solid #EEF1F6' }}>
                       <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Penalaran Lanjutan (Pro)</div>
                       <div style={{ fontSize: '14px', fontWeight: 800, color: '#7C3AED', marginTop: '4px' }}>
                         EZRAB AI Pro
@@ -2056,7 +2056,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>DED → RAB & Analisis QTO</div>
                     </div>
 
-                    <div style={{ padding: '12px', borderRadius: '10px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                    <div style={{ padding: '12px', borderRadius: '10px', background: '#F8FAFC', border: '1px solid #EEF1F6' }}>
                       <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Latensi Respons</div>
                       <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', marginTop: '4px' }}>
                         {aiAuditResult?.latencyMs ? `${aiAuditResult.latencyMs} ms` : '142 ms'}
@@ -2102,7 +2102,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   onClick={() => setAuditLogs(settingsAuditService.getLogs())}
                   style={{
                     padding: '6px 12px',
-                    borderRadius: '8px',
+                    borderRadius: '10px',
                     border: '1px solid #CBD5E1',
                     background: '#FFFFFF',
                     color: '#334155',
@@ -2120,7 +2120,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               </div>
 
               {/* Audit Log Table */}
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ border: '1px solid #EEF1F6', borderRadius: '16px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                   <thead>
                     <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
@@ -2194,7 +2194,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   { q: 'Bagaimana cara kerja Harga Proyek Override?', a: 'Harga Proyek meng-override harga master database khusus untuk proyek terpilih tanpa mengubah master data acuan nasional.' },
                   { q: 'Apakah model AI dapat diubah oleh pengguna?', a: 'Tidak. Sesuai prinsip arsitektur EZRAB, AI beroperasi secara internal sebagai task router infrastructure terpusat.' },
                 ].map((faq) => (
-                  <div key={faq.q} style={{ padding: '16px', borderRadius: '12px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                  <div key={faq.q} style={{ padding: '16px', borderRadius: '16px', background: '#F8FAFC', border: '1px solid #EEF1F6' }}>
                     <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A' }}>{faq.q}</div>
                     <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '6px', lineHeight: 1.5 }}>{faq.a}</div>
                   </div>
@@ -2213,7 +2213,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
                     Informasi & Metadata Proyek
                   </h3>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#92400E', background: '#FEF3C7', padding: '2px 8px', borderRadius: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#92400E', background: '#FEF3C7', padding: '2px 10px', borderRadius: '999px' }}>
                     {activeProject?.name || 'Proyek'}
                   </span>
                 </div>
@@ -2229,7 +2229,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="text"
                     value={projName}
                     onChange={(e) => setProjName(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -2239,7 +2239,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="text"
                     value={projNumber}
                     onChange={(e) => setProjNumber(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -2249,7 +2249,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="text"
                     value={projClient}
                     onChange={(e) => setProjClient(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -2259,7 +2259,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="text"
                     value={projLocation}
                     onChange={(e) => setProjLocation(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -2268,7 +2268,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <select
                     value={projBuildingType}
                     onChange={(e) => setProjBuildingType(e.target.value as any)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
                     <option value="Rumah Tinggal">Rumah Tinggal</option>
                     <option value="Gedung Kantor">Gedung Kantor</option>
@@ -2283,7 +2283,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="number"
                     value={projBuildingArea}
                     onChange={(e) => setProjBuildingArea(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
               </div>
@@ -2300,7 +2300,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
                     Parameter Estimasi & Pajak Proyek
                   </h3>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#92400E', background: '#FEF3C7', padding: '2px 8px', borderRadius: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#92400E', background: '#FEF3C7', padding: '2px 10px', borderRadius: '999px' }}>
                     {activeProject?.name || 'Proyek'}
                   </span>
                 </div>
@@ -2319,7 +2319,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     step={0.5}
                     value={projOverhead}
                     onChange={(e) => setProjOverhead(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -2332,7 +2332,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     step={0.5}
                     value={projProfit}
                     onChange={(e) => setProjProfit(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -2344,7 +2344,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     max={25}
                     value={projPpn}
                     onChange={(e) => setProjPpn(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -2353,7 +2353,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <select
                     value={projRounding}
                     onChange={(e) => setProjRounding(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
                     <option value="RIBUAN">Pembulatan ke Ribuan Terdekat (Rp 1.000)</option>
                     <option value="RATUSAN">Pembulatan ke Ratusan Terdekat (Rp 100)</option>
@@ -2375,7 +2375,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   onClick={() => onNavigateTab?.('harga-proyek')}
                   style={{
                     padding: '8px 14px',
-                    borderRadius: '8px',
+                    borderRadius: '10px',
                     background: '#2563EB',
                     color: '#FFFFFF',
                     border: 'none',
@@ -2411,7 +2411,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="number"
                     value={projWaste}
                     onChange={(e) => setProjWaste(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -2420,7 +2420,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <select
                     value={projVolumeDecimals}
                     onChange={(e) => setProjVolumeDecimals(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
                   >
                     <option value={2}>2 Desimal (Standar PU)</option>
                     <option value={3}>3 Desimal (Presisi Tinggi)</option>
@@ -2450,7 +2450,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <input
                     type="text"
                     defaultValue={`SP/${projNumber}/2026`}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -2459,7 +2459,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <input
                     type="text"
                     defaultValue={companyDirector}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
               </div>
@@ -2487,7 +2487,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="date"
                     value={projStartDate}
                     onChange={(e) => setProjStartDate(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
@@ -2497,7 +2497,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="date"
                     value={projTargetDate}
                     onChange={(e) => setProjTargetDate(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
               </div>
@@ -2525,7 +2525,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     type="text"
                     defaultValue={formatCurrencyIDR(450000000)}
                     disabled
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', background: '#F8FAFC', fontWeight: 700 }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', background: '#F8FAFC', fontWeight: 700 }}
                   />
                   <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Diambil dari Grand Total RAB yang disetujui direksi</span>
                 </div>
