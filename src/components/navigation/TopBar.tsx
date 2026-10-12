@@ -16,6 +16,8 @@ import {
   Keyboard,
   LifeBuoy,
   MessageSquare,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { NotificationBell } from '../../notifications/NotificationBell';
 import type { NotificationItem } from '../../notifications/NotificationContext';
@@ -23,6 +25,7 @@ import { ClientUserManagementService } from '../../services/userManagementServic
 import { UserRole } from '../../types';
 import { useI18n } from '../../i18n';
 import { useRole } from '../../auth/RoleContext';
+import { useTheme } from '../../context/ThemeContext';
 
 interface TopBarProps {
   isMobile: boolean;
@@ -50,6 +53,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   const [currentUser, setCurrentUser] = useState(() => ClientUserManagementService.getCurrentUser());
   const [helpOpen, setHelpOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const { effectiveTheme, setTheme } = useTheme();
+  const isDark = effectiveTheme === 'dark';
 
   const handleNotificationItemClick = (item: NotificationItem) => {
     if (item.link) {
@@ -280,6 +285,29 @@ export const TopBar: React.FC<TopBarProps> = ({
          ======================================================================= */}
       <div style={{ display: 'flex', alignItems: 'center', gap: isNarrowMobile ? '8px' : '12px', flexShrink: 0 }}>
         
+        {/* 0. THEME TOGGLE (terang/gelap) */}
+        <button
+          type="button"
+          onClick={() => setTheme(isDark ? 'light' : 'dark')}
+          title={isDark ? 'Mode terang' : 'Mode gelap'}
+          aria-label={isDark ? 'Mode terang' : 'Mode gelap'}
+          aria-pressed={isDark}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '10px',
+            border: '1px solid #E2E8F0',
+            background: '#FFFFFF',
+            color: '#64748B',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          {isDark ? <Sun size={17} /> : <Moon size={17} />}
+        </button>
+
         {/* 1. NOTIFICATION BELL & POPOVER (real notification center) */}
         <NotificationBell
           isNarrowMobile={isNarrowMobile}

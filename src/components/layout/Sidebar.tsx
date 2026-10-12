@@ -29,10 +29,7 @@ import {
   FileSpreadsheet,
   FileCheck,
   Calendar,
-  Sun,
-  Moon,
 } from 'lucide-react';
-import { useTheme } from '../../context/ThemeContext';
 import { Project } from '../../types';
 import { useI18n } from '../../i18n';
 
@@ -60,50 +57,6 @@ interface NavItemDef {
   badgeType?: 'primary' | 'success' | 'neutral';
   matchMenu?: (active: string) => boolean;
 }
-
-/** Toggle light/dark via ThemeContext — dark mode tetap bisa diakses dari workspace. */
-const ThemeToggleInline: React.FC<{
-  sidebarCollapsed: boolean;
-  isMobile: boolean;
-  handleMouseEnterItem: (e: React.MouseEvent<HTMLElement>, label: string, id: string) => void;
-  handleMouseLeaveItem: () => void;
-}> = ({ sidebarCollapsed, isMobile, handleMouseEnterItem, handleMouseLeaveItem }) => {
-  const { effectiveTheme, setTheme } = useTheme();
-  const isDark = effectiveTheme === 'dark';
-  const label = isDark ? 'Mode terang' : 'Mode gelap';
-  return (
-    <button
-      type="button"
-      onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      onMouseEnter={(e) => handleMouseEnterItem(e, label, 'theme')}
-      onMouseLeave={handleMouseLeaveItem}
-      title={label}
-      aria-label={label}
-      aria-pressed={isDark}
-      style={{
-        width: '100%',
-        height: '36px',
-        borderRadius: '8px',
-        background: '#FFFFFF',
-        border: '1px solid #DCE4EE',
-        color: '#64748B',
-        fontSize: '12px',
-        fontWeight: 600,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
-        padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
-        gap: '10px',
-        cursor: 'pointer',
-        transition: 'all 0.15s ease',
-        marginBottom: '8px',
-      }}
-    >
-      {isDark ? <Sun size={16} /> : <Moon size={16} />}
-      {(!sidebarCollapsed || isMobile) && <span>{label}</span>}
-    </button>
-  );
-};
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeMenu,
@@ -1430,12 +1383,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
 
           {/* Logout button */}
-          <ThemeToggleInline
-            sidebarCollapsed={sidebarCollapsed}
-            isMobile={isMobile}
-            handleMouseEnterItem={handleMouseEnterItem}
-            handleMouseLeaveItem={handleMouseLeaveItem}
-          />
           <button
             type="button"
             onClick={() => {
