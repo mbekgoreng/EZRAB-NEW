@@ -149,6 +149,14 @@ export const SlidingAuthCard: React.FC<Props> = ({
         <X size={20} />
       </button>
 
+      <div className="sac-mobile-brand">
+        <img src="/images/ez-emblem.png" alt="EZRAB" />
+        <div className="sac-mobile-brand-text">
+          <strong>EZRAB</strong>
+          <span>Platform RAB &amp; Estimasi Konstruksi AI</span>
+        </div>
+      </div>
+
       <div className={`sac-container${isSignUp ? ' sac-right-active' : ''}`}>
         {checking ? (
           <div className="sac-loggedin">
@@ -175,7 +183,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
             {/* ---- Form DAFTAR ---- */}
             <div className="sac-form-container sac-sign-up-container">
               <form onSubmit={(e) => void submit(e, true)}>
-                <h1>Buat Akun</h1>
+                <h1>Buat Akun EZRAB</h1>
                 <div className="sac-social">
                   <button
                     type="button"
@@ -231,7 +239,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
             {/* ---- Form MASUK ---- */}
             <div className="sac-form-container sac-sign-in-container">
               <form onSubmit={(e) => void submit(e, false)}>
-                <h1>Masuk</h1>
+                <h1>Masuk ke EZRAB</h1>
                 <div className="sac-social">
                   <button
                     type="button"
@@ -279,17 +287,21 @@ export const SlidingAuthCard: React.FC<Props> = ({
             <div className="sac-overlay-container" aria-hidden="true">
               <div className="sac-overlay">
                 <div className="sac-overlay-panel sac-overlay-left">
-                  <div className="sac-brandmark">EZ</div>
+                  <div className="sac-brandmark">
+                    <img src="/images/ez-emblem.png" alt="EZRAB" />
+                  </div>
                   <h1>Selamat Datang Kembali!</h1>
-                  <p>Agar tetap terhubung dengan kami, masuk dengan akun pribadi Anda</p>
+                  <p>Masuk untuk melanjutkan proyek, QTO, dan RAB Anda</p>
                   <button type="button" className="sac-btn sac-ghost" onClick={() => switchMode(false)} tabIndex={-1}>
                     Masuk
                   </button>
                 </div>
                 <div className="sac-overlay-panel sac-overlay-right">
-                  <div className="sac-brandmark">EZ</div>
-                  <h1>Halo, Sobat!</h1>
-                  <p>Masukkan data pribadi Anda dan mulai perjalanan bersama kami</p>
+                  <div className="sac-brandmark">
+                    <img src="/images/ez-emblem.png" alt="EZRAB" />
+                  </div>
+                  <h1>Halo, Estimator!</h1>
+                  <p>Daftar gratis dan susun RAB pertama Anda dalam hitungan menit</p>
                   <button type="button" className="sac-btn sac-ghost" onClick={() => switchMode(true)} tabIndex={-1}>
                     Daftar
                   </button>
