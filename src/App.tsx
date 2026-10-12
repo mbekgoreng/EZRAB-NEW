@@ -16,6 +16,12 @@ import {
 import { isAppPath, navigateTo, parseWorkspaceRoute, paths, routeForMenu, routeLabel } from './routing/routes';
 import { useBrowserLocation } from './routing/useBrowserLocation';
 
+// Login dinonaktifkan sementara (perintah user 2026-10-12): seluruh pintu
+// masuk login disembunyikan — CTA "Masuk/Daftar" langsung ke dashboard
+// tanpa menampilkan modal atau halaman login. Ubah ke true untuk
+// mengaktifkan kembali.
+const AUTH_ENABLED = false;
+
 export const App: React.FC = () => {
   const location = useBrowserLocation();
   const workspaceRoute = parseWorkspaceRoute(location.pathname, location.search);
@@ -69,6 +75,10 @@ export const App: React.FC = () => {
   };
 
   const handleOpenAuth = (tab: 'masuk' | 'daftar' = 'masuk') => {
+    if (!AUTH_ENABLED) {
+      handleSetWorkspace(true);
+      return;
+    }
     setAuthInitialTab(tab);
     setAuthModalOpen(true);
   };
@@ -131,15 +141,17 @@ export const App: React.FC = () => {
         />
 
         {/* Modals */}
-        <AuthModal
-          isOpen={authModalOpen}
-          initialTab={authInitialTab}
-          onClose={() => setAuthModalOpen(false)}
-          onSuccessLogin={() => {
-            setAuthModalOpen(false);
-            handleSetWorkspace(true);
-          }}
-        />
+        {AUTH_ENABLED && (
+          <AuthModal
+            isOpen={authModalOpen}
+            initialTab={authInitialTab}
+            onClose={() => setAuthModalOpen(false)}
+            onSuccessLogin={() => {
+              setAuthModalOpen(false);
+              handleSetWorkspace(true);
+            }}
+          />
+        )}
 
         <DemoModal
           isOpen={demoModalOpen}
