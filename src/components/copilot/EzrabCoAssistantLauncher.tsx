@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { X, ChevronUp } from 'lucide-react';
+import { X, ChevronUp, Sparkles } from 'lucide-react';
 import { MascotGlow, EZRABMascotLucu } from '../mascot';
 
 interface EzrabCoAssistantLauncherProps {
@@ -15,7 +15,7 @@ interface EzrabCoAssistantLauncherProps {
  * - Powered by the official EZRAB Mascot Lucu vector graphic.
  * - Interactive 60fps eye tracking following the cursor across the screen.
  * - Natural organic blinking & autonomous curious gaze.
- * - Proximity detection: displays "EZRAB AI ASISSTANT" badge when cursor moves towards bottom-right,
+ * - Proximity detection: displays "EZRAB AI ASSISTANT" badge when cursor moves towards bottom-right,
  *   with smooth automatic hide after 2.6s or on cursor exit.
  * - Hide / Minimize capability: user can dismiss the mascot via subtle '×' button, with sleek
  *   unhide pill tab to restore anytime.
@@ -109,7 +109,7 @@ export const EzrabCoAssistantLauncher: React.FC<EzrabCoAssistantLauncherProps> =
     const handlePointerMove = (e: PointerEvent) => {
       mousePosRef.current = { x: e.clientX, y: e.clientY };
 
-      // Proximity detection for "EZRAB AI ASISSTANT" text badge
+      // Proximity detection for "EZRAB AI ASSISTANT" text badge
       if (anchorRef.current) {
         const rect = anchorRef.current.getBoundingClientRect();
         const anchorCenterX = rect.left + rect.width / 2;
@@ -306,7 +306,7 @@ export const EzrabCoAssistantLauncher: React.FC<EzrabCoAssistantLauncherProps> =
         zIndex: 9990,
       }}
     >
-      {/* "EZRAB AI ASISSTANT" Text Badge on Cursor Approach with Auto-Hide */}
+      {/* "EZRAB AI ASSISTANT" Text Badge on Cursor Approach with Auto-Hide */}
       <div
         className="ezrab-assistant-tooltip"
         style={{
@@ -350,7 +350,7 @@ export const EzrabCoAssistantLauncher: React.FC<EzrabCoAssistantLauncherProps> =
               animation: 'ezrabSparkleRotate 2.6s ease-in-out infinite',
             }}
           >
-            ✨
+            <Sparkles size={12} color="#93C5FD" />
           </span>
           <span
             style={{
@@ -360,7 +360,7 @@ export const EzrabCoAssistantLauncher: React.FC<EzrabCoAssistantLauncherProps> =
               WebkitTextFillColor: 'transparent',
             }}
           >
-            EZRAB AI ASISSTANT
+            EZRAB AI ASSISTANT
           </span>
           <span
             style={{
