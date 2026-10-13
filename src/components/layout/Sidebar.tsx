@@ -23,6 +23,12 @@ import {
   FileSpreadsheet,
   FileCheck,
   Calendar,
+  Building2,
+  Plus,
+  Check,
+  HelpCircle,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
 import { Project } from '../../types';
 import { useI18n } from '../../i18n';
@@ -76,6 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [databaseSubmenuOpen, setDatabaseSubmenuOpen] = useState(true);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; label: string } | null>(null);
+  const [projectPickerOpen, setProjectPickerOpen] = useState(false);
 
   // Volume Calculation Submenu Items
   const volumeSubItems = [
@@ -405,6 +412,187 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           </div>
 
+
+          {/* Project selector — compact, minimal */}
+          {(!sidebarCollapsed || isMobile) ? (
+            <div style={{ position: 'relative', margin: '4px 0 8px 0' }}>
+              <button
+                type="button"
+                onClick={() => setProjectPickerOpen((v) => !v)}
+                aria-label="Pilih proyek saat ini"
+                aria-expanded={projectPickerOpen}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '8px',
+                  padding: '8px 10px',
+                  borderRadius: '10px',
+                  background: '#FFFFFF',
+                  border: '1px solid #E2E8F0',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease',
+                  boxShadow: projectPickerOpen ? '0 4px 12px rgba(37,99,235,0.08)' : 'none',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                  <div
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '8px',
+                      background: '#E3EEFB',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      color: '#2563EB',
+                    }}
+                  >
+                    <Building2 size={15} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '9px', fontWeight: 800, color: '#2563EB', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                      Proyek Saat Ini
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#141412', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {currentProject ? currentProject.name : 'Pilih Proyek'}
+                    </div>
+                  </div>
+                </div>
+                <ChevronDown
+                  size={14}
+                  color="#64748B"
+                  style={{
+                    transform: projectPickerOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s ease',
+                    flexShrink: 0,
+                  }}
+                />
+              </button>
+
+              {projectPickerOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    marginTop: '6px',
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '12px',
+                    border: '1px solid #EEF1F6',
+                    boxShadow: '0 12px 28px rgba(15,23,42,0.14)',
+                    zIndex: 100,
+                    maxHeight: '280px',
+                    overflowY: 'auto',
+                    padding: '6px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                  }}
+                >
+                  <div style={{ padding: '6px 8px 4px', fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Daftar Proyek ({projects.length})
+                  </div>
+                  {projects.map((proj) => {
+                    const isSelected = currentProject?.id === proj.id;
+                    return (
+                      <button
+                        key={proj.id}
+                        type="button"
+                        onClick={() => {
+                          onSelectMenu(activeMenu, proj.id);
+                          setProjectPickerOpen(false);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '7px 8px',
+                          borderRadius: '8px',
+                          border: isSelected ? '1px solid #BFDBFE' : '1px solid transparent',
+                          background: isSelected ? '#E3EEFB' : 'transparent',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          width: '100%',
+                          transition: 'background 0.12s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected) e.currentTarget.style.background = '#F8FAFC';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) e.currentTarget.style.background = 'transparent';
+                        }}
+                      >
+                        <div style={{ minWidth: 0, flex: 1, marginRight: '6px' }}>
+                          <div style={{ fontSize: '11.5px', fontWeight: 700, color: isSelected ? '#2563EB' : '#141412', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {proj.name}
+                          </div>
+                          <div style={{ fontSize: '10px', color: '#8A8A84' }}>
+                            {proj.projectNumber || proj.id} • {proj.status === 'completed' ? 'Selesai' : proj.status === 'in_progress' ? 'Berjalan' : 'Draft'}
+                          </div>
+                        </div>
+                        {isSelected && <Check size={14} color="#2563EB" style={{ flexShrink: 0 }} />}
+                      </button>
+                    );
+                  })}
+                  <div style={{ borderTop: '1px solid #F1F5F9', marginTop: '4px', paddingTop: '4px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelectMenu('proyek');
+                        setProjectPickerOpen(false);
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '8px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: '#E3EEFB',
+                        color: '#2563EB',
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <Plus size={13} />
+                      <span>+ Buat Proyek Baru</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', justifyContent: 'center', margin: '6px 0 10px 0' }}>
+              <button
+                type="button"
+                onClick={() => onSelectMenu('proyek')}
+                title={`Proyek Saat Ini: ${currentProject ? currentProject.name : 'Pilih Proyek'}`}
+                aria-label="Pilih proyek"
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  background: '#E3EEFB',
+                  border: 'none',
+                  color: '#2563EB',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <Building2 size={18} />
+              </button>
+            </div>
+          )}
 
           {/* =========================================================================
               MAIN NAVIGATION
@@ -927,12 +1115,149 @@ export const Sidebar: React.FC<SidebarProps> = ({
               />
               {(!sidebarCollapsed || isMobile) && <span>{t('nav.pengaturan')}</span>}
             </button>
+            {/* Tutorial EZRAB */}
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new CustomEvent('ezrab:open-onboarding'));
+                }
+                if (isMobile) onCloseMobileDrawer();
+              }}
+              onMouseEnter={(e) => handleMouseEnterItem(e, 'Tutorial', 'tutorial')}
+              onMouseLeave={handleMouseLeaveItem}
+              aria-label="Tutorial EZRAB"
+              style={{
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
+                padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 500,
+                color: hoveredItemId === 'tutorial' ? '#2563EB' : '#475569',
+                background: hoveredItemId === 'tutorial' ? '#DCE7F5' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%',
+                gap: '12px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <HelpCircle
+                size={17}
+                color={hoveredItemId === 'tutorial' ? '#2563EB' : '#64748B'}
+              />
+              {(!sidebarCollapsed || isMobile) && <span>Tutorial</span>}
+            </button>
           </nav>
         </div>
 
         {/* =========================================================================
             BOTTOM: USER PROFILE & LOGOUT
            ========================================================================= */}
+        <div
+          style={{
+            padding: sidebarCollapsed && !isMobile ? '10px 8px' : '10px 12px',
+            borderTop: '1px solid #DCE4EE',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            flexShrink: 0,
+          }}
+        >
+          {(!sidebarCollapsed || isMobile) && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '6px 8px',
+                borderRadius: '10px',
+                background: '#FFFFFF',
+                border: '1px solid #EEF1F6',
+              }}
+            >
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: '#E3EEFB',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#2563EB',
+                  flexShrink: 0,
+                }}
+              >
+                <UserIcon size={16} />
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#141412',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  Estimator Pro
+                </div>
+                <div
+                  style={{
+                    fontSize: '10.5px',
+                    color: '#8A8A84',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  estimator@ezrab.id
+                </div>
+              </div>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              if (onBackToLanding) {
+                if (window.confirm('Apakah Anda yakin ingin keluar ke halaman beranda?')) {
+                  onBackToLanding();
+                }
+              }
+            }}
+            onMouseEnter={(e) => handleMouseEnterItem(e, 'Keluar ke Beranda', 'logout')}
+            onMouseLeave={handleMouseLeaveItem}
+            title="Keluar ke Beranda"
+            aria-label="Keluar ke Beranda"
+            style={{
+              width: '100%',
+              height: '36px',
+              borderRadius: '8px',
+              background: 'transparent',
+              border: 'none',
+              color: hoveredItemId === 'logout' ? '#2563EB' : '#64748B',
+              fontSize: '12.5px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
+              padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+              gap: '12px',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <LogOut size={16} />
+            {(!sidebarCollapsed || isMobile) && <span>Keluar ke Beranda</span>}
+          </button>
+        </div>
       </aside>
 
       {/* Floating pill toggle — distinctive hide/show control on sidebar boundary.
