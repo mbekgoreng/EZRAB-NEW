@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useContext } from 'react';
-import { Plus, X, Folder, FileText, ArrowRight, CheckCircle2, Trash2, Sparkles, Search, Filter } from 'lucide-react';
+import { Plus, X, Folder, FileText, ArrowRight, CheckCircle2, Trash2, Sparkles, Search, Filter, Building2, MapPin, Wallet, CalendarDays, Layers, ShieldCheck, ClipboardList, Briefcase } from 'lucide-react';
 import type { Project } from '../../types';
 import { DOCUMENT_REGISTRY, getDocumentDefinition } from '../../document-engine/registry';
 import { LocalDocumentRepository } from '../../document-engine/repository';
@@ -22,12 +22,12 @@ import { computeSourceHash } from '../../document-engine/sourceChangeDetector';
 
 type Workflow = 'tender' | 'technical' | 'hse' | 'commercial' | 'schedule';
 
-const workflows: { id: Workflow; icon: string; label: string; description: string; categories: string[] }[] = [
-  { id: 'tender', icon: '🏗️', label: 'Dokumen Proyek', description: 'Dokumen pekerjaan terintegrasi', categories: ['ADMINISTRATION', 'TECHNICAL', 'COMMERCIAL', 'HSE', 'SCHEDULE'] },
-  { id: 'technical', icon: '📐', label: 'Teknis', description: 'Dokumen teknis', categories: ['TECHNICAL'] },
-  { id: 'hse', icon: '🛡️', label: 'HSE / K3', description: 'Dokumen K3', categories: ['HSE'] },
-  { id: 'commercial', icon: '💰', label: 'Komersial', description: 'Dokumen komersial', categories: ['COMMERCIAL'] },
-  { id: 'schedule', icon: '📅', label: 'Schedule', description: 'Penjadwalan', categories: ['SCHEDULE'] },
+const workflows: { id: Workflow; icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>; label: string; description: string; categories: string[] }[] = [
+  { id: 'tender', icon: Briefcase, label: 'Dokumen Proyek', description: 'Dokumen pekerjaan terintegrasi', categories: ['ADMINISTRATION', 'TECHNICAL', 'COMMERCIAL', 'HSE', 'SCHEDULE'] },
+  { id: 'technical', icon: Layers, label: 'Teknis', description: 'Dokumen teknis', categories: ['TECHNICAL'] },
+  { id: 'hse', icon: ShieldCheck, label: 'HSE / K3', description: 'Dokumen K3', categories: ['HSE'] },
+  { id: 'commercial', icon: Wallet, label: 'Komersial', description: 'Dokumen komersial', categories: ['COMMERCIAL'] },
+  { id: 'schedule', icon: CalendarDays, label: 'Schedule', description: 'Penjadwalan', categories: ['SCHEDULE'] },
 ];
 
 export interface TenderDocumentsViewProps {
@@ -104,6 +104,21 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
   const [selectionStep, setSelectionStep] = useState(1);
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<{ defId: string; docName: string } | null>(null);
+
+  // Escape closes topmost dialog: delete confirm first, then wizard
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (deleteTarget) {
+        setDeleteTarget(null);
+      } else if (wizard) {
+        setWizard(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [deleteTarget, wizard]);
 
   const reloadActiveRecords = useCallback(() => {
     const docs = repo.getProjectDocuments(projectId).filter((r) => r.status !== 'NOT_STARTED');
@@ -170,10 +185,13 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
   };
 
   const handleDeleteDocument = (defId: string, docName: string) => {
-    if (typeof window !== 'undefined' && !window.confirm(`Hapus dokumen "${docName}" dari dokumen aktif?`)) {
-      return;
-    }
-    repo.deleteDocument(defId);
+    setDeleteTarget({ defId, docName });
+  };
+
+  const confirmDeleteDocument = () => {
+    if (!deleteTarget) return;
+    repo.deleteDocument(deleteTarget.defId);
+    setDeleteTarget(null);
     reloadActiveRecords();
   };
 
@@ -297,9 +315,9 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                       {proj.name}
                     </h3>
                     <div style={{ fontSize: 13, color: '#475569', display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
-                      <div>📍 <strong>Lokasi:</strong> {proj.location || '—'}</div>
-                      <div>💰 <strong>RAB:</strong> {formatRupiah(proj.totalRab || 0)}</div>
-                      <div>📋 <strong>Status RAB:</strong> <span style={{ color: '#16A34A', fontWeight: 600 }}>Lengkap</span></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={13} color="#94A3B8" /> <strong>Lokasi:</strong> {proj.location || '—'}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Wallet size={13} color="#94A3B8" /> <strong>RAB:</strong> {formatRupiah(proj.totalRab || 0)}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><ClipboardList size={13} color="#94A3B8" /> <strong>Status RAB:</strong> <span style={{ color: '#16A34A', fontWeight: 600 }}>Lengkap</span></div>
                     </div>
                   </div>
 
@@ -335,39 +353,9 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
           <div style={{ textAlign: 'center', padding: '50px 20px', background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0' }}>
             <Folder size={40} color="#94A3B8" style={{ margin: '0 auto 12px' }} />
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Belum Ada Daftar Pekerjaan</h3>
-            <p style={{ margin: '6px 0 16px', color: '#64748B', fontSize: 13 }}>
-              Buat proyek baru di menu Proyek atau gunakan proyek percontohan.
+            <p style={{ margin: '6px 0 0', color: '#64748B', fontSize: 13 }}>
+              Buat proyek baru di menu Proyek, lalu kembali ke sini untuk memilihnya.
             </p>
-            <button
-              onClick={() => {
-                const sampleJob: Project = {
-                  id: 'PRJ-DEMO-01',
-                  projectNumber: 'PRJ-2026-001',
-                  name: 'Renovasi Kantor',
-                  clientName: 'PT Mandiri Jaya',
-                  location: 'Surabaya',
-                  totalRab: 1250000000,
-                  status: 'in_progress',
-                  startDate: '2026-03-01',
-                  targetDate: '2026-07-01',
-                } as Project;
-                setSelectedJob(sampleJob);
-                setIsSelectingJob(false);
-                onSelectProject?.(sampleJob);
-              }}
-              style={{
-                background: '#2563EB',
-                color: '#fff',
-                border: 0,
-                borderRadius: 8,
-                padding: '9px 18px',
-                fontSize: 13,
-                fontWeight: 650,
-                cursor: 'pointer',
-              }}
-            >
-              Pilih Renovasi Kantor (Rp 1.250.000.000)
-            </button>
           </div>
         )}
       </div>
@@ -376,47 +364,53 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
 
   return (
     <div style={{ fontFamily: "'Inter', system-ui", color: '#0F172A', maxWidth: 1200, margin: '0 auto' }}>
-      {/* ACTIVE JOB CONTEXT BANNER (Section 3) */}
+      {/* PROJECT CONTEXT BAR — compact enterprise header */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
-          color: '#fff',
+          background: '#FFFFFF',
+          border: '1px solid #E2E8F0',
           borderRadius: 12,
-          padding: '16px 20px',
-          marginBottom: 22,
+          padding: '12px 16px',
+          marginBottom: 20,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          boxShadow: '0 4px 14px rgba(15,23,42,0.12)',
+          gap: 12,
+          flexWrap: 'wrap',
+          boxShadow: '0 1px 3px rgba(15,23,42,0.04)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
           <div
             style={{
-              width: 44,
-              height: 44,
-              borderRadius: 10,
-              background: 'rgba(37,99,235,0.2)',
-              border: '1px solid rgba(59,130,246,0.3)',
+              width: 38,
+              height: 38,
+              borderRadius: 9,
+              background: '#EFF6FF',
+              border: '1px solid #BFDBFE',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 22,
+              color: '#2563EB',
+              flexShrink: 0,
             }}
           >
-            🏗️
+            <Building2 size={19} />
           </div>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 750, color: '#94A3B8', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-              Pekerjaan Aktif (Active Job Context)
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#F8FAFC', marginTop: 1 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 750, color: '#0F172A', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {activeProject.name}
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 4, fontSize: 12.5, color: '#CBD5E1' }}>
-              <span>📍 <strong>Lokasi:</strong> {activeProject.location || '—'}</span>
-              <span>💰 <strong>RAB:</strong> {formatRupiah(activeProject.totalRab || 0)}</span>
-              <span>📅 <strong>Durasi:</strong> {activeProject.startDate ? `${activeProject.startDate} s/d ${activeProject.targetDate || 'Selesai'}` : '120 Hari'}</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 3, fontSize: 12, color: '#64748B', alignItems: 'center' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <MapPin size={12} /> {activeProject.location || '—'}
+              </span>
+              <span style={{ color: '#CBD5E1' }}>•</span>
+              <span>{activeProject.buildingType || 'Konstruksi'}</span>
+              <span style={{ color: '#CBD5E1' }}>•</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <Wallet size={12} /> {formatRupiah(activeProject.totalRab || 0)}
+              </span>
             </div>
           </div>
         </div>
@@ -424,18 +418,18 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
         <button
           onClick={() => setIsSelectingJob(true)}
           style={{
-            background: 'rgba(255,255,255,0.1)',
-            color: '#fff',
-            border: '1px solid rgba(255,255,255,0.25)',
+            background: '#F8FAFC',
+            color: '#334155',
+            border: '1px solid #CBD5E1',
             borderRadius: 8,
             padding: '8px 14px',
             fontSize: 12.5,
             fontWeight: 650,
             cursor: 'pointer',
-            transition: 'all 0.15s ease',
+            whiteSpace: 'nowrap',
           }}
         >
-          Ganti Pekerjaan
+          Ganti Proyek
         </button>
       </div>
 
@@ -474,7 +468,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
               transition: 'all 0.15s ease',
             }}
           >
-            <Sparkles size={16} /> ✨ Buat Paket dengan AI
+            <Sparkles size={16} /> Buat Paket dengan AI
           </button>
 
           <button
@@ -504,32 +498,29 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
         </div>
       </div>
 
-      {/* STATS OVERVIEW BAR */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 20 }}>
+      {/* STATS OVERVIEW — compact enterprise strip, real data only */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, marginBottom: 20, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 12, overflow: 'hidden' }}>
         {[
-          { label: 'Total Dokumen', val: stats.total, sub: 'Semua berkas aktif', color: '#2563EB', bg: '#EFF6FF' },
-          { label: 'Selesai / Siap', val: stats.completed, sub: 'Lengkap & tervalidasi', color: '#16A34A', bg: '#F0FDF4' },
-          { label: 'Draft (R0)', val: stats.draft, sub: 'Perlu review narasi', color: '#D97706', bg: '#FFFBEB' },
-          { label: 'Perlu Data', val: stats.incomplete, sub: 'Variabel belum lengkap', color: '#DC2626', bg: '#FEF2F2' },
-        ].map((item, idx) => (
+          { label: 'Total Dokumen', val: stats.total, color: '#2563EB' },
+          { label: 'Selesai / Siap', val: stats.completed, color: '#16A34A' },
+          { label: 'Draft (R0)', val: stats.draft, color: '#D97706' },
+          { label: 'Perlu Data', val: stats.incomplete, color: '#DC2626' },
+        ].map((item, idx, arr) => (
           <div
             key={idx}
             style={{
-              background: '#FFFFFF',
-              borderRadius: 12,
-              border: '1px solid #E2E8F0',
-              padding: '14px 16px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+              flex: '1 1 140px',
+              padding: '12px 18px',
+              borderRight: idx < arr.length - 1 ? '1px solid #F1F5F9' : 'none',
               display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
+              alignItems: 'baseline',
+              gap: 10,
             }}
           >
-            <div style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>{item.label}</div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: item.color, margin: '4px 0' }}>
+            <span style={{ fontSize: 22, fontWeight: 800, color: item.color, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
               {item.val}
-            </div>
-            <div style={{ fontSize: 11, color: '#94A3B8' }}>{item.sub}</div>
+            </span>
+            <span style={{ fontSize: 12, color: '#64748B', fontWeight: 600 }}>{item.label}</span>
           </div>
         ))}
       </div>
@@ -676,7 +667,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                 boxShadow: '0 4px 14px rgba(37,99,235,0.25)',
               }}
             >
-              <Sparkles size={16} /> ✨ Buat Paket dengan AI
+              <Sparkles size={16} /> Buat Paket dengan AI
             </button>
             <button
               onClick={() => {
@@ -889,10 +880,59 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
         </div>
       )}
 
+      {/* DELETE CONFIRMATION DIALOG */}
+      {deleteTarget && (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="delete-dialog-title"
+          aria-describedby="delete-dialog-desc"
+          onClick={() => setDeleteTarget(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', zIndex: 200, display: 'grid', placeItems: 'center', padding: 20 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 14, width: 'min(420px, 100%)', padding: 22, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15)', border: '1px solid #E2E8F0' }}
+          >
+            <h3 id="delete-dialog-title" style={{ margin: 0, fontSize: 16, fontWeight: 750, color: '#0F172A' }}>
+              Hapus Dokumen
+            </h3>
+            <p id="delete-dialog-desc" style={{ margin: '8px 0 0', fontSize: 13.5, color: '#64748B', lineHeight: 1.55 }}>
+              Hapus dokumen <strong style={{ color: '#0F172A' }}>"{deleteTarget.docName}"</strong> dari
+              dokumen aktif? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+              <button
+                onClick={() => setDeleteTarget(null)}
+                autoFocus
+                style={{ padding: '9px 18px', background: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: 8, fontWeight: 600, fontSize: 13, color: '#334155', cursor: 'pointer' }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDeleteDocument}
+                style={{ padding: '9px 18px', background: '#DC2626', border: 0, borderRadius: 8, fontWeight: 700, fontSize: 13, color: '#fff', cursor: 'pointer' }}
+              >
+                Hapus Dokumen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* WIZARD MODAL */}
       {wizard && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', zIndex: 100, display: 'grid', placeItems: 'center', padding: 20 }}>
-          <div style={{ background: '#fff', borderRadius: 16, width: 'min(760px, 100%)', padding: 24, maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Wizard pembuatan dokumen manual"
+          onClick={() => setWizard(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', zIndex: 100, display: 'grid', placeItems: 'center', padding: 20 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 16, width: 'min(760px, 100%)', padding: 24, maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800 }}>
@@ -928,7 +968,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                         transition: 'all 0.15s ease',
                       }}
                     >
-                      <div style={{ fontSize: 24, marginBottom: 6 }}>{w.icon}</div>
+                      <div style={{ marginBottom: 8, color: '#2563EB' }}><w.icon size={22} /></div>
                       <div style={{ fontWeight: 700, fontSize: 14, color: '#0F172A' }}>{w.label}</div>
                       <div style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>{w.description}</div>
                     </button>
@@ -990,12 +1030,12 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                           <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
                             {def.autoVariables && def.autoVariables.length > 0 && (
                               <span style={{ fontSize: 10.5, background: '#DCFCE7', color: '#15803D', padding: '1px 6px', borderRadius: 4, fontWeight: 650 }}>
-                                ✓ Auto: {def.autoVariables.length} data proyek
+                                Auto: {def.autoVariables.length} data proyek
                               </span>
                             )}
                             {def.userFields && def.userFields.length > 0 && (
                               <span style={{ fontSize: 10.5, background: '#EFF6FF', color: '#2563EB', padding: '1px 6px', borderRadius: 4, fontWeight: 650 }}>
-                                ✍️ Input: {def.userFields.length} field
+                                Input: {def.userFields.length} field
                               </span>
                             )}
                           </div>

@@ -15,8 +15,12 @@ import {
   ShieldCheck,
   Building2,
   Calendar,
+  CalendarDays,
   DollarSign,
   Download,
+  ClipboardList,
+  DraftingCompass,
+  Wallet,
 } from 'lucide-react';
 import type { Project } from '../../types';
 import {
@@ -34,6 +38,7 @@ import {
 import { ConsistencyEngine } from '../../document-engine/consistencyEngine';
 import { formatRupiah } from '../../document-engine/templateEngine';
 import { computeSourceHash } from '../../document-engine/sourceChangeDetector';
+import { brandingClient } from '../../services/brandingClient';
 import {
   EMPTY_MASTER_DATA,
   type ProjectMasterData,
@@ -55,13 +60,13 @@ export interface DocumentPackageWizardModalProps {
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 
-const CATEGORY_META: Record<string, { label: string; icon: string; color: string; bg: string }> = {
-  ADMINISTRATION: { label: 'Administrasi', icon: '📋', color: '#2563EB', bg: '#EFF6FF' },
-  TECHNICAL: { label: 'Teknis', icon: '📐', color: '#0D9488', bg: '#F0FDFA' },
-  COMMERCIAL: { label: 'Biaya', icon: '💰', color: '#16A34A', bg: '#F0FDF4' },
-  COST: { label: 'Biaya', icon: '💰', color: '#16A34A', bg: '#F0FDF4' },
-  SCHEDULE: { label: 'Jadwal', icon: '📅', color: '#D97706', bg: '#FFFBEB' },
-  HSE: { label: 'K3 / HSE', icon: '🛡️', color: '#DC2626', bg: '#FEF2F2' },
+const CATEGORY_META: Record<string, { label: string; icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>; color: string; bg: string }> = {
+  ADMINISTRATION: { label: 'Administrasi', icon: ClipboardList, color: '#2563EB', bg: '#EFF6FF' },
+  TECHNICAL: { label: 'Teknis', icon: DraftingCompass, color: '#0D9488', bg: '#F0FDFA' },
+  COMMERCIAL: { label: 'Biaya', icon: Wallet, color: '#16A34A', bg: '#F0FDF4' },
+  COST: { label: 'Biaya', icon: Wallet, color: '#16A34A', bg: '#F0FDF4' },
+  SCHEDULE: { label: 'Jadwal', icon: CalendarDays, color: '#D97706', bg: '#FFFBEB' },
+  HSE: { label: 'K3 / HSE', icon: ShieldCheck, color: '#DC2626', bg: '#FEF2F2' },
 };
 
 export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProps> = ({
@@ -84,20 +89,52 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
   const [letterDate, setLetterDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [recipientName, setRecipientName] = useState<string>('Pokja Pemilihan / PPK');
   const [recipientOrg, setRecipientOrg] = useState<string>('Dinas Pekerjaan Umum & Penataan Ruang');
-  const [signatoryName, setSignatoryName] = useState<string>('Ir. Budi Santoso');
+  const [signatoryName, setSignatoryName] = useState<string>('');
   const [signatoryPosition, setSignatoryPosition] = useState<string>('Direktur Utama');
+  // Company identity: loaded from real workspace branding. Never hardcoded demo.
+  const [companyName, setCompanyName] = useState<string>('');
+  const [brandingLoading, setBrandingLoading] = useState<boolean>(false);
+  const [identityError, setIdentityError] = useState<string | null>(null);
 
   const projectId = currentProject?.id || currentProject?.projectNumber || 'default';
   const repo = useMemo(() => new LocalDocumentRepository(projectId), [projectId]);
 
-  // Reset or initialize on open
+  // Reset or initialize on open — incl. real company identity from branding.
+  // The branding default placeholder ('PT EZRAB KONSTRUKSI DIGITAL') is treated
+  // as "not available": the field stays empty and required instead of using it.
   useEffect(() => {
     if (isOpen) {
       setStep(1);
       setActivePreset('ALL');
       setSelectedDocIds([...TENDER_PACKAGE_PRESETS.ALL]);
+      setIdentityError(null);
+      setBrandingLoading(true);
+      let cancelled = false;
+      brandingClient.getBranding('ws-default-ezrab').then((b) => {
+        if (cancelled) return;
+        const raw = (b.companyName || '').trim();
+        const valid = raw && raw !== 'PT EZRAB KONSTRUKSI DIGITAL' ? raw : '';
+        setCompanyName(valid);
+        setBrandingLoading(false);
+      }).catch(() => {
+        if (cancelled) return;
+        // Fetch failed: no fictional fallback — user must fill the field.
+        setCompanyName('');
+        setBrandingLoading(false);
+      });
+      return () => { cancelled = true; };
     }
   }, [isOpen]);
+
+  // Escape closes the wizard
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
 
   const masterData: ProjectMasterData = useMemo(() => {
     if (!currentProject) {
@@ -111,7 +148,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
       projectName: currentProject.name || 'Proyek Tanpa Nama',
       projectNumber: projectId,
       owner: currentProject.clientName || 'Pemberi Kerja',
-      contractor: 'PT Rekacipta Konstruksi Utama',
+      contractor: companyName,
       location: currentProject.location || 'Indonesia',
       contractValue: currentProject.totalRab || 0,
       duration: currentProject.startDate && currentProject.targetDate
@@ -128,12 +165,12 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
       architect: 'A. Rahman, IAI',
       hseOfficer: 'Siti Handayani, S.T., Ahli K3',
       qs: 'QS Team EZRAB',
-      companyName: 'PT Rekacipta Konstruksi Utama',
+      companyName: companyName,
       companyAddress: 'Jl. Sudirman No. 45, Jakarta',
       companyPhone: '(021) 555-0199',
       companyEmail: 'kontraktor@ezrab.co.id',
     };
-  }, [currentProject, projectId, signatoryName]);
+  }, [currentProject, projectId, signatoryName, companyName]);
 
   // Calculate authoritative RAB total
   const calculatedRabTotal = useMemo(() => {
@@ -218,6 +255,19 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
   // Creation Action (Commitment)
   const [createdDocsCount, setCreatedDocsCount] = useState<number>(0);
   const handleGeneratePackage = () => {
+    // Identity validation: never generate documents with missing or fictional identity.
+    if (brandingLoading) return;
+    const cleanCompany = companyName.trim();
+    const cleanSignatory = signatoryName.trim();
+    if (!cleanCompany || !cleanSignatory) {
+      setIdentityError(
+        !cleanCompany
+          ? 'Nama perusahaan wajib diisi sebelum membuat dokumen.'
+          : 'Nama penandatangan wajib diisi sebelum membuat dokumen.'
+      );
+      return;
+    }
+    setIdentityError(null);
     let count = 0;
     const initialHash = computeSourceHash({
       master: masterData,
@@ -291,6 +341,10 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="AI Document Package Wizard"
+      onClick={onClose}
       style={{
         position: 'fixed',
         top: 0,
@@ -298,16 +352,16 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
         right: 0,
         bottom: 0,
         backgroundColor: 'rgba(15, 23, 42, 0.65)',
-        backdropFilter: 'blur(5px)',
-        zIndex: 9999,
+        zIndex: 150,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '20px',
-        fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+        fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif",
       }}
     >
       <div
+        onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%',
           maxWidth: '920px',
@@ -507,9 +561,10 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {Object.entries(groupedDocuments).map(([catKey, docs]) => {
                   if (docs.length === 0) return null;
-                  const meta = CATEGORY_META[catKey] || { label: catKey, icon: '📄', color: '#64748B', bg: '#F8FAFC' };
+                  const meta = CATEGORY_META[catKey] || { label: catKey, icon: FileText, color: '#64748B', bg: '#F8FAFC' };
                   const isCollapsed = collapsedCategories[catKey];
                   const selectedInCat = docs.filter((d) => selectedDocIds.includes(d.id)).length;
+                  const MetaIcon = meta.icon;
 
                   return (
                     <div
@@ -535,7 +590,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '18px' }}>{meta.icon}</span>
+                          <span style={{ color: meta.color, display: 'flex' }}><MetaIcon size={17} /></span>
                           <span style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
                             {meta.label} ({docs.length})
                           </span>
@@ -879,12 +934,38 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                    Penandatangan (Direktur)
+                    Nama Perusahaan / Kontraktor <span style={{ color: '#DC2626' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={companyName}
+                    onChange={(e) => { setCompanyName(e.target.value); setIdentityError(null); }}
+                    placeholder={brandingLoading ? 'Memuat dari profil perusahaan…' : 'Nama perusahaan — wajib diisi'}
+                    disabled={brandingLoading}
+                    style={{
+                      width: '100%',
+                      padding: '9px 12px',
+                      borderRadius: '8px',
+                      border: `1px solid ${identityError ? '#DC2626' : '#CBD5E1'}`,
+                      fontSize: '13px',
+                      boxSizing: 'border-box',
+                      opacity: brandingLoading ? 0.6 : 1,
+                    }}
+                  />
+                  {identityError && (
+                    <div style={{ marginTop: '4px', fontSize: '11.5px', color: '#DC2626' }}>{identityError}</div>
+                  )}
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                    Penandatangan (Direktur) <span style={{ color: '#DC2626' }}>*</span>
                   </label>
                   <input
                     type="text"
                     value={signatoryName}
                     onChange={(e) => setSignatoryName(e.target.value)}
+                    placeholder="Nama penandatangan — wajib diisi"
                     style={{
                       width: '100%',
                       padding: '9px 12px',
@@ -1211,15 +1292,16 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
               ) : (
                 <button
                   onClick={handleGeneratePackage}
+                  disabled={brandingLoading}
                   style={{
                     padding: '9px 22px',
                     borderRadius: '8px',
                     border: 'none',
-                    backgroundColor: '#16A34A',
+                    backgroundColor: brandingLoading ? '#94A3B8' : '#16A34A',
                     color: '#FFFFFF',
                     fontWeight: 700,
                     fontSize: '13px',
-                    cursor: 'pointer',
+                    cursor: brandingLoading ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
@@ -1227,7 +1309,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   }}
                 >
                   <Sparkles size={15} />
-                  <span>✓ Konfirmasi & Buat Dokumen</span>
+                  <span>{brandingLoading ? 'Memuat identitas…' : '✓ Konfirmasi & Buat Dokumen'}</span>
                 </button>
               )}
             </div>
