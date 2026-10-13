@@ -48,6 +48,22 @@ import {
   List,
   Eye,
   EyeOff,
+  Building2,
+  DraftingCompass,
+  Route,
+  Droplets,
+  Droplet,
+  Waves,
+  Sprout,
+  Landmark,
+  Tractor,
+  Wheat,
+  CloudRain,
+  GlassWater,
+  Home,
+  BrickWall,
+  Mountain,
+  type LucideIcon,
 } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
 import { CONSTRUCTION_CALCULATORS, getCalculatorById } from '../../engine/constructionCalculators/registry';
@@ -112,7 +128,7 @@ export const CALCULATOR_CATEGORIES = [
   {
     id: 'LEGACY_WORKBOOK',
     name: 'A. MASTER STANDAR SNI & CAD (24)',
-    icon: '📐',
+    icon: DraftingCompass,
     pack: 'LEGACY',
     items: [
       { id: 'BOWPLANK', name: 'Pengukuran & Pemasangan Bowplank', shortDesc: 'Penetapan as bangunan, kayu patok 5/7, papan 3/20, paku', inputPreview: 'P × L Lahan', outputPreview: 'Keliling (m\')' },
@@ -144,7 +160,7 @@ export const CALCULATOR_CATEGORIES = [
   {
     id: 'PEKERJAAN_TANAH',
     name: 'B. PEKERJAAN TANAH',
-    icon: '🚜',
+    icon: Tractor,
     pack: 'RESIDENTIAL',
     items: [
       { id: 'residential.cut_and_fill', name: 'Cut & Fill', shortDesc: 'Hitung volume cut, fill, dan balance tanah', inputPreview: 'L × W × Elevasi', outputPreview: 'Cut / Fill / Net (m³)' },
@@ -157,7 +173,7 @@ export const CALCULATOR_CATEGORIES = [
   {
     id: 'PONDASI_DAN_BETON',
     name: 'C. PONDASI & BETON',
-    icon: '🏗️',
+    icon: HardHat,
     pack: 'RESIDENTIAL',
     items: [
       { id: 'residential.pondasi_batu_kali', name: 'Pondasi Batu Kali', shortDesc: 'Pasangan pondasi batu belah & aanstamping', inputPreview: 'P × Lebar atas/bawah × T', outputPreview: 'Pas. Batu & Uruk (m³)' },
@@ -176,7 +192,7 @@ export const CALCULATOR_CATEGORIES = [
   {
     id: 'DINDING_DAN_FINISHING',
     name: 'D. DINDING & FINISHING',
-    icon: '🧱',
+    icon: BrickWall,
     pack: 'RESIDENTIAL',
     items: [
       { id: 'residential.dinding', name: 'Dinding Bata Ringan / Merah', shortDesc: 'Pasangan bata merah, hebel, dan batako', inputPreview: 'P × T - Luas Bukaan', outputPreview: 'Luas Dinding Netto (m²)' },
@@ -190,7 +206,7 @@ export const CALCULATOR_CATEGORIES = [
   {
     id: 'ATAP_DAN_BUKAAN',
     name: 'E. ATAP & BUKAAN',
-    icon: '🏠',
+    icon: Home,
     pack: 'RESIDENTIAL',
     items: [
       { id: 'residential.atap_baja_ringan', name: 'Atap Baja Ringan', shortDesc: 'Rangka kuda-kuda, reng, dan truss baja ringan', inputPreview: 'Luas Denah / cos(Sudut)', outputPreview: 'Luas Bidang Atap (m²)' },
@@ -202,7 +218,7 @@ export const CALCULATOR_CATEGORIES = [
   {
     id: 'MEP_DAN_SANITAIR',
     name: 'F. MEP & SANITASI',
-    icon: '⚡',
+    icon: Zap,
     pack: 'RESIDENTIAL',
     items: [
       { id: 'residential.instalasi_listrik_basic', name: 'Instalasi Listrik Basic', shortDesc: 'Titik lampu, stop kontak, saklar & panel MCB', inputPreview: 'Jumlah Titik & Stop Kontak', outputPreview: 'Total Titik Listrik' },
@@ -214,7 +230,7 @@ export const CALCULATOR_CATEGORIES = [
   {
     id: 'ROAD',
     name: 'G. ROAD & HIGHWAY (39)',
-    icon: '🛣️',
+    icon: Route,
     pack: 'ROAD',
     items: [
       // CORE ROAD (11)
@@ -276,7 +292,7 @@ export const CALCULATOR_CATEGORIES = [
   {
     id: 'DRAINAGE',
     name: 'H. DRAINAGE & SALURAN (15)',
-    icon: '🌊',
+    icon: Droplets,
     pack: 'DRAINAGE',
     items: [
       { id: 'drainage.channel', name: 'Drainage Channel (Saluran Terbuka)', shortDesc: 'Saluran drainase trapesium/persegi', inputPreview: 'Panjang, Lebar Atas/Bawah, T', outputPreview: 'Galian & Lining (m³)' },
@@ -299,7 +315,7 @@ export const CALCULATOR_CATEGORIES = [
   {
     id: 'BRIDGE',
     name: 'I. BRIDGE / JEMBATAN (16)',
-    icon: '🌉',
+    icon: Landmark,
     pack: 'BRIDGE',
     items: [
       { id: 'bridge.geometry', name: 'Bridge Geometry', shortDesc: 'Geometri bentang jembatan dan luas lantai', inputPreview: 'Panjang Bentang × Lebar', outputPreview: 'Luas Lantai Jembatan (m²)' },
@@ -323,7 +339,7 @@ export const CALCULATOR_CATEGORIES = [
   {
     id: 'IRRIGATION',
     name: 'J. IRRIGATION / IRIGASI (11)',
-    icon: '🌾',
+    icon: Wheat,
     pack: 'IRRIGATION',
     items: [
       { id: 'irrigation.canal', name: 'Irrigation Canal', shortDesc: 'Saluran irigasi trapesium primer/sekunder', inputPreview: 'Panjang, Lebar Dasar, Tinggi, Slope', outputPreview: 'Galian & Luas Basah (m³)' },
@@ -342,7 +358,7 @@ export const CALCULATOR_CATEGORIES = [
   {
     id: 'RIVER',
     name: 'K. RIVER & FLOOD PROTECTION (9)',
-    icon: '🏞️',
+    icon: CloudRain,
     pack: 'RIVER',
     items: [
       { id: 'river.segment', name: 'River Reach Protection', shortDesc: 'Penanganan perkuatan tebing sungai', inputPreview: 'Panjang Penanganan × Kemiringan', outputPreview: 'Luas Bidang Penanganan (m²)' },
@@ -359,7 +375,7 @@ export const CALCULATOR_CATEGORIES = [
   {
     id: 'WEIR',
     name: 'L. WEIR / BENDUNG (10)',
-    icon: '🧱',
+    icon: Waves,
     pack: 'WEIR',
     items: [
       { id: 'weir.body', name: 'Weir Body (Tubuh Bendung)', shortDesc: 'Tubuh bendung tetap pasangan batu/beton', inputPreview: 'Panjang Mercu, Tinggi, Lebar', outputPreview: 'Volume Tubuh Bendung (m³)' },
@@ -377,7 +393,7 @@ export const CALCULATOR_CATEGORIES = [
   {
     id: 'EMBUNG',
     name: 'M. EMBUNG & RETENSI (11)',
-    icon: '💧',
+    icon: Droplet,
     pack: 'EMBUNG',
     items: [
       { id: 'embung.reservoir', name: 'Embung Reservoir Capacity', shortDesc: 'Estimasi volume kapasitas tampungan embung', inputPreview: 'Luas Muka Air, Luas Dasar, Kedalaman', outputPreview: 'Volume Tampungan (m³)' },
@@ -396,7 +412,7 @@ export const CALCULATOR_CATEGORIES = [
   {
     id: 'DAM',
     name: 'N. DAM / BENDUNGAN BESAR (12)',
-    icon: '🏔️',
+    icon: Mountain,
     pack: 'DAM',
     items: [
       { id: 'dam.body', name: 'Dam Body (Tubuh Bendungan)', shortDesc: 'Volume kubikasi total tubuh bendungan besar', inputPreview: 'Panjang Puncak, Tinggi, Kemiringan', outputPreview: 'Volume Tubuh Bendungan (m³)' },
@@ -416,7 +432,7 @@ export const CALCULATOR_CATEGORIES = [
   {
     id: 'WATER_STRUCTURE',
     name: 'O. WATER STRUCTURE / SPAM (13)',
-    icon: '🚰',
+    icon: GlassWater,
     pack: 'WATER_STRUCTURE',
     items: [
       { id: 'water.intake', name: 'Raw Water Intake (SPAM)', shortDesc: 'Bangunan intake penyadap air baku', inputPreview: 'P × L × Tinggi × Tebal Dinding', outputPreview: 'Volume Beton Intake (m³)' },
@@ -440,22 +456,22 @@ export interface CivilDomainDef {
   id: string;
   name: string;
   subtitle: string;
-  icon: string;
+  icon: LucideIcon;
   packs: string[];
 }
 
 export const CIVIL_DOMAINS: CivilDomainDef[] = [
-  { id: 'BUILDING', name: 'Bangunan', subtitle: 'Building', icon: '🏠', packs: ['RESIDENTIAL', 'LEGACY'] },
-  { id: 'MASTER_SNI', name: 'Master SNI / CAD (24)', subtitle: 'Kalkulator Utama', icon: '📐', packs: ['LEGACY'] },
-  { id: 'ROAD', name: 'Jalan', subtitle: 'Road', icon: '🛣️', packs: ['ROAD'] },
-  { id: 'DRAINAGE', name: 'Drainase & Saluran', subtitle: 'Drainage', icon: '💧', packs: ['DRAINAGE'] },
-  { id: 'BRIDGE', name: 'Jembatan', subtitle: 'Bridge', icon: '🌉', packs: ['BRIDGE'] },
-  { id: 'IRRIGATION', name: 'Irigasi', subtitle: 'Irrigation', icon: '🌱', packs: ['IRRIGATION'] },
-  { id: 'RIVER', name: 'Sungai & Proteksi Banjir', subtitle: 'River & Flood', icon: '🌊', packs: ['RIVER'] },
-  { id: 'WEIR', name: 'Bendung', subtitle: 'Weir', icon: '🏗️', packs: ['WEIR'] },
-  { id: 'EMBUNG', name: 'Embung & Retensi', subtitle: 'Embung', icon: '💦', packs: ['EMBUNG'] },
-  { id: 'DAM', name: 'Bendungan', subtitle: 'Dam', icon: '🏔️', packs: ['DAM'] },
-  { id: 'WATER_STRUCTURE', name: 'Bangunan Air', subtitle: 'Water Structure', icon: '🏞️', packs: ['WATER_STRUCTURE'] },
+  { id: 'BUILDING', name: 'Bangunan', subtitle: 'Building', icon: Building2, packs: ['RESIDENTIAL', 'LEGACY'] },
+  { id: 'MASTER_SNI', name: 'Master SNI / CAD (24)', subtitle: 'Kalkulator Utama', icon: DraftingCompass, packs: ['LEGACY'] },
+  { id: 'ROAD', name: 'Jalan', subtitle: 'Road', icon: Route, packs: ['ROAD'] },
+  { id: 'DRAINAGE', name: 'Drainase & Saluran', subtitle: 'Drainage', icon: Droplets, packs: ['DRAINAGE'] },
+  { id: 'BRIDGE', name: 'Jembatan', subtitle: 'Bridge', icon: Landmark, packs: ['BRIDGE'] },
+  { id: 'IRRIGATION', name: 'Irigasi', subtitle: 'Irrigation', icon: Sprout, packs: ['IRRIGATION'] },
+  { id: 'RIVER', name: 'Sungai & Proteksi Banjir', subtitle: 'River & Flood', icon: Waves, packs: ['RIVER'] },
+  { id: 'WEIR', name: 'Bendung', subtitle: 'Weir', icon: HardHat, packs: ['WEIR'] },
+  { id: 'EMBUNG', name: 'Embung & Retensi', subtitle: 'Embung', icon: Droplet, packs: ['EMBUNG'] },
+  { id: 'DAM', name: 'Bendungan', subtitle: 'Dam', icon: Mountain, packs: ['DAM'] },
+  { id: 'WATER_STRUCTURE', name: 'Bangunan Air', subtitle: 'Water Structure', icon: GlassWater, packs: ['WATER_STRUCTURE'] },
 ];
 
 export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
@@ -1407,7 +1423,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         right: isFullscreen ? 0 : 'auto',
         bottom: isFullscreen ? 0 : 'auto',
         zIndex: isFullscreen ? 9999 : 'auto',
-        background: isFullscreen ? '#F8FAFC' : 'transparent',
+        background: isFullscreen ? '#F2F7FF' : 'transparent',
         padding: isFullscreen ? '20px' : 0,
         overflowY: isFullscreen ? 'auto' : 'visible',
       }}
@@ -1587,33 +1603,33 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       <div
         style={{
           background: '#ffffff',
-          borderRadius: '20px',
+          borderRadius: '22px',
           border: '1px solid #EEF1F6',
-          padding: '12px 20px',
+          padding: '14px 20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '12px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
+          boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div
             style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '10px',
-              background: '#2563EB',
-              color: '#ffffff',
+              width: '44px',
+              height: '44px',
+              borderRadius: '14px',
+              background: '#E3EEFB',
+              color: '#2563EB',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 10px rgba(37,99,235,0.25)',
+              boxShadow: '0 4px 10px rgba(37,99,235,0.12)',
               flexShrink: 0,
             }}
           >
-            <Calculator size={20} />
+            <Calculator size={22} />
           </div>
 
           <div>
@@ -1651,11 +1667,11 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
           <button
             onClick={() => onNavigateToTab?.('qto')}
             style={{
-              height: '34px',
-              padding: '0 12px',
-              borderRadius: '7px',
-              background: '#F8FAFC',
-              border: '1px solid #CBD5E1',
+              height: '36px',
+              padding: '0 14px',
+              borderRadius: '12px',
+              background: '#ffffff',
+              border: '1px solid #E2E8F0',
               color: '#334155',
               fontSize: '12px',
               fontWeight: 600,
@@ -1667,17 +1683,17 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             }}
           >
             <ArrowLeft size={13} />
-            <span>← Kembali</span>
+            <span>Kembali</span>
           </button>
 
           <button
             onClick={handleResetClick}
             style={{
-              height: '34px',
-              padding: '0 12px',
-              borderRadius: '7px',
+              height: '36px',
+              padding: '0 14px',
+              borderRadius: '12px',
               background: '#ffffff',
-              border: '1px solid #CBD5E1',
+              border: '1px solid #E2E8F0',
               color: hasUnsavedChanges ? '#D97706' : '#64748B',
               fontSize: '12px',
               fontWeight: 600,
@@ -1695,11 +1711,11 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
           <button
             onClick={handleExportExcel}
             style={{
-              height: '34px',
-              padding: '0 12px',
-              borderRadius: '7px',
+              height: '36px',
+              padding: '0 14px',
+              borderRadius: '12px',
               background: '#ffffff',
-              border: '1px solid #CBD5E1',
+              border: '1px solid #E2E8F0',
               color: '#059669',
               fontSize: '12px',
               fontWeight: 700,
@@ -1716,11 +1732,11 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
             style={{
-              height: '34px',
-              padding: '0 9px',
-              borderRadius: '7px',
-              background: '#F8FAFC',
-              border: '1px solid #CBD5E1',
+              height: '36px',
+              padding: '0 10px',
+              borderRadius: '12px',
+              background: '#ffffff',
+              border: '1px solid #E2E8F0',
               color: '#475569',
               fontSize: '12px',
               fontWeight: 600,
@@ -1739,10 +1755,11 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       {/* 2. QUICK ACCESS (TERAKHIR DIGUNAKAN) & FAVORIT BAR */}
       <div
         style={{
-          background: '#F8FAFC',
-          borderRadius: '20px',
+          background: '#ffffff',
+          borderRadius: '22px',
           border: '1px solid #EEF1F6',
-          padding: '6px 14px',
+          boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
+          padding: '8px 16px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -1839,9 +1856,9 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         <button
           onClick={() => setActiveDomain('ALL')}
           style={{
-            height: '34px',
-            padding: '0 12px',
-            borderRadius: '8px',
+            height: '36px',
+            padding: '0 12px 0 6px',
+            borderRadius: '12px',
             background: activeDomain === 'ALL' ? '#EFF6FF' : '#ffffff',
             border: activeDomain === 'ALL' ? '1.5px solid #2563EB' : '1px solid #E2E8F0',
             color: activeDomain === 'ALL' ? '#1D4ED8' : '#334155',
@@ -1850,13 +1867,28 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '8px',
             whiteSpace: 'nowrap',
             flexShrink: 0,
             transition: 'all 0.12s ease',
+            boxShadow: activeDomain === 'ALL' ? '0 4px 12px rgba(37,99,235,0.12)' : 'none',
           }}
         >
-          <span>🌐</span>
+          <span
+            style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '8px',
+              background: activeDomain === 'ALL' ? '#DBEAFE' : '#F1F5F9',
+              color: activeDomain === 'ALL' ? '#1D4ED8' : '#64748B',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <LayoutGrid size={14} />
+          </span>
           <span>Semua Domain</span>
           <span
             style={{
@@ -1881,9 +1913,9 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               key={domain.id}
               onClick={() => setActiveDomain(domain.id)}
               style={{
-                height: '34px',
-                padding: '0 12px',
-                borderRadius: '8px',
+                height: '36px',
+                padding: '0 12px 0 6px',
+                borderRadius: '12px',
                 background: isActive ? '#EFF6FF' : '#ffffff',
                 border: isActive ? '1.5px solid #2563EB' : '1px solid #E2E8F0',
                 color: isActive ? '#1D4ED8' : '#334155',
@@ -1892,13 +1924,28 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '8px',
                 whiteSpace: 'nowrap',
                 flexShrink: 0,
                 transition: 'all 0.12s ease',
+                boxShadow: isActive ? '0 4px 12px rgba(37,99,235,0.12)' : 'none',
               }}
             >
-              <span>{domain.icon}</span>
+              <span
+                style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '8px',
+                  background: isActive ? '#DBEAFE' : '#F1F5F9',
+                  color: isActive ? '#1D4ED8' : '#64748B',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <domain.icon size={14} />
+              </span>
               <span>{domain.name}</span>
               <span
                 style={{
@@ -1961,11 +2008,11 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{
                   width: '100%',
-                  height: '34px',
-                  paddingLeft: '32px',
-                  paddingRight: searchQuery ? '30px' : '10px',
-                  borderRadius: '6px',
-                  border: '1px solid #CBD5E1',
+                  height: '36px',
+                  paddingLeft: '34px',
+                  paddingRight: searchQuery ? '32px' : '12px',
+                  borderRadius: '12px',
+                  border: '1px solid #E2E8F0',
                   fontSize: '12px',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -2009,10 +2056,10 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   onChange={(e) => setFilterCategory(e.target.value)}
                   style={{
                     width: '100%',
-                    height: '28px',
-                    borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
-                    background: '#F8FAFC',
+                    height: '32px',
+                    borderRadius: '10px',
+                    border: '1px solid #E2E8F0',
+                    background: '#ffffff',
                     fontSize: '11px',
                     color: '#334155',
                     padding: '0 6px',
@@ -2039,10 +2086,10 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   onChange={(e) => setFilterUnit(e.target.value)}
                   style={{
                     width: '100%',
-                    height: '28px',
-                    borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
-                    background: '#F8FAFC',
+                    height: '32px',
+                    borderRadius: '10px',
+                    border: '1px solid #E2E8F0',
+                    background: '#ffffff',
                     fontSize: '11px',
                     color: '#334155',
                     padding: '0 6px',
@@ -2175,10 +2222,10 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                     style={{
                       flexShrink: 0,
                       border: '1px solid #EEF1F6',
-                      borderRadius: '20px',
+                      borderRadius: '22px',
                       overflow: 'hidden',
                       background: '#ffffff',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
+                      boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
                     }}
                   >
                     {/* Collapsible Section Header */}
@@ -2201,8 +2248,22 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                         transition: 'background 0.1s ease',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '13px' }}>{group.icon}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span
+                          style={{
+                            width: '26px',
+                            height: '26px',
+                            borderRadius: '8px',
+                            background: '#EFF6FF',
+                            color: '#2563EB',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <group.icon size={14} />
+                        </span>
                         <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#1E293B', textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                           {group.name.replace(/^[A-Z][.]\s*/, '')}
                         </span>
@@ -2348,13 +2409,13 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
           id="active-calculator-workbench"
           style={{
             background: '#ffffff',
-            borderRadius: '20px',
+            borderRadius: '22px',
             border: '1px solid #EEF1F6',
-            padding: '18px 20px',
+            padding: '20px 22px',
             display: 'flex',
             flexDirection: 'column',
             gap: '16px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
+            boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
           }}
         >
           {/* Workbench Header */}
@@ -2633,7 +2694,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                     {activeSpec.primaryQuantityLabel}
                   </span>
                   <span style={{ fontSize: '10px', fontWeight: 700, color: '#166534', background: '#E2F4D8', padding: '1px 6px', borderRadius: '999px' }}>
-                    ✓ DETERMINISTIC
+                    DETERMINISTIC
                   </span>
                 </div>
 
@@ -2748,9 +2809,9 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                           letterSpacing: '0.04em',
                         }}
                       >
-                        {scopeCost.status === 'RESOLVED' && '✓ BIAYA TEPAT (CostPolicyEngine)'}
-                        {(scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL') && '⚠️ HARGA REGIONAL BELUM TERSEDIA'}
-                        {scopeCost.status === 'AHSP_MISSING' && '❌ AHSP BELUM TERDAFTAR'}
+                        {scopeCost.status === 'RESOLVED' && 'BIAYA TEPAT (CostPolicyEngine)'}
+                        {(scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL') && 'HARGA REGIONAL BELUM TERSEDIA'}
+                        {scopeCost.status === 'AHSP_MISSING' && 'AHSP BELUM TERDAFTAR'}
                       </span>
                     </div>
                     <span
