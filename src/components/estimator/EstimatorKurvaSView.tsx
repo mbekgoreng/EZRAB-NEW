@@ -107,10 +107,22 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
 
   const pathD = useMemo(() => {
     if (cumulativePercentages.length === 0) return "";
-    return cumulativePercentages.reduce((acc, pct, idx) => {
-      const { x, y } = getCoordinates(idx, pct);
-      return idx === 0 ? `M ${x} ${y}` : `${acc} L ${x} ${y}`;
-    }, "");
+    const pts = cumulativePercentages.map((pct, idx) => getCoordinates(idx, pct));
+    if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
+    // Smooth Catmull-Rom → cubic bezier
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[Math.min(pts.length - 1, i + 2)];
+      const c1x = p1.x + (p2.x - p0.x) / 6;
+      const c1y = p1.y + (p2.y - p0.y) / 6;
+      const c2x = p2.x - (p3.x - p1.x) / 6;
+      const c2y = p2.y - (p3.y - p1.y) / 6;
+      d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+    }
+    return d;
   }, [cumulativePercentages, totalWeeks]);
 
   const areaD = useMemo(() => {
@@ -189,6 +201,21 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
 
       {/* 2. S-CURVE VISUAL CHART */}
       <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "16px", padding: "24px", boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
+        <style>{`
+          @keyframes estkurva-draw { to { stroke-dashoffset: 0; } }
+          @keyframes estkurva-pop {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          @keyframes estkurva-fade { to { opacity: 1; } }
+          .estkurva-line { stroke-dasharray: 2400; stroke-dashoffset: 2400; animation: estkurva-draw 1.6s ease-out 0.15s forwards; }
+          .estkurva-area { opacity: 0; animation: estkurva-fade 0.9s ease-out 0.9s forwards; }
+          .estkurva-dot { transform-box: fill-box; transform-origin: center; opacity: 0; animation: estkurva-pop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+          @media (prefers-reduced-motion: reduce) {
+            .estkurva-line, .estkurva-area, .estkurva-dot { animation: none !important; opacity: 1 !important; stroke-dashoffset: 0 !important; transform: none !important; }
+          }
+        `}</style>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#2563EB" }} />
@@ -244,12 +271,12 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
             })}
 
             {/* Area fill */}
-            {areaD && <path d={areaD} fill="url(#curveGradient)" />}
+            {areaD && <path d={areaD} fill="url(#curveGradient)" className="estkurva-area" />}
 
-            {/* S-Curve Line */}
-            {pathD && <path d={pathD} fill="none" stroke="#2563EB" strokeWidth="3.5" strokeLinecap="round" />}
+            {/* S-Curve Line — smooth + draw animation */}
+            {pathD && <path d={pathD} fill="none" stroke="#2563EB" strokeWidth="3.5" strokeLinecap="round" className="estkurva-line" />}
 
-            {/* Week Data Points */}
+            {/* Week Data Points — staggered pop-in + hover tooltip */}
             {cumulativePercentages.map((pct, idx) => {
               const { x, y } = getCoordinates(idx, pct);
               const isHovered = hoveredWeek === idx + 1;
@@ -267,7 +294,19 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
                     fill="#FFFFFF"
                     stroke="#2563EB"
                     strokeWidth={isHovered ? 3 : 2}
+                    className="estkurva-dot"
+                    style={{ animationDelay: `${0.5 + idx * 0.06}s` }}
                   />
+                  {isHovered && (
+                    <g transform={`translate(${Math.min(Math.max(x - 58, paddingX - 10), chartWidth - 130)}, ${Math.max(y - 58, 4)})`}>
+                      <rect width="116" height="42" rx="8" fill="#0F172A" opacity="0.94" />
+                      <text x="10" y="17" fill="#94A3B8" fontSize="10" fontWeight="700">Minggu {idx + 1}</text>
+                      <circle cx="14" cy="30" r="3.5" fill="#3B82F6" />
+                      <text x="22" y="33" fill="#FFFFFF" fontSize="10.5" fontWeight="700">
+                        Rencana: {pct.toFixed(1)}%
+                      </text>
+                    </g>
+                  )}
                   <text
                     x={x}
                     y={chartHeight - 8}

@@ -84,6 +84,28 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
 
   const deviasi = Number((currentActualProgress - (projectKurvaSData[0]?.plannedWeeklyPercent || 0)).toFixed(1));
 
+  // --- S-Curve chart enhancements: hover tooltip state ---
+  const [scurveHoverIdx, setScurveHoverIdx] = useState<number | null>(null);
+
+  // Smooth path (Catmull-Rom → cubic bezier) for the S-curve line
+  const scurveSmoothPath = (pts: { x: number; y: number }[]): string => {
+    if (pts.length === 0) return '';
+    if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[Math.min(pts.length - 1, i + 2)];
+      const c1x = p1.x + (p2.x - p0.x) / 6;
+      const c1y = p1.y + (p2.y - p0.y) / 6;
+      const c2x = p2.x - (p3.x - p1.x) / 6;
+      const c2y = p2.y - (p3.y - p1.y) / 6;
+      d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+    }
+    return d;
+  };
+
   // Auto-sync tasks from RAB Categories
   const handleAutoSyncFromRab = () => {
     if (projectRabItems.length === 0) return;
@@ -368,9 +390,37 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
           </div>
         </div>
 
-        {/* Dynamic SVG Curve Display */}
+        {/* Dynamic SVG Curve Display — animated, smooth, gradient */}
+        <style>{`
+          @keyframes scurve-draw { to { stroke-dashoffset: 0; } }
+          @keyframes scurve-pop {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          @keyframes scurve-ping {
+            0% { transform: scale(0.6); opacity: 0.7; }
+            80%, 100% { transform: scale(2.2); opacity: 0; }
+          }
+          .scurve-line { stroke-dasharray: 2600; stroke-dashoffset: 2600; animation: scurve-draw 1.6s ease-out 0.15s forwards; }
+          .scurve-area { opacity: 0; animation: scurve-pop 0.9s ease-out 0.9s forwards; }
+          .scurve-dot { transform-box: fill-box; transform-origin: center; opacity: 0; animation: scurve-pop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+          .scurve-ping { transform-box: fill-box; transform-origin: center; animation: scurve-ping 1.8s cubic-bezier(0,0,0.2,1) infinite; }
+          @media (prefers-reduced-motion: reduce) {
+            .scurve-line, .scurve-area, .scurve-dot, .scurve-ping { animation: none !important; opacity: 1 !important; stroke-dashoffset: 0 !important; transform: none !important; }
+          }
+        `}</style>
         <div style={{ position: 'relative', width: '100%', height: '240px', background: '#FFFFFF', borderRadius: '16px', padding: '16px', border: '1px solid #EEF1F6' }}>
           <svg viewBox="0 0 1000 200" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+            <defs>
+              <linearGradient id="scurvePlanGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#2563EB" stopOpacity="0.22" />
+                <stop offset="100%" stopColor="#2563EB" stopOpacity="0.0" />
+              </linearGradient>
+              <filter id="scurveGlow" x="-60%" y="-60%" width="220%" height="220%">
+                <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor="#16A34A" floodOpacity="0.55" />
+              </filter>
+            </defs>
             {/* Grid lines */}
             {[0, 25, 50, 75, 100].map((pct, i) => {
               const y = 180 - (pct / 100) * 160;
@@ -397,40 +447,92 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
             {projectScheduleTasks.length === 0 ? (
               <line x1="50" y1="180" x2="970" y2="180" stroke="#CBD5E1" strokeWidth="2" strokeDasharray="6 6" />
             ) : (
-              <>
-                {/* Plan Curve Line */}
-                <polyline
-                  fill="none"
-                  stroke="#2563EB"
-                  strokeWidth="3"
-                  points={projectKurvaSData
-                    .map((d, idx) => {
-                      const x = 50 + (idx / Math.max(1, projectKurvaSData.length - 1)) * 920;
-                      const y = 180 - (d.cumulativePlannedPercent / 100) * 160;
-                      return `${x},${y}`;
-                    })
-                    .join(' ')}
-                />
+              (() => {
+                const n = projectKurvaSData.length;
+                const pts = projectKurvaSData.map((d, idx) => ({
+                  x: 50 + (idx / Math.max(1, n - 1)) * 920,
+                  y: 180 - (d.cumulativePlannedPercent / 100) * 160,
+                  pct: d.cumulativePlannedPercent,
+                  weekIndex: d.weekIndex,
+                }));
+                const lineD = scurveSmoothPath(pts);
+                const areaD = pts.length > 0
+                  ? `${lineD} L ${pts[pts.length - 1].x.toFixed(1)} 180 L ${pts[0].x.toFixed(1)} 180 Z`
+                  : '';
+                const hovered = scurveHoverIdx !== null ? pts[scurveHoverIdx] : null;
+                return (
+                  <>
+                    {/* Gradient area under plan curve */}
+                    {areaD && <path d={areaD} fill="url(#scurvePlanGrad)" className="scurve-area" />}
 
-                {/* Plan Points */}
-                {projectKurvaSData.map((d, idx) => {
-                  const x = 50 + (idx / Math.max(1, projectKurvaSData.length - 1)) * 920;
-                  const y = 180 - (d.cumulativePlannedPercent / 100) * 160;
-                  return <circle key={idx} cx={x} cy={y} r="3.5" fill="#2563EB" />;
-                })}
+                    {/* Smooth animated plan line */}
+                    <path
+                      d={lineD}
+                      fill="none"
+                      stroke="#2563EB"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      className="scurve-line"
+                    />
 
-                {/* Actual Curve Points if progress exists */}
-                {currentActualProgress > 0 && (
-                  <circle
-                    cx={50}
-                    cy={180 - (currentActualProgress / 100) * 160}
-                    r="5"
-                    fill="#16A34A"
-                    stroke="#FFFFFF"
-                    strokeWidth="2"
-                  />
-                )}
-              </>
+                    {/* Plan points — staggered pop-in + hover tooltip */}
+                    {pts.map((p, idx) => (
+                      <g key={idx}>
+                        <circle
+                          cx={p.x}
+                          cy={p.y}
+                          r={scurveHoverIdx === idx ? 6 : 3.5}
+                          fill="#2563EB"
+                          stroke="#FFFFFF"
+                          strokeWidth="2"
+                          className="scurve-dot"
+                          style={{ animationDelay: `${0.5 + idx * 0.07}s`, cursor: 'pointer' }}
+                          onMouseEnter={() => setScurveHoverIdx(idx)}
+                          onMouseLeave={() => setScurveHoverIdx(null)}
+                        />
+                        <circle
+                          cx={p.x}
+                          cy={p.y}
+                          r="12"
+                          fill="transparent"
+                          style={{ cursor: 'pointer' }}
+                          onMouseEnter={() => setScurveHoverIdx(idx)}
+                          onMouseLeave={() => setScurveHoverIdx(null)}
+                        />
+                      </g>
+                    ))}
+
+                    {/* Hover tooltip */}
+                    {hovered && (
+                      <g transform={`translate(${Math.min(Math.max(hovered.x - 62, 46), 830)}, ${Math.max(hovered.y - 62, 8)})`}>
+                        <rect width="124" height="44" rx="8" fill="#0F172A" opacity="0.94" />
+                        <text x="10" y="18" fill="#94A3B8" fontSize="10" fontWeight="700">W{hovered.weekIndex} · Rencana</text>
+                        <circle cx="14" cy="32" r="3.5" fill="#3B82F6" />
+                        <text x="22" y="35" fill="#FFFFFF" fontSize="10.5" fontWeight="700">
+                          {hovered.pct.toFixed(1)}%
+                        </text>
+                      </g>
+                    )}
+
+                    {/* Actual progress point with pulse glow */}
+                    {currentActualProgress > 0 && (
+                      <g filter="url(#scurveGlow)">
+                        <circle cx={50} cy={180 - (currentActualProgress / 100) * 160} r="8" fill="#16A34A" opacity="0.35" className="scurve-ping" />
+                        <circle
+                          cx={50}
+                          cy={180 - (currentActualProgress / 100) * 160}
+                          r="5.5"
+                          fill="#16A34A"
+                          stroke="#FFFFFF"
+                          strokeWidth="2.5"
+                          className="scurve-dot"
+                          style={{ animationDelay: '1.4s' }}
+                        />
+                      </g>
+                    )}
+                  </>
+                );
+              })()
             )}
           </svg>
         </div>

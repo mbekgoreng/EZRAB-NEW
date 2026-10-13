@@ -62,6 +62,25 @@ interface LaporanViewProps {
   onNavigateToTab?: (tab: string) => void;
 }
 
+// Smooth path (Catmull-Rom → cubic bezier) shared by the S-curve chart
+const laporanSmoothPath = (pts: { x: number; y: number }[]): string => {
+  if (pts.length === 0) return '';
+  if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[Math.min(pts.length - 1, i + 2)];
+    const c1x = p1.x + (p2.x - p0.x) / 6;
+    const c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6;
+    const c2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+  }
+  return d;
+};
+
 export const LaporanView: React.FC<LaporanViewProps> = ({
   onOpenMagicAi,
   onNavigateToTab,
@@ -1933,6 +1952,26 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   position: 'relative',
                 }}
               >
+                <style>{`
+                  @keyframes lapkurva-draw { to { stroke-dashoffset: 0; } }
+                  @keyframes lapkurva-pop {
+                    0% { transform: scale(0); opacity: 0; }
+                    70% { transform: scale(1.3); opacity: 1; }
+                    100% { transform: scale(1); opacity: 1; }
+                  }
+                  @keyframes lapkurva-fade { to { opacity: 1; } }
+                  @keyframes lapkurva-ping {
+                    0% { transform: scale(0.6); opacity: 0.7; }
+                    80%, 100% { transform: scale(2.4); opacity: 0; }
+                  }
+                  .lapkurva-line { stroke-dasharray: 2400; stroke-dashoffset: 2400; animation: lapkurva-draw 1.6s ease-out 0.15s forwards; }
+                  .lapkurva-area { opacity: 0; animation: lapkurva-fade 0.9s ease-out 0.9s forwards; }
+                  .lapkurva-dot { transform-box: fill-box; transform-origin: center; opacity: 0; animation: lapkurva-pop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+                  .lapkurva-ping { transform-box: fill-box; transform-origin: center; animation: lapkurva-ping 1.8s cubic-bezier(0,0,0.2,1) 1.6s infinite; }
+                  @media (prefers-reduced-motion: reduce) {
+                    .lapkurva-line, .lapkurva-area, .lapkurva-dot, .lapkurva-ping { animation: none !important; opacity: 1 !important; stroke-dashoffset: 0 !important; transform: none !important; }
+                  }
+                `}</style>
                 {/* SVG Chart Container */}
                 <div style={{ width: '100%', height: '280px', position: 'relative' }}>
                   <svg viewBox="0 0 840 260" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
@@ -1973,9 +2012,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                         return { x, y, week: w.week, planCum: w.planCum, planWeekly: w.planWeekly };
                       });
 
-                      const planPathD = planCoords.reduce((acc, pt, idx) => {
-                        return idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
-                      }, '');
+                      const planPathD = laporanSmoothPath(planCoords);
 
                       const lastPt = planCoords[planCoords.length - 1] || { x: 785, y: 30 };
                       const firstPt = planCoords[0] || { x: 55, y: 210 };
@@ -1991,9 +2028,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                         })
                         .filter(Boolean) as Array<{ x: number; y: number; week: string; actCum: number; actWeekly: number | null; dev: number | null; idx: number }>;
 
-                      const actPathD = actPointsWithCoord.reduce((acc, pt, idx) => {
-                        return idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
-                      }, '');
+                      const actPathD = laporanSmoothPath(actPointsWithCoord);
 
                       const actAreaD = actPointsWithCoord.length > 1
                         ? `${actPathD} L ${actPointsWithCoord[actPointsWithCoord.length - 1].x} 210 L ${actPointsWithCoord[0].x} 210 Z`
@@ -2001,14 +2036,14 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
                       return (
                         <>
-                          {/* Planned Area & Line */}
-                          <path d={planAreaD} fill="url(#planGrad)" />
-                          <path d={planPathD} fill="none" stroke="#2563EB" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+                          {/* Planned Area & Line — animated draw */}
+                          {planAreaD && <path d={planAreaD} fill="url(#planGrad)" className="lapkurva-area" />}
+                          <path d={planPathD} fill="none" stroke="#2563EB" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" className="lapkurva-line" />
 
-                          {/* Actual Area & Line */}
-                          {actAreaD && <path d={actAreaD} fill="url(#actGrad)" />}
+                          {/* Actual Area & Line — animated draw */}
+                          {actAreaD && <path d={actAreaD} fill="url(#actGrad)" className="lapkurva-area" style={{ animationDelay: '0.35s' }} />}
                           {actPathD && (
-                            <path d={actPathD} fill="none" stroke="#10B981" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d={actPathD} fill="none" stroke="#10B981" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" className="lapkurva-line" style={{ animationDelay: '0.5s' }} />
                           )}
 
                           {/* Vertical Guidance Line on Hover */}
@@ -2024,7 +2059,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                             />
                           )}
 
-                          {/* Planned Circles */}
+                          {/* Planned Circles — staggered pop-in */}
                           {planCoords.map((pt, idx) => (
                             <circle
                               key={`plan-${idx}`}
@@ -2034,26 +2069,33 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                               fill="#2563EB"
                               stroke="#ffffff"
                               strokeWidth="2.5"
-                              style={{ cursor: 'pointer', transition: 'all 0.15s ease' }}
+                              className="lapkurva-dot"
+                              style={{ cursor: 'pointer', transition: 'all 0.15s ease', animationDelay: `${0.6 + idx * 0.06}s` }}
                               onMouseEnter={() => setHoveredWeekIndex(idx)}
                               onMouseLeave={() => setHoveredWeekIndex(null)}
                             />
                           ))}
 
-                          {/* Actual Circles */}
-                          {actPointsWithCoord.map((pt) => (
-                            <circle
-                              key={`act-${pt.idx}`}
-                              cx={pt.x}
-                              cy={pt.y}
-                              r={hoveredWeekIndex === pt.idx ? 7 : 5}
-                              fill="#10B981"
-                              stroke="#ffffff"
-                              strokeWidth="2.5"
-                              style={{ cursor: 'pointer', transition: 'all 0.15s ease' }}
-                              onMouseEnter={() => setHoveredWeekIndex(pt.idx)}
-                              onMouseLeave={() => setHoveredWeekIndex(null)}
-                            />
+                          {/* Actual Circles — staggered pop-in */}
+                          {actPointsWithCoord.map((pt, i) => (
+                            <g key={`act-${pt.idx}`}>
+                              {/* Pulse halo on the latest actual point */}
+                              {i === actPointsWithCoord.length - 1 && (
+                                <circle cx={pt.x} cy={pt.y} r="8" fill="#10B981" opacity="0.35" className="lapkurva-ping" />
+                              )}
+                              <circle
+                                cx={pt.x}
+                                cy={pt.y}
+                                r={hoveredWeekIndex === pt.idx ? 7 : 5}
+                                fill="#10B981"
+                                stroke="#ffffff"
+                                strokeWidth="2.5"
+                                className="lapkurva-dot"
+                                style={{ cursor: 'pointer', transition: 'all 0.15s ease', animationDelay: `${0.9 + i * 0.08}s` }}
+                                onMouseEnter={() => setHoveredWeekIndex(pt.idx)}
+                                onMouseLeave={() => setHoveredWeekIndex(null)}
+                              />
+                            </g>
                           ))}
 
                           {/* Floating Interactive Tooltip */}
