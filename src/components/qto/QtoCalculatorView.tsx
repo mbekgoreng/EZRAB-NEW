@@ -1395,7 +1395,12 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
+        gap: '22px',
+        maxWidth: isFullscreen ? 'none' : '1440px',
+        margin: isFullscreen ? 0 : '0 auto',
+        width: '100%',
+        color: '#141412',
+        fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
         position: isFullscreen ? 'fixed' : 'relative',
         top: isFullscreen ? 0 : 'auto',
         left: isFullscreen ? 0 : 'auto',

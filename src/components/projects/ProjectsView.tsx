@@ -3,15 +3,13 @@ import {
   Folder,
   Plus,
   Sparkles,
-  ChevronDown,
-  Layers,
   FileText,
   Play,
   CheckCircle2,
   Archive,
 } from 'lucide-react';
 import { Project } from '../../types';
-import { AllProjectsView } from './AllProjectsView';
+import { AllProjectsView, type ActivityItem } from './AllProjectsView';
 import { DraftProjectsView } from './DraftProjectsView';
 import { InProgressProjectsView } from './InProgressProjectsView';
 import { CompletedProjectsView } from './CompletedProjectsView';
@@ -19,6 +17,7 @@ import { ArchivedProjectsView } from './ArchivedProjectsView';
 
 interface ProjectsViewProps {
   projects: Project[];
+  activities?: ActivityItem[];
   onCreateProject: () => void;
   onOpenMagicAi: () => void;
   onNavigateToTab?: (tab: string) => void;
@@ -29,6 +28,7 @@ interface ProjectsViewProps {
 
 export const ProjectsView: React.FC<ProjectsViewProps> = ({
   projects,
+  activities,
   onCreateProject,
   onOpenMagicAi,
   onNavigateToTab,
@@ -104,25 +104,31 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     <div
       style={{
         width: '100%',
-        maxWidth: '1680px',
+        maxWidth: '1440px',
         margin: '0 auto',
         display: 'flex',
         flexDirection: 'column',
-        gap: '20px',
-        color: '#0F172A',
-        fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+        gap: '22px',
+        color: '#141412',
+        fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
       }}
     >
+      <style>{`
+        @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
+      `}</style>
       {/* =========================================================================
           1. HEADER & INTERACTIVE NAVIGATION TABS
          ========================================================================= */}
       <div
+        className="ezdb-anim"
         style={{
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '16px',
+          animation: 'ezdb-rise 0.6s 0s both',
         }}
       >
         <div>
@@ -134,7 +140,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               gap: '6px',
               fontSize: '12px',
               fontWeight: 500,
-              color: '#64748B',
+              color: '#8A8A84',
               marginBottom: '4px',
             }}
           >
@@ -142,20 +148,20 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               onClick={() => onNavigateToTab && onNavigateToTab('dashboard')}
               style={{ cursor: 'pointer', transition: 'color 0.15s' }}
               onMouseEnter={(e) => (e.currentTarget.style.color = '#2563EB')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#64748B')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#8A8A84')}
             >
               Dashboard
             </span>
-            <span style={{ color: '#94A3B8' }}>&gt;</span>
+            <span style={{ color: '#C9C9C2' }}>&gt;</span>
             <span
               onClick={() => setFilterType('Semua Proyek')}
-              style={{ cursor: 'pointer', color: filterType === 'Semua Proyek' ? '#2563EB' : '#64748B' }}
+              style={{ cursor: 'pointer', color: filterType === 'Semua Proyek' ? '#2563EB' : '#8A8A84' }}
             >
               Proyek
             </span>
             {filterType !== 'Semua Proyek' && (
               <>
-                <span style={{ color: '#94A3B8' }}>&gt;</span>
+                <span style={{ color: '#C9C9C2' }}>&gt;</span>
                 <span style={{ color: '#2563EB', fontWeight: 600 }}>{filterType}</span>
               </>
             )}
@@ -165,14 +171,14 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             style={{
               fontSize: '24px',
               fontWeight: 800,
-              letterSpacing: '-0.025em',
-              color: '#0F172A',
+              letterSpacing: '-0.3px',
+              color: '#141412',
               margin: '0 0 4px 0',
             }}
           >
             {headerInfo.title}
           </h1>
-          <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
+          <p style={{ fontSize: '13px', color: '#8A8A84', margin: 0 }}>
             {headerInfo.subtitle}
           </p>
         </div>
@@ -184,17 +190,17 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             style={{
               height: '38px',
               padding: '0 16px',
-              borderRadius: '10px',
+              borderRadius: '12px',
               background: '#2563EB',
               color: '#ffffff',
-              fontSize: '12.5px',
-              fontWeight: 600,
+              fontSize: '14px',
+              fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: '0 4px 12px rgba(37,99,235,0.22)',
+              boxShadow: '0 4px 14px rgba(37,99,235,0.28)',
               transition: 'background 0.15s ease',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = '#1D4ED8')}
@@ -209,17 +215,17 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             style={{
               height: '38px',
               padding: '0 14px',
-              borderRadius: '10px',
+              borderRadius: '12px',
               background: '#ffffff',
-              border: '1px solid #BFDBFE',
+              border: '1px solid #E2E8F0',
               color: '#2563EB',
-              fontSize: '12.5px',
-              fontWeight: 600,
+              fontSize: '14px',
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
               transition: 'all 0.15s ease',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = '#EFF6FF')}
@@ -235,13 +241,15 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           2. MENU TAB SWITCHER PILLS
          ========================================================================= */}
       <div
+        className="ezdb-anim"
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
           overflowX: 'auto',
           paddingBottom: '2px',
-          borderBottom: '1px solid #E2E8F0',
+          borderBottom: '1px solid #EEF1F6',
+          animation: 'ezdb-rise 0.6s 0.08s both',
         }}
       >
         {tabs.map((tab) => {
@@ -258,7 +266,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 border: 'none',
                 background: 'transparent',
                 borderBottom: isActive ? '3px solid #2563EB' : '3px solid transparent',
-                color: isActive ? '#2563EB' : '#64748B',
+                color: isActive ? '#2563EB' : '#8A8A84',
                 fontSize: '13px',
                 fontWeight: isActive ? 750 : 600,
                 cursor: 'pointer',
@@ -269,16 +277,17 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 transition: 'all 0.15s ease',
               }}
             >
-              <TabIcon size={16} color={isActive ? '#2563EB' : '#94A3B8'} />
+              <TabIcon size={16} color={isActive ? '#2563EB' : '#C9C9C2'} />
               <span>{tab.label}</span>
               <span
                 style={{
                   fontSize: '11px',
                   fontWeight: 700,
-                  padding: '1px 7px',
+                  padding: '5px 12px',
                   borderRadius: '999px',
-                  background: isActive ? '#DBEAFE' : '#F1F5F9',
-                  color: isActive ? '#1D4ED8' : '#64748B',
+                  background: isActive ? '#E3EEFB' : '#F1F5F9',
+                  color: isActive ? '#2456A8' : '#64748B',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {tab.count}
@@ -326,6 +335,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
       ) : (
         <AllProjectsView
           projects={projects}
+          activities={activities}
           onCreateProject={onCreateProject}
           onOpenMagicAi={onOpenMagicAi}
           onNavigateToTab={onNavigateToTab}

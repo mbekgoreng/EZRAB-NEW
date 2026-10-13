@@ -401,7 +401,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#F8FAFC] text-[#0F172A] font-sans flex flex-col">
+    <div className="w-full min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col" style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
       {/* =========================================================================
           PAGE HEADER (Section 7)
          ========================================================================= */}

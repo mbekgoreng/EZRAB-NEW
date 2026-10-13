@@ -833,17 +833,25 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       style={{
         display: 'flex',
         width: '100%',
+        maxWidth: '1440px',
+        margin: '0 auto',
         minHeight: 'calc(100vh - 64px)',
-        background: '#FAF9F6',
         position: 'relative',
         overflow: 'hidden',
+        color: '#141412',
         fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
+      {/* Dashboard entrance animation language (prefers-reduced-motion respected) */}
+      <style>{`
+        @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
+      `}</style>
       {/* =====================================================================
           MAIN SPREADSHEET WORKSPACE (Left / Center)
          ===================================================================== */}
       <div
+        className="ezdb-anim"
         style={{
           flexGrow: 1,
           minWidth: 0,
@@ -851,6 +859,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
+          animation: 'ezdb-rise 0.6s 0s both',
         }}
       >
         {/* 1. PROJECT CONTEXT HEADER */}

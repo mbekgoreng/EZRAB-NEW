@@ -946,9 +946,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           aria-pressed={isHidden}
           style={{
             position: 'fixed',
-            left: isHidden ? '8px' : sidebarCollapsed ? '60px' : '244px',
-            top: '50%',
-            transform: 'translateY(-50%)',
+            // 8px clear of the sidebar edge so the capsule never crowds
+            // group-header text or item rows; bottom-anchored in the
+            // sidebar's neutral empty band instead of vertical center.
+            left: isHidden ? '8px' : sidebarCollapsed ? '68px' : '252px',
+            top: 'auto',
+            bottom: '32px',
+            transform: 'none',
             width: '28px',
             height: '64px',
             borderRadius: '99px',

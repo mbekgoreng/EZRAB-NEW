@@ -1,0 +1,40 @@
+/* Keuangan Proyek — dashboard-aligned */
+@keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
+
+.keu { max-width: 1440px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 22px; padding: 0 0 40px; font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif; color: #141412; }
+.keu-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 2px; }
+.keu-head h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.3px; margin: 0; }
+.keu-head p { color: #8A8A84; font-size: 13px; margin: 4px 0 0 0; }
+.keu-select { padding: 10px 14px; border: 1px solid #EEF1F6; border-radius: 12px; font-size: 13px; font-weight: 600; font-family: inherit; color: #141412; background: #FFFFFF; }
+.keu-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.keu-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.keu-tab { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 999px; border: 1px solid #EEF1F6; background: #FFFFFF; font-size: 13px; font-weight: 700; cursor: pointer; color: #6B6B64; font-family: inherit; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
+.keu-tab:hover { border-color: #2563EB; color: #2563EB; }
+.keu-tab.active { background: #2563EB; border-color: #2563EB; color: #fff; box-shadow: 0 4px 14px rgba(37,99,235,0.28); }
+.keu-card { background: #FFFFFF; border: 1px solid #EEF1F6; border-radius: 22px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
+.keu-card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: #141412; margin-bottom: 4px; }
+.keu-card-title svg { color: #2563EB; }
+.keu-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.keu-table th { text-align: left; padding: 10px 12px; color: #8A8A84; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; border-bottom: 1px solid #F0EFE9; }
+.keu-table td { padding: 14px 12px; border-bottom: 1px solid #F5F4EF; color: #141412; }
+.keu-table tbody tr:last-child td { border-bottom: none; }
+.keu-table tbody tr { transition: background-color .12s ease; }
+.keu-table tbody tr:hover { background: #FAFAF8; }
+.keu-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 999px; white-space: nowrap; }
+.keu-pill.green { background: #E2F4D8; color: #2C6E2C; }
+.keu-pill.amber { background: #FDF3D8; color: #A8780A; }
+.keu-pill.slate { background: #F1F5F9; color: #64748B; }
+.keu-chart { display: flex; align-items: flex-end; gap: 10px; height: 180px; margin: 18px 0 8px; }
+.keu-bar { flex: 1; background: #2563EB; border-radius: 8px 8px 0 0; min-height: 8px; }
+.keu-months { display: flex; gap: 10px; }
+.keu-months span { flex: 1; text-align: center; font-size: 11.5px; color: #8A8A84; font-weight: 600; }
+.keu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.keu-bigbar { height: 8px; background: #F0EFE9; border-radius: 99px; overflow: hidden; margin: 14px 0; }
+.keu-bigbar > div { height: 100%; background: #2563EB; border-radius: 99px; }
+.keu-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 8px 0; border-bottom: 1px solid #F5F4EF; color: #141412; }
+.keu-row span { color: #6B6B64; }
+.keu-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.keu-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px; border-radius: 12px; border: 1px solid #EEF1F6; background: #FFFFFF; font-weight: 700; font-size: 13px; cursor: pointer; color: #141412; font-family: inherit; }
+.keu-actions button:hover { border-color: #2563EB; color: #2563EB; }
+@media (max-width: 700px) { .keu-kpis { grid-template-columns: 1fr 1fr; } .keu-grid { grid-template-columns: 1fr; } }

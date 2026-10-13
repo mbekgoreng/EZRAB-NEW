@@ -5,15 +5,7 @@ import {
   Download,
   Trash2,
   Search,
-  Lock,
-  Database,
-  Calendar,
-  Layers,
   MapPin,
-  Sparkles,
-  FileSpreadsheet,
-  Coins,
-  History,
 } from 'lucide-react';
 import { Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
@@ -88,200 +80,93 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' , fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
+      <style>{`
+        @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
+      `}</style>
       {/* 1. TOP 4 ARCHIVE VAULT KPIS */}
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '14px',
+          gap: '18px',
         }}
       >
         {/* KPI 1: Total Proyek Diarsipkan */}
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #EEF2F7',
-            padding: '16px 20px',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: '#F1F5F9',
-                  color: '#475569',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Archive size={16} />
-              </div>
-              <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748B' }}>Total Berkas Arsip</span>
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
-              {archivedProjects.length} <span style={{ fontSize: '13px', color: '#94A3B8', fontWeight: 500 }}>Proyek</span>
-            </div>
-            <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600, marginTop: '2px' }}>
-              Tersimpan dalam Cold Vault
-            </div>
+        <div className="ezdb-anim ez-stat ez-stat-sky" style={{ animation: 'ezdb-rise 0.6s 0.05s both' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+            Total Berkas Arsip
           </div>
-          <div style={{ width: '56px', height: '32px', opacity: 0.8 }}>
-            <svg viewBox="0 0 56 32" style={{ width: '100%', height: '100%' }}>
-              <path d="M 0 15 Q 15 25, 35 10 T 56 12" fill="none" stroke="#CBD5E1" strokeWidth="2.5" strokeLinecap="round" />
-            </svg>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
+            {archivedProjects.length}{' '}
+            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>Proyek</span>
+          </div>
+          <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
+            Tersimpan dalam Cold Vault
           </div>
         </div>
 
         {/* KPI 2: Total Nilai Historis */}
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #EEF2F7',
-            padding: '16px 20px',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: '#EFF6FF',
-                  color: '#2563EB',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: '12px',
-                }}
-              >
-                Rp
-              </div>
-              <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748B' }}>Total Nilai Arsip</span>
-            </div>
-            <div style={{ fontSize: '22px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
-              {totalArchivedValue === 0 ? 'Rp 0' : formatRupiah(totalArchivedValue)}
-            </div>
-            <div style={{ fontSize: '11px', color: '#2563EB', fontWeight: 600, marginTop: '2px' }}>
-              Rekam jejak nilai proyek
-            </div>
+        <div className="ezdb-anim ez-stat ez-stat-cream" style={{ animation: 'ezdb-rise 0.6s 0.12s both' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+            Total Nilai Arsip
+          </div>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
+            {totalArchivedValue === 0 ? 'Rp 0' : formatRupiah(totalArchivedValue)}
+          </div>
+          <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
+            Rekam jejak nilai proyek
           </div>
         </div>
 
         {/* KPI 3: Benchmark Database Referensi */}
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #EEF2F7',
-            padding: '16px 20px',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: '#ECFDF5',
-                  color: '#059669',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Database size={16} />
-              </div>
-              <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748B' }}>Benchmark Harga</span>
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#059669', letterSpacing: '-0.02em' }}>
-              Aktif
-            </div>
-            <div style={{ fontSize: '11px', color: '#059669', fontWeight: 600, marginTop: '2px' }}>
-              Dapat dijadikan referensi AHSP baru
-            </div>
+        <div className="ezdb-anim ez-stat ez-stat-mint" style={{ animation: 'ezdb-rise 0.6s 0.19s both' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+            Benchmark Harga
+          </div>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#2C6E2C' }}>
+            Aktif
+          </div>
+          <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
+            Dapat dijadikan referensi AHSP baru
           </div>
         </div>
 
         {/* KPI 4: Status Keamanan Vault */}
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #EEF2F7',
-            padding: '16px 20px',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: '#F8FAFC',
-                  color: '#334155',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Lock size={16} />
-              </div>
-              <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748B' }}>Enkripsi & Keamanan</span>
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
-              100% Aman
-            </div>
-            <div style={{ fontSize: '11px', color: '#16A34A', fontWeight: 600, marginTop: '2px' }}>
-              ● Backup Cloud & Restore Instant
-            </div>
+        <div className="ezdb-anim ez-stat ez-stat-peach" style={{ animation: 'ezdb-rise 0.6s 0.26s both' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+            Enkripsi & Keamanan
+          </div>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
+            100% Aman
+          </div>
+          <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
+            Backup Cloud & Restore Instant
           </div>
         </div>
       </div>
 
       {/* 2. SEARCH & YEAR FILTER BAR */}
       <div
+        className="ezdb-anim"
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: '#ffffff',
-          padding: '12px 16px',
-          borderRadius: '14px',
-          border: '1px solid #EEF2F7',
+          background: '#FFFFFF',
+          padding: '16px 20px',
+          borderRadius: '22px',
+          border: '1px solid #EEF1F6',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           flexWrap: 'wrap',
           gap: '12px',
+          animation: 'ezdb-rise 0.6s 0.3s both',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '240px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '240px', flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', width: '100%', maxWidth: '320px' }}>
-            <Search size={14} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '11px' }} />
+            <Search size={14} color="#8A8A84" style={{ position: 'absolute', left: '12px', top: '12px' }} />
             <input
               type="text"
               placeholder="Cari berkas arsip..."
@@ -289,33 +174,33 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
                 width: '100%',
-                height: '36px',
+                height: '38px',
                 paddingLeft: '34px',
                 paddingRight: '12px',
-                borderRadius: '8px',
-                border: '1px solid #E2E8F0',
-                background: '#F8FAFC',
-                fontSize: '12.5px',
-                color: '#0F172A',
+                borderRadius: '12px',
+                border: '1px solid #EEF1F6',
+                background: '#FAFAF8',
+                fontSize: '13px',
+                color: '#141412',
                 outline: 'none',
               }}
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {['all', '2026', '2025', '2024'].map((year) => (
               <button
                 key={year}
                 onClick={() => setYearFilter(year)}
                 style={{
-                  height: '30px',
-                  padding: '0 10px',
-                  borderRadius: '6px',
-                  fontSize: '11.5px',
-                  fontWeight: yearFilter === year ? 700 : 500,
-                  background: yearFilter === year ? '#F1F5F9' : '#FFFFFF',
-                  color: yearFilter === year ? '#0F172A' : '#64748B',
-                  border: '1px solid #CBD5E1',
+                  height: '32px',
+                  padding: '0 12px',
+                  borderRadius: '999px',
+                  fontSize: '12px',
+                  fontWeight: yearFilter === year ? 700 : 600,
+                  background: yearFilter === year ? '#E3EEFB' : '#FAFAF8',
+                  color: yearFilter === year ? '#2456A8' : '#6B6B64',
+                  border: 'none',
                   cursor: 'pointer',
                 }}
               >
@@ -325,31 +210,48 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
           </div>
         </div>
 
-        <div style={{ fontSize: '12.5px', color: '#64748B', fontWeight: 600 }}>
-          Menampilkan <span style={{ color: '#0F172A', fontWeight: 800 }}>{filteredProjects.length}</span> berkas arsip
+        <div style={{ fontSize: '12.5px', color: '#6B6B64', fontWeight: 600 }}>
+          Menampilkan <span style={{ color: '#141412', fontWeight: 800 }}>{filteredProjects.length}</span> berkas arsip
         </div>
       </div>
 
       {/* 3. ARCHIVED PROJECTS LIST */}
       {filteredProjects.length === 0 ? (
         <div
+          className="ezdb-anim"
           style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #EEF2F7',
+            background: '#FFFFFF',
+            borderRadius: '22px',
+            border: '1px solid #EEF1F6',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
             padding: '48px 24px',
             textAlign: 'center',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            animation: 'ezdb-rise 0.6s 0.36s both',
           }}
         >
-          <Archive size={36} color="#94A3B8" style={{ marginBottom: '12px' }} />
-          <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0' }}>
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '18px',
+              background: '#F1F5F9',
+              color: '#64748B',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '14px',
+            }}
+          >
+            <Archive size={26} />
+          </div>
+          <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#141412', margin: '0 0 6px 0' }}>
             Gudang Arsip Kosong
           </h3>
-          <p style={{ fontSize: '12.5px', color: '#64748B', maxWidth: '380px', margin: '0 0 16px 0' }}>
+          <p style={{ fontSize: '13px', color: '#6B6B64', maxWidth: '380px', margin: '0 0 16px 0', lineHeight: 1.5 }}>
             Proyek yang telah selesai dapat dipindahkan ke arsip untuk merapikan ruang kerja Anda dan tetap tersimpan sebagai data historis.
           </p>
         </div>
@@ -358,7 +260,7 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
-            gap: '16px',
+            gap: '18px',
           }}
         >
           {filteredProjects.map((proj) => {
@@ -367,16 +269,18 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
             return (
               <div
                 key={proj.id}
+                className="ezdb-anim"
                 style={{
-                  background: '#F8FAFC',
-                  borderRadius: '16px',
-                  border: '1px solid #E2E8F0',
-                  padding: '18px',
+                  background: '#FFFFFF',
+                  borderRadius: '22px',
+                  border: '1px solid #EEF1F6',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
+                  padding: '22px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   gap: '14px',
-                  position: 'relative',
+                  animation: 'ezdb-rise 0.6s 0.36s both',
                 }}
               >
                 <div>
@@ -385,11 +289,12 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                     <span
                       style={{
                         fontSize: '11px',
-                        background: '#E2E8F0',
-                        color: '#475569',
-                        padding: '2px 8px',
-                        borderRadius: '6px',
                         fontWeight: 700,
+                        padding: '5px 12px',
+                        borderRadius: '999px',
+                        background: '#E3EEFB',
+                        color: '#2456A8',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {proj.projectNumber || proj.id}
@@ -398,13 +303,13 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                     <span
                       style={{
                         fontSize: '11px',
-                        padding: '2px 8px',
-                        borderRadius: '999px',
                         fontWeight: 700,
+                        padding: '5px 12px',
+                        borderRadius: '999px',
                         background: '#F1F5F9',
                         color: '#64748B',
-                        border: '1px solid #CBD5E1',
-                        display: 'flex',
+                        whiteSpace: 'nowrap',
+                        display: 'inline-flex',
                         alignItems: 'center',
                         gap: '4px',
                       }}
@@ -419,7 +324,7 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                     style={{
                       fontSize: '15px',
                       fontWeight: 800,
-                      color: '#334155',
+                      color: '#141412',
                       margin: '0 0 4px 0',
                       lineHeight: 1.3,
                     }}
@@ -427,8 +332,8 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                     {proj.name}
                   </h4>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748B', marginBottom: '12px' }}>
-                    <MapPin size={12} color="#94A3B8" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6B6B64', marginBottom: '12px' }}>
+                    <MapPin size={12} color="#8A8A84" />
                     <span>{proj.location || 'Indonesia'}</span>
                     <span>•</span>
                     <span>{proj.clientName || proj.client || 'Klien'}</span>
@@ -437,44 +342,45 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                   {/* Summary Box */}
                   <div
                     style={{
-                      background: '#FFFFFF',
-                      borderRadius: '10px',
+                      background: '#FAFAF8',
+                      borderRadius: '12px',
                       padding: '10px 12px',
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid #EEF1F6',
                       fontSize: '12px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '4px',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748B' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6B6B64' }}>
                       <span>Nilai Historis RAB:</span>
-                      <span style={{ fontWeight: 700, color: '#0F172A' }}>{formatRupiah(totalCost)}</span>
+                      <span style={{ fontWeight: 700, color: '#141412' }}>{formatRupiah(totalCost)}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748B' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6B6B64' }}>
                       <span>Tipe Bangunan:</span>
-                      <span style={{ fontWeight: 600, color: '#334155' }}>{proj.buildingType || 'Umum'}</span>
+                      <span style={{ fontWeight: 600, color: '#141412' }}>{proj.buildingType || 'Umum'}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Bottom Action Strip: Restore, Download, Delete Permanent */}
-                <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <button
                     onClick={() => handleRestoreProject(proj)}
                     style={{
-                      height: '32px',
-                      padding: '0 12px',
-                      borderRadius: '8px',
+                      height: '36px',
+                      padding: '0 16px',
+                      borderRadius: '12px',
                       background: '#2563EB',
                       color: '#FFFFFF',
-                      fontSize: '11.5px',
+                      fontSize: '13px',
                       fontWeight: 700,
                       border: 'none',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
+                      boxShadow: '0 4px 14px rgba(37,99,235,0.28)',
                     }}
                   >
                     <RotateCcw size={13} />
@@ -486,14 +392,14 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                       onClick={() => handleExportArchiveBundle(proj)}
                       title="Unduh Berkas Arsip"
                       style={{
-                        height: '32px',
-                        padding: '0 10px',
-                        borderRadius: '6px',
+                        height: '36px',
+                        padding: '0 12px',
+                        borderRadius: '12px',
                         background: '#FFFFFF',
-                        border: '1px solid #CBD5E1',
-                        color: '#475569',
-                        fontSize: '11.5px',
-                        fontWeight: 600,
+                        border: '1px solid #E2E8F0',
+                        color: '#141412',
+                        fontSize: '12px',
+                        fontWeight: 700,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -508,12 +414,12 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                       onClick={() => handleDeletePermanent(proj)}
                       title="Hapus Permanen"
                       style={{
-                        height: '32px',
-                        width: '32px',
-                        borderRadius: '6px',
-                        background: '#FEF2F2',
-                        border: '1px solid #FECACA',
-                        color: '#DC2626',
+                        height: '36px',
+                        width: '36px',
+                        borderRadius: '12px',
+                        background: '#FCE9E9',
+                        border: '1px solid #F5D5D5',
+                        color: '#B54747',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',

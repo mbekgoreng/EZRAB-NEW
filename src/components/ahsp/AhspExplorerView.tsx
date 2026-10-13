@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Sparkles,
   Info,
+  AlertTriangle,
   Sliders,
   ChevronLeft,
   ChevronsLeft,
@@ -302,15 +303,20 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
     <div
       style={{
         width: '100%',
-        maxWidth: '1680px',
+        maxWidth: '1440px',
         margin: '0 auto',
         display: 'flex',
         flexDirection: 'column',
-        gap: '20px',
-        color: '#0F172A',
+        gap: '22px',
+        color: '#141412',
         fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
       }}
     >
+      {/* Dashboard entrance animation language (prefers-reduced-motion respected) */}
+      <style>{`
+        @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
+      `}</style>
       {/* Toast Notification */}
       {toastMessage && (
         <div
@@ -318,7 +324,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             position: 'fixed',
             bottom: '28px',
             right: '28px',
-            background: '#0F172A',
+            background: '#141412',
             color: '#ffffff',
             padding: '14px 22px',
             borderRadius: '12px',
@@ -341,11 +347,12 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
           1. HEADER HERO BANNER & REGULATION CITATION (CLEAN LIGHT STYLE)
          ========================================================================= */}
       <div
+        className="ezdb-anim"
         style={{
           background: '#FFFFFF',
-          borderRadius: '20px',
+          borderRadius: '22px',
           padding: '22px 26px',
-          color: '#0F172A',
+          color: '#141412',
           border: '1px solid #EEF1F6',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
@@ -355,6 +362,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
           gap: '20px',
           position: 'relative',
           overflow: 'hidden',
+          animation: 'ezdb-rise 0.6s 0s both',
         }}
       >
         <div style={{ position: 'relative', zIndex: 2, maxWidth: '850px' }}>
@@ -393,7 +401,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             </span>
           </div>
 
-          <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.02em', margin: 0, lineHeight: 1.3, color: '#0F172A' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.3px', margin: 0, lineHeight: 1.3, color: '#141412' }}>
             {selectedDomain === 'BINA_MARGA'
               ? 'Katalog Lengkap AHSP Bidang Bina Marga (Jalan & Jembatan) 2026'
               : selectedDomain === 'SUMBER_DAYA_AIR'
@@ -402,7 +410,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               ? 'Katalog AHSP Bidang Cipta Karya (Gedung & Perumahan) 2026'
               : 'Katalog Nasional AHSP PUPR 2026 (Bina Marga, SDA, Cipta Karya, SMKK)'}
           </h1>
-          <p style={{ fontSize: '13.5px', color: '#64748B', margin: '8px 0 0', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '13px', color: '#8A8A84', margin: '8px 0 0', lineHeight: 1.5 }}>
             {selectedDomain === 'CIPTA_KARYA' ? (
               <>Daftar resmi <strong>{domainCounts.CIPTA_KARYA.toLocaleString('id-ID')} Analisa Harga Satuan Pekerjaan Gedung & Perumahan (Cipta Karya)</strong> terintegrasi penuh dengan Price Database & DHSP resmi SE DJBK No. 47/SE/Dk/2026.</>
             ) : selectedDomain === 'BINA_MARGA' ? (
@@ -483,15 +491,17 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
           2. DOMAIN TABS: Semua Bidang -> Cipta Karya -> Bina Marga -> SDA -> SMKK K3
          ========================================================================= */}
       <div
+        className="ezdb-anim"
         style={{
           display: 'flex',
           flexWrap: 'wrap',
           gap: '8px',
           background: '#ffffff',
-          borderRadius: '20px',
+          borderRadius: '22px',
           padding: '8px',
           border: '1px solid #EEF1F6',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
+          animation: 'ezdb-rise 0.6s 0.07s both',
         }}
       >
         {/* 1. SEMUA BIDANG */}
@@ -764,9 +774,10 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
           4. SEARCH, FILTER & SORT BAR
          ========================================================================= */}
       <div
+        className="ezdb-anim"
         style={{
           background: '#ffffff',
-          borderRadius: '20px',
+          borderRadius: '22px',
           border: '1px solid #EEF1F6',
           padding: '16px 20px',
           display: 'flex',
@@ -775,6 +786,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
           justifyContent: 'space-between',
           gap: '14px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
+          animation: 'ezdb-rise 0.6s 0.14s both',
         }}
       >
         {/* Search Input */}
@@ -796,7 +808,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               borderRadius: '12px',
               border: '1.5px solid #E2E8F0',
               fontSize: '13.5px',
-              color: '#0F172A',
+              color: '#141412',
               outline: 'none',
               background: '#FFFFFF',
             }}
@@ -963,7 +975,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
         <div
           style={{
             background: '#ffffff',
-            borderRadius: '20px',
+            borderRadius: '22px',
             border: '1px solid #EEF1F6',
             boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
             padding: '60px 20px',
@@ -976,7 +988,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
           }}
         >
           <Database size={40} color="#94A3B8" />
-          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0F172A' }}>
+          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#141412' }}>
             Tidak ada item AHSP yang cocok dengan pencarian
           </h3>
           <p style={{ margin: 0, fontSize: '13px', color: '#64748B', maxWidth: '400px' }}>
@@ -1006,10 +1018,12 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
         </div>
       ) : (
         <div
+          className="ezdb-anim"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
-            gap: '16px',
+            gap: '18px',
+            animation: 'ezdb-rise 0.6s 0.21s both',
           }}
         >
           {paginatedItems.map((item) => {
@@ -1027,9 +1041,9 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                 key={item.id}
                 style={{
                   background: '#ffffff',
-                  borderRadius: '20px',
+                  borderRadius: '22px',
                   border: '1px solid #EEF1F6',
-                  padding: '20px 22px',
+                  padding: '24px',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1085,7 +1099,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                     style={{
                       fontSize: '15px',
                       fontWeight: 650,
-                      color: '#0F172A',
+                      color: '#141412',
                       lineHeight: 1.45,
                       margin: '0 0 12px',
                       display: '-webkit-box',
@@ -1105,7 +1119,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   {/* Metadata Row: Satuan & Status */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', marginBottom: '10px' }}>
                     <span style={{ color: '#64748B' }}>
-                      Satuan: <strong style={{ color: '#0F172A', fontWeight: 700 }}>{item.unit || '—'}</strong>
+                      Satuan: <strong style={{ color: '#141412', fontWeight: 700 }}>{item.unit || '—'}</strong>
                     </span>
 
                     {pricingStatus === 'FULL' && (
@@ -1138,9 +1152,9 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                       color: '#64748B',
                     }}
                   >
-                    <span>Tenaga Kerja: <strong style={{ color: laborTotal > 0 ? '#0F172A' : '#94A3B8' }}>{laborTotal > 0 ? formatCurrencyIDR(laborTotal) : (composition.labor.components.length > 0 ? '—' : '0')}</strong></span>
-                    <span>Material: <strong style={{ color: materialTotal > 0 ? '#0F172A' : '#94A3B8' }}>{materialTotal > 0 ? formatCurrencyIDR(materialTotal) : (composition.material.components.length > 0 ? '—' : '0')}</strong></span>
-                    <span>Peralatan: <strong style={{ color: equipTotal > 0 ? '#0F172A' : '#94A3B8' }}>{equipTotal > 0 ? formatCurrencyIDR(equipTotal) : (composition.equipment.components.length > 0 ? '—' : '0')}</strong></span>
+                    <span>Tenaga Kerja: <strong style={{ color: laborTotal > 0 ? '#141412' : '#94A3B8' }}>{laborTotal > 0 ? formatCurrencyIDR(laborTotal) : (composition.labor.components.length > 0 ? '—' : '0')}</strong></span>
+                    <span>Material: <strong style={{ color: materialTotal > 0 ? '#141412' : '#94A3B8' }}>{materialTotal > 0 ? formatCurrencyIDR(materialTotal) : (composition.material.components.length > 0 ? '—' : '0')}</strong></span>
+                    <span>Peralatan: <strong style={{ color: equipTotal > 0 ? '#141412' : '#94A3B8' }}>{equipTotal > 0 ? formatCurrencyIDR(equipTotal) : (composition.equipment.components.length > 0 ? '—' : '0')}</strong></span>
                   </div>
                 </div>
 
@@ -1246,7 +1260,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               borderRadius: '10px',
               border: '1px solid #E2E8F0',
               background: '#ffffff',
-              color: safeCurrentPage === 1 ? '#94A3B8' : '#0F172A',
+              color: safeCurrentPage === 1 ? '#94A3B8' : '#141412',
               cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -1267,7 +1281,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               borderRadius: '10px',
               border: '1px solid #E2E8F0',
               background: '#ffffff',
-              color: safeCurrentPage === 1 ? '#94A3B8' : '#0F172A',
+              color: safeCurrentPage === 1 ? '#94A3B8' : '#141412',
               cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -1288,7 +1302,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               padding: '0 8px',
               fontSize: '13px',
               fontWeight: 700,
-              color: '#0F172A',
+              color: '#141412',
             }}
           >
             <span>Halaman</span>
@@ -1324,7 +1338,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               borderRadius: '10px',
               border: '1px solid #E2E8F0',
               background: '#ffffff',
-              color: safeCurrentPage === totalPages ? '#94A3B8' : '#0F172A',
+              color: safeCurrentPage === totalPages ? '#94A3B8' : '#141412',
               cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -1345,7 +1359,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               borderRadius: '10px',
               border: '1px solid #E2E8F0',
               background: '#ffffff',
-              color: safeCurrentPage === totalPages ? '#94A3B8' : '#0F172A',
+              color: safeCurrentPage === totalPages ? '#94A3B8' : '#141412',
               cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -1381,7 +1395,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '20px',
+              borderRadius: '22px',
               maxWidth: '850px',
               width: '100%',
               maxHeight: '90vh',
@@ -1415,7 +1429,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                     {selectedAhsp.sourceDocument || 'Sumber tidak tercatat'}
                   </span>
                 </div>
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#0F172A', lineHeight: 1.4 }}>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#141412', lineHeight: 1.4 }}>
                   {selectedAhsp.name}
                 </h3>
                 <div style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
@@ -1442,12 +1456,14 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             <div style={{ padding: '20px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {selectedAhspComposition?.pricingStatus === 'PARTIAL' && (
                 <div style={{ background: '#FDF3D8', border: '1px solid #FDF3D8', color: '#A8780A', padding: '10px 14px', borderRadius: '14px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>⚠️ <strong>Harga Parsial:</strong> Beberapa komponen sumber daya belum memiliki data harga di database 2026. Subtotal di bawah mencerminkan komponen yang telah terpetakan ({selectedAhspComposition.resolvedComponents} dari {selectedAhspComposition.totalComponents} item).</span>
+                  <AlertTriangle size={15} style={{ flexShrink: 0 }} />
+                  <span><strong>Harga Parsial:</strong> Beberapa komponen sumber daya belum memiliki data harga di database 2026. Subtotal di bawah mencerminkan komponen yang telah terpetakan ({selectedAhspComposition.resolvedComponents} dari {selectedAhspComposition.totalComponents} item).</span>
                 </div>
               )}
               {selectedAhspComposition?.pricingStatus === 'MISSING' && (
                 <div style={{ background: '#F4F6FA', border: '1px solid #EDF1F7', color: '#475569', padding: '10px 14px', borderRadius: '14px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>ℹ️ <strong>Harga Belum Tersedia:</strong> Belum ada data harga satuan untuk komponen pada analisa ini di database standar 2026. Anda dapat menyesuaikan harga secara manual setelah menambahkan ke proyek.</span>
+                  <Info size={15} style={{ flexShrink: 0 }} />
+                  <span><strong>Harga Belum Tersedia:</strong> Belum ada data harga satuan untuk komponen pada analisa ini di database standar 2026. Anda dapat menyesuaikan harga secara manual setelah menambahkan ke proyek.</span>
                 </div>
               )}
 
@@ -1473,7 +1489,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                       </tr>
                       {selectedAhspComposition!.labor.components.map((r, i) => (
                         <tr key={i} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                          <td style={{ padding: '8px 10px', color: '#0F172A', fontWeight: 500 }}>
+                          <td style={{ padding: '8px 10px', color: '#141412', fontWeight: 500 }}>
                             {r.itemName} {r.itemCode && <span style={{ color: '#94A3B8', fontSize: '11px' }}>({r.itemCode})</span>}
                           </td>
                           <td style={{ padding: '8px 10px', textAlign: 'center' }}>
@@ -1485,10 +1501,10 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                             {r.coefficient}
                           </td>
                           <td style={{ padding: '8px 10px', textAlign: 'center', color: '#64748B' }}>{r.unit || 'OH'}</td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', color: r.unitPrice !== null ? '#0F172A' : '#94A3B8' }}>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', color: r.unitPrice !== null ? '#141412' : '#94A3B8' }}>
                             {r.unitPrice !== null ? r.unitPrice.toLocaleString('id-ID') : 'Belum ada data'}
                           </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: r.subtotalPerUnit !== null ? '#0F172A' : '#94A3B8' }}>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: r.subtotalPerUnit !== null ? '#141412' : '#94A3B8' }}>
                             {r.subtotalPerUnit !== null ? Math.round(r.subtotalPerUnit).toLocaleString('id-ID') : '—'}
                           </td>
                         </tr>
@@ -1506,7 +1522,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                       </tr>
                       {selectedAhspComposition!.material.components.map((r, i) => (
                         <tr key={i} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                          <td style={{ padding: '8px 10px', color: '#0F172A', fontWeight: 500 }}>
+                          <td style={{ padding: '8px 10px', color: '#141412', fontWeight: 500 }}>
                             {r.itemName} {r.itemCode && <span style={{ color: '#94A3B8', fontSize: '11px' }}>({r.itemCode})</span>}
                           </td>
                           <td style={{ padding: '8px 10px', textAlign: 'center' }}>
@@ -1518,10 +1534,10 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                             {r.coefficient}
                           </td>
                           <td style={{ padding: '8px 10px', textAlign: 'center', color: '#64748B' }}>{r.unit}</td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', color: r.unitPrice !== null ? '#0F172A' : '#94A3B8' }}>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', color: r.unitPrice !== null ? '#141412' : '#94A3B8' }}>
                             {r.unitPrice !== null ? r.unitPrice.toLocaleString('id-ID') : 'Belum ada data'}
                           </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: r.subtotalPerUnit !== null ? '#0F172A' : '#94A3B8' }}>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: r.subtotalPerUnit !== null ? '#141412' : '#94A3B8' }}>
                             {r.subtotalPerUnit !== null ? Math.round(r.subtotalPerUnit).toLocaleString('id-ID') : '—'}
                           </td>
                         </tr>
@@ -1539,7 +1555,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                       </tr>
                       {selectedAhspComposition!.equipment.components.map((r, i) => (
                         <tr key={i} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                          <td style={{ padding: '8px 10px', color: '#0F172A', fontWeight: 500 }}>
+                          <td style={{ padding: '8px 10px', color: '#141412', fontWeight: 500 }}>
                             {r.itemName} {r.itemCode && <span style={{ color: '#94A3B8', fontSize: '11px' }}>({r.itemCode})</span>}
                           </td>
                           <td style={{ padding: '8px 10px', textAlign: 'center' }}>
@@ -1551,10 +1567,10 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                             {r.coefficient}
                           </td>
                           <td style={{ padding: '8px 10px', textAlign: 'center', color: '#64748B' }}>{r.unit}</td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', color: r.unitPrice !== null ? '#0F172A' : '#94A3B8' }}>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', color: r.unitPrice !== null ? '#141412' : '#94A3B8' }}>
                             {r.unitPrice !== null ? r.unitPrice.toLocaleString('id-ID') : 'Belum ada data'}
                           </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: r.subtotalPerUnit !== null ? '#0F172A' : '#94A3B8' }}>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: r.subtotalPerUnit !== null ? '#141412' : '#94A3B8' }}>
                             {r.subtotalPerUnit !== null ? Math.round(r.subtotalPerUnit).toLocaleString('id-ID') : '—'}
                           </td>
                         </tr>
@@ -1567,7 +1583,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                     <td colSpan={5} style={{ padding: '10px', textAlign: 'right', fontSize: '12.5px', color: '#475569' }}>
                       Jumlah Biaya Langsung (D = A + B + C):
                     </td>
-                    <td style={{ padding: '10px', textAlign: 'right', color: '#0F172A', fontSize: '13.5px', fontWeight: 800 }}>
+                    <td style={{ padding: '10px', textAlign: 'right', color: '#141412', fontSize: '13.5px', fontWeight: 800 }}>
                       {selectedAhspComposition && selectedAhspComposition.unitPrice !== null && selectedAhspComposition.unitPrice > 0
                         ? formatCurrencyIDR(selectedAhspComposition.unitPrice)
                         : '—'}
@@ -1624,7 +1640,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   lineHeight: 1.6,
                 }}
               >
-                <div style={{ fontWeight: 800, color: '#0F172A', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ fontWeight: 800, color: '#141412', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <FileText size={15} color="#2563EB" />
                   <span>Informasi Sumber Resmi (Data Lineage & Provenansi)</span>
                 </div>
@@ -1758,7 +1774,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '20px',
+              borderRadius: '22px',
               maxWidth: '480px',
               width: '100%',
               padding: '24px',
@@ -1774,7 +1790,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                 <div style={{ width: '34px', height: '34px', borderRadius: '12px', background: '#E3EEFB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB' }}>
                   <FileSpreadsheet size={18} />
                 </div>
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#141412' }}>
                   Tambahkan ke RAB Proyek
                 </h3>
               </div>
@@ -1796,7 +1812,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   {addToRabModalItem.category}
                 </span>
               </div>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', lineHeight: 1.4 }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#141412', lineHeight: 1.4 }}>
                 {addToRabModalItem.name}
               </div>
               {(() => {
@@ -1829,7 +1845,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   border: '1.5px solid #E2E8F0',
                   fontSize: '15px',
                   fontWeight: 700,
-                  color: '#0F172A',
+                  color: '#141412',
                   outline: 'none',
                 }}
                 autoFocus
@@ -1919,7 +1935,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
           <div
             style={{
               background: '#ffffff',
-              borderRadius: '20px',
+              borderRadius: '22px',
               maxWidth: '680px',
               width: '100%',
               padding: '28px',
@@ -1938,7 +1954,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   <ShieldCheck size={22} />
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0F172A' }}>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#141412' }}>
                     Audit & Provenansi Database 2026
                   </h3>
                   <div style={{ fontSize: '12px', color: '#64748B' }}>SE DJBK No. 47/SE/Dk/2026 — Kementerian PUPR</div>
@@ -1955,7 +1971,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '12.5px' }}>
               <div style={{ background: '#FDF3D8', padding: '12px 14px', borderRadius: '14px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
                 <div style={{ color: '#6B6B64', fontWeight: 600 }}>File Sumber Resmi</div>
-                <div style={{ fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>ahsp bina kontruksi 2026.xlsx</div>
+                <div style={{ fontWeight: 800, color: '#141412', marginTop: '2px' }}>ahsp bina kontruksi 2026.xlsx</div>
                 <div style={{ fontSize: '10.5px', color: '#94A3B8', fontFamily: 'monospace', marginTop: '4px', wordBreak: 'break-all' }}>
                   SHA256: ee35ca4369f802e8ccced7884ceca76b7d1c5c774b5a2fccb784c48a34d1eb5a
                 </div>
@@ -1977,7 +1993,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
 
               <div style={{ background: '#FFE9D6', padding: '12px 14px', borderRadius: '14px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
                 <div style={{ color: '#6B6B64', fontWeight: 600 }}>Price Database Master</div>
-                <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '16px', marginTop: '2px' }}>3.324 Resource</div>
+                <div style={{ fontWeight: 800, color: '#141412', fontSize: '16px', marginTop: '2px' }}>3.324 Resource</div>
                 <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>3.075 Bahan, 45 Upah, 204 Peralatan</div>
               </div>
             </div>
@@ -1998,11 +2014,11 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               style={{
                 height: '42px',
                 borderRadius: '12px',
-                background: '#0F172A',
+                background: '#2563EB',
                 color: '#ffffff',
                 border: 'none',
                 fontWeight: 700,
-                fontSize: '13px',
+                fontSize: '14px',
                 cursor: 'pointer',
               }}
             >

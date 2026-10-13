@@ -76,15 +76,19 @@ export const DokumenAiView: React.FC = () => {
 
   return (
     <div className="docai">
-      <div className="docai-hero">
+      <style>{`
+        @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
+      `}</style>
+      <div className="docai-hero ezdb-anim" style={{ animation: 'ezdb-rise 0.6s 0s both' }}>
         <div className="docai-hero-icon"><Sparkles size={22} /></div>
         <div>
-          <h2>Dokumen AI</h2>
+          <h1>Dokumen AI</h1>
           <p>Unggah PDF, DOCX, atau XLSX — AI membaca isinya untuk merangkum, menjawab, mengekstrak, dan membandingkan.</p>
         </div>
       </div>
 
-      <div className="docai-grid">
+      <div className="docai-grid ezdb-anim" style={{ animation: 'ezdb-rise 0.6s 0.08s both' }}>
         {/* UPLOAD */}
         <div className="docai-card">
           <div className="docai-step">1 · Dokumen</div>
@@ -126,7 +130,7 @@ export const DokumenAiView: React.FC = () => {
                 <button key={m.id} className={`docai-mode ${active ? 'active' : ''}`} onClick={() => setMode(m.id)}>
                   <Icon size={20} />
                   <div><div className="docai-mode-label">{m.label}</div><div className="docai-mode-desc">{m.desc}</div></div>
-                  {active && <span className="docai-mode-check">✓</span>}
+                  {active && <span className="docai-mode-check"><Check size={12} strokeWidth={3.5} /></span>}
                 </button>
               );
             })}
@@ -141,25 +145,25 @@ export const DokumenAiView: React.FC = () => {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') run(); }}
-            placeholder={mode === 'QA' ? 'Tanya sesuatu tentang dokumen ini… 🤔' : 'Apa yang ingin dibandingkan? (opsional)'}
+            placeholder={mode === 'QA' ? 'Tanya sesuatu tentang dokumen ini…' : 'Apa yang ingin dibandingkan? (opsional)'}
           />
           <button onClick={() => run()} disabled={!doc || busy} className={!doc || busy ? 'disabled' : ''}>
-            {busy ? <Loader2 size={16} className="spin" /> : null} {mode === 'QA' ? 'Tanya ✨' : 'Bandingkan 🔍'}
+            {busy ? <Loader2 size={16} className="spin" /> : null} {mode === 'QA' ? 'Tanya' : 'Bandingkan'}
           </button>
         </div>
       )}
       {(mode === 'SUMMARY' || mode === 'EXTRACT') && (
         <button className="docai-run" onClick={() => run()} disabled={!doc || busy}>
-          {busy ? <><Loader2 size={17} className="spin" /> AI sedang membaca…</> : <><Sparkles size={17} /> {mode === 'SUMMARY' ? 'Buatkan Ringkasan ✨' : 'Ekstrak Data 📊'}</>}
+          {busy ? <><Loader2 size={17} className="spin" /> AI sedang membaca…</> : <><Sparkles size={17} /> {mode === 'SUMMARY' ? 'Buatkan Ringkasan' : 'Ekstrak Data'}</>}
         </button>
       )}
 
-      {error && <div className="docai-error"><b>😢 Analisis gagal</b><div>{error}</div></div>}
+      {error && <div className="docai-error"><b>Analisis gagal</b><div>{error}</div></div>}
 
       {reply && (
         <div className="docai-result">
           <div className="docai-result-head">
-            <span>✨ Hasil {MODES.find((m) => m.id === mode)?.label}</span>
+            <span>Hasil {MODES.find((m) => m.id === mode)?.label}</span>
             <button onClick={copyReply} title="Salin">{copied ? <Check size={15} /> : <Copy size={15} />} {copied ? 'Tersalin!' : 'Salin'}</button>
           </div>
           <div className="docai-result-body">{reply}</div>

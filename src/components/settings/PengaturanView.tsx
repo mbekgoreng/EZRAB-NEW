@@ -13,11 +13,30 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
   onNavigateTab,
 }) => {
   return (
-    <UnifiedSettingsView
-      initialTab={initialTab}
-      initialScope={initialScope}
-      onNavigateTab={onNavigateTab}
-    />
+    <div
+      className="ezdb-anim"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '22px',
+        maxWidth: '1440px',
+        margin: '0 auto',
+        width: '100%',
+        color: '#141412',
+        fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
+        animation: 'ezdb-rise 0.6s 0s both',
+      }}
+    >
+      <style>{`
+        @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
+      `}</style>
+      <UnifiedSettingsView
+        initialTab={initialTab}
+        initialScope={initialScope}
+        onNavigateTab={onNavigateTab}
+      />
+    </div>
   );
 };
 

@@ -232,8 +232,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             <div
               onClick={() => setActiveStep('magic_ai')}
               style={{
-                background: 'linear-gradient(135deg, #F0F5FF 0%, #EEF2FF 100%)',
-                border: '1.5px solid #C7D2FE',
+                background: '#E3EEFB',
+                border: '1.5px solid #BFDBFE',
                 borderRadius: '12px',
                 padding: '16px',
                 cursor: 'pointer',
@@ -248,7 +248,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.borderColor = '#C7D2FE';
+                e.currentTarget.style.borderColor = '#BFDBFE';
               }}
             >
               <div>
@@ -258,7 +258,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                       width: '38px',
                       height: '38px',
                       borderRadius: '10px',
-                      background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
+                      background: '#2563EB',
                       color: '#ffffff',
                       display: 'flex',
                       alignItems: 'center',
@@ -267,7 +267,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   >
                     <Sparkles size={19} />
                   </div>
-                  <span style={{ fontSize: '10px', fontWeight: 800, background: '#EEF2FF', color: '#4F46E5', padding: '2px 8px', borderRadius: '999px', border: '1px solid #C7D2FE' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 800, background: '#E3EEFB', color: '#2456A8', padding: '2px 8px', borderRadius: '999px', border: '1px solid #BFDBFE' }}>
                     PALING CEPAT
                   </span>
                 </div>
@@ -278,7 +278,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   Generate draft RAB lengkap langsung dari prompt deskripsi, luas tanah/bangunan, atau dokumen gambar kerja.
                 </p>
               </div>
-              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#4F46E5' }}>
+              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#2456A8' }}>
                 <span>Mulai dengan AI</span>
                 <ArrowRight size={14} />
               </div>
@@ -668,7 +668,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         {activeStep === 'magic_ai' && (
           <form onSubmit={handleMagicAiSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#4F46E5', marginBottom: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#2456A8', marginBottom: '4px' }}>
                 <Sparkles size={14} />
                 <span>Format Rekomendasi Prompt AI</span>
               </div>
@@ -727,7 +727,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   gap: '6px',
                   padding: '9px 20px',
                   borderRadius: '8px',
-                  background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
+                  background: '#2563EB',
                   color: '#ffffff',
                   border: 'none',
                   fontSize: '13px',
