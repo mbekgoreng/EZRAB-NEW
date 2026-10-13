@@ -83,9 +83,9 @@ export const ExactFinalCta: React.FC<ExactFinalCtaProps> = ({ onStartFree }) => 
           <button
             onClick={onStartFree}
             className="ez-luxury-cta-primary-btn"
-            aria-label="Mulai Gratis"
+            aria-label="Buat RAB pertama gratis"
           >
-            <span>Mulai Gratis</span>
+            <span>Buat RAB Pertama Gratis</span>
             <span className="ez-luxury-cta-arrow" aria-hidden="true">→</span>
           </button>
         </div>

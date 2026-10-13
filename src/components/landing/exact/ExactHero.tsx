@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   ArrowRight,
   Play,
@@ -9,12 +9,13 @@ import {
   Sparkles,
   TrendingUp,
   CheckCircle2,
+  Cpu,
   Zap,
   Check,
   Building2,
 } from 'lucide-react';
-import { ArchitecturalBackground } from '../architectural/ArchitecturalBackground';
-import { ProductStage } from '../cinematic/ProductStage';
+import { RibbonFieldBackground } from './RibbonFieldBackground';
+import { ChromaKeyVideo } from '../../common/ChromaKeyVideo';
 
 interface ExactHeroProps {
   onStartFree?: () => void;
@@ -22,9 +23,10 @@ interface ExactHeroProps {
 }
 
 export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoTime, setVideoTime] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [cardsReady, setCardsReady] = useState<boolean>(false);
-  // Active demo scene (Layer B) → drives the architectural background (Layer A)
-  const [demoScene, setDemoScene] = useState<number>(0);
 
   // Stagger reveal of all 5 floating cards so all assets immediately render and stay visible
   useEffect(() => {
@@ -34,15 +36,88 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
     return () => clearTimeout(timer);
   }, []);
 
-  // Cards are guaranteed to render and stay visible!
+  // Bulletproof video autoplay handling for modern browsers (Chrome/Edge/Safari/Firefox)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const playVideo = () => {
+      video.defaultMuted = true;
+      video.muted = true;
+      const promise = video.play();
+      if (promise !== undefined) {
+        promise
+          .then(() => setIsPlaying(true))
+          .catch(() => {
+            setIsPlaying(false);
+            // Fallback: start video on first user interaction if autoplay was blocked by browser policy
+            const onFirstGesture = () => {
+              if (video.paused) {
+                video.defaultMuted = true;
+                video.muted = true;
+                video.play().then(() => setIsPlaying(true)).catch(() => {});
+              }
+              window.removeEventListener('click', onFirstGesture);
+              window.removeEventListener('touchstart', onFirstGesture);
+              window.removeEventListener('scroll', onFirstGesture);
+              window.removeEventListener('pointerdown', onFirstGesture);
+            };
+            window.addEventListener('click', onFirstGesture, { once: true });
+            window.addEventListener('touchstart', onFirstGesture, { once: true });
+            window.addEventListener('scroll', onFirstGesture, { once: true });
+            window.addEventListener('pointerdown', onFirstGesture, { once: true });
+          });
+      }
+    };
+
+    playVideo();
+    video.addEventListener('loadedmetadata', playVideo);
+    video.addEventListener('canplay', playVideo);
+
+    // Watchdog check: ensure video is running within first 2 seconds
+    const watchdog = setInterval(() => {
+      if (video.paused) {
+        playVideo();
+      }
+    }, 800);
+
+    const clearWatchdog = setTimeout(() => {
+      clearInterval(watchdog);
+    }, 4000);
+
+    return () => {
+      clearInterval(watchdog);
+      clearTimeout(clearWatchdog);
+      video.removeEventListener('loadedmetadata', playVideo);
+      video.removeEventListener('canplay', playVideo);
+    };
+  }, []);
+
+  const handleManualPlay = () => {
+    if (videoRef.current) {
+      videoRef.current.defaultMuted = true;
+      videoRef.current.muted = true;
+      videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setVideoTime(videoRef.current.currentTime);
+    }
+  };
+
+  // All 5 cards are guaranteed to render and stay visible!
   const showCard1 = true;
   const showCard2 = cardsReady;
+  const showCard3 = cardsReady;
+  const showCard4 = cardsReady;
   const showCard5 = cardsReady;
 
   return (
     <section id="beranda" className="ez-hero-exact">
-      {/* Layer A — living architectural ambience (Three.js), reacts to the demo */}
-      <ArchitecturalBackground mode={demoScene} />
+      {/* 1. WebGL Ribbon Field Background (Pure Blue Gradients + Deep Navy Base) */}
+      <RibbonFieldBackground speed={1} pointerAmount={1} smoothing={0.035} />
 
       <div className="ez-hero-container">
         {/* Left Column: Copy & Actions */}
@@ -127,9 +202,65 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
             <div className="ez-blueprint-scan-beam" />
             <div className="ez-platform-ground-glow" />
 
-            {/* Demo animasi produk — miring perspektif seperti iPad Pro */}
-            <div className="ez-feature-stage-wrapper">
-              <ProductStage onSceneChange={setDemoScene} />
+            {/* Video Container positioned over the blueprint area (frameless) */}
+            <div 
+              className="ez-building-platform-wrapper"
+              onClick={handleManualPlay}
+              style={{ cursor: isPlaying ? 'default' : 'pointer' }}
+              title={isPlaying ? 'Simulasi 3D Berjalan' : 'Klik untuk memutar video'}
+            >
+              <ChromaKeyVideo
+                videoRef={(el) => {
+                  videoRef.current = el;
+                  if (el) {
+                    el.defaultMuted = true;
+                    el.muted = true;
+                    el.playsInline = true;
+                    el.setAttribute('playsinline', '');
+                    el.setAttribute('webkit-playsinline', '');
+                    el.play().then(() => setIsPlaying(true)).catch(() => {});
+                  }
+                }}
+                src="/videos/0908fg.mp4"
+                poster="/videos/0908fg-poster.jpg"
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                threshold={0.065}
+                smoothness={0.055}
+                keyMode="black"
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onCanPlay={(e) => {
+                  const v = e.currentTarget;
+                  v.defaultMuted = true;
+                  v.muted = true;
+                  v.play().then(() => setIsPlaying(true)).catch(() => {});
+                }}
+                onLoadedMetadata={(e) => {
+                  const v = e.currentTarget;
+                  v.defaultMuted = true;
+                  v.muted = true;
+                  v.play().then(() => setIsPlaying(true)).catch(() => {});
+                }}
+                onTimeUpdate={handleTimeUpdate}
+                className="ez-hero-video-render"
+              />
+
+              {/* Status Indicator & Click-to-Play Overlay if Browser paused */}
+              {!isPlaying && (
+                <button
+                  type="button"
+                  onClick={handleManualPlay}
+                  className="ez-hero-video-play-btn"
+                  aria-label="Putar Video Simulasi 3D"
+                >
+                  <Play size={20} fill="#ffffff" />
+                  <span>Putar Simulasi 3D</span>
+                </button>
+              )}
             </div>
 
             {/* Neon Connection Circuit Lines SVG Overlay */}
@@ -182,102 +313,150 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
                 5 DYNAMIC ENLARGED POP-UP CARDS (Synchronized to Video)
                 ======================================================= */}
 
-            {/* ======= 3 POPUP CARDS — berjejer di atas, demo terlihat penuh ======= */}
-            {/* Card 1: Proyek (kiri atas) — sesuai scene demo "Proyek" */}
+            {/* Card 1: Total Estimasi RAB (Top Left) */}
             <div
-              className={`ez-popup-card ez-card-scene-proyek ${showCard1 ? 'is-visible' : ''}`}
+              className={`ez-popup-card ez-card-rab-total ${showCard1 ? 'is-visible' : ''}`}
             >
               <div className="ez-card-header-flex">
-                <div className="ez-card-icon-bubble blue">
-                  <Building2 size={16} />
+                <div className="ez-card-icon-bubble green">
+                  <TrendingUp size={16} />
                 </div>
                 <div className="ez-card-header-text">
-                  <span className="ez-card-cat-label">PROYEK</span>
-                  <span className="ez-card-chip-tag green">Aktif</span>
+                  <span className="ez-card-cat-label">TOTAL ESTIMASI RAB</span>
+                  <span className="ez-card-chip-tag green">AI Otomatis</span>
                 </div>
               </div>
 
-              <div className="ez-card-highlight-title">
-                Rumah Tipe 36
-              </div>
-
-              <div className="ez-card-meta-text">
-                Bekasi, Jawa Barat
+              <div className="ez-card-amount-display font-mono">
+                Rp 1.485.250.000
               </div>
 
               <div className="ez-card-footer-meta">
                 <div className="ez-card-meta-stat">
                   <span className="ez-card-dot success" />
-                  <span>Progres <b>34%</b></span>
+                  <span>Akurasi 99.4% • <b>24 Item</b></span>
                 </div>
                 <div className="ez-card-progress-track">
-                  <div className="ez-card-progress-bar green" style={{ width: '34%' }} />
+                  <div className="ez-card-progress-bar green" style={{ width: '100%' }} />
                 </div>
               </div>
             </div>
 
-            {/* Card 2: AI Estimate (tengah atas) — sesuai scene demo "AI Estimate" */}
+            {/* Card 2: Magic AI Detection (Top Right) */}
             <div
-              className={`ez-popup-card ez-card-scene-estimate ${showCard2 ? 'is-visible' : ''}`}
+              className={`ez-popup-card ez-card-ai-detect ${showCard2 ? 'is-visible' : ''}`}
             >
               <div className="ez-card-header-flex">
                 <div className="ez-card-icon-bubble cyan">
                   <Sparkles size={16} />
                 </div>
                 <div className="ez-card-header-text">
-                  <span className="ez-card-cat-label">AI ESTIMATE</span>
-                  <span className="ez-card-chip-tag cyan">Selesai</span>
+                  <span className="ez-card-cat-label">MAGIC AI ENGINE</span>
+                  <span className="ez-card-chip-tag cyan">Terdeteksi</span>
                 </div>
               </div>
 
               <div className="ez-card-highlight-title">
-                10 Item Tersusun
+                24 Pekerjaan Terurai
               </div>
 
               <div className="ez-card-mini-tags">
                 <span className="ez-mini-badge">Pondasi</span>
-                <span className="ez-mini-badge">Struktur</span>
+                <span className="ez-mini-badge">Kolom</span>
+                <span className="ez-mini-badge">Balok</span>
                 <span className="ez-mini-badge">Atap</span>
               </div>
 
               <div className="ez-card-footer-meta">
                 <span className="ez-card-sub-info">
                   <Zap size={13} className="text-amber-400" />
-                  <span>Estimasi: <b>Rp 135.723.000</b></span>
+                  <span>Waktu Analisis: <b>1.8 Detik</b></span>
                 </span>
               </div>
             </div>
 
-            {/* Card 3: Kurva S (kanan atas) — sesuai scene demo "Kurva S" */}
+            {/* Card 3: AHSP PUPR 2026 Database (Middle Right) */}
             <div
-              className={`ez-popup-card ez-card-scene-kurva ${showCard5 ? 'is-visible' : ''}`}
+              className={`ez-popup-card ez-card-ahsp-sync ${showCard3 ? 'is-visible' : ''}`}
             >
               <div className="ez-card-header-flex">
-                <div className="ez-card-icon-bubble purple">
-                  <TrendingUp size={16} />
+                <div className="ez-card-icon-bubble blue">
+                  <Database size={16} />
                 </div>
                 <div className="ez-card-header-text">
-                  <span className="ez-card-cat-label">KURVA S</span>
-                  <span className="ez-card-chip-tag purple">68%</span>
+                  <span className="ez-card-cat-label">DATABASE AHSP 2026</span>
+                  <span className="ez-card-chip-tag blue">Permen PUPR</span>
+                </div>
+              </div>
+
+              <div className="ez-card-sub-price font-mono">
+                Rp 820.000 <small>/ m³</small>
+              </div>
+
+              <div className="ez-card-meta-text">
+                Beton Bertulang K-300 SNI
+              </div>
+
+              <div className="ez-card-footer-meta">
+                <span className="ez-card-status-pill blue">
+                  <Check size={12} />
+                  Harga Terupdate 2026
+                </span>
+              </div>
+            </div>
+
+            {/* Card 4: QTO & Volume Kalkulasi (Bottom Left) */}
+            <div
+              className={`ez-popup-card ez-card-qto-calc ${showCard4 ? 'is-visible' : ''}`}
+            >
+              <div className="ez-card-header-flex">
+                <div className="ez-card-icon-bubble amber">
+                  <Layers size={16} />
+                </div>
+                <div className="ez-card-header-text">
+                  <span className="ez-card-cat-label">QTO & VOLUME</span>
+                  <span className="ez-card-chip-tag amber">1.284 m³</span>
                 </div>
               </div>
 
               <div className="ez-card-highlight-title">
-                Minggu 8 dari 12
+                Kalkulasi Otomatis
               </div>
 
               <div className="ez-card-meta-text">
-                Progres rencana vs realisasi
+                Pondasi Strauss + Pile Cap Selesai
+              </div>
+
+              <div className="ez-card-progress-track">
+                <div className="ez-card-progress-bar amber" style={{ width: '88%' }} />
+              </div>
+            </div>
+
+            {/* Card 5: BOQ & Export Siap Tender (Bottom Right) */}
+            <div
+              className={`ez-popup-card ez-card-boq-export ${showCard5 ? 'is-visible' : ''}`}
+            >
+              <div className="ez-card-header-flex">
+                <div className="ez-card-icon-bubble purple">
+                  <FileSpreadsheet size={16} />
+                </div>
+                <div className="ez-card-header-text">
+                  <span className="ez-card-cat-label">BOQ & LAPORAN</span>
+                  <span className="ez-card-chip-tag purple">Siap Tender</span>
+                </div>
+              </div>
+
+              <div className="ez-card-export-badges">
+                <span className="ez-export-format-tag xlsx">.XLSX</span>
+                <span className="ez-export-format-tag pdf">.PDF</span>
+                <span className="ez-export-format-tag scurve">Kurva S</span>
               </div>
 
               <div className="ez-card-footer-meta">
-                <div className="ez-card-meta-stat">
-                  <span className="ez-card-dot success" />
-                  <span>Sesuai <b>jadwal</b></span>
-                </div>
-                <div className="ez-card-progress-track">
-                  <div className="ez-card-progress-bar green" style={{ width: '68%' }} />
-                </div>
+                <span className="ez-card-sub-info">
+                  <CheckCircle2 size={13} className="text-emerald-400" />
+                  <span>1-Click Export Dokumen</span>
+                </span>
               </div>
             </div>
 

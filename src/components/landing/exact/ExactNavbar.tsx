@@ -52,7 +52,7 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
           className="ez-nav-logo"
         >
           <img
-            src="/images/landing/ezrab-logo-nav.png"
+            src="/images/ezrab-logo.png"
             alt="EZRAB - AI Construction Estimator"
             className="ez-nav-brand-logo"
             fetchPriority="high"

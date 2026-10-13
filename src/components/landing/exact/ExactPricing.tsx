@@ -54,7 +54,7 @@ const PLANS: PlanConfig[] = [
       { text: 'QTO & Volume Calculator' },
       { text: 'Export PDF' }
     ],
-    ctaText: 'Mulai Gratis',
+    ctaText: 'Pilih Gratis',
     styleVariant: 'free',
     icon: <Zap size={20} />
   },

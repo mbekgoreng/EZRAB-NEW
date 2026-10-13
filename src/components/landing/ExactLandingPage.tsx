@@ -10,6 +10,9 @@ import { ExactHero } from './exact/ExactHero';
 const ExactWorkflow = React.lazy(() =>
   import('./exact/ExactWorkflow').then((m) => ({ default: m.ExactWorkflow })),
 );
+const ExactMagicAi = React.lazy(() =>
+  import('./exact/ExactMagicAi').then((m) => ({ default: m.ExactMagicAi })),
+);
 const ExactStackedShowcase = React.lazy(() =>
   import('./exact/ExactStackedShowcase').then((m) => ({ default: m.ExactStackedShowcase })),
 );
@@ -65,7 +68,7 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
 
       {/* Main Sections */}
       <main style={{ flexGrow: 1 }}>
-        {/* 2. Hero klasik — video kanan diganti animasi demo produk */}
+        {/* 2. Dark Hero Section with 3D Building & 5 Floating Neon Cards */}
         <ExactHero
           onStartFree={() => onOpenAuth('daftar')}
           onOpenDemo={onOpenDemo}
@@ -74,6 +77,11 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
         {/* 3. Satu Workflow (2-row connected nodes) */}
         <Suspense fallback={null}>
           <ExactWorkflow />
+        </Suspense>
+
+        {/* 4. EZRAB Magic AI (Dark with floating modal preview) */}
+        <Suspense fallback={null}>
+          <ExactMagicAi onStart={onOpenWorkspace} />
         </Suspense>
 
         {/* 5-10. Stacked Scrolling Product Story (6-Workspace Physical Stack) */}
