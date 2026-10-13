@@ -322,8 +322,58 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           paddingBottom: isNarrowMobile ? 'calc(68px + var(--ezrab-safe-bottom))' : '0px',
         }}
       >
-        {/* TOPBAR (CLEAN, MINIMAL, LIGHT MODE ONLY, MODERN UX) */}
+        {/* TOPBAR (CLEAN, MINIMAL — breadcrumb menyatu dalam satu header) */}
         <TopBar
+          breadcrumb={
+            activeMenu !== 'dashboard' &&
+            activeMenu !== 'material' &&
+            activeMenu !== 'database-material' &&
+            activeMenu !== 'material-harga' &&
+            activeMenu !== 'harga' ? (
+              <UnifiedBreadcrumb
+                route={route}
+                currentProject={currentProject}
+                activeMenu={activeMenu}
+                onNavigate={(menu, projectId) => setActiveMenu(menu, projectId)}
+                projectFilter={projectFilter}
+                settingsTab={
+                  activeMenu === 'pengaturan'
+                    ? pengaturanActiveTab === 'profile'
+                      ? 'Profil Saya'
+                      : pengaturanActiveTab === 'workspace' || pengaturanActiveTab === 'company'
+                      ? 'Profil Perusahaan'
+                      : pengaturanActiveTab === 'users'
+                      ? 'Tim & Anggota'
+                      : pengaturanActiveTab === 'roles'
+                      ? 'Role & Hak Akses'
+                      : pengaturanActiveTab === 'notifications'
+                      ? 'Notifikasi'
+                      : pengaturanActiveTab === 'calculation' || pengaturanActiveTab === 'ded-volume'
+                      ? 'DED & Presisi'
+                      : pengaturanActiveTab === 'rab' || pengaturanActiveTab === 'estimator'
+                      ? 'Standar Estimator'
+                      : pengaturanActiveTab === 'master-data'
+                      ? 'Master Data & AHSP'
+                      : pengaturanActiveTab === 'export' || pengaturanActiveTab === 'documents'
+                      ? 'Dokumen & Ekspor'
+                      : pengaturanActiveTab === 'schedule'
+                      ? 'Kalender & Jadwal'
+                      : pengaturanActiveTab === 'cost'
+                      ? 'Cost Code & Biaya'
+                      : pengaturanActiveTab === 'integrations'
+                      ? 'Integrasi'
+                      : pengaturanActiveTab === 'audit-log'
+                      ? 'Audit Trail'
+                      : pengaturanActiveTab === 'security'
+                      ? 'Keamanan Akun'
+                      : pengaturanActiveTab === 'subscription'
+                      ? 'Paket & Billing'
+                      : 'Pengaturan Sistem'
+                    : undefined
+                }
+              />
+            ) : undefined
+          }
           isMobile={isMobile}
           isNarrowMobile={isNarrowMobile}
           searchQuery={searchQuery}
@@ -347,77 +397,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             }
           }}
         />
-
-        {/* =========================================================================
-            UNIFIED BREADCRUMB & ACTION BAR (Only visible on non-dashboard pages)
-           ========================================================================= */}
-        {activeMenu !== 'dashboard' &&
-          activeMenu !== 'material' &&
-          activeMenu !== 'database-material' &&
-          activeMenu !== 'material-harga' &&
-          activeMenu !== 'harga' && (
-          <div
-            style={{
-              background: '#ffffff',
-              borderBottom: '1px solid #E2E8F0',
-              padding: isNarrowMobile ? '6px 12px' : '8px 24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '8px',
-              position: 'sticky',
-              top: isNarrowMobile ? '56px' : '64px',
-              zIndex: 19,
-            }}
-          >
-            <UnifiedBreadcrumb
-              route={route}
-              currentProject={currentProject}
-              activeMenu={activeMenu}
-              onNavigate={(menu, projectId) => setActiveMenu(menu, projectId)}
-              projectFilter={projectFilter}
-              settingsTab={
-                activeMenu === 'pengaturan'
-                  ? pengaturanActiveTab === 'profile'
-                    ? 'Profil Saya'
-                    : pengaturanActiveTab === 'workspace' || pengaturanActiveTab === 'company'
-                    ? 'Profil Perusahaan'
-                    : pengaturanActiveTab === 'users'
-                    ? 'Tim & Anggota'
-                    : pengaturanActiveTab === 'roles'
-                    ? 'Role & Hak Akses'
-                    : pengaturanActiveTab === 'notifications'
-                    ? 'Notifikasi'
-                    : pengaturanActiveTab === 'calculation' || pengaturanActiveTab === 'ded-volume'
-                    ? 'DED & Presisi'
-                    : pengaturanActiveTab === 'rab' || pengaturanActiveTab === 'estimator'
-                    ? 'Standar Estimator'
-                    : pengaturanActiveTab === 'master-data'
-                    ? 'Master Data & AHSP'
-                    : pengaturanActiveTab === 'export' || pengaturanActiveTab === 'documents'
-                    ? 'Dokumen & Ekspor'
-                    : pengaturanActiveTab === 'schedule'
-                    ? 'Kalender & Jadwal'
-                    : pengaturanActiveTab === 'cost'
-                    ? 'Cost Code & Biaya'
-                    : pengaturanActiveTab === 'integrations'
-                    ? 'Integrasi'
-                    : pengaturanActiveTab === 'audit-log'
-                    ? 'Audit Trail'
-                    : pengaturanActiveTab === 'security'
-                    ? 'Keamanan Akun'
-                    : pengaturanActiveTab === 'subscription'
-                    ? 'Paket & Billing'
-                    : 'Pengaturan Sistem'
-                  : undefined
-              }
-            />
-
-          </div>
-        )}
-
-
 
         {/* =========================================================================
             MAIN VIEW (PROYEK, DAFTAR PEKERJAAN, MAGIC AI, QTO, OR DASHBOARD)

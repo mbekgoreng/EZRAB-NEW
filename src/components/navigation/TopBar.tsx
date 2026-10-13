@@ -36,6 +36,7 @@ interface TopBarProps {
   onNavigate: (menu: string, tab?: string) => void;
   onLogout?: () => void;
   workspaceName?: string;
+  breadcrumb?: React.ReactNode;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -47,6 +48,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onNavigate,
   onLogout,
   workspaceName = 'EZRAB Construction Workspace',
+  breadcrumb,
 }) => {
   const { t } = useI18n();
   const { activeRole, logoutRole } = useRole();
@@ -130,20 +132,24 @@ export const TopBar: React.FC<TopBarProps> = ({
   return (
     <header
       style={{
-        height: isNarrowMobile ? '56px' : '64px',
         background: '#FFFFFF',
         borderBottom: '1px solid #E5E7EB',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: isNarrowMobile ? '0 12px' : '0 24px',
         position: 'sticky',
         top: 0,
         zIndex: 40,
-        gap: '16px',
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
       }}
     >
+      <div
+        style={{
+          height: isNarrowMobile ? '56px' : '64px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: isNarrowMobile ? '0 12px' : '0 24px',
+          gap: '16px',
+        }}
+      >
       {/* =======================================================================
           LEFT: BRAND LOGO / IDENTITY (MOBILE HAMBURGER)
          ======================================================================= */}
@@ -719,6 +725,20 @@ export const TopBar: React.FC<TopBarProps> = ({
           )}
         </div>
       </div>
+      </div>
+      {breadcrumb && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: isNarrowMobile ? '4px 12px' : '6px 24px',
+            borderTop: '1px solid #F1F5F9',
+            background: '#FFFFFF',
+          }}
+        >
+          {breadcrumb}
+        </div>
+      )}
     </header>
   );
 };
