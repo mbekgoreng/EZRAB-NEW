@@ -819,6 +819,15 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
     return 'v1.0';
   }, [projectEstimateVersions]);
 
+  // Real cost delta vs previous version for the summary card. Null when there
+  // is no version history or the stored diff is not a finite number — the card
+  // then shows a neutral label instead of a fabricated percentage.
+  const latestVersionDelta = useMemo(() => {
+    if (projectEstimateVersions.length === 0) return null;
+    const d = projectEstimateVersions[projectEstimateVersions.length - 1]?.percentageDiff;
+    return typeof d === 'number' && Number.isFinite(d) ? d : null;
+  }, [projectEstimateVersions]);
+
   return (
     <div
       style={{
@@ -866,7 +875,8 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         {/* 3. ACTIVE TAB VIEW */}
         {activeEstimatorTab === 'spreadsheet' && (
           <>
-            {/* 3A. 5 ESSENTIAL PROJECT METRICS */}
+            {/* 3A. 5 ESSENTIAL PROJECT METRICS — values always from real data.
+                No demo fallbacks: empty projects render 0 / Rp0 / "—". */}
             <EstimatorMetrics
               totalRab={totalRabNominal}
               totalItems={totalItemsCount}
@@ -874,10 +884,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
               totalVolume={totalVolumeSum}
               lastSavedText="Tersinkronisasi Otomatis"
               isSaving={saveStatus === 'saving'}
-              progressPercent={68}
-              completedItemsCount={7}
-              inProgressItemsCount={0}
-              pendingItemsCount={0}
+              versionDeltaPercent={latestVersionDelta}
             />
 
             {/* 3B. SPREADSHEET TOOLBAR */}

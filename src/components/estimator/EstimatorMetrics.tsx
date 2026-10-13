@@ -15,10 +15,13 @@ interface EstimatorMetricsProps {
   totalVolume: number;
   lastSavedText?: string;
   isSaving?: boolean;
+  /** Real progress 0-100. When omitted/undefined the card renders "—" — never a demo number. */
   progressPercent?: number;
   completedItemsCount?: number;
   inProgressItemsCount?: number;
   pendingItemsCount?: number;
+  /** Real percentageDiff from the latest estimate version. Null/undefined = no version history. */
+  versionDeltaPercent?: number | null;
 }
 
 export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
@@ -26,13 +29,31 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
   totalItems,
   ahspCount,
   totalVolume,
-  lastSavedText = '14 Agu 2026, 10:24',
+  lastSavedText = '—',
   isSaving = false,
-  progressPercent = 68,
-  completedItemsCount = 7,
-  inProgressItemsCount = 0,
-  pendingItemsCount = 0,
+  progressPercent,
+  completedItemsCount,
+  inProgressItemsCount,
+  pendingItemsCount,
+  versionDeltaPercent = null,
 }) => {
+  // Data integrity: 0 is a valid value. Never use `||` fallbacks that replace
+  // real zeros with demo numbers.
+  const safeTotalRab = totalRab ?? 0;
+  const safeTotalItems = totalItems ?? 0;
+  const safeAhspCount = ahspCount ?? 0;
+
+  // Progress is only shown when a real, finite value is provided.
+  const progressPct =
+    typeof progressPercent === 'number' && Number.isFinite(progressPercent)
+      ? Math.min(100, Math.max(0, progressPercent))
+      : null;
+
+  // Version delta only when a real, finite percentageDiff exists.
+  const deltaPct =
+    typeof versionDeltaPercent === 'number' && Number.isFinite(versionDeltaPercent)
+      ? versionDeltaPercent
+      : null;
   // Format volume Indonesian style (e.g. 15.431,70)
   const formattedVolume = totalVolume.toLocaleString('id-ID', {
     minimumFractionDigits: 2,
@@ -81,14 +102,23 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
 
         <div>
           <div style={{ fontSize: '17px', fontWeight: 850, color: '#0F172A', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-            {formatCurrencyIDR(totalRab || 660638840)}
+            {formatCurrencyIDR(safeTotalRab)}
           </div>
 
           {/* Subtext + Sparkline */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
             <div style={{ fontSize: '10.5px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '3px' }}>
-              <span style={{ color: '#059669', fontWeight: 700 }}>▲ 3,2%</span>
-              <span>dari versi sebelumnya</span>
+              {deltaPct !== null ? (
+                <>
+                  <span style={{ color: deltaPct >= 0 ? '#059669' : '#DC2626', fontWeight: 700 }}>
+                    {deltaPct >= 0 ? '▲' : '▼'}{' '}
+                    {Math.abs(deltaPct).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+                  </span>
+                  <span>dari versi sebelumnya</span>
+                </>
+              ) : (
+                <span>nilai saat ini</span>
+              )}
             </div>
 
             {/* Sparkline curve */}
@@ -137,10 +167,10 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
 
         <div>
           <div style={{ fontSize: '20px', fontWeight: 850, color: '#0F172A', letterSpacing: '-0.02em' }}>
-            {totalItems || 7}
+            {safeTotalItems}
           </div>
           <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '4px' }}>
-            dari {ahspCount || 7} AHSP
+            dari {safeAhspCount} AHSP
           </div>
         </div>
       </div>
@@ -261,7 +291,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               fill="none"
               stroke="#0D9488"
               strokeWidth="3.2"
-              strokeDasharray={`${progressPercent}, 100`}
+              strokeDasharray={`${progressPct ?? 0}, 100`}
               strokeLinecap="round"
             />
           </svg>
@@ -280,7 +310,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               color: '#0F172A',
             }}
           >
-            {progressPercent}%
+            {progressPct !== null ? `${progressPct}%` : '—'}
           </div>
         </div>
 
@@ -294,7 +324,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#10B981' }} />
               Item selesai
             </span>
-            <span style={{ fontWeight: 700, color: '#334155' }}>{completedItemsCount}</span>
+            <span style={{ fontWeight: 700, color: '#334155' }}>{completedItemsCount ?? '—'}</span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: '#64748B' }}>
@@ -302,7 +332,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#F59E0B' }} />
               Dalam proses
             </span>
-            <span style={{ fontWeight: 700, color: '#334155' }}>{inProgressItemsCount}</span>
+            <span style={{ fontWeight: 700, color: '#334155' }}>{inProgressItemsCount ?? '—'}</span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: '#64748B' }}>
@@ -310,7 +340,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#3B82F6' }} />
               Belum dihitung
             </span>
-            <span style={{ fontWeight: 700, color: '#334155' }}>{pendingItemsCount}</span>
+            <span style={{ fontWeight: 700, color: '#334155' }}>{pendingItemsCount ?? '—'}</span>
           </div>
         </div>
       </div>
