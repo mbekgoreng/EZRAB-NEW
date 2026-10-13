@@ -132,41 +132,6 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
         }}
       >
         <div>
-          {/* Breadcrumb */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '12px',
-              fontWeight: 500,
-              color: '#8A8A84',
-              marginBottom: '4px',
-            }}
-          >
-            <span
-              onClick={() => onNavigateToTab && onNavigateToTab('dashboard')}
-              style={{ cursor: 'pointer', transition: 'color 0.15s' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#2563EB')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#8A8A84')}
-            >
-              Dashboard
-            </span>
-            <span style={{ color: '#C9C9C2' }}>&gt;</span>
-            <span
-              onClick={() => setFilterType('Semua Proyek')}
-              style={{ cursor: 'pointer', color: filterType === 'Semua Proyek' ? '#2563EB' : '#8A8A84' }}
-            >
-              Proyek
-            </span>
-            {filterType !== 'Semua Proyek' && (
-              <>
-                <span style={{ color: '#C9C9C2' }}>&gt;</span>
-                <span style={{ color: '#2563EB', fontWeight: 600 }}>{filterType}</span>
-              </>
-            )}
-          </div>
-
           <h1
             style={{
               fontSize: '24px',
