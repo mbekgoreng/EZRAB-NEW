@@ -388,7 +388,7 @@ export class ExcelImportEngine {
         description: descStr,
         volume: volume || 1,
         unit: normUnit || 'ls',
-        unitPrice: unitPrice || 0,
+        unitPrice: unitPrice ?? null,
         amount: amount || calculatedAmount || 0,
         calculatedAmount,
         anomalies: rowAnomalies,

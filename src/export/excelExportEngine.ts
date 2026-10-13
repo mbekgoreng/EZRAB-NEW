@@ -792,10 +792,24 @@ export async function exportRABToProfessionalExcel(
         iRow.getCell(8).numFmt = NUMBER_FORMATS.PERCENT;
         // Fase 4A: tandai item yang harganya belum tersedia secara eksplisit,
         // jangan biarkan Rp0 terlihat seperti harga resmi.
+        // Price Fallback Layer: tampilkan label sumber harga.
         const isPriceUnresolved = (itm as any).priceStatus === 'PRICE_UNRESOLVED';
-        iRow.getCell(9).value =
-          (isPriceUnresolved ? 'HARGA BELUM TERSEDIA — ' : '') +
-          ((itm as any).volumeSource || itm.ahspCode || 'MANUAL');
+        const srcKind = (itm as any).priceSourceKind as string | undefined;
+        const srcLabel = (itm as any).priceSourceLabel as string | undefined;
+        let sumberText: string;
+        if (srcKind === 'EZRAB_ASSUMPTION') {
+          sumberText = `ASUMSI — PERLU VERIFIKASI${(itm as any).priceSourceExplanation ? ' — ' + (itm as any).priceSourceExplanation : ''}`;
+        } else if (srcKind === 'MARKET_REFERENCE') {
+          sumberText = `REFERENSI PASAR${(itm as any).priceSourceExplanation ? ' — ' + (itm as any).priceSourceExplanation : ''}`;
+        } else if (srcKind === 'OFFICIAL_AHSP') {
+          sumberText = (itm as any).volumeSource || itm.ahspCode || 'RESMI AHSP';
+        } else if (isPriceUnresolved || srcKind === 'UNRESOLVED') {
+          sumberText = 'HARGA BELUM TERSEDIA — ' + ((itm as any).volumeSource || itm.ahspCode || 'MANUAL');
+        } else {
+          // legacy: no source kind recorded
+          sumberText = (srcLabel || (itm as any).volumeSource || itm.ahspCode || 'MANUAL');
+        }
+        iRow.getCell(9).value = sumberText;
 
         for (let c = 1; c <= 9; c++) {
           iRow.getCell(c).border = { bottom: BORDER_THIN_LIGHT };

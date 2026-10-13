@@ -200,6 +200,10 @@ export interface GeneratedWorkItemResult {
   ahspCode?: string;
   ahspName?: string;
   ahspSource?: string;
+  /** Phase 3F: true if price is from benchmark/fallback, not official AHSP */
+  isPriceFabricated?: boolean;
+  /** Phase 3F: true if AHSP code was ambiguous */
+  isPriceAmbiguous?: boolean;
   formula: string;
   formulaInputs: Record<string, any>;
   dimensions?: Record<string, number>;
@@ -224,6 +228,19 @@ export interface TemplateGenerationResult {
   workItems: GeneratedWorkItemResult[];
   categorySubtotals: Record<WorkItemCategoryGroup, number>;
   totalDirectCost: number;
+  /** Phase 3F: Verified-only direct cost (excludes fabricated prices) */
+  verifiedDirectCost?: number;
+  /** Phase 3F: Fabricated direct cost (benchmark/fallback) */
+  fabricatedDirectCost?: number;
+  /** Phase 3F: Count of ambiguous items */
+  ambiguousItemCount?: number;
+  /** Phase 3G: VERIFIED | INDICATIVE | INCOMPLETE */
+  totalStatus?: 'VERIFIED' | 'INDICATIVE' | 'INCOMPLETE';
+  /** Phase 3G: Verified-only totals (only when totalStatus is VERIFIED) */
+  verifiedOverheadAmount?: number;
+  verifiedProfitAmount?: number;
+  verifiedTaxAmount?: number;
+  verifiedTotalRabCost?: number;
   overheadPercentage: number;
   overheadAmount: number;
   profitPercentage: number;

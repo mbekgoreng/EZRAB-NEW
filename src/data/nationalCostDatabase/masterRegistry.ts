@@ -7,6 +7,7 @@ import {
 } from './types';
 import { OFFICIAL_AHSP_SOURCES } from './sources';
 import { AHSP_2026_CANONICAL } from './ahsp2026Canonical.generated';
+import { BINA_MARGA_2026_MASTER } from './binaMarga2026Master.generated';
 import { OFFICIAL_SMKK_2026_ITEMS } from './officialSmkk2026';
 import { AHSPItem } from '../../types';
 
@@ -36,10 +37,62 @@ const STORAGE_KEY_LEGACY_BACKUP = 'yfarch_custom_ahsp_legacy_backup';
 const canonicalNonSmkk = AHSP_2026_CANONICAL.filter((item) => item.domain !== 'SMKK');
 
 /**
+ * Bina Marga 2026 Master migration (2026-10-12):
+ * Replace the old Bina Marga slice from AHSP_2026_CANONICAL with the new
+ * MASTER_AHSP_BINA_MARGA_2026 (1137 items, PDF-verified).
+ * Old Bina Marga data is preserved in ahsp2026Canonical.generated.ts (backup).
+ */
+const canonicalWithoutOldBinaMarga = canonicalNonSmkk.filter(
+  (item) => item.domain !== 'BINA_MARGA'
+);
+
+/**
  * Combine all official datasets.
  */
+/**
+ * Map BinaMarga2026Item to NationalAHSPItem shape.
+ */
+function mapBinaMargaToNational(item: import('./binaMarga2026Master.generated').BinaMarga2026Item): NationalAHSPItem {
+  const mapComp = (c: import('./binaMarga2026Master.generated').BinaMarga2026Component) => ({
+    code: c.resourceCode,
+    name: c.description,
+    unit: c.unit,
+    coefficient: c.coefficient,
+    unitPrice: c.unitPrice,
+    amount: c.amount,
+  });
+  return {
+    id: `BM2026-${item.code}`,
+    code: item.code,
+    codeNormalized: item.codeNormalized,
+    name: item.name,
+    unit: item.unit,
+    unitRaw: item.unit,
+    domain: 'BINA_MARGA' as const,
+    category: 'BINA_MARGA',
+    version: '2026',
+    year: 2026,
+    normativeStatus: 'Normatif' as const,
+    method: 'Manual' as const,
+    sourceId: 'BM-2026-AUDITED',
+    sourceDocument: 'MASTER_AHSP_BINA_MARGA_2026_AUDITED',
+    sourcePage: item.sourcePdfPage ?? undefined,
+    status: item.validationStatus === 'VERIFIED' ? 'VERIFIED' as const : 'REVIEW' as const,
+    laborComponents: item.laborComponents.map(mapComp),
+    materialComponents: item.materialComponents.map(mapComp),
+    equipmentComponents: item.equipmentComponents.map(mapComp),
+    totalLabor: null,
+    totalMaterial: null,
+    totalEquipment: null,
+    unitPrice: item.unitPrice,
+    lastUpdated: '2026-10-12',
+    dataQualityScore: item.validationStatus === 'VERIFIED' ? 95 : 50,
+  } as unknown as NationalAHSPItem;
+}
+
 export const ALL_OFFICIAL_AHSP_ITEMS: NationalAHSPItem[] = [
-  ...canonicalNonSmkk,
+  ...canonicalWithoutOldBinaMarga,
+  ...BINA_MARGA_2026_MASTER.map(mapBinaMargaToNational),
   ...OFFICIAL_SMKK_2026_ITEMS,
 ];
 
@@ -171,12 +224,34 @@ class NationalConstructionCostDatabaseEngine {
 
   /**
    * Find item by exact code
+   * 
+   * NOTE: If multiple items share the same code (e.g. SDA variants),
+   * this returns the first match. Use findAllByCode() to detect ambiguity.
    */
   public findByCode(code: string): NationalAHSPItem | undefined {
     const clean = code.trim().toLowerCase();
     return this.getAllItems().find(
       itm => itm.codeNormalized.toLowerCase() === clean || itm.code.toLowerCase() === clean
     );
+  }
+
+  /**
+   * Find ALL items matching a code.
+   * Use this to detect ambiguous codes (multiple variants sharing one code).
+   * Returns empty array if no match.
+   */
+  public findAllByCode(code: string): NationalAHSPItem[] {
+    const clean = code.trim().toLowerCase();
+    return this.getAllItems().filter(
+      itm => itm.codeNormalized.toLowerCase() === clean || itm.code.toLowerCase() === clean
+    );
+  }
+
+  /**
+   * Check if a code is ambiguous (matches multiple items).
+   */
+  public isCodeAmbiguous(code: string): boolean {
+    return this.findAllByCode(code).length > 1;
   }
 
   /**

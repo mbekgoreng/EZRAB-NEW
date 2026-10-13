@@ -35,7 +35,7 @@ export function evaluateSpreadsheetFormula(
   formulaStr: string,
   rowItemMap: Record<number, RABItem>,
   grandTotal: number = 1
-): { value: number; error: string | null } {
+): { value: number; error: string | null; hasIncomplete?: boolean } {
   if (!formulaStr || !formulaStr.startsWith('=')) {
     const num = parseFloat(formulaStr);
     return { value: isNaN(num) ? 0 : num, error: null };
@@ -51,16 +51,20 @@ export function evaluateSpreadsheetFormula(
       const startRow = parseInt(sumMatch[2]);
       const endRow = parseInt(sumMatch[4]);
       let totalSum = 0;
+      let hasIncomplete = false;
 
       for (let r = Math.min(startRow, endRow); r <= Math.max(startRow, endRow); r++) {
         const item = rowItemMap[r];
         if (item) {
           if (col === 'F') totalSum += item.volume || 0;
-          else if (col === 'K') totalSum += item.unitPrice || 0;
+          else if (col === 'K') {
+            if (item.unitPrice == null) hasIncomplete = true;
+            else totalSum += item.unitPrice;
+          }
           else if (col === 'L') totalSum += item.totalPrice || 0;
         }
       }
-      return { value: Math.round(totalSum * 100) / 100, error: null };
+      return { value: Math.round(totalSum * 100) / 100, error: null, hasIncomplete };
     }
 
     // 2. Check for AVERAGE function

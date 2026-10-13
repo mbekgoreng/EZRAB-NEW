@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Excavator Std. 125 HP",
+    "code": "E15d",
+    "unit": "Jam",
+    "price": 314143.83
+  },
+  {
+    "name": "Dump Truck, 7 Ton",
+    "code": "E11b",
+    "unit": "Jam",
+    "price": 258609.78
+  },
+  {
+    "name": "Excavator Std. 155 HP",
+    "code": "E15e",
+    "unit": "Jam",
+    "price": 562993.62
+  },
+  {
+    "name": "Dump Truck - 7 Ton",
+    "code": "E13c",
+    "unit": "Jam",
+    "price": 381961.97
+  },
+  {
+    "name": "Water Tanker",
+    "code": "E60b",
+    "unit": "Jam",
+    "price": 406166.42
+  }
+]

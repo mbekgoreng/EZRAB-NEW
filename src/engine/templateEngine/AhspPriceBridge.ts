@@ -106,7 +106,7 @@ export class AhspPriceBridge {
       const qSource: QuantitySource = qItem ? qItem.source : 'template_estimate';
 
       // Look up AHSP and price
-      let unitPrice = 0;
+      let unitPrice: number | null = null;
       let ahspStatus: AhspStatus = 'needs_verification';
       let priceSource: PriceSource = 'ai_estimate';
 
@@ -116,13 +116,14 @@ export class AhspPriceBridge {
         ahspStatus = base.verified ? 'verified' : 'needs_verification';
         priceSource = 'verified_database';
       } else if (item.level === 3) {
-        // Unmapped item: provide estimated fallback price without inventing false AHSP codes
-        unitPrice = Math.round(150000 * regionalMultiplier);
+        // Unmapped item: NO fallback price. Must remain null for estimator review.
+        // (Phase 2J: fabricated Rp150.000 removed - do not reintroduce)
+        unitPrice = null;
         ahspStatus = 'needs_verification';
         priceSource = 'ai_estimate';
       }
 
-      const totalPrice = item.level === 3 ? Math.round(volume * unitPrice) : 0;
+      const totalPrice = item.level === 3 && unitPrice != null ? Math.round(volume * unitPrice) : 0;
       const validationStatus = ahspStatus === 'verified' ? 'verified' : 'needs_verification';
 
       return {

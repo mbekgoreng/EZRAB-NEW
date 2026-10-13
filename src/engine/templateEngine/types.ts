@@ -109,7 +109,7 @@ export interface GeneratedRabItem {
   quantitySource: QuantitySource;
   ahspCode?: string;
   ahspStatus: AhspStatus;
-  unitPrice: number;
+  unitPrice: number | null;
   priceSource: PriceSource;
   totalPrice: number;
   validationStatus: 'verified' | 'needs_verification';

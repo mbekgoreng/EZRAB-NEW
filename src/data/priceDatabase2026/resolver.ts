@@ -30,8 +30,8 @@ import {
   OFFICIAL_BM_2026_MATERIALS,
   OFFICIAL_BM_2026_LABOR,
   OFFICIAL_BM_2026_EQUIPMENT,
-} from '../nationalCostDatabase/officialBinaMargaPrices2026';
-import { OFFICIAL_BM_2026_DHSP_MAP } from '../nationalCostDatabase/officialBinaMargaDhsp2026';
+  OFFICIAL_BM_2026_DHSP_MAP,
+} from '../nationalCostDatabase/binaMarga2026Adapter';
 import type {
   AhspCategoryPricing,
   AhspComponentPricing,

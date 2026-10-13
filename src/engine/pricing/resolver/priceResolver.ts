@@ -191,6 +191,87 @@ export class PriceResolver {
     // 2. TIER 2: Exact item code match in Master DB
     if (qObj.code) {
       const normCode = PriceNormalizationEngine.normalizeCode(qObj.code);
+
+      // Phase 3D: Detect ambiguous codes before returning EXACT_MATCH.
+      // If multiple variants share the code and no variant ID was provided,
+      // return AMBIGUOUS instead of silently picking last-registered (Map overwrite).
+      if (!qObj.id) {
+        const allMatches = this.repository.getAllByCode(normCode);
+        if (allMatches.length > 1) {
+          return {
+            status: 'AMBIGUOUS',
+            query: qObj,
+            error: `Kode "${qObj.code}" cocok dengan ${allMatches.length} varian harga. Sertakan ID varian untuk memilih.`,
+            priceCandidates: allMatches.map(m => ({
+              id: m.id,
+              price: m.price,
+              unit: m.unit,
+              source: 'EZRAB_DATABASE' as const,
+              sourceName: m.priceSource,
+              observedDate: m.effectiveDate,
+              region: m.location,
+              confidence: 0.5,
+              matchType: 'AMBIGUOUS' as const,
+              isConfirmed: false,
+              notes: `Kandidat ambigu untuk kode ${qObj.code}: ${m.name}`,
+            })),
+            warnings: [
+              `AMBIGUOUS_PRICE_CODE: ${allMatches.length} varian untuk kode "${qObj.code}". Tidak ada harga yang dipilih.`,
+            ],
+            confidence: 0,
+            explanation: `Kode ambigu: ${allMatches.length} varian ditemukan, tidak ada yang dipilih otomatis.`,
+          };
+        }
+      }
+
+      // Phase 3D: If variant ID provided, resolve by ID and validate code match.
+      if (qObj.id) {
+        const byId = this.repository.getAllMasterPrices().find(p => p.id === qObj.id);
+        if (byId) {
+          const byIdNormCode = PriceNormalizationEngine.normalizeCode(byId.codeNormalized || byId.code);
+          if (byIdNormCode !== normCode) {
+            return {
+              status: 'PRICE_NOT_FOUND',
+              query: qObj,
+              error: `ID varian "${qObj.id}" tidak cocok dengan kode "${qObj.code}". Harga tidak diresolve.`,
+              warnings: [`ID_CODE_MISMATCH: ID ${qObj.id} tidak cocok dengan kode ${qObj.code}`],
+            };
+          }
+          // ID valid and code matches - use this specific variant
+          const candidate: import('../contracts/types').PriceCandidate = {
+            id: byId.id,
+            price: byId.price,
+            unit: byId.unit,
+            source: byId.priceSource.includes('SE') || byId.priceSource.includes('PUPR') ? 'REGIONAL' : 'EZRAB_DATABASE',
+            sourceName: byId.provenance?.sourceName || byId.priceSource,
+            observedDate: byId.effectiveDate,
+            region: byId.location,
+            specification: byId.specification,
+            brand: byId.brand,
+            confidence: byId.provenance?.confidenceScore || 0.95,
+            matchType: 'EXACT',
+            isConfirmed: true,
+            notes: 'Kecocokan ID varian eksak di Master Database.',
+          };
+          return {
+            status: 'EXACT_MATCH',
+            query: qObj,
+            resolvedPrice: byId,
+            selectedCandidate: candidate,
+            priceCandidates: [candidate],
+            confidence: candidate.confidence,
+            explanation: `Kecocokan ID varian: [${byId.code}] ${byId.name}`,
+          };
+        }
+        // ID provided but not found - do NOT fall through to code lookup
+        // as that could return the wrong variant's price
+        return {
+          status: 'PRICE_NOT_FOUND',
+          query: qObj,
+          error: `ID varian "${qObj.id}" tidak ditemukan. Harga tidak diresolve.`,
+        };
+      }
+
       const exactMatch = this.repository.getByCode(normCode, projectId);
       if (exactMatch) {
         const candidate: import('../contracts/types').PriceCandidate = {
@@ -510,10 +591,32 @@ export class PriceResolver {
     // STEP A: Fetch Baseline Reference Price (National / Master DB)
     // Never polluted by project prices
     let refItem: PriceDefinition | undefined = undefined;
+    let refWarnings: string[] = [];
     if (normCode) {
-      refItem = this.repository.getByCode(normCode, undefined);
+      // Phase 3D: Check for ambiguity before using code lookup for reference.
+      // If ambiguous, do NOT silently use last-registered; leave unresolved
+      // unless a valid variant ID was provided.
+      if (qObj.id) {
+        const byId = this.repository.getAllMasterPrices().find(p => p.id === qObj.id);
+        if (byId) {
+          const byIdNorm = PriceNormalizationEngine.normalizeCode(byId.codeNormalized || byId.code);
+          if (byIdNorm === normCode) {
+            refItem = byId;
+          } else {
+            refWarnings.push(`ID_CODE_MISMATCH: ID ${qObj.id} tidak cocok dengan kode ${qObj.code} pada referensi baseline.`);
+          }
+        } else {
+          refWarnings.push(`ID_NOT_FOUND: ID varian ${qObj.id} tidak ditemukan pada referensi baseline.`);
+        }
+      } else if (this.repository.isCodeAmbiguous(normCode)) {
+        refWarnings.push(`AMBIGUOUS_REFERENCE_CODE: Kode "${qObj.code}" cocok dengan beberapa varian; referensi baseline tidak diresolve otomatis.`);
+        // refItem stays undefined - do NOT fall through to name fallback
+        // as that could return a different variant's price
+      } else {
+        refItem = this.repository.getByCode(normCode, undefined);
+      }
     }
-    if (!refItem && normName) {
+    if (!refItem && normName && refWarnings.length === 0) {
       const allMaster = this.repository.getAllMasterPrices();
       const normUnit = qObj.unit ? PriceNormalizationEngine.normalizeUnit(qObj.unit) : '';
       refItem = allMaster.find((p) => {

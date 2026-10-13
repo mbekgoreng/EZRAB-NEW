@@ -92,7 +92,7 @@ export interface PriceCandidate {
   specification?: string;
   brand?: string;
   confidence: number;
-  matchType: 'EXACT' | 'SEMANTIC' | 'HISTORICAL' | 'REGIONAL' | 'WEB' | 'SIMILAR' | 'MANUAL';
+  matchType: 'EXACT' | 'SEMANTIC' | 'HISTORICAL' | 'REGIONAL' | 'WEB' | 'SIMILAR' | 'MANUAL' | 'AMBIGUOUS';
   notes?: string;
   isConfirmed?: boolean;
   rawPayload?: any;
@@ -154,6 +154,8 @@ export interface PriceItemQuery {
   year?: number;
   quantity?: number;
   manualPrice?: number;
+  /** Phase 3D: Internal variant ID for disambiguating codes shared by multiple variants. */
+  id?: string;
 }
 
 export interface PriceResolutionResult {
@@ -224,6 +226,9 @@ export interface ResolvedPrice {
   variancePercent?: number;
 
   explanation?: string;
+
+  /** Phase 3D: Structured warnings (e.g. ambiguous code, ID mismatch). */
+  warnings?: string[];
 
   provenance?: {
     referenceId?: string;

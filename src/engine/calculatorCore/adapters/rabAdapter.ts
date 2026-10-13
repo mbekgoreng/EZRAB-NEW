@@ -8,6 +8,42 @@ import { QTOItem, RabItem } from '../../../types';
 import { PrecisionEngine } from '../precision/precisionEngine';
 import { AHSPRepository } from '../../ahsp/repository/ahspRepository';
 import { AHSPResolver } from '../../ahsp/resolver/ahspResolver';
+import { PRICE_SOURCE_LABELS } from '../../pricing/assumption/types';
+import type { PriceSourceKind } from '../../pricing/assumption/types';
+
+/**
+ * Summarize component-level provenance into a single RabItem label.
+ * Explicit rules (never guess from nominal price):
+ *   - Any UNRESOLVED → UNRESOLVED (partial; not final)
+ *   - Any EZRAB_ASSUMPTION → EZRAB_ASSUMPTION (must be labeled, never "fully official")
+ *   - Any MARKET_REFERENCE → MARKET_REFERENCE
+ *   - All OFFICIAL_AHSP → OFFICIAL_AHSP
+ */
+function summarizeProvenance(
+  components: Array<{ fallbackSourceKind?: PriceSourceKind }>
+): { kind: PriceSourceKind; label: string; explanation: string } {
+  const kinds = new Set<PriceSourceKind>();
+  for (const c of components) {
+    kinds.add(c.fallbackSourceKind ?? 'UNRESOLVED');
+  }
+  let kind: PriceSourceKind;
+  if (kinds.has('UNRESOLVED')) kind = 'UNRESOLVED';
+  else if (kinds.has('EZRAB_ASSUMPTION')) kind = 'EZRAB_ASSUMPTION';
+  else if (kinds.has('MARKET_REFERENCE')) kind = 'MARKET_REFERENCE';
+  else kind = 'OFFICIAL_AHSP';
+
+  const counts = [...kinds].join(', ');
+  const explanation =
+    kind === 'OFFICIAL_AHSP'
+      ? 'Seluruh komponen memakai harga resmi.'
+      : `Campuran sumber komponen: ${counts}. ` +
+        (kind === 'EZRAB_ASSUMPTION'
+          ? 'Mengandung harga asumsi — BUKAN harga resmi AHSP.'
+          : kind === 'UNRESOLVED'
+            ? 'Ada komponen tanpa harga valid — total belum final.'
+            : 'Mengandung referensi pasar.');
+  return { kind, label: PRICE_SOURCE_LABELS[kind], explanation };
+}
 import { CostCompositionEngine } from '../../cost/composition/costCompositionEngine';
 import { PriceContext } from '../../pricing/contracts/types';
 import { CostCompositionResult } from '../../cost/contracts/types';
@@ -183,6 +219,14 @@ export class RabAdapter {
 
     const rabId = options.targetRabId || `RAB-${Date.now().toString().slice(-6)}`;
 
+    // Provenance wiring: summarize component-level fallback kinds.
+    const allComponents = [
+      ...costResult.labor.components,
+      ...costResult.material.components,
+      ...costResult.equipment.components,
+    ];
+    const prov = summarizeProvenance(allComponents);
+
     const rabItem: RabItem = {
       id: rabId,
       projectId: qtoItem.projectId,
@@ -200,6 +244,10 @@ export class RabAdapter {
       calculationRunId: qtoItem.calculationRunId,
       calculatorId: qtoItem.calculatorId,
       notes: `Direct Cost: Rp ${costResult.directCost.toLocaleString('id-ID')} (Labor: Rp ${costResult.labor.totalSubtotal.toLocaleString('id-ID')}, Material: Rp ${costResult.material.totalSubtotal.toLocaleString('id-ID')}, Equip: Rp ${costResult.equipment.totalSubtotal.toLocaleString('id-ID')})`,
+      // Price Fallback Layer provenance (wired from cost composition)
+      priceSourceKind: prov.kind,
+      priceSourceLabel: prov.label,
+      priceSourceExplanation: prov.explanation,
     };
 
     return {

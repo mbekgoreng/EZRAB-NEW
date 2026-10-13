@@ -13,6 +13,11 @@ import {
 } from '../contracts/types';
 import { AHSPComponentDefinition } from '../../ahsp/contracts/types';
 import { PriceResolver } from '../../pricing/resolver/priceResolver';
+import {
+  resolveWithFallback,
+  PRICE_SOURCE_LABELS,
+} from '../../pricing/assumption/index';
+import type { PriceSourceKind } from '../../pricing/assumption/index';
 import { PriceContext } from '../../pricing/contracts/types';
 import { PriceProvenanceEngine } from '../../pricing/provenance/priceProvenance';
 import { AHSPProvenanceEngine } from '../../ahsp/provenance/ahspProvenance';
@@ -224,17 +229,43 @@ export class CostCompositionEngine {
       let priceSource: string | undefined = undefined;
       let priceStatus: 'RESOLVED' | 'UNRESOLVED' | 'OVERRIDDEN' = 'UNRESOLVED';
       let prov: FormulaProvenance | undefined = undefined;
+      // Fallback layer: tracks which tier supplied the price
+      let fallbackKind: PriceSourceKind = 'UNRESOLVED';
+      let fallbackExplanation: string | undefined = undefined;
 
       if (priceRes.status === 'EXACT_MATCH' || priceRes.status === 'NORMALIZED_MATCH') {
         unitPrice = priceRes.resolvedPrice?.price || 0;
         priceSource = priceRes.resolvedPrice?.priceSource;
         priceStatus = priceRes.resolvedPrice?.location?.includes('Project') ? 'OVERRIDDEN' : 'RESOLVED';
+        fallbackKind = 'OFFICIAL_AHSP';
         if (priceRes.resolvedPrice) {
           prov = PriceProvenanceEngine.createProvenance(priceRes.resolvedPrice);
           provenanceList.push(prov);
         }
       } else {
-        warnings.push(`Price not found for ${type} component "${c.itemName}" (${c.itemCode || 'no code'}). Zero price assigned.`);
+        // Tier 2-4: try fallback resolver (market → assumption → unresolved)
+        // Official resolver found nothing; do NOT silently use 0.
+        const fb = resolveWithFallback({
+          resourceCode: c.itemCode || c.itemName,
+          resourceName: c.itemName,
+          resourceType: type,
+          unit: c.unit,
+          // Tier 1 already tried via priceResolver above; pass null to avoid double lookup.
+          // Market lookup can be injected here when market store is available.
+        });
+        fallbackKind = fb.sourceKind;
+        if (fb.price != null && fb.price > 0 && fb.usableInFinal) {
+          unitPrice = fb.price;
+          priceSource = fb.sourceName || PRICE_SOURCE_LABELS[fb.sourceKind];
+          priceStatus = 'RESOLVED';
+          fallbackExplanation = fb.explanation;
+          warnings.push(
+            `Price for ${type} "${c.itemName}" from ${fb.sourceLabel}: ${fb.explanation}`
+          );
+        } else {
+          warnings.push(`Price not found for ${type} component "${c.itemName}" (${c.itemCode || 'no code'}). Marked UNRESOLVED - subtotal incomplete.`);
+          (this as any)._hasUnresolvedPrices = true;
+        }
       }
 
       const upDec = new Decimal(unitPrice);
@@ -258,6 +289,10 @@ export class CostCompositionEngine {
         priceSource,
         priceStatus,
         provenance: prov,
+        // Fallback layer provenance (non-breaking additive fields)
+        fallbackSourceKind: fallbackKind,
+        fallbackSourceLabel: PRICE_SOURCE_LABELS[fallbackKind],
+        fallbackExplanation,
       });
 
       traceSteps.push({

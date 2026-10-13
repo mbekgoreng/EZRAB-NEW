@@ -11,7 +11,7 @@
  */
 
 import { CostPolicyEngine } from '../engine/cost/policy/costPolicyEngine';
-import { BINA_MARGA_AHSP_2026_OFFICIAL } from '../data/nationalCostDatabase/binaMargaCanonical';
+import { BINA_MARGA_AHSP_2026_OFFICIAL } from '../data/nationalCostDatabase/binaMarga2026Adapter';
 import { PriceContext } from '../engine/pricing/contracts/types';
 
 const engine = new CostPolicyEngine();
@@ -48,7 +48,7 @@ function assertTrue(cond: boolean, msg?: string) {
 // ---------------------------------------------------------------------------
 
 test('Lookup AHSP 2.1.(1) from official dataset', () => {
-  const item = BINA_MARGA_AHSP_2026_OFFICIAL.find((i) => i.code === '2.1.(1)');
+  const item = BINA_MARGA_AHSP_2026_OFFICIAL.find((i) => i.code === 'B.1' || (i as any).standardCode === '2.1.(1)');
   assertTrue(!!item, 'Item 2.1.(1) should exist');
   assertEqual(item!.name, 'Galian untuk Selokan Drainase dan Saluran Air');
   assertEqual(item!.unit, 'm3');

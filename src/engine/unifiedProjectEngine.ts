@@ -12,6 +12,7 @@ import {
   ProjectVersionSnapshot,
 } from '../types';
 import { SafeDecimalEngine } from './safeDecimalEngine';
+import { loadVersioned } from './storage/hardenedStorage';
 
 export class UnifiedProjectEngine {
   /**
@@ -83,13 +84,10 @@ export class UnifiedProjectEngine {
 
     if (rawItems.length === 0 && typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('ezrab_prod_rab_items');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const matched = parsed.filter((it: any) => it.projectId === project.id);
-            rawItems = matched.length > 0 ? matched : parsed;
-          }
+        const result = loadVersioned<any[]>('ezrab_prod_rab_items');
+        if (result.ok && Array.isArray(result.data) && result.data.length > 0) {
+          const matched = result.data.filter((it: any) => it.projectId === project.id);
+          rawItems = matched.length > 0 ? matched : result.data;
         }
       } catch {
         // ignore storage error

@@ -1560,6 +1560,7 @@ export class MockAiProvider implements AIProvider {
 - **Standar Biaya**: AHSP PUPR 2026 (Cipta Karya / Bina Marga / SDA)
 - **Total Item Pekerjaan**: **${calcResult.items.length} item terdaftar**
 - **Total Estimasi Biaya (Direct Cost)**: **${formatRupiah(calcResult.totalDirectCost)}**
+- **Status Verifikasi**: **${(calcResult as any).totalStatus || 'UNKNOWN'}**${(calcResult as any).totalStatus === 'VERIFIED' ? ' — seluruh harga terverifikasi resmi' : (calcResult as any).totalStatus === 'INDICATIVE' ? ' — mengandung harga estimasi/benchmark, bukan seluruhnya harga resmi' : (calcResult as any).totalStatus === 'INCOMPLETE' ? ' — ada item yang belum terselesaikan, total belum final' : ''}
 
 ### 💰 Rekapitulasi per Kategori Pekerjaan
 ${categoryBreakdown}

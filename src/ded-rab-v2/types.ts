@@ -412,7 +412,7 @@ export interface DedQtoResult {
 
 export type SupportedUnit = 'm' | 'm2' | 'm3' | 'kg' | 'ton' | 'bh' | 'unit' | 'ttk' | 'ls' | 'set' | 'm1' | string;
 
-export type AhspMatchType = 'EXACT_MATCH' | 'SEMANTIC_MATCH' | 'AMBIGUOUS' | 'AI_CUSTOM' | 'NOT_FOUND';
+export type AhspMatchType = 'EXACT_MATCH' | 'SEMANTIC_MATCH' | 'AMBIGUOUS' | 'AI_CUSTOM' | 'NOT_FOUND' | 'GRADE_MISMATCH';
 
 export interface DedAhspMatch {
   code: string;

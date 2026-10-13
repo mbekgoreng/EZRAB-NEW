@@ -13,7 +13,7 @@
 
 import { useMemo } from 'react';
 import { ScopeBasedCostCalculator, WeirGeometryInput } from '../engine/cost/scope/scopeBasedCostCalculator';
-import { BINA_MARGA_AHSP_2026_OFFICIAL } from '../data/nationalCostDatabase/binaMargaCanonical';
+import { BINA_MARGA_AHSP_2026_OFFICIAL } from '../data/nationalCostDatabase/binaMarga2026Adapter';
 import { PriceContext } from '../engine/pricing/contracts/types';
 import { CostEngineResult } from '../engine/cost/policy/costPolicyEngine';
 

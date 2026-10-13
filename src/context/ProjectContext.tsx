@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Project,
   RabItem,
@@ -28,6 +28,13 @@ import { resolveQtoSyncPrice, resolveQtoSyncCode } from '../lib/qtoSyncPricing';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
 import { projectPriceEngine } from '../engine/pricing/projectPriceEngine';
 import { resolveInitialProjects } from '../lib/demoSeed';
+import {
+  saveVersioned,
+  loadVersioned,
+  onExternalStorageChange,
+  peekEnvelope,
+  type SaveResult,
+} from '../engine/storage/hardenedStorage';
 
 export interface SourceTraceLineage {
   qto?: QTOItem;
@@ -173,7 +180,11 @@ interface ProjectContextType {
   applyScenarioToActiveProject: (scenario: EstimateScenario) => void;
   projectVersions: ProjectVersionSnapshot[];
   createVersionSnapshot: (description: string) => ProjectVersionSnapshot;
-  saveStatus: 'saved' | 'saving' | 'dirty';
+  saveStatus: 'saved' | 'saving' | 'dirty' | 'error';
+  saveError: string | null;
+  /** External (other-tab) storage change — app should prompt user, not auto-merge. */
+  externalChange: { key: string; detectedAt: string } | null;
+  dismissExternalChange: () => void;
 
   // 9. Data Utilities
   loadProjectTemplate: (templateName?: string) => Project;
@@ -480,6 +491,19 @@ const DEFAULT_FLAGSHIP_RAB_ITEMS: RabItem[] = [
 ];
 
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  /**
+   * Hardened dataset loader: reads versioned envelope or legacy raw JSON.
+   * Returns fallback on NOT_FOUND/CORRUPT (caller decides default).
+   */
+  function loadDataset<T>(key: string, fallback: T): T {
+    const result = loadVersioned<T>(key);
+    if (result.ok) return result.data;
+    if (result.error === 'CORRUPT' || result.error === 'MIGRATION_FAILED') {
+      console.warn(`[EZRAB] Storage ${result.error} for key ${key}; using fallback.`);
+    }
+    return fallback;
+  }
+
   // 1. Projects Store
   const [projects, setProjects] = useState<Project[]>(() => {
     // P0-B: data demo JANGAN muncul kembali setelah pengguna menghapusnya.
@@ -488,8 +512,10 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const SEED_FLAG = 'ezrab_prod_seeded_v1';
     try {
       const alreadySeeded = localStorage.getItem(SEED_FLAG) === '1';
-      const saved = localStorage.getItem('ezrab_prod_projects');
-      const resolved = resolveInitialProjects(saved, alreadySeeded, DEFAULT_PORTFOLIO_PROJECTS);
+      // Hardened: unwrap versioned envelope if present, else legacy raw.
+      const loaded = loadVersioned<Project[]>('ezrab_prod_projects');
+      const savedJson = loaded.ok ? JSON.stringify(loaded.data) : localStorage.getItem('ezrab_prod_projects');
+      const resolved = resolveInitialProjects(savedJson, alreadySeeded, DEFAULT_PORTFOLIO_PROJECTS);
       if (resolved.shouldMarkSeeded) {
         try {
           localStorage.setItem(SEED_FLAG, '1');
@@ -515,129 +541,169 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   });
 
   // 3. Calculation Runs Store
-  const [calculationRuns, setCalculationRuns] = useState<CalculationRun[]>(() => {
-    try {
-      const saved = localStorage.getItem('ezrab_prod_calculation_runs');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [calculationRuns, setCalculationRuns] = useState<CalculationRun[]>(() =>
+    loadDataset<CalculationRun[]>('ezrab_prod_calculation_runs', [])
+  );
 
   // 4. QTO Items Store
-  const [qtoItems, setQtoItems] = useState<QTOItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('ezrab_prod_qto_items');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [qtoItems, setQtoItems] = useState<QTOItem[]>(() =>
+    loadDataset<QTOItem[]>('ezrab_prod_qto_items', [])
+  );
 
   // 5. Mappings Store
-  const [mappings, setMappings] = useState<QTOItemRABMapping[]>(() => {
-    try {
-      const saved = localStorage.getItem('ezrab_prod_qto_rab_mappings');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [mappings, setMappings] = useState<QTOItemRABMapping[]>(() =>
+    loadDataset<QTOItemRABMapping[]>('ezrab_prod_qto_rab_mappings', [])
+  );
 
   // 5.5. Work Items Store (Daftar Pekerjaan)
-  const [workItems, setWorkItems] = useState<WorkItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('ezrab_prod_work_items');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [workItems, setWorkItems] = useState<WorkItem[]>(() =>
+    loadDataset<WorkItem[]>('ezrab_prod_work_items', [])
+  );
 
   // 6. RAB Items Flat Database per Project
   const [allRabItems, setAllRabItems] = useState<RabItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('ezrab_prod_rab_items');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-      return DEFAULT_FLAGSHIP_RAB_ITEMS;
-    } catch {
-      return DEFAULT_FLAGSHIP_RAB_ITEMS;
-    }
+    const loaded = loadDataset<RabItem[]>('ezrab_prod_rab_items', []);
+    if (loaded.length > 0) return loaded;
+    return DEFAULT_FLAGSHIP_RAB_ITEMS;
   });
 
   // 7. Schedule Tasks Store
-  const [scheduleTasks, setScheduleTasks] = useState<ScheduleTask[]>(() => {
-    try {
-      const saved = localStorage.getItem('ezrab_prod_schedule_tasks');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [scheduleTasks, setScheduleTasks] = useState<ScheduleTask[]>(() =>
+    loadDataset<ScheduleTask[]>('ezrab_prod_schedule_tasks', [])
+  );
 
   // 8. Project Price Overrides Store
-  const [priceOverrides, setPriceOverrides] = useState<ProjectPriceOverride[]>(() => {
-    try {
-      const saved = localStorage.getItem('ezrab_prod_price_overrides');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [priceOverrides, setPriceOverrides] = useState<ProjectPriceOverride[]>(() =>
+    loadDataset<ProjectPriceOverride[]>('ezrab_prod_price_overrides', [])
+  );
 
   // 9. Version History Snapshots Store
-  const [versionSnapshots, setVersionSnapshots] = useState<ProjectVersionSnapshot[]>(() => {
-    try {
-      const saved = localStorage.getItem('ezrab_prod_version_snapshots');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [versionSnapshots, setVersionSnapshots] = useState<ProjectVersionSnapshot[]>(() =>
+    loadDataset<ProjectVersionSnapshot[]>('ezrab_prod_version_snapshots', [])
+  );
 
   // 10. Estimate Versions Store (Phase 11)
-  const [estimateVersions, setEstimateVersions] = useState<EstimateVersion[]>(() => {
-    try {
-      const saved = localStorage.getItem('ezrab_prod_estimate_versions');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [estimateVersions, setEstimateVersions] = useState<EstimateVersion[]>(() =>
+    loadDataset<EstimateVersion[]>('ezrab_prod_estimate_versions', [])
+  );
 
   // 11. Autosave Status
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'dirty'>('saved');
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'dirty' | 'error'>('saved');
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [externalChange, setExternalChange] = useState<{ key: string; detectedAt: string } | null>(null);
 
-  // Debounced Sync to LocalStorage
+  const dismissExternalChange = useCallback(() => setExternalChange(null), []);
+
+  // Cross-tab conflict detection: if another tab writes to our dataset keys,
+  // surface it to the user instead of silently overwriting on next save.
+  // We do NOT auto-merge — user decides (reload or keep editing).
+  useEffect(() => {
+    const datasetKeys = new Set([
+      'ezrab_prod_projects',
+      'ezrab_prod_rab_items',
+      'ezrab_prod_work_items',
+      'ezrab_prod_calculation_runs',
+      'ezrab_prod_qto_items',
+      'ezrab_prod_qto_rab_mappings',
+      'ezrab_prod_schedule_tasks',
+      'ezrab_prod_price_overrides',
+      'ezrab_prod_version_snapshots',
+      'ezrab_prod_estimate_versions',
+    ]);
+    const unsubscribe = onExternalStorageChange((ev) => {
+      if (datasetKeys.has(ev.key)) {
+        setExternalChange({ key: ev.key, detectedAt: new Date().toISOString() });
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  // Refs for unmount flush — always point at latest state.
+  const projectsRef = useRef(projects);
+  const currentProjectIdRef = useRef(currentProjectId);
+  const workItemsRef = useRef(workItems);
+  const calculationRunsRef = useRef(calculationRuns);
+  const qtoItemsRef = useRef(qtoItems);
+  const mappingsRef = useRef(mappings);
+  const allRabItemsRef = useRef(allRabItems);
+  const scheduleTasksRef = useRef(scheduleTasks);
+  const priceOverridesRef = useRef(priceOverrides);
+  const versionSnapshotsRef = useRef(versionSnapshots);
+  const estimateVersionsRef = useRef(estimateVersions);
+  useEffect(() => {
+    projectsRef.current = projects;
+    currentProjectIdRef.current = currentProjectId;
+    workItemsRef.current = workItems;
+    calculationRunsRef.current = calculationRuns;
+    qtoItemsRef.current = qtoItems;
+    mappingsRef.current = mappings;
+    allRabItemsRef.current = allRabItems;
+    scheduleTasksRef.current = scheduleTasks;
+    priceOverridesRef.current = priceOverrides;
+    versionSnapshotsRef.current = versionSnapshots;
+    estimateVersionsRef.current = estimateVersions;
+  });
+
+  // Flush pending writes on unmount (e.g. project switch / tab close via React tree).
+  useEffect(() => {
+    return () => {
+      flushToStorageRef.current();
+    };
+  }, []);
+
+  // Debounced Sync to LocalStorage (hardened)
+  // Extracted so unmount can flush pending writes instead of dropping them.
+  const flushToStorageRef = useRef<() => void>(() => {});
+  const flushToStorage = useCallback(() => {
+    const failures: string[] = [];
+    const saveOne = (key: string, data: unknown) => {
+      const result: SaveResult = saveVersioned(key, data);
+      if (!result.ok) {
+        failures.push(`${key}: ${result.message}`);
+      }
+    };
+
+    // Read latest state via refs to avoid stale closure on unmount flush.
+    // (Values captured here are from the render that scheduled the flush.)
+    saveOne('ezrab_prod_projects', projectsRef.current);
+    try {
+      if (currentProjectIdRef.current) {
+        localStorage.setItem('ezrab_prod_active_project_id', currentProjectIdRef.current);
+      } else {
+        localStorage.removeItem('ezrab_prod_active_project_id');
+      }
+    } catch (e) {
+      failures.push(`ezrab_prod_active_project_id: ${String((e as Error)?.message || e)}`);
+    }
+    saveOne('ezrab_prod_work_items', workItemsRef.current);
+    saveOne('ezrab_prod_calculation_runs', calculationRunsRef.current);
+    saveOne('ezrab_prod_qto_items', qtoItemsRef.current);
+    saveOne('ezrab_prod_qto_rab_mappings', mappingsRef.current);
+    saveOne('ezrab_prod_rab_items', allRabItemsRef.current);
+    saveOne('ezrab_prod_schedule_tasks', scheduleTasksRef.current);
+    saveOne('ezrab_prod_price_overrides', priceOverridesRef.current);
+    saveOne('ezrab_prod_version_snapshots', versionSnapshotsRef.current);
+    saveOne('ezrab_prod_estimate_versions', estimateVersionsRef.current);
+
+    if (failures.length > 0) {
+      console.error('Failed to sync EZRAB state to localStorage:', failures);
+      setSaveError(failures.join('; '));
+      setSaveStatus('error');
+    } else {
+      setSaveError(null);
+      setSaveStatus('saved');
+    }
+  }, []);
+
+  // Keep ref in sync so unmount flush uses the latest implementation.
+  useEffect(() => {
+    flushToStorageRef.current = flushToStorage;
+  }, [flushToStorage]);
+
   useEffect(() => {
     setSaveStatus('saving');
-    const timer = setTimeout(() => {
-      try {
-        localStorage.setItem('ezrab_prod_projects', JSON.stringify(projects));
-        if (currentProjectId) {
-          localStorage.setItem('ezrab_prod_active_project_id', currentProjectId);
-        } else {
-          localStorage.removeItem('ezrab_prod_active_project_id');
-        }
-        localStorage.setItem('ezrab_prod_work_items', JSON.stringify(workItems));
-        localStorage.setItem('ezrab_prod_calculation_runs', JSON.stringify(calculationRuns));
-        localStorage.setItem('ezrab_prod_qto_items', JSON.stringify(qtoItems));
-        localStorage.setItem('ezrab_prod_qto_rab_mappings', JSON.stringify(mappings));
-        localStorage.setItem('ezrab_prod_rab_items', JSON.stringify(allRabItems));
-        localStorage.setItem('ezrab_prod_schedule_tasks', JSON.stringify(scheduleTasks));
-        localStorage.setItem('ezrab_prod_price_overrides', JSON.stringify(priceOverrides));
-        localStorage.setItem('ezrab_prod_version_snapshots', JSON.stringify(versionSnapshots));
-        localStorage.setItem('ezrab_prod_estimate_versions', JSON.stringify(estimateVersions));
-        setSaveStatus('saved');
-      } catch (e) {
-        console.error('Failed to sync EZRAB state to localStorage:', e);
-        setSaveStatus('dirty');
-      }
-    }, 400);
-
+    setSaveError(null);
+    const timer = setTimeout(flushToStorage, 400);
     return () => clearTimeout(timer);
   }, [
     projects,
@@ -2352,6 +2418,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       projectVersions,
       createVersionSnapshot,
       saveStatus,
+      saveError,
+      externalChange,
+      dismissExternalChange,
       loadProjectTemplate,
       resetAllProductionData,
     }),
@@ -2414,6 +2483,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       projectVersions,
       createVersionSnapshot,
       saveStatus,
+      saveError,
+      externalChange,
+      dismissExternalChange,
       loadProjectTemplate,
       resetAllProductionData,
     ]

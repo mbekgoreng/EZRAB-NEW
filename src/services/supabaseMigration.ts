@@ -11,6 +11,7 @@
  *  - on any failure, the app keeps reading localStorage
  */
 import { getSupabaseClient, isSupabaseAuthEnabled } from '../lib/supabase';
+import { loadVersioned } from '../engine/storage/hardenedStorage';
 
 export const MIGRATION_FLAG = 'ezrab_supabase_migrated_v1';
 
@@ -23,13 +24,10 @@ export interface MigrationProgress {
 export type ProgressCallback = (p: MigrationProgress) => void;
 
 function readJson<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
+  // Hardened: reads both versioned envelopes and legacy raw JSON.
+  const result = loadVersioned<T>(key);
+  if (result.ok) return result.data;
+  return fallback;
 }
 
 export function isMigrationComplete(): boolean {

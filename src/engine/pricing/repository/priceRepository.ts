@@ -375,6 +375,29 @@ export class PriceRepository {
     return this.masterPricesByCode.get(normCode);
   }
 
+  /**
+   * Phase 3C: Get ALL master prices matching a normalized code.
+   * Use this to detect ambiguous codes (multiple variants sharing one code).
+   * Project overrides are NOT included; check projectId separately.
+   *
+   * NOTE: getByCode() returns the LAST registered price for duplicates
+   * (Map overwrite semantics). Do not rely on it for ambiguous codes.
+   */
+  public getAllByCode(code: string): PriceDefinition[] {
+    const normCode = PriceNormalizationEngine.normalizeCode(code);
+    if (!normCode) return [];
+    return this.masterPriceList.filter(
+      p => PriceNormalizationEngine.normalizeCode(p.codeNormalized || p.code) === normCode
+    );
+  }
+
+  /**
+   * Phase 3C: Check if a price code is ambiguous (matches multiple master prices).
+   */
+  public isCodeAmbiguous(code: string): boolean {
+    return this.getAllByCode(code).length > 1;
+  }
+
   public getAllMasterPrices(): PriceDefinition[] {
     return [...this.masterPriceList];
   }
@@ -705,7 +728,7 @@ export class PriceRepository {
       `"${(p.specification || '').replace(/"/g, '""')}"`,
       `"${(p.brand || '').replace(/"/g, '""')}"`,
       `"${p.unit || ''}"`,
-      p.price || 0,
+      p.price ?? "",
       `"${(p.location || '').replace(/"/g, '""')}"`,
       `"${(p.priceSource || '').replace(/"/g, '""')}"`,
       `"${p.effectiveDate || ''}"`,

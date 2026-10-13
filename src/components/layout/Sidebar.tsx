@@ -29,6 +29,7 @@ import {
   FileSpreadsheet,
   FileCheck,
   Calendar,
+  HelpCircle,
 } from 'lucide-react';
 import { Project } from '../../types';
 import { useI18n } from '../../i18n';
@@ -1310,6 +1311,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 color={activeMenu === 'pengaturan' || activeMenu === 'subscription' ? '#2563EB' : '#64748B'}
               />
               {(!sidebarCollapsed || isMobile) && <span>{t('nav.pengaturan')}</span>}
+            </button>
+            {/* BANTUAN: Tutorial EZRAB */}
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new CustomEvent('ezrab:open-onboarding'));
+                }
+              }}
+              onMouseEnter={(e) => handleMouseEnterItem(e, 'Tutorial', 'tutorial')}
+              onMouseLeave={handleMouseLeaveItem}
+              aria-label="Tutorial EZRAB"
+              style={{
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
+                padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 500,
+                color: hoveredItemId === 'tutorial' ? '#2563EB' : '#475569',
+                background: hoveredItemId === 'tutorial' ? '#F8FAFC' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%',
+                gap: '12px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <HelpCircle
+                size={18}
+                color={hoveredItemId === 'tutorial' ? '#2563EB' : '#64748B'}
+              />
+              {(!sidebarCollapsed || isMobile) && <span>Tutorial</span>}
             </button>
           </nav>
         </div>

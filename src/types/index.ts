@@ -894,6 +894,12 @@ export interface RabItem {
   otherComponentsPercent?: number;
   auditTrail?: WorkItemAuditEntry[];
   notes?: string;
+  /** Price Fallback Layer: source kind for the resolved price. */
+  priceSourceKind?: 'OFFICIAL_AHSP' | 'MARKET_REFERENCE' | 'EZRAB_ASSUMPTION' | 'UNRESOLVED';
+  /** Human-readable source label. */
+  priceSourceLabel?: string;
+  /** Explanation of price provenance (e.g. assumption ID, basis). */
+  priceSourceExplanation?: string;
 }
 
 export interface AhspResource {

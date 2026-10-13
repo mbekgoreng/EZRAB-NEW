@@ -355,11 +355,29 @@ export class CanonicalPriceResolver {
     // =========================================================================
     // STEP 5: REFERENCE PRICE (Master Repository National Benchmark)
     // =========================================================================
-    const masterHit = this.priceRepo.getByCode(normCode, undefined) ||
-      this.priceRepo.getAllMasterPrices().find((p) => {
+    // Phase 3D: Do not silently use last-registered price for ambiguous codes.
+    // If code is ambiguous, skip code lookup and only use name fallback with warning.
+    let masterHit: import('../contracts/types').PriceDefinition | undefined = undefined;
+    if (this.priceRepo.isCodeAmbiguous(normCode)) {
+      resolutionPath.push(`AMBIGUOUS_CODE_SKIPPED: "${normCode}" matches multiple variants; code lookup skipped for benchmark.`);
+      // Fall through to name-based lookup only (with warning below)
+    } else {
+      masterHit = this.priceRepo.getByCode(normCode, undefined) || undefined;
+    }
+    if (!masterHit) {
+      const nameHit = this.priceRepo.getAllMasterPrices().find((p) => {
         const pNormName = PriceNormalizationEngine.normalizeText(p.name);
         return pNormName === normName;
       });
+      if (nameHit) {
+        // Phase 3D: Warn if name fallback returns a different code than queried
+        const nameHitCode = PriceNormalizationEngine.normalizeCode(nameHit.codeNormalized || nameHit.code);
+        if (normCode && nameHitCode !== normCode) {
+          resolutionPath.push(`NAME_FALLBACK_CODE_MISMATCH: queried "${normCode}" but name matched "${nameHitCode}". Using name match with warning.`);
+        }
+        masterHit = nameHit;
+      }
+    }
 
     if (masterHit && masterHit.price > 0) {
       resolutionPath.push(`NATIONAL_REFERENCE_MATCH: ${masterHit.code || masterHit.name}`);

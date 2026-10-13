@@ -42,6 +42,46 @@ export class AHSPResolver {
     // 1. Exact code match
     if (qObj.code) {
       const normCode = AHSPNormalizationEngine.normalizeCode(qObj.code);
+
+      // Phase 3B: Detect ambiguous codes before returning EXACT_MATCH.
+      // If multiple variants share the code and no variant ID was provided,
+      // return AMBIGUOUS instead of silently picking one.
+      if (!qObj.id) {
+        const allMatches = this.repository.getAllByCode(normCode);
+        if (allMatches.length > 1) {
+          return {
+            status: 'AMBIGUOUS',
+            query: rawQueryStr,
+            error: `Kode "${qObj.code}" cocok dengan ${allMatches.length} varian. Sertakan ID varian untuk memilih.`,
+            candidates: allMatches.map(m => ({
+              ahsp: m,
+              matchScore: 1.0,
+              matchReason: 'EXACT_CODE_AMBIGUOUS: kode cocok dengan beberapa varian',
+            })),
+          };
+        }
+      }
+
+      // If variant ID provided, resolve by ID and validate code/domain match.
+      if (qObj.id) {
+        const byId = this.repository.getAllMasterDefinitions().find(d => d.id === qObj.id);
+        if (byId) {
+          const byIdNormCode = AHSPNormalizationEngine.normalizeCode(byId.codeNormalized || byId.code);
+          if (byIdNormCode !== normCode) {
+            return {
+              status: 'AHSP_NOT_FOUND',
+              query: rawQueryStr,
+              error: `ID varian "${qObj.id}" tidak cocok dengan kode "${qObj.code}".`,
+            };
+          }
+          return {
+            status: 'EXACT_MATCH',
+            query: rawQueryStr,
+            resolvedAHSP: byId,
+          };
+        }
+      }
+
       const exactMatch = this.repository.getByCode(normCode, projectId);
       if (exactMatch) {
         return {

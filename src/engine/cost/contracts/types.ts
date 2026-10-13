@@ -30,6 +30,10 @@ export interface CostComponentDetail {
   priceSource?: string;
   priceStatus: 'RESOLVED' | 'UNRESOLVED' | 'OVERRIDDEN';
   provenance?: FormulaProvenance;
+  /** Price Fallback Layer: which tier supplied this component's price. */
+  fallbackSourceKind?: 'OFFICIAL_AHSP' | 'MARKET_REFERENCE' | 'EZRAB_ASSUMPTION' | 'UNRESOLVED';
+  fallbackSourceLabel?: string;
+  fallbackExplanation?: string;
 }
 
 export interface CostCategoryBreakdown {

@@ -1,29 +1,28 @@
 /**
- * OnboardingTour
+ * OnboardingTour — Tutorial interaktif 6 langkah untuk pengguna baru EZRAB.
  *
- * Layar sapa + tutorial singkat (3 langkah) untuk pengguna baru:
- *   1. Sapaan + apa itu EZRAB
- *   2. Fitur utama (RAB & estimasi, AI, database AHSP 2026)
- *   3. Cara mulai (buat proyek / buka dashboard)
+ * Langkah:
+ *   0. Selamat Datang (welcome)
+ *   1. Kenali Dashboard
+ *   2. Buat Proyek
+ *   3. Buat dan Kelola RAB
+ *   4. Gunakan CoAssistant dan Magic AI
+ *   5. Gunakan AHSP dan Dokumen
+ *   6. Selesai
  *
- * - Muncul SETELAH login/daftar berhasil (bukan saat boot landing page).
- * - "Lewati" = lewati kali ini saja (muncul lagi saat login berikutnya).
- * - "Jangan tampilkan lagi" / menyelesaikan tur = tidak muncul lagi,
- *   via flag localStorage `ezrab_onboarding_done_v1`.
- * - Bisa dibuka ulang dari pengaturan: panggil `openOnboarding()` atau
- *   dispatch CustomEvent `ezrab:open-onboarding`, lalu hubungkan dengan
- *   `useOnboardingTour()` di parent.
- * - `resetOnboarding()` menghapus flag (berguna untuk pengujian / pengaturan).
+ * Penyimpanan status:
+ * - `ezrab_onboarding_done_v1` = '1' → selesai / jangan tampilkan lagi
+ * - `ezrab_onboarding_step_v1` = nomor langkah terakhir (untuk lanjutkan)
+ * - Namespace per-user: suffix dengan user ID jika tersedia
  *
- * Contoh integrasi di App.tsx:
- *   const { open, closeTour } = useOnboardingTour();
- *   const handleLoginSuccess = () => { if (shouldShowOnboarding()) setTourPending(true); };
- *   {booted && <OnboardingTour open={open} onClose={closeTour} />}
+ * Buka ulang: dispatch CustomEvent `ezrab:open-onboarding`
+ * Tutup: Escape (lewati sekali), tombol tutup, tombol Lewati
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { GreetingMascot } from '../boot/GreetingMascot';
 
 export const ONBOARDING_FLAG = 'ezrab_onboarding_done_v1';
+export const ONBOARDING_STEP_KEY = 'ezrab_onboarding_step_v1';
 export const ONBOARDING_OPEN_EVENT = 'ezrab:open-onboarding';
 
 const TOUR_STYLES = `
@@ -35,55 +34,178 @@ const TOUR_STYLES = `
   from { opacity: 0; transform: translateX(18px); }
   to { opacity: 1; transform: translateX(0); }
 }
+@keyframes ezrab-mascot-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
 .ezrab-tour-enter { animation: ezrab-tour-enter 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .ezrab-tour-step { animation: ezrab-tour-step 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.ezrab-mascot-anim { animation: ezrab-mascot-bounce 2.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .ezrab-tour-enter, .ezrab-tour-step, .ezrab-mascot-anim { animation: none; }
+}
 `;
 
-/* ---------------- helpers ---------------- */
+/* ---------------- storage helpers ---------------- */
 
-function readFlag(): boolean {
+function storageKey(base: string, userId?: string): string {
+  return userId ? `${base}_${userId}` : base;
+}
+
+function readFlag(userId?: string): boolean {
   try {
-    return window.localStorage.getItem(ONBOARDING_FLAG) === '1';
+    return window.localStorage.getItem(storageKey(ONBOARDING_FLAG, userId)) === '1';
   } catch {
     return false;
   }
 }
 
-function writeFlag(): void {
+function writeFlag(userId?: string): void {
   try {
-    window.localStorage.setItem(ONBOARDING_FLAG, '1');
+    window.localStorage.setItem(storageKey(ONBOARDING_FLAG, userId), '1');
+  } catch { /* abaikan */ }
+}
+
+function readStep(userId?: string): number {
+  try {
+    const v = window.localStorage.getItem(storageKey(ONBOARDING_STEP_KEY, userId));
+    const n = v ? parseInt(v, 10) : 0;
+    return isNaN(n) ? 0 : Math.max(0, Math.min(n, 6));
   } catch {
-    /* abaikan jika storage tidak tersedia */
+    return 0;
   }
 }
 
-/** Apakah tur perlu ditampilkan untuk pengguna ini? */
-export function shouldShowOnboarding(): boolean {
-  return !readFlag();
-}
-
-/** Tandai tur sebagai selesai. */
-export function markOnboardingDone(): void {
-  writeFlag();
-}
-
-/** Hapus flag — tur akan muncul lagi di boot berikutnya. */
-export function resetOnboarding(): void {
+function writeStep(step: number, userId?: string): void {
   try {
-    window.localStorage.removeItem(ONBOARDING_FLAG);
-  } catch {
-    /* abaikan */
-  }
+    window.localStorage.setItem(storageKey(ONBOARDING_STEP_KEY, userId), String(step));
+  } catch { /* abaikan */ }
 }
 
-/** Buka tur dari mana saja (mis. halaman Pengaturan) lewat event global. */
+export function shouldShowOnboarding(userId?: string): boolean {
+  return !readFlag(userId);
+}
+
+export function markOnboardingDone(userId?: string): void {
+  writeFlag(userId);
+  try {
+    window.localStorage.removeItem(storageKey(ONBOARDING_STEP_KEY, userId));
+  } catch { /* abaikan */ }
+}
+
+export function resetOnboarding(userId?: string): void {
+  try {
+    window.localStorage.removeItem(storageKey(ONBOARDING_FLAG, userId));
+    window.localStorage.removeItem(storageKey(ONBOARDING_STEP_KEY, userId));
+  } catch { /* abaikan */ }
+}
+
 export function openOnboarding(): void {
   window.dispatchEvent(new CustomEvent(ONBOARDING_OPEN_EVENT));
 }
 
-/** Hook: mengelola state buka/tutup tur + mendengarkan `openOnboarding()`. */
-export function useOnboardingTour() {
+/* ---------------- langkah tutorial ---------------- */
+
+interface TourStep {
+  title: string;
+  subtitle?: string;
+  desc: string;
+  bullets?: string[];
+  actionLabel?: string;
+  actionHref?: string;
+  note?: string;
+}
+
+const TOUR_STEPS: TourStep[] = [
+  {
+    // 0 — Welcome
+    title: 'Selamat Datang di EZRAB!',
+    subtitle: 'Saya CoAssistant, asisten pintar Anda untuk mengelola RAB dengan lebih mudah dan cepat.',
+    desc: 'Kami akan memandu Anda mengenal fitur utama EZRAB agar Anda bisa mulai bekerja dengan percaya diri.',
+  },
+  {
+    // 1 — Dashboard
+    title: 'Semua Proyek dalam Satu Tempat',
+    desc: 'Dashboard membantu Anda melihat ringkasan proyek dan aktivitas pekerjaan. Gunakan menu Proyek untuk mulai mengelola proyek konstruksi.',
+    bullets: [
+      'Ringkasan total proyek aktif',
+      'Aktivitas terbaru dan progres',
+      'Akses cepat ke menu Proyek',
+    ],
+    actionLabel: 'Buka Dashboard',
+    actionHref: '/app/dashboard',
+  },
+  {
+    // 2 — Buat Proyek
+    title: 'Mulai dari Proyek Anda',
+    desc: 'Buat proyek baru, isi informasi dasar, lalu pilih metode penyusunan RAB yang sesuai kebutuhan.',
+    bullets: [
+      'Magic AI — susun RAB otomatis dari deskripsi',
+      'Manual RAB — input item satu per satu',
+      'Perhitungan Volume — hitung dari gambar',
+      'Template RAB — pakai template yang sudah ada',
+    ],
+    actionLabel: 'Coba Buat Proyek',
+    actionHref: '/app/proyek',
+    note: 'Tidak ada proyek yang dibuat otomatis — Anda yang mengisi datanya.',
+  },
+  {
+    // 3 — Kelola RAB
+    title: 'Susun RAB dengan Lebih Mudah',
+    desc: 'Tambahkan pekerjaan, tentukan volume dan satuan, periksa harga satuan, lalu tinjau subtotal serta total RAB.',
+    bullets: [
+      'Uraian pekerjaan yang jelas',
+      'Volume dan satuan yang terverifikasi',
+      'Harga satuan dari AHSP 2026',
+      'Status validasi per item',
+    ],
+    actionLabel: 'Buka RAB',
+    actionHref: '/app/rab',
+    note: 'Contoh di bawah adalah DEMO — bukan data proyek Anda. Volume yang belum terverifikasi harus ditinjau sebelum digunakan.',
+  },
+  {
+    // 4 — CoAssistant & Magic AI
+    title: 'Cukup Tanyakan Apa yang Anda Butuhkan',
+    desc: 'CoAssistant membantu mencari informasi proyek, memahami data RAB, dan menggunakan perintah yang didukung aplikasi.',
+    bullets: [
+      '"Berapa total RAB proyek ini?" — cek total cepat',
+      '"Bantu saya menyusun RAB rumah tipe 36" — buat draf RAB',
+      'Perintah slash: /help, /total, /cari',
+    ],
+    actionLabel: 'Coba CoAssistant',
+    actionHref: '/app/ezrab-ai',
+    note: 'CoAssistant dan Magic AI adalah fitur berbeda: CoAssistant untuk tanya-jawab, Magic AI untuk generate otomatis. Hasil AI perlu diperiksa sebelum dipakai.',
+  },
+  {
+    // 5 — AHSP & Dokumen
+    title: 'Periksa Dasar Perhitungan',
+    desc: 'Gunakan fitur AHSP dan dokumen untuk membantu memeriksa dasar pekerjaan, harga, dan informasi teknis yang tersedia.',
+    bullets: [
+      'Pencarian AHSP 2026',
+      'Pemeriksaan harga satuan',
+      'Analisis dokumen DED dengan AI',
+      'Kurva S dan progres proyek',
+    ],
+    actionLabel: 'Buka AHSP',
+    actionHref: '/app/ahsp',
+    note: 'Hasil AI dan kuantitas yang belum terverifikasi perlu diperiksa sebelum digunakan untuk keputusan proyek.',
+  },
+  {
+    // 6 — Selesai
+    title: 'Anda Siap Menggunakan EZRAB!',
+    desc: 'Sekarang Anda sudah mengenal dasar penggunaan EZRAB. Mulailah dengan membuat proyek, menyusun RAB, atau bertanya kepada CoAssistant.',
+  },
+];
+
+const TOTAL_STEPS = TOUR_STEPS.length;
+
+/* ---------------- hook ---------------- */
+
+export function useOnboardingTour(userId?: string) {
   const [open, setOpen] = useState(false);
+
+  const openTour = useCallback(() => setOpen(true), []);
+  const closeTour = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
     const handler = () => setOpen(true);
@@ -91,122 +213,61 @@ export function useOnboardingTour() {
     return () => window.removeEventListener(ONBOARDING_OPEN_EVENT, handler);
   }, []);
 
-  const closeTour = useCallback(() => setOpen(false), []);
-  const openTour = useCallback(() => setOpen(true), []);
-
-  return { open, openTour, closeTour };
+  return { open, openTour, closeTour, shouldShow: shouldShowOnboarding(userId) };
 }
-
-/* ---------------- ikon fitur (inline SVG) ---------------- */
-
-function FeatureIcon({ kind }: { kind: 'rab' | 'ai' | 'db' }) {
-  const common = {
-    width: 22,
-    height: 22,
-    viewBox: '0 0 24 24',
-    fill: 'none',
-    stroke: 'var(--ezrab-blue, #2563eb)',
-    strokeWidth: 1.8,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-  };
-  if (kind === 'rab')
-    return (
-      <svg {...common}>
-        <rect x="4" y="3" width="16" height="18" rx="2" />
-        <path d="M8 8h8M8 12h8M8 16h5" />
-      </svg>
-    );
-  if (kind === 'ai')
-    return (
-      <svg {...common}>
-        <rect x="7" y="7" width="10" height="10" rx="2.5" />
-        <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-        <circle cx="10" cy="11" r="1" fill="var(--ezrab-blue, #2563eb)" stroke="none" />
-        <circle cx="14" cy="11" r="1" fill="var(--ezrab-blue, #2563eb)" stroke="none" />
-      </svg>
-    );
-  return (
-    <svg {...common}>
-      <ellipse cx="12" cy="5.5" rx="7" ry="2.8" />
-      <path d="M5 5.5v13c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-13" />
-      <path d="M5 12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8" />
-    </svg>
-  );
-}
-
-/* ---------------- konten langkah ---------------- */
-
-const FEATURES = [
-  {
-    kind: 'rab' as const,
-    title: 'RAB & Estimasi',
-    desc: 'Susun Rencana Anggaran Biaya proyek lengkap dengan volume, harga satuan, dan rekap otomatis.',
-  },
-  {
-    kind: 'ai' as const,
-    title: 'AI Estimator',
-    desc: 'Asisten AI membantu menghitung volume, menganalisis gambar kerja (DED), dan menyusun dokumen.',
-  },
-  {
-    kind: 'db' as const,
-    title: 'Database AHSP 2026',
-    desc: 'Analisa Harga Satuan Pekerjaan 2026 siap pakai — akurat dan selalu terbarui.',
-  },
-];
-
-const START_STEPS = [
-  {
-    title: 'Buat proyek baru',
-    desc: 'Beri nama proyek, pilih jenis pekerjaan, dan mulai susun RAB dari template.',
-  },
-  {
-    title: 'Buka dashboard',
-    desc: 'Lihat ringkasan semua proyek, progres pekerjaan, dan aktivitas terbaru Anda.',
-  },
-];
 
 /* ---------------- komponen ---------------- */
 
 interface OnboardingTourProps {
   open: boolean;
   onClose: () => void;
+  userId?: string;
 }
 
-export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
-  const [step, setStep] = useState(0);
-  const totalSteps = 3;
-  const isLast = step === totalSteps - 1;
+export function OnboardingTour({ open, onClose, userId }: OnboardingTourProps) {
+  // Mulai dari langkah tersimpan (lanjutkan) atau 0
+  const [step, setStep] = useState(() => readStep(userId));
+  const modalRef = useRef<HTMLDivElement>(null);
+  const isLast = step === TOTAL_STEPS - 1;
+  const isWelcome = step === 0;
+  const current = TOUR_STEPS[step];
 
-  // Reset ke langkah pertama setiap tur dibuka
+  // Reset ke langkah tersimpan setiap dibuka
   useEffect(() => {
-    if (open) setStep(0);
-  }, [open ]);
+    if (open) {
+      setStep(readStep(userId));
+      // Fokus ke modal untuk aksesibilitas
+      setTimeout(() => modalRef.current?.focus(), 50);
+    }
+  }, [open, userId]);
+
+  // Simpan progress setiap ganti langkah
+  useEffect(() => {
+    if (open) writeStep(step, userId);
+  }, [step, open, userId]);
 
   const handleFinish = useCallback(() => {
-    markOnboardingDone();
+    markOnboardingDone(userId);
     onClose();
-  }, [onClose]);
+  }, [onClose, userId]);
 
-  /** "Lewati" — tutup kali ini saja, tur boleh muncul lagi di login berikutnya. */
   const handleSkipOnce = useCallback(() => {
-    onClose();
+    onClose(); // progress tersimpan, bisa dilanjutkan nanti
   }, [onClose]);
 
-  /** "Jangan tampilkan lagi" — tutup permanen. */
   const handleDontShowAgain = useCallback(() => {
-    markOnboardingDone();
+    markOnboardingDone(userId);
     onClose();
-  }, [onClose]);
+  }, [onClose, userId]);
 
   const next = useCallback(() => {
     if (isLast) handleFinish();
-    else setStep((s) => s + 1);
+    else setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1));
   }, [isLast, handleFinish]);
 
   const back = useCallback(() => setStep((s) => Math.max(0, s - 1)), []);
 
-  // Tutup dengan tombol Escape (dianggap "lewati sekali")
+  // Keyboard: Escape = tutup, panah = navigasi
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -218,13 +279,31 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, handleSkipOnce, next, back]);
 
+  // Trap fokus sederhana di dalam modal
+  useEffect(() => {
+    if (!open) return;
+    const handleFocus = (e: FocusEvent) => {
+      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+        modalRef.current.focus();
+      }
+    };
+    document.addEventListener('focusin', handleFocus);
+    return () => document.removeEventListener('focusin', handleFocus);
+  }, [open ]);
+
   if (!open) return null;
+
+  const handleAction = () => {
+    if (current.actionHref) {
+      window.location.href = current.actionHref;
+    }
+  };
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Panduan awal EZRAB"
+      aria-label="Tutorial EZRAB"
       style={{
         position: 'fixed',
         inset: 0,
@@ -232,301 +311,177 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 20,
-        background: 'rgba(15, 23, 42, 0.45)',
-        backdropFilter: 'blur(6px)',
-        WebkitBackdropFilter: 'blur(6px)',
+        padding: 16,
+        background: 'rgba(15, 23, 42, 0.55)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+      }}
+      onClick={(e) => {
+        // Klik backdrop = lewati sekali (tidak tutup permanen)
+        if (e.target === e.currentTarget) handleSkipOnce();
       }}
     >
       <style>{TOUR_STYLES}</style>
 
       <div
+        ref={modalRef}
+        tabIndex={-1}
         className="ezrab-tour-enter"
         style={{
-          width: 'min(440px, 100%)',
-          maxHeight: 'calc(100vh - 40px)',
+          width: 'min(520px, 100%)',
+          maxHeight: 'calc(100vh - 32px)',
           overflowY: 'auto',
-          background: 'var(--ezrab-card-bg, #ffffff)',
-          border: '1px solid var(--ezrab-card-border, #e5e7eb)',
-          borderRadius: 'var(--ezrab-radius-xl, 28px)',
-          boxShadow: 'var(--ezrab-shadow-lg)',
-          padding: 28,
-          fontFamily: 'var(--ezrab-font-sans)',
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: 24,
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          padding: '28px 28px 24px',
+          fontFamily: 'inherit',
+          outline: 'none',
         }}
       >
-        {/* Header: indikator langkah + Lewati */}
+        {/* Header: indikator + tutup */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {Array.from({ length: totalSteps }).map((_, i) => (
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }} aria-label={`Langkah ${step + 1} dari ${TOTAL_STEPS}`}>
+            {TOUR_STEPS.map((_, i) => (
               <span
                 key={i}
                 style={{
-                  width: i === step ? 24 : 8,
+                  width: i === step ? 28 : 8,
                   height: 8,
-                  borderRadius: 'var(--ezrab-radius-full, 9999px)',
-                  background: i <= step ? 'var(--ezrab-blue, #2563eb)' : 'var(--ezrab-surface-subtle, #f1f5f9)',
-                  transition: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
+                  borderRadius: 9999,
+                  background: i < step ? '#3b82f6' : i === step ? '#1d4ed8' : '#e2e8f0',
+                  transition: 'all 0.3s ease',
                 }}
               />
             ))}
+            <span style={{ marginLeft: 8, fontSize: 12, color: '#64748b', fontWeight: 600 }}>
+              {step + 1}/{TOTAL_STEPS}
+            </span>
           </div>
           <button
             onClick={handleSkipOnce}
+            aria-label="Tutup tutorial"
             style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--ezrab-text-secondary, #64748b)',
-              cursor: 'pointer',
-              padding: '6px 10px',
-              borderRadius: 'var(--ezrab-radius-sm, 8px)',
-              minHeight: 'var(--ezrab-touch-min, 44px)',
+              width: 32, height: 32, borderRadius: '50%', border: '1px solid #e2e8f0',
+              background: '#f8fafc', color: '#64748b', cursor: 'pointer',
+              fontSize: 16, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ezrab-surface-soft, #f8fafc)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
-            Lewati
+            ×
           </button>
         </div>
 
-        {/* Isi langkah */}
-        <div key={step} className="ezrab-tour-step">
-          {step === 0 && (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                <GreetingMascot size={112} />
-              </div>
-              <h2
-                style={{
-                  fontSize: 'var(--font-size-h1, 24px)',
-                  fontWeight: 800,
-                  letterSpacing: '-0.025em',
-                  color: 'var(--ezrab-text, #111827)',
-                  margin: '0 0 10px',
-                }}
-              >
-                Selamat datang di EZRAB!
-              </h2>
-              <p
-                style={{
-                  fontSize: 'var(--font-size-body, 13.5px)',
-                  lineHeight: 1.6,
-                  color: 'var(--ezrab-text-secondary, #64748b)',
-                  margin: 0,
-                }}
-              >
-                EZRAB adalah aplikasi penyusun <strong style={{ color: 'var(--ezrab-text, #111827)' }}>RAB &amp; estimasi
-                biaya konstruksi</strong> yang cepat, akurat, dan mudah dipakai — dari perencanaan sampai rekap anggaran
-                proyek Anda.
-              </p>
-            </div>
+        {/* Maskot */}
+        <div className="ezrab-mascot-anim" style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+          <GreetingMascot size={72} />
+        </div>
+
+        {/* Konten langkah */}
+        <div key={step} className="ezrab-tour-step" style={{ textAlign: 'center', marginBottom: 20 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+            {current.title}
+          </h2>
+          {current.subtitle && (
+            <p style={{ fontSize: 14, color: '#3b82f6', fontWeight: 600, margin: '0 0 12px' }}>
+              {current.subtitle}
+            </p>
+          )}
+          <p style={{ fontSize: 14.5, color: '#475569', lineHeight: 1.65, margin: '0 0 12px' }}>
+            {current.desc}
+          </p>
+
+          {current.bullets && (
+            <ul style={{ textAlign: 'left', margin: '0 auto 12px', maxWidth: 400, paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+              {current.bullets.map((b, i) => (
+                <li key={i} style={{ marginBottom: 4 }}>{b}</li>
+              ))}
+            </ul>
           )}
 
-          {step === 1 && (
-            <div>
-              <h2
-                style={{
-                  fontSize: 'var(--font-size-h1, 24px)',
-                  fontWeight: 800,
-                  letterSpacing: '-0.025em',
-                  color: 'var(--ezrab-text, #111827)',
-                  margin: '0 0 6px',
-                }}
-              >
-                Semua kebutuhan estimasi, satu tempat
-              </h2>
-              <p
-                style={{
-                  fontSize: 'var(--font-size-body, 13.5px)',
-                  color: 'var(--ezrab-text-secondary, #64748b)',
-                  margin: '0 0 16px',
-                  lineHeight: 1.6,
-                }}
-              >
-                Tiga hal utama yang bisa Anda lakukan di EZRAB:
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {FEATURES.map((f) => (
-                  <div
-                    key={f.title}
-                    style={{
-                      display: 'flex',
-                      gap: 12,
-                      alignItems: 'flex-start',
-                      padding: 14,
-                      background: 'var(--ezrab-surface-soft, #f8fafc)',
-                      border: '1px solid var(--ezrab-border-light, #f1f5f9)',
-                      borderRadius: 'var(--ezrab-radius-md, 14px)',
-                    }}
-                  >
-                    <div
-                      style={{
-                        flexShrink: 0,
-                        width: 40,
-                        height: 40,
-                        borderRadius: 12,
-                        background: 'var(--ezrab-blue-soft, #eff6ff)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <FeatureIcon kind={f.kind} />
-                    </div>
-                    <div>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ezrab-text, #111827)', margin: '0 0 2px' }}>
-                        {f.title}
-                      </p>
-                      <p
-                        style={{
-                          fontSize: 12.5,
-                          lineHeight: 1.55,
-                          color: 'var(--ezrab-text-secondary, #64748b)',
-                          margin: 0,
-                        }}
-                      >
-                        {f.desc}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div>
-              <h2
-                style={{
-                  fontSize: 'var(--font-size-h1, 24px)',
-                  fontWeight: 800,
-                  letterSpacing: '-0.025em',
-                  color: 'var(--ezrab-text, #111827)',
-                  margin: '0 0 6px',
-                }}
-              >
-                Mulai dalam hitungan detik
-              </h2>
-              <p
-                style={{
-                  fontSize: 'var(--font-size-body, 13.5px)',
-                  color: 'var(--ezrab-text-secondary, #64748b)',
-                  margin: '0 0 16px',
-                  lineHeight: 1.6,
-                }}
-              >
-                Tidak perlu pengaturan rumit. Pilih salah satu untuk mulai:
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-                {START_STEPS.map((s, i) => (
-                  <div
-                    key={s.title}
-                    style={{
-                      display: 'flex',
-                      gap: 12,
-                      alignItems: 'flex-start',
-                      padding: 14,
-                      background: 'var(--ezrab-surface-soft, #f8fafc)',
-                      border: '1px solid var(--ezrab-border-light, #f1f5f9)',
-                      borderRadius: 'var(--ezrab-radius-md, 14px)',
-                    }}
-                  >
-                    <div
-                      style={{
-                        flexShrink: 0,
-                        width: 28,
-                        height: 28,
-                        borderRadius: 'var(--ezrab-radius-full, 9999px)',
-                        background: 'var(--ezrab-blue, #2563eb)',
-                        color: '#fff',
-                        fontSize: 13,
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      {i + 1}
-                    </div>
-                    <div>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--ezrab-text, #111827)', margin: '0 0 2px' }}>
-                        {s.title}
-                      </p>
-                      <p
-                        style={{
-                          fontSize: 12.5,
-                          lineHeight: 1.55,
-                          color: 'var(--ezrab-text-secondary, #64748b)',
-                          margin: 0,
-                        }}
-                      >
-                        {s.desc}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p
-                style={{
-                  fontSize: 12,
-                  color: 'var(--ezrab-text-muted, #94a3b8)',
-                  margin: 0,
-                  textAlign: 'center',
-                }}
-              >
-                Panduan ini bisa dibuka lagi kapan saja dari menu Pengaturan.
-              </p>
+          {current.note && (
+            <div style={{
+              fontSize: 12.5, color: '#92400e', background: '#fffbeb',
+              border: '1px solid #fde68a', borderRadius: 8, padding: '8px 12px',
+              margin: '0 auto', maxWidth: 420, textAlign: 'left', lineHeight: 1.5,
+            }}>
+              ℹ️ {current.note}
             </div>
           )}
         </div>
 
-        {/* Footer navigasi */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginTop: 24,
-            gap: 12,
-          }}
-        >
-          {step > 0 ? (
+        {/* Tombol aksi langkah (jika ada) */}
+        {current.actionLabel && current.actionHref && (
+          <button
+            onClick={handleAction}
+            style={{
+              display: 'block', width: '100%', marginBottom: 12,
+              padding: '12px', borderRadius: 12, border: '1px solid #bfdbfe',
+              background: '#eff6ff', color: '#1d4ed8',
+              fontSize: 14, fontWeight: 700, cursor: 'pointer',
+            }}
+          >
+            {current.actionLabel} →
+          </button>
+        )}
+
+        {/* Navigasi */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+          {step > 0 && (
             <button
               onClick={back}
-              className="ezrab-button-secondary"
-              style={{ height: 44, padding: '0 20px', minWidth: 110 }}
+              style={{
+                flex: 1, padding: '12px', borderRadius: 12,
+                border: '1px solid #e2e8f0', background: '#ffffff',
+                color: '#475569', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+              }}
             >
-              Kembali
+              ← Kembali
             </button>
-          ) : (
-            <span />
           )}
           <button
             onClick={next}
-            className="ezrab-button-primary"
-            style={{ height: 44, padding: '0 24px', minWidth: 140 }}
+            style={{
+              flex: 2, padding: '12px', borderRadius: 12, border: 'none',
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              color: '#ffffff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
+            }}
           >
-            {isLast ? 'Mulai Sekarang' : 'Lanjut'}
+            {isWelcome ? 'Mulai Tutorial' : isLast ? 'Mulai Menggunakan EZRAB' : 'Berikutnya →'}
           </button>
         </div>
 
-        {/* Opsi permanen: jangan tampilkan lagi di login berikutnya */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+        {/* Opsi bawah */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <button
-            onClick={handleDontShowAgain}
+            onClick={handleSkipOnce}
+            style={{ fontSize: 13, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+          >
+            Lewati Tutorial
+          </button>
+          <label style={{ fontSize: 12.5, color: '#64748b', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              onChange={(e) => { if (e.target.checked) handleDontShowAgain(); }}
+              style={{ accentColor: '#2563eb' }}
+            />
+            Jangan tampilkan otomatis lagi
+          </label>
+        </div>
+
+        {isLast && (
+          <button
+            onClick={() => { resetOnboarding(userId); setStep(0); }}
             style={{
-              background: 'none',
-              border: 'none',
-              fontSize: 12.5,
-              color: 'var(--ezrab-text-muted, #94a3b8)',
-              cursor: 'pointer',
-              textDecoration: 'underline',
-              textUnderlineOffset: 3,
-              padding: '6px 10px',
+              display: 'block', width: '100%', marginTop: 12,
+              fontSize: 13, color: '#3b82f6', background: 'none',
+              border: 'none', cursor: 'pointer', fontWeight: 600,
             }}
           >
-            Jangan tampilkan lagi
+            ↻ Ulangi Tutorial
           </button>
-        </div>
+        )}
       </div>
     </div>
   );

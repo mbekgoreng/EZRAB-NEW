@@ -173,19 +173,61 @@ export class ParametricVolumeEngine {
 
   /**
    * Resolve unit price for an AHSP code or candidate item
+   *
+   * Phase 3E: Ambiguous codes (multiple variants sharing one code) are NOT
+   * silently resolved to the first match. If the input matches an ID exactly,
+   * that specific variant is used. If the input is a code matching multiple
+   * variants, the lookup falls through to benchmark/default rather than
+   * picking a potentially wrong variant's price.
+   *
+   * Phase 3F: Returns price status indicators. Fabricated prices (benchmark
+   * fallback, Rp150.000 default) are marked isFabricated=true and must NOT
+   * be presented as verified official prices.
    */
-  public resolveUnitPrice(ahspCode: string, region: string = 'DKI Jakarta'): { unitPrice: number; ahspName: string; source: string } {
+  public resolveUnitPrice(ahspCode: string, region: string = 'DKI Jakarta'): {
+    unitPrice: number;
+    ahspName: string;
+    source: string;
+    /** Phase 3F: true if price is from benchmark/default fallback, not official AHSP */
+    isFabricated: boolean;
+    /** Phase 3F: true if code was ambiguous and no variant was selected */
+    isAmbiguous: boolean;
+  } {
     const multiplier = REGIONAL_PRICE_INDICES[region] || 1.0;
 
     // Search official AHSP item
-    const officialItem = ALL_OFFICIAL_AHSP_ITEMS.find((it) => it.code === ahspCode || it.id === ahspCode);
-    if (officialItem && officialItem.unitPrice && officialItem.unitPrice > 0) {
+    // Phase 3E: First check for exact ID match (IDs are unique)
+    const idMatch = ALL_OFFICIAL_AHSP_ITEMS.find((it) => it.id === ahspCode);
+    if (idMatch && idMatch.unitPrice && idMatch.unitPrice > 0) {
       return {
-        unitPrice: Math.round(officialItem.unitPrice * multiplier),
-        ahspName: officialItem.name,
-        source: officialItem.domain === 'CIPTA_KARYA' ? 'CIPTA_KARYA_2026' : officialItem.domain === 'BINA_MARGA' ? 'BINA_MARGA_2026' : 'SDA_2026',
+        unitPrice: Math.round(idMatch.unitPrice * multiplier),
+        ahspName: idMatch.name,
+        source: idMatch.domain === 'CIPTA_KARYA' ? 'CIPTA_KARYA_2026' : idMatch.domain === 'BINA_MARGA' ? 'BINA_MARGA_2026' : 'SDA_2026',
+        isFabricated: false,
+        isAmbiguous: false,
       };
     }
+
+    // Phase 3E: For code lookup, check for ambiguity
+    const codeMatches = ALL_OFFICIAL_AHSP_ITEMS.filter((it) => it.code === ahspCode);
+    if (codeMatches.length > 1) {
+      // Ambiguous code - do NOT pick first silently.
+      // Fall through to benchmark/default below.
+      // The caller should provide an ID for precise variant selection.
+    } else if (codeMatches.length === 1) {
+      const officialItem = codeMatches[0];
+      if (officialItem.unitPrice && officialItem.unitPrice > 0) {
+        return {
+          unitPrice: Math.round(officialItem.unitPrice * multiplier),
+          ahspName: officialItem.name,
+          source: officialItem.domain === 'CIPTA_KARYA' ? 'CIPTA_KARYA_2026' : officialItem.domain === 'BINA_MARGA' ? 'BINA_MARGA_2026' : 'SDA_2026',
+          isFabricated: false,
+          isAmbiguous: false,
+        };
+      }
+    }
+    // Fall through to benchmark/default if: no ID match with valid price,
+    // ambiguous code, single code match without valid price, or no match
 
 
     // Heuristic benchmark fallback price table based on official PUPR 2026 standards
@@ -236,11 +278,16 @@ export class ParametricVolumeEngine {
         unitPrice: Math.round(benchmark.price * multiplier),
         ahspName: benchmark.name,
         source: benchmark.source,
+        // Phase 3F: Benchmark is an indicative estimate, not official AHSP price
+        isFabricated: true,
+        isAmbiguous: false,
       };
     }
 
     // Default fallback
     // PHASE 1 telemetry: unknown AHSP code → flat Rp 150.000/m3 × regional multiplier.
+    // Phase 3F: This is a generic assumption, NOT an official price.
+    // It is marked isFabricated=true and tracked via telemetry.
     recordFabricatedTotal('parametric.borongan.default', Math.round(150000 * multiplier), {
       constant: 150000,
       unit: ahspCode,
@@ -251,6 +298,10 @@ export class ParametricVolumeEngine {
       unitPrice: Math.round(150000 * multiplier),
       ahspName: `Analisa Satuan Pekerjaan (${ahspCode})`,
       source: 'CUSTOM',
+      // Phase 3F: Generic Rp150.000 fallback is an assumption, NOT verified.
+      // Marked fabricated so totals can distinguish verified vs estimated.
+      isFabricated: true,
+      isAmbiguous: codeMatches.length > 1,
     };
   }
 
@@ -321,6 +372,11 @@ export class ParametricVolumeEngine {
     };
 
     let totalDirectCost = 0;
+    // Phase 3F: Track verified vs fabricated costs separately.
+    // Fabricated = benchmark fallback or Rp150.000 default (not official AHSP).
+    let verifiedDirectCost = 0;
+    let fabricatedDirectCost = 0;
+    let ambiguousItemCount = 0;
     const allWarnings: string[] = [...valResult.warnings];
     const allErrors: string[] = [];
 
@@ -356,7 +412,7 @@ export class ParametricVolumeEngine {
 
       // Resolve AHSP and Unit Price
       const defaultAhsp = item.defaultAhspCode || (item.ahspCandidates[0]?.ahspCode ?? 'CUSTOM.01');
-      const { unitPrice, ahspName, source: ahspSource } = this.resolveUnitPrice(defaultAhsp, region);
+      const { unitPrice, ahspName, source: ahspSource, isFabricated, isAmbiguous } = this.resolveUnitPrice(defaultAhsp, region);
       const totalPrice = Math.round(quantity * unitPrice);
 
       if (categorySubtotals[item.category] !== undefined) {
@@ -366,6 +422,20 @@ export class ParametricVolumeEngine {
       }
 
       totalDirectCost += totalPrice;
+
+      // Phase 3F: Separate verified vs fabricated costs.
+      // Fabricated prices must NOT be presented as verified official totals.
+      if (isFabricated) {
+        fabricatedDirectCost += totalPrice;
+        allWarnings.push(
+          `FABRICATED_PRICE: "${item.name}" menggunakan harga ${isAmbiguous ? 'ambigu' : 'asumsi'} (${ahspSource}), bukan harga AHSP resmi terverifikasi.`
+        );
+      } else {
+        verifiedDirectCost += totalPrice;
+      }
+      if (isAmbiguous) {
+        ambiguousItemCount++;
+      }
 
       if (volRes.warnings && volRes.warnings.length > 0) {
         allWarnings.push(...volRes.warnings);
@@ -386,6 +456,9 @@ export class ParametricVolumeEngine {
         ahspCode: defaultAhsp,
         ahspName,
         ahspSource,
+        // Phase 3F: Price provenance per item
+        isPriceFabricated: isFabricated,
+        isPriceAmbiguous: isAmbiguous,
         formula: volRes.formula,
         formulaInputs: volRes.formulaInputs,
         dimensions: volRes.dimensions,
@@ -428,6 +501,56 @@ export class ParametricVolumeEngine {
       workItems: generatedWorkItems,
       categorySubtotals,
       totalDirectCost,
+      // Phase 3F: Separate verified vs fabricated costs.
+      // totalDirectCost includes both for backward compat, but consumers
+      // MUST check verifiedDirectCost for verified official totals.
+      verifiedDirectCost,
+      fabricatedDirectCost,
+      ambiguousItemCount,
+      // Phase 3G: Explicit total status contract.
+      // VERIFIED: all items have verified official prices, no ambiguity, no unresolved.
+      // INDICATIVE: contains benchmark/assumption prices explicitly allowed as indicative estimate.
+      // INCOMPLETE: has unresolved/ambiguous items, total does not cover all required costs.
+      totalStatus: (() => {
+        const hasUnresolved = generatedWorkItems.some(
+          (w: any) => w.status === 'blocked' || (w.errors && w.errors.length > 0)
+        );
+        if (hasUnresolved || ambiguousItemCount > 0) {
+          return 'INCOMPLETE' as const;
+        }
+        if (fabricatedDirectCost > 0) {
+          return 'INDICATIVE' as const;
+        }
+        return 'VERIFIED' as const;
+      })(),
+      // Phase 3G: Verified-only totals. Only populated when totalStatus is VERIFIED.
+      // This ensures overhead/profit/tax inherit validity from base costs.
+      // When not VERIFIED, these are undefined - consumers must not use
+      // totalRabCost as a verified total.
+      ...(() => {
+        const hasUnresolved = generatedWorkItems.some(
+          (w: any) => w.status === 'blocked' || (w.errors && w.errors.length > 0)
+        );
+        const isVerified = !hasUnresolved && ambiguousItemCount === 0 && fabricatedDirectCost === 0;
+        if (isVerified) {
+          const vOverhead = Math.round((verifiedDirectCost * overheadPercentage) / 100);
+          const vProfit = Math.round((verifiedDirectCost * profitPercentage) / 100);
+          const vSubtotal = verifiedDirectCost + vOverhead + vProfit;
+          const vTax = Math.round((vSubtotal * taxPercentage) / 100);
+          return {
+            verifiedOverheadAmount: vOverhead,
+            verifiedProfitAmount: vProfit,
+            verifiedTaxAmount: vTax,
+            verifiedTotalRabCost: vSubtotal + vTax,
+          };
+        }
+        return {
+          verifiedOverheadAmount: undefined as number | undefined,
+          verifiedProfitAmount: undefined as number | undefined,
+          verifiedTaxAmount: undefined as number | undefined,
+          verifiedTotalRabCost: undefined as number | undefined,
+        };
+      })(),
       overheadPercentage,
       overheadAmount,
       profitPercentage,

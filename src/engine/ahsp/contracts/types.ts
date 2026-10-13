@@ -102,4 +102,6 @@ export interface AHSPQuery {
   domain?: AHSPDomain;
   version?: string;
   unit?: string;
+  /** Phase 3B: Internal variant ID (e.g. "AHSP-2026-SDA-000010") for disambiguating codes shared by multiple variants. */
+  id?: string;
 }

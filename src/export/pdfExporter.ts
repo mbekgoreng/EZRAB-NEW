@@ -8,6 +8,7 @@ import { terbilangIndo } from './exportDesignSystem';
 import { renderPdfWatermark } from './pdfWatermark';
 import { loadOfficialEzrabEmblem, loadOfficialEzrabLogo } from './pdfAssets';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
+import { loadVersioned } from '../engine/storage/hardenedStorage';
 // PHASE 1 (audit §16): single canonical default set, so the PDF agrees with the screen.
 import { resolvePolicyValue } from '../engine/cost/policy/costPolicyDefaults';
 
@@ -61,13 +62,10 @@ function normalizeProjectSections(project: Project): RABSection[] {
   // Try retrieving from browser localStorage if rawItems is empty
   if (rawItems.length === 0 && typeof window !== 'undefined') {
     try {
-      const saved = localStorage.getItem('ezrab_prod_rab_items');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const matched = parsed.filter((it) => it.projectId === project.id);
-          rawItems = matched.length > 0 ? matched : parsed;
-        }
+      const result = loadVersioned<any[]>('ezrab_prod_rab_items');
+      if (result.ok && Array.isArray(result.data) && result.data.length > 0) {
+        const matched = result.data.filter((it) => it.projectId === project.id);
+        rawItems = matched.length > 0 ? matched : result.data;
       }
     } catch {
       // ignore localStorage parse error
@@ -732,7 +730,10 @@ export async function exportProjectToPDF(
       const itemWeight = costs.directCost > 0 ? (itemTotalPrice / costs.directCost) * 100 : 0;
       // FASE 5D: bedakan harga belum tersedia dari harga nol yang valid.
       // priceStatus kanonis — bukan sekadar unitPrice === 0.
+      // Price Fallback Layer: label asumsi.
       const isUnresolved = (item as any).priceStatus === 'PRICE_UNRESOLVED';
+      const srcKind = (item as any).priceSourceKind as string | undefined;
+      const isAssumption = srcKind === 'EZRAB_ASSUMPTION';
       const unitPriceCell = isUnresolved
         ? { content: 'HARGA BELUM TERSEDIA', styles: { halign: 'center' as const, textColor: [180, 83, 9] } }
         : formatRupiah(item.unitPrice);
@@ -744,7 +745,8 @@ export async function exportProjectToPDF(
         globalItemIndex.toString(),
         item.code || '-',
         item.description + (item.specification ? `\nSpesifikasi: ${item.specification}` : '') +
-          (isUnresolved ? '\n(Harga belum tersedia — bukan Rp0)' : ''),
+          (isUnresolved ? '\n(Harga belum tersedia — bukan Rp0)' : '') +
+          (isAssumption ? '\n[ASUMSI — PERLU VERIFIKASI, bukan harga resmi AHSP]' : ''),
         item.unit || 'ls',
         item.volume.toLocaleString('id-ID', { maximumFractionDigits: 2 }),
         unitPriceCell,

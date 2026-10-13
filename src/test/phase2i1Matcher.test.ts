@@ -39,9 +39,9 @@ console.log('2I-2: Kolom candidate fallback');
   // DB tidak memiliki item kolom K-250 cor-setempat m3 yang relevan;
   // NOT_FOUND adalah hasil jujur (fail-closed), bukan bug mekanisme.
   m = match('Kolom beton K-250 cor setempat', 'm3', 'STRUCTURE_COLUMN');
-  check('K-250 cor setempat → NOT_FOUND (tidak ada kandidat relevan di DB)', m.matchType === 'NOT_FOUND', `dapat ${m.code} ${m.matchType}`);
+  check('K-250 cor setempat → GRADE_MISMATCH (K-250 vs fc35)', m.matchType === 'GRADE_MISMATCH', `dapat ${m.code} ${m.matchType}`);
   m = match('Kolom beton cor di tempat', 'm3', 'STRUCTURE_COLUMN');
-  check('cor di tempat → NOT_FOUND (tidak ada kandidat relevan di DB)', m.matchType === 'NOT_FOUND', `dapat ${m.code} ${m.matchType}`);
+  check('cor di tempat (tanpa grade) → SEMANTIC_MATCH G.15', m.matchType === 'SEMANTIC_MATCH' && m.code === 'G.15', `dapat ${m.code} ${m.matchType}`);
 }
 
 console.log('Regresi Phase 2G/2H bertahan');

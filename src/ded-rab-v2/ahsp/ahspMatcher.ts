@@ -18,12 +18,14 @@
  */
 
 import { DedWorkItem, DedAhspMatch } from '../types';
+import { checkGradeCompatibility } from './concreteGradeGate';
 import { officialAhspRepository, ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { constructionNormalizer } from '../interpretation/constructionNormalizer';
 import { specificationValidator } from '../../ded-rab-v3/validation/specificationValidator';
 
 export class AhspMatcher {
   private static instance: AhspMatcher;
+  private gradeRejections: Array<{ input: string; candidate: string; reason: string }> = [];
 
   private constructor() {}
 
@@ -35,6 +37,24 @@ export class AhspMatcher {
   }
 
   /**
+   * Record a grade-based rejection for GRADE_MISMATCH reporting.
+   * Called by isSpecCompatible when checkGradeCompatibility fails.
+   */
+  private recordGradeRejection(input: string, candidate: string, reason: string): void {
+    this.gradeRejections.push({ input, candidate, reason });
+  }
+
+  /** Clear grade rejections at start of a new match operation. */
+  public clearGradeRejections(): void {
+    this.gradeRejections = [];
+  }
+
+  /** Get recorded grade rejections for the current match operation. */
+  public getGradeRejections(): Array<{ input: string; candidate: string; reason: string }> {
+    return [...this.gradeRejections];
+  }
+
+  /**
    * Matches a DedWorkItem against official AHSP records.
    */
   public matchWorkItem(
@@ -42,6 +62,9 @@ export class AhspMatcher {
     companyCatalog?: Array<{ code: string; name: string; unit: string; unitPrice?: number }>,
     options?: { allowAiSynthesis?: boolean }
   ): DedAhspMatch {
+    // Clear grade rejections for this match operation
+    this.clearGradeRejections();
+
     const itemName = item.name.toLowerCase().trim();
     const itemUnit = (item.unit || '').toLowerCase().trim();
     const category = item.category;
@@ -152,6 +175,20 @@ export class AhspMatcher {
     }
 
     // 7. FAIL-CLOSED FALLBACK (Only for strict invariant tests with no fallback)
+    // Check if all rejections were due to grade mismatch
+    const gradeRejs = this.getGradeRejections();
+    if (gradeRejs.length > 0) {
+      const reasons = gradeRejs.map(r => r.reason).join('; ');
+      return {
+        code: '',
+        name: item.name,
+        unit: item.unit || 'unit',
+        matchType: 'GRADE_MISMATCH',
+        source: 'OFFICIAL_DATABASE',
+        confidence: 0,
+        coefficientSummary: `Mutu beton tidak cocok: ${reasons}. Diperlukan review manual estimator.`,
+      };
+    }
     return {
       code: '',
       name: item.name,
@@ -330,12 +367,14 @@ export class AhspMatcher {
       if (candRatio && candRatio !== itemRatio) return false;
     }
 
-    // 4. Concrete grade conflicts
-    const grades = ['k-175', 'k-225', 'k-250', 'k-300', 'k-350'];
-    const itemGrade = grades.find(g => itemFull.includes(g) || itemFull.includes(g.replace('-', ' ')));
-    if (itemGrade) {
-      const candGrade = grades.find(g => cand.includes(g) || cand.includes(g.replace('-', ' ')));
-      if (candGrade && candGrade !== itemGrade) return false;
+    // 4. Concrete grade conflicts — GRADE MISMATCH GATE
+    //    Uses structured grade extraction (K-xxx and fc'xx).
+    //    K-250 is NOT assumed equivalent to fc'21 without approved conversion.
+    const gradeResult = checkGradeCompatibility(itemFull, cand);
+    if (!gradeResult.compatible) {
+      // Record rejection reason for GRADE_MISMATCH reporting
+      this.recordGradeRejection(itemName, candidateName, gradeResult.reason);
+      return false;
     }
 
     return true;

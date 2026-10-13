@@ -9,7 +9,7 @@
  */
 
 import { ScopeBasedCostCalculator } from '../engine/cost/scope/scopeBasedCostCalculator';
-import { BINA_MARGA_AHSP_2026_OFFICIAL } from '../data/nationalCostDatabase/binaMargaCanonical';
+import { BINA_MARGA_AHSP_2026_OFFICIAL } from '../data/nationalCostDatabase/binaMarga2026Adapter';
 import { PriceContext } from '../engine/pricing/contracts/types';
 
 const calculator = new ScopeBasedCostCalculator();

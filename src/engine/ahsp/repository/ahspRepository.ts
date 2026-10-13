@@ -124,6 +124,10 @@ export class AHSPRepository {
 
   /**
    * Get AHSP by exact normalized code, with project override support if projectId provided.
+   *
+   * NOTE: If multiple definitions share the same code, the project override
+   * takes precedence, otherwise the LAST registered master definition is returned
+   * (Map overwrite semantics). Use getAllByCode() to detect ambiguity.
    */
   public getByCode(code: string, projectId?: string): AHSPDefinition | undefined {
     const normCode = AHSPNormalizationEngine.normalizeCode(code);
@@ -139,6 +143,26 @@ export class AHSPRepository {
 
     // 2. Fall back to master definitions
     return this.masterDefinitionsByCode.get(normCode);
+  }
+
+  /**
+   * Get ALL master definitions matching a normalized code.
+   * Use this to detect ambiguous codes (multiple variants sharing one code).
+   * Project overrides are NOT included; check projectId separately.
+   */
+  public getAllByCode(code: string): AHSPDefinition[] {
+    const normCode = AHSPNormalizationEngine.normalizeCode(code);
+    if (!normCode) return [];
+    return this.masterList.filter(
+      def => AHSPNormalizationEngine.normalizeCode(def.codeNormalized || def.code) === normCode
+    );
+  }
+
+  /**
+   * Check if a code is ambiguous (matches multiple master definitions).
+   */
+  public isCodeAmbiguous(code: string): boolean {
+    return this.getAllByCode(code).length > 1;
   }
 
   /**
