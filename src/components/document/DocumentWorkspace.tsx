@@ -636,7 +636,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
   const currentRevStr = `REV ${String(selectedRevision).padStart(2, '0')}`;
 
   return (
-    <div style={{ background: '#F8FAFC', minHeight: 'calc(100vh - 64px)', padding: 24, fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ background: '#F8FAFC', minHeight: 'calc(100vh - 64px)', padding: 24, fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
       {/* TOP BAR */}
       <div
         style={{

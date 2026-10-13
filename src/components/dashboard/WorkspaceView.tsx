@@ -48,7 +48,7 @@ import { AhspExplorerView } from '../ahsp/AhspExplorerView';
 import { DaftarPekerjaanView } from '../workItems/DaftarPekerjaanView';
 import { QtoCalculatorView } from '../qto/QtoCalculatorView';
 import { QtoRekapVolumeView } from '../qto/QtoRekapVolumeView';
-import { LaporanView } from '../reports/LaporanView';
+import { LaporanMax } from '../reports/LaporanMax';
 import { PengaturanView } from '../settings/PengaturanView';
 import { PricesExplorerView } from '../database/PricesExplorerView';
 import { ResourceLibraryView } from '../resources/ResourceLibraryView';
@@ -86,17 +86,18 @@ import '../../styles/dashboard-refined.css';
 import '../../styles/workspace-mobile-fixes.css';
 import { UnifiedBreadcrumb } from '../navigation/UnifiedBreadcrumb';
 import { TopBar } from '../navigation/TopBar';
-import { TemplateRabCatalogView } from '../templates/TemplateRabCatalogView';
+import { TemplateRabMinimal } from '../templates/TemplateRabMinimal';
 import { HouseTypeCatalogItem } from '../../data/houseTypeCatalog';
 import { RabTemplateService } from '../../services/rabTemplateService';
 import { RabTemplate } from '../../types/rabTemplate';
 import { CreateProjectModal } from '../projects/CreateProjectModal';
-import { TenderDocumentsView } from '../document/TenderDocumentsView';
+import { DokumenMax } from '../document/DokumenMax';
 import { OnboardingTourModal } from './OnboardingTourModal';
+import { DashboardGuideModal, shouldShowDashboardGuide } from './DashboardGuideModal';
 import { Sidebar } from '../layout/Sidebar';
 import { EnterpriseEntryPage } from '../enterprise/EnterpriseEntryPage';
-import { ProjectFinanceView } from '../finance/ProjectFinanceView';
-import { MaterialDatabaseView } from '../materials/MaterialDatabaseView';
+import { KeuanganMax } from '../finance/KeuanganMax';
+import { DatabaseMinimal } from '../materials/DatabaseMinimal';
 
 interface WorkspaceViewProps {
   onBackToLanding?: () => void;
@@ -205,6 +206,10 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
   // single first-run/replayable tutorial. Kept mounted but never auto-opens.
   const [onboardingTourOpen, setOnboardingTourOpen] = useState(false);
 
+  // Panduan langkah pertama di dashboard — muncul otomatis saat pengguna
+  // masuk dashboard dan belum punya proyek sama sekali.
+  const [dashboardGuideOpen, setDashboardGuideOpen] = useState(false);
+
   // Sync activities to localStorage
   useEffect(() => {
     try {
@@ -213,6 +218,17 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
       console.error(e);
     }
   }, [activities]);
+
+  // Panduan langkah pertama: otomatis tampil saat masuk dashboard dan belum
+  // punya proyek. Delay 1,2 detik agar tidak bertumpuk dengan tur selamat
+  // datang di level App (jika sedang tampil di atasnya).
+  useEffect(() => {
+    if (activeMenu !== 'dashboard') return;
+    if (projects.length > 0) return;
+    if (!shouldShowDashboardGuide()) return;
+    const t = setTimeout(() => setDashboardGuideOpen(true), 1200);
+    return () => clearTimeout(t);
+  }, [activeMenu, projects.length]);
 
   // Dynamic calculations (100% genuine - 0 dummy data)
   const totalProjects = projects.length;
@@ -270,7 +286,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
       className="pf-page"
       style={{
         minHeight: '100vh',
-        fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, sans-serif",
+        fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
         color: '#0F172A',
       }}
     >
@@ -283,7 +299,9 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
         />
       )}
 
-      {/* PREMIUM FRAME — Layer 2 (outer dark frame) + Layer 3 (app panel) */}
+      {/* =========================================================================
+          PREMIUM FRAME — Layer 2 (outer dark frame) + Layer 3 (app panel)
+         ========================================================================= */}
       <div className="pf-frame">
         <div className="pf-panel">
       {/* =========================================================================
@@ -328,6 +346,12 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           isNarrowMobile={isNarrowMobile}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          projects={projects}
+          onOpenProject={(projectId) => {
+            setCurrentProjectId(projectId);
+            setActiveMenu('manajemen-proyek', projectId);
+          }}
+          onCreateProject={() => setCreateModalOpen(true)}
           onOpenMobileDrawer={() => setMobileDrawerOpen(true)}
           onNavigate={(menu, tab) => {
             if (tab) {
@@ -439,6 +463,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           <main style={{ padding: '20px 24px', background: '#F2F7FF', minHeight: 'calc(100vh - 64px)' }}>
             <ProjectsView
               projects={projects}
+              activities={activities}
               initialFilter={projectFilter}
               onFilterChange={(f) => setProjectFilter(f)}
               onCreateProject={() => setCreateModalOpen(true)}
@@ -451,7 +476,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             />
           </main>
         ) : (activeMenu === 'daftar-pekerjaan' || activeMenu === 'pekerjaan' || activeMenu === 'qto-daftar') ? (
-          <main style={{ padding: '20px 24px', background: '#F8FAFC', minHeight: 'calc(100vh - 64px)' }}>
+          <main style={{ padding: '20px 24px', background: '#F2F7FF', minHeight: 'calc(100vh - 64px)' }}>
             <DaftarPekerjaanView
               onNavigateToCalculator={(calcId, qtoId) => {
                 setActiveCalcId(calcId || 'BOWPLANK');
@@ -571,8 +596,8 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             />
           </main>
         ) : activeMenu === 'template-rab' ? (
-          <main style={{ padding: '20px 24px', background: '#F8FAFC', minHeight: 'calc(100vh - 64px)' }}>
-            <TemplateRabCatalogView
+          <main style={{ padding: '20px 24px', background: '#F2F7FF', minHeight: 'calc(100vh - 64px)' }}>
+            <TemplateRabMinimal
               currentProject={currentProject}
               projects={projects}
               onNavigateToTab={(tab, projId) => setActiveMenu(tab, projId)}
@@ -642,17 +667,12 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             />
           </main>
         ) : activeMenu === 'dokumen-tender' ? (
-          <main style={{ padding: '20px 24px', background: '#F8FAFC', minHeight: 'calc(100vh - 64px)' }}>
-            <TenderDocumentsView
-              currentProject={currentProject}
-              rabItems={projectRabItems}
-              scheduleTasks={projectScheduleTasks}
-              kurvaSData={projectKurvaSData}
-            />
+          <main style={{ padding: '20px 24px', background: '#F2F7FF', minHeight: 'calc(100vh - 64px)' }}>
+            <DokumenMax projectName={currentProject?.name} />
           </main>
         ) : (activeMenu === 'keuangan-proyek' || activeMenu === 'keuangan' || activeMenu === 'termin' || activeMenu === 'invoice' || activeMenu === 'pemasukan' || activeMenu === 'pengeluaran' || activeMenu === 'cash-flow') ? (
-          <main style={{ padding: '20px 24px', background: '#F8FAFC', minHeight: 'calc(100vh - 64px)' }}>
-            <ProjectFinanceView
+          <main style={{ padding: '20px 24px', background: '#F2F7FF', minHeight: 'calc(100vh - 64px)' }}>
+            <KeuanganMax
               currentProject={currentProject}
               projects={projects}
               rabItems={projectRabItems}
@@ -674,26 +694,26 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           </main>
         ) : (activeMenu === 'laporan' || activeMenu === 'boq' || activeMenu === 'rekapitulasi') ? (
           <main style={{ padding: '20px 24px', background: '#F2F7FF', minHeight: 'calc(100vh - 64px)' }}>
-            <LaporanView projects={projects} rabItems={projectRabItems} onNavigateToTab={(tab) => setActiveMenu(tab)} />
+            <LaporanMax projects={projects} rabItems={projectRabItems} onNavigateToTab={(tab) => setActiveMenu(tab)} />
           </main>
         ) : (activeMenu === 'material' || activeMenu === 'database-material' || activeMenu === 'material-harga' || activeMenu === 'harga') ? (
           <main style={{ padding: 0, minHeight: 'calc(100vh - 64px)' }}>
-            <MaterialDatabaseView initialTab="MATERIALS" onNavigateToTab={(tab) => setActiveMenu(tab)} />
+            <DatabaseMinimal initialTab="MATERIALS" onNavigateToTab={(tab) => setActiveMenu(tab)} />
           </main>
         ) : (activeMenu === 'upah' || activeMenu === 'database-upah') ? (
           <main style={{ padding: 0, minHeight: 'calc(100vh - 64px)' }}>
-            <MaterialDatabaseView initialTab="LABOR" onNavigateToTab={(tab) => setActiveMenu(tab)} />
+            <DatabaseMinimal initialTab="LABOR" onNavigateToTab={(tab) => setActiveMenu(tab)} />
           </main>
         ) : (activeMenu === 'alat' || activeMenu === 'database-alat') ? (
           <main style={{ padding: 0, minHeight: 'calc(100vh - 64px)' }}>
-            <MaterialDatabaseView initialTab="EQUIPMENT" onNavigateToTab={(tab) => setActiveMenu(tab)} />
+            <DatabaseMinimal initialTab="EQUIPMENT" onNavigateToTab={(tab) => setActiveMenu(tab)} />
           </main>
         ) : (activeMenu === 'harga-proyek' || activeMenu === 'project-price') ? (
           <main style={{ padding: 0, minHeight: 'calc(100vh - 64px)' }}>
-            <MaterialDatabaseView initialTab="PROJECT_PRICE" onNavigateToTab={(tab) => setActiveMenu(tab)} />
+            <DatabaseMinimal initialTab="PROJECT_PRICE" onNavigateToTab={(tab) => setActiveMenu(tab)} />
           </main>
         ) : (activeMenu === 'resource-library' || activeMenu === 'suppliers') ? (
-          <main style={{ padding: 0, background: '#F8FAFC', minHeight: 'calc(100vh - 64px)' }}>
+          <main style={{ padding: 0, background: '#F2F7FF', minHeight: 'calc(100vh - 64px)' }}>
             <ResourceLibraryView initialTab="SUPPLIERS" onNavigateToTab={(tab) => setActiveMenu(tab)} />
           </main>
         ) : (activeMenu === 'kurva-s' || activeMenu === 'jadwal') ? (
@@ -702,7 +722,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           </main>
         ) : activeMenu === 'export' ? (
           <main style={{ padding: '20px 24px', background: '#F2F7FF', minHeight: 'calc(100vh - 64px)' }}>
-            <LaporanView projects={projects} rabItems={projectRabItems} onNavigateToTab={(tab) => setActiveMenu(tab)} />
+            <LaporanMax projects={projects} rabItems={projectRabItems} onNavigateToTab={(tab) => setActiveMenu(tab)} />
           </main>
         ) : activeMenu === 'pengaturan' ? (
           <main style={{ padding: '20px 24px', background: '#F2F7FF', minHeight: 'calc(100vh - 64px)' }}>
@@ -713,11 +733,11 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             />
           </main>
         ) : activeMenu === 'subscription' ? (
-          <main style={{ padding: isNarrowMobile ? '16px 14px' : '24px 28px', background: '#F8FAFC', minHeight: 'calc(100vh - 64px)' }}>
+          <main style={{ padding: isNarrowMobile ? '16px 14px' : '24px 28px', background: '#F2F7FF', minHeight: 'calc(100vh - 64px)' }}>
             <PricingSection onSelectPlan={() => setActiveMenu('magic-ai')} />
           </main>
         ) : (
-          <main style={{ padding: isNarrowMobile ? '16px 14px' : '24px 28px', background: '#F8FAFC', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <main style={{ padding: isNarrowMobile ? '16px 14px' : '24px 28px', background: '#F2F7FF', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <DashboardViewSwitcher
               projects={projects}
               onCreateProject={() => setCreateModalOpen(true)}
@@ -740,6 +760,8 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           </main>
         )}
         </div>
+        </div>
+      </div>
       </div>
 
       {/* =========================================================================
@@ -756,6 +778,18 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
         onNavigateToTab={(tab, projId) => setActiveMenu(tab, projId)}
         onOpenMagicAiWithPrompt={(prompt) => {
           setActiveMenu('magic-ai');
+        }}
+      />
+
+      {/* =========================================================================
+          PANDUAN LANGKAH PERTAMA DI DASHBOARD (auto saat belum ada proyek)
+         ========================================================================= */}
+      <DashboardGuideModal
+        open={dashboardGuideOpen}
+        onClose={() => setDashboardGuideOpen(false)}
+        onStartFirstProject={() => {
+          setDashboardGuideOpen(false);
+          setCreateModalOpen(true);
         }}
       />
 
@@ -830,8 +864,10 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
 
 
 
-      {/* EZRAB Floating Launcher (Bottom-Right, safe from mobile bottom nav; hidden in Magic AI for Single-Mascot Rule) */}
-      {activeMenu !== 'magic-ai' && (
+      {/* EZRAB Floating Launcher — hidden in AI menus (Single-Mascot Rule):
+          each AI menu (Chat AI, DED Estimate AI, AI Document, Magic AI) has
+          its own mascot/interface, so the floating assistant stays out. */}
+      {!['magic-ai', 'ai-assistant', 'ezrab-ai', 'ded-ai', 'dokumen-ai'].includes(activeMenu) && (
         <>
           <EzrabCoAssistantLauncher
             isOpen={coAssistantMode !== 'closed' && coAssistantMode !== 'minimized'}
@@ -862,8 +898,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           />
         </>
       )}
-        </div>
-      </div>
     </div>
   );
 };

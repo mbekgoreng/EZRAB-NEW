@@ -363,7 +363,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
   }
 
   return (
-    <div style={{ fontFamily: "'Inter', system-ui", color: '#0F172A', maxWidth: 1200, margin: '0 auto' }}>
+    <div style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif", color: '#0F172A', maxWidth: 1200, margin: '0 auto' }}>
       {/* PROJECT CONTEXT BAR — compact enterprise header */}
       <div
         style={{

@@ -935,7 +935,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
         transition: 'width 0.24s cubic-bezier(0.16, 1, 0.3, 1), height 0.24s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
     >
