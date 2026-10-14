@@ -145,7 +145,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           >
             {headerInfo.title}
           </h1>
-          <p style={{ fontSize: '13px', color: '#8A8A84', margin: 0 }}>
+          <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
             {headerInfo.subtitle}
           </p>
         </div>
@@ -184,7 +184,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               padding: '0 14px',
               borderRadius: 'var(--ez-radius-control)',
               background: 'var(--ez-color-surface)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               color: 'var(--ez-color-primary)',
               fontSize: '14px',
               fontWeight: 700,
@@ -215,7 +215,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           gap: '8px',
           overflowX: 'auto',
           paddingBottom: '2px',
-          borderBottom: '1px solid #EEF1F6',
+          borderBottom: '1px solid var(--ez-color-border-soft)',
           animation: 'ezdb-rise 0.6s 0.08s both',
         }}
       >
@@ -233,7 +233,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 border: 'none',
                 background: 'transparent',
                 borderBottom: isActive ? '3px solid #2563EB' : '3px solid transparent',
-                color: isActive ? 'var(--ez-color-primary)' : '#8A8A84',
+                color: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                 fontSize: '13px',
                 fontWeight: isActive ? 750 : 600,
                 cursor: 'pointer',
@@ -252,7 +252,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   fontWeight: 700,
                   padding: '5px 12px',
                   borderRadius: 'var(--ez-radius-pill)',
-                  background: isActive ? 'var(--ez-pastel-sky)' : '#F1F5F9',
+                  background: isActive ? 'var(--ez-pastel-sky)' : 'var(--ez-color-surface-tertiary)',
                   color: isActive ? '#2456A8' : 'var(--ez-color-text-muted)',
                   whiteSpace: 'nowrap',
                 }}

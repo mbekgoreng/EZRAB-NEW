@@ -116,48 +116,48 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
       >
         {/* KPI 1: Total Draft */}
         <div className="ezdb-anim ez-stat ez-stat-cream" style={{ animation: 'ezdb-rise 0.6s 0.05s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
             {t('proj.draft.kpi1_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {draftProjects.length}{' '}
-            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>{t('proj.draft.kpi1_u')}</span>
+            <span style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.draft.kpi1_u')}</span>
           </div>
-          <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
             {t('proj.draft.kpi1_s')}
           </div>
         </div>
 
         {/* KPI 2: Potensi Nilai Draft */}
         <div className="ezdb-anim ez-stat ez-stat-mint" style={{ animation: 'ezdb-rise 0.6s 0.12s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
             {t('proj.draft.kpi2_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {totalDraftValue === 0 ? 'Rp 0' : formatRupiah(totalDraftValue)}
           </div>
-          <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
             {t('proj.draft.kpi2_s')}
           </div>
         </div>
 
         {/* KPI 3: Draft Siap Diajukan */}
         <div className="ezdb-anim ez-stat ez-stat-sky" style={{ animation: 'ezdb-rise 0.6s 0.19s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
             {t('proj.draft.kpi3_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {draftProjects.filter((p) => getDraftReadiness(p) >= 75).length}{' '}
-            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>{t('proj.draft.kpi3_u')}</span>
+            <span style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.draft.kpi3_u')}</span>
           </div>
-          <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
             {t('proj.draft.kpi3_s')}
           </div>
         </div>
 
         {/* KPI 4: Akselerasi Template Rumah */}
         <div className="ezdb-anim ez-stat ez-stat-peach" style={{ animation: 'ezdb-rise 0.6s 0.26s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
             {t('proj.draft.kpi4_t')}
           </div>
           <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ez-color-text-primary)', lineHeight: 1.4, marginBottom: '10px' }}>
@@ -168,7 +168,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
             style={{
               background: 'var(--ez-color-primary)',
               border: 'none',
-              color: '#FFFFFF',
+              color: 'var(--ez-color-on-primary)',
               borderRadius: 'var(--ez-radius-control)',
               padding: '9px 16px',
               fontSize: '13px',
@@ -187,7 +187,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
         style={{
           background: 'var(--ez-color-surface)',
           borderRadius: 'var(--ez-radius-card)',
-          border: '1px solid #EEF1F6',
+          border: '1px solid var(--ez-color-border-soft)',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           padding: '24px',
           display: 'flex',
@@ -206,7 +206,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
           <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px 0' }}>
             {t('proj.draft.banner_t')}
           </h3>
-          <p style={{ fontSize: '13px', color: '#6B6B64', margin: 0, lineHeight: 1.5 }}>
+          <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', margin: 0, lineHeight: 1.5 }}>
             {t('proj.draft.banner_b')}
           </p>
         </div>
@@ -219,7 +219,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
               padding: '0 18px',
               borderRadius: 'var(--ez-radius-control)',
               background: 'var(--ez-color-primary)',
-              color: '#FFFFFF',
+              color: 'var(--ez-color-on-primary)',
               fontSize: '14px',
               fontWeight: 700,
               border: 'none',
@@ -240,7 +240,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
               padding: '0 16px',
               borderRadius: 'var(--ez-radius-control)',
               background: 'var(--ez-color-surface)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               color: 'var(--ez-color-text-primary)',
               fontSize: '14px',
               fontWeight: 700,
@@ -266,7 +266,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
           background: 'var(--ez-color-surface)',
           padding: '16px 20px',
           borderRadius: 'var(--ez-radius-card)',
-          border: '1px solid #EEF1F6',
+          border: '1px solid var(--ez-color-border-soft)',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           flexWrap: 'wrap',
           gap: '10px',
@@ -274,7 +274,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
         }}
       >
         <div style={{ position: 'relative', width: '100%', maxWidth: '340px' }}>
-          <Search size={14} color="#8A8A84" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+          <Search size={14} color="var(--ez-color-text-faint)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
           <input
             type="text"
             placeholder={t('proj.draft.search_ph')}
@@ -286,8 +286,8 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
               paddingLeft: '34px',
               paddingRight: '12px',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #EEF1F6',
-              background: '#FAFAF8',
+              border: '1px solid var(--ez-color-border-soft)',
+              background: 'var(--ez-color-surface-faint)',
               fontSize: '13px',
               color: 'var(--ez-color-text-primary)',
               outline: 'none',
@@ -295,7 +295,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
           />
         </div>
 
-        <div style={{ fontSize: '12px', color: '#6B6B64', fontWeight: 600 }}>
+        <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
           {t('proj.draft.showing_a')}{' '}<span style={{ color: 'var(--ez-color-text-primary)', fontWeight: 800 }}>{filteredDrafts.length}</span>{' '}{t('proj.draft.showing_b')}
         </div>
       </div>
@@ -307,7 +307,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
           style={{
             background: 'var(--ez-color-surface)',
             borderRadius: 'var(--ez-radius-card)',
-            border: '1px solid #EEF1F6',
+            border: '1px solid var(--ez-color-border-soft)',
             boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
             padding: '48px 24px',
             textAlign: 'center',
@@ -326,7 +326,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
           <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
             {t('proj.draft.empty_t')}
           </h3>
-          <p style={{ fontSize: '13px', color: '#6B6B64', maxWidth: '380px', margin: '0 0 16px 0', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', maxWidth: '380px', margin: '0 0 16px 0', lineHeight: 1.5 }}>
             {t('proj.draft.empty_b')}
           </p>
           <button
@@ -335,7 +335,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
               height: '40px',
               padding: '0 20px',
               background: 'var(--ez-color-primary)',
-              color: '#FFFFFF',
+              color: 'var(--ez-color-on-primary)',
               borderRadius: 'var(--ez-radius-control)',
               border: 'none',
               fontSize: '14px',
@@ -365,7 +365,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                 style={{
                   background: 'var(--ez-color-surface)',
                   borderRadius: 'var(--ez-radius-card)',
-                  border: '1px solid #EEF1F6',
+                  border: '1px solid var(--ez-color-border-soft)',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
                   padding: '22px',
                   display: 'flex',
@@ -395,7 +395,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                       style={{
                         fontSize: '11px',
                         fontWeight: 700,
-                        color: readiness >= 75 ? '#2C6E2C' : '#A8780A',
+                        color: readiness >= 75 ? 'var(--ez-pill-ok-text)' : '#A8780A',
                       }}
                     >
                       {t('proj.draft.readiness')} {readiness}%
@@ -417,8 +417,8 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                     {proj.name}
                   </h4>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6B6B64', marginBottom: '12px' }}>
-                    <MapPin size={12} color="#8A8A84" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--ez-color-text-muted)', marginBottom: '12px' }}>
+                    <MapPin size={12} color="var(--ez-color-text-faint)" />
                     <span>{proj.location || t('proj.draft.loc_default')}</span>
                     <span>•</span>
                     <span>{proj.clientName || proj.client || t('proj.draft.client_default')}</span>
@@ -427,10 +427,10 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                   {/* Checklist Kelengkapan Pra-Konstruksi */}
                   <div
                     style={{
-                      background: '#FAFAF8',
+                      background: 'var(--ez-color-surface-faint)',
                       borderRadius: 'var(--ez-radius-control)',
                       padding: '10px 12px',
-                      border: '1px solid #EEF1F6',
+                      border: '1px solid var(--ez-color-border-soft)',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '6px',
@@ -441,17 +441,17 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                       {t('proj.draft.checklist_t')}
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: proj.location ? '#2C6E2C' : '#8A8A84' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: proj.location ? 'var(--ez-pill-ok-text)' : 'var(--ez-color-text-muted)' }}>
                       {proj.location ? <CheckCircle2 size={13} /> : <Circle size={13} />}
                       <span>{t('proj.draft.check_loc')}</span>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: proj.buildingType ? '#2C6E2C' : '#8A8A84' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: proj.buildingType ? 'var(--ez-pill-ok-text)' : 'var(--ez-color-text-muted)' }}>
                       {proj.buildingType ? <CheckCircle2 size={13} /> : <Circle size={13} />}
                       <span>{t('proj.draft.check_type_a')}{proj.buildingType || t('proj.draft.check_type_none')})</span>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: totalCost > 0 ? '#2C6E2C' : '#8A8A84' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: totalCost > 0 ? 'var(--ez-pill-ok-text)' : 'var(--ez-color-text-muted)' }}>
                       {totalCost > 0 ? <CheckCircle2 size={13} /> : <Circle size={13} />}
                       <span>{t('proj.draft.check_rab_a')}{formatRupiah(totalCost)})</span>
                     </div>
@@ -459,10 +459,10 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                 </div>
 
                 {/* Bottom Action Strip */}
-                <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ borderTop: '1px solid var(--ez-color-border-soft)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
-                      <div style={{ fontSize: '10.5px', color: '#8A8A84' }}>{t('proj.draft.budget_t')}</div>
+                      <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>{t('proj.draft.budget_t')}</div>
                       <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                         {formatRupiah(totalCost)}
                       </div>
@@ -477,7 +477,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                         padding: '0 14px',
                         borderRadius: 'var(--ez-radius-control)',
                         background: '#16A34A',
-                        color: '#FFFFFF',
+                        color: 'var(--ez-color-on-primary)',
                         fontSize: '13px',
                         fontWeight: 700,
                         border: 'none',
@@ -503,7 +503,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                           padding: '0 12px',
                           borderRadius: 'var(--ez-radius-control)',
                           background: 'var(--ez-color-surface)',
-                          border: '1px solid #E2E8F0',
+                          border: '1px solid var(--ez-color-border-line)',
                           fontSize: '12px',
                           fontWeight: 700,
                           color: 'var(--ez-color-text-primary)',
@@ -538,9 +538,9 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                           height: '32px',
                           width: '32px',
                           borderRadius: 'var(--ez-radius-control)',
-                          background: '#FAFAF8',
-                          border: '1px solid #EEF1F6',
-                          color: '#6B6B64',
+                          background: 'var(--ez-color-surface-faint)',
+                          border: '1px solid var(--ez-color-border-soft)',
+                          color: 'var(--ez-color-text-muted)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',

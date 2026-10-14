@@ -1001,7 +1001,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                           alignItems: 'center',
                           padding: '12px 16px',
                           border: `1px solid ${isAlreadyCreated ? '#BBF7D0' : isChecked ? '#BFDBFE' : 'var(--ez-color-border)'}`,
-                          background: isAlreadyCreated ? '#F0FDF4' : isChecked ? '#EFF6FF' : '#fff',
+                          background: isAlreadyCreated ? 'var(--ez-hue-green-bg)' : isChecked ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                           borderRadius: 10,
                         }}
                       >

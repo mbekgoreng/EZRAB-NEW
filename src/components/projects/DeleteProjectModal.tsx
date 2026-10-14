@@ -159,7 +159,7 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
               padding: '14px 16px',
               backgroundColor: 'var(--ez-color-surface-secondary)',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
             }}
           >
             <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -219,7 +219,7 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
                 gap: '6px',
                 padding: '7px 14px',
                 borderRadius: '8px',
-                backgroundColor: downloaded ? '#DCFCE7' : '#FFFFFF',
+                backgroundColor: downloaded ? 'var(--ez-color-success-soft)' : 'var(--ez-color-on-primary)',
                 border: downloaded ? '1px solid #86EFAC' : '1px solid #93C5FD',
                 color: downloaded ? '#15803D' : 'var(--ez-color-primary-hover)',
                 fontSize: '12px',
@@ -242,7 +242,7 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
         <div
           style={{
             padding: '14px 20px',
-            borderTop: '1px solid #F1F5F9',
+            borderTop: '1px solid var(--ez-color-border-soft)',
             backgroundColor: 'var(--ez-color-surface-secondary)',
             display: 'flex',
             alignItems: 'center',
@@ -275,7 +275,7 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
               borderRadius: '8px',
               border: 'none',
               backgroundColor: '#DC2626',
-              color: '#FFFFFF',
+              color: 'var(--ez-color-on-primary)',
               fontSize: '13px',
               fontWeight: 700,
               cursor: isDeleting ? 'not-allowed' : 'pointer',

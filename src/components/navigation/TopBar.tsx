@@ -252,7 +252,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             placeholder={t('nav.search_placeholder')}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          aria-label="Pencarian Global"
+          aria-label={t('nav.search_aria_label')}
           style={{
             width: '100%',
             height: '38px',

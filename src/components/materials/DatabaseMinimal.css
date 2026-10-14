@@ -2,31 +2,31 @@
 @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
 
-.dbm { max-width: 1440px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 22px; padding: 0 0 40px; font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif; color: #141412; }
+.dbm { max-width: 1440px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 22px; padding: 0 0 40px; font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif; color: var(--ez-color-text-primary); }
 .dbm-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 2px; }
 .dbm-head h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.3px; margin: 0; }
-.dbm-head p { color: #8A8A84; font-size: 13px; margin: 4px 0 0 0; }
-.dbm-search { display: flex; align-items: center; gap: 8px; background: #FFFFFF; border: 1px solid #EEF1F6; box-shadow: 0 4px 20px rgba(0,0,0,0.045); border-radius: 12px; padding: 11px 16px; min-width: 260px; }
-.dbm-search-icon { color: #8A8A84; flex-shrink: 0; }
-.dbm-search input { background: none; border: none; outline: none; color: #141412; font-size: 14px; flex: 1; font-family: inherit; }
-.dbm-search input::placeholder { color: #8A8A84; }
+.dbm-head p { color: var(--ez-color-text-muted); font-size: 13px; margin: 4px 0 0 0; }
+.dbm-search { display: flex; align-items: center; gap: 8px; background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); box-shadow: 0 4px 20px rgba(0,0,0,0.045); border-radius: 12px; padding: 11px 16px; min-width: 260px; }
+.dbm-search-icon { color: var(--ez-color-text-muted); flex-shrink: 0; }
+.dbm-search input { background: none; border: none; outline: none; color: var(--ez-color-text-primary); font-size: 14px; flex: 1; font-family: inherit; }
+.dbm-search input::placeholder { color: var(--ez-color-text-muted); }
 .dbm-tabs { display: flex; gap: 10px; }
-.dbm-tab { flex: 1; padding: 14px; border-radius: 12px; border: 1px solid #EEF1F6; background: #FFFFFF; box-shadow: 0 4px 20px rgba(0,0,0,0.045); font-size: 14px; font-weight: 700; cursor: pointer; color: #6B6B64; display: flex; align-items: center; justify-content: center; gap: 8px; transition: .18s; font-family: inherit; }
+.dbm-tab { flex: 1; padding: 14px; border-radius: 12px; border: 1px solid var(--ez-color-border-soft); background: var(--ez-color-surface); box-shadow: 0 4px 20px rgba(0,0,0,0.045); font-size: 14px; font-weight: 700; cursor: pointer; color: var(--ez-color-text-muted); display: flex; align-items: center; justify-content: center; gap: 8px; transition: .18s; font-family: inherit; }
 .dbm-tab:hover { border-color: #2563EB; color: #2563EB; }
 .dbm-tab.active { background: #2563EB; border-color: #2563EB; color: #fff; box-shadow: 0 4px 14px rgba(37,99,235,0.28); }
-.dbm-count { background: #E3EEFB; color: #2456A8; font-size: 11px; padding: 2px 9px; border-radius: 999px; font-weight: 800; }
+.dbm-count { background: var(--ez-pastel-sky); color: var(--ez-pill-run-text); font-size: 11px; padding: 2px 9px; border-radius: 999px; font-weight: 800; }
 .dbm-tab.active .dbm-count { background: rgba(255,255,255,0.25); color: #fff; }
-.dbm-table-wrap { background: #FFFFFF; border: 1px solid #EEF1F6; border-radius: 22px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
+.dbm-table-wrap { background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: 22px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
 .dbm-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.dbm-table th { text-align: left; padding: 10px 12px; color: #8A8A84; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; border-bottom: 1px solid #F0EFE9; }
-.dbm-table td { padding: 14px 12px; border-bottom: 1px solid #F5F4EF; color: #141412; }
+.dbm-table th { text-align: left; padding: 10px 12px; color: var(--ez-color-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; border-bottom: 1px solid var(--ez-color-border-soft); }
+.dbm-table td { padding: 14px 12px; border-bottom: 1px solid var(--ez-color-border-soft); color: var(--ez-color-text-primary); }
 .dbm-table tr:last-child td { border: none; }
 .dbm-table tbody tr { transition: background-color .12s ease; }
-.dbm-table tbody tr:hover { background: #FAFAF8; }
-.dbm-spec { font-size: 11.5px; color: #8A8A84; margin-top: 2px; }
-.dbm-unit { background: #F5F4EF; padding: 4px 11px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #6B6B64; white-space: nowrap; }
-.dbm-price { color: #141412; font-size: 14px; }
-.dbm-empty { text-align: center; padding: 50px; color: #8A8A84; font-size: 13px; }
-.dbm-note { display: flex; align-items: flex-start; gap: 10px; margin: 0; font-size: 12.5px; line-height: 1.6; color: #6B6B64; background: #FFFFFF; border: 1px solid #EEF1F6; box-shadow: 0 4px 20px rgba(0,0,0,0.045); padding: 14px 16px; border-radius: 22px; }
+.dbm-table tbody tr:hover { background: var(--ez-color-surface-faint); }
+.dbm-spec { font-size: 11.5px; color: var(--ez-color-text-muted); margin-top: 2px; }
+.dbm-unit { background: var(--ez-color-surface-tertiary); padding: 4px 11px; border-radius: 999px; font-size: 12px; font-weight: 700; color: var(--ez-color-text-muted); white-space: nowrap; }
+.dbm-price { color: var(--ez-color-text-primary); font-size: 14px; }
+.dbm-empty { text-align: center; padding: 50px; color: var(--ez-color-text-muted); font-size: 13px; }
+.dbm-note { display: flex; align-items: flex-start; gap: 10px; margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--ez-color-text-muted); background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); box-shadow: 0 4px 20px rgba(0,0,0,0.045); padding: 14px 16px; border-radius: 22px; }
 .dbm-note svg { color: #2563EB; flex-shrink: 0; margin-top: 1px; }
 @media (max-width: 640px) { .dbm-tabs { flex-direction: column; } .dbm-search { min-width: 100%; } }

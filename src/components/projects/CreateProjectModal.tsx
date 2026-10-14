@@ -180,7 +180,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               <button
                 onClick={() => setActiveStep('select')}
                 style={{
-                  background: '#F1F5F9',
+                  background: 'var(--ez-color-surface-tertiary)',
                   border: 'none',
                   width: '32px',
                   height: '32px',
@@ -291,7 +291,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               onClick={() => setActiveStep('manual')}
               style={{
                 background: 'var(--ez-color-surface)',
-                border: '1.5px solid #E2E8F0',
+                border: '1.5px solid var(--ez-color-border-line)',
                 borderRadius: 'var(--ez-radius-control)',
                 padding: '16px',
                 cursor: 'pointer',
@@ -326,7 +326,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   >
                     <FileEdit size={19} />
                   </div>
-                  <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--ez-color-surface-secondary)', color: 'var(--ez-color-text-muted)', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', border: '1px solid #E2E8F0' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--ez-color-surface-secondary)', color: 'var(--ez-color-text-muted)', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', border: '1px solid var(--ez-color-border-line)' }}>
                     {t('proj.create.card2_tag')}
                   </span>
                 </div>
@@ -348,7 +348,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               onClick={handleVolumeCalcPathway}
               style={{
                 background: 'var(--ez-color-surface)',
-                border: '1.5px solid #E2E8F0',
+                border: '1.5px solid var(--ez-color-border-line)',
                 borderRadius: 'var(--ez-radius-control)',
                 padding: '16px',
                 cursor: 'pointer',
@@ -383,7 +383,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   >
                     <Calculator size={19} />
                   </div>
-                  <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--ez-color-surface-secondary)', color: 'var(--ez-color-text-muted)', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', border: '1px solid #E2E8F0' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--ez-color-surface-secondary)', color: 'var(--ez-color-text-muted)', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', border: '1px solid var(--ez-color-border-line)' }}>
                     {t('proj.create.card3_tag')}
                   </span>
                 </div>
@@ -405,7 +405,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               onClick={handleTemplatePathway}
               style={{
                 background: 'var(--ez-color-surface)',
-                border: '1.5px solid #E2E8F0',
+                border: '1.5px solid var(--ez-color-border-line)',
                 borderRadius: 'var(--ez-radius-control)',
                 padding: '16px',
                 cursor: 'pointer',
@@ -440,7 +440,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   >
                     <Layers size={19} />
                   </div>
-                  <span style={{ fontSize: '10px', fontWeight: 700, background: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--ez-color-success-soft)', color: '#15803D', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)' }}>
                     {t('proj.create.card4_tag')}
                   </span>
                 </div>
@@ -633,7 +633,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 style={{
                   padding: '9px 16px',
                   borderRadius: '8px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   background: 'var(--ez-color-surface)',
                   color: 'var(--ez-color-text-muted)',
                   fontSize: '13px',
@@ -669,7 +669,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
            ========================================================================= */}
         {activeStep === 'magic_ai' && (
           <form onSubmit={handleMagicAiSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+            <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#2456A8', marginBottom: '4px' }}>
                 <Sparkles size={14} />
                 <span>{t('proj.create.ai_fmt')}</span>
@@ -710,7 +710,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 style={{
                   padding: '9px 16px',
                   borderRadius: '8px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   background: 'var(--ez-color-surface)',
                   color: 'var(--ez-color-text-muted)',
                   fontSize: '13px',

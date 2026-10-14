@@ -122,28 +122,28 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
       >
         {/* KPI 1: Proyek Aktif */}
         <div className="ezdb-anim ez-stat ez-stat-sky" style={{ animation: 'ezdb-rise 0.6s 0.05s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
             {t('proj.active.kpi1_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {inProgressProjects.length}{' '}
-            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi1_u')}</span>
+            <span style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi1_u')}</span>
           </div>
-          <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
             {formatRupiah(totalActiveValue)}
           </div>
         </div>
 
         {/* KPI 2: On Schedule */}
         <div className="ezdb-anim ez-stat ez-stat-mint" style={{ animation: 'ezdb-rise 0.6s 0.12s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
             {t('proj.active.kpi2_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {onTrackCount}{' '}
-            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi2_u')}</span>
+            <span style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi2_u')}</span>
           </div>
-          <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
             {t('proj.active.kpi2_s')}
           </div>
         </div>
@@ -156,12 +156,12 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
             background: '#FCE9E9',
           }}
         >
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
             {t('proj.active.kpi3_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#B54747' }}>
             {behindCount}{' '}
-            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi3_u')}</span>
+            <span style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi3_u')}</span>
           </div>
           <div style={{ fontSize: '12px', color: '#B54747', marginTop: '6px' }}>
             {t('proj.active.kpi3_s')}
@@ -170,7 +170,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
 
         {/* KPI 4: Rata-rata Progres Realisasi */}
         <div className="ezdb-anim ez-stat ez-stat-cream" style={{ animation: 'ezdb-rise 0.6s 0.26s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
             {t('proj.active.kpi4_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
@@ -189,7 +189,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
           background: 'var(--ez-color-surface)',
           padding: '16px 20px',
           borderRadius: 'var(--ez-radius-card)',
-          border: '1px solid #EEF1F6',
+          border: '1px solid var(--ez-color-border-soft)',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           alignItems: 'center',
@@ -201,7 +201,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '240px', flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', width: '100%', maxWidth: '320px' }}>
-            <Search size={14} color="#8A8A84" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+            <Search size={14} color="var(--ez-color-text-faint)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
             <input
               type="text"
               placeholder={t('proj.active.search_ph')}
@@ -213,8 +213,8 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                 paddingLeft: '34px',
                 paddingRight: '12px',
                 borderRadius: 'var(--ez-radius-control)',
-                border: '1px solid #EEF1F6',
-                background: '#FAFAF8',
+                border: '1px solid var(--ez-color-border-soft)',
+                background: 'var(--ez-color-surface-faint)',
                 fontSize: '13px',
                 color: 'var(--ez-color-text-primary)',
                 outline: 'none',
@@ -232,8 +232,8 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                 borderRadius: 'var(--ez-radius-pill)',
                 fontSize: '12px',
                 fontWeight: statusSubFilter === 'all' ? 700 : 600,
-                background: statusSubFilter === 'all' ? 'var(--ez-pastel-sky)' : '#FAFAF8',
-                color: statusSubFilter === 'all' ? '#2456A8' : '#6B6B64',
+                background: statusSubFilter === 'all' ? 'var(--ez-pastel-sky)' : 'var(--ez-color-surface-faint)',
+                color: statusSubFilter === 'all' ? '#2456A8' : 'var(--ez-color-text-muted)',
                 border: 'none',
                 cursor: 'pointer',
               }}
@@ -248,8 +248,8 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                 borderRadius: 'var(--ez-radius-pill)',
                 fontSize: '12px',
                 fontWeight: statusSubFilter === 'on_track' ? 700 : 600,
-                background: statusSubFilter === 'on_track' ? 'var(--ez-pastel-mint)' : '#FAFAF8',
-                color: statusSubFilter === 'on_track' ? '#2C6E2C' : '#6B6B64',
+                background: statusSubFilter === 'on_track' ? 'var(--ez-pastel-mint)' : 'var(--ez-color-surface-faint)',
+                color: statusSubFilter === 'on_track' ? 'var(--ez-pill-ok-text)' : 'var(--ez-color-text-muted)',
                 border: 'none',
                 cursor: 'pointer',
               }}
@@ -264,8 +264,8 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                 borderRadius: 'var(--ez-radius-pill)',
                 fontSize: '12px',
                 fontWeight: statusSubFilter === 'behind' ? 700 : 600,
-                background: statusSubFilter === 'behind' ? '#FCE9E9' : '#FAFAF8',
-                color: statusSubFilter === 'behind' ? '#B54747' : '#6B6B64',
+                background: statusSubFilter === 'behind' ? '#FCE9E9' : 'var(--ez-color-surface-faint)',
+                color: statusSubFilter === 'behind' ? '#B54747' : 'var(--ez-color-text-muted)',
                 border: 'none',
                 cursor: 'pointer',
               }}
@@ -282,7 +282,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
             padding: '0 16px',
             borderRadius: 'var(--ez-radius-control)',
             background: 'var(--ez-color-primary)',
-            color: '#FFFFFF',
+            color: 'var(--ez-color-on-primary)',
             fontSize: '13px',
             fontWeight: 700,
             border: 'none',
@@ -305,7 +305,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
           style={{
             background: 'var(--ez-color-surface)',
             borderRadius: 'var(--ez-radius-card)',
-            border: '1px solid #EEF1F6',
+            border: '1px solid var(--ez-color-border-soft)',
             boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
             padding: '48px 24px',
             textAlign: 'center',
@@ -334,7 +334,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
           <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
             {t('proj.active.empty_t')}
           </h3>
-          <p style={{ fontSize: '13px', color: '#6B6B64', maxWidth: '380px', margin: '0 0 16px 0', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', maxWidth: '380px', margin: '0 0 16px 0', lineHeight: 1.5 }}>
             {t('proj.active.empty_b')}
           </p>
           <button
@@ -343,7 +343,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
               height: '40px',
               padding: '0 20px',
               background: 'var(--ez-color-primary)',
-              color: '#FFFFFF',
+              color: 'var(--ez-color-on-primary)',
               borderRadius: 'var(--ez-radius-control)',
               border: 'none',
               fontSize: '14px',
@@ -373,7 +373,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                 style={{
                   background: 'var(--ez-color-surface)',
                   borderRadius: 'var(--ez-radius-card)',
-                  border: '1px solid #EEF1F6',
+                  border: '1px solid var(--ez-color-border-soft)',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
                   padding: '22px',
                   display: 'flex',
@@ -407,7 +407,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                         padding: '5px 12px',
                         borderRadius: 'var(--ez-radius-pill)',
                         background: isAhead ? 'var(--ez-pastel-mint)' : '#FCE9E9',
-                        color: isAhead ? '#2C6E2C' : '#B54747',
+                        color: isAhead ? 'var(--ez-pill-ok-text)' : '#B54747',
                         whiteSpace: 'nowrap',
                       }}
                     >
@@ -430,8 +430,8 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                     {proj.name}
                   </h4>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6B6B64', marginBottom: '14px' }}>
-                    <MapPin size={12} color="#8A8A84" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--ez-color-text-muted)', marginBottom: '14px' }}>
+                    <MapPin size={12} color="var(--ez-color-text-faint)" />
                     <span>{proj.location || t('proj.active.loc_default')}</span>
                     <span>•</span>
                     <span>{proj.clientName || proj.client || t('proj.active.client_default')}</span>
@@ -440,17 +440,17 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                   {/* Dual Kurva S Progress Comparison Box */}
                   <div
                     style={{
-                      background: '#FAFAF8',
+                      background: 'var(--ez-color-surface-faint)',
                       borderRadius: 'var(--ez-radius-control)',
                       padding: '12px',
-                      border: '1px solid #EEF1F6',
+                      border: '1px solid var(--ez-color-border-soft)',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '8px',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
-                      <span style={{ fontWeight: 600, color: '#6B6B64' }}>{t('proj.active.actual_t')}</span>
+                      <span style={{ fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>{t('proj.active.actual_t')}</span>
                       <span style={{ fontWeight: 800, color: 'var(--ez-color-primary)', fontSize: '14px' }}>{progress}%</span>
                     </div>
 
@@ -471,9 +471,9 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                       />
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: '#6B6B64' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
                       <span>{t('proj.active.planned_t')}<strong>{planned}%</strong></span>
-                      <span style={{ fontWeight: 700, color: isAhead ? '#2C6E2C' : '#B54747' }}>
+                      <span style={{ fontWeight: 700, color: isAhead ? 'var(--ez-pill-ok-text)' : '#B54747' }}>
                         {t('proj.active.dev_t')}{deviation >= 0 ? `+${deviation}%` : `${deviation}%`}
                       </span>
                     </div>
@@ -507,13 +507,13 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', marginTop: '2px' }}>
                         <button
                           onClick={() => setEditingProgressProjId(null)}
-                          style={{ height: '30px', padding: '0 12px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-surface)', border: '1px solid #E2E8F0', color: 'var(--ez-color-text-primary)', cursor: 'pointer' }}
+                          style={{ height: '30px', padding: '0 12px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-primary)', cursor: 'pointer' }}
                         >
                           {t('proj.active.cancel')}
                         </button>
                         <button
                           onClick={() => handleSaveProgress(proj.id)}
-                          style={{ height: '30px', padding: '0 12px', fontSize: '12px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-primary)', color: '#FFFFFF', border: 'none', fontWeight: 700, cursor: 'pointer' }}
+                          style={{ height: '30px', padding: '0 12px', fontSize: '12px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-primary)', color: 'var(--ez-color-on-primary)', border: 'none', fontWeight: 700, cursor: 'pointer' }}
                         >
                           {t('proj.active.save')}
                         </button>
@@ -523,10 +523,10 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                 </div>
 
                 {/* Bottom Strip: Value, S-Curve Shortcut, & Mark Complete */}
-                <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ borderTop: '1px solid var(--ez-color-border-soft)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
-                      <div style={{ fontSize: '10.5px', color: '#8A8A84' }}>{t('proj.active.value_t')}</div>
+                      <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>{t('proj.active.value_t')}</div>
                       <div style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                         {formatRupiah(totalCost)}
                       </div>
@@ -539,7 +539,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                         padding: '0 12px',
                         borderRadius: 'var(--ez-radius-control)',
                         background: 'var(--ez-color-surface)',
-                        border: '1px solid #E2E8F0',
+                        border: '1px solid var(--ez-color-border-line)',
                         fontSize: '12px',
                         fontWeight: 700,
                         color: 'var(--ez-color-text-primary)',
@@ -585,7 +585,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                         height: '36px',
                         borderRadius: 'var(--ez-radius-control)',
                         background: 'var(--ez-color-primary)',
-                        color: '#FFFFFF',
+                        color: 'var(--ez-color-on-primary)',
                         fontSize: '12px',
                         fontWeight: 700,
                         border: 'none',
@@ -607,7 +607,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                         borderRadius: 'var(--ez-radius-control)',
                         background: 'var(--ez-pastel-mint)',
                         border: 'none',
-                        color: '#2C6E2C',
+                        color: 'var(--ez-pill-ok-text)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',

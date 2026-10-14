@@ -233,7 +233,7 @@ img, svg {
 
 /* Cards */
 .ezrab-card {
-  background: #ffffff;
+  background: var(--ez-color-surface);
   border: 1px solid var(--ezrab-card-border);
   border-radius: 14px;
   box-shadow: var(--ezrab-shadow-sm);
@@ -249,7 +249,7 @@ img, svg {
 .ezrab-table-wrapper {
   width: 100%;
   overflow-x: auto;
-  background: #ffffff;
+  background: var(--ez-color-surface);
   border-radius: 12px;
   border: 1px solid var(--ezrab-border);
   box-shadow: var(--ezrab-shadow-sm);
@@ -294,7 +294,7 @@ img, svg {
 .ezrab-input {
   height: 38px;
   padding: 0 12px;
-  background: #ffffff;
+  background: var(--ez-color-surface);
   border: 1px solid var(--ezrab-border);
   border-radius: 8px;
   font-size: 13px;
@@ -319,7 +319,7 @@ img, svg {
   padding: 48px 24px;
   border-radius: 16px;
   border: 1px dashed var(--ezrab-border-strong);
-  background: #ffffff;
+  background: var(--ez-color-surface);
 }
 
 .ezrab-empty-state-icon {
@@ -372,7 +372,7 @@ img, svg {
 }
 
 .ezrab-tab-item.is-active {
-  background: #ffffff;
+  background: var(--ez-color-surface);
   color: var(--ezrab-blue);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
@@ -503,7 +503,7 @@ img, svg {
   left: 0;
   bottom: 0;
   width: min(84vw, 320px);
-  background: #ffffff;
+  background: var(--ez-color-surface);
   z-index: 9995;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
   display: flex;
@@ -582,7 +582,7 @@ img, svg {
   left: 0;
   right: 0;
   bottom: 0;
-  background: #ffffff;
+  background: var(--ez-color-surface);
   border-radius: 20px 20px 0 0;
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
   z-index: 10000;
@@ -654,7 +654,7 @@ img, svg {
 
 /* Sidebar Container (Full-height sticky on desktop, reaching bottom of page) */
 .ezrab-workstation-sidebar {
-  background: #ffffff;
+  background: var(--ez-color-surface);
   border-radius: 12px;
   border: 1px solid #E2E8F0;
   padding: 14px 14px 10px;
@@ -693,7 +693,7 @@ img, svg {
   flex-shrink: 0;
   border: 1px solid #E2E8F0;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--ez-color-surface);
   overflow: hidden;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -728,7 +728,7 @@ img, svg {
   padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid #E2E8F0;
-  background: #ffffff;
+  background: var(--ez-color-surface);
   cursor: pointer;
   transition: all 0.12s ease;
   user-select: none;

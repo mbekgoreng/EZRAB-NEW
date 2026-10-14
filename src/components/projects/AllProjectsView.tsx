@@ -52,10 +52,10 @@ const getStatusKey = (p: Project): StatusKey => {
 const getStatusMeta = (
   t: (key: string) => string,
 ): Record<StatusKey, { label: string; bg: string; color: string }> => ({
-  berjalan: { label: t('proj.all.st_running'), bg: 'var(--ez-pastel-sky)', color: '#2456A8' },
-  draft: { label: t('proj.all.st_draft'), bg: 'var(--ez-pastel-cream)', color: '#A8780A' },
-  selesai: { label: t('proj.all.st_done'), bg: 'var(--ez-pastel-mint)', color: '#2C6E2C' },
-  arsip: { label: t('proj.all.st_archived'), bg: '#F1F5F9', color: 'var(--ez-color-text-muted)' },
+  berjalan: { label: t('proj.all.st_running'), bg: 'var(--ez-pastel-sky)', color: 'var(--ez-pill-run-text)' },
+  draft: { label: t('proj.all.st_draft'), bg: 'var(--ez-pastel-cream)', color: 'var(--ez-pill-wait-text)' },
+  selesai: { label: t('proj.all.st_done'), bg: 'var(--ez-pastel-mint)', color: 'var(--ez-pill-ok-text)' },
+  arsip: { label: t('proj.all.st_archived'), bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-muted)' },
 });
 
 const getProgress = (p: Project): number => {
@@ -120,7 +120,7 @@ const formatDate = (d?: string): string => {
 const cardStyle: React.CSSProperties = {
   background: 'var(--ez-color-surface)',
   borderRadius: 'var(--ez-radius-card)',
-  border: '1px solid #EEF1F6',
+  border: '1px solid var(--ez-color-border-soft)',
   padding: 24,
   boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
 };
@@ -133,13 +133,13 @@ const StatCard: React.FC<{
   subColor?: string;
   onClick?: () => void;
   delay?: string;
-}> = ({ bgClass, label, value, sub, subColor = '#6B6B64', onClick, delay = '0s' }) => (
+}> = ({ bgClass, label, value, sub, subColor = 'var(--ez-color-text-muted)', onClick, delay = '0s' }) => (
   <div
     className={`ezdb-anim ez-stat ${bgClass}`}
     style={{ cursor: onClick ? 'pointer' : 'default', animation: `ezdb-rise 0.6s ${delay} both` }}
     onClick={onClick}
   >
-    <div style={{ fontSize: 12, fontWeight: 600, color: '#6B6B64', marginBottom: 8 }}>{label}</div>
+    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: 8 }}>{label}</div>
     <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
       {value}
     </div>
@@ -158,7 +158,7 @@ const Donut: React.FC<{ segments: Array<{ value: number; color: string; label: s
     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
       <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#F1F5F9" strokeWidth={stroke} />
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--ez-color-surface-tertiary)" strokeWidth={stroke} />
           {segments.map((s, i) => {
             if (total === 0 || s.value === 0) return null;
             const frac = s.value / total;
@@ -183,14 +183,14 @@ const Donut: React.FC<{ segments: Array<{ value: number; color: string; label: s
           }}
         >
           <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--ez-color-text-primary)', lineHeight: 1 }}>{total}</span>
-          <span style={{ fontSize: 11, color: '#8A8A84' }}>{centerLabel}</span>
+          <span style={{ fontSize: 11, color: 'var(--ez-color-text-muted)' }}>{centerLabel}</span>
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {segments.map((s, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
             <span style={{ width: 9, height: 9, borderRadius: 3, background: s.color, flexShrink: 0 }} />
-            <span style={{ color: '#6B6B64', fontWeight: 500 }}>{s.label}</span>
+            <span style={{ color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>{s.label}</span>
             <span style={{ color: 'var(--ez-color-text-primary)', fontWeight: 700, marginLeft: 'auto', paddingLeft: 12 }}>{s.value}</span>
           </div>
         ))}
@@ -354,7 +354,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
           bgClass="ez-stat-sky"
           label={t('proj.all.stat_attention')} value={String(overdueList.length)}
           sub={overdueList.length > 0 ? t('proj.all.stat_attention_sub') : t('proj.all.stat_attention_ok')}
-          subColor={overdueList.length > 0 ? '#B54747' : '#6B6B64'} delay="0.26s"
+          subColor={overdueList.length > 0 ? '#B54747' : 'var(--ez-color-text-muted)'} delay="0.26s"
         />
       </div>
 
@@ -366,16 +366,16 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
           sub={totalProjects > 0 ? `${t('proj.all.stat_avg_sub_a')} ${totalProjects} ${t('proj.all.stat_avg_sub_b')}` : t('proj.all.stat_avg_empty')} delay="0.3s"
         />
         <div className="ezdb-anim" style={{ ...cardStyle, animation: 'ezdb-rise 0.6s 0.34s both' }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#6B6B64', marginBottom: 8 }}>{t('proj.all.progress_title')}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: 8 }}>{t('proj.all.progress_title')}</div>
           <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--ez-color-text-primary)', letterSpacing: '-1px' }}>
-            {avgProgress}%{avgPlanned != null && <span style={{ color: '#8A8A84', fontWeight: 600 }}> / {avgPlanned}%</span>}
+            {avgProgress}%{avgPlanned != null && <span style={{ color: 'var(--ez-color-text-muted)', fontWeight: 600 }}> / {avgPlanned}%</span>}
           </div>
-          <div style={{ fontSize: 12, color: avgPlanned != null && avgProgress < avgPlanned ? '#B54747' : '#6B6B64', marginTop: 6 }}>
+          <div style={{ fontSize: 12, color: avgPlanned != null && avgProgress < avgPlanned ? '#B54747' : 'var(--ez-color-text-muted)', marginTop: 6 }}>
             {avgPlanned != null
               ? `${t('proj.all.progress_behind_a')} ${avgProgress - avgPlanned >= 0 ? '+' : ''}${avgProgress - avgPlanned}% ${t('proj.all.progress_behind_b')}`
               : t('proj.all.progress_avg')}
           </div>
-          <div style={{ width: '100%', height: 6, background: '#F1F5F9', borderRadius: 'var(--ez-radius-pill)', overflow: 'hidden', marginTop: 10 }}>
+          <div style={{ width: '100%', height: 6, background: 'var(--ez-color-surface-tertiary)', borderRadius: 'var(--ez-radius-pill)', overflow: 'hidden', marginTop: 10 }}>
             <div style={{ width: `${Math.min(100, avgProgress)}%`, height: '100%', background: 'var(--ez-color-primary)', borderRadius: 'var(--ez-radius-pill)' }} />
           </div>
         </div>
@@ -386,7 +386,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
         />
         <div className="ezdb-anim" style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: 4, animation: 'ezdb-rise 0.6s 0.42s both' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: '#6B6B64' }}>{t('proj.all.donut_title')}</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>{t('proj.all.donut_title')}</span>
           </div>
           <Donut
             centerLabel={t('proj.all.donut_center')}
@@ -420,7 +420,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
             {/* search + filter + sort */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-                <Search size={15} color="#8A8A84" style={{ position: 'absolute', left: 11, top: 12 }} />
+                <Search size={15} color="var(--ez-color-text-faint)" style={{ position: 'absolute', left: 11, top: 12 }} />
                 <input
                   type="text"
                   placeholder={t('proj.all.search_ph')}
@@ -428,7 +428,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                   onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
                   style={{
                     width: '100%', height: 38, paddingLeft: 34, paddingRight: 12,
-                    borderRadius: 'var(--ez-radius-control)', border: '1px solid #EEF1F6', background: '#FAFAF8',
+                    borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-color-border-soft)', background: 'var(--ez-color-surface-faint)',
                     fontSize: 13, color: 'var(--ez-color-text-primary)', outline: 'none', boxSizing: 'border-box',
                   }}
                 />
@@ -437,7 +437,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                 onClick={() => setShowFilters(!showFilters)}
                 style={{
                   height: 38, padding: '0 14px', borderRadius: 'var(--ez-radius-control)', fontSize: 13, fontWeight: 700,
-                  background: showFilters ? 'var(--ez-pastel-sky)' : '#FFFFFF', color: showFilters ? '#2456A8' : '#6B6B64',
+                  background: showFilters ? 'var(--ez-pastel-sky)' : 'var(--ez-color-surface)', color: showFilters ? 'var(--ez-pill-run-text)' : 'var(--ez-color-text-muted)',
                   border: `1px solid ${showFilters ? 'var(--ez-pastel-sky)' : 'var(--ez-color-border)'}`, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', gap: 7,
                 }}
@@ -449,7 +449,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                 style={{
                   height: 38, padding: '0 10px', borderRadius: 'var(--ez-radius-control)', fontSize: 13, fontWeight: 600,
-                  background: 'var(--ez-color-surface)', color: '#6B6B64', border: '1px solid #E2E8F0', cursor: 'pointer',
+                  background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-muted)', border: '1px solid var(--ez-color-border-line)', cursor: 'pointer',
                 }}
               >
                 <option value="terbaru">{t('proj.all.sort_newest')}</option>
@@ -465,7 +465,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                 <select
                   value={clientFilter}
                   onChange={(e) => { setClientFilter(e.target.value); setPage(0); }}
-                  style={{ height: 36, padding: '0 10px', borderRadius: 'var(--ez-radius-control)', fontSize: 12, border: '1px solid #E2E8F0', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)' }}
+                  style={{ height: 36, padding: '0 10px', borderRadius: 'var(--ez-radius-control)', fontSize: 12, border: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)' }}
                 >
                   <option value="all">{t('proj.all.opt_all_clients')}</option>
                   {clients.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -473,7 +473,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                 <select
                   value={locationFilter}
                   onChange={(e) => { setLocationFilter(e.target.value); setPage(0); }}
-                  style={{ height: 36, padding: '0 10px', borderRadius: 'var(--ez-radius-control)', fontSize: 12, border: '1px solid #E2E8F0', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)' }}
+                  style={{ height: 36, padding: '0 10px', borderRadius: 'var(--ez-radius-control)', fontSize: 12, border: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)' }}
                 >
                   <option value="all">{t('proj.all.opt_all_locations')}</option>
                   {locations.map((l) => <option key={l} value={l}>{l}</option>)}
@@ -491,7 +491,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                     onClick={() => { setStatusFilter(t.id); setPage(0); }}
                     style={{
                       height: 32, padding: '0 14px', borderRadius: 'var(--ez-radius-pill)', fontSize: 12, fontWeight: active ? 700 : 600,
-                      background: active ? 'var(--ez-color-primary)' : '#FAFAF8', color: active ? '#fff' : '#6B6B64',
+                      background: active ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-faint)', color: active ? 'var(--ez-color-on-primary)' : 'var(--ez-color-text-muted)',
                       border: 'none', cursor: 'pointer',
                     }}
                   >
@@ -511,12 +511,12 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                 display: 'flex', alignItems: 'center', gap: 10, fontSize: 13,
               }}
             >
-              <span style={{ fontWeight: 700, color: '#2456A8' }}>{selectedIds.size} {t('proj.all.bulk_selected')}</span>
+              <span style={{ fontWeight: 700, color: 'var(--ez-pill-run-text)' }}>{selectedIds.size} {t('proj.all.bulk_selected')}</span>
               <button
                 onClick={handleBulkDelete}
                 style={{
                   marginLeft: 'auto', height: 32, padding: '0 14px', borderRadius: 'var(--ez-radius-control)',
-                  background: '#B54747', color: '#fff', fontSize: 12, fontWeight: 700,
+                  background: '#B54747', color: 'var(--ez-color-on-primary)', fontSize: 12, fontWeight: 700,
                   border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
                 }}
               >
@@ -524,7 +524,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
               </button>
               <button
                 onClick={() => setSelectedIds(new Set())}
-                style={{ background: 'none', border: 'none', color: '#6B6B64', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}
+                style={{ background: 'none', border: 'none', color: 'var(--ez-color-text-muted)', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}
               >
                 {t('proj.all.bulk_cancel')}
               </button>
@@ -536,12 +536,12 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
             <div style={{ padding: '40px 24px', textAlign: 'center' }}>
               <img src={emptyBlueprintImg} alt={t('proj.all.empty_alt')} style={{ width: 150, opacity: 0.85, marginBottom: 12 }} />
               <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--ez-color-text-primary)', marginBottom: 4 }}>{t('proj.all.empty_title')}</div>
-              <div style={{ fontSize: 13, color: '#6B6B64', marginBottom: 14 }}>
+              <div style={{ fontSize: 13, color: 'var(--ez-color-text-muted)', marginBottom: 14 }}>
                 {searchQuery ? `${t('proj.all.empty_search_a')}${searchQuery}${t('proj.all.empty_search_b')}` : t('proj.all.empty_default')}
               </div>
               <button
                 onClick={onCreateProject}
-                style={{ height: '40px', padding: '0 20px', background: 'var(--ez-color-primary)', color: '#fff', borderRadius: 'var(--ez-radius-control)', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                style={{ height: '40px', padding: '0 20px', background: 'var(--ez-color-primary)', color: 'var(--ez-color-on-primary)', borderRadius: 'var(--ez-radius-control)', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
               >
                 {t('proj.all.empty_cta')}
               </button>
@@ -551,7 +551,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', minWidth: 880, borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
                   <thead>
-                    <tr style={{ background: '#FAFAF8', borderTop: '1px solid #F1F5F9', borderBottom: '1px solid #EEF1F6' }}>
+                    <tr style={{ background: 'var(--ez-color-surface-faint)', borderTop: '1px solid var(--ez-color-border-soft)', borderBottom: '1px solid var(--ez-color-border-soft)' }}>
                       <th style={{ padding: '10px 8px 10px 24px', width: 36 }}>
                         <input
                           type="checkbox"
@@ -564,9 +564,9 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                         t('proj.all.th_no'), t('proj.all.th_name'), t('proj.all.th_client'), t('proj.all.th_location'),
                         t('proj.all.th_value'), t('proj.all.th_progress'), t('proj.all.th_status'), t('proj.all.th_due'),
                       ].map((h) => (
-                        <th key={h} style={{ padding: '10px 10px', fontSize: 11, fontWeight: 700, color: '#8A8A84', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
+                        <th key={h} style={{ padding: '10px 10px', fontSize: 11, fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
-                      <th style={{ padding: '10px 24px 10px 10px', fontSize: 11, fontWeight: 700, color: '#8A8A84', textAlign: 'right' }}>{t('proj.all.th_action')}</th>
+                      <th style={{ padding: '10px 24px 10px 10px', fontSize: 11, fontWeight: 700, color: 'var(--ez-color-text-muted)', textAlign: 'right' }}>{t('proj.all.th_action')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -579,9 +579,9 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                       return (
                         <tr
                           key={p.id}
-                          style={{ borderBottom: '1px solid #F1F5F9', background: selectedIds.has(p.id) ? '#F5F9FF' : 'transparent' }}
-                          onMouseEnter={(e) => { if (!selectedIds.has(p.id)) e.currentTarget.style.background = '#FAFAF8'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = selectedIds.has(p.id) ? '#F5F9FF' : 'transparent'; }}
+                          style={{ borderBottom: '1px solid var(--ez-color-border-soft)', background: selectedIds.has(p.id) ? 'var(--ez-hue-blue-bg)' : 'transparent' }}
+                          onMouseEnter={(e) => { if (!selectedIds.has(p.id)) e.currentTarget.style.background = 'var(--ez-color-surface-faint)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = selectedIds.has(p.id) ? 'var(--ez-hue-blue-bg)' : 'transparent'; }}
                         >
                           <td style={{ padding: '12px 8px 12px 24px' }}>
                             <input
@@ -605,13 +605,13 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                             </span>
                           </td>
                           <td style={{ padding: '12px 10px', color: 'var(--ez-color-text-primary)' }}>{p.clientName || (p as unknown as { client?: string }).client || '—'}</td>
-                          <td style={{ padding: '12px 10px', color: '#6B6B64' }}>
+                          <td style={{ padding: '12px 10px', color: 'var(--ez-color-text-muted)' }}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                              <MapPin size={12} color="#8A8A84" />{p.location || '—'}
+                              <MapPin size={12} color="var(--ez-color-text-faint)" />{p.location || '—'}
                             </span>
                           </td>
                           <td style={{ padding: '12px 10px', fontWeight: 750, color: 'var(--ez-color-primary)', whiteSpace: 'nowrap' }} title={formatRpFull(val)}>
-                            {val > 0 ? formatRpCompact(val) : <span style={{ color: '#8A8A84', fontWeight: 500 }}>{t('proj.all.no_value')}</span>}
+                            {val > 0 ? formatRpCompact(val) : <span style={{ color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>{t('proj.all.no_value')}</span>}
                           </td>
                           <td style={{ padding: '12px 10px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 110 }}>
@@ -632,7 +632,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                               </span>
                             )}
                           </td>
-                          <td style={{ padding: '12px 10px', color: overdue ? '#B54747' : '#6B6B64', fontWeight: overdue ? 700 : 500, whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '12px 10px', color: overdue ? '#B54747' : 'var(--ez-color-text-muted)', fontWeight: overdue ? 700 : 500, whiteSpace: 'nowrap' }}>
                             {formatDate(p.targetDate)}
                           </td>
                           <td style={{ padding: '12px 24px 12px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>
@@ -641,8 +641,8 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                                 title={t('proj.all.act_detail')}
                                 onClick={() => onOpenProject?.(p.id, 'manajemen-proyek')}
                                 style={iconBtn}
-                                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--ez-pastel-sky)'; e.currentTarget.style.color = '#2456A8'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8A8A84'; }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--ez-pastel-sky)'; e.currentTarget.style.color = 'var(--ez-pill-run-text)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ez-color-text-muted)'; }}
                               >
                                 <Eye size={15} />
                               </button>
@@ -650,8 +650,8 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                                 title={t('proj.all.act_edit')}
                                 onClick={() => setEditingProject(p)}
                                 style={iconBtn}
-                                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--ez-pastel-sky)'; e.currentTarget.style.color = '#2456A8'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#8A8A84'; }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--ez-pastel-sky)'; e.currentTarget.style.color = 'var(--ez-pill-run-text)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ez-color-text-muted)'; }}
                               >
                                 <Pencil size={14} />
                               </button>
@@ -669,7 +669,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                                     <div
                                       style={{
                                         position: 'absolute', right: 0, top: 'calc(100% + 4px)', zIndex: 51,
-                                        background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid #EEF1F6',
+                                        background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-color-border-soft)',
                                         boxShadow: '0 4px 20px rgba(0,0,0,0.045)', minWidth: 180, overflow: 'hidden',
                                         padding: 4,
                                       }}
@@ -687,7 +687,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                                             fontWeight: 600, color: a.danger ? '#B54747' : 'var(--ez-color-text)',
                                             background: 'transparent', border: 'none', borderRadius: 7, cursor: 'pointer',
                                           }}
-                                          onMouseEnter={(e) => (e.currentTarget.style.background = a.danger ? '#FCE9E9' : '#FAFAF8')}
+                                          onMouseEnter={(e) => (e.currentTarget.style.background = a.danger ? '#FCE9E9' : 'var(--ez-color-surface-faint)')}
                                           onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                         >
                                           {a.label}
@@ -710,10 +710,10 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
               <div
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '12px 18px', borderTop: '1px solid #F1F5F9', flexWrap: 'wrap', gap: 8,
+                  padding: '12px 18px', borderTop: '1px solid var(--ez-color-border-soft)', flexWrap: 'wrap', gap: 8,
                 }}
               >
-                <span style={{ fontSize: 12, color: '#6B6B64' }}>
+                <span style={{ fontSize: 12, color: 'var(--ez-color-text-muted)' }}>
                   {t('proj.all.pg_show')} {filtered.length === 0 ? 0 : safePage * PAGE_SIZE + 1}–{Math.min(filtered.length, safePage * PAGE_SIZE + PAGE_SIZE)} {t('proj.all.pg_of')} {filtered.length} {t('proj.all.pg_projects')}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -730,8 +730,8 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                       onClick={() => setPage(i)}
                       style={{
                         ...pageBtn(false),
-                        background: i === safePage ? 'var(--ez-color-primary)' : '#fff',
-                        color: i === safePage ? '#fff' : 'var(--ez-color-text)',
+                        background: i === safePage ? 'var(--ez-color-primary)' : 'var(--ez-color-on-primary)',
+                        color: i === safePage ? 'var(--ez-color-on-primary)' : 'var(--ez-color-text)',
                         border: `1px solid ${i === safePage ? 'var(--ez-color-primary)' : 'var(--ez-color-border)'}`,
                         fontWeight: 700,
                       }}
@@ -760,7 +760,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
               <h4 style={{ fontSize: 15, fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>{t('proj.all.activity_title')}</h4>
             </div>
             {activities.length === 0 ? (
-              <div style={{ fontSize: 12, color: '#8A8A84', textAlign: 'center', padding: '18px 8px' }}>
+              <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', textAlign: 'center', padding: '18px 8px' }}>
                 {t('proj.all.activity_empty')}
               </div>
             ) : (
@@ -770,7 +770,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                     key={i}
                     style={{
                       display: 'flex', gap: 10, padding: '9px 0',
-                      borderBottom: i < Math.min(activities.length, 5) - 1 ? '1px solid #F1F5F9' : 'none',
+                      borderBottom: i < Math.min(activities.length, 5) - 1 ? '1px solid var(--ez-color-border-soft)' : 'none',
                     }}
                   >
                     <div
@@ -781,14 +781,14 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                       }}
                     >
                       {a.type === 'create'
-                        ? <Plus size={14} color="#2456A8" />
+                        ? <Plus size={14} color="var(--ez-pill-run-text)" />
                         : a.type === 'delete'
                           ? <Trash2 size={13} color="#B54747" />
-                          : <CheckCircle2 size={14} color="#2C6E2C" />}
+                          : <CheckCircle2 size={14} color="var(--ez-pill-ok-text)" />}
                     </div>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ez-color-text-primary)', lineHeight: 1.4 }}>{a.text}</div>
-                      <div style={{ fontSize: 11, color: '#8A8A84', marginTop: 2 }}>{a.time}</div>
+                      <div style={{ fontSize: 11, color: 'var(--ez-color-text-muted)', marginTop: 2 }}>{a.time}</div>
                     </div>
                   </div>
                 ))}
@@ -843,18 +843,18 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
 
 const iconBtn: React.CSSProperties = {
   width: 30, height: 30, borderRadius: 7, background: 'transparent', border: 'none',
-  color: '#8A8A84', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  color: 'var(--ez-color-text-muted)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
 };
 
 const pageBtn = (disabled: boolean): React.CSSProperties => ({
-  minWidth: 32, height: 32, borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-surface)', border: '1px solid #E2E8F0',
+  minWidth: 32, height: 32, borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)',
   color: disabled ? '#C9C9C2' : 'var(--ez-color-text)', cursor: disabled ? 'default' : 'pointer',
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12,
   opacity: disabled ? 0.5 : 1,
 });
 
 const qaBtn: React.CSSProperties = {
-  height: 40, borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-surface)', border: '1px solid #E2E8F0',
+  height: 40, borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)',
   color: 'var(--ez-color-text-primary)', fontSize: 12, fontWeight: 700, cursor: 'pointer',
   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
 };
@@ -874,9 +874,9 @@ const EditProjectModal: React.FC<{
   const [status, setStatus] = useState(project.status);
 
   const field: React.CSSProperties = { marginBottom: 12 };
-  const label: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 700, color: '#6B6B64', marginBottom: 5 };
+  const label: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ez-color-text-muted)', marginBottom: 5 };
   const input: React.CSSProperties = {
-    width: '100%', height: 38, borderRadius: 'var(--ez-radius-control)', border: '1px solid #EEF1F6',
+    width: '100%', height: 38, borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-color-border-soft)',
     padding: '0 12px', fontSize: 13, color: 'var(--ez-color-text-primary)', outline: 'none', boxSizing: 'border-box',
     background: 'var(--ez-color-surface)',
   };
@@ -892,14 +892,14 @@ const EditProjectModal: React.FC<{
       <div
         style={{
           width: 'min(440px, 100%)', background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-card)',
-          border: '1px solid #EEF1F6', boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
+          border: '1px solid var(--ez-color-border-soft)', boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           padding: 24,
         }}
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>{t('proj.all.edit_title')}</h3>
-          <button onClick={onClose} style={{ ...iconBtn, background: '#F1F5F9' }}>
+          <button onClick={onClose} style={{ ...iconBtn, background: 'var(--ez-color-surface-tertiary)' }}>
             <X size={15} />
           </button>
         </div>
@@ -937,7 +937,7 @@ const EditProjectModal: React.FC<{
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 6 }}>
           <button
             onClick={onClose}
-            style={{ height: 38, padding: '0 16px', borderRadius: 'var(--ez-radius-control)', background: '#F1F5F9', color: 'var(--ez-color-text-primary)', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
+            style={{ height: 38, padding: '0 16px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-primary)', fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}
           >
             {t('proj.all.edit_cancel')}
           </button>
@@ -949,7 +949,7 @@ const EditProjectModal: React.FC<{
             disabled={!name.trim()}
             style={{
               height: 38, padding: '0 18px', borderRadius: 'var(--ez-radius-control)', background: name.trim() ? 'var(--ez-color-primary)' : '#C9C9C2',
-              color: '#fff', fontSize: 13, fontWeight: 700, border: 'none', cursor: name.trim() ? 'pointer' : 'default',
+              color: 'var(--ez-color-on-primary)', fontSize: 13, fontWeight: 700, border: 'none', cursor: name.trim() ? 'pointer' : 'default',
               boxShadow: name.trim() ? '0 4px 14px rgba(37,99,235,0.28)' : 'none',
             }}
           >

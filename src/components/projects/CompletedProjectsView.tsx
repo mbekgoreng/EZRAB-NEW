@@ -113,54 +113,54 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
       >
         {/* KPI 1: Total Proyek Selesai */}
         <div className="ezdb-anim ez-stat ez-stat-mint" style={{ animation: 'ezdb-rise 0.6s 0.05s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
             {t('proj.done.kpi1_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {completedProjects.length}{' '}
-            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>{t('proj.done.kpi1_u')}</span>
+            <span style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.done.kpi1_u')}</span>
           </div>
-          <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
             {t('proj.done.kpi1_s')}
           </div>
         </div>
 
         {/* KPI 2: Total Omset Nilai Selesai */}
         <div className="ezdb-anim ez-stat ez-stat-cream" style={{ animation: 'ezdb-rise 0.6s 0.12s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
             {t('proj.done.kpi2_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {totalCompletedValue === 0 ? 'Rp 0' : formatRupiah(totalCompletedValue)}
           </div>
-          <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
             {t('proj.done.kpi2_s')}
           </div>
         </div>
 
         {/* KPI 3: Rata-rata Margin Profit */}
         <div className="ezdb-anim ez-stat ez-stat-sky" style={{ animation: 'ezdb-rise 0.6s 0.19s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
             {t('proj.done.kpi3_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#2C6E2C' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-pill-ok-text)' }}>
             +12.4%
           </div>
-          <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
             {t('proj.done.kpi3_s')}
           </div>
         </div>
 
         {/* KPI 4: Masa Retensi Aktif */}
         <div className="ezdb-anim ez-stat ez-stat-peach" style={{ animation: 'ezdb-rise 0.6s 0.26s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
             {t('proj.done.kpi4_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {completedProjects.length}{' '}
-            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>{t('proj.done.kpi4_u')}</span>
+            <span style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.done.kpi4_u')}</span>
           </div>
-          <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
             {t('proj.done.kpi4_s')}
           </div>
         </div>
@@ -176,7 +176,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
           background: 'var(--ez-color-surface)',
           padding: '16px 20px',
           borderRadius: 'var(--ez-radius-card)',
-          border: '1px solid #EEF1F6',
+          border: '1px solid var(--ez-color-border-soft)',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           flexWrap: 'wrap',
           gap: '12px',
@@ -184,7 +184,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
         }}
       >
         <div style={{ position: 'relative', width: '100%', maxWidth: '340px' }}>
-          <Search size={14} color="#8A8A84" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+          <Search size={14} color="var(--ez-color-text-faint)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
           <input
             type="text"
             placeholder={t('proj.done.search_ph')}
@@ -196,8 +196,8 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
               paddingLeft: '34px',
               paddingRight: '12px',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #EEF1F6',
-              background: '#FAFAF8',
+              border: '1px solid var(--ez-color-border-soft)',
+              background: 'var(--ez-color-surface-faint)',
               fontSize: '13px',
               color: 'var(--ez-color-text-primary)',
               outline: 'none',
@@ -205,7 +205,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
           />
         </div>
 
-        <div style={{ fontSize: '12.5px', color: '#6B6B64', fontWeight: 600 }}>
+        <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
           {t('proj.done.showing_a')}{' '}<span style={{ color: 'var(--ez-color-text-primary)', fontWeight: 800 }}>{filteredProjects.length}</span>{' '}{t('proj.done.showing_b')}
         </div>
       </div>
@@ -217,7 +217,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
           style={{
             background: 'var(--ez-color-surface)',
             borderRadius: 'var(--ez-radius-card)',
-            border: '1px solid #EEF1F6',
+            border: '1px solid var(--ez-color-border-soft)',
             boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
             padding: '48px 24px',
             textAlign: 'center',
@@ -234,7 +234,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
               height: '56px',
               borderRadius: 'var(--ez-radius-control)',
               background: 'var(--ez-pastel-mint)',
-              color: '#2C6E2C',
+              color: 'var(--ez-pill-ok-text)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -246,7 +246,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
           <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
             {t('proj.done.empty_t')}
           </h3>
-          <p style={{ fontSize: '13px', color: '#6B6B64', maxWidth: '380px', margin: '0 0 16px 0', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', maxWidth: '380px', margin: '0 0 16px 0', lineHeight: 1.5 }}>
             {t('proj.done.empty_b')}
           </p>
         </div>
@@ -268,7 +268,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                 style={{
                   background: 'var(--ez-color-surface)',
                   borderRadius: 'var(--ez-radius-card)',
-                  border: '1px solid #EEF1F6',
+                  border: '1px solid var(--ez-color-border-soft)',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
                   padding: '22px',
                   display: 'flex',
@@ -302,7 +302,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                         padding: '5px 12px',
                         borderRadius: 'var(--ez-radius-pill)',
                         background: 'var(--ez-pastel-mint)',
-                        color: '#2C6E2C',
+                        color: 'var(--ez-pill-ok-text)',
                         whiteSpace: 'nowrap',
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -329,8 +329,8 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                     {proj.name}
                   </h4>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6B6B64', marginBottom: '12px' }}>
-                    <MapPin size={12} color="#8A8A84" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--ez-color-text-muted)', marginBottom: '12px' }}>
+                    <MapPin size={12} color="var(--ez-color-text-faint)" />
                     <span>{proj.location || t('proj.done.loc_default')}</span>
                     <span>•</span>
                     <span>{proj.clientName || proj.client || t('proj.done.client_default')}</span>
@@ -339,35 +339,35 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                   {/* Financial Evaluation Box (Closeout Reconciliation) */}
                   <div
                     style={{
-                      background: '#FAFAF8',
+                      background: 'var(--ez-color-surface-faint)',
                       borderRadius: 'var(--ez-radius-control)',
                       padding: '12px',
-                      border: '1px solid #EEF1F6',
+                      border: '1px solid var(--ez-color-border-soft)',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '8px',
                       fontSize: '12px',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6B6B64' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
                       <span>{t('proj.done.contract_t')}</span>
                       <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(totalRab)}</span>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6B6B64' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
                       <span>{t('proj.done.actual_t')}</span>
                       <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(realCost)}</span>
                     </div>
 
                     <div
                       style={{
-                        borderTop: '1px dashed #E2E8F0',
+                        borderTop: '1px dashed var(--ez-color-border-line)',
                         paddingTop: '6px',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         fontWeight: 700,
-                        color: '#2C6E2C',
+                        color: 'var(--ez-pill-ok-text)',
                       }}
                     >
                       <span>{t('proj.done.margin_t')}</span>
@@ -377,7 +377,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                 </div>
 
                 {/* Bottom Closeout Action Strip */}
-                <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ borderTop: '1px solid var(--ez-color-border-soft)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button
                       onClick={() => handlePrintBast(proj)}
@@ -408,7 +408,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                         height: '36px',
                         borderRadius: 'var(--ez-radius-control)',
                         background: 'var(--ez-color-primary)',
-                        color: '#FFFFFF',
+                        color: 'var(--ez-color-on-primary)',
                         fontSize: '12px',
                         fontWeight: 700,
                         border: 'none',
@@ -431,7 +431,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                       style={{
                         background: 'transparent',
                         border: 'none',
-                        color: '#6B6B64',
+                        color: 'var(--ez-color-text-muted)',
                         fontSize: '11px',
                         fontWeight: 600,
                         cursor: 'pointer',
@@ -452,7 +452,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                         padding: '0 12px',
                         borderRadius: 'var(--ez-radius-control)',
                         background: 'var(--ez-color-surface)',
-                        border: '1px solid #E2E8F0',
+                        border: '1px solid var(--ez-color-border-line)',
                         color: 'var(--ez-color-text-primary)',
                         fontSize: '12px',
                         fontWeight: 700,
