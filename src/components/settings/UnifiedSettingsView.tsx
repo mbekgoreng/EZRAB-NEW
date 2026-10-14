@@ -909,8 +909,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                         padding: '0 12px',
                         borderRadius: '9px',
                         border: 'none',
-                        background: isActive ? '#EFF6FF' : 'transparent',
-                        color: isActive ? 'var(--ez-color-primary)' : '#475569',
+                        background: isActive ? 'var(--ez-hue-blue-bg)' : 'transparent',
+                        color: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                         fontSize: '12.5px',
                         fontWeight: isActive ? 700 : 500,
                         cursor: 'pointer',
@@ -1126,10 +1126,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               </div>
 
               {/* ============ ULANGI TUTORIAL ============ */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '16px', background: '#EFF6FF', borderRadius: '16px', border: '1px solid #DBEAFE', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '16px', background: 'var(--ez-hue-blue-bg)', borderRadius: '16px', border: '1px solid var(--ez-hue-blue-border)', flexWrap: 'wrap' }}>
                 <div>
                   <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>{t('settings.ulangi_tutorial')}</div>
-                  <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>{t('settings.ulangi_tutorial_desc')}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>{t('settings.ulangi_tutorial_desc')}</div>
                 </div>
                 <button
                   type="button"
