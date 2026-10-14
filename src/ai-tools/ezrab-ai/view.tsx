@@ -252,14 +252,75 @@ export const EzrabAiView: React.FC = () => {
   const mascotExpression: 'idle' | 'thinking' | 'happy' =
     busy ? 'thinking' : messages.length > 0 ? 'happy' : 'idle';
 
+  /* Composer dipakai dua tempat: di tengah (saat chat kosong, di bawah
+   * trust badges) dan di bawah (saat sudah ada percakapan). */
+  const composer = (middle: boolean) => (
+    <div className={`ezchat2-input-wrap${middle ? ' middle' : ''}`}>
+      {attached && (
+        <div className="ezchat2-attchip">
+          <img src={attached.url} alt={attached.name} />
+          <span>{attached.name}</span>
+          <button onClick={() => { URL.revokeObjectURL(attached.url); setAttached(null); }} title="Hapus">
+            <X size={13} />
+          </button>
+        </div>
+      )}
+      {listening && (
+        <div className="ezchat2-listening"><span className="ezdot busy pulse" /> Mendengarkan… bicara sekarang</div>
+      )}
+      <div className="ezchat2-pill">
+        <button
+          className="ezchat2-tool"
+          onClick={() => fileRef.current?.click()}
+          title="Lampirkan gambar"
+          disabled={busy}
+        >
+          <Paperclip size={17} />
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={onPickFile}
+        />
+        <textarea
+          ref={taRef}
+          value={input}
+          onChange={(e) => { setInput(e.target.value); autoresize(); }}
+          onKeyDown={onKey}
+          placeholder={listening ? 'Mendengarkan…' : 'Ketik pesan atau perintah, misalnya /template'}
+          rows={1}
+          disabled={busy}
+        />
+        <button
+          className={`ezchat2-tool ${listening ? 'listening' : ''}`}
+          onClick={toggleMic}
+          title={listening ? 'Berhenti merekam' : 'Voice input (id-ID)'}
+          disabled={busy}
+        >
+          <Mic size={17} />
+        </button>
+        <button
+          className={`ezchat2-send ${input.trim() || attached ? 'ready' : ''}`}
+          onClick={() => submit()}
+          disabled={busy || (!input.trim() && !attached)}
+          title="Kirim"
+        >
+          {busy ? <Loader2 size={17} className="spin" /> : <Send size={17} />}
+        </button>
+      </div>
+      <div className="ezchat2-foot">
+        <ImagePlus size={11} /> Gambar dilampirkan sebagai catatan — model teks belum bisa "melihat" gambar
+        <span> • </span>Ezrab AI bisa salah, cek ulang angka penting
+      </div>
+    </div>
+  );
+
   return (
     <div className="ezchat2">
-      <style>{`
-        @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-        @media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
-      `}</style>
       {/* ===== Header ===== */}
-      <div className="ezchat2-header ezdb-anim" style={{ animation: 'ezdb-rise 0.6s 0s both' }}>
+      <div className="ezchat2-header">
         <div className="ezchat2-mascot">
           <EZRABMascot3D
             variant="chatbot"
@@ -324,6 +385,7 @@ export const EzrabAiView: React.FC = () => {
               <span><Calculator size={12} /> Hitung volume</span><i>•</i>
               <span><FileText size={12} /> Bantu susun RAB</span>
             </div>
+            {composer(true)}
           </div>
         ) : (
           <div className="ezchat2-list">
@@ -369,67 +431,8 @@ export const EzrabAiView: React.FC = () => {
         )}
       </div>
 
-      {/* ===== Composer ===== */}
-      <div className="ezchat2-input-wrap">
-        {attached && (
-          <div className="ezchat2-attchip">
-            <img src={attached.url} alt={attached.name} />
-            <span>{attached.name}</span>
-            <button onClick={() => { URL.revokeObjectURL(attached.url); setAttached(null); }} title="Hapus">
-              <X size={13} />
-            </button>
-          </div>
-        )}
-        {listening && (
-          <div className="ezchat2-listening"><span className="ezdot busy pulse" /> Mendengarkan… bicara sekarang</div>
-        )}
-        <div className="ezchat2-pill">
-          <button
-            className="ezchat2-tool"
-            onClick={() => fileRef.current?.click()}
-            title="Lampirkan gambar"
-            disabled={busy}
-          >
-            <Paperclip size={17} />
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={onPickFile}
-          />
-          <textarea
-            ref={taRef}
-            value={input}
-            onChange={(e) => { setInput(e.target.value); autoresize(); }}
-            onKeyDown={onKey}
-            placeholder={listening ? 'Mendengarkan…' : 'Tanya Ezrab AI…'}
-            rows={1}
-            disabled={busy}
-          />
-          <button
-            className={`ezchat2-tool ${listening ? 'listening' : ''}`}
-            onClick={toggleMic}
-            title={listening ? 'Berhenti merekam' : 'Voice input (id-ID)'}
-            disabled={busy}
-          >
-            <Mic size={17} />
-          </button>
-          <button
-            className={`ezchat2-send ${input.trim() || attached ? 'ready' : ''}`}
-            onClick={() => submit()}
-            disabled={busy || (!input.trim() && !attached)}
-            title="Kirim"
-          >
-            {busy ? <Loader2 size={17} className="spin" /> : <Send size={17} />}
-          </button>
-        </div>
-        <div className="ezchat2-foot">
-          <ImagePlus size={11} /> Gambar dilampirkan sebagai catatan — model teks belum bisa "melihat" gambar
-          <span> • </span>Ezrab AI bisa salah, cek ulang angka penting
-        </div>
-      </div>
+      {/* ===== Composer di bawah (hanya saat sudah ada percakapan) ===== */}
+      {messages.length > 0 && composer(false)}
     </div>
   );
 };
