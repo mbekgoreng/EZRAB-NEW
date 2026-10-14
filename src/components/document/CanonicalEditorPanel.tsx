@@ -53,9 +53,9 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
       {/* TOOLBAR */}
       <div
         style={{
-          background: '#fff',
+          background: 'var(--ez-color-surface)',
           border: '1px solid #E2E8F0',
-          borderRadius: 12,
+          borderRadius: 'var(--ez-radius-control)',
           padding: '12px 16px',
           display: 'flex',
           justifyContent: 'space-between',
@@ -72,7 +72,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
               onClick={() => setShowInsertDataMenu(!showInsertDataMenu)}
               disabled={isReadOnly}
               style={{
-                background: '#2563EB',
+                background: 'var(--ez-color-primary)',
                 color: '#fff',
                 border: 0,
                 borderRadius: 8,
@@ -98,7 +98,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
                   top: '100%',
                   left: 0,
                   marginTop: 6,
-                  background: '#fff',
+                  background: 'var(--ez-color-surface)',
                   border: '1px solid #CBD5E1',
                   borderRadius: 10,
                   boxShadow: '0 10px 25px -5px rgba(15,23,42,0.15)',
@@ -109,12 +109,12 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
                   padding: 8,
                 }}
               >
-                <div style={{ padding: '6px 8px', fontSize: 11, fontWeight: 800, color: '#64748B', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                <div style={{ padding: '6px 8px', fontSize: 11, fontWeight: 800, color: 'var(--ez-color-text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                   Pilih Data Proyek Untuk Dimasukkan:
                 </div>
                 {AVAILABLE_CANONICAL_VARIABLES.map((cat) => (
                   <div key={cat.category} style={{ marginBottom: 8 }}>
-                    <div style={{ padding: '4px 8px', fontSize: 11, fontWeight: 750, color: '#2563EB', background: '#F1F5F9', borderRadius: 4 }}>
+                    <div style={{ padding: '4px 8px', fontSize: 11, fontWeight: 750, color: 'var(--ez-color-primary)', background: '#F1F5F9', borderRadius: 4 }}>
                       {cat.category}
                     </div>
                     {cat.variables.map((v) => (
@@ -138,8 +138,8 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
                         onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                       >
                         <div>
-                          <div style={{ fontWeight: 650, color: '#0F172A' }}>{v.label}</div>
-                          <div style={{ fontSize: 10.5, color: '#64748B' }}>{`{{${v.path}}}`}</div>
+                          <div style={{ fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>{v.label}</div>
+                          <div style={{ fontSize: 10.5, color: 'var(--ez-color-text-muted)' }}>{`{{${v.path}}}`}</div>
                         </div>
                         {v.example && (
                           <span style={{ fontSize: 10.5, color: '#16A34A', background: '#DCFCE7', padding: '1px 6px', borderRadius: 4 }}>
@@ -160,7 +160,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
             onClick={onAddParagraph}
             disabled={isReadOnly}
             style={{
-              background: '#fff',
+              background: 'var(--ez-color-surface)',
               border: '1px solid #CBD5E1',
               borderRadius: 8,
               padding: '8px 12px',
@@ -180,7 +180,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
             onClick={onAddHeading}
             disabled={isReadOnly}
             style={{
-              background: '#fff',
+              background: 'var(--ez-color-surface)',
               border: '1px solid #CBD5E1',
               borderRadius: 8,
               padding: '8px 12px',
@@ -197,7 +197,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
           </button>
         </div>
 
-        <div style={{ fontSize: 12, color: '#64748B' }}>
+        <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)' }}>
           {canonicalDoc.blocks.length} Blok Konten
         </div>
       </div>
@@ -212,9 +212,9 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
             <div
               key={block.id}
               style={{
-                background: '#fff',
+                background: 'var(--ez-color-surface)',
                 border: '1px solid #E2E8F0',
-                borderRadius: 12,
+                borderRadius: 'var(--ez-radius-control)',
                 padding: 16,
                 boxShadow: '0 1px 3px rgba(15,23,42,0.03)',
               }}
@@ -222,7 +222,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
               {/* Block Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 11, fontWeight: 750, color: '#2563EB', background: '#EFF6FF', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: 11, fontWeight: 750, color: 'var(--ez-color-primary)', background: '#EFF6FF', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' }}>
                     {block.type}
                   </span>
                   <span style={{ fontSize: 11, color: '#94A3B8' }}>#{idx + 1}</span>
@@ -233,7 +233,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
                     onClick={() => onMoveBlock(block.id, 'up')}
                     disabled={isFirst || isReadOnly}
                     title="Geser Ke Atas"
-                    style={{ border: 0, background: 'none', color: isFirst ? '#CBD5E1' : '#64748B', cursor: isFirst ? 'default' : 'pointer', padding: 4 }}
+                    style={{ border: 0, background: 'none', color: isFirst ? 'var(--ez-color-border)' : 'var(--ez-color-text-muted)', cursor: isFirst ? 'default' : 'pointer', padding: 4 }}
                   >
                     <ArrowUp size={15} />
                   </button>
@@ -241,7 +241,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
                     onClick={() => onMoveBlock(block.id, 'down')}
                     disabled={isLast || isReadOnly}
                     title="Geser Ke Bawah"
-                    style={{ border: 0, background: 'none', color: isLast ? '#CBD5E1' : '#64748B', cursor: isLast ? 'default' : 'pointer', padding: 4 }}
+                    style={{ border: 0, background: 'none', color: isLast ? 'var(--ez-color-border)' : 'var(--ez-color-text-muted)', cursor: isLast ? 'default' : 'pointer', padding: 4 }}
                   >
                     <ArrowDown size={15} />
                   </button>
@@ -296,27 +296,27 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
                     }}
                   />
                   {/* Live Resolved Preview */}
-                  <div style={{ marginTop: 8, padding: '8px 12px', background: '#F8FAFC', borderRadius: 6, fontSize: 11.5, color: '#475569' }}>
-                    <span style={{ fontWeight: 700, color: '#64748B' }}>Pratinjau Variabel Terisi: </span>
+                  <div style={{ marginTop: 8, padding: '8px 12px', background: 'var(--ez-color-surface-secondary)', borderRadius: 6, fontSize: 11.5, color: '#475569' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>Pratinjau Variabel Terisi: </span>
                     {resolveTextWithContext((block as ParagraphBlock).content, contextValues)}
                   </div>
                 </div>
               )}
 
               {block.type === 'header' && (
-                <div style={{ fontSize: 12, color: '#475569', background: '#F8FAFC', padding: 10, borderRadius: 6 }}>
+                <div style={{ fontSize: 12, color: '#475569', background: 'var(--ez-color-surface-secondary)', padding: 10, borderRadius: 6 }}>
                   <strong>Kop Perusahaan:</strong> {block.companyName} ({block.address || 'Alamat Perusahaan'})
                 </div>
               )}
 
               {block.type === 'signature' && (
-                <div style={{ fontSize: 12, color: '#475569', background: '#F8FAFC', padding: 10, borderRadius: 6 }}>
+                <div style={{ fontSize: 12, color: '#475569', background: 'var(--ez-color-surface-secondary)', padding: 10, borderRadius: 6 }}>
                   <strong>Area Tanda Tangan:</strong> {(block as SignatureBlock).signatories.map((s) => `${s.name} (${s.position})`).join(', ')}
                 </div>
               )}
 
               {block.type === 'table' && (
-                <div style={{ fontSize: 12, color: '#475569', background: '#F8FAFC', padding: 10, borderRadius: 6 }}>
+                <div style={{ fontSize: 12, color: '#475569', background: 'var(--ez-color-surface-secondary)', padding: 10, borderRadius: 6 }}>
                   <strong>Tabel Rincian:</strong> {block.caption || 'Tabel Terstruktur'}
                 </div>
               )}

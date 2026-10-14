@@ -128,7 +128,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
   return (
     <div
       style={{
-        background: '#ffffff',
+        background: 'var(--ez-color-surface)',
         borderRadius: '16px',
         border: '1px solid #E2E8F0',
         boxShadow: '0 4px 16px rgba(15, 23, 42, 0.04)',
@@ -171,7 +171,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#2563EB',
+              color: 'var(--ez-color-primary)',
               flexShrink: 0,
             }}
           >
@@ -185,7 +185,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                   fontSize: '11px',
                   fontWeight: 800,
                   letterSpacing: '0.06em',
-                  color: '#2563EB',
+                  color: 'var(--ez-color-primary)',
                   background: '#EFF6FF',
                   padding: '2px 8px',
                   borderRadius: '5px',
@@ -194,7 +194,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
               >
                 GAMBAR TEKNIK
               </span>
-              <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>
+              <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
                 {refData?.category || categoryName} • {refData?.workName || workName || workId}
               </span>
               {refData?.standard && (
@@ -214,10 +214,10 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
               )}
             </div>
 
-            <div style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>
+            <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
               Detail: {activeImage ? activeImage.title : (refData?.workName || workName || workId)}
               {activeImage?.subtitle && (
-                <span style={{ fontWeight: 500, color: '#64748B', marginLeft: '6px', fontSize: '12px' }}>
+                <span style={{ fontWeight: 500, color: 'var(--ez-color-text-muted)', marginLeft: '6px', fontSize: '12px' }}>
                   — {activeImage.subtitle}
                 </span>
               )}
@@ -249,7 +249,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                   border: 'none',
                   cursor: 'pointer',
                   background: viewMode === 'reference_image' ? '#ffffff' : 'transparent',
-                  color: viewMode === 'reference_image' ? '#2563EB' : '#64748B',
+                  color: viewMode === 'reference_image' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                   boxShadow: viewMode === 'reference_image' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
                   transition: 'all 0.15s ease',
                   display: 'flex',
@@ -270,7 +270,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                   border: 'none',
                   cursor: 'pointer',
                   background: viewMode === 'cad_vector' ? '#ffffff' : 'transparent',
-                  color: viewMode === 'cad_vector' ? '#2563EB' : '#64748B',
+                  color: viewMode === 'cad_vector' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                   boxShadow: viewMode === 'cad_vector' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
                   transition: 'all 0.15s ease',
                   display: 'flex',
@@ -290,7 +290,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
-              background: '#F8FAFC',
+              background: 'var(--ez-color-surface-secondary)',
               border: '1px solid #E2E8F0',
               borderRadius: '8px',
               padding: '2px 4px',
@@ -318,7 +318,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
               style={{
                 fontSize: '11.5px',
                 fontWeight: 700,
-                color: '#0F172A',
+                color: 'var(--ez-color-text-primary)',
                 fontFamily: 'monospace',
                 minWidth: '42px',
                 textAlign: 'center',
@@ -353,7 +353,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: '#FFFFFF',
+                background: 'var(--ez-color-surface)',
                 border: '1px solid #CBD5E1',
                 borderRadius: '5px',
                 fontSize: '11px',
@@ -373,7 +373,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: '#FFFFFF',
+                background: 'var(--ez-color-surface)',
                 border: '1px solid #CBD5E1',
                 borderRadius: '5px',
                 color: '#475569',
@@ -395,7 +395,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
               alignItems: 'center',
               gap: '6px',
               background: isFullscreen ? '#0F172A' : '#EFF6FF',
-              color: isFullscreen ? '#ffffff' : '#2563EB',
+              color: isFullscreen ? '#ffffff' : 'var(--ez-color-primary)',
               border: isFullscreen ? 'none' : '1px solid #BFDBFE',
               borderRadius: '8px',
               fontSize: '12px',
@@ -586,7 +586,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                   marginTop: '16px',
                   padding: '8px 16px',
                   borderRadius: '8px',
-                  background: '#2563EB',
+                  background: 'var(--ez-color-primary)',
                   color: '#ffffff',
                   fontSize: '12px',
                   fontWeight: 700,
@@ -611,14 +611,14 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
           style={{
             padding: '10px 18px',
             borderTop: '1px solid #F1F5F9',
-            background: '#F8FAFC',
+            background: 'var(--ez-color-surface-secondary)',
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
             overflowX: 'auto',
           }}
         >
-          <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', whiteSpace: 'nowrap' }}>
             Gambar Referensi ({images.length}):
           </span>
 
@@ -663,7 +663,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                       style={{
                         fontSize: '11px',
                         fontWeight: 700,
-                        color: isSelected ? '#1D4ED8' : '#334155',
+                        color: isSelected ? 'var(--ez-color-primary-hover)' : '#334155',
                         whiteSpace: 'nowrap',
                       }}
                     >
@@ -673,7 +673,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                       <div
                         style={{
                           fontSize: '9.5px',
-                          color: '#64748B',
+                          color: 'var(--ez-color-text-muted)',
                           whiteSpace: 'nowrap',
                         }}
                       >

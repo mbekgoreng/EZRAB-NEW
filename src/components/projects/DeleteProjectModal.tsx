@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AlertTriangle, Download, Trash2, X, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { Project } from '../../types';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
+import { useI18n } from '../../i18n/I18nContext';
 
 export interface DeleteProjectModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
   onConfirmDelete,
   onBackupProject,
 }) => {
+  const { t } = useI18n();
   const [downloaded, setDownloaded] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -88,8 +90,8 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
         style={{
           width: '100%',
           maxWidth: '520px',
-          backgroundColor: '#FFFFFF',
-          borderRadius: '16px',
+          backgroundColor: 'var(--ez-color-surface)',
+          borderRadius: 'var(--ez-radius-card)',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           overflow: 'hidden',
           border: '1px solid #FEE2E2',
@@ -113,7 +115,7 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
               style={{
                 width: '36px',
                 height: '36px',
-                borderRadius: '10px',
+                borderRadius: 'var(--ez-radius-control)',
                 backgroundColor: '#FEE2E2',
                 border: '1px solid #FECACA',
                 color: '#DC2626',
@@ -126,10 +128,10 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#991B1B' }}>
-                Hapus Proyek Konstruksi
+                {t('proj.del.title')}
               </h3>
               <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#B91C1C' }}>
-                Tindakan ini memerlukan konfirmasi dan pencadangan data
+                {t('proj.del.subtitle')}
               </p>
             </div>
           </div>
@@ -142,7 +144,7 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
               cursor: 'pointer',
               color: '#94A3B8',
               padding: '4px',
-              borderRadius: '6px',
+              borderRadius: 'var(--ez-radius-chip)',
             }}
           >
             <X size={18} />
@@ -155,29 +157,29 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
           <div
             style={{
               padding: '14px 16px',
-              backgroundColor: '#F8FAFC',
-              borderRadius: '12px',
+              backgroundColor: 'var(--ez-color-surface-secondary)',
+              borderRadius: 'var(--ez-radius-control)',
               border: '1px solid #E2E8F0',
             }}
           >
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Rincian Proyek yang Akan Dihapus:
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              {t('proj.del.detail_t')}
             </div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', marginTop: '4px' }}>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '4px' }}>
               {project.name}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '8px', fontSize: '12px', color: '#475569' }}>
               <div>
-                Kode: <strong style={{ color: '#0F172A' }}>{project.projectNumber || project.id}</strong>
+                {t('proj.del.code_t')}<strong style={{ color: 'var(--ez-color-text-primary)' }}>{project.projectNumber || project.id}</strong>
               </div>
               <div>•</div>
               <div>
-                Total RAB: <strong style={{ color: '#2563EB' }}>{formatCurrencyIDR(totalCost)}</strong>
+                {t('proj.del.rab_t')}<strong style={{ color: 'var(--ez-color-primary)' }}>{formatCurrencyIDR(totalCost)}</strong>
               </div>
               {project.location && (
                 <>
                   <div>•</div>
-                  <div>Lokasi: <strong>{project.location}</strong></div>
+                  <div>{t('proj.del.loc_t')}<strong>{project.location}</strong></div>
                 </>
               )}
             </div>
@@ -188,7 +190,7 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
             style={{
               padding: '14px 16px',
               backgroundColor: '#EFF6FF',
-              borderRadius: '12px',
+              borderRadius: 'var(--ez-radius-control)',
               border: '1px solid #BFDBFE',
               display: 'flex',
               flexDirection: 'column',
@@ -199,10 +201,10 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
               <ShieldAlert size={18} color="#2563EB" style={{ marginTop: '2px', flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: '12.5px', fontWeight: 750, color: '#1E40AF' }}>
-                  Pencadangan Data Otomatis (Backup)
+                  {t('proj.del.backup_t')}
                 </div>
                 <div style={{ fontSize: '11.5px', color: '#3B82F6', marginTop: '2px', lineHeight: 1.4 }}>
-                  EZRAB merekomendasikan mengunduh berkas cadangan JSON sebelum menghapus. Berkas ini mencakup seluruh item RAB, QTO, jadwal, dan data teknis.
+                  {t('proj.del.backup_b')}
                 </div>
               </div>
             </div>
@@ -219,7 +221,7 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
                 borderRadius: '8px',
                 backgroundColor: downloaded ? '#DCFCE7' : '#FFFFFF',
                 border: downloaded ? '1px solid #86EFAC' : '1px solid #93C5FD',
-                color: downloaded ? '#15803D' : '#1D4ED8',
+                color: downloaded ? '#15803D' : 'var(--ez-color-primary-hover)',
                 fontSize: '12px',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -227,12 +229,12 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
               }}
             >
               {downloaded ? <CheckCircle2 size={14} /> : <Download size={14} />}
-              <span>{downloaded ? '✓ Cadangan Berhasil Diunduh' : 'Unduh Cadangan Proyek (.json)'}</span>
+              <span>{downloaded ? t('proj.del.dl_ok') : t('proj.del.dl_btn')}</span>
             </button>
           </div>
 
-          <p style={{ margin: 0, fontSize: '12.5px', color: '#64748B', lineHeight: 1.45 }}>
-            Apakah Anda yakin ingin menghapus proyek ini secara permanen dari sistem? Seluruh perhitungan RAB dan keterkaitan data pekerjaan terkait akan dibersihkan.
+          <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--ez-color-text-muted)', lineHeight: 1.45 }}>
+            {t('proj.del.warn')}
           </p>
         </div>
 
@@ -241,7 +243,7 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
           style={{
             padding: '14px 20px',
             borderTop: '1px solid #F1F5F9',
-            backgroundColor: '#F8FAFC',
+            backgroundColor: 'var(--ez-color-surface-secondary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
@@ -255,14 +257,14 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
               padding: '8px 16px',
               borderRadius: '8px',
               border: '1px solid #CBD5E1',
-              backgroundColor: '#FFFFFF',
+              backgroundColor: 'var(--ez-color-surface)',
               color: '#475569',
               fontSize: '13px',
               fontWeight: 600,
               cursor: 'pointer',
             }}
           >
-            Batal
+            {t('proj.del.cancel')}
           </button>
           <button
             type="button"
@@ -284,7 +286,7 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
             }}
           >
             <Trash2 size={14} />
-            <span>{isDeleting ? 'Menghapus...' : 'Hapus Proyek & Simpan Backup'}</span>
+            <span>{isDeleting ? t('proj.del.deleting') : t('proj.del.delete_btn')}</span>
           </button>
         </div>
       </div>

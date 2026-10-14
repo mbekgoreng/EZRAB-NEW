@@ -33,7 +33,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
           style={{
             background: 'linear-gradient(135deg, #1E3A8A 0%, #1E293B 100%)',
             color: '#fff',
-            borderRadius: 12,
+            borderRadius: 'var(--ez-radius-control)',
             padding: '16px 20px',
             display: 'flex',
             justifyContent: 'space-between',
@@ -61,18 +61,18 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
       {/* Upload Custom DOCX Template Card */}
       <div
         style={{
-          background: '#fff',
+          background: 'var(--ez-color-surface)',
           border: '2px dashed #93C5FD',
-          borderRadius: 12,
+          borderRadius: 'var(--ez-radius-control)',
           padding: '20px 24px',
           textAlign: 'center',
         }}
       >
         <Upload size={28} color="#2563EB" style={{ margin: '0 auto 8px' }} />
-        <h4 style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 750, color: '#0F172A' }}>
+        <h4 style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
           Upload Template Kustom (DOCX)
         </h4>
-        <p style={{ margin: '0 0 14px', fontSize: 12.5, color: '#64748B', maxWidth: 460, marginLeft: 'auto', marginRight: 'auto' }}>
+        <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'var(--ez-color-text-muted)', maxWidth: 460, marginLeft: 'auto', marginRight: 'auto' }}>
           Gunakan file Microsoft Word (.docx) format perusahaan Anda. EZRAB akan mendeteksi paragraf, tabel, dan variabel placeholder secara otomatis.
         </p>
         <label
@@ -81,7 +81,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
             alignItems: 'center',
             gap: 8,
             padding: '9px 18px',
-            background: '#2563EB',
+            background: 'var(--ez-color-primary)',
             color: '#fff',
             borderRadius: 8,
             fontSize: 13,
@@ -105,10 +105,10 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <Star size={18} color="#EAB308" fill="#EAB308" />
-          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 750, color: '#0F172A' }}>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
             Template Standar EZRAB
           </h3>
-          <span style={{ fontSize: 12, color: '#64748B' }}>({builtinTemplates.length} varian)</span>
+          <span style={{ fontSize: 12, color: 'var(--ez-color-text-muted)' }}>({builtinTemplates.length} varian)</span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
@@ -118,9 +118,9 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
               <div
                 key={tpl.id}
                 style={{
-                  background: '#fff',
+                  background: 'var(--ez-color-surface)',
                   border: isSelected ? '2px solid #2563EB' : '1px solid #E2E8F0',
-                  borderRadius: 12,
+                  borderRadius: 'var(--ez-radius-control)',
                   padding: 16,
                   display: 'flex',
                   flexDirection: 'column',
@@ -130,7 +130,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
               >
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                    <h4 style={{ margin: 0, fontSize: 15, fontWeight: 750, color: '#0F172A' }}>
+                    <h4 style={{ margin: 0, fontSize: 15, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
                       {tpl.name}
                     </h4>
                     {isSelected && (
@@ -139,7 +139,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
                       </span>
                     )}
                   </div>
-                  <p style={{ margin: '0 0 12px', fontSize: 12.5, color: '#64748B', lineHeight: 1.45 }}>
+                  <p style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--ez-color-text-muted)', lineHeight: 1.45 }}>
                     {tpl.description}
                   </p>
                   <div style={{ fontSize: 11, color: '#94A3B8', marginBottom: 14 }}>
@@ -155,7 +155,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
                     borderRadius: 8,
                     border: isSelected ? '1px solid #2563EB' : '1px solid #CBD5E1',
                     background: isSelected ? '#EFF6FF' : '#fff',
-                    color: isSelected ? '#2563EB' : '#334155',
+                    color: isSelected ? 'var(--ez-color-primary)' : '#334155',
                     fontSize: 12.5,
                     fontWeight: 700,
                     cursor: 'pointer',
@@ -175,10 +175,10 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <span style={{ fontSize: 18 }}>★</span>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 750, color: '#0F172A' }}>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
               Template Saya (Kustom)
             </h3>
-            <span style={{ fontSize: 12, color: '#64748B' }}>({customTemplates.length} template)</span>
+            <span style={{ fontSize: 12, color: 'var(--ez-color-text-muted)' }}>({customTemplates.length} template)</span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
@@ -188,9 +188,9 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
                 <div
                   key={tpl.id}
                   style={{
-                    background: '#fff',
+                    background: 'var(--ez-color-surface)',
                     border: isSelected ? '2px solid #2563EB' : '1px solid #E2E8F0',
-                    borderRadius: 12,
+                    borderRadius: 'var(--ez-radius-control)',
                     padding: 16,
                     display: 'flex',
                     flexDirection: 'column',
@@ -199,7 +199,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
                 >
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                      <h4 style={{ margin: 0, fontSize: 15, fontWeight: 750, color: '#0F172A' }}>
+                      <h4 style={{ margin: 0, fontSize: 15, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
                         {tpl.name}
                       </h4>
                       <button
@@ -210,10 +210,10 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
                         <Trash2 size={15} />
                       </button>
                     </div>
-                    <div style={{ fontSize: 11, color: '#2563EB', fontWeight: 650, marginBottom: 4 }}>
+                    <div style={{ fontSize: 11, color: 'var(--ez-color-primary)', fontWeight: 650, marginBottom: 4 }}>
                       Sumber: DOCX Import
                     </div>
-                    <p style={{ margin: '0 0 12px', fontSize: 12, color: '#64748B' }}>
+                    <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--ez-color-text-muted)' }}>
                       {tpl.description || 'Template kustom yang diupload oleh pengguna.'}
                     </p>
                     <div style={{ fontSize: 11, color: '#94A3B8', marginBottom: 14 }}>
@@ -229,7 +229,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
                       borderRadius: 8,
                       border: isSelected ? '1px solid #2563EB' : '1px solid #CBD5E1',
                       background: isSelected ? '#EFF6FF' : '#fff',
-                      color: isSelected ? '#2563EB' : '#334155',
+                      color: isSelected ? 'var(--ez-color-primary)' : '#334155',
                       fontSize: 12.5,
                       fontWeight: 700,
                       cursor: 'pointer',

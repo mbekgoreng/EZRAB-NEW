@@ -22,7 +22,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
         maxWidth: '1440px',
         margin: '0 auto',
         width: '100%',
-        color: '#141412',
+        color: 'var(--ez-color-text-primary)',
         fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
         animation: 'ezdb-rise 0.6s 0s both',
       }}

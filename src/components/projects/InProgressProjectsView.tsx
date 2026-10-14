@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
+import { useI18n } from '../../i18n/I18nContext';
 
 interface InProgressProjectsViewProps {
   projects: Project[];
@@ -27,6 +28,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
   onOpenProject,
 }) => {
   const { updateProject } = useProject();
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusSubFilter, setStatusSubFilter] = useState<'all' | 'on_track' | 'behind'>('all');
   
@@ -92,7 +94,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
   const handleMarkAsCompleted = (proj: Project) => {
     if (
       window.confirm(
-        `Konfirmasi penyelesaian: Apakah proyek "${proj.name}" telah rampung 100% dan siap untuk Berita Acara Serah Terima (BAST)?`
+        t('proj.active.done_confirm_a') + proj.name + t('proj.active.done_confirm_b')
       )
     ) {
       updateProject(proj.id, {
@@ -100,7 +102,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
         progress: 100,
         targetDate: proj.targetDate || new Date().toISOString().split('T')[0],
       });
-      alert(`Proyek "${proj.name}" telah ditandai Selesai (100%) dan dipindahkan ke menu Selesai.`);
+      alert(t('proj.active.done_ok_a') + proj.name + t('proj.active.done_ok_b'));
     }
   };
 
@@ -121,11 +123,11 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
         {/* KPI 1: Proyek Aktif */}
         <div className="ezdb-anim ez-stat ez-stat-sky" style={{ animation: 'ezdb-rise 0.6s 0.05s both' }}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
-            Proyek Lapangan Aktif
+            {t('proj.active.kpi1_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {inProgressProjects.length}{' '}
-            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>Proyek</span>
+            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi1_u')}</span>
           </div>
           <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
             {formatRupiah(totalActiveValue)}
@@ -135,14 +137,14 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
         {/* KPI 2: On Schedule */}
         <div className="ezdb-anim ez-stat ez-stat-mint" style={{ animation: 'ezdb-rise 0.6s 0.12s both' }}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
-            Tepat Waktu / Ahead
+            {t('proj.active.kpi2_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {onTrackCount}{' '}
-            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>Proyek</span>
+            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi2_u')}</span>
           </div>
           <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
-            Deviasi bobot Kurva S positif
+            {t('proj.active.kpi2_s')}
           </div>
         </div>
 
@@ -155,27 +157,27 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
           }}
         >
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
-            Deviasi / Waspada
+            {t('proj.active.kpi3_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#B54747' }}>
             {behindCount}{' '}
-            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>Proyek</span>
+            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi3_u')}</span>
           </div>
           <div style={{ fontSize: '12px', color: '#B54747', marginTop: '6px' }}>
-            Perlu evaluasi opname & lembur
+            {t('proj.active.kpi3_s')}
           </div>
         </div>
 
         {/* KPI 4: Rata-rata Progres Realisasi */}
         <div className="ezdb-anim ez-stat ez-stat-cream" style={{ animation: 'ezdb-rise 0.6s 0.26s both' }}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
-            Rata-rata Bobot Fisik
+            {t('proj.active.kpi4_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {avgActiveProgress}%
           </div>
-          <div style={{ width: '100%', height: '6px', background: 'rgba(20,20,18,0.08)', borderRadius: '999px', overflow: 'hidden', marginTop: '10px' }}>
-            <div style={{ width: `${avgActiveProgress}%`, height: '100%', background: '#2563EB', borderRadius: '999px' }} />
+          <div style={{ width: '100%', height: '6px', background: 'rgba(20,20,18,0.08)', borderRadius: 'var(--ez-radius-pill)', overflow: 'hidden', marginTop: '10px' }}>
+            <div style={{ width: `${avgActiveProgress}%`, height: '100%', background: 'var(--ez-color-primary)', borderRadius: 'var(--ez-radius-pill)' }} />
           </div>
         </div>
       </div>
@@ -184,9 +186,9 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
       <div
         className="ezdb-anim"
         style={{
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           padding: '16px 20px',
-          borderRadius: '22px',
+          borderRadius: 'var(--ez-radius-card)',
           border: '1px solid #EEF1F6',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
@@ -202,7 +204,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
             <Search size={14} color="#8A8A84" style={{ position: 'absolute', left: '12px', top: '12px' }} />
             <input
               type="text"
-              placeholder="Cari proyek aktif..."
+              placeholder={t('proj.active.search_ph')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
@@ -210,11 +212,11 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                 height: '38px',
                 paddingLeft: '34px',
                 paddingRight: '12px',
-                borderRadius: '12px',
+                borderRadius: 'var(--ez-radius-control)',
                 border: '1px solid #EEF1F6',
                 background: '#FAFAF8',
                 fontSize: '13px',
-                color: '#141412',
+                color: 'var(--ez-color-text-primary)',
                 outline: 'none',
               }}
             />
@@ -227,39 +229,39 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
               style={{
                 height: '32px',
                 padding: '0 12px',
-                borderRadius: '999px',
+                borderRadius: 'var(--ez-radius-pill)',
                 fontSize: '12px',
                 fontWeight: statusSubFilter === 'all' ? 700 : 600,
-                background: statusSubFilter === 'all' ? '#E3EEFB' : '#FAFAF8',
+                background: statusSubFilter === 'all' ? 'var(--ez-pastel-sky)' : '#FAFAF8',
                 color: statusSubFilter === 'all' ? '#2456A8' : '#6B6B64',
                 border: 'none',
                 cursor: 'pointer',
               }}
             >
-              Semua ({inProgressProjects.length})
+              {t('proj.active.chip_all')} ({inProgressProjects.length})
             </button>
             <button
               onClick={() => setStatusSubFilter('on_track')}
               style={{
                 height: '32px',
                 padding: '0 12px',
-                borderRadius: '999px',
+                borderRadius: 'var(--ez-radius-pill)',
                 fontSize: '12px',
                 fontWeight: statusSubFilter === 'on_track' ? 700 : 600,
-                background: statusSubFilter === 'on_track' ? '#E2F4D8' : '#FAFAF8',
+                background: statusSubFilter === 'on_track' ? 'var(--ez-pastel-mint)' : '#FAFAF8',
                 color: statusSubFilter === 'on_track' ? '#2C6E2C' : '#6B6B64',
                 border: 'none',
                 cursor: 'pointer',
               }}
             >
-              On Track ({onTrackCount})
+              {t('proj.active.chip_track')} ({onTrackCount})
             </button>
             <button
               onClick={() => setStatusSubFilter('behind')}
               style={{
                 height: '32px',
                 padding: '0 12px',
-                borderRadius: '999px',
+                borderRadius: 'var(--ez-radius-pill)',
                 fontSize: '12px',
                 fontWeight: statusSubFilter === 'behind' ? 700 : 600,
                 background: statusSubFilter === 'behind' ? '#FCE9E9' : '#FAFAF8',
@@ -268,7 +270,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                 cursor: 'pointer',
               }}
             >
-              Deviasi / Delay ({behindCount})
+              {t('proj.active.chip_delay')} ({behindCount})
             </button>
           </div>
         </div>
@@ -278,8 +280,8 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
           style={{
             height: '38px',
             padding: '0 16px',
-            borderRadius: '12px',
-            background: '#2563EB',
+            borderRadius: 'var(--ez-radius-control)',
+            background: 'var(--ez-color-primary)',
             color: '#FFFFFF',
             fontSize: '13px',
             fontWeight: 700,
@@ -292,7 +294,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
           }}
         >
           <Plus size={14} />
-          <span>+ Tambah Proyek Aktif</span>
+          <span>{t('proj.active.add_btn')}</span>
         </button>
       </div>
 
@@ -301,8 +303,8 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
         <div
           className="ezdb-anim"
           style={{
-            background: '#FFFFFF',
-            borderRadius: '22px',
+            background: 'var(--ez-color-surface)',
+            borderRadius: 'var(--ez-radius-card)',
             border: '1px solid #EEF1F6',
             boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
             padding: '48px 24px',
@@ -318,9 +320,9 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
             style={{
               width: '56px',
               height: '56px',
-              borderRadius: '18px',
-              background: '#E3EEFB',
-              color: '#2563EB',
+              borderRadius: 'var(--ez-radius-control)',
+              background: 'var(--ez-pastel-sky)',
+              color: 'var(--ez-color-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -329,27 +331,27 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
           >
             <Play size={26} />
           </div>
-          <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#141412', margin: '0 0 6px 0' }}>
-            Tidak ada proyek yang sedang berjalan
+          <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
+            {t('proj.active.empty_t')}
           </h3>
           <p style={{ fontSize: '13px', color: '#6B6B64', maxWidth: '380px', margin: '0 0 16px 0', lineHeight: 1.5 }}>
-            Anda dapat memindahkan proyek dari status Draft atau membuat proyek baru untuk memulai monitoring pelaksanaan lapangan.
+            {t('proj.active.empty_b')}
           </p>
           <button
             onClick={onCreateProject}
             style={{
               height: '40px',
               padding: '0 20px',
-              background: '#2563EB',
+              background: 'var(--ez-color-primary)',
               color: '#FFFFFF',
-              borderRadius: '12px',
+              borderRadius: 'var(--ez-radius-control)',
               border: 'none',
               fontSize: '14px',
               fontWeight: 700,
               cursor: 'pointer',
             }}
           >
-            + Buat Proyek Baru
+            {t('proj.active.new_btn')}
           </button>
         </div>
       ) : (
@@ -369,8 +371,8 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                 key={proj.id}
                 className="ezdb-anim"
                 style={{
-                  background: '#FFFFFF',
-                  borderRadius: '22px',
+                  background: 'var(--ez-color-surface)',
+                  borderRadius: 'var(--ez-radius-card)',
                   border: '1px solid #EEF1F6',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
                   padding: '22px',
@@ -389,8 +391,8 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                         fontSize: '11px',
                         fontWeight: 700,
                         padding: '5px 12px',
-                        borderRadius: '999px',
-                        background: '#E3EEFB',
+                        borderRadius: 'var(--ez-radius-pill)',
+                        background: 'var(--ez-pastel-sky)',
                         color: '#2456A8',
                         whiteSpace: 'nowrap',
                       }}
@@ -403,13 +405,13 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                         fontSize: '11px',
                         fontWeight: 700,
                         padding: '5px 12px',
-                        borderRadius: '999px',
-                        background: isAhead ? '#E2F4D8' : '#FCE9E9',
+                        borderRadius: 'var(--ez-radius-pill)',
+                        background: isAhead ? 'var(--ez-pastel-mint)' : '#FCE9E9',
                         color: isAhead ? '#2C6E2C' : '#B54747',
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {isAhead ? 'On Schedule' : 'Terlambat'}
+                      {isAhead ? t('proj.active.badge_on') : t('proj.active.badge_late')}
                     </span>
                   </div>
 
@@ -419,7 +421,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                     style={{
                       fontSize: '15px',
                       fontWeight: 800,
-                      color: '#141412',
+                      color: 'var(--ez-color-text-primary)',
                       margin: '0 0 4px 0',
                       cursor: 'pointer',
                       lineHeight: 1.3,
@@ -430,16 +432,16 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6B6B64', marginBottom: '14px' }}>
                     <MapPin size={12} color="#8A8A84" />
-                    <span>{proj.location || 'Indonesia'}</span>
+                    <span>{proj.location || t('proj.active.loc_default')}</span>
                     <span>•</span>
-                    <span>{proj.clientName || proj.client || 'Klien Umum'}</span>
+                    <span>{proj.clientName || proj.client || t('proj.active.client_default')}</span>
                   </div>
 
                   {/* Dual Kurva S Progress Comparison Box */}
                   <div
                     style={{
                       background: '#FAFAF8',
-                      borderRadius: '12px',
+                      borderRadius: 'var(--ez-radius-control)',
                       padding: '12px',
                       border: '1px solid #EEF1F6',
                       display: 'flex',
@@ -448,12 +450,12 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
-                      <span style={{ fontWeight: 600, color: '#6B6B64' }}>Realisasi Fisik (Aktual)</span>
-                      <span style={{ fontWeight: 800, color: '#2563EB', fontSize: '14px' }}>{progress}%</span>
+                      <span style={{ fontWeight: 600, color: '#6B6B64' }}>{t('proj.active.actual_t')}</span>
+                      <span style={{ fontWeight: 800, color: 'var(--ez-color-primary)', fontSize: '14px' }}>{progress}%</span>
                     </div>
 
                     {/* Dual Progress Bar */}
-                    <div style={{ position: 'relative', width: '100%', height: '8px', background: '#F0EFE9', borderRadius: '999px', overflow: 'hidden' }}>
+                    <div style={{ position: 'relative', width: '100%', height: '8px', background: '#F0EFE9', borderRadius: 'var(--ez-radius-pill)', overflow: 'hidden' }}>
                       {/* Actual Progress Bar */}
                       <div
                         style={{
@@ -462,17 +464,17 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                           top: 0,
                           bottom: 0,
                           width: `${progress}%`,
-                          background: isAhead ? '#16A34A' : '#2563EB',
-                          borderRadius: '999px',
+                          background: isAhead ? '#16A34A' : 'var(--ez-color-primary)',
+                          borderRadius: 'var(--ez-radius-pill)',
                           zIndex: 2,
                         }}
                       />
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: '#6B6B64' }}>
-                      <span>Rencana Jadwal: <strong>{planned}%</strong></span>
+                      <span>{t('proj.active.planned_t')}<strong>{planned}%</strong></span>
                       <span style={{ fontWeight: 700, color: isAhead ? '#2C6E2C' : '#B54747' }}>
-                        Deviasi: {deviation >= 0 ? `+${deviation}%` : `${deviation}%`}
+                        {t('proj.active.dev_t')}{deviation >= 0 ? `+${deviation}%` : `${deviation}%`}
                       </span>
                     </div>
                   </div>
@@ -483,15 +485,15 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                       style={{
                         marginTop: '10px',
                         padding: '12px',
-                        background: '#E3EEFB',
-                        borderRadius: '12px',
+                        background: 'var(--ez-pastel-sky)',
+                        borderRadius: 'var(--ez-radius-control)',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '6px',
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 700, color: '#2456A8' }}>
-                        <span>Input Opname Fisik:</span>
+                        <span>{t('proj.active.slider_t')}</span>
                         <span>{newProgressVal}%</span>
                       </div>
                       <input
@@ -505,15 +507,15 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', marginTop: '2px' }}>
                         <button
                           onClick={() => setEditingProgressProjId(null)}
-                          style={{ height: '30px', padding: '0 12px', fontSize: '12px', fontWeight: 600, borderRadius: '12px', background: '#FFFFFF', border: '1px solid #E2E8F0', color: '#141412', cursor: 'pointer' }}
+                          style={{ height: '30px', padding: '0 12px', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-surface)', border: '1px solid #E2E8F0', color: 'var(--ez-color-text-primary)', cursor: 'pointer' }}
                         >
-                          Batal
+                          {t('proj.active.cancel')}
                         </button>
                         <button
                           onClick={() => handleSaveProgress(proj.id)}
-                          style={{ height: '30px', padding: '0 12px', fontSize: '12px', borderRadius: '12px', background: '#2563EB', color: '#FFFFFF', border: 'none', fontWeight: 700, cursor: 'pointer' }}
+                          style={{ height: '30px', padding: '0 12px', fontSize: '12px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-primary)', color: '#FFFFFF', border: 'none', fontWeight: 700, cursor: 'pointer' }}
                         >
-                          Simpan Opname
+                          {t('proj.active.save')}
                         </button>
                       </div>
                     </div>
@@ -524,8 +526,8 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                 <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
-                      <div style={{ fontSize: '10.5px', color: '#8A8A84' }}>Nilai Kontrak Proyek</div>
-                      <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#141412' }}>
+                      <div style={{ fontSize: '10.5px', color: '#8A8A84' }}>{t('proj.active.value_t')}</div>
+                      <div style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                         {formatRupiah(totalCost)}
                       </div>
                     </div>
@@ -535,12 +537,12 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                       style={{
                         height: '32px',
                         padding: '0 12px',
-                        borderRadius: '12px',
-                        background: '#FFFFFF',
+                        borderRadius: 'var(--ez-radius-control)',
+                        background: 'var(--ez-color-surface)',
                         border: '1px solid #E2E8F0',
                         fontSize: '12px',
                         fontWeight: 700,
-                        color: '#141412',
+                        color: 'var(--ez-color-text-primary)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -548,7 +550,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                       }}
                     >
                       <Sliders size={12} />
-                      <span>Update Opname</span>
+                      <span>{t('proj.active.update_opname')}</span>
                     </button>
                   </div>
 
@@ -559,8 +561,8 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                       style={{
                         flex: 1,
                         height: '36px',
-                        borderRadius: '12px',
-                        background: '#E3EEFB',
+                        borderRadius: 'var(--ez-radius-control)',
+                        background: 'var(--ez-pastel-sky)',
                         border: 'none',
                         color: '#2456A8',
                         fontSize: '12px',
@@ -573,7 +575,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                       }}
                     >
                       <LineChart size={13} />
-                      <span>Kurva S & Jadwal</span>
+                      <span>{t('proj.active.curve_btn')}</span>
                     </button>
 
                     <button
@@ -581,8 +583,8 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                       style={{
                         flex: 1,
                         height: '36px',
-                        borderRadius: '12px',
-                        background: '#2563EB',
+                        borderRadius: 'var(--ez-radius-control)',
+                        background: 'var(--ez-color-primary)',
                         color: '#FFFFFF',
                         fontSize: '12px',
                         fontWeight: 700,
@@ -593,17 +595,17 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                         justifyContent: 'center',
                       }}
                     >
-                      Dashboard Lapangan →
+                      {t('proj.active.dash_btn')} →
                     </button>
 
                     <button
                       onClick={() => handleMarkAsCompleted(proj)}
-                      title="Tandai Proyek Selesai 100%"
+                      title={t('proj.active.complete_title')}
                       style={{
                         height: '36px',
                         width: '36px',
-                        borderRadius: '12px',
-                        background: '#E2F4D8',
+                        borderRadius: 'var(--ez-radius-control)',
+                        background: 'var(--ez-pastel-mint)',
                         border: 'none',
                         color: '#2C6E2C',
                         display: 'flex',

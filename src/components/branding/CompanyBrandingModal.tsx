@@ -178,7 +178,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
           width: '100%',
           maxWidth: '720px',
           maxHeight: '90vh',
-          backgroundColor: '#ffffff',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
           boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.25)',
           display: 'flex',
@@ -208,16 +208,16 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
               }}
             >
               <Building2 size={22} />
             </div>
             <div>
-              <h2 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+              <h2 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                 Pengaturan Branding & Kop PDF
               </h2>
-              <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
+              <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0 0' }}>
                 Atur logo perusahaan, profil kontraktor/konsultan, dan lisensi dokumen RAB
               </p>
             </div>
@@ -228,7 +228,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
-              color: '#64748B',
+              color: 'var(--ez-color-text-muted)',
               padding: '6px',
               borderRadius: '8px',
             }}
@@ -282,7 +282,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
           <div
             style={{
               padding: '14px 18px',
-              borderRadius: '12px',
+              borderRadius: 'var(--ez-radius-control)',
               background: isPaid ? '#F0FDF4' : '#FFFBEB',
               border: `1px solid ${isPaid ? '#BBF7D0' : '#FDE68A'}`,
               display: 'flex',
@@ -294,7 +294,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
               {isPaid ? <Crown size={22} color="#16A34A" /> : <ShieldAlert size={22} color="#D97706" />}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                     Paket Langganan: {(branding?.subscriptionPlan || 'FREE').toUpperCase()}
                   </span>
                   <span
@@ -310,7 +310,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                     {isPaid ? 'BEBAS WATERMARK' : 'WATERMARK WAJIB'}
                   </span>
                 </div>
-                <p style={{ fontSize: '12px', color: '#64748B', margin: '3px 0 0 0' }}>
+                <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '3px 0 0 0' }}>
                   {isPaid
                     ? 'Anda memiliki hak penuh untuk mengunggah logo perusahaan kustom pada seluruh dokumen PDF.'
                     : 'Paket Free/Trial wajib menyertakan watermark resmi EZRAB dan tidak dapat mengunggah logo kustom.'}
@@ -329,7 +329,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                   fontSize: '11px',
                   fontWeight: 600,
                   border: '1px solid #CBD5E1',
-                  background: '#FFFFFF',
+                  background: 'var(--ez-color-surface)',
                   color: '#334155',
                   cursor: 'pointer',
                   display: 'flex',
@@ -348,17 +348,17 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
           <div
             style={{
               padding: '16px',
-              borderRadius: '12px',
+              borderRadius: 'var(--ez-radius-control)',
               border: '1px solid #E2E8F0',
-              background: '#F8FAFC',
+              background: 'var(--ez-color-surface-secondary)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <div>
-                <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                   Logo Perusahaan (Kop PDF & Cover)
                 </h3>
-                <p style={{ fontSize: '11.5px', color: '#64748B', margin: '2px 0 0 0' }}>
+                <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0 0' }}>
                   Format: PNG, JPG, atau WebP (Maksimal 2 MB). Aspek rasio dijaga otomatis.
                 </p>
               </div>
@@ -395,7 +395,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                   height: '80px',
                   borderRadius: '10px',
                   border: '1px dashed #CBD5E1',
-                  background: '#FFFFFF',
+                  background: 'var(--ez-color-surface)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -439,7 +439,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                       style={{
                         padding: '9px 18px',
                         borderRadius: '8px',
-                        background: '#2563EB',
+                        background: 'var(--ez-color-primary)',
                         color: '#FFFFFF',
                         fontSize: '12.5px',
                         fontWeight: 700,
@@ -454,7 +454,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                       <Upload size={14} />
                       <span>{uploadingLogo ? 'Mengunggah...' : branding?.logoUrl ? 'Ganti Logo' : 'Unggah Logo Perusahaan'}</span>
                     </button>
-                    <p style={{ fontSize: '11px', color: '#64748B', margin: '6px 0 0 0' }}>
+                    <p style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', margin: '6px 0 0 0' }}>
                       Logo akan muncul di Halaman Cover dan Kop Surat seluruh halaman PDF.
                     </p>
                   </div>
@@ -491,7 +491,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
 
           {/* Section 2: Informasi Perusahaan / Kontraktor */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Identitas Kontraktor / Konsultan
             </h3>
 
@@ -673,7 +673,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
             alignItems: 'center',
             justifyContent: 'flex-end',
             gap: '10px',
-            backgroundColor: '#F8FAFC',
+            backgroundColor: 'var(--ez-color-surface-secondary)',
           }}
         >
           <button
@@ -684,7 +684,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
               padding: '0 16px',
               borderRadius: '8px',
               border: '1px solid #CBD5E1',
-              background: '#FFFFFF',
+              background: 'var(--ez-color-surface)',
               color: '#334155',
               fontSize: '12.5px',
               fontWeight: 600,
@@ -702,7 +702,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
               padding: '0 20px',
               borderRadius: '8px',
               border: 'none',
-              background: '#2563EB',
+              background: 'var(--ez-color-primary)',
               color: '#FFFFFF',
               fontSize: '12.5px',
               fontWeight: 700,

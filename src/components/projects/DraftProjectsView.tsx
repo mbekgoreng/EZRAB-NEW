@@ -14,6 +14,7 @@ import { Project } from '../../types';
 import docEmptyImg from '../../assets/proyek-doc-empty.png';
 import { useProject } from '../../context/ProjectContext';
 import { DeleteProjectModal } from './DeleteProjectModal';
+import { useI18n } from '../../i18n/I18nContext';
 
 interface DraftProjectsViewProps {
   projects: Project[];
@@ -31,6 +32,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
   onOpenProject,
 }) => {
   const { updateProject, deleteProject, backupProjectData, createProject } = useProject();
+  const { t } = useI18n();
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -68,7 +70,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
   const handlePublishToInProgress = (proj: Project) => {
     if (
       window.confirm(
-        `Apakah Anda yakin ingin mempublikasikan "${proj.name}" ke status SEDANG DIKERJAKAN? Proyek akan masuk ke pemantauan Kurva S dan pelaksanaan lapangan.`
+        t('proj.draft.publish_confirm_a') + proj.name + t('proj.draft.publish_confirm_b')
       )
     ) {
       updateProject(proj.id, {
@@ -76,13 +78,13 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
         progress: proj.progress && proj.progress > 0 ? proj.progress : 5,
         startDate: proj.startDate || new Date().toISOString().split('T')[0],
       });
-      alert(`Proyek "${proj.name}" berhasil dipindahkan ke status Sedang Dikerjakan.`);
+      alert(t('proj.draft.publish_ok_a') + proj.name + t('proj.draft.publish_ok_b'));
     }
   };
 
   const handleDuplicateDraft = (proj: Project) => {
     const newProj = createProject({
-      name: `${proj.name} (Salinan Draft)`,
+      name: proj.name + t('proj.draft.dup_suffix'),
       clientName: proj.clientName || proj.client,
       location: proj.location,
       buildingType: proj.buildingType,
@@ -91,7 +93,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
       costSummary: proj.costSummary,
       sections: proj.sections,
     });
-    alert(`Draft berhasil diduplikasi: "${newProj.name}"`);
+    alert(t('proj.draft.dup_ok_a') + newProj.name + '");');
   };
 
   const handleDeleteDraft = (proj: Project) => {
@@ -115,66 +117,66 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
         {/* KPI 1: Total Draft */}
         <div className="ezdb-anim ez-stat ez-stat-cream" style={{ animation: 'ezdb-rise 0.6s 0.05s both' }}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
-            Draft Proyek
+            {t('proj.draft.kpi1_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {draftProjects.length}{' '}
-            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>Rancangan</span>
+            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>{t('proj.draft.kpi1_u')}</span>
           </div>
           <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
-            Tahap Pra-Konstruksi & Estimasi
+            {t('proj.draft.kpi1_s')}
           </div>
         </div>
 
         {/* KPI 2: Potensi Nilai Draft */}
         <div className="ezdb-anim ez-stat ez-stat-mint" style={{ animation: 'ezdb-rise 0.6s 0.12s both' }}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
-            Potensi Nilai Penawaran
+            {t('proj.draft.kpi2_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {totalDraftValue === 0 ? 'Rp 0' : formatRupiah(totalDraftValue)}
           </div>
           <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
-            Estimasi total pra-persetujuan
+            {t('proj.draft.kpi2_s')}
           </div>
         </div>
 
         {/* KPI 3: Draft Siap Diajukan */}
         <div className="ezdb-anim ez-stat ez-stat-sky" style={{ animation: 'ezdb-rise 0.6s 0.19s both' }}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
-            Siap Diajukan
+            {t('proj.draft.kpi3_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {draftProjects.filter((p) => getDraftReadiness(p) >= 75).length}{' '}
-            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>Draft</span>
+            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>{t('proj.draft.kpi3_u')}</span>
           </div>
           <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
-            Kelengkapan data ≥ 75%
+            {t('proj.draft.kpi3_s')}
           </div>
         </div>
 
         {/* KPI 4: Akselerasi Template Rumah */}
         <div className="ezdb-anim ez-stat ez-stat-peach" style={{ animation: 'ezdb-rise 0.6s 0.26s both' }}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
-            Template Cepat
+            {t('proj.draft.kpi4_t')}
           </div>
-          <div style={{ fontSize: '15px', fontWeight: 700, color: '#141412', lineHeight: 1.4, marginBottom: '10px' }}>
-            Tipe 36, 45, 70, Ruko & Kost
+          <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ez-color-text-primary)', lineHeight: 1.4, marginBottom: '10px' }}>
+            {t('proj.draft.kpi4_b')}
           </div>
           <button
             onClick={() => onNavigateToTab?.('template-rab')}
             style={{
-              background: '#2563EB',
+              background: 'var(--ez-color-primary)',
               border: 'none',
               color: '#FFFFFF',
-              borderRadius: '12px',
+              borderRadius: 'var(--ez-radius-control)',
               padding: '9px 16px',
               fontSize: '13px',
               fontWeight: 700,
               cursor: 'pointer',
             }}
           >
-            Buka Katalog Template →
+            {t('proj.draft.kpi4_btn')} →
           </button>
         </div>
       </div>
@@ -183,8 +185,8 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
       <div
         className="ezdb-anim"
         style={{
-          background: '#FFFFFF',
-          borderRadius: '22px',
+          background: 'var(--ez-color-surface)',
+          borderRadius: 'var(--ez-radius-card)',
           border: '1px solid #EEF1F6',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           padding: '24px',
@@ -199,13 +201,13 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
         <div style={{ maxWidth: '560px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#A8780A', fontSize: '11.5px', fontWeight: 750, marginBottom: '6px' }}>
             <Sparkles size={14} />
-            <span>AKSELERASI DRAFT DENGAN AI</span>
+            <span>{t('proj.draft.banner_tag')}</span>
           </div>
-          <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#141412', margin: '0 0 4px 0' }}>
-            Ubah Denah Sketsa & Gambar Kerja Menjadi Draft RAB Siap Pakai
+          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px 0' }}>
+            {t('proj.draft.banner_t')}
           </h3>
           <p style={{ fontSize: '13px', color: '#6B6B64', margin: 0, lineHeight: 1.5 }}>
-            Cukup unggah file PDF/CAD atau ketik deskripsi ruangan. Magic AI akan mengisi daftar pekerjaan, volume QTO, dan analisa harga satuan (AHSP) otomatis.
+            {t('proj.draft.banner_b')}
           </p>
         </div>
 
@@ -215,8 +217,8 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
             style={{
               height: '40px',
               padding: '0 18px',
-              borderRadius: '12px',
-              background: '#2563EB',
+              borderRadius: 'var(--ez-radius-control)',
+              background: 'var(--ez-color-primary)',
               color: '#FFFFFF',
               fontSize: '14px',
               fontWeight: 700,
@@ -229,17 +231,17 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
             }}
           >
             <Sparkles size={14} />
-            <span>Generate Draft Baru (AI)</span>
+            <span>{t('proj.draft.gen_btn')}</span>
           </button>
           <button
             onClick={onCreateProject}
             style={{
               height: '40px',
               padding: '0 16px',
-              borderRadius: '12px',
-              background: '#FFFFFF',
+              borderRadius: 'var(--ez-radius-control)',
+              background: 'var(--ez-color-surface)',
               border: '1px solid #E2E8F0',
-              color: '#141412',
+              color: 'var(--ez-color-text-primary)',
               fontSize: '14px',
               fontWeight: 700,
               cursor: 'pointer',
@@ -249,7 +251,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
             }}
           >
             <Plus size={14} />
-            <span>+ Buat Draft Manual</span>
+            <span>{t('proj.draft.manual_btn')}</span>
           </button>
         </div>
       </div>
@@ -261,9 +263,9 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           padding: '16px 20px',
-          borderRadius: '22px',
+          borderRadius: 'var(--ez-radius-card)',
           border: '1px solid #EEF1F6',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           flexWrap: 'wrap',
@@ -275,7 +277,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
           <Search size={14} color="#8A8A84" style={{ position: 'absolute', left: '12px', top: '12px' }} />
           <input
             type="text"
-            placeholder="Cari draft proyek..."
+            placeholder={t('proj.draft.search_ph')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
@@ -283,18 +285,18 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
               height: '38px',
               paddingLeft: '34px',
               paddingRight: '12px',
-              borderRadius: '12px',
+              borderRadius: 'var(--ez-radius-control)',
               border: '1px solid #EEF1F6',
               background: '#FAFAF8',
               fontSize: '13px',
-              color: '#141412',
+              color: 'var(--ez-color-text-primary)',
               outline: 'none',
             }}
           />
         </div>
 
         <div style={{ fontSize: '12px', color: '#6B6B64', fontWeight: 600 }}>
-          Menampilkan <span style={{ color: '#141412', fontWeight: 800 }}>{filteredDrafts.length}</span> rancangan draft
+          {t('proj.draft.showing_a')}{' '}<span style={{ color: 'var(--ez-color-text-primary)', fontWeight: 800 }}>{filteredDrafts.length}</span>{' '}{t('proj.draft.showing_b')}
         </div>
       </div>
 
@@ -303,8 +305,8 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
         <div
           className="ezdb-anim"
           style={{
-            background: '#FFFFFF',
-            borderRadius: '22px',
+            background: 'var(--ez-color-surface)',
+            borderRadius: 'var(--ez-radius-card)',
             border: '1px solid #EEF1F6',
             boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
             padding: '48px 24px',
@@ -321,27 +323,27 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
             alt="No Drafts"
             style={{ width: '140px', maxHeight: '100px', objectFit: 'contain', marginBottom: '14px', opacity: 0.85 }}
           />
-          <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#141412', margin: '0 0 6px 0' }}>
-            Belum ada draft proyek tersimpan
+          <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
+            {t('proj.draft.empty_t')}
           </h3>
           <p style={{ fontSize: '13px', color: '#6B6B64', maxWidth: '380px', margin: '0 0 16px 0', lineHeight: 1.5 }}>
-            Buat rancangan proyek baru, susun estimasi RAB dan perhitungan volume tanpa khawatir memengaruhi proyek yang sedang berjalan.
+            {t('proj.draft.empty_b')}
           </p>
           <button
             onClick={onCreateProject}
             style={{
               height: '40px',
               padding: '0 20px',
-              background: '#2563EB',
+              background: 'var(--ez-color-primary)',
               color: '#FFFFFF',
-              borderRadius: '12px',
+              borderRadius: 'var(--ez-radius-control)',
               border: 'none',
               fontSize: '14px',
               fontWeight: 700,
               cursor: 'pointer',
             }}
           >
-            + Buat Draft Proyek Pertama
+            {t('proj.draft.empty_btn')}
           </button>
         </div>
       ) : (
@@ -361,8 +363,8 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                 key={proj.id}
                 className="ezdb-anim"
                 style={{
-                  background: '#FFFFFF',
-                  borderRadius: '22px',
+                  background: 'var(--ez-color-surface)',
+                  borderRadius: 'var(--ez-radius-card)',
                   border: '1px solid #EEF1F6',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
                   padding: '22px',
@@ -381,13 +383,13 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                         fontSize: '11px',
                         fontWeight: 700,
                         padding: '5px 12px',
-                        borderRadius: '999px',
-                        background: '#FDF3D8',
+                        borderRadius: 'var(--ez-radius-pill)',
+                        background: 'var(--ez-pastel-cream)',
                         color: '#A8780A',
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      DRAFT ESTIMASI
+                      {t('proj.draft.badge')}
                     </span>
                     <span
                       style={{
@@ -396,7 +398,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                         color: readiness >= 75 ? '#2C6E2C' : '#A8780A',
                       }}
                     >
-                      Kesiapan Data: {readiness}%
+                      {t('proj.draft.readiness')} {readiness}%
                     </span>
                   </div>
 
@@ -406,7 +408,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                     style={{
                       fontSize: '15px',
                       fontWeight: 800,
-                      color: '#141412',
+                      color: 'var(--ez-color-text-primary)',
                       margin: '0 0 4px 0',
                       cursor: 'pointer',
                       lineHeight: 1.3,
@@ -417,16 +419,16 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6B6B64', marginBottom: '12px' }}>
                     <MapPin size={12} color="#8A8A84" />
-                    <span>{proj.location || 'Lokasi belum dispesifikasikan'}</span>
+                    <span>{proj.location || t('proj.draft.loc_default')}</span>
                     <span>•</span>
-                    <span>{proj.clientName || proj.client || 'Klien Draft'}</span>
+                    <span>{proj.clientName || proj.client || t('proj.draft.client_default')}</span>
                   </div>
 
                   {/* Checklist Kelengkapan Pra-Konstruksi */}
                   <div
                     style={{
                       background: '#FAFAF8',
-                      borderRadius: '12px',
+                      borderRadius: 'var(--ez-radius-control)',
                       padding: '10px 12px',
                       border: '1px solid #EEF1F6',
                       display: 'flex',
@@ -435,23 +437,23 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                       fontSize: '11.5px',
                     }}
                   >
-                    <div style={{ fontWeight: 700, color: '#141412', marginBottom: '2px' }}>
-                      Checklist Kesiapan Proposal:
+                    <div style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '2px' }}>
+                      {t('proj.draft.checklist_t')}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: proj.location ? '#2C6E2C' : '#8A8A84' }}>
                       {proj.location ? <CheckCircle2 size={13} /> : <Circle size={13} />}
-                      <span>Informasi Lokasi & Klien</span>
+                      <span>{t('proj.draft.check_loc')}</span>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: proj.buildingType ? '#2C6E2C' : '#8A8A84' }}>
                       {proj.buildingType ? <CheckCircle2 size={13} /> : <Circle size={13} />}
-                      <span>Tipe Bangunan & Spesifikasi ({proj.buildingType || 'Belum dipilih'})</span>
+                      <span>{t('proj.draft.check_type_a')}{proj.buildingType || t('proj.draft.check_type_none')})</span>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: totalCost > 0 ? '#2C6E2C' : '#8A8A84' }}>
                       {totalCost > 0 ? <CheckCircle2 size={13} /> : <Circle size={13} />}
-                      <span>Estimasi Nilai RAB ({formatRupiah(totalCost)})</span>
+                      <span>{t('proj.draft.check_rab_a')}{formatRupiah(totalCost)})</span>
                     </div>
                   </div>
                 </div>
@@ -460,8 +462,8 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                 <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
-                      <div style={{ fontSize: '10.5px', color: '#8A8A84' }}>Rencana Anggaran (RAB)</div>
-                      <div style={{ fontSize: '15px', fontWeight: 800, color: '#141412' }}>
+                      <div style={{ fontSize: '10.5px', color: '#8A8A84' }}>{t('proj.draft.budget_t')}</div>
+                      <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                         {formatRupiah(totalCost)}
                       </div>
                     </div>
@@ -469,11 +471,11 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                     {/* Launch / Publish Button */}
                     <button
                       onClick={() => handlePublishToInProgress(proj)}
-                      title="Mulai proyek dan ubah status ke Sedang Dikerjakan"
+                      title={t('proj.draft.publish_title')}
                       style={{
                         height: '36px',
                         padding: '0 14px',
-                        borderRadius: '12px',
+                        borderRadius: 'var(--ez-radius-control)',
                         background: '#16A34A',
                         color: '#FFFFFF',
                         fontSize: '13px',
@@ -487,7 +489,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                       }}
                     >
                       <Rocket size={13} />
-                      <span>Jadikan Proyek Berjalan</span>
+                      <span>{t('proj.draft.publish_btn')}</span>
                     </button>
                   </div>
 
@@ -499,24 +501,24 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                         style={{
                           height: '32px',
                           padding: '0 12px',
-                          borderRadius: '12px',
-                          background: '#FFFFFF',
+                          borderRadius: 'var(--ez-radius-control)',
+                          background: 'var(--ez-color-surface)',
                           border: '1px solid #E2E8F0',
                           fontSize: '12px',
                           fontWeight: 700,
-                          color: '#141412',
+                          color: 'var(--ez-color-text-primary)',
                           cursor: 'pointer',
                         }}
                       >
-                        Hitung QTO
+                        {t('proj.draft.qto_btn')}
                       </button>
                       <button
                         onClick={() => onOpenProject?.(proj.id, 'rab-estimasi')}
                         style={{
                           height: '32px',
                           padding: '0 12px',
-                          borderRadius: '12px',
-                          background: '#E3EEFB',
+                          borderRadius: 'var(--ez-radius-control)',
+                          background: 'var(--ez-pastel-sky)',
                           border: 'none',
                           fontSize: '12px',
                           fontWeight: 700,
@@ -524,18 +526,18 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                           cursor: 'pointer',
                         }}
                       >
-                        Susun RAB
+                        {t('proj.draft.rab_btn')}
                       </button>
                     </div>
 
                     <div style={{ display: 'flex', gap: '4px' }}>
                       <button
                         onClick={() => handleDuplicateDraft(proj)}
-                        title="Duplikat Draft Ini"
+                        title={t('proj.draft.dup_title')}
                         style={{
                           height: '32px',
                           width: '32px',
-                          borderRadius: '12px',
+                          borderRadius: 'var(--ez-radius-control)',
                           background: '#FAFAF8',
                           border: '1px solid #EEF1F6',
                           color: '#6B6B64',
@@ -549,11 +551,11 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                       </button>
                       <button
                         onClick={() => handleDeleteDraft(proj)}
-                        title="Hapus Draft Ini"
+                        title={t('proj.draft.del_title')}
                         style={{
                           height: '32px',
                           width: '32px',
-                          borderRadius: '12px',
+                          borderRadius: 'var(--ez-radius-control)',
                           background: '#FCE9E9',
                           border: '1px solid #F5D5D5',
                           color: '#B54747',

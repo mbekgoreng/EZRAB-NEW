@@ -28,16 +28,16 @@ interface Props {
 }
 
 const CAT_META: Record<string, { icon: LucideIcon; label: string; bg: string; color: string }> = {
-  residential: { icon: Home, label: 'Hunian', bg: '#FDF3D8', color: '#A8780A' },
-  commercial: { icon: Building2, label: 'Komersial', bg: '#E3EEFB', color: '#2456A8' },
-  road: { icon: Route, label: 'Jalan', bg: '#FFE9D6', color: '#B45309' },
-  drainage: { icon: Waves, label: 'Drainase', bg: '#E2F4D8', color: '#2C6E2C' },
+  residential: { icon: Home, label: 'Hunian', bg: 'var(--ez-pastel-cream)', color: '#A8780A' },
+  commercial: { icon: Building2, label: 'Komersial', bg: 'var(--ez-pastel-sky)', color: '#2456A8' },
+  road: { icon: Route, label: 'Jalan', bg: 'var(--ez-pastel-peach)', color: '#B45309' },
+  drainage: { icon: Waves, label: 'Drainase', bg: 'var(--ez-pastel-mint)', color: '#2C6E2C' },
 };
 
 const CAT_DEFAULT: { icon: LucideIcon; bg: string; color: string } = {
   icon: FileText,
   bg: '#F1F5F9',
-  color: '#64748B',
+  color: 'var(--ez-color-text-muted)',
 };
 
 export const TemplateRabMinimal: React.FC<Props> = ({ onSelectTemplate, onCreateProjectWithTemplate, onApplyTemplate }) => {

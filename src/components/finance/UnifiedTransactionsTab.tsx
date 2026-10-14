@@ -35,7 +35,7 @@ export const UnifiedTransactionsTab: React.FC<UnifiedTransactionsTabProps> = ({
       {/* Header Banner */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
           border: '1px solid #E2E8F0',
           padding: '20px 24px',
@@ -47,10 +47,10 @@ export const UnifiedTransactionsTab: React.FC<UnifiedTransactionsTabProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
           <div>
-            <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Buku Besar & Mutasi Transaksi Finansial
             </h2>
-            <div style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
+            <div style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
               Log terpusat seluruh pergerakan kas masuk, pembayaran invoice, pengeluaran proyek, dan komitmen hutang.
             </div>
           </div>
@@ -69,7 +69,7 @@ export const UnifiedTransactionsTab: React.FC<UnifiedTransactionsTabProps> = ({
       {/* Main Table Container */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
           border: '1px solid #E2E8F0',
           padding: '20px 24px',

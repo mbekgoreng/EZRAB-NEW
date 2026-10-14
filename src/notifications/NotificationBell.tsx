@@ -114,19 +114,19 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
-          color: open ? '#2563EB' : '#64748B',
+          color: open ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
           transition: 'all 0.15s ease',
         }}
         onMouseEnter={(e) => {
           if (!open) {
-            e.currentTarget.style.background = '#F8FAFC';
+            e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
             e.currentTarget.style.color = '#0F172A';
           }
         }}
         onMouseLeave={(e) => {
           if (!open) {
             e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = '#64748B';
+            e.currentTarget.style.color = 'var(--ez-color-text-muted)';
           }
         }}
       >
@@ -140,7 +140,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
               minWidth: '15px',
               height: '15px',
               padding: '0 3px',
-              borderRadius: '999px',
+              borderRadius: 'var(--ez-radius-pill)',
               background: '#EF4444',
               color: '#FFFFFF',
               fontSize: '9.5px',
@@ -166,7 +166,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
             top: 'calc(100% + 8px)',
             right: isNarrowMobile ? '-60px' : '0',
             width: isNarrowMobile ? '310px' : '360px',
-            background: '#FFFFFF',
+            background: 'var(--ez-color-surface)',
             borderRadius: '14px',
             border: '1px solid #E5E7EB',
             boxShadow: '0 12px 32px rgba(15,23,42,0.12)',
@@ -186,16 +186,16 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A' }}>{t('notif.judul')}</span>
+              <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{t('notif.judul')}</span>
               {unreadCount > 0 && (
                 <span
                   style={{
                     fontSize: '11px',
                     fontWeight: 700,
                     background: '#EFF6FF',
-                    color: '#2563EB',
+                    color: 'var(--ez-color-primary)',
                     padding: '1px 7px',
-                    borderRadius: '999px',
+                    borderRadius: 'var(--ez-radius-pill)',
                   }}
                 >
                   {unreadCount} belum dibaca
@@ -210,7 +210,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                   border: 'none',
                   fontSize: '11.5px',
                   fontWeight: 600,
-                  color: '#2563EB',
+                  color: 'var(--ez-color-primary)',
                   cursor: 'pointer',
                   padding: 0,
                 }}
@@ -243,7 +243,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                     borderBottom: '1px solid #F1F5F9',
                     display: 'flex',
                     gap: '12px',
-                    background: item.read ? '#FFFFFF' : '#F8FAFC',
+                    background: item.read ? '#FFFFFF' : 'var(--ez-color-surface-secondary)',
                     transition: 'background 0.15s ease',
                     cursor: 'pointer',
                   }}
@@ -251,7 +251,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                     e.currentTarget.style.background = '#F1F5F9';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = item.read ? '#FFFFFF' : '#F8FAFC';
+                    e.currentTarget.style.background = item.read ? '#FFFFFF' : 'var(--ez-color-surface-secondary)';
                   }}
                 >
                   <div style={{ marginTop: '2px', flexShrink: 0 }}>
@@ -263,7 +263,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                         style={{
                           fontSize: '10px',
                           fontWeight: 700,
-                          color: '#64748B',
+                          color: 'var(--ez-color-text-muted)',
                           background: '#F1F5F9',
                           padding: '1px 5px',
                           borderRadius: '4px',
@@ -275,10 +275,10 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                         {formatRelative(item.createdAt)}
                       </span>
                     </div>
-                    <div style={{ fontSize: '12.5px', fontWeight: 650, color: '#0F172A', marginTop: '3px' }}>
+                    <div style={{ fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-primary)', marginTop: '3px' }}>
                       {item.title}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.4, marginTop: '2px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', lineHeight: 1.4, marginTop: '2px' }}>
                       {item.message}
                     </div>
                   </div>
@@ -326,7 +326,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                 border: 'none',
                 fontSize: '12px',
                 fontWeight: 650,
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 cursor: 'pointer',
               }}
             >

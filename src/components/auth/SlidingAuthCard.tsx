@@ -160,7 +160,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
       <div className={`sac-container${isSignUp ? ' sac-right-active' : ''}`}>
         {checking ? (
           <div className="sac-loggedin">
-            <Loader2 size={22} className="animate-spin" style={{ color: '#2563eb' }} />
+            <Loader2 size={22} className="animate-spin" style={{ color: 'var(--ez-color-primary)' }} />
             <p>Memeriksa sesi…</p>
           </div>
         ) : currentUserEmail ? (

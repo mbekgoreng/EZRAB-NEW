@@ -13,14 +13,17 @@ import { dokumenAiService } from '../service';
 import type { DraftRecord, HistoryEntry } from '../view';
 import { newId, formatDate } from '../view';
 import { useProject } from '../../../context/ProjectContext';
+import { useI18n } from '../../../i18n/I18nContext';
 
-const TEMPLATES = [
-  { id: 'berita-acara', name: 'Berita Acara', desc: 'Serah terima, opname, atau kesepakatan lapangan' },
-  { id: 'surat', name: 'Surat Resmi', desc: 'Surat permohonan, pemberitahuan, undangan' },
-  { id: 'laporan-harian', name: 'Laporan Harian', desc: 'Progres harian proyek konstruksi' },
-  { id: 'notulen', name: 'Notulen Rapat', desc: 'Ringkasan rapat koordinasi proyek' },
-  { id: 'checklist-qc', name: 'Checklist QC', desc: 'Pemeriksaan mutu pekerjaan' },
-  { id: 'bebas', name: 'Draf Bebas', desc: 'Instruksi sendiri untuk AI' },
+const getTemplates = (
+  t: (key: string) => string,
+): Array<{ id: string; name: string; desc: string }> => [
+  { id: 'berita-acara', name: t('ai.doc.create.tmpl_berita_n'), desc: t('ai.doc.create.tmpl_berita_d') },
+  { id: 'surat', name: t('ai.doc.create.tmpl_surat_n'), desc: t('ai.doc.create.tmpl_surat_d') },
+  { id: 'laporan-harian', name: t('ai.doc.create.tmpl_laporan_n'), desc: t('ai.doc.create.tmpl_laporan_d') },
+  { id: 'notulen', name: t('ai.doc.create.tmpl_notulen_n'), desc: t('ai.doc.create.tmpl_notulen_d') },
+  { id: 'checklist-qc', name: t('ai.doc.create.tmpl_checklist_n'), desc: t('ai.doc.create.tmpl_checklist_d') },
+  { id: 'bebas', name: t('ai.doc.create.tmpl_bebas_n'), desc: t('ai.doc.create.tmpl_bebas_d') },
 ];
 
 export const DocCreator: React.FC<{
@@ -28,6 +31,8 @@ export const DocCreator: React.FC<{
   onUpsertDraft: (d: DraftRecord) => void;
   onAddHistory: (e: Omit<HistoryEntry, 'id' | 'at'>) => void;
 }> = ({ drafts, onUpsertDraft, onAddHistory }) => {
+  const { t } = useI18n();
+  const TEMPLATES = getTemplates(t);
   const { currentProject, projects } = useProject();
   const [templateId, setTemplateId] = useState('berita-acara');
   const [projectId, setProjectId] = useState(currentProject?.id || '');
@@ -57,21 +62,21 @@ export const DocCreator: React.FC<{
       if (res.success) {
         const d: DraftRecord = {
           id: newId('draft'), templateId, templateName: template.name,
-          title: `${template.name} — ${project?.name || 'Tanpa proyek'}`,
+          title: `${template.name} — ${project?.name || t('ai.doc.create.no_project')}`,
           content: res.reply || '', projectId: project?.id, projectName: project?.name,
           status: 'draft', createdAt: Date.now(), updatedAt: Date.now(),
         };
         setDraft(d);
         onAddHistory({
           type: 'draft', docIds: [], docNames: [],
-          title: `Draf: ${d.title}`,
+          title: `${t('ai.doc.create.hist_a')} ${d.title}`,
           resultPreview: d.content.slice(0, 300), resultFull: d.content,
         });
       } else {
-        setError(`${res.errorCode || 'ERROR'}: ${res.message || 'Gagal.'}`);
+        setError(`${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`);
       }
     } catch (e: any) {
-      setError(e?.message || 'Kesalahan tidak terduga.');
+      setError(e?.message || t('ai.doc.err_unexpected'));
     } finally {
       setBusy(false);
     }
@@ -86,7 +91,7 @@ export const DocCreator: React.FC<{
 
   const downloadDraft = () => {
     if (!draft) return;
-    const blob = new Blob([`[DRAF — belum resmi]\n${draft.title}\n\n${draft.content}`], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob([`${t('ai.doc.create.draft_header')}\n${draft.title}\n\n${draft.content}`], { type: 'text/plain;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = draft.title.replace(/[^\w\- ]/g, '').slice(0, 60) + '.txt';
@@ -98,47 +103,47 @@ export const DocCreator: React.FC<{
     <div className="docai-tab">
       <div className="docai-pagehead">
         <div>
-          <div className="docai-crumb">EZRAB AI Dokumen</div>
-          <h2>Buat Dokumen</h2>
-          <p>Susun draf dokumen konstruksi dengan bantuan AI. Semua hasil berstatus DRAF sampai ditinjau.</p>
+          <div className="docai-crumb">{t('ai.doc.create.crumb')}</div>
+          <h2>{t('ai.doc.create.h2')}</h2>
+          <p>{t('ai.doc.create.sub')}</p>
         </div>
       </div>
 
       <div className="docai-createlayout">
         <div className="docai-card">
-          <div className="docai-step">1 · Pilih template</div>
+          <div className="docai-step">{t('ai.doc.create.step_1')}</div>
           <div className="docai-tmplgrid">
-            {TEMPLATES.map((t) => (
-              <button key={t.id} className={`docai-tmpl ${templateId === t.id ? 'active' : ''}`} onClick={() => setTemplateId(t.id)}>
-                <div className="docai-tmpl-n">{t.name}</div>
-                <div className="docai-tmpl-d">{t.desc}</div>
+            {TEMPLATES.map((tmpl) => (
+              <button key={tmpl.id} className={`docai-tmpl ${templateId === tmpl.id ? 'active' : ''}`} onClick={() => setTemplateId(tmpl.id)}>
+                <div className="docai-tmpl-n">{tmpl.name}</div>
+                <div className="docai-tmpl-d">{tmpl.desc}</div>
               </button>
             ))}
           </div>
 
-          <div className="docai-step" style={{ marginTop: 16 }}>2 · Proyek & instruksi</div>
+          <div className="docai-step" style={{ marginTop: 16 }}>{t('ai.doc.create.step_2')}</div>
           <select value={projectId} onChange={(e) => setProjectId(e.target.value)} className="docai-select docai-full">
-            <option value="">— tanpa proyek —</option>
+            <option value="">{t('ai.doc.create.opt_no_project')}</option>
             {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
           <textarea
             className="docai-textarea" rows={4} value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
-            placeholder="Contoh: Berita acara serah terima pekerjaan pondasi tahap 1, tanggal 10 Oktober 2026, dihadiri mandor dan pengawas…"
+            placeholder={t('ai.doc.create.instr_ph')}
           />
           <button className="docai-btn-primary docai-runbtn" onClick={generate} disabled={busy}>
-            {busy ? <><Loader2 size={15} className="spin" /> Menyusun draf…</> : <><FilePlus2 size={15} /> Buatkan Draf</>}
+            {busy ? <><Loader2 size={15} className="spin" /> {t('ai.doc.create.gen_busy')}</> : <><FilePlus2 size={15} /> {t('ai.doc.create.gen')}</>}
           </button>
           {error && <div className="docai-error"><AlertTriangle size={14} /> {error}</div>}
         </div>
 
         <div className="docai-card">
-          <div className="docai-step">3 · Review draf</div>
+          <div className="docai-step">{t('ai.doc.create.step_3')}</div>
           {!draft ? (
-            <p className="docai-hint">Draf akan muncul di sini. Periksa isinya sebelum disimpan — AI tidak mengarang nomor surat, nama pihak, atau nilai kontrak.</p>
+            <p className="docai-hint">{t('ai.doc.create.hint_empty')}</p>
           ) : (
             <>
-              <div className="docai-draftwarn">STATUS: DRAF — perlu ditinjau manusia sebelum dipakai resmi.</div>
+              <div className="docai-draftwarn">{t('ai.doc.create.draft_warn')}</div>
               <input
                 className="docai-input" value={draft.title}
                 onChange={(e) => setDraft({ ...draft, title: e.target.value })}
@@ -149,20 +154,20 @@ export const DocCreator: React.FC<{
               />
               <div className="docai-btnrow">
                 <button className="docai-btn-primary" onClick={saveDraft}>
-                  {saved ? <Check size={15} /> : <Save size={15} />} {saved ? 'Tersimpan' : 'Simpan Draf'}
+                  {saved ? <Check size={15} /> : <Save size={15} />} {saved ? t('ai.doc.create.saved') : t('ai.doc.create.save')}
                 </button>
-                <button className="docai-btn-ghost" onClick={downloadDraft}><Download size={15} /> Unduh .txt</button>
+                <button className="docai-btn-ghost" onClick={downloadDraft}><Download size={15} /> {t('ai.doc.create.unduh')}</button>
               </div>
             </>
           )}
 
           {drafts.length > 0 && (
             <>
-              <div className="docai-step" style={{ marginTop: 18 }}>Draf tersimpan</div>
+              <div className="docai-step" style={{ marginTop: 18 }}>{t('ai.doc.create.draft_saved_list')}</div>
               <div className="docai-draftlist">
                 {drafts.map((d) => (
                   <button key={d.id} className="docai-draftitem" onClick={() => setDraft(d)}>
-                    <div><strong>{d.title}</strong><span className="docai-draftst">{d.status === 'draft' ? 'DRAF' : 'Ditinjau'}</span></div>
+                    <div><strong>{d.title}</strong><span className="docai-draftst">{d.status === 'draft' ? t('ai.doc.create.st_draft') : t('ai.doc.create.st_reviewed')}</span></div>
                     <span>{formatDate(d.updatedAt)}</span>
                   </button>
                 ))}

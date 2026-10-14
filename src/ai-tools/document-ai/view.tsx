@@ -21,6 +21,7 @@ import { DocLibrary } from './components/DocLibrary';
 import { DocAnalyzer } from './components/DocAnalyzer';
 import { DocCreator } from './components/DocCreator';
 import { DocHistory } from './components/DocHistory';
+import { useI18n } from '../../i18n/I18nContext';
 import './document-ai.css';
 
 /* ------------------------------------------------------------------ */
@@ -138,6 +139,7 @@ interface DokumenAiViewProps {
 }
 
 export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveChange }) => {
+  const { t } = useI18n();
   const [tab, setTab] = useState<Tab>('library');
   const [activeDoc, setActiveDoc] = useState<DocRecord | null>(null);
 
@@ -187,24 +189,24 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
 
   return (
     <div className="docai-shell">
-      <nav className="docai-tabs" aria-label="Menu AI Dokumen">
+      <nav className="docai-tabs" aria-label={t('ai.doc.tab_menu_label')}>
         {[
-          { id: 'library', label: 'Dokumen Saya', icon: FolderOpen },
-          { id: 'analyze', label: 'Analisis Dokumen', icon: ScanSearch },
-          { id: 'create', label: 'Buat Dokumen', icon: FilePlus2 },
-          { id: 'history', label: 'Riwayat', icon: History },
-        ].map((t) => {
-          const Icon = t.icon;
-          const disabled = t.id === 'analyze' && !activeDoc;
+          { id: 'library', label: t('ai.doc.tab_library'), icon: FolderOpen },
+          { id: 'analyze', label: t('ai.doc.tab_analyze'), icon: ScanSearch },
+          { id: 'create', label: t('ai.doc.tab_create'), icon: FilePlus2 },
+          { id: 'history', label: t('ai.doc.tab_history'), icon: History },
+        ].map((tabItem) => {
+          const Icon = tabItem.icon;
+          const disabled = tabItem.id === 'analyze' && !activeDoc;
           return (
             <button
-              key={t.id}
-              className={`docai-tabbtn ${tab === t.id ? 'active' : ''}`}
+              key={tabItem.id}
+              className={`docai-tabbtn ${tab === tabItem.id ? 'active' : ''}`}
               disabled={disabled}
-              title={disabled ? 'Pilih dokumen di "Dokumen Saya" dulu' : t.label}
-              onClick={() => setTab(t.id as Tab)}
+              title={disabled ? t('ai.doc.tab_analyze_disabled') : tabItem.label}
+              onClick={() => setTab(tabItem.id as Tab)}
             >
-              <Icon size={16} /> {t.label}
+              <Icon size={16} /> {tabItem.label}
             </button>
           );
         })}

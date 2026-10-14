@@ -86,7 +86,7 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
     >
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '20px',
           width: '100%',
           maxWidth: '1050px',
@@ -106,7 +106,7 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            backgroundColor: '#F8FAFC',
+            backgroundColor: 'var(--ez-color-surface-secondary)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -114,20 +114,20 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
               style={{
                 width: '42px',
                 height: '42px',
-                borderRadius: '12px',
+                borderRadius: 'var(--ez-radius-control)',
                 backgroundColor: '#EFF6FF',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 border: '1px solid #BFDBFE',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
               }}
             >
               <Scale size={22} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                <h2 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                   AI Cek Kewajaran & Audit RAB
                 </h2>
                 <span
@@ -137,13 +137,13 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                     padding: '2px 8px',
                     borderRadius: '6px',
                     backgroundColor: '#DBEAFE',
-                    color: '#1D4ED8',
+                    color: 'var(--ez-color-primary-hover)',
                   }}
                 >
                   PHASE 9
                 </span>
               </div>
-              <p style={{ fontSize: '13px', color: '#64748B', margin: '2px 0 0 0' }}>
+              <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0 0' }}>
                 Audit harga pasar, mapping AHSP, duplikasi pekerjaan, dan kelengkapan item RAB
               </p>
             </div>
@@ -156,12 +156,12 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
               height: '36px',
               borderRadius: '10px',
               border: '1px solid #E2E8F0',
-              backgroundColor: '#FFFFFF',
+              backgroundColor: 'var(--ez-color-surface)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              color: '#64748B',
+              color: 'var(--ez-color-text-muted)',
             }}
           >
             <X size={18} />
@@ -179,14 +179,14 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                 gap: '12px',
               }}
             >
-              <div style={{ backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+              <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
                   Total Item Diperiksa
                 </div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', marginTop: '4px' }}>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '4px' }}>
                   {summary.totalItemsReviewed} Pekerjaan
                 </div>
-                <div style={{ fontSize: '11px', color: '#64748B' }}>
+                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
                   {summary.totalFindings} Catatan Temuan
                 </div>
               </div>
@@ -219,31 +219,31 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                 >
                   {summary.healthScore} / 100
                 </div>
-                <div style={{ fontSize: '11px', color: '#64748B' }}>
+                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
                   {summary.criticalWarnings} Warning • {summary.needsReviewCount} Review
                 </div>
               </div>
 
-              <div style={{ backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+              <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
                   Selisih Harga Acuan
                 </div>
                 <div style={{ fontSize: '18px', fontWeight: 800, color: '#D97706', marginTop: '4px' }}>
                   {summary.priceFindings} Item
                 </div>
-                <div style={{ fontSize: '11px', color: '#64748B' }}>
+                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
                   vs Master Price Benchmark
                 </div>
               </div>
 
-              <div style={{ backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+              <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
                   Mapping & Satuan AHSP
                 </div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#2563EB', marginTop: '4px' }}>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-primary)', marginTop: '4px' }}>
                   {summary.ahspFindings} Item
                 </div>
-                <div style={{ fontSize: '11px', color: '#64748B' }}>
+                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
                   Standar SNI / PUPR
                 </div>
               </div>
@@ -291,7 +291,7 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                     fontSize: '12px',
                     fontWeight: 600,
                     cursor: 'pointer',
-                    backgroundColor: selectedCategory === cat ? '#2563EB' : '#FFFFFF',
+                    backgroundColor: selectedCategory === cat ? 'var(--ez-color-primary)' : '#FFFFFF',
                     color: selectedCategory === cat ? '#FFFFFF' : '#475569',
                   }}
                 >
@@ -329,16 +329,16 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                 style={{
                   textAlign: 'center',
                   padding: '40px 20px',
-                  backgroundColor: '#F8FAFC',
-                  borderRadius: '12px',
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
+                  borderRadius: 'var(--ez-radius-control)',
                   border: '1px dashed #CBD5E1',
                 }}
               >
                 <CheckCircle2 size={36} color="#16A34A" style={{ margin: '0 auto 10px auto' }} />
-                <div style={{ fontSize: '15px', fontWeight: 750, color: '#0F172A' }}>
+                <div style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
                   Tidak Ditemukan Isu Kritis
                 </div>
-                <div style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
+                <div style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
                   Seluruh item pekerjaan pada RAB memenuhi kriteria acuan standar.
                 </div>
               </div>
@@ -351,9 +351,9 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                   <div
                     key={finding.id}
                     style={{
-                      backgroundColor: '#FFFFFF',
-                      borderRadius: '12px',
-                      border: `1px solid ${isWarning ? '#FECACA' : isReview ? '#FED7AA' : '#E2E8F0'}`,
+                      backgroundColor: 'var(--ez-color-surface)',
+                      borderRadius: 'var(--ez-radius-control)',
+                      border: `1px solid ${isWarning ? '#FECACA' : isReview ? '#FED7AA' : 'var(--ez-color-border)'}`,
                       borderLeft: `4px solid ${isWarning ? '#DC2626' : isReview ? '#EA580C' : '#3B82F6'}`,
                       padding: '14px 18px',
                       display: 'flex',
@@ -370,7 +370,7 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                             padding: '2px 8px',
                             borderRadius: '4px',
                             backgroundColor: isWarning ? '#FEF2F2' : isReview ? '#FFF7ED' : '#EFF6FF',
-                            color: isWarning ? '#B91C1C' : isReview ? '#C2410C' : '#1D4ED8',
+                            color: isWarning ? '#B91C1C' : isReview ? '#C2410C' : 'var(--ez-color-primary-hover)',
                           }}
                         >
                           {finding.severity}
@@ -389,16 +389,16 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                           {finding.category}
                         </span>
 
-                        <span style={{ fontSize: '14px', fontWeight: 750, color: '#0F172A' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
                           {finding.itemName}
                         </span>
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '11px', color: '#64748B', backgroundColor: '#F8FAFC', padding: '2px 8px', borderRadius: '4px', border: '1px solid #E2E8F0' }}>
+                        <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', backgroundColor: 'var(--ez-color-surface-secondary)', padding: '2px 8px', borderRadius: '4px', border: '1px solid #E2E8F0' }}>
                           Sumber: <strong>{finding.source}</strong>
                         </span>
-                        <span style={{ fontSize: '11px', color: '#64748B' }}>
+                        <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
                           Confidence: {finding.confidence}
                         </span>
                       </div>
@@ -410,7 +410,7 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
 
                     <div
                       style={{
-                        backgroundColor: '#F8FAFC',
+                        backgroundColor: 'var(--ez-color-surface-secondary)',
                         padding: '8px 12px',
                         borderRadius: '6px',
                         fontSize: '12px',
@@ -432,9 +432,9 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                             onClose();
                           }}
                           style={{
-                            backgroundColor: '#FFFFFF',
+                            backgroundColor: 'var(--ez-color-surface)',
                             border: '1px solid #CBD5E1',
-                            color: '#0F172A',
+                            color: 'var(--ez-color-text-primary)',
                             padding: '4px 10px',
                             borderRadius: '6px',
                             fontSize: '11.5px',
@@ -463,13 +463,13 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
           style={{
             padding: '16px 24px',
             borderTop: '1px solid #E2E8F0',
-            backgroundColor: '#F8FAFC',
+            backgroundColor: 'var(--ez-color-surface-secondary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
-          <div style={{ fontSize: '12px', color: '#64748B' }}>
+          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
             🔒 <em>EZRAB AI tidak mengubah data spreadsheet RAB tanpa persetujuan manual pengguna.</em>
           </div>
 

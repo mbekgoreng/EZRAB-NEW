@@ -43,7 +43,7 @@ export const MagicAIQuickRail: React.FC<MagicAIQuickRailProps> = ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        background: '#FFFFFF',
+        background: 'var(--ez-color-surface)',
         borderRadius: '24px',
         border: '1px solid #E2E8F0',
         padding: collapsed ? '6px 4px' : '8px 6px',
@@ -83,7 +83,7 @@ export const MagicAIQuickRail: React.FC<MagicAIQuickRailProps> = ({
               style={{
                 width: '42px',
                 height: '42px',
-                borderRadius: '12px',
+                borderRadius: 'var(--ez-radius-control)',
                 border: 'none',
                 background: 'transparent',
                 display: 'flex',
@@ -91,17 +91,17 @@ export const MagicAIQuickRail: React.FC<MagicAIQuickRailProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                color: '#64748B',
+                color: 'var(--ez-color-text-muted)',
                 gap: '2px',
                 transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = '#EFF6FF';
-                e.currentTarget.style.color = '#2563EB';
+                e.currentTarget.style.color = 'var(--ez-color-primary)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = '#64748B';
+                e.currentTarget.style.color = 'var(--ez-color-text-muted)';
               }}
             >
               <Icon size={16} />
@@ -122,8 +122,8 @@ export const MagicAIQuickRail: React.FC<MagicAIQuickRailProps> = ({
           height: '24px',
           borderRadius: '50%',
           border: '1px solid #E2E8F0',
-          background: '#F8FAFC',
-          color: '#64748B',
+          background: 'var(--ez-color-surface-secondary)',
+          color: 'var(--ez-color-text-muted)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

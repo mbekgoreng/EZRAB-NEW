@@ -57,7 +57,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
         return {
           bg: '#EFF6FF',
           border: '#BFDBFE',
-          color: '#1D4ED8',
+          color: 'var(--ez-color-primary-hover)',
           text: 'HARGA OVERRIDE (AKTIF)',
           desc: 'Dipilih secara manual oleh Estimator (Prioritas Tertinggi Tier 1)',
         };
@@ -87,8 +87,8 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
         };
       case 'REFERENCE':
         return {
-          bg: '#F8FAFC',
-          border: '#E2E8F0',
+          bg: 'var(--ez-color-surface-secondary)',
+          border: 'var(--ez-color-border)',
           color: '#475569',
           text: 'HARGA REFERENSI NASIONAL',
           desc: 'Menggunakan Database Acuan Master EZRAB / HSD 2026',
@@ -131,7 +131,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
           width: '100%',
           maxWidth: '680px',
           maxHeight: '90vh',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           overflow: 'hidden',
@@ -159,10 +159,10 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
                 Price Provenance & Resolution Inspector
               </span>
             </div>
-            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#0F172A' }}>
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
               {materialName}
             </h3>
-            <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px', fontFamily: 'monospace' }}>
+            <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '2px', fontFamily: 'monospace' }}>
               Kode: {materialCode} • Satuan: {resolved.unit}
             </div>
           </div>
@@ -174,7 +174,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
               padding: '6px',
               borderRadius: '8px',
               cursor: 'pointer',
-              color: '#64748B',
+              color: 'var(--ez-color-text-muted)',
             }}
           >
             <X size={20} />
@@ -233,15 +233,15 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
                 display: 'grid',
                 gridTemplateColumns: 'repeat(3, 1fr)',
                 gap: '12px',
-                backgroundColor: '#F8FAFC',
+                backgroundColor: 'var(--ez-color-surface-secondary)',
                 padding: '16px',
-                borderRadius: '12px',
+                borderRadius: 'var(--ez-radius-control)',
                 border: '1px solid #E2E8F0',
               }}
             >
               {/* 1. Harga Referensi */}
-              <div style={{ padding: '10px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>1. Acuan Nasional</div>
+              <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface)', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>1. Acuan Nasional</div>
                 <div style={{ fontSize: '15px', fontWeight: 700, color: '#334155', marginTop: '4px' }}>
                   {refPrice > 0 ? formatCurrencyIDR(refPrice) : '-'}
                 </div>
@@ -256,16 +256,16 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
                   padding: '10px',
                   backgroundColor: resolved.projectPrice ? '#ECFDF5' : '#FFFFFF',
                   borderRadius: '8px',
-                  border: `1px solid ${resolved.projectPrice ? '#A7F3D0' : '#E2E8F0'}`,
+                  border: `1px solid ${resolved.projectPrice ? '#A7F3D0' : 'var(--ez-color-border)'}`,
                 }}
               >
-                <div style={{ fontSize: '11px', color: resolved.projectPrice ? '#047857' : '#64748B', fontWeight: 600 }}>
+                <div style={{ fontSize: '11px', color: resolved.projectPrice ? '#047857' : 'var(--ez-color-text-muted)', fontWeight: 600 }}>
                   2. Penawaran Proyek
                 </div>
                 <div style={{ fontSize: '15px', fontWeight: 700, color: resolved.projectPrice ? '#065F46' : '#94A3B8', marginTop: '4px' }}>
                   {resolved.projectPrice ? formatCurrencyIDR(resolved.projectPrice) : 'Belum Diatur'}
                 </div>
-                <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '2px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                   {resolved.supplier || 'Penawaran Vendor'}
                 </div>
               </div>
@@ -276,16 +276,16 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
                   padding: '10px',
                   backgroundColor: resolved.overridePrice ? '#EFF6FF' : '#FFFFFF',
                   borderRadius: '8px',
-                  border: `1px solid ${resolved.overridePrice ? '#BFDBFE' : '#E2E8F0'}`,
+                  border: `1px solid ${resolved.overridePrice ? '#BFDBFE' : 'var(--ez-color-border)'}`,
                 }}
               >
-                <div style={{ fontSize: '11px', color: resolved.overridePrice ? '#1D4ED8' : '#64748B', fontWeight: 600 }}>
+                <div style={{ fontSize: '11px', color: resolved.overridePrice ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)', fontWeight: 600 }}>
                   3. Override Khusus
                 </div>
                 <div style={{ fontSize: '15px', fontWeight: 700, color: resolved.overridePrice ? '#1E40AF' : '#94A3B8', marginTop: '4px' }}>
                   {resolved.overridePrice ? formatCurrencyIDR(resolved.overridePrice) : 'Tidak Aktif'}
                 </div>
-                <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '2px' }}>
+                <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
                   Keputusan Estimator
                 </div>
               </div>
@@ -344,7 +344,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
             </div>
             <div
               style={{
-                backgroundColor: '#F8FAFC',
+                backgroundColor: 'var(--ez-color-surface-secondary)',
                 border: '1px solid #E2E8F0',
                 borderRadius: '10px',
                 padding: '12px 16px',
@@ -355,18 +355,18 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
               }}
             >
               <div>
-                <span style={{ color: '#64748B' }}>Sumber Resmi: </span>
+                <span style={{ color: 'var(--ez-color-text-muted)' }}>Sumber Resmi: </span>
                 <strong style={{ color: '#1E293B' }}>{resolved.sourceName || resolved.source}</strong>
               </div>
               {resolved.supplier && (
                 <div>
-                  <span style={{ color: '#64748B' }}>Supplier / Vendor: </span>
+                  <span style={{ color: 'var(--ez-color-text-muted)' }}>Supplier / Vendor: </span>
                   <strong style={{ color: '#1E293B' }}>{resolved.supplier}</strong>
                 </div>
               )}
               {resolved.validUntil && (
                 <div>
-                  <span style={{ color: '#64748B' }}>Masa Berlaku: </span>
+                  <span style={{ color: 'var(--ez-color-text-muted)' }}>Masa Berlaku: </span>
                   <strong style={{ color: resolved.status === 'EXPIRED' ? '#DC2626' : '#1E293B' }}>
                     s.d. {resolved.validUntil}
                   </strong>
@@ -374,7 +374,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
               )}
               {resolved.provenance?.createdBy && (
                 <div>
-                  <span style={{ color: '#64748B' }}>Ditetapkan Oleh: </span>
+                  <span style={{ color: 'var(--ez-color-text-muted)' }}>Ditetapkan Oleh: </span>
                   <strong style={{ color: '#1E293B' }}>{resolved.provenance.createdBy}</strong>
                 </div>
               )}
@@ -393,7 +393,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
                     key={rec.id}
                     style={{
                       padding: '8px 12px',
-                      backgroundColor: '#F8FAFC',
+                      backgroundColor: 'var(--ez-color-surface-secondary)',
                       border: '1px solid #E2E8F0',
                       borderRadius: '8px',
                       fontSize: '11.5px',
@@ -403,8 +403,8 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
                     }}
                   >
                     <div>
-                      <strong style={{ color: '#0F172A' }}>{rec.action}</strong>
-                      <div style={{ color: '#64748B', fontSize: '11px' }}>
+                      <strong style={{ color: 'var(--ez-color-text-primary)' }}>{rec.action}</strong>
+                      <div style={{ color: 'var(--ez-color-text-muted)', fontSize: '11px' }}>
                         {rec.reason || 'Pembaruan harga'} • {rec.userName}
                       </div>
                     </div>
@@ -444,7 +444,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
                 padding: '8px 16px',
                 borderRadius: '8px',
                 border: '1px solid #CBD5E1',
-                backgroundColor: '#FFFFFF',
+                backgroundColor: 'var(--ez-color-surface)',
                 color: '#475569',
                 fontSize: '12.5px',
                 fontWeight: 600,

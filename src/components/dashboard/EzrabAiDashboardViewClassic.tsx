@@ -27,18 +27,23 @@ interface EzrabAiDashboardViewClassicProps {
   onOpenOnboarding?: () => void;
 }
 
-const formatProjectDate = (dateStr?: string): string => {
+/** BCP47 locale untuk bahasa antarmuka yang sedang aktif. */
+const localeForLang = (lang: string): string =>
+  ({ id: 'id-ID', en: 'en-US', zh: 'zh-CN', ms: 'ms-MY' } as Record<string, string>)[lang] ?? 'id-ID';
+
+const formatProjectDate = (dateStr: string | undefined, lang: string): string => {
   if (!dateStr) return '-';
   try {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    const day = d.getDate();
-    const month = months[d.getMonth()];
-    const year = d.getFullYear();
+    const datePart = new Intl.DateTimeFormat(localeForLang(lang), {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).format(d);
     const hours = String(d.getHours()).padStart(2, '0');
     const minutes = String(d.getMinutes()).padStart(2, '0');
-    return `${day} ${month} ${year}, ${hours}:${minutes}`;
+    return `${datePart}, ${hours}:${minutes}`;
   } catch {
     return dateStr;
   }
@@ -52,7 +57,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
   onOpenMagicAi,
 }) => {
   const { currentProject, setCurrentProjectId } = useProject();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   // Dynamic time-based greeting (localized)
   const getLocalizedGreeting = (): string => {
@@ -85,8 +90,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
       case 'in_progress':
         return {
           label: t('dashboard.status_aktif'),
-          bg: '#EFF6FF',
-          color: '#2563EB',
+          bg: 'var(--ez-color-primary-soft)',
+          color: 'var(--ez-color-primary)',
           border: '#DBEAFE',
         };
       case 'completed':
@@ -94,22 +99,22 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
       case 'COMPLETED':
         return {
           label: t('dashboard.status_selesai'),
-          bg: '#F0FDF4',
-          color: '#16A34A',
+          bg: 'var(--ez-color-success-soft)',
+          color: 'var(--ez-color-success)',
           border: '#DCFCE7',
         };
       case 'archived':
         return {
           label: t('dashboard.status_arsip'),
-          bg: '#F1F5F9',
-          color: '#64748B',
-          border: '#E2E8F0',
+          bg: 'var(--ez-color-surface-secondary)',
+          color: 'var(--ez-color-text-muted)',
+          border: 'var(--ez-color-border)',
         };
       default:
         return {
           label: t('dashboard.status_draft'),
-          bg: '#FFFBEB',
-          color: '#D97706',
+          bg: 'var(--ez-color-warning-soft)',
+          color: 'var(--ez-color-warning)',
           border: '#FEF3C7',
         };
     }
@@ -125,7 +130,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
         maxWidth: '1440px',
         margin: '0 auto',
         width: '100%',
-        color: '#0F172A',
+        color: 'var(--ez-color-text-primary)',
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
@@ -135,9 +140,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
       <section
         className="ezrab-dashboard-hero"
         style={{
-          background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 55%, #EFF6FF 100%)',
-          borderRadius: '20px',
-          border: '1px solid #E5E7EB',
+          background: 'linear-gradient(135deg, var(--ez-color-surface) 0%, var(--ez-color-surface-secondary) 55%, var(--ez-color-primary-soft) 100%)',
+          borderRadius: '22px',
+          border: '1px solid var(--ez-color-border)',
           padding: '36px 44px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           position: 'relative',
@@ -154,7 +159,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           style={{
             position: 'absolute',
             inset: 0,
-            borderRadius: '20px',
+            borderRadius: '22px',
             overflow: 'hidden',
             pointerEvents: 'none',
           }}
@@ -182,8 +187,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               marginBottom: '10px',
             }}
           >
-            <span style={{ color: '#0F172A' }}>{getLocalizedGreeting()}, </span>
-            <span style={{ color: '#2563EB' }}>Ahmad</span>
+            <span style={{ color: 'var(--ez-color-text-primary)' }}>{getLocalizedGreeting()}, </span>
+            <span style={{ color: 'var(--ez-color-primary)' }}>Ahmad</span>
           </div>
 
           <h1
@@ -191,7 +196,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               fontSize: 'clamp(28px, 3.2vw, 36px)',
               fontWeight: 800,
               letterSpacing: '-0.03em',
-              color: '#0F172A',
+              color: 'var(--ez-color-text-primary)',
               lineHeight: 1.2,
               margin: '0 0 14px 0',
             }}
@@ -202,7 +207,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           <p
             style={{
               fontSize: '14px',
-              color: '#475569',
+              color: 'var(--ez-color-text-secondary)',
               lineHeight: 1.6,
               margin: '0 0 24px 0',
               maxWidth: '520px',
@@ -218,9 +223,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               style={{
                 height: '42px',
                 padding: '0 20px',
-                borderRadius: '10px',
-                background: '#2563EB',
-                color: '#FFFFFF',
+                borderRadius: '12px',
+                background: 'var(--ez-color-primary)',
+                color: 'var(--ez-color-surface)',
                 fontSize: '13.5px',
                 fontWeight: 650,
                 border: 'none',
@@ -232,11 +237,11 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 transition: 'all 0.18s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#1D4ED8';
+                e.currentTarget.style.background = 'var(--ez-color-primary-hover)';
                 e.currentTarget.style.transform = 'translateY(-1px)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#2563EB';
+                e.currentTarget.style.background = 'var(--ez-color-primary)';
                 e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
@@ -257,12 +262,12 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               style={{
                 height: '42px',
                 padding: '0 18px',
-                borderRadius: '10px',
-                background: '#FFFFFF',
-                color: '#334155',
+                borderRadius: '12px',
+                background: 'var(--ez-color-surface)',
+                color: 'var(--ez-color-text-primary)',
                 fontSize: '13.5px',
                 fontWeight: 600,
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -271,12 +276,12 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 transition: 'all 0.18s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#F8FAFC';
-                e.currentTarget.style.borderColor = '#CBD5E1';
+                e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
+                e.currentTarget.style.borderColor = 'var(--ez-color-border)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#FFFFFF';
-                e.currentTarget.style.borderColor = '#E2E8F0';
+                e.currentTarget.style.background = 'var(--ez-color-surface)';
+                e.currentTarget.style.borderColor = 'var(--ez-color-border)';
               }}
             >
               <span>{t('dashboard.buka_proyek')}</span>
@@ -320,31 +325,31 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 x="65"
                 y="28"
                 textAnchor="middle"
-                fill="#2563EB"
+                fill="var(--ez-color-primary)"
                 fontFamily="'Caveat', 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive"
                 fontSize="16"
                 fontWeight="700"
                 transform="rotate(-3 65 28)"
               >
-                Membangun
+                {t('dash.hero_note_1')}
               </text>
               <text
                 x="68"
                 y="48"
                 textAnchor="middle"
-                fill="#2563EB"
+                fill="var(--ez-color-primary)"
                 fontFamily="'Caveat', 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive"
                 fontSize="15"
                 fontWeight="600"
                 transform="rotate(-3 68 48)"
               >
-                lebih baik bersama
+                {t('dash.hero_note_2')}
               </text>
               <text
                 x="72"
                 y="70"
                 textAnchor="middle"
-                fill="#2563EB"
+                fill="var(--ez-color-primary)"
                 fontFamily="'Caveat', 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive"
                 fontSize="17"
                 fontWeight="800"
@@ -355,14 +360,14 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               {/* Playful curved arrow pointing right toward the mascot */}
               <path
                 d="M 108 68 C 124 70, 138 76, 150 84"
-                stroke="#2563EB"
+                stroke="var(--ez-color-primary)"
                 strokeWidth="2.2"
                 strokeLinecap="round"
                 fill="none"
               />
               <path
                 d="M 140 85 L 151 84 L 148 74"
-                stroke="#2563EB"
+                stroke="var(--ez-color-primary)"
                 strokeWidth="2.2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -399,11 +404,11 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           style={{
             fontSize: '16px',
             fontWeight: 750,
-            color: '#0F172A',
+            color: 'var(--ez-color-text-primary)',
             margin: '0 0 14px 0',
           }}
         >
-          Quick Actions
+          {t('dash.quick_actions')}
         </h2>
 
         <div
@@ -420,9 +425,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             tabIndex={0}
             style={{
               height: '96px',
-              background: '#FFFFFF',
-              borderRadius: '14px',
-              border: '1px solid #E5E7EB',
+              background: 'var(--ez-color-surface)',
+              borderRadius: '22px',
+              border: '1px solid var(--ez-color-border)',
               padding: '16px 18px',
               display: 'flex',
               alignItems: 'center',
@@ -438,7 +443,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = '#E5E7EB';
+              e.currentTarget.style.borderColor = 'var(--ez-color-border)';
               e.currentTarget.style.boxShadow = '0 1px 3px rgba(15, 23, 42, 0.02)';
             }}
           >
@@ -446,9 +451,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               style={{
                 width: '42px',
                 height: '42px',
-                borderRadius: '10px',
-                background: '#EFF6FF',
-                color: '#2563EB',
+                borderRadius: '12px',
+                background: 'var(--ez-color-primary-soft)',
+                color: 'var(--ez-color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -458,11 +463,11 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               <FileText size={20} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '14.5px', fontWeight: 700, color: '#0F172A', marginBottom: '2px' }}>
-                Buat RAB
+              <div style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '2px' }}>
+                {t('dash.qa_rab')}
               </div>
-              <div style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.35 }}>
-                Penyusunan RAB otomatis & terstruktur
+              <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', lineHeight: 1.35 }}>
+                {t('dash.qa_rab_desc')}
               </div>
             </div>
           </div>
@@ -474,9 +479,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             tabIndex={0}
             style={{
               height: '96px',
-              background: '#FFFFFF',
-              borderRadius: '14px',
-              border: '1px solid #E5E7EB',
+              background: 'var(--ez-color-surface)',
+              borderRadius: '22px',
+              border: '1px solid var(--ez-color-border)',
               padding: '16px 18px',
               display: 'flex',
               alignItems: 'center',
@@ -492,7 +497,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = '#E5E7EB';
+              e.currentTarget.style.borderColor = 'var(--ez-color-border)';
               e.currentTarget.style.boxShadow = '0 1px 3px rgba(15, 23, 42, 0.02)';
             }}
           >
@@ -500,7 +505,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               style={{
                 width: '42px',
                 height: '42px',
-                borderRadius: '10px',
+                borderRadius: '12px',
                 background: '#F5F3FF',
                 color: '#7C3AED',
                 display: 'flex',
@@ -512,11 +517,11 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               <Upload size={20} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '14.5px', fontWeight: 700, color: '#0F172A', marginBottom: '2px' }}>
-                Upload DED
+              <div style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '2px' }}>
+                {t('dash.qa_ded')}
               </div>
-              <div style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.35 }}>
-                Ekstraksi BoQ dari dokumen gambar teknis
+              <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', lineHeight: 1.35 }}>
+                {t('dash.qa_ded_desc')}
               </div>
             </div>
           </div>
@@ -528,9 +533,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             tabIndex={0}
             style={{
               height: '96px',
-              background: '#FFFFFF',
-              borderRadius: '14px',
-              border: '1px solid #E5E7EB',
+              background: 'var(--ez-color-surface)',
+              borderRadius: '22px',
+              border: '1px solid var(--ez-color-border)',
               padding: '16px 18px',
               display: 'flex',
               alignItems: 'center',
@@ -546,7 +551,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = '#E5E7EB';
+              e.currentTarget.style.borderColor = 'var(--ez-color-border)';
               e.currentTarget.style.boxShadow = '0 1px 3px rgba(15, 23, 42, 0.02)';
             }}
           >
@@ -554,9 +559,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               style={{
                 width: '42px',
                 height: '42px',
-                borderRadius: '10px',
-                background: '#ECFDF5',
-                color: '#10B981',
+                borderRadius: '12px',
+                background: 'var(--ez-color-success-soft)',
+                color: 'var(--ez-color-success)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -566,11 +571,11 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               <Calculator size={20} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '14.5px', fontWeight: 700, color: '#0F172A', marginBottom: '2px' }}>
-                Volume Calculation
+              <div style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '2px' }}>
+                {t('dash.qa_qto')}
               </div>
-              <div style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.35 }}>
-                Kalkulator QTO terintegrasi standar teknis
+              <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', lineHeight: 1.35 }}>
+                {t('dash.qa_qto_desc')}
               </div>
             </div>
           </div>
@@ -582,9 +587,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             tabIndex={0}
             style={{
               height: '96px',
-              background: '#FFFFFF',
-              borderRadius: '14px',
-              border: '1px solid #E5E7EB',
+              background: 'var(--ez-color-surface)',
+              borderRadius: '22px',
+              border: '1px solid var(--ez-color-border)',
               padding: '16px 18px',
               display: 'flex',
               alignItems: 'center',
@@ -600,7 +605,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = '#E5E7EB';
+              e.currentTarget.style.borderColor = 'var(--ez-color-border)';
               e.currentTarget.style.boxShadow = '0 1px 3px rgba(15, 23, 42, 0.02)';
             }}
           >
@@ -608,9 +613,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               style={{
                 width: '42px',
                 height: '42px',
-                borderRadius: '10px',
-                background: '#FFFBEB',
-                color: '#D97706',
+                borderRadius: '12px',
+                background: 'var(--ez-color-warning-soft)',
+                color: 'var(--ez-color-warning)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -620,11 +625,11 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               <Shield size={20} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '14.5px', fontWeight: 700, color: '#0F172A', marginBottom: '2px' }}>
-                Cari AHSP
+              <div style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '2px' }}>
+                {t('dash.qa_ahsp')}
               </div>
-              <div style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.35 }}>
-                Database analisa PUPR 2026 terverifikasi
+              <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', lineHeight: 1.35 }}>
+                {t('dash.qa_ahsp_desc')}
               </div>
             </div>
           </div>
@@ -637,10 +642,10 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
       <section>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
           <div>
-            <h2 style={{ fontSize: '17px', fontWeight: 750, color: '#0F172A', margin: '0 0 2px 0' }}>
-              Proyek Anda
+            <h2 style={{ fontSize: '17px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: '0 0 2px 0' }}>
+              {t('dash.proyek_anda')}
             </h2>
-            <span style={{ fontSize: '12px', color: '#64748B' }}>
+            <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
               {t('dashboard.ringkasan_aktif')}
             </span>
           </div>
@@ -650,7 +655,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             style={{
               fontSize: '12.5px',
               fontWeight: 650,
-              color: '#2563EB',
+              color: 'var(--ez-color-primary)',
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
@@ -659,7 +664,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               gap: '4px',
             }}
           >
-            <span>Semua Proyek</span>
+            <span>{t('dash.semua_proyek')}</span>
             <ChevronRight size={14} />
           </button>
         </div>
@@ -674,9 +679,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           {/* Card 1: Total Proyek */}
           <div
             style={{
-              background: '#FFFFFF',
-              borderRadius: '12px',
-              border: '1px solid #E5E7EB',
+              background: 'var(--ez-color-surface)',
+              borderRadius: '22px',
+              border: '1px solid var(--ez-color-border)',
               padding: '18px 20px',
               boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
               display: 'flex',
@@ -685,11 +690,11 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             }}
           >
             <div>
-              <div style={{ fontSize: '26px', fontWeight: 800, color: '#0F172A', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ez-color-text-primary)', lineHeight: 1.1 }}>
                 {totalProjects}
               </div>
-              <div style={{ fontSize: '12px', fontWeight: 550, color: '#64748B', marginTop: '4px' }}>
-                Total Proyek
+              <div style={{ fontSize: '12px', fontWeight: 550, color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
+                {t('dash.stat_total')}
               </div>
             </div>
             <div
@@ -697,8 +702,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 width: '38px',
                 height: '38px',
                 borderRadius: '8px',
-                background: '#EFF6FF',
-                color: '#2563EB',
+                background: 'var(--ez-color-primary-soft)',
+                color: 'var(--ez-color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -711,9 +716,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           {/* Card 2: Sedang Dikerjakan */}
           <div
             style={{
-              background: '#FFFFFF',
-              borderRadius: '12px',
-              border: '1px solid #E5E7EB',
+              background: 'var(--ez-color-surface)',
+              borderRadius: '22px',
+              border: '1px solid var(--ez-color-border)',
               padding: '18px 20px',
               boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
               display: 'flex',
@@ -722,11 +727,11 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             }}
           >
             <div>
-              <div style={{ fontSize: '26px', fontWeight: 800, color: '#2563EB', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ez-color-primary)', lineHeight: 1.1 }}>
                 {inProgressProjects}
               </div>
-              <div style={{ fontSize: '12px', fontWeight: 550, color: '#64748B', marginTop: '4px' }}>
-                Sedang Dikerjakan
+              <div style={{ fontSize: '12px', fontWeight: 550, color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
+                {t('dash.stat_aktif')}
               </div>
             </div>
             <div
@@ -734,8 +739,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 width: '38px',
                 height: '38px',
                 borderRadius: '8px',
-                background: '#EFF6FF',
-                color: '#2563EB',
+                background: 'var(--ez-color-primary-soft)',
+                color: 'var(--ez-color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -748,9 +753,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           {/* Card 3: Selesai */}
           <div
             style={{
-              background: '#FFFFFF',
-              borderRadius: '12px',
-              border: '1px solid #E5E7EB',
+              background: 'var(--ez-color-surface)',
+              borderRadius: '22px',
+              border: '1px solid var(--ez-color-border)',
               padding: '18px 20px',
               boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
               display: 'flex',
@@ -759,11 +764,11 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             }}
           >
             <div>
-              <div style={{ fontSize: '26px', fontWeight: 800, color: '#16A34A', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ez-color-success)', lineHeight: 1.1 }}>
                 {completedProjects}
               </div>
-              <div style={{ fontSize: '12px', fontWeight: 550, color: '#64748B', marginTop: '4px' }}>
-                Selesai
+              <div style={{ fontSize: '12px', fontWeight: 550, color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
+                {t('dash.stat_selesai')}
               </div>
             </div>
             <div
@@ -771,8 +776,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 width: '38px',
                 height: '38px',
                 borderRadius: '8px',
-                background: '#ECFDF5',
-                color: '#16A34A',
+                background: 'var(--ez-color-success-soft)',
+                color: 'var(--ez-color-success)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -785,9 +790,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           {/* Card 4: Draft */}
           <div
             style={{
-              background: '#FFFFFF',
-              borderRadius: '12px',
-              border: '1px solid #E5E7EB',
+              background: 'var(--ez-color-surface)',
+              borderRadius: '22px',
+              border: '1px solid var(--ez-color-border)',
               padding: '18px 20px',
               boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
               display: 'flex',
@@ -796,11 +801,11 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             }}
           >
             <div>
-              <div style={{ fontSize: '26px', fontWeight: 800, color: '#D97706', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ez-color-warning)', lineHeight: 1.1 }}>
                 {draftProjects}
               </div>
-              <div style={{ fontSize: '12px', fontWeight: 550, color: '#64748B', marginTop: '4px' }}>
-                Draft
+              <div style={{ fontSize: '12px', fontWeight: 550, color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
+                {t('dash.stat_draft')}
               </div>
             </div>
             <div
@@ -808,8 +813,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 width: '38px',
                 height: '38px',
                 borderRadius: '8px',
-                background: '#FFFBEB',
-                color: '#D97706',
+                background: 'var(--ez-color-warning-soft)',
+                color: 'var(--ez-color-warning)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -836,9 +841,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
         {/* LEFT: Daftar Proyek Terkini Table */}
         <div
           style={{
-            background: '#FFFFFF',
-            borderRadius: '14px',
-            border: '1px solid #E5E7EB',
+            background: 'var(--ez-color-surface)',
+            borderRadius: '22px',
+            border: '1px solid var(--ez-color-border)',
             boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
             padding: '20px 22px',
             display: 'flex',
@@ -849,30 +854,30 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             style={{
               fontSize: '15px',
               fontWeight: 750,
-              color: '#0F172A',
+              color: 'var(--ez-color-text-primary)',
               margin: '0 0 16px 0',
             }}
           >
-            Daftar Proyek Terkini
+            {t('dash.daftar_proyek_terkini')}
           </h3>
 
           <div style={{ overflowX: 'auto', flex: 1 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
               <thead>
-                <tr style={{ color: '#64748B', fontWeight: 650, fontSize: '11px', borderBottom: '1px solid #F1F5F9' }}>
-                  <th style={{ padding: '8px 12px 12px 6px', fontWeight: 650 }}>PROYEK</th>
-                  <th style={{ padding: '8px 12px 12px 12px', fontWeight: 650 }}>LOKASI</th>
-                  <th style={{ padding: '8px 12px 12px 12px', fontWeight: 650 }}>NILAI RAB</th>
-                  <th style={{ padding: '8px 12px 12px 12px', fontWeight: 650 }}>PROGRESS</th>
-                  <th style={{ padding: '8px 12px 12px 12px', fontWeight: 650 }}>STATUS</th>
-                  <th style={{ padding: '8px 6px 12px 12px', fontWeight: 650 }}>UPDATED</th>
+                <tr style={{ color: 'var(--ez-color-text-muted)', fontWeight: 650, fontSize: '11px', borderBottom: '1px solid var(--ez-color-border-soft)' }}>
+                  <th style={{ padding: '8px 12px 12px 6px', fontWeight: 650 }}>{t('dash.col_proyek')}</th>
+                  <th style={{ padding: '8px 12px 12px 12px', fontWeight: 650 }}>{t('dash.col_lokasi')}</th>
+                  <th style={{ padding: '8px 12px 12px 12px', fontWeight: 650 }}>{t('dash.col_nilai_rab')}</th>
+                  <th style={{ padding: '8px 12px 12px 12px', fontWeight: 650 }}>{t('dash.col_progress')}</th>
+                  <th style={{ padding: '8px 12px 12px 12px', fontWeight: 650 }}>{t('dash.col_status')}</th>
+                  <th style={{ padding: '8px 6px 12px 12px', fontWeight: 650 }}>{t('dash.col_updated')}</th>
                 </tr>
               </thead>
               <tbody>
                 {projects.slice(0, 3).map((proj) => {
                   const badge = getStatusBadge(proj.status);
                   const progressPct = proj.progress || 0;
-                  const barColor = progressPct >= 70 ? '#10B981' : progressPct > 0 ? '#2563EB' : '#CBD5E1';
+                  const barColor = progressPct >= 70 ? 'var(--ez-color-success)' : progressPct > 0 ? 'var(--ez-color-primary)' : 'var(--ez-color-border)';
 
                   return (
                     <tr
@@ -882,11 +887,11 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                         onSelectProject(proj.id, 'rab-estimasi');
                       }}
                       style={{
-                        borderBottom: '1px solid #F8FAFC',
+                        borderBottom: '1px solid var(--ez-color-surface-secondary)',
                         cursor: 'pointer',
                         transition: 'background-color 0.12s ease',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)')}
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
                       {/* Proyek */}
@@ -896,9 +901,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                             style={{
                               width: '30px',
                               height: '30px',
-                              borderRadius: '7px',
-                              background: '#EFF6FF',
-                              color: '#2563EB',
+                              borderRadius: '8px',
+                              background: 'var(--ez-color-primary-soft)',
+                              color: 'var(--ez-color-primary)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -907,19 +912,19 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                           >
                             <FileText size={15} />
                           </div>
-                          <span style={{ fontWeight: 650, color: '#0F172A', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontWeight: 650, color: 'var(--ez-color-text-primary)', whiteSpace: 'nowrap' }}>
                             {proj.name}
                           </span>
                         </div>
                       </td>
 
                       {/* Lokasi */}
-                      <td style={{ padding: '14px 12px', color: '#64748B', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '14px 12px', color: 'var(--ez-color-text-muted)', whiteSpace: 'nowrap' }}>
                         {proj.location || 'Indonesia'}
                       </td>
 
                       {/* Nilai RAB */}
-                      <td style={{ padding: '14px 12px', color: '#0F172A', fontWeight: 550, whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '14px 12px', color: 'var(--ez-color-text-primary)', fontWeight: 550, whiteSpace: 'nowrap' }}>
                         {proj.totalRab && proj.totalRab > 0
                           ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(proj.totalRab)
                           : '-'}
@@ -928,10 +933,10 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                       {/* Progress */}
                       <td style={{ padding: '14px 12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '130px' }}>
-                          <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748B', width: '28px' }}>
+                          <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)', width: '28px' }}>
                             {progressPct}%
                           </span>
-                          <div style={{ flex: 1, height: '5px', borderRadius: '3px', background: '#F1F5F9', overflow: 'hidden' }}>
+                          <div style={{ flex: 1, height: '5px', borderRadius: '3px', background: 'var(--ez-color-border-soft)', overflow: 'hidden' }}>
                             <div
                               style={{
                                 width: `${progressPct}%`,
@@ -941,7 +946,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                               }}
                             />
                           </div>
-                          <span style={{ fontSize: '11px', color: '#94A3B8' }}>%</span>
+                          <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>%</span>
                         </div>
                       </td>
 
@@ -952,7 +957,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                             fontSize: '11px',
                             fontWeight: 700,
                             padding: '2px 10px',
-                            borderRadius: '999px',
+                            borderRadius: '99px',
                             background: badge.bg,
                             color: badge.color,
                             border: `1px solid ${badge.border}`,
@@ -964,8 +969,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                       </td>
 
                       {/* Updated */}
-                      <td style={{ padding: '14px 6px 14px 12px', color: '#64748B', fontSize: '11.5px', whiteSpace: 'nowrap' }}>
-                        {formatProjectDate(proj.updatedAt)}
+                      <td style={{ padding: '14px 6px 14px 12px', color: 'var(--ez-color-text-muted)', fontSize: '11.5px', whiteSpace: 'nowrap' }}>
+                        {formatProjectDate(proj.updatedAt, lang)}
                       </td>
                     </tr>
                   );
@@ -978,9 +983,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
         {/* RIGHT: EZRAB Insight Card with Mini Mascot Peeking */}
         <div
           style={{
-            background: '#FFFFFF',
-            borderRadius: '14px',
-            border: '1px solid #E5E7EB',
+            background: 'var(--ez-color-surface)',
+            borderRadius: '22px',
+            border: '1px solid var(--ez-color-border)',
             boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
             padding: '22px 22px 18px 22px',
             display: 'flex',
@@ -998,9 +1003,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 style={{
                   width: '28px',
                   height: '28px',
-                  borderRadius: '7px',
-                  background: '#EFF6FF',
-                  color: '#2563EB',
+                  borderRadius: '8px',
+                  background: 'var(--ez-color-primary-soft)',
+                  color: 'var(--ez-color-primary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1008,13 +1013,13 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               >
                 <TrendingUp size={16} />
               </div>
-              <span style={{ fontSize: '14px', fontWeight: 750, color: '#2563EB' }}>
+              <span style={{ fontSize: '14px', fontWeight: 750, color: 'var(--ez-color-primary)' }}>
                 EZRAB Insight
               </span>
             </div>
 
-            <p style={{ fontSize: '13px', color: '#334155', lineHeight: 1.5, margin: 0, maxWidth: '200px' }}>
-              3 item material pada proyek Anda memiliki potensi optimasi.
+            <p style={{ fontSize: '13px', color: 'var(--ez-color-text-primary)', lineHeight: 1.5, margin: 0, maxWidth: '200px' }}>
+              {t('dash.insight_text')}
             </p>
           </div>
 
@@ -1027,8 +1032,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 height: '34px',
                 padding: '0 14px',
                 borderRadius: '8px',
-                background: '#FFFFFF',
-                color: '#2563EB',
+                background: 'var(--ez-color-surface)',
+                color: 'var(--ez-color-primary)',
                 border: '1px solid #BFDBFE',
                 fontSize: '12px',
                 fontWeight: 650,
@@ -1041,13 +1046,13 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 zIndex: 2,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#EFF6FF';
+                e.currentTarget.style.background = 'var(--ez-color-primary-soft)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#FFFFFF';
+                e.currentTarget.style.background = 'var(--ez-color-surface)';
               }}
             >
-              <span>Lihat Analisis</span>
+              <span>{t('dash.lihat_analisis')}</span>
               <ChevronRight size={13} />
             </button>
 
@@ -1084,8 +1089,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           5. BOTTOM: AKTIVITAS TERBARU
          ========================================================================= */}
       <section style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0 24px 0' }}>
-        <h2 style={{ fontSize: '15px', fontWeight: 750, color: '#0F172A', margin: 0 }}>
-          Aktivitas Terbaru
+        <h2 style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
+          {t('dash.aktivitas_terbaru')}
         </h2>
         <button
           type="button"
@@ -1093,7 +1098,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           style={{
             fontSize: '12.5px',
             fontWeight: 650,
-            color: '#2563EB',
+            color: 'var(--ez-color-primary)',
             background: 'transparent',
             border: 'none',
             cursor: 'pointer',
@@ -1102,7 +1107,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             gap: '4px',
           }}
         >
-          <span>Lihat Semua</span>
+          <span>{t('dashboard.lihat_semua')}</span>
           <ChevronRight size={14} />
         </button>
       </section>

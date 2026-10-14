@@ -18,7 +18,7 @@ export const QuickActionFollowUpSuggestions: React.FC<QuickActionFollowUpSuggest
   return (
     <div className="ezrab-suggestions-container">
       <div className="ezrab-suggestions-header">
-        <Sparkles className="h-3 w-3" style={{ color: '#2563EB' }} />
+        <Sparkles className="h-3 w-3" style={{ color: 'var(--ez-color-primary)' }} />
         <span>Saran Langkah Lanjutan:</span>
       </div>
       <div className="ezrab-suggestions-list">
@@ -31,7 +31,7 @@ export const QuickActionFollowUpSuggestions: React.FC<QuickActionFollowUpSuggest
             className="ezrab-suggestion-chip"
           >
             <span>{suggestion}</span>
-            <ArrowRight className="h-2.5 w-2.5" style={{ color: '#2563EB', opacity: 0.8 }} />
+            <ArrowRight className="h-2.5 w-2.5" style={{ color: 'var(--ez-color-primary)', opacity: 0.8 }} />
           </button>
         ))}
       </div>

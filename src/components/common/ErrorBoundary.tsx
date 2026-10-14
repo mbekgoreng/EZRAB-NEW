@@ -41,7 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
             maxWidth: '640px',
             background: '#FEF2F2',
             border: '1.5px solid #FECACA',
-            borderRadius: '12px',
+            borderRadius: 'var(--ez-radius-control)',
             textAlign: 'center',
             boxShadow: '0 4px 12px rgba(239, 68, 68, 0.08)',
           }}
@@ -96,7 +96,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 padding: '8px 16px',
                 borderRadius: '6px',
                 border: '1px solid #CBD5E1',
-                background: '#FFFFFF',
+                background: 'var(--ez-color-surface)',
                 color: '#475569',
                 fontSize: '12px',
                 fontWeight: 600,

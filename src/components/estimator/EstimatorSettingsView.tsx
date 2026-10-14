@@ -46,10 +46,10 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", maxWidth: "1600px", margin: "0 auto" }}>
       {/* 1. HEADER */}
-      <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
+      <div style={{ background: "var(--ez-color-surface)", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
           <div>
-            <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0F172A", margin: 0 }}>
+            <h3 style={{ fontSize: "16px", fontWeight: 800, color: "var(--ez-color-text-primary)", margin: 0 }}>
               Pengaturan & Parameter Estimasi Proyek
             </h3>
             <p style={{ fontSize: "12.5px", color: "#64748B", margin: "3px 0 0 0" }}>
@@ -83,13 +83,13 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
       {/* 2. SETTINGS CARDS GRID */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "18px" }}>
         {/* Card 1: Overhead & Keuntungan */}
-        <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "20px" }}>
+        <div style={{ background: "var(--ez-color-surface)", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
             <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#EFF6FF", color: "#2563EB", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Percent size={16} />
             </div>
             <div>
-              <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A", margin: 0 }}>
+              <h4 style={{ fontSize: "14px", fontWeight: 700, color: "var(--ez-color-text-primary)", margin: 0 }}>
                 Overhead & Jasa Kontraktor
               </h4>
               <span style={{ fontSize: "11.5px", color: "#64748B" }}>Persentase margin jasa pelaksanaan</span>
@@ -112,7 +112,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
                 border: "1px solid #CBD5E1",
                 fontSize: "14px",
                 fontWeight: 700,
-                color: "#0F172A",
+                color: "var(--ez-color-text-primary)",
                 outline: "none",
               }}
             />
@@ -124,13 +124,13 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
         </div>
 
         {/* Card 2: Pajak Pertambahan Nilai (PPN) */}
-        <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "20px" }}>
+        <div style={{ background: "var(--ez-color-surface)", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
             <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#FEF3C7", color: "#B45309", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <ShieldCheck size={16} />
             </div>
             <div>
-              <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A", margin: 0 }}>
+              <h4 style={{ fontSize: "14px", fontWeight: 700, color: "var(--ez-color-text-primary)", margin: 0 }}>
                 Tarif Pajak (PPN)
               </h4>
               <span style={{ fontSize: "11.5px", color: "#64748B" }}>Pajak resmi pengadaan barang & jasa</span>
@@ -153,7 +153,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
                 border: "1px solid #CBD5E1",
                 fontSize: "14px",
                 fontWeight: 700,
-                color: "#0F172A",
+                color: "var(--ez-color-text-primary)",
                 outline: "none",
               }}
             />
@@ -165,13 +165,13 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
         </div>
 
         {/* Card 3: Wilayah & Indeks Kemahalan */}
-        <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "20px" }}>
+        <div style={{ background: "var(--ez-color-surface)", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
             <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#F0FDF4", color: "#16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <MapPin size={16} />
             </div>
             <div>
-              <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A", margin: 0 }}>
+              <h4 style={{ fontSize: "14px", fontWeight: 700, color: "var(--ez-color-text-primary)", margin: 0 }}>
                 Faktor Penyesuaian Wilayah
               </h4>
               <span style={{ fontSize: "11.5px", color: "#64748B" }}>Indeks harga pasar lokal acuan</span>
@@ -188,9 +188,9 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
               borderRadius: "8px",
               border: "1px solid #CBD5E1",
               fontSize: "13px",
-              color: "#0F172A",
+              color: "var(--ez-color-text-primary)",
               fontWeight: 600,
-              background: "#FFFFFF",
+              background: "var(--ez-color-surface)",
               outline: "none",
             }}
           >
@@ -210,13 +210,13 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
         </div>
 
         {/* Card 4: Skema Pembulatan Harga */}
-        <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "20px" }}>
+        <div style={{ background: "var(--ez-color-surface)", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
             <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#F3E8FF", color: "#7E22CE", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Coins size={16} />
             </div>
             <div>
-              <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A", margin: 0 }}>
+              <h4 style={{ fontSize: "14px", fontWeight: 700, color: "var(--ez-color-text-primary)", margin: 0 }}>
                 Pembulatan Angka Akhir
               </h4>
               <span style={{ fontSize: "11.5px", color: "#64748B" }}>Format pembulatan pada tabel & laporan</span>
@@ -233,9 +233,9 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
               borderRadius: "8px",
               border: "1px solid #CBD5E1",
               fontSize: "13px",
-              color: "#0F172A",
+              color: "var(--ez-color-text-primary)",
               fontWeight: 600,
-              background: "#FFFFFF",
+              background: "var(--ez-color-surface)",
               outline: "none",
             }}
           >

@@ -35,7 +35,7 @@ export const EZRABMascot: React.FC<EZRABMascotProps> = ({
   speechBubbleText,
   speechBubbleDuration = 5500,
   interactive = true,
-  glowColor = '#2563EB',
+  glowColor = 'var(--ez-color-primary)',
   className = '',
   style = {},
   onClick,

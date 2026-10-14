@@ -72,7 +72,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       {/* 1. TOTAL RAB */}
       <div className="ez-stat"
         style={{
-          background: '#FDF3D8',
+          background: 'var(--ez-pastel-cream)',
           borderRadius: '20px',
           padding: '20px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
@@ -82,7 +82,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'capitalize' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', textTransform: 'capitalize' }}>
             Total RAB
           </span>
           <div
@@ -101,13 +101,13 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
         </div>
 
         <div>
-          <div style={{ fontSize: '17px', fontWeight: 850, color: '#0F172A', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+          <div style={{ fontSize: '17px', fontWeight: 850, color: 'var(--ez-color-text-primary)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
             {formatCurrencyIDR(safeTotalRab)}
           </div>
 
           {/* Subtext + Sparkline */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
-            <div style={{ fontSize: '10.5px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '3px' }}>
+            <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
               {deltaPct !== null ? (
                 <>
                   <span style={{ color: deltaPct >= 0 ? '#059669' : '#DC2626', fontWeight: 700 }}>
@@ -137,7 +137,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       {/* 2. TOTAL ITEM */}
       <div className="ez-stat"
         style={{
-          background: '#E2F4D8',
+          background: 'var(--ez-pastel-mint)',
           borderRadius: '20px',
           padding: '20px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
@@ -147,7 +147,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>
             Total Item
           </span>
           <div
@@ -166,10 +166,10 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
         </div>
 
         <div>
-          <div style={{ fontSize: '20px', fontWeight: 850, color: '#0F172A', letterSpacing: '-0.02em' }}>
+          <div style={{ fontSize: '20px', fontWeight: 850, color: 'var(--ez-color-text-primary)', letterSpacing: '-0.02em' }}>
             {safeTotalItems}
           </div>
-          <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '4px' }}>
+          <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
             dari {safeAhspCount} AHSP
           </div>
         </div>
@@ -178,7 +178,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       {/* 3. TOTAL VOLUME */}
       <div className="ez-stat"
         style={{
-          background: '#FFE9D6',
+          background: 'var(--ez-pastel-peach)',
           borderRadius: '20px',
           padding: '20px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
@@ -188,7 +188,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>
             Total Volume
           </span>
           <div
@@ -207,10 +207,10 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
         </div>
 
         <div>
-          <div style={{ fontSize: '18px', fontWeight: 850, color: '#0F172A', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+          <div style={{ fontSize: '18px', fontWeight: 850, color: 'var(--ez-color-text-primary)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
             {formattedVolume || '15.431,70'}
           </div>
-          <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '4px' }}>
+          <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
             berbagai satuan
           </div>
         </div>
@@ -219,7 +219,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       {/* 4. TERAKHIR DISIMPAN */}
       <div className="ez-stat"
         style={{
-          background: '#E3EEFB',
+          background: 'var(--ez-pastel-sky)',
           borderRadius: '20px',
           padding: '20px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
@@ -229,7 +229,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>
             Terakhir Disimpan
           </span>
           <div
@@ -248,10 +248,10 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
         </div>
 
         <div>
-          <div style={{ fontSize: '14px', fontWeight: 750, color: '#0F172A', letterSpacing: '-0.01em' }}>
+          <div style={{ fontSize: '14px', fontWeight: 750, color: 'var(--ez-color-text-primary)', letterSpacing: '-0.01em' }}>
             {lastSavedText}
           </div>
-          <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
             <span
               style={{
                 width: '6px',
@@ -268,7 +268,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       {/* 5. PROGRESS ESTIMASI (Donut progress card) */}
       <div className="ez-stat"
         style={{
-          background: '#FDF3D8',
+          background: 'var(--ez-pastel-cream)',
           borderRadius: '20px',
           padding: '20px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
@@ -307,7 +307,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               justifyContent: 'center',
               fontSize: '11px',
               fontWeight: 800,
-              color: '#0F172A',
+              color: 'var(--ez-color-text-primary)',
             }}
           >
             {progressPct !== null ? `${progressPct}%` : '—'}
@@ -319,7 +319,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
           <div style={{ fontSize: '10.5px', fontWeight: 700, color: '#334155', marginBottom: '2px' }}>
             Progress Estimasi
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: '#64748B' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#10B981' }} />
               Item selesai
@@ -327,7 +327,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
             <span style={{ fontWeight: 700, color: '#334155' }}>{completedItemsCount ?? '—'}</span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: '#64748B' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#F59E0B' }} />
               Dalam proses
@@ -335,7 +335,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
             <span style={{ fontWeight: 700, color: '#334155' }}>{inProgressItemsCount ?? '—'}</span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: '#64748B' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#3B82F6' }} />
               Belum dihitung

@@ -39,10 +39,10 @@ export const EstimatorNotesView: React.FC<EstimatorNotesViewProps> = ({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", maxWidth: "1600px", margin: "0 auto" }}>
       {/* 1. HEADER */}
-      <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
+      <div style={{ background: "var(--ez-color-surface)", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
           <div>
-            <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0F172A", margin: 0 }}>
+            <h3 style={{ fontSize: "16px", fontWeight: 800, color: "var(--ez-color-text-primary)", margin: 0 }}>
               Catatan Teknis, Spesifikasi & Asumsi Konstruksi
             </h3>
             <p style={{ fontSize: "12.5px", color: "#64748B", margin: "3px 0 0 0" }}>
@@ -75,10 +75,10 @@ export const EstimatorNotesView: React.FC<EstimatorNotesViewProps> = ({
 
       {/* 2. MAIN NOTES EDITOR */}
       <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: "20px" }}>
-        <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "16px", padding: "20px", boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
+        <div style={{ background: "var(--ez-color-surface)", border: "1px solid #E2E8F0", borderRadius: "16px", padding: "20px", boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
             <FileText size={18} color="#2563EB" />
-            <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A", margin: 0 }}>
+            <h4 style={{ fontSize: "14px", fontWeight: 700, color: "var(--ez-color-text-primary)", margin: 0 }}>
               Lembar Catatan Estimator
             </h4>
           </div>
@@ -95,7 +95,7 @@ export const EstimatorNotesView: React.FC<EstimatorNotesViewProps> = ({
               border: "1px solid #CBD5E1",
               fontSize: "13px",
               lineHeight: "1.6",
-              color: "#0F172A",
+              color: "var(--ez-color-text-primary)",
               fontFamily: "var(--ezrab-font-sans)",
               resize: "vertical",
               outline: "none",
@@ -111,10 +111,10 @@ export const EstimatorNotesView: React.FC<EstimatorNotesViewProps> = ({
         {/* 3. QUICK SPECIFICATION GUIDE CARDS */}
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {/* Card 1: Struktur */}
-          <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px" }}>
+          <div style={{ background: "var(--ez-color-surface)", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
               <Layers size={16} color="#2563EB" />
-              <span style={{ fontSize: "13px", fontWeight: 700, color: "#0F172A" }}>Standar Struktur & Pondasi</span>
+              <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--ez-color-text-primary)" }}>Standar Struktur & Pondasi</span>
             </div>
             <p style={{ fontSize: "12px", color: "#64748B", margin: 0, lineHeight: 1.5 }}>
               Kedalaman galian pondasi disesuaikan dengan daya dukung tanah keras setempat (standar min. 0.8m - 1.2m). Mutu baja tulangan ulir BjTS 420B untuk D10 ke atas.
@@ -122,10 +122,10 @@ export const EstimatorNotesView: React.FC<EstimatorNotesViewProps> = ({
           </div>
 
           {/* Card 2: Arsitektur */}
-          <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px" }}>
+          <div style={{ background: "var(--ez-color-surface)", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
               <Building size={16} color="#0D9488" />
-              <span style={{ fontSize: "13px", fontWeight: 700, color: "#0F172A" }}>Standar Finishing Arsitektur</span>
+              <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--ez-color-text-primary)" }}>Standar Finishing Arsitektur</span>
             </div>
             <p style={{ fontSize: "12px", color: "#64748B", margin: 0, lineHeight: 1.5 }}>
               Lantai utama menggunakan Granit Tile 60x60 cm unpolished/polished kualitas Granito/Roman dengan nat epoxy anti-noda di area basah.
@@ -133,10 +133,10 @@ export const EstimatorNotesView: React.FC<EstimatorNotesViewProps> = ({
           </div>
 
           {/* Card 3: MEP & Sanitasi */}
-          <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px" }}>
+          <div style={{ background: "var(--ez-color-surface)", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "14px 16px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
               <Wrench size={16} color="#F59E0B" />
-              <span style={{ fontSize: "13px", fontWeight: 700, color: "#0F172A" }}>Standar MEP & Sanitasi</span>
+              <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--ez-color-text-primary)" }}>Standar MEP & Sanitasi</span>
             </div>
             <p style={{ fontSize: "12px", color: "#64748B", margin: 0, lineHeight: 1.5 }}>
               Pipa air bersih menggunakan PVC AW atau PPR PN-10. Septic tank biofilter berkapasitas sesuai jumlah penghuni dan sumur resapan air hujan.

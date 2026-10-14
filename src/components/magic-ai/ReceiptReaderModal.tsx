@@ -151,7 +151,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
     >
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '20px',
           width: '100%',
           maxWidth: '960px',
@@ -171,7 +171,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            backgroundColor: '#F8FAFC',
+            backgroundColor: 'var(--ez-color-surface-secondary)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -179,7 +179,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
               style={{
                 width: '42px',
                 height: '42px',
-                borderRadius: '12px',
+                borderRadius: 'var(--ez-radius-control)',
                 backgroundColor: '#ECFDF5',
                 display: 'flex',
                 alignItems: 'center',
@@ -192,7 +192,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                <h2 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                   AI Baca Nota & Supplier Invoice
                 </h2>
                 <span
@@ -208,7 +208,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                   PHASE 9
                 </span>
               </div>
-              <p style={{ fontSize: '13px', color: '#64748B', margin: '2px 0 0 0' }}>
+              <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0 0' }}>
                 OCR bukti belanja & pencocokan harga terhadap Master Price
               </p>
             </div>
@@ -221,12 +221,12 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
               height: '36px',
               borderRadius: '10px',
               border: '1px solid #E2E8F0',
-              backgroundColor: '#FFFFFF',
+              backgroundColor: 'var(--ez-color-surface)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              color: '#64748B',
+              color: 'var(--ez-color-text-muted)',
             }}
           >
             <X size={18} />
@@ -284,8 +284,8 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                   borderRadius: '16px',
                   padding: '36px 20px',
                   textAlign: 'center',
-                  backgroundColor: selectedFile ? '#F0FDF4' : '#F8FAFC',
-                  borderColor: selectedFile ? '#86EFAC' : '#CBD5E1',
+                  backgroundColor: selectedFile ? '#F0FDF4' : 'var(--ez-color-surface-secondary)',
+                  borderColor: selectedFile ? '#86EFAC' : 'var(--ez-color-border)',
                   cursor: 'pointer',
                   position: 'relative',
                 }}
@@ -325,16 +325,16 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                     <div style={{ fontSize: '15px', fontWeight: 750, color: '#166534' }}>
                       ✓ File Siap: {selectedFile.name}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
                       Ukuran: {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • Klik untuk ganti file
                     </div>
                   </div>
                 ) : (
                   <div>
-                    <div style={{ fontSize: '15px', fontWeight: 750, color: '#0F172A' }}>
+                    <div style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
                       Klik atau Seret Foto Nota / Invoice Supplier ke Sini
                     </div>
-                    <div style={{ fontSize: '12.5px', color: '#64748B', marginTop: '4px' }}>
+                    <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
                       Mendukung foto nota fisik JPG/PNG atau invoice PDF toko bangunan
                     </div>
                   </div>
@@ -343,7 +343,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
 
               {filePreview && (
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: '#64748B', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
                     Pratinjau Nota
                   </div>
                   <img
@@ -352,7 +352,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                     style={{
                       maxHeight: '220px',
                       maxWidth: '100%',
-                      borderRadius: '12px',
+                      borderRadius: 'var(--ez-radius-control)',
                       border: '1px solid #E2E8F0',
                       objectFit: 'contain',
                     }}
@@ -400,8 +400,8 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
               {/* Header Info Banner */}
               <div
                 style={{
-                  backgroundColor: '#F8FAFC',
-                  borderRadius: '12px',
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
+                  borderRadius: 'var(--ez-radius-control)',
                   padding: '16px 20px',
                   border: '1px solid #E2E8F0',
                   display: 'grid',
@@ -410,26 +410,26 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                 }}
               >
                 <div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
                     Supplier / Toko
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Store size={16} color="#059669" />
                     <span>{ocrResult.supplierName}</span>
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
                     Tanggal & No. Nota
                   </div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A', marginTop: '2px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
                     {ocrResult.invoiceDate} • <code style={{ fontSize: '12px' }}>{ocrResult.invoiceNumber}</code>
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
                     Total Nilai Belanja
                   </div>
                   <div style={{ fontSize: '16px', fontWeight: 800, color: '#059669', marginTop: '2px' }}>
@@ -440,14 +440,14 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
 
               {/* Items Table with Master Price Match */}
               <div>
-                <div style={{ fontSize: '13px', fontWeight: 750, color: '#0F172A', marginBottom: '8px' }}>
+                <div style={{ fontSize: '13px', fontWeight: 750, color: 'var(--ez-color-text-primary)', marginBottom: '8px' }}>
                   Rincian Barang & Pencocokan Harga Acuan (Master Price):
                 </div>
 
-                <div style={{ border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden' }}>
+                <div style={{ border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
-                      <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
+                      <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
                         <th style={{ padding: '10px 14px' }}>Deskripsi Barang Nota</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' }}>Qty</th>
                         <th style={{ padding: '10px 14px', textAlign: 'right' }}>Harga Nota</th>
@@ -463,23 +463,23 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
 
                         return (
                           <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                            <td style={{ padding: '10px 14px', fontWeight: 700, color: '#0F172A' }}>
+                            <td style={{ padding: '10px 14px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                               {item.description}
                             </td>
                             <td style={{ padding: '10px 14px', textAlign: 'center', color: '#475569' }}>
                               {item.quantity} {item.unit}
                             </td>
-                            <td style={{ padding: '10px 14px', textAlign: 'right', color: '#0F172A' }}>
+                            <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--ez-color-text-primary)' }}>
                               {formatCurrencyIDR(item.unitPrice)}
                             </td>
-                            <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 750, color: '#0F172A' }}>
+                            <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
                               {formatCurrencyIDR(item.subtotal)}
                             </td>
-                            <td style={{ padding: '10px 14px', color: '#64748B', fontSize: '12px' }}>
+                            <td style={{ padding: '10px 14px', color: 'var(--ez-color-text-muted)', fontSize: '12px' }}>
                               {match ? (
                                 <div>
                                   <div style={{ fontWeight: 600, color: '#334155' }}>{match.masterItemName}</div>
-                                  <div style={{ fontSize: '11px', color: '#64748B' }}>Acuan: {formatCurrencyIDR(match.masterPrice)}</div>
+                                  <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Acuan: {formatCurrencyIDR(match.masterPrice)}</div>
                                 </div>
                               ) : (
                                 <span style={{ color: '#94A3B8', fontStyle: 'italic' }}>Belum ada acuan</span>
@@ -517,9 +517,9 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                   gap: '16px',
-                  backgroundColor: '#F8FAFC',
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
                   padding: '16px 20px',
-                  borderRadius: '12px',
+                  borderRadius: 'var(--ez-radius-control)',
                   border: '1px solid #E2E8F0',
                 }}
               >
@@ -536,8 +536,8 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                       borderRadius: '8px',
                       border: '1px solid #CBD5E1',
                       fontSize: '13px',
-                      backgroundColor: '#FFFFFF',
-                      color: '#0F172A',
+                      backgroundColor: 'var(--ez-color-surface)',
+                      color: 'var(--ez-color-text-primary)',
                     }}
                   >
                     <option value="Material">Material (Bahan Bangunan)</option>
@@ -564,8 +564,8 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                       borderRadius: '8px',
                       border: '1px solid #CBD5E1',
                       fontSize: '13px',
-                      backgroundColor: '#FFFFFF',
-                      color: '#0F172A',
+                      backgroundColor: 'var(--ez-color-surface)',
+                      color: 'var(--ez-color-text-primary)',
                     }}
                   >
                     <option value="Transfer">Transfer Bank</option>
@@ -590,7 +590,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                 <button
                   onClick={() => setOcrResult(null)}
                   style={{
-                    backgroundColor: '#FFFFFF',
+                    backgroundColor: 'var(--ez-color-surface)',
                     border: '1px solid #CBD5E1',
                     color: '#475569',
                     padding: '10px 18px',

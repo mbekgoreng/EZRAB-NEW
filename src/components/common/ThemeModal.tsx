@@ -13,7 +13,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   const accents: { id: AccentColor; name: string; color: string }[] = [
-    { id: 'blue', name: 'EZRAB Blue', color: '#2563eb' },
+    { id: 'blue', name: 'EZRAB Blue', color: 'var(--ez-color-primary)' },
     { id: 'emerald', name: 'Emerald', color: '#059669' },
     { id: 'violet', name: 'Violet', color: '#7c3aed' },
     { id: 'amber', name: 'Amber Gold', color: '#d97706' },

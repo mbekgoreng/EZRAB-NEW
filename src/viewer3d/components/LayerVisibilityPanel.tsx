@@ -11,13 +11,13 @@ export interface LayerVisibilityPanelProps {
 }
 
 const LAYER_LABELS: Record<ViewerLayerType, { label: string; color: string }> = {
-  FOUNDATION: { label: '01. Pondasi Batu Kali', color: '#64748B' },
+  FOUNDATION: { label: '01. Pondasi Batu Kali', color: 'var(--ez-color-text-muted)' },
   STRUCTURE: { label: '02. Struktur (Sloof, Kolom, Balok)', color: '#0284C7' },
   WALLS: { label: '03. Pasangan Dinding Hebel', color: '#E2E8F0' },
   OPENINGS: { label: '04. Kusen Pintu & Jendela', color: '#D97706' },
   ROOF: { label: '05. Rangka & Penutup Atap', color: '#DC2626' },
   SLAB: { label: '06. Pelat Lantai 2', color: '#0284C7' },
-  FINISHES: { label: '07. Plafon & Finishing', color: '#F8FAFC' },
+  FINISHES: { label: '07. Plafon & Finishing', color: 'var(--ez-color-surface-secondary)' },
   INFRASTRUCTURE: { label: '08. Infrastruktur Jalan', color: '#10B981' },
   DRAINAGE: { label: '09. Saluran Drainase', color: '#06B6D4' },
   GRID: { label: '10. Grid As Bangunan', color: '#38BDF8' },

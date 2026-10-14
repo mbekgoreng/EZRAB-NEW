@@ -9,6 +9,7 @@ import {
   Archive,
 } from 'lucide-react';
 import { Project } from '../../types';
+import { useI18n } from '../../i18n/I18nContext';
 import { AllProjectsView, type ActivityItem } from './AllProjectsView';
 import { DraftProjectsView } from './DraftProjectsView';
 import { InProgressProjectsView } from './InProgressProjectsView';
@@ -36,6 +37,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   initialFilter = 'Semua Proyek',
   onFilterChange,
 }) => {
+  const { t } = useI18n();
   const [filterType, setFilterTypeState] = useState(initialFilter);
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
 
@@ -58,11 +60,11 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   const archiveCount = projects.filter((p) => p.status === 'archived' || p.isArchived).length;
 
   const tabs = [
-    { id: 'Semua Proyek', label: 'Semua Proyek', count: totalProjects, icon: Folder },
-    { id: 'Draft', label: 'Draft', count: draftCount, icon: FileText },
-    { id: 'Sedang Dikerjakan', label: 'Sedang Dikerjakan', count: inProgressCount, icon: Play },
-    { id: 'Selesai', label: 'Selesai', count: completedCount, icon: CheckCircle2 },
-    { id: 'Arsip', label: 'Arsip', count: archiveCount, icon: Archive },
+    { id: 'Semua Proyek', label: t('proj.tab_all'), count: totalProjects, icon: Folder },
+    { id: 'Draft', label: t('proj.tab_draft'), count: draftCount, icon: FileText },
+    { id: 'Sedang Dikerjakan', label: t('proj.tab_active'), count: inProgressCount, icon: Play },
+    { id: 'Selesai', label: t('proj.tab_done'), count: completedCount, icon: CheckCircle2 },
+    { id: 'Arsip', label: t('proj.tab_archived'), count: archiveCount, icon: Archive },
   ];
 
   // Header Title and Subtitle based on active menu
@@ -70,30 +72,30 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     switch (filterType) {
       case 'Draft':
         return {
-          title: 'Rancangan Proyek & Pra-Estimasi (Draft)',
-          subtitle: 'Ruang kerja persiapan proyek, survei data volume awal, dan simulasi anggaran sebelum disetujui.',
+          title: t('proj.head_draft_t'),
+          subtitle: t('proj.head_draft_s'),
         };
       case 'Sedang Dikerjakan':
       case 'Proyek Berjalan':
         return {
-          title: 'Proyek Aktif & Monitoring Pelaksanaan Lapangan',
-          subtitle: 'Pantau progres fisik real-time, Kurva S, jadwal pelaksanaan, deviasi mingguan, dan arus kas lapangan.',
+          title: t('proj.head_active_t'),
+          subtitle: t('proj.head_active_s'),
         };
       case 'Selesai':
         return {
-          title: 'Proyek Selesai & Serah Terima (Closeout)',
-          subtitle: 'Rekapitulasi proyek tuntas 100%, evaluasi laba rugi realisasi anggaran, dan Berita Acara Serah Terima (BAST).',
+          title: t('proj.head_done_t'),
+          subtitle: t('proj.head_done_s'),
         };
       case 'Arsip':
         return {
-          title: 'Gudang Arsip & Data Historis Proyek',
-          subtitle: 'Penyimpanan arsip aman proyek masa lalu, benchmark harga historis, dan fungsi pemulihan data (Restore).',
+          title: t('proj.head_archived_t'),
+          subtitle: t('proj.head_archived_s'),
         };
       case 'Semua Proyek':
       default:
         return {
-          title: 'Direktori & Portofolio Semua Proyek',
-          subtitle: 'Pusat kendali seluruh siklus proyek konstruksi dari pra-desain, pelaksanaan, hingga serah terima.',
+          title: t('proj.head_all_t'),
+          subtitle: t('proj.head_all_s'),
         };
     }
   };
@@ -109,7 +111,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
         display: 'flex',
         flexDirection: 'column',
         gap: '22px',
-        color: '#141412',
+        color: 'var(--ez-color-text-primary)',
         fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
       }}
     >
@@ -137,7 +139,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               fontSize: '24px',
               fontWeight: 800,
               letterSpacing: '-0.3px',
-              color: '#141412',
+              color: 'var(--ez-color-text-primary)',
               margin: '0 0 4px 0',
             }}
           >
@@ -155,8 +157,8 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             style={{
               height: '38px',
               padding: '0 16px',
-              borderRadius: '12px',
-              background: '#2563EB',
+              borderRadius: 'var(--ez-radius-control)',
+              background: 'var(--ez-color-primary)',
               color: '#ffffff',
               fontSize: '14px',
               fontWeight: 700,
@@ -168,11 +170,11 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               boxShadow: '0 4px 14px rgba(37,99,235,0.28)',
               transition: 'background 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#1D4ED8')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#2563EB')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-primary-hover)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-primary)')}
           >
             <Plus size={15} />
-            <span>+ Buat Proyek</span>
+            <span>+ {t('proj.create_project')}</span>
           </button>
 
           <button
@@ -180,10 +182,10 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             style={{
               height: '38px',
               padding: '0 14px',
-              borderRadius: '12px',
-              background: '#ffffff',
+              borderRadius: 'var(--ez-radius-control)',
+              background: 'var(--ez-color-surface)',
               border: '1px solid #E2E8F0',
-              color: '#2563EB',
+              color: 'var(--ez-color-primary)',
               fontSize: '14px',
               fontWeight: 700,
               cursor: 'pointer',
@@ -197,7 +199,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
           >
             <Sparkles size={15} color="#2563EB" />
-            <span>Generate dengan AI</span>
+            <span>{t('proj.generate_ai')}</span>
           </button>
         </div>
       </div>
@@ -231,7 +233,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 border: 'none',
                 background: 'transparent',
                 borderBottom: isActive ? '3px solid #2563EB' : '3px solid transparent',
-                color: isActive ? '#2563EB' : '#8A8A84',
+                color: isActive ? 'var(--ez-color-primary)' : '#8A8A84',
                 fontSize: '13px',
                 fontWeight: isActive ? 750 : 600,
                 cursor: 'pointer',
@@ -249,9 +251,9 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   fontSize: '11px',
                   fontWeight: 700,
                   padding: '5px 12px',
-                  borderRadius: '999px',
-                  background: isActive ? '#E3EEFB' : '#F1F5F9',
-                  color: isActive ? '#2456A8' : '#64748B',
+                  borderRadius: 'var(--ez-radius-pill)',
+                  background: isActive ? 'var(--ez-pastel-sky)' : '#F1F5F9',
+                  color: isActive ? '#2456A8' : 'var(--ez-color-text-muted)',
                   whiteSpace: 'nowrap',
                 }}
               >

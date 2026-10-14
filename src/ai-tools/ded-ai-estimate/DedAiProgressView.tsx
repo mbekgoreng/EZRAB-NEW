@@ -9,6 +9,7 @@ import {
   Clock, Files, HardDrive, Zap, Brain, FileText,
 } from 'lucide-react';
 import './dedAi.css';
+import { useI18n } from '../../i18n/I18nContext';
 
 export type StageStatus = 'waiting' | 'active' | 'done' | 'failed';
 
@@ -51,18 +52,21 @@ const fmtElapsed = (ms: number) => {
   return `${m} mnt ${s % 60} dtk`;
 };
 
-export const STAGE_DEFS: Array<{ key: string; title: string; desc: string; icon: React.ReactNode }> = [
-  { key: 'received', title: 'Dokumen diterima', desc: 'File tervalidasi dan siap diproses.', icon: <FileCheck size={17} /> },
-  { key: 'reading', title: 'Membaca dokumen dan gambar', desc: 'Mengekstrak teks dari setiap halaman PDF.', icon: <BookOpen size={17} /> },
-  { key: 'extract', title: 'Mengekstrak informasi proyek', desc: 'Menyiapkan ringkasan halaman untuk AI.', icon: <ScanSearch size={17} /> },
-  { key: 'identify', title: 'Mengidentifikasi pekerjaan dan kuantitas', desc: 'AI menganalisis dan menyusun daftar pekerjaan.', icon: <ListChecks size={17} /> },
-  { key: 'validate', title: 'Memvalidasi hasil', desc: 'Cek kuantitas, satuan, dan kewajaran harga di kode.', icon: <ShieldCheck size={17} /> },
-  { key: 'prepare', title: 'Menyiapkan estimasi', desc: 'Menghitung subtotal dan total secara deterministik.', icon: <PackageCheck size={17} /> },
+export const getStageDefs = (
+  t: (key: string) => string,
+): Array<{ key: string; title: string; desc: string; icon: React.ReactNode }> => [
+  { key: 'received', title: t('ai.ded.progress.stage_received_title'), desc: t('ai.ded.progress.stage_received_desc'), icon: <FileCheck size={17} /> },
+  { key: 'reading', title: t('ai.ded.progress.stage_reading_title'), desc: t('ai.ded.progress.stage_reading_desc'), icon: <BookOpen size={17} /> },
+  { key: 'extract', title: t('ai.ded.progress.stage_extract_title'), desc: t('ai.ded.progress.stage_extract_desc'), icon: <ScanSearch size={17} /> },
+  { key: 'identify', title: t('ai.ded.progress.stage_identify_title'), desc: t('ai.ded.progress.stage_identify_desc'), icon: <ListChecks size={17} /> },
+  { key: 'validate', title: t('ai.ded.progress.stage_validate_title'), desc: t('ai.ded.progress.stage_validate_desc'), icon: <ShieldCheck size={17} /> },
+  { key: 'prepare', title: t('ai.ded.progress.stage_prepare_title'), desc: t('ai.ded.progress.stage_prepare_desc'), icon: <PackageCheck size={17} /> },
 ];
 
 export const DedAiProgressView: React.FC<Props> = ({
   stages, percent, statusLine, summary, error, onRetry, onBack, onSeeResult, resultReady,
 }) => {
+  const { t } = useI18n();
   const [now, setNow] = React.useState(Date.now());
   React.useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -72,28 +76,28 @@ export const DedAiProgressView: React.FC<Props> = ({
   return (
     <div className="dedai">
       <div className="dedai-head">
-        <h1>EZRAB sedang <span className="accent">menganalisis</span> proyek Anda</h1>
-        <p>AI sedang membaca dokumen dan menyiapkan data untuk estimasi pekerjaan konstruksi.</p>
+        <h1>{t('ai.ded.progress.head_a')} <span className="accent">{t('ai.ded.progress.head_b')}</span> {t('ai.ded.progress.head_c')}</h1>
+        <p>{t('ai.ded.progress.head_sub')}</p>
       </div>
 
       <div className="dedai-steps">
-        <div className="dedai-step done"><span className="n">✓</span> Input</div>
+        <div className="dedai-step done"><span className="n">✓</span> {t('ai.ded.input.step_1')}</div>
         <div className="dedai-step-line done" />
-        <div className="dedai-step active"><span className="n">2</span> Progress</div>
+        <div className="dedai-step active"><span className="n">2</span> {t('ai.ded.input.step_2')}</div>
         <div className="dedai-step-line" />
-        <div className="dedai-step"><span className="n">3</span> Hasil</div>
+        <div className="dedai-step"><span className="n">3</span> {t('ai.ded.input.step_3')}</div>
       </div>
 
       <div className="dedai-progress-wrap">
         <div className="dedai-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            {!error && !resultReady && <Loader2 size={18} className="spin" color="#2563EB" />}
-            {resultReady && <CheckCircle2 size={18} color="#10B981" />}
-            {error && <XCircle size={18} color="#EF4444" />}
+            {!error && !resultReady && <Loader2 size={18} className="spin" color="var(--ez-color-primary)" />}
+            {resultReady && <CheckCircle2 size={18} color="var(--ez-color-success)" />}
+            {error && <XCircle size={18} color="var(--ez-color-danger)" />}
             <span style={{ fontWeight: 800, fontSize: 15 }}>
-              {error ? 'Analisis gagal' : resultReady ? 'Analisis selesai' : statusLine}
+              {error ? t('ai.ded.status_failed') : resultReady ? t('ai.ded.status_done') : statusLine}
             </span>
-            <span style={{ marginLeft: 'auto', fontWeight: 800, color: '#1D4ED8', fontSize: 15 }}>{Math.round(percent)}%</span>
+            <span style={{ marginLeft: 'auto', fontWeight: 800, color: 'var(--ez-color-primary-hover)', fontSize: 15 }}>{Math.round(percent)}%</span>
           </div>
           <div className="dedai-bar"><div style={{ width: `${Math.min(100, Math.max(0, percent))}%` }} /></div>
           {summary.currentFile && !error && !resultReady && (
@@ -112,7 +116,7 @@ export const DedAiProgressView: React.FC<Props> = ({
                   <div className="s-title">
                     {s.title}
                     <span className={`s-badge ${s.status}`}>
-                      {s.status === 'waiting' ? 'Menunggu' : s.status === 'active' ? 'Proses' : s.status === 'done' ? 'Selesai' : 'Gagal'}
+                      {s.status === 'waiting' ? t('ai.ded.progress.badge_waiting') : s.status === 'active' ? t('ai.ded.progress.badge_active') : s.status === 'done' ? t('ai.ded.progress.badge_done') : t('ai.ded.progress.badge_failed')}
                     </span>
                   </div>
                   <div className="s-desc">{s.desc}</div>
@@ -125,7 +129,7 @@ export const DedAiProgressView: React.FC<Props> = ({
             <div className="dedai-error">
               <h4><XCircle size={16} /> {error.message}</h4>
               {error.errorCode && <p><code>{error.errorCode}</code>{error.stage && <code style={{ marginLeft: 6 }}>{error.stage}</code>}</p>}
-              <p style={{ marginTop: 8 }}>Input Anda tetap tersimpan — tidak perlu mengunggah ulang.</p>
+              <p style={{ marginTop: 8 }}>{t('ai.ded.progress.err_kept')}</p>
             </div>
           )}
 
@@ -134,36 +138,36 @@ export const DedAiProgressView: React.FC<Props> = ({
               <>
                 {error.retryable !== false && (
                   <button className="dedai-btn primary" onClick={onRetry}>
-                    <RotateCcw size={17} /> Coba Lagi
+                    <RotateCcw size={17} /> {t('ai.ded.progress.btn_retry')}
                   </button>
                 )}
                 <button className="dedai-btn ghost" onClick={onBack}>
-                  <ArrowLeft size={17} /> Kembali ke Input
+                  <ArrowLeft size={17} /> {t('ai.ded.progress.btn_back_input')}
                 </button>
               </>
             ) : resultReady ? (
               <button className="dedai-btn success" onClick={onSeeResult}>
-                Lihat Hasil Estimasi <ArrowRight size={18} />
+                {t('ai.ded.progress.btn_see_result')} <ArrowRight size={18} />
               </button>
             ) : (
               <button className="dedai-btn ghost" onClick={onBack}>
-                <ArrowLeft size={17} /> Batalkan & Kembali
+                <ArrowLeft size={17} /> {t('ai.ded.progress.btn_cancel_back')}
               </button>
             )}
           </div>
         </div>
 
         <div className="dedai-summary">
-          <h3>Ringkasan Proses</h3>
-          <div className="row"><span className="k">Proyek</span><span className="v">{summary.projectName}</span></div>
-          <div className="row"><span className="k"><Files size={13} style={{ verticalAlign: -2 }} /> Dokumen</span><span className="v">{summary.fileCount} file</span></div>
-          <div className="row"><span className="k"><HardDrive size={13} style={{ verticalAlign: -2 }} /> Ukuran</span><span className="v">{fmtSize(summary.totalSize)}</span></div>
-          <div className="row"><span className="k">Mode AI</span><span className="v" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            {summary.mode === 'FAST' ? <Zap size={13} color="#2563EB" /> : <Brain size={13} color="#7C3AED" />}
-            {summary.mode === 'FAST' ? 'Cepat' : 'Mendalam'}
+          <h3>{t('ai.ded.progress.sum_title')}</h3>
+          <div className="row"><span className="k">{t('ai.ded.progress.sum_project')}</span><span className="v">{summary.projectName}</span></div>
+          <div className="row"><span className="k"><Files size={13} style={{ verticalAlign: -2 }} /> {t('ai.ded.progress.sum_docs')}</span><span className="v">{summary.fileCount} file</span></div>
+          <div className="row"><span className="k"><HardDrive size={13} style={{ verticalAlign: -2 }} /> {t('ai.ded.progress.sum_size')}</span><span className="v">{fmtSize(summary.totalSize)}</span></div>
+          <div className="row"><span className="k">{t('ai.ded.progress.sum_mode')}</span><span className="v" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            {summary.mode === 'FAST' ? <Zap size={13} color="var(--ez-color-primary)" /> : <Brain size={13} color="var(--ez-color-primary)" />}
+            {summary.mode === 'FAST' ? t('ai.ded.input.mode_fast') : t('ai.ded.input.mode_deep')}
           </span></div>
-          <div className="row"><span className="k"><Clock size={13} style={{ verticalAlign: -2 }} /> Waktu jalan</span><span className="v">{fmtElapsed(now - summary.startedAt)}</span></div>
-          <div className="row"><span className="k">Mulai</span><span className="v">{new Date(summary.startedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span></div>
+          <div className="row"><span className="k"><Clock size={13} style={{ verticalAlign: -2 }} /> {t('ai.ded.progress.sum_elapsed')}</span><span className="v">{fmtElapsed(now - summary.startedAt)}</span></div>
+          <div className="row"><span className="k">{t('ai.ded.progress.sum_start')}</span><span className="v">{new Date(summary.startedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span></div>
         </div>
       </div>
     </div>

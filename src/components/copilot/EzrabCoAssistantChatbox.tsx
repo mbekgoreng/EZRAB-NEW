@@ -872,7 +872,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
         const parts = line.split(/(\*\*[^*]+\*\*)/g);
         processed = parts.map((part, pIdx) => {
           if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={pIdx} style={{ fontWeight: 700, color: '#0F172A' }}>{part.slice(2, -2)}</strong>;
+            return <strong key={pIdx} style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{part.slice(2, -2)}</strong>;
           }
           return part;
         });
@@ -882,7 +882,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
       if (line.trim().startsWith('- ') || line.trim().startsWith('• ')) {
         return (
           <div key={idx} style={{ display: 'flex', gap: '6px', marginTop: '3px' }}>
-            <span style={{ color: '#2563EB', fontWeight: 700 }}>•</span>
+            <span style={{ color: 'var(--ez-color-primary)', fontWeight: 700 }}>•</span>
             <span style={{ flex: 1 }}>{typeof processed === 'string' ? processed.replace(/^[-•]\s*/, '') : processed}</span>
           </div>
         );
@@ -893,7 +893,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
       if (numMatch) {
         return (
           <div key={idx} style={{ display: 'flex', gap: '6px', marginTop: '3px' }}>
-            <span style={{ color: '#2563EB', fontWeight: 600 }}>{numMatch[1]}.</span>
+            <span style={{ color: 'var(--ez-color-primary)', fontWeight: 600 }}>{numMatch[1]}.</span>
             <span style={{ flex: 1 }}>{numMatch[2]}</span>
           </div>
         );
@@ -926,7 +926,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
         height: isMobile ? `min(calc(100dvh - 16px - ${keyboardOffset}px), 640px)` : desktopHeight,
         maxHeight: isMobile ? '100dvh' : 'calc(100dvh - 24px)',
         zIndex: 9995,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'var(--ez-color-surface)',
         borderRadius: isMobile ? '24px 24px 0 0' : '24px',
         border: isMobile ? 'none' : '1px solid rgba(226, 232, 240, 0.85)',
         boxShadow: isMobile
@@ -950,7 +950,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '10px',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderBottom: '1px solid #F1F5F9',
         }}
       >
@@ -1011,7 +1011,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                 style={{
                   fontSize: '16px',
                   fontWeight: 800,
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   letterSpacing: '-0.02em',
                   lineHeight: 1.15,
                   margin: 0,
@@ -1035,7 +1035,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
               style={{
                 fontSize: '11px',
                 fontWeight: 500,
-                color: '#64748B',
+                color: 'var(--ez-color-text-muted)',
                 margin: '2px 0 0',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
@@ -1061,21 +1061,21 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                 width: '30px',
                 height: '30px',
                 borderRadius: '50%',
-                backgroundColor: '#F8FAFC',
+                backgroundColor: 'var(--ez-color-surface-secondary)',
                 border: '1px solid #E2E8F0',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#64748B',
+                color: 'var(--ez-color-text-muted)',
                 cursor: 'pointer',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#EFF6FF';
-                e.currentTarget.style.color = '#2563EB';
+                e.currentTarget.style.color = 'var(--ez-color-primary)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#F8FAFC';
-                e.currentTarget.style.color = '#64748B';
+                e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)';
+                e.currentTarget.style.color = 'var(--ez-color-text-muted)';
               }}
             >
               <RotateCcw size={13} />
@@ -1092,12 +1092,12 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
               width: '30px',
               height: '30px',
               borderRadius: '50%',
-              backgroundColor: '#F8FAFC',
+              backgroundColor: 'var(--ez-color-surface-secondary)',
               border: '1px solid #E2E8F0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#64748B',
+              color: 'var(--ez-color-text-muted)',
               cursor: 'pointer',
             }}
             onMouseEnter={(e) => {
@@ -1105,8 +1105,8 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
               e.currentTarget.style.color = '#0F172A';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#F8FAFC';
-              e.currentTarget.style.color = '#64748B';
+              e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)';
+              e.currentTarget.style.color = 'var(--ez-color-text-muted)';
             }}
           >
             <Minus size={14} />
@@ -1123,12 +1123,12 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                 width: '30px',
                 height: '30px',
                 borderRadius: '50%',
-                backgroundColor: '#F8FAFC',
+                backgroundColor: 'var(--ez-color-surface-secondary)',
                 border: '1px solid #E2E8F0',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#64748B',
+                color: 'var(--ez-color-text-muted)',
                 cursor: 'pointer',
               }}
               onMouseEnter={(e) => {
@@ -1136,8 +1136,8 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                 e.currentTarget.style.color = '#0F172A';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#F8FAFC';
-                e.currentTarget.style.color = '#64748B';
+                e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)';
+                e.currentTarget.style.color = 'var(--ez-color-text-muted)';
               }}
             >
               {isExpanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
@@ -1160,16 +1160,16 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 cursor: 'pointer',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#DBEAFE';
-                e.currentTarget.style.color = '#1D4ED8';
+                e.currentTarget.style.color = 'var(--ez-color-primary-hover)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = '#EFF6FF';
-                e.currentTarget.style.color = '#2563EB';
+                e.currentTarget.style.color = 'var(--ez-color-primary)';
               }}
             >
               <ExternalLink size={13} />
@@ -1186,12 +1186,12 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
               width: '30px',
               height: '30px',
               borderRadius: '50%',
-              backgroundColor: '#F8FAFC',
+              backgroundColor: 'var(--ez-color-surface-secondary)',
               border: '1px solid #E2E8F0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#64748B',
+              color: 'var(--ez-color-text-muted)',
               cursor: 'pointer',
             }}
             onMouseEnter={(e) => {
@@ -1200,9 +1200,9 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
               e.currentTarget.style.color = '#DC2626';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#F8FAFC';
-              e.currentTarget.style.borderColor = '#E2E8F0';
-              e.currentTarget.style.color = '#64748B';
+              e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)';
+              e.currentTarget.style.borderColor = 'var(--ez-color-border)';
+              e.currentTarget.style.color = 'var(--ez-color-text-muted)';
             }}
           >
             <X size={14} />
@@ -1231,7 +1231,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
           minHeight: 0,
           overflowY: 'auto',
           padding: isMobile ? '12px' : '14px 16px',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           display: 'flex',
           flexDirection: 'column',
           gap: '12px',
@@ -1246,7 +1246,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
               <div
                 style={{
                   maxWidth: '88%',
-                  backgroundColor: '#F8FAFC',
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
                   border: '1px solid #E2E8F0',
                   borderRadius: '16px 16px 16px 4px',
                   padding: '12px 14px',
@@ -1257,7 +1257,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                   style={{
                     fontSize: '14px',
                     lineHeight: 1.45,
-                    color: '#0F172A',
+                    color: 'var(--ez-color-text-primary)',
                     fontWeight: 500,
                     margin: 0,
                   }}
@@ -1275,7 +1275,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
-                  color: '#64748B',
+                  color: 'var(--ez-color-text-muted)',
                   marginBottom: '8px',
                 }}
               >
@@ -1297,7 +1297,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                       type="button"
                       onClick={() => handleQuickActionClick(action.actionId, action.title, action.prompt)}
                       style={{
-                        backgroundColor: '#FFFFFF',
+                        backgroundColor: 'var(--ez-color-surface)',
                         border: '1px solid #E0E7FF',
                         borderRadius: '20px',
                         minHeight: '44px',
@@ -1312,7 +1312,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.borderColor = '#818CF8';
-                        e.currentTarget.style.backgroundColor = '#F8FAFC';
+                        e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)';
                         e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.1)';
                       }}
                       onMouseLeave={(e) => {
@@ -1399,7 +1399,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
               <div
                 style={{
                   maxWidth: isUser ? '84%' : '88%',
-                  backgroundColor: isUser ? '#1D4ED8' : message.isError ? '#FEF2F2' : '#FFFFFF',
+                  backgroundColor: isUser ? 'var(--ez-color-primary-hover)' : message.isError ? '#FEF2F2' : '#FFFFFF',
                   color: isUser ? '#FFFFFF' : message.isError ? '#991B1B' : '#0F172A',
                   border: isUser
                     ? 'none'
@@ -1427,7 +1427,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                       borderBottom: '1px solid #F1F5F9',
                     }}
                   >
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A' }}>EZRAB AI</span>
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>EZRAB AI</span>
                   </div>
                 )}
                 {/* Error Banner */}
@@ -1440,9 +1440,9 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
 
                 {/* Stat Callout (if returned) */}
                 {message.stats && (
-                  <div style={{ marginBottom: '8px', padding: '8px 10px', borderRadius: '10px', backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0' }}>
-                    <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>{message.stats.label}</div>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: message.stats.color || '#2563EB' }}>{message.stats.value}</div>
+                  <div style={{ marginBottom: '8px', padding: '8px 10px', borderRadius: '10px', backgroundColor: 'var(--ez-color-surface)', border: '1px solid #E2E8F0' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>{message.stats.label}</div>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: message.stats.color || 'var(--ez-color-primary)' }}>{message.stats.value}</div>
                     {message.stats.sub && <div style={{ fontSize: '10.5px', color: '#94A3B8' }}>{message.stats.sub}</div>}
                   </div>
                 )}
@@ -1452,10 +1452,10 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
 
                 {/* Table (if returned) */}
                 {message.table && message.table.rows?.length > 0 && (
-                  <div style={{ marginTop: '8px', overflowX: 'auto', borderRadius: '8px', border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF' }}>
+                  <div style={{ marginTop: '8px', overflowX: 'auto', borderRadius: '8px', border: '1px solid #E2E8F0', backgroundColor: 'var(--ez-color-surface)' }}>
                     <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', textAlign: 'left' }}>
                       <thead>
-                        <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                        <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0' }}>
                           {message.table.headers.map((h, hIdx) => (
                             <th key={hIdx} style={{ padding: '6px 8px', fontWeight: 700, color: '#475569' }}>{h}</th>
                           ))}
@@ -1480,8 +1480,8 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                     style={{
                       marginTop: '8px',
                       padding: '10px',
-                      borderRadius: '12px',
-                      backgroundColor: '#FFFFFF',
+                      borderRadius: 'var(--ez-radius-control)',
+                      backgroundColor: 'var(--ez-color-surface)',
                       border: '1px solid #E2E8F0',
                       boxShadow: '0 1px 4px rgba(15, 23, 42, 0.04)',
                     }}
@@ -1489,7 +1489,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                     <div style={{ fontSize: '11px', fontWeight: 700, color: '#1E40AF', marginBottom: '4px' }}>
                       📋 Rekomendasi Aksi Estimasi
                     </div>
-                    <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#0F172A' }}>
+                    <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>
                       {message.actionProposal.description || message.actionProposal.toolName}
                     </div>
                     {userRole !== 'CLIENT' && (
@@ -1501,8 +1501,8 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                           style={{
                             padding: '5px 10px',
                             borderRadius: '6px',
-                            backgroundColor: appliedProposalIds.has(message.actionProposal.actionId) ? '#F1F5F9' : '#2563EB',
-                            color: appliedProposalIds.has(message.actionProposal.actionId) ? '#64748B' : '#FFFFFF',
+                            backgroundColor: appliedProposalIds.has(message.actionProposal.actionId) ? '#F1F5F9' : 'var(--ez-color-primary)',
+                            color: appliedProposalIds.has(message.actionProposal.actionId) ? 'var(--ez-color-text-muted)' : '#FFFFFF',
                             fontSize: '11.5px',
                             fontWeight: 600,
                             border: 'none',
@@ -1581,7 +1581,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
           <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
             <div
               style={{
-                backgroundColor: '#F8FAFC',
+                backgroundColor: 'var(--ez-color-surface-secondary)',
                 border: '1px solid #E2E8F0',
                 borderRadius: '16px 16px 16px 4px',
                 padding: '10px 14px',
@@ -1621,7 +1621,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                   animation: 'bounceDot 1.4s infinite ease-in-out 0.4s',
                 }}
               />
-              <span style={{ fontSize: '11.5px', color: '#64748B', marginLeft: '4px', fontWeight: 500 }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginLeft: '4px', fontWeight: 500 }}>
                 {thinkingStep}
               </span>
             </div>
@@ -1635,7 +1635,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
       <div
         style={{
           flexShrink: 0,
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderTop: '1px solid #F1F5F9',
           padding: isMobile ? '8px 12px calc(10px + env(safe-area-inset-bottom, 0px))' : '10px 14px 12px',
         }}
@@ -1652,7 +1652,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  backgroundColor: '#F8FAFC',
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
                   border: '1px solid #E2E8F0',
                   borderRadius: '18px',
                   height: '34px',
@@ -1668,7 +1668,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                   e.currentTarget.style.backgroundColor = '#EFF6FF';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#F8FAFC';
+                  e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)';
                 }}
               >
                 <Building2 size={13} color="#64748B" style={{ flexShrink: 0 }} />
@@ -1696,7 +1696,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                   width: '24px',
                   height: '24px',
                   borderRadius: '50%',
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: 'var(--ez-color-surface)',
                   border: '1px solid #E2E8F0',
                   color: '#94A3B8',
                   display: 'flex',
@@ -1725,7 +1725,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                   width: '260px',
                   maxHeight: '180px',
                   overflowY: 'auto',
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: 'var(--ez-color-surface)',
                   borderRadius: '14px',
                   boxShadow: '0 12px 30px -4px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.08)',
                   padding: '4px',
@@ -1736,7 +1736,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                   PILIH PROYEK AKTIF
                 </div>
                 {projects.length === 0 ? (
-                  <div style={{ padding: '6px 8px', fontSize: '11.5px', color: '#64748B' }}>
+                  <div style={{ padding: '6px 8px', fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
                     Belum ada proyek tersedia.
                   </div>
                 ) : (
@@ -1757,14 +1757,14 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                         border: 'none',
                         fontSize: '11.5px',
                         fontWeight: proj.id === currentProject?.id ? 700 : 500,
-                        color: proj.id === currentProject?.id ? '#1D4ED8' : '#1E293B',
+                        color: proj.id === currentProject?.id ? 'var(--ez-color-primary-hover)' : '#1E293B',
                         cursor: 'pointer',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
                       }}
                       onMouseEnter={(e) => {
-                        if (proj.id !== currentProject?.id) e.currentTarget.style.backgroundColor = '#F8FAFC';
+                        if (proj.id !== currentProject?.id) e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)';
                       }}
                       onMouseLeave={(e) => {
                         if (proj.id !== currentProject?.id) e.currentTarget.style.backgroundColor = 'transparent';
@@ -1844,7 +1844,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
               border: 'none',
               outline: 'none',
               fontSize: '13.5px',
-              color: '#0F172A',
+              color: 'var(--ez-color-text-primary)',
               resize: 'none',
               lineHeight: 1.35,
               padding: '6px 0',

@@ -65,7 +65,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
     >
       <div
         style={{
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           borderRadius: '14px',
           width: '460px',
           maxWidth: '92vw',
@@ -76,7 +76,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Filter size={18} color="#2563EB" />
-            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Filter Lanjutan Item RAB
             </h3>
           </div>
@@ -88,7 +88,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {/* Kelompok WBS */}
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '4px' }}>
               Kelompok Pekerjaan (WBS):
             </label>
             <select
@@ -107,7 +107,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
 
           {/* Sumber Volume / Analisa */}
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '4px' }}>
               Sumber Volume / Analisa:
             </label>
             <select
@@ -125,7 +125,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
 
           {/* Kisaran Harga Satuan */}
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '4px' }}>
               Rentang Harga Satuan (Rp):
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -148,7 +148,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
 
           {/* Keterkaitan AHSP */}
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '4px' }}>
               Status Pemetaan AHSP:
             </label>
             <select
@@ -177,8 +177,8 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
               padding: '0 12px',
               borderRadius: '6px',
               border: '1px solid #E2E8F0',
-              background: '#FFFFFF',
-              color: '#64748B',
+              background: 'var(--ez-color-surface)',
+              color: 'var(--ez-color-text-muted)',
               fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
@@ -199,7 +199,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
             </button>
             <button
               onClick={handleApply}
-              style={{ height: '34px', padding: '0 16px', borderRadius: '6px', border: 'none', background: '#2563EB', color: '#FFFFFF', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ height: '34px', padding: '0 16px', borderRadius: '6px', border: 'none', background: 'var(--ez-color-primary)', color: '#FFFFFF', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <Check size={14} />
               <span>Terapkan Filter</span>

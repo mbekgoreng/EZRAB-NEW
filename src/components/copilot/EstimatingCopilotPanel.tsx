@@ -551,7 +551,7 @@ export const EstimatingCopilotPanel: React.FC<EstimatingCopilotPanelProps> = ({
         width: `${width}px`,
         height: '100%',
         background: '#0F172A',
-        color: '#F8FAFC',
+        color: 'var(--ez-color-surface-secondary)',
         borderLeft: '1px solid #1E293B',
         display: 'flex',
         flexDirection: 'column',
@@ -574,7 +574,7 @@ export const EstimatingCopilotPanel: React.FC<EstimatingCopilotPanelProps> = ({
           width: '8px',
           cursor: 'ew-resize',
           zIndex: 50,
-          background: isResizing ? '#2563EB' : 'transparent',
+          background: isResizing ? 'var(--ez-color-primary)' : 'transparent',
           transition: 'background 0.2s',
         }}
         title="Geser untuk mengubah lebar panel Copilot"
@@ -695,7 +695,7 @@ export const EstimatingCopilotPanel: React.FC<EstimatingCopilotPanelProps> = ({
           ) : selectedGroup ? (
             <span style={{ color: '#FBBF24', fontWeight: 600 }}>Grup: {selectedGroup}</span>
           ) : (
-            <span style={{ color: '#64748B' }}>Seluruh Spreadsheet ({projectRabItems.length} Item)</span>
+            <span style={{ color: 'var(--ez-color-text-muted)' }}>Seluruh Spreadsheet ({projectRabItems.length} Item)</span>
           )}
           {selectedCell && (
             <span style={{ color: '#A78BFA', fontSize: '10px', marginLeft: 'auto' }}>
@@ -729,7 +729,7 @@ export const EstimatingCopilotPanel: React.FC<EstimatingCopilotPanelProps> = ({
             }}
           >
             {/* Sender header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10.5px', color: '#64748B' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>
               {msg.sender === 'ai' ? (
                 <>
                   <Bot size={12} color="#60A5FA" />
@@ -751,8 +751,8 @@ export const EstimatingCopilotPanel: React.FC<EstimatingCopilotPanelProps> = ({
                 maxWidth: '92%',
                 padding: '10px 14px',
                 borderRadius: msg.sender === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                background: msg.sender === 'user' ? '#2563EB' : '#1E293B',
-                color: '#F8FAFC',
+                background: msg.sender === 'user' ? 'var(--ez-color-primary)' : '#1E293B',
+                color: 'var(--ez-color-surface-secondary)',
                 fontSize: '12.5px',
                 lineHeight: '1.5',
                 border: msg.sender === 'user' ? 'none' : '1px solid #334155',
@@ -794,7 +794,7 @@ export const EstimatingCopilotPanel: React.FC<EstimatingCopilotPanelProps> = ({
                   >
                     <AlertTriangle size={15} color={ano.severity === 'high' ? '#EF4444' : '#F59E0B'} style={{ flexShrink: 0, marginTop: '2px' }} />
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#F8FAFC' }}>{ano.title}</div>
+                      <div style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-surface-secondary)' }}>{ano.title}</div>
                       <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px' }}>{ano.desc}</div>
                     </div>
                   </div>
@@ -830,7 +830,7 @@ export const EstimatingCopilotPanel: React.FC<EstimatingCopilotPanelProps> = ({
                       </span>
                     </div>
                     <div style={{ width: '100%', height: '5px', background: '#334155', borderRadius: '3px', overflow: 'hidden' }}>
-                      <div style={{ width: `${cat.percent}%`, height: '100%', background: '#2563EB', borderRadius: '3px' }} />
+                      <div style={{ width: `${cat.percent}%`, height: '100%', background: 'var(--ez-color-primary)', borderRadius: '3px' }} />
                     </div>
                   </div>
                 ))}
@@ -875,7 +875,7 @@ export const EstimatingCopilotPanel: React.FC<EstimatingCopilotPanelProps> = ({
                       ? 'TERAPLIKASI (AUDITED)'
                       : 'PROPOSAL PERUBAHAN ANGGARAN'}
                   </span>
-                  <span style={{ fontSize: '10px', color: '#64748B' }}>{msg.proposal.timestamp}</span>
+                  <span style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>{msg.proposal.timestamp}</span>
                 </div>
 
                 <div>
@@ -898,7 +898,7 @@ export const EstimatingCopilotPanel: React.FC<EstimatingCopilotPanelProps> = ({
                       fontSize: '11px',
                     }}
                   >
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748B', marginBottom: '6px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--ez-color-text-muted)', marginBottom: '6px' }}>
                       ITEM TERDAMPAK ({msg.proposal.affectedWorkItems.length}):
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '120px', overflowY: 'auto' }}>
@@ -944,13 +944,13 @@ export const EstimatingCopilotPanel: React.FC<EstimatingCopilotPanelProps> = ({
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '9.5px', color: '#64748B', textTransform: 'uppercase' }}>Before Total RAB</div>
+                    <div style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>Before Total RAB</div>
                     <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#E2E8F0' }}>
                       {formatCurrencyIDR(msg.proposal.beforeTotalRab)}
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '9.5px', color: '#64748B', textTransform: 'uppercase' }}>After Total RAB</div>
+                    <div style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>After Total RAB</div>
                     <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#38BDF8' }}>
                       {formatCurrencyIDR(msg.proposal.afterTotalRab)}
                     </div>
@@ -1210,7 +1210,7 @@ export const EstimatingCopilotPanel: React.FC<EstimatingCopilotPanelProps> = ({
               width: '28px',
               height: '28px',
               borderRadius: '6px',
-              background: inputQuery.trim() && !isThinking ? '#2563EB' : '#334155',
+              background: inputQuery.trim() && !isThinking ? 'var(--ez-color-primary)' : '#334155',
               color: '#FFFFFF',
               border: 'none',
               display: 'flex',
@@ -1224,7 +1224,7 @@ export const EstimatingCopilotPanel: React.FC<EstimatingCopilotPanelProps> = ({
           </button>
         </form>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: '#64748B' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>
           <span>💡 Zero silent changes • Wajib konfirmasi proposal</span>
           <span>Tekan ↵ Enter</span>
         </div>

@@ -39,7 +39,7 @@ export const DocxImportModal: React.FC<DocxImportModalProps> = ({
     >
       <div
         style={{
-          background: '#fff',
+          background: 'var(--ez-color-surface)',
           borderRadius: 14,
           width: 'min(640px, 100%)',
           maxHeight: '90vh',
@@ -50,14 +50,14 @@ export const DocxImportModal: React.FC<DocxImportModalProps> = ({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 750, color: '#0F172A' }}>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
               Template Berhasil Dibaca
             </h3>
-            <div style={{ fontSize: 12.5, color: '#64748B', marginTop: 2 }}>
+            <div style={{ fontSize: 12.5, color: 'var(--ez-color-text-muted)', marginTop: 2 }}>
               File: <strong>{importResult.templateName}.docx</strong>
             </div>
           </div>
-          <button onClick={onClose} style={{ border: 0, background: 'none', cursor: 'pointer', color: '#64748B' }}>
+          <button onClick={onClose} style={{ border: 0, background: 'none', cursor: 'pointer', color: 'var(--ez-color-text-muted)' }}>
             <X size={20} />
           </button>
         </div>
@@ -96,10 +96,10 @@ export const DocxImportModal: React.FC<DocxImportModalProps> = ({
 
         {/* VARIABLE MAPPING */}
         <div style={{ marginBottom: 22 }}>
-          <h4 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 750, color: '#0F172A' }}>
+          <h4 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
             Pemetaan Variabel (Variable Mapping)
           </h4>
-          <p style={{ margin: '0 0 14px', fontSize: 12, color: '#64748B' }}>
+          <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--ez-color-text-muted)' }}>
             Petakan placeholder teks pada dokumen Word Anda ke variabel data resmi EZRAB:
           </p>
 
@@ -114,13 +114,13 @@ export const DocxImportModal: React.FC<DocxImportModalProps> = ({
                       display: 'flex',
                       alignItems: 'center',
                       gap: 12,
-                      background: '#F8FAFC',
+                      background: 'var(--ez-color-surface-secondary)',
                       padding: '10px 12px',
                       borderRadius: 8,
                       border: '1px solid #E2E8F0',
                     }}
                   >
-                    <div style={{ flex: 1, fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: '#0F172A' }}>
+                    <div style={{ flex: 1, fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                       {placeholder}
                     </div>
                     <ArrowRight size={14} color="#64748B" />
@@ -134,7 +134,7 @@ export const DocxImportModal: React.FC<DocxImportModalProps> = ({
                           borderRadius: 6,
                           border: '1px solid #CBD5E1',
                           fontSize: 12,
-                          background: '#fff',
+                          background: 'var(--ez-color-surface)',
                         }}
                       >
                         <option value="">-- Lewati / Jangan Petakan --</option>
@@ -154,7 +154,7 @@ export const DocxImportModal: React.FC<DocxImportModalProps> = ({
               })}
             </div>
           ) : (
-            <div style={{ fontSize: 12, color: '#64748B', fontStyle: 'italic', padding: 12, background: '#F8FAFC', borderRadius: 8 }}>
+            <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', fontStyle: 'italic', padding: 12, background: 'var(--ez-color-surface-secondary)', borderRadius: 8 }}>
               Tidak ditemukan placeholder kurung siku seperti [NAMA PEKERJAAN]. Dokumen akan diimpor sebagai teks murni dan Anda dapat menyisipkan variabel di Editor.
             </div>
           )}
@@ -166,7 +166,7 @@ export const DocxImportModal: React.FC<DocxImportModalProps> = ({
             onClick={onClose}
             style={{
               padding: '9px 18px',
-              background: '#fff',
+              background: 'var(--ez-color-surface)',
               border: '1px solid #CBD5E1',
               borderRadius: 8,
               fontSize: 13,
@@ -180,7 +180,7 @@ export const DocxImportModal: React.FC<DocxImportModalProps> = ({
             onClick={onApply}
             style={{
               padding: '9px 20px',
-              background: '#2563EB',
+              background: 'var(--ez-color-primary)',
               color: '#fff',
               border: 0,
               borderRadius: 8,

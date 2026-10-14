@@ -324,7 +324,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        background: '#FFFFFF',
+        background: 'var(--ez-color-surface)',
         fontFamily: 'inherit',
       }}
     >
@@ -429,11 +429,11 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
       {/* 2. Context Pill (Shows active item / WBS context) */}
       <div
         style={{
-          background: '#F8FAFC',
+          background: 'var(--ez-color-surface-secondary)',
           borderBottom: '1px solid #E2E8F0',
           padding: '6px 14px',
           fontSize: '11px',
-          color: '#64748B',
+          color: 'var(--ez-color-text-muted)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -442,11 +442,11 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           <span style={{ fontWeight: 700, color: '#334155' }}>Konteks:</span>
           {selectedItem ? (
-            <span style={{ color: '#2563EB', fontWeight: 650 }}>
+            <span style={{ color: 'var(--ez-color-primary)', fontWeight: 650 }}>
               {selectedItem.description} ({selectedItem.volume} {selectedItem.unit})
             </span>
           ) : selectedGroup ? (
-            <span style={{ color: '#2563EB', fontWeight: 650 }}>Kelompok: {selectedGroup}</span>
+            <span style={{ color: 'var(--ez-color-primary)', fontWeight: 650 }}>Kelompok: {selectedGroup}</span>
           ) : (
             <span>Seluruh Proyek ({projectRabItems.length} Item)</span>
           )}
@@ -462,7 +462,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
           display: 'flex',
           flexDirection: 'column',
           gap: '14px',
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
         }}
       >
         {messages.map((msg) => (
@@ -481,7 +481,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
                 maxWidth: '88%',
                 padding: '10px 14px',
                 borderRadius: msg.sender === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                background: msg.sender === 'user' ? '#2563EB' : '#F1F5F9',
+                background: msg.sender === 'user' ? 'var(--ez-color-primary)' : '#F1F5F9',
                 color: msg.sender === 'user' ? '#FFFFFF' : '#0F172A',
                 fontSize: '12px',
                 lineHeight: 1.5,
@@ -496,7 +496,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
               <div
                 style={{
                   width: '95%',
-                  background: '#F8FAFC',
+                  background: 'var(--ez-color-surface-secondary)',
                   borderRadius: '10px',
                   border: '1px solid #BFDBFE',
                   padding: '12px',
@@ -516,7 +516,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
                       fontSize: '10px',
                       fontWeight: 700,
                       background: msg.proposal.status === 'APPLIED' ? '#DCFCE7' : '#EFF6FF',
-                      color: msg.proposal.status === 'APPLIED' ? '#16A34A' : '#2563EB',
+                      color: msg.proposal.status === 'APPLIED' ? '#16A34A' : 'var(--ez-color-primary)',
                       padding: '1px 6px',
                       borderRadius: '4px',
                     }}
@@ -525,7 +525,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
                   </span>
                 </div>
 
-                <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#0F172A' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                   {msg.proposal.title}
                 </div>
 
@@ -535,21 +535,21 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr',
                     gap: '6px',
-                    background: '#FFFFFF',
+                    background: 'var(--ez-color-surface)',
                     padding: '8px 10px',
                     borderRadius: '6px',
                     border: '1px solid #E2E8F0',
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: '9.5px', color: '#64748B' }}>Total Sebelum</div>
+                    <div style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)' }}>Total Sebelum</div>
                     <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
                       {formatCurrencyIDR(msg.proposal.beforeTotalRab)}
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '9.5px', color: '#64748B' }}>Total Setelah</div>
-                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#2563EB' }}>
+                    <div style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)' }}>Total Setelah</div>
+                    <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-primary)' }}>
                       {formatCurrencyIDR(msg.proposal.afterTotalRab)}
                     </div>
                   </div>
@@ -575,7 +575,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
                       style={{
                         flexGrow: 1,
                         height: '28px',
-                        background: '#2563EB',
+                        background: 'var(--ez-color-primary)',
                         border: 'none',
                         borderRadius: '6px',
                         color: '#FFFFFF',
@@ -599,10 +599,10 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
                       style={{
                         height: '28px',
                         padding: '0 10px',
-                        background: '#FFFFFF',
+                        background: 'var(--ez-color-surface)',
                         border: '1px solid #CBD5E1',
                         borderRadius: '6px',
-                        color: '#64748B',
+                        color: 'var(--ez-color-text-muted)',
                         fontSize: '11px',
                         fontWeight: 600,
                         cursor: 'pointer',
@@ -623,9 +623,9 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
                     key={idx}
                     onClick={() => handleSendMessage(action.prompt)}
                     style={{
-                      background: '#FFFFFF',
+                      background: 'var(--ez-color-surface)',
                       border: '1px solid #CBD5E1',
-                      borderRadius: '999px',
+                      borderRadius: 'var(--ez-radius-pill)',
                       padding: '4px 10px',
                       fontSize: '10.5px',
                       fontWeight: 650,
@@ -636,11 +636,11 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = '#EFF6FF';
                       e.currentTarget.style.borderColor = '#93C5FD';
-                      e.currentTarget.style.color = '#2563EB';
+                      e.currentTarget.style.color = 'var(--ez-color-primary)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = '#FFFFFF';
-                      e.currentTarget.style.borderColor = '#CBD5E1';
+                      e.currentTarget.style.borderColor = 'var(--ez-color-border)';
                       e.currentTarget.style.color = '#334155';
                     }}
                   >
@@ -653,7 +653,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
         ))}
 
         {isThinking && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748B', fontSize: '11.5px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ez-color-text-muted)', fontSize: '11.5px' }}>
             <Sparkles size={13} color="#2563EB" />
             <span>Magic AI sedang menganalisis data proyek...</span>
           </div>
@@ -667,7 +667,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
         style={{
           padding: '10px 14px',
           borderTop: '1px solid #E2E8F0',
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           borderBottomLeftRadius: mode === 'floating' ? '14px' : '0',
           borderBottomRightRadius: mode === 'floating' ? '14px' : '0',
         }}
@@ -677,7 +677,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            background: '#F8FAFC',
+            background: 'var(--ez-color-surface-secondary)',
             border: '1px solid #CBD5E1',
             borderRadius: '10px',
             padding: '4px 8px 4px 12px',
@@ -697,7 +697,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
               background: 'transparent',
               fontSize: '12px',
               outline: 'none',
-              color: '#0F172A',
+              color: 'var(--ez-color-text-primary)',
             }}
           />
           <button
@@ -707,7 +707,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
               width: '28px',
               height: '28px',
               borderRadius: '7px',
-              background: inputQuery.trim() ? '#2563EB' : '#E2E8F0',
+              background: inputQuery.trim() ? 'var(--ez-color-primary)' : '#E2E8F0',
               border: 'none',
               color: '#FFFFFF',
               display: 'flex',

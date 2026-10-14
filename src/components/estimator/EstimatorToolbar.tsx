@@ -127,8 +127,8 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
   return (
     <div
       style={{
-        background: '#FFFFFF',
-        borderRadius: '12px',
+        background: 'var(--ez-color-surface)',
+        borderRadius: 'var(--ez-radius-control)',
         border: '1px solid #E2E8F0',
         padding: '8px 12px',
         display: 'flex',
@@ -162,24 +162,24 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               borderRadius: '6px',
               border: searchQuery ? '1.5px solid #2563EB' : '1px solid #CBD5E1',
               fontSize: '12px',
-              color: '#0F172A',
+              color: 'var(--ez-color-text-primary)',
               outline: 'none',
-              background: '#FFFFFF',
+              background: 'var(--ez-color-surface)',
               transition: 'border-color 0.15s, box-shadow 0.15s',
             }}
             onFocus={(e) => {
-              e.target.style.borderColor = '#2563EB';
+              e.target.style.borderColor = 'var(--ez-color-primary)';
               e.target.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.1)';
             }}
             onBlur={(e) => {
-              if (!searchQuery) e.target.style.borderColor = '#CBD5E1';
+              if (!searchQuery) e.target.style.borderColor = 'var(--ez-color-border)';
               e.target.style.boxShadow = 'none';
             }}
           />
           {searchQuery && (
             <div style={{ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', gap: '4px' }}>
               {totalMatchedItems !== undefined && (
-                <span style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 600 }}>
+                <span style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
                   {totalMatchedItems}
                 </span>
               )}
@@ -215,7 +215,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               border: selectedCategory !== 'ALL' ? '1.5px solid #2563EB' : '1px solid #CBD5E1',
               fontSize: '12px',
               fontWeight: selectedCategory !== 'ALL' ? 700 : 500,
-              color: selectedCategory !== 'ALL' ? '#1D4ED8' : '#334155',
+              color: selectedCategory !== 'ALL' ? 'var(--ez-color-primary-hover)' : '#334155',
               background: selectedCategory !== 'ALL' ? '#EFF6FF' : '#FFFFFF',
               cursor: 'pointer',
               outline: 'none',
@@ -249,7 +249,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               border: selectedSource !== 'ALL' ? '1.5px solid #2563EB' : '1px solid #CBD5E1',
               fontSize: '12px',
               fontWeight: selectedSource !== 'ALL' ? 700 : 500,
-              color: selectedSource !== 'ALL' ? '#1D4ED8' : '#334155',
+              color: selectedSource !== 'ALL' ? 'var(--ez-color-primary-hover)' : '#334155',
               background: selectedSource !== 'ALL' ? '#EFF6FF' : '#FFFFFF',
               cursor: 'pointer',
               outline: 'none',
@@ -280,14 +280,14 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
             background: activeFiltersCount > 0 ? '#EFF6FF' : '#FFFFFF',
             fontSize: '12px',
             fontWeight: 600,
-            color: activeFiltersCount > 0 ? '#1D4ED8' : '#334155',
+            color: activeFiltersCount > 0 ? 'var(--ez-color-primary-hover)' : '#334155',
             display: 'flex',
             alignItems: 'center',
             gap: '5px',
             cursor: 'pointer',
           }}
           onMouseEnter={(e) => {
-            if (activeFiltersCount === 0) e.currentTarget.style.background = '#F8FAFC';
+            if (activeFiltersCount === 0) e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
           }}
           onMouseLeave={(e) => {
             if (activeFiltersCount === 0) e.currentTarget.style.background = '#FFFFFF';
@@ -301,8 +301,8 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                 fontSize: '10px',
                 fontWeight: 800,
                 padding: '1px 5px',
-                borderRadius: '999px',
-                background: '#2563EB',
+                borderRadius: 'var(--ez-radius-pill)',
+                background: 'var(--ez-color-primary)',
                 color: '#FFFFFF',
                 marginLeft: '2px',
               }}
@@ -324,7 +324,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               background: !isGrouped ? '#EFF6FF' : '#FFFFFF',
               fontSize: '12px',
               fontWeight: 600,
-              color: !isGrouped ? '#1D4ED8' : '#334155',
+              color: !isGrouped ? 'var(--ez-color-primary-hover)' : '#334155',
               display: 'flex',
               alignItems: 'center',
               gap: '5px',
@@ -332,7 +332,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
             }}
             title={isGrouped ? 'Tampilan WBS Hierarki (Klik untuk beralih ke Flat)' : 'Tampilan Flat (Klik untuk beralih ke WBS)'}
             onMouseEnter={(e) => {
-              if (isGrouped) e.currentTarget.style.background = '#F8FAFC';
+              if (isGrouped) e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
             }}
             onMouseLeave={(e) => {
               if (isGrouped) e.currentTarget.style.background = '#FFFFFF';
@@ -354,14 +354,14 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
             background: activeSortLabel ? '#EFF6FF' : '#FFFFFF',
             fontSize: '12px',
             fontWeight: 600,
-            color: activeSortLabel ? '#1D4ED8' : '#334155',
+            color: activeSortLabel ? 'var(--ez-color-primary-hover)' : '#334155',
             display: 'flex',
             alignItems: 'center',
             gap: '5px',
             cursor: 'pointer',
           }}
           onMouseEnter={(e) => {
-            if (!activeSortLabel) e.currentTarget.style.background = '#F8FAFC';
+            if (!activeSortLabel) e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
           }}
           onMouseLeave={(e) => {
             if (!activeSortLabel) e.currentTarget.style.background = '#FFFFFF';
@@ -379,7 +379,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
             padding: '0 10px',
             borderRadius: '6px',
             border: '1px solid #CBD5E1',
-            background: '#FFFFFF',
+            background: 'var(--ez-color-surface)',
             fontSize: '12px',
             fontWeight: 600,
             color: '#334155',
@@ -388,7 +388,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
             gap: '5px',
             cursor: 'pointer',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
           onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
         >
           <Columns3 size={13} color="#64748B" />
@@ -408,7 +408,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               width: '34px',
               borderRadius: '6px',
               border: '1px solid #CBD5E1',
-              background: canUndo ? '#FFFFFF' : '#F8FAFC',
+              background: canUndo ? '#FFFFFF' : 'var(--ez-color-surface-secondary)',
               color: canUndo ? '#1E293B' : '#94A3B8',
               display: 'flex',
               alignItems: 'center',
@@ -435,7 +435,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               width: '34px',
               borderRadius: '6px',
               border: '1px solid #CBD5E1',
-              background: canRedo ? '#FFFFFF' : '#F8FAFC',
+              background: canRedo ? '#FFFFFF' : 'var(--ez-color-surface-secondary)',
               color: canRedo ? '#1E293B' : '#94A3B8',
               display: 'flex',
               alignItems: 'center',
@@ -472,7 +472,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               padding: '0 12px',
               borderTopLeftRadius: '6px',
               borderBottomLeftRadius: '6px',
-              background: '#2563EB',
+              background: 'var(--ez-color-primary)',
               border: '1px solid #1D4ED8',
               borderRight: 'none',
               fontSize: '12.5px',
@@ -486,8 +486,8 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               transition: 'background 0.15s ease',
               userSelect: 'none',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#1D4ED8')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#2563EB')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-primary-hover)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-primary)')}
           >
             <Plus size={15} color="#FFFFFF" strokeWidth={2.5} style={{ pointerEvents: 'none' }} />
             <span style={{ pointerEvents: 'none' }}>Tambah Item</span>
@@ -507,7 +507,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               width: '28px',
               borderTopRightRadius: '6px',
               borderBottomRightRadius: '6px',
-              background: '#1D4ED8',
+              background: 'var(--ez-color-primary-hover)',
               border: '1px solid #1D4ED8',
               color: '#FFFFFF',
               display: 'flex',
@@ -518,7 +518,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               userSelect: 'none',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = '#1E40AF')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#1D4ED8')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-primary-hover)')}
           >
             <ChevronDown size={14} color="#FFFFFF" style={{ pointerEvents: 'none' }} />
           </button>
@@ -531,7 +531,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                 top: '100%',
                 right: 0,
                 marginTop: '4px',
-                background: '#FFFFFF',
+                background: 'var(--ez-color-surface)',
                 borderRadius: '8px',
                 border: '1px solid #E2E8F0',
                 boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
@@ -558,7 +558,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                   borderRadius: '6px',
                   border: 'none',
                   background: 'transparent',
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   fontSize: '12px',
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -570,7 +570,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                 <BookOpen size={14} color="#2563EB" />
                 <div>
                   <div>Dari AHSP PUPR 2026</div>
-                  <div style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 400 }}>Database analisa resmi</div>
+                  <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', fontWeight: 400 }}>Database analisa resmi</div>
                 </div>
               </button>
 
@@ -589,7 +589,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                   borderRadius: '6px',
                   border: 'none',
                   background: 'transparent',
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   fontSize: '12px',
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -601,7 +601,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                 <PenTool size={14} color="#059669" />
                 <div>
                   <div>Input Manual Mandiri</div>
-                  <div style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 400 }}>Kustom uraian & harga</div>
+                  <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', fontWeight: 400 }}>Kustom uraian & harga</div>
                 </div>
               </button>
 
@@ -620,7 +620,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                   borderRadius: '6px',
                   border: 'none',
                   background: 'transparent',
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   fontSize: '12px',
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -632,7 +632,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                 <Sparkles size={14} color="#6366F1" />
                 <div>
                   <div>Dengan Magic AI</div>
-                  <div style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 400 }}>Bahasa natural ke RAB</div>
+                  <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', fontWeight: 400 }}>Bahasa natural ke RAB</div>
                 </div>
               </button>
 
@@ -651,7 +651,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                   borderRadius: '6px',
                   border: 'none',
                   background: 'transparent',
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   fontSize: '12px',
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -663,7 +663,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                 <LayoutTemplate size={14} color="#D97706" />
                 <div>
                   <div>Dari Template Proyek</div>
-                  <div style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 400 }}>Paket WBS gedung</div>
+                  <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', fontWeight: 400 }}>Paket WBS gedung</div>
                 </div>
               </button>
 
@@ -682,7 +682,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                   borderRadius: '6px',
                   border: 'none',
                   background: 'transparent',
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   fontSize: '12px',
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -694,7 +694,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                 <Copy size={14} color="#0891B2" />
                 <div>
                   <div>Duplikasi Pekerjaan</div>
-                  <div style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 400 }}>Salin item eksisting</div>
+                  <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', fontWeight: 400 }}>Salin item eksisting</div>
                 </div>
               </button>
 
@@ -713,7 +713,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                   borderRadius: '6px',
                   border: 'none',
                   background: 'transparent',
-                  color: '#1D4ED8',
+                  color: 'var(--ez-color-primary-hover)',
                   fontSize: '12px',
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -725,7 +725,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                 <FileText size={14} color="#2563EB" />
                 <div>
                   <div>DED & AI Document Review</div>
-                  <div style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 400 }}>QTO & audit gambar kerja</div>
+                  <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', fontWeight: 400 }}>QTO & audit gambar kerja</div>
                 </div>
               </button>
             </div>
@@ -743,13 +743,13 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               borderRadius: '6px',
               border: '1px solid #CBD5E1',
               background: isMoreMenuOpen ? '#F1F5F9' : '#FFFFFF',
-              color: '#64748B',
+              color: 'var(--ez-color-text-muted)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
             onMouseLeave={(e) => {
               if (!isMoreMenuOpen) e.currentTarget.style.background = '#FFFFFF';
             }}
@@ -764,7 +764,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                 top: '100%',
                 right: 0,
                 marginTop: '4px',
-                background: '#FFFFFF',
+                background: 'var(--ez-color-surface)',
                 borderRadius: '8px',
                 border: '1px solid #E2E8F0',
                 boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
@@ -794,7 +794,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                   cursor: 'pointer',
                   textAlign: 'left',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 <RefreshCw size={13} color="#64748B" />
@@ -822,7 +822,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                   cursor: 'pointer',
                   textAlign: 'left',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 <FileSpreadsheet size={13} color="#059669" />
@@ -848,7 +848,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                   cursor: 'pointer',
                   textAlign: 'left',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 <Download size={13} color="#2563EB" />
@@ -876,7 +876,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                   cursor: 'pointer',
                   textAlign: 'left',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 <ShieldCheck size={13} color="#D97706" />
@@ -902,7 +902,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                   cursor: 'pointer',
                   textAlign: 'left',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 <Calculator size={13} color="#6366F1" />
@@ -930,7 +930,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                   cursor: 'pointer',
                   textAlign: 'left',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 <RotateCcw size={13} color="#64748B" />
@@ -956,7 +956,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                   cursor: 'pointer',
                   textAlign: 'left',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 <Keyboard size={13} color="#64748B" />
@@ -982,7 +982,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
                   cursor: 'pointer',
                   textAlign: 'left',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 <History size={13} color="#64748B" />

@@ -153,7 +153,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
   // Dashboard design tokens (match EzrabAiDashboardView exactly)
   const FONT = "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif";
   const CARD_SHADOW = '0 4px 20px rgba(0,0,0,0.045)';
-  const DOT_FILLS = ['#FDF3D8', '#E2F4D8', '#FFE9D6', '#E3EEFB'];
+  const DOT_FILLS = ['var(--ez-pastel-cream)', 'var(--ez-pastel-mint)', 'var(--ez-pastel-peach)', 'var(--ez-pastel-sky)'];
 
   // Active Selected Item Object
   const selectedItem = useMemo(() => {
@@ -577,41 +577,41 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
   const getStatusBadge = (status: WorkItemStatus, item: WorkItem) => {
     if (item.rabItemId || status === 'MASUK_RAB') {
       return (
-        <span style={{ fontSize: '11px', fontWeight: 700, background: '#E2F4D8', color: '#2C6E2C', padding: '5px 12px', borderRadius: '999px', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: '11px', fontWeight: 700, background: 'var(--ez-pastel-mint)', color: '#2C6E2C', padding: '5px 12px', borderRadius: 'var(--ez-radius-pill)', whiteSpace: 'nowrap' }}>
           Masuk RAB
         </span>
       );
     }
     if (item.qtoItemId || status === 'MASUK_QTO') {
       return (
-        <span style={{ fontSize: '11px', fontWeight: 700, background: '#E3EEFB', color: '#2456A8', padding: '5px 12px', borderRadius: '999px', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: '11px', fontWeight: 700, background: 'var(--ez-pastel-sky)', color: '#2456A8', padding: '5px 12px', borderRadius: 'var(--ez-radius-pill)', whiteSpace: 'nowrap' }}>
           Masuk QTO
         </span>
       );
     }
     if (item.ahspCode || status === 'AHSP_TERHUBUNG') {
       return (
-        <span style={{ fontSize: '11px', fontWeight: 700, background: '#FDF3D8', color: '#A8780A', padding: '5px 12px', borderRadius: '999px', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: '11px', fontWeight: 700, background: 'var(--ez-pastel-cream)', color: '#A8780A', padding: '5px 12px', borderRadius: 'var(--ez-radius-pill)', whiteSpace: 'nowrap' }}>
           AHSP Terhubung
         </span>
       );
     }
     if ((item.volume || 0) > 0 || status === 'TERHITUNG') {
       return (
-        <span style={{ fontSize: '11px', fontWeight: 700, background: '#F1F5F9', color: '#64748B', padding: '5px 12px', borderRadius: '999px', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: '11px', fontWeight: 700, background: '#F1F5F9', color: 'var(--ez-color-text-muted)', padding: '5px 12px', borderRadius: 'var(--ez-radius-pill)', whiteSpace: 'nowrap' }}>
           Terhitung
         </span>
       );
     }
     return (
-      <span style={{ fontSize: '11px', fontWeight: 700, background: '#F1F5F9', color: '#64748B', padding: '5px 12px', borderRadius: '999px', whiteSpace: 'nowrap' }}>
+      <span style={{ fontSize: '11px', fontWeight: 700, background: '#F1F5F9', color: 'var(--ez-color-text-muted)', padding: '5px 12px', borderRadius: 'var(--ez-radius-pill)', whiteSpace: 'nowrap' }}>
         Belum Dihitung
       </span>
     );
   };
 
   return (
-    <div className="daftar-pekerjaan-view" style={{ display: 'flex', flexDirection: 'column', gap: '22px', maxWidth: '1440px', margin: '0 auto', width: '100%', color: '#141412', fontFamily: FONT }}>
+    <div className="daftar-pekerjaan-view" style={{ display: 'flex', flexDirection: 'column', gap: '22px', maxWidth: '1440px', margin: '0 auto', width: '100%', color: 'var(--ez-color-text-primary)', fontFamily: FONT }}>
       <style>{`
         @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -630,7 +630,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             background: toastMsg.type === 'warning' ? '#FEF3C7' : '#0F172A',
             color: toastMsg.type === 'warning' ? '#92400E' : '#FFFFFF',
             padding: '12px 20px',
-            borderRadius: '12px',
+            borderRadius: 'var(--ez-radius-control)',
             boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
             fontSize: '13px',
             fontWeight: 600,
@@ -664,10 +664,10 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#8A8A84', marginBottom: '4px' }}>
             <span>Proyek</span>
             <span>&gt;</span>
-            <span style={{ color: '#141412', fontWeight: 600 }}>Daftar Pekerjaan</span>
+            <span style={{ color: 'var(--ez-color-text-primary)', fontWeight: 600 }}>Daftar Pekerjaan</span>
           </div>
 
-          <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#141412', letterSpacing: '-0.3px', margin: 0 }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ez-color-text-primary)', letterSpacing: '-0.3px', margin: 0 }}>
             Daftar Pekerjaan
           </h1>
           <p style={{ fontSize: '13px', color: '#8A8A84', margin: '4px 0 0 0' }}>
@@ -683,8 +683,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             style={{
               height: '40px',
               padding: '0 18px',
-              borderRadius: '12px',
-              background: '#2563EB',
+              borderRadius: 'var(--ez-radius-control)',
+              background: 'var(--ez-color-primary)',
               color: '#FFFFFF',
               fontSize: '14px',
               fontWeight: 700,
@@ -707,8 +707,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             style={{
               height: '40px',
               padding: '0 14px',
-              borderRadius: '12px',
-              background: '#FFFFFF',
+              borderRadius: 'var(--ez-radius-control)',
+              background: 'var(--ez-color-surface)',
               border: '1px solid #E2E8F0',
               color: '#334155',
               fontSize: '12.5px',
@@ -729,8 +729,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             style={{
               height: '40px',
               padding: '0 14px',
-              borderRadius: '12px',
-              background: '#FFFFFF',
+              borderRadius: 'var(--ez-radius-control)',
+              background: 'var(--ez-color-surface)',
               border: '1px solid #E2E8F0',
               color: '#334155',
               fontSize: '12.5px',
@@ -753,8 +753,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             style={{
               height: '40px',
               padding: '0 14px',
-              borderRadius: '12px',
-              background: '#FFFFFF',
+              borderRadius: 'var(--ez-radius-control)',
+              background: 'var(--ez-color-surface)',
               border: '1px solid #E2E8F0',
               color: '#334155',
               fontSize: '12.5px',
@@ -775,10 +775,10 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             style={{
               height: '38px',
               padding: '0 16px',
-              borderRadius: '12px',
+              borderRadius: 'var(--ez-radius-control)',
               background: '#EFF6FF',
               border: '1px solid #DBEAFE',
-              color: '#2563EB',
+              color: 'var(--ez-color-primary)',
               fontSize: '12.5px',
               fontWeight: 600,
               cursor: 'pointer',
@@ -800,8 +800,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
       <div
         className="ezdb-anim"
         style={{
-          background: '#FFFFFF',
-          borderRadius: '22px',
+          background: 'var(--ez-color-surface)',
+          borderRadius: 'var(--ez-radius-card)',
           border: '1px solid #EEF1F6',
           padding: '24px',
           display: 'flex',
@@ -818,9 +818,9 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             style={{
               width: '44px',
               height: '44px',
-              borderRadius: '14px',
-              background: '#E3EEFB',
-              color: '#2563EB',
+              borderRadius: 'var(--ez-radius-control)',
+              background: 'var(--ez-pastel-sky)',
+              color: 'var(--ez-color-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -830,17 +830,17 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h2 style={{ fontSize: '14.5px', fontWeight: 800, color: '#141412', margin: 0 }}>
+              <h2 style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                 {currentProject ? currentProject.name : 'Belum ada proyek'}
               </h2>
               <span
                 style={{
                   fontSize: '11px',
                   fontWeight: 700,
-                  background: currentProject ? '#E2F4D8' : '#F1F5F9',
-                  color: currentProject ? '#2C6E2C' : '#64748B',
+                  background: currentProject ? 'var(--ez-pastel-mint)' : '#F1F5F9',
+                  color: currentProject ? '#2C6E2C' : 'var(--ez-color-text-muted)',
                   padding: '5px 12px',
-                  borderRadius: '999px',
+                  borderRadius: 'var(--ez-radius-pill)',
                 }}
               >
                 {currentProject ? currentProject.status || 'Active' : 'Belum ada'}
@@ -861,21 +861,21 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           <div>
             <span style={{ fontSize: '11px', color: '#6B6B64', display: 'block' }}>Nilai Estimasi RAB</span>
-            <span style={{ fontSize: '15px', fontWeight: 800, color: '#141412' }}>
+            <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
               {currentProject ? formatCurrencyIDR(currentProject.costSummary?.grandTotal || currentProject.totalRab || 0) : 'Rp 0'}
             </span>
           </div>
 
-          <div style={{ width: '1px', height: '28px', background: '#EEF1F6' }} />
+          <div style={{ width: '1px', height: '28px', background: 'var(--ez-color-surface-secondary)' }} />
 
           <div>
             <span style={{ fontSize: '11px', color: '#6B6B64', display: 'block' }}>Total Pekerjaan</span>
-            <span style={{ fontSize: '15px', fontWeight: 800, color: '#2563EB' }}>
+            <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-primary)' }}>
               {projectWorkItems.length} Item
             </span>
           </div>
 
-          <div style={{ width: '1px', height: '28px', background: '#EEF1F6' }} />
+          <div style={{ width: '1px', height: '28px', background: 'var(--ez-color-surface-secondary)' }} />
 
           <div>
             <span style={{ fontSize: '11px', color: '#6B6B64', display: 'block' }}>Progress Proyek</span>
@@ -891,54 +891,54 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
          ========================================================================= */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
         {/* Card 1: Total Pekerjaan */}
-        <div className="ezdb-anim ez-stat" style={{ background: '#FDF3D8', borderRadius: '22px', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.1s both' }}>
+        <div className="ezdb-anim ez-stat" style={{ background: 'var(--ez-pastel-cream)', borderRadius: 'var(--ez-radius-card)', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.1s both' }}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
             Total Pekerjaan
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {stats.total}
           </div>
           <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
-            item terdaftar · <b style={{ color: '#141412' }}>{stats.total > 0 ? `${stats.total} pekerjaan aktif` : 'belum ada pekerjaan'}</b>
+            item terdaftar · <b style={{ color: 'var(--ez-color-text-primary)' }}>{stats.total > 0 ? `${stats.total} pekerjaan aktif` : 'belum ada pekerjaan'}</b>
           </div>
         </div>
 
         {/* Card 2: Sudah Dihitung */}
-        <div className="ezdb-anim ez-stat" style={{ background: '#E2F4D8', borderRadius: '22px', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.16s both' }}>
+        <div className="ezdb-anim ez-stat" style={{ background: 'var(--ez-pastel-mint)', borderRadius: 'var(--ez-radius-card)', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.16s both' }}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
             Sudah Dihitung
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {stats.sudahDihitung}
           </div>
           <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
-            dari <b style={{ color: '#141412' }}>{stats.total}</b> · {stats.total > 0 ? `${Math.round((stats.sudahDihitung / stats.total) * 100)}% memiliki volume` : '0% terhitung'}
+            dari <b style={{ color: 'var(--ez-color-text-primary)' }}>{stats.total}</b> · {stats.total > 0 ? `${Math.round((stats.sudahDihitung / stats.total) * 100)}% memiliki volume` : '0% terhitung'}
           </div>
         </div>
 
         {/* Card 3: Terhubung AHSP */}
-        <div className="ezdb-anim ez-stat" style={{ background: '#FFE9D6', borderRadius: '22px', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.22s both' }}>
+        <div className="ezdb-anim ez-stat" style={{ background: 'var(--ez-pastel-peach)', borderRadius: 'var(--ez-radius-card)', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.22s both' }}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
             Terhubung AHSP
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {stats.terhubungAhsp}
           </div>
           <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
-            dari <b style={{ color: '#141412' }}>{stats.total}</b> · {stats.total > 0 ? `${Math.round((stats.terhubungAhsp / stats.total) * 100)}% harga terpasang` : '0% terhubung'}
+            dari <b style={{ color: 'var(--ez-color-text-primary)' }}>{stats.total}</b> · {stats.total > 0 ? `${Math.round((stats.terhubungAhsp / stats.total) * 100)}% harga terpasang` : '0% terhubung'}
           </div>
         </div>
 
         {/* Card 4: Terhubung RAB */}
-        <div className="ezdb-anim ez-stat" style={{ background: '#E3EEFB', borderRadius: '22px', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.28s both' }}>
+        <div className="ezdb-anim ez-stat" style={{ background: 'var(--ez-pastel-sky)', borderRadius: 'var(--ez-radius-card)', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.28s both' }}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
             Terhubung RAB
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {stats.terhubungRab}
           </div>
           <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
-            total nilai <b style={{ color: '#141412' }}>{formatCurrencyIDR(stats.totalNilai)}</b>
+            total nilai <b style={{ color: 'var(--ez-color-text-primary)' }}>{formatCurrencyIDR(stats.totalNilai)}</b>
           </div>
         </div>
       </div>
@@ -949,8 +949,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
       <div
         className="ezdb-anim"
         style={{
-          background: '#FFFFFF',
-          borderRadius: '22px',
+          background: 'var(--ez-color-surface)',
+          borderRadius: 'var(--ez-radius-card)',
           border: '1px solid #EEF1F6',
           padding: '14px 20px',
           display: 'flex',
@@ -979,7 +979,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               paddingRight: '12px',
               fontSize: '12.5px',
               outline: 'none',
-              background: '#F8FAFC',
+              background: 'var(--ez-color-surface-secondary)',
             }}
           />
         </div>
@@ -996,7 +996,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               border: '1px solid #CBD5E1',
               padding: '0 10px',
               fontSize: '12px',
-              background: '#FFFFFF',
+              background: 'var(--ez-color-surface)',
               color: '#334155',
               cursor: 'pointer',
             }}
@@ -1019,7 +1019,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               border: '1px solid #CBD5E1',
               padding: '0 10px',
               fontSize: '12px',
-              background: '#FFFFFF',
+              background: 'var(--ez-color-surface)',
               color: '#334155',
               cursor: 'pointer',
             }}
@@ -1041,7 +1041,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               border: '1px solid #CBD5E1',
               padding: '0 10px',
               fontSize: '12px',
-              background: '#FFFFFF',
+              background: 'var(--ez-color-surface)',
               color: '#334155',
               cursor: 'pointer',
             }}
@@ -1061,12 +1061,12 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               style={{
                 height: '32px',
                 padding: '0 10px',
-                borderRadius: '6px',
+                borderRadius: 'var(--ez-radius-control)',
                 border: 'none',
                 fontSize: '11.5px',
                 fontWeight: viewMode === 'grouped' ? 700 : 500,
                 background: viewMode === 'grouped' ? '#FFFFFF' : 'transparent',
-                color: viewMode === 'grouped' ? '#2563EB' : '#6B6B64',
+                color: viewMode === 'grouped' ? 'var(--ez-color-primary)' : '#6B6B64',
                 cursor: 'pointer',
                 boxShadow: viewMode === 'grouped' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
               }}
@@ -1079,12 +1079,12 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               style={{
                 height: '32px',
                 padding: '0 10px',
-                borderRadius: '6px',
+                borderRadius: 'var(--ez-radius-control)',
                 border: 'none',
                 fontSize: '11.5px',
                 fontWeight: viewMode === 'table' ? 700 : 500,
                 background: viewMode === 'table' ? '#FFFFFF' : 'transparent',
-                color: viewMode === 'table' ? '#2563EB' : '#6B6B64',
+                color: viewMode === 'table' ? 'var(--ez-color-primary)' : '#6B6B64',
                 cursor: 'pointer',
                 boxShadow: viewMode === 'table' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
               }}
@@ -1102,8 +1102,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
         <div
           className="ezdb-anim"
           style={{
-            background: '#FFFFFF',
-            borderRadius: '22px',
+            background: 'var(--ez-color-surface)',
+            borderRadius: 'var(--ez-radius-card)',
             border: '1px solid #EEF1F6',
             padding: '60px 24px',
             textAlign: 'center',
@@ -1119,8 +1119,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             style={{
               width: '120px',
               height: '120px',
-              borderRadius: '24px',
-              background: '#F8FAFC',
+              borderRadius: 'var(--ez-radius-card)',
+              background: 'var(--ez-color-surface-secondary)',
               border: '1px dashed #CBD5E1',
               display: 'flex',
               alignItems: 'center',
@@ -1132,7 +1132,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             <img src={blueprintEmptyImg} alt="Blueprint" style={{ width: '80px', height: '80px', objectFit: 'contain', opacity: 0.7 }} />
           </div>
 
-          <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#141412', margin: '0 0 6px 0' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
             Belum ada pekerjaan
           </h3>
           <p style={{ fontSize: '13.5px', color: '#8A8A84', maxWidth: '460px', margin: '0 0 24px 0', lineHeight: 1.5 }}>
@@ -1145,8 +1145,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               style={{
                 height: '42px',
                 padding: '0 20px',
-                borderRadius: '12px',
-                background: '#2563EB',
+                borderRadius: 'var(--ez-radius-control)',
+                background: 'var(--ez-color-primary)',
                 color: '#FFFFFF',
                 fontSize: '14px',
                 fontWeight: 700,
@@ -1169,8 +1169,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               style={{
                 height: '42px',
                 padding: '0 18px',
-                borderRadius: '12px',
-                background: '#FFFFFF',
+                borderRadius: 'var(--ez-radius-control)',
+                background: 'var(--ez-color-surface)',
                 border: '1px solid #E2E8F0',
                 color: '#334155',
                 fontSize: '13px',
@@ -1190,8 +1190,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               style={{
                 height: '42px',
                 padding: '0 18px',
-                borderRadius: '12px',
-                background: '#FFFFFF',
+                borderRadius: 'var(--ez-radius-control)',
+                background: 'var(--ez-color-surface)',
                 border: '1px solid #E2E8F0',
                 color: '#334155',
                 fontSize: '13px',
@@ -1214,7 +1214,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               style={{
                 height: '42px',
                 padding: '0 18px',
-                borderRadius: '12px',
+                borderRadius: 'var(--ez-radius-control)',
                 background: '#F1F5F9',
                 border: 'none',
                 color: '#475569',
@@ -1246,8 +1246,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                 <div
                   key={catName}
                   style={{
-                    background: '#FFFFFF',
-                    borderRadius: '22px',
+                    background: 'var(--ez-color-surface)',
+                    borderRadius: 'var(--ez-radius-card)',
                     border: '1px solid #EEF1F6',
                     overflow: 'hidden',
                     boxShadow: CARD_SHADOW,
@@ -1258,7 +1258,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                     onClick={() => toggleCategoryCollapse(catName)}
                     style={{
                       padding: '14px 20px',
-                      background: '#F8FAFC',
+                      background: 'var(--ez-color-surface-secondary)',
                       borderBottom: isCollapsed ? 'none' : '1px solid #EEF1F6',
                       display: 'flex',
                       alignItems: 'center',
@@ -1282,7 +1282,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                           flexShrink: 0,
                         }}
                       />
-                      <h3 style={{ fontSize: '13.5px', fontWeight: 800, color: '#141412', margin: 0 }}>
+                      <h3 style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                         {catName}
                       </h3>
                       <span
@@ -1290,9 +1290,9 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                           fontSize: '11px',
                           fontWeight: 700,
                           background: groupData.items.length > 0 ? '#EFF6FF' : '#F1F5F9',
-                          color: groupData.items.length > 0 ? '#2563EB' : '#94A3B8',
+                          color: groupData.items.length > 0 ? 'var(--ez-color-primary)' : '#94A3B8',
                           padding: '5px 12px',
-                          borderRadius: '999px',
+                          borderRadius: 'var(--ez-radius-pill)',
                         }}
                       >
                         {groupData.items.length} Pekerjaan
@@ -1303,7 +1303,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                       {groupData.items.length > 0 && (
                         <div style={{ textAlign: 'right' }}>
                           <span style={{ fontSize: '11px', color: '#6B6B64', display: 'block' }}>Subtotal Kategori</span>
-                          <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#141412' }}>
+                          <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                             {formatCurrencyIDR(groupData.subtotalAmount)}
                           </span>
                         </div>
@@ -1317,10 +1317,10 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                         style={{
                           height: '28px',
                           padding: '0 10px',
-                          borderRadius: '6px',
-                          background: '#FFFFFF',
+                          borderRadius: 'var(--ez-radius-control)',
+                          background: 'var(--ez-color-surface)',
                           border: '1px solid #CBD5E1',
-                          color: '#2563EB',
+                          color: 'var(--ez-color-primary)',
                           fontSize: '11.5px',
                           fontWeight: 700,
                           cursor: 'pointer',
@@ -1343,7 +1343,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                           Belum ada item pekerjaan di kategori ini.{' '}
                           <button
                             onClick={() => handleOpenAddModal(catName)}
-                            style={{ background: 'transparent', border: 'none', color: '#2563EB', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--ez-color-primary)', fontWeight: 600, cursor: 'pointer', padding: 0 }}
                           >
                             Tambah sekarang
                           </button>
@@ -1389,7 +1389,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                                   onClick={() => setSelectedItemId(item.id)}
                                   style={{
                                     borderBottom: '1px solid #F5F4EF',
-                                    background: isRowActive ? '#EFF6FF' : isSelected ? '#F8FAFC' : '#FFFFFF',
+                                    background: isRowActive ? '#EFF6FF' : isSelected ? 'var(--ez-color-surface-secondary)' : '#FFFFFF',
                                     cursor: 'pointer',
                                     transition: 'background 0.1s',
                                   }}
@@ -1404,16 +1404,16 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                                   </td>
 
                                   {/* Kode */}
-                                  <td style={{ padding: '10px 10px', fontFamily: 'monospace', fontWeight: 700, color: '#2563EB', fontSize: '11.5px' }}>
+                                  <td style={{ padding: '10px 10px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--ez-color-primary)', fontSize: '11.5px' }}>
                                     {item.code}
                                   </td>
 
                                   {/* Uraian Pekerjaan */}
-                                  <td style={{ padding: '10px 12px', fontWeight: 600, color: '#141412' }}>
+                                  <td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                       <span>{item.name}</span>
                                       {item.calculatorId && (
-                                        <span style={{ fontSize: '10px', background: '#F1F5F9', color: '#6B6B64', padding: '1px 5px', borderRadius: '4px' }}>
+                                        <span style={{ fontSize: '10px', background: '#F1F5F9', color: '#6B6B64', padding: '1px 5px', borderRadius: 'var(--ez-radius-chip)' }}>
                                           VC: {item.calculatorId}
                                         </span>
                                       )}
@@ -1423,7 +1423,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                                   {/* Sumber */}
                                   <td style={{ padding: '10px 10px', color: '#6B6B64', fontSize: '11.5px' }}>
                                     {item.source === 'CALCULATOR' ? (
-                                      <span style={{ color: '#2563EB', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                      <span style={{ color: 'var(--ez-color-primary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
                                         <Calculator size={11} /> VC
                                       </span>
                                     ) : item.source === 'AI' ? (
@@ -1440,7 +1440,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                                   </td>
 
                                   {/* Volume */}
-                                  <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: (item.volume || 0) > 0 ? '#141412' : '#94A3B8' }}>
+                                  <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: (item.volume || 0) > 0 ? 'var(--ez-color-text)' : '#94A3B8' }}>
                                     {(item.volume || 0) > 0 ? (item.volume || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                                   </td>
 
@@ -1454,10 +1454,10 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                                     {item.ahspCode ? (
                                       <div
                                         onClick={() => handleOpenAhspLinker(item.id)}
-                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#F8FAFC', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #E2E8F0' }}
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'var(--ez-color-surface-secondary)', padding: '2px 6px', borderRadius: 'var(--ez-radius-chip)', cursor: 'pointer', border: '1px solid #E2E8F0' }}
                                         title={item.ahspDescription || item.ahspCode}
                                       >
-                                        <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '11px', color: '#141412' }}>
+                                        <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '11px', color: 'var(--ez-color-text-primary)' }}>
                                           {item.ahspCode}
                                         </span>
                                       </div>
@@ -1467,10 +1467,10 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                                         style={{
                                           background: 'transparent',
                                           border: '1px dashed #CBD5E1',
-                                          color: '#2563EB',
+                                          color: 'var(--ez-color-primary)',
                                           fontSize: '11px',
                                           padding: '2px 6px',
-                                          borderRadius: '4px',
+                                          borderRadius: 'var(--ez-radius-chip)',
                                           cursor: 'pointer',
                                         }}
                                       >
@@ -1485,7 +1485,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                                   </td>
 
                                   {/* Jumlah Harga */}
-                                  <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: (item.totalAmount || 0) > 0 ? '#141412' : '#94A3B8' }}>
+                                  <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: (item.totalAmount || 0) > 0 ? 'var(--ez-color-text)' : '#94A3B8' }}>
                                     {(item.totalAmount || 0) > 0 ? formatCurrencyIDR(item.totalAmount) : 'Rp 0'}
                                   </td>
 
@@ -1504,10 +1504,10 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                                         style={{
                                           width: '28px',
                                           height: '28px',
-                                          borderRadius: '6px',
+                                          borderRadius: 'var(--ez-radius-control)',
                                           background: '#EFF6FF',
                                           border: 'none',
-                                          color: '#2563EB',
+                                          color: 'var(--ez-color-primary)',
                                           cursor: 'pointer',
                                           display: 'flex',
                                           alignItems: 'center',
@@ -1524,8 +1524,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                                         style={{
                                           width: '28px',
                                           height: '28px',
-                                          borderRadius: '6px',
-                                          background: '#F8FAFC',
+                                          borderRadius: 'var(--ez-radius-control)',
+                                          background: 'var(--ez-color-surface-secondary)',
                                           border: '1px solid #E2E8F0',
                                           color: '#6B6B64',
                                           cursor: 'pointer',
@@ -1544,7 +1544,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                                         style={{
                                           width: '28px',
                                           height: '28px',
-                                          borderRadius: '6px',
+                                          borderRadius: 'var(--ez-radius-control)',
                                           background: '#FEF2F2',
                                           border: 'none',
                                           color: '#EF4444',
@@ -1571,7 +1571,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             })
           ) : (
             /* FLAT TABLE VIEW */
-            <div style={{ background: '#FFFFFF', borderRadius: '22px', border: '1px solid #EEF1F6', overflow: 'hidden', boxShadow: CARD_SHADOW }}>
+            <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-card)', border: '1px solid #EEF1F6', overflow: 'hidden', boxShadow: CARD_SHADOW }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ background: 'transparent', borderBottom: '1px solid #F0EFE9', color: '#8A8A84', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>
@@ -1606,26 +1606,26 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                         onClick={() => setSelectedItemId(item.id)}
                         style={{
                           borderBottom: '1px solid #F5F4EF',
-                          background: isRowActive ? '#EFF6FF' : isSelected ? '#F8FAFC' : '#FFFFFF',
+                          background: isRowActive ? '#EFF6FF' : isSelected ? 'var(--ez-color-surface-secondary)' : '#FFFFFF',
                           cursor: 'pointer',
                         }}
                       >
                         <td style={{ padding: '10px 14px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                           <input type="checkbox" checked={isSelected} onChange={() => handleToggleSelectOne(item.id)} />
                         </td>
-                        <td style={{ padding: '10px 10px', fontFamily: 'monospace', fontWeight: 700, color: '#2563EB', fontSize: '11.5px' }}>
+                        <td style={{ padding: '10px 10px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--ez-color-primary)', fontSize: '11.5px' }}>
                           {item.code}
                         </td>
                         <td style={{ padding: '10px 12px', color: '#6B6B64', fontSize: '11.5px' }}>
                           {item.category}
                         </td>
-                        <td style={{ padding: '10px 12px', fontWeight: 600, color: '#141412' }}>
+                        <td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>
                           {item.name}
                         </td>
                         <td style={{ padding: '10px 10px', color: '#6B6B64' }}>
                           {item.source}
                         </td>
-                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: (item.volume || 0) > 0 ? '#141412' : '#94A3B8' }}>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: (item.volume || 0) > 0 ? 'var(--ez-color-text)' : '#94A3B8' }}>
                           {(item.volume || 0) > 0 ? (item.volume || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                         </td>
                         <td style={{ padding: '10px 10px', color: '#6B6B64' }}>{item.unit}</td>
@@ -1634,7 +1634,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                         <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800 }}>{(item.totalAmount || 0) > 0 ? formatCurrencyIDR(item.totalAmount) : 'Rp 0'}</td>
                         <td style={{ padding: '10px 12px', textAlign: 'center' }}>{getStatusBadge(item.status, item)}</td>
                         <td style={{ padding: '10px 14px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                          <button onClick={() => handleLaunchCalculator(item)} style={{ background: '#EFF6FF', border: 'none', color: '#2563EB', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>
+                          <button onClick={() => handleLaunchCalculator(item)} style={{ background: '#EFF6FF', border: 'none', color: 'var(--ez-color-primary)', padding: '4px 8px', borderRadius: 'var(--ez-radius-chip)', cursor: 'pointer' }}>
                             <Calculator size={13} />
                           </button>
                         </td>
@@ -1660,7 +1660,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             transform: 'translateX(-50%)',
             background: '#0F172A',
             color: '#FFFFFF',
-            borderRadius: '14px',
+            borderRadius: 'var(--ez-radius-card)',
             padding: '12px 20px',
             display: 'flex',
             alignItems: 'center',
@@ -1679,7 +1679,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
           <button
             onClick={handleBulkSyncQto}
             style={{
-              background: '#2563EB',
+              background: 'var(--ez-color-primary)',
               color: '#FFFFFF',
               border: 'none',
               padding: '6px 14px',
@@ -1762,7 +1762,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             right: 0,
             bottom: 0,
             width: '440px',
-            background: '#FFFFFF',
+            background: 'var(--ez-color-surface)',
             boxShadow: '-10px 0 40px rgba(0,0,0,0.15)',
             zIndex: 1000,
             display: 'flex',
@@ -1771,12 +1771,12 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
           }}
         >
           {/* Drawer Header */}
-          <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F8FAFC' }}>
+          <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--ez-color-surface-secondary)' }}>
             <div>
-              <span style={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: 800, color: '#2563EB', background: '#EFF6FF', padding: '2px 6px', borderRadius: '4px' }}>
+              <span style={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: 800, color: 'var(--ez-color-primary)', background: '#EFF6FF', padding: '2px 6px', borderRadius: 'var(--ez-radius-chip)' }}>
                 {selectedItem.code}
               </span>
-              <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#141412', margin: '4px 0 0 0' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '4px 0 0 0' }}>
                 {selectedItem.name}
               </h3>
               <span style={{ fontSize: '11.5px', color: '#6B6B64' }}>{selectedItem.category}</span>
@@ -1792,7 +1792,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
           {/* Drawer Body (Scrollable) */}
           <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* Workflow Pipeline Status */}
-            <div style={{ background: '#F8FAFC', borderRadius: '22px', padding: '18px', border: '1px solid #EEF1F6' }}>
+            <div style={{ background: 'var(--ez-color-surface-secondary)', borderRadius: 'var(--ez-radius-card)', padding: '18px', border: '1px solid #EEF1F6' }}>
               <span style={{ fontSize: '11px', fontWeight: 800, color: '#6B6B64', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block', marginBottom: '12px' }}>
                 WORKFLOW PIPELINE STATUS
               </span>
@@ -1813,8 +1813,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                           width: '26px',
                           height: '26px',
                           borderRadius: '50%',
-                          background: node.done ? '#E2F4D8' : '#F1F5F9',
-                          color: node.done ? '#2C6E2C' : '#64748B',
+                          background: node.done ? 'var(--ez-pastel-mint)' : '#F1F5F9',
+                          color: node.done ? '#2C6E2C' : 'var(--ez-color-text-muted)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -1831,7 +1831,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                         style={{
                           height: '2px',
                           flex: 1,
-                          background: node.done && arr[i + 1].done ? '#2563EB' : '#E2E8F0',
+                          background: node.done && arr[i + 1].done ? 'var(--ez-color-primary)' : '#E2E8F0',
                           margin: '0 4px',
                           marginBottom: '14px',
                           borderRadius: '2px',
@@ -1844,14 +1844,14 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             </div>
 
             {/* Volume Breakdown Section */}
-            <div style={{ background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '16px' }}>
+            <div style={{ background: 'var(--ez-color-surface-secondary)', borderRadius: 'var(--ez-radius-control)', border: '1px solid #E2E8F0', padding: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: '#141412', textTransform: 'uppercase' }}>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase' }}>
                   Volume Pekerjaan
                 </span>
                 <button
                   onClick={() => handleLaunchCalculator(selectedItem)}
-                  style={{ background: '#2563EB', color: '#FFFFFF', border: 'none', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  style={{ background: 'var(--ez-color-primary)', color: '#FFFFFF', border: 'none', padding: '3px 8px', borderRadius: 'var(--ez-radius-control)', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                 >
                   <Calculator size={11} />
                   <span>Hitung Ulang</span>
@@ -1860,7 +1860,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '6px' }}>
                 <span style={{ fontSize: '12px', color: '#6B6B64' }}>Volume Akhir:</span>
-                <span style={{ fontSize: '18px', fontWeight: 800, color: '#2563EB' }}>
+                <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-primary)' }}>
                   {(selectedItem.volume || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {selectedItem.unit}
                 </span>
               </div>
@@ -1873,14 +1873,14 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             </div>
 
             {/* AHSP & Harga Section */}
-            <div style={{ background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '16px' }}>
+            <div style={{ background: 'var(--ez-color-surface-secondary)', borderRadius: 'var(--ez-radius-control)', border: '1px solid #E2E8F0', padding: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: '#141412', textTransform: 'uppercase' }}>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase' }}>
                   Analisa Harga Satuan (AHSP)
                 </span>
                 <button
                   onClick={() => handleOpenAhspLinker(selectedItem.id)}
-                  style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', color: '#334155', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{ background: 'var(--ez-color-surface)', border: '1px solid #CBD5E1', color: '#334155', padding: '3px 8px', borderRadius: 'var(--ez-radius-control)', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
                 >
                   {selectedItem.ahspCode ? 'Ubah AHSP' : 'Hubungkan'}
                 </button>
@@ -1889,13 +1889,13 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#6B6B64' }}>Kode AHSP:</span>
-                  <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#141412' }}>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                     {selectedItem.ahspCode || 'Belum terhubung'}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: '#6B6B64' }}>Harga Satuan:</span>
-                  <span style={{ fontWeight: 800, color: '#141412' }}>
+                  <span style={{ fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                     {formatCurrencyIDR(selectedItem.unitPrice)} / {selectedItem.unit}
                   </span>
                 </div>
@@ -1903,7 +1903,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             </div>
 
             {/* Total Nilai RAB Section */}
-            <div style={{ background: '#EFF6FF', borderRadius: '12px', border: '1px solid #BFDBFE', padding: '16px' }}>
+            <div style={{ background: '#EFF6FF', borderRadius: 'var(--ez-radius-control)', border: '1px solid #BFDBFE', padding: '16px' }}>
               <span style={{ fontSize: '11.5px', color: '#1E40AF', fontWeight: 700, textTransform: 'uppercase' }}>
                 Total Nilai Pekerjaan (RAB)
               </span>
@@ -1917,7 +1917,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
           </div>
 
           {/* Drawer Footer Actions */}
-          <div style={{ padding: '14px 20px', borderTop: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '8px', background: '#F8FAFC' }}>
+          <div style={{ padding: '14px 20px', borderTop: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '8px', background: 'var(--ez-color-surface-secondary)' }}>
             <button
               onClick={() => {
                 setInspectorItem(selectedItem);
@@ -1926,10 +1926,10 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               style={{
                 width: '100%',
                 height: '38px',
-                borderRadius: '12px',
+                borderRadius: 'var(--ez-radius-control)',
                 background: '#EFF6FF',
                 border: '1px solid #BFDBFE',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 fontSize: '12px',
                 fontWeight: 750,
                 cursor: 'pointer',
@@ -1949,10 +1949,10 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                 style={{
                   flex: 1,
                   height: '34px',
-                  borderRadius: '12px',
-                  background: '#FFFFFF',
+                  borderRadius: 'var(--ez-radius-control)',
+                  background: 'var(--ez-color-surface)',
                   border: '1px solid #CBD5E1',
-                  color: '#2563EB',
+                  color: 'var(--ez-color-primary)',
                   fontSize: '11.5px',
                   fontWeight: 650,
                   cursor: 'pointer',
@@ -1965,8 +1965,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                 style={{
                   flex: 1,
                   height: '34px',
-                  borderRadius: '12px',
-                  background: '#2563EB',
+                  borderRadius: 'var(--ez-radius-control)',
+                  background: 'var(--ez-color-primary)',
                   border: 'none',
                   color: '#FFFFFF',
                   fontSize: '11.5px',
@@ -2002,8 +2002,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
         >
           <div
             style={{
-              background: '#FFFFFF',
-              borderRadius: '22px',
+              background: 'var(--ez-color-surface)',
+              borderRadius: 'var(--ez-radius-card)',
               width: '100%',
               maxWidth: '560px',
               padding: '24px',
@@ -2011,7 +2011,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '17px', fontWeight: 800, color: '#141412', margin: 0 }}>
+              <h2 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                 {editingItem ? 'Edit Item Pekerjaan' : 'Tambah Pekerjaan Baru'}
               </h2>
               <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94A3B8' }}>
@@ -2134,13 +2134,13 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  style={{ height: '38px', padding: '0 16px', borderRadius: '12px', background: '#F1F5F9', border: 'none', color: '#475569', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{ height: '38px', padding: '0 16px', borderRadius: 'var(--ez-radius-control)', background: '#F1F5F9', border: 'none', color: '#475569', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  style={{ height: '38px', padding: '0 20px', borderRadius: '12px', background: '#2563EB', border: 'none', color: '#FFFFFF', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ height: '38px', padding: '0 20px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-primary)', border: 'none', color: '#FFFFFF', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
                 >
                   {editingItem ? 'Simpan Perubahan' : 'Tambahkan Pekerjaan'}
                 </button>
@@ -2171,8 +2171,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
         >
           <div
             style={{
-              background: '#FFFFFF',
-              borderRadius: '22px',
+              background: 'var(--ez-color-surface)',
+              borderRadius: 'var(--ez-radius-card)',
               width: '100%',
               maxWidth: '720px',
               maxHeight: '85vh',
@@ -2182,9 +2182,9 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               overflow: 'hidden',
             }}
           >
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F8FAFC' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--ez-color-surface-secondary)' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#141412', margin: 0 }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                   Hubungkan Analisa Harga Satuan (AHSP)
                 </h3>
                 <span style={{ fontSize: '12px', color: '#6B6B64' }}>Pilih item standar dari Database PUPR / Nasional 2026</span>
@@ -2216,34 +2216,34 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                   onClick={() => handleSelectAhsp(ahsp)}
                   style={{
                     padding: '12px 16px',
-                    borderRadius: '10px',
+                    borderRadius: 'var(--ez-radius-control)',
                     border: '1px solid #E2E8F0',
-                    background: '#FFFFFF',
+                    background: 'var(--ez-color-surface)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     transition: 'all 0.15s',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#2563EB')}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#E2E8F0')}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--ez-color-primary)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--ez-color-border)')}
                 >
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 800, color: '#2563EB', fontSize: '12px' }}>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 800, color: 'var(--ez-color-primary)', fontSize: '12px' }}>
                         {ahsp.code}
                       </span>
-                      <span style={{ fontSize: '11px', color: '#6B6B64', background: '#F1F5F9', padding: '1px 6px', borderRadius: '4px' }}>
+                      <span style={{ fontSize: '11px', color: '#6B6B64', background: '#F1F5F9', padding: '1px 6px', borderRadius: 'var(--ez-radius-chip)' }}>
                         {ahsp.category}
                       </span>
                     </div>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#141412', marginTop: '2px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
                       {ahsp.name}
                     </div>
                   </div>
 
                   <div style={{ textAlign: 'right' }}>
-                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#141412', display: 'block' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', display: 'block' }}>
                       {formatCurrencyIDR(ahsp.unitPrice)}
                     </span>
                     <span style={{ fontSize: '11px', color: '#6B6B64' }}>per {ahsp.unit}</span>
@@ -2276,8 +2276,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
         >
           <div
             style={{
-              background: '#FFFFFF',
-              borderRadius: '22px',
+              background: 'var(--ez-color-surface)',
+              borderRadius: 'var(--ez-radius-card)',
               width: '100%',
               maxWidth: '600px',
               padding: '24px',
@@ -2285,7 +2285,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#141412', margin: 0 }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                 Import Daftar Pekerjaan / RAB Existing
               </h3>
               <button onClick={() => setIsImportModalOpen(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94A3B8' }}>
@@ -2302,13 +2302,13 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               value={importPasteText}
               onChange={(e) => setImportPasteText(e.target.value)}
               placeholder="01.01	Pembersihan Lapangan	120	m2	15000&#10;01.02	Pemasangan Bowplank	50	m'	94800"
-              style={{ width: '100%', borderRadius: '10px', border: '1px solid #CBD5E1', padding: '10px', fontSize: '12px', fontFamily: 'monospace', outline: 'none' }}
+              style={{ width: '100%', borderRadius: 'var(--ez-radius-control)', border: '1px solid #CBD5E1', padding: '10px', fontSize: '12px', fontFamily: 'monospace', outline: 'none' }}
             />
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
               <button
                 onClick={() => setIsImportModalOpen(false)}
-                style={{ height: '36px', padding: '0 14px', borderRadius: '12px', background: '#F1F5F9', border: 'none', color: '#475569', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
+                style={{ height: '36px', padding: '0 14px', borderRadius: 'var(--ez-radius-control)', background: '#F1F5F9', border: 'none', color: '#475569', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
               >
                 Batal
               </button>
@@ -2344,7 +2344,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                   setImportPasteText('');
                   setIsImportModalOpen(false);
                 }}
-                style={{ height: '36px', padding: '0 18px', borderRadius: '12px', background: '#2563EB', border: 'none', color: '#FFFFFF', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
+                style={{ height: '36px', padding: '0 18px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-primary)', border: 'none', color: '#FFFFFF', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
               >
                 Proses Import
               </button>
@@ -2364,14 +2364,14 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             right: 0,
             bottom: 0,
             width: '460px',
-            background: '#FFFFFF',
+            background: 'var(--ez-color-surface)',
             boxShadow: '-10px 0 40px rgba(0,0,0,0.2)',
             zIndex: 1100,
             display: 'flex',
             flexDirection: 'column',
           }}
         >
-          <div style={{ padding: '18px 24px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#FFFFFF', color: '#111827' }}>
+          <div style={{ padding: '18px 24px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--ez-color-surface)', color: '#111827' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Sparkles size={18} color="#2563EB" />
               <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: '#111827' }}>EZRAB Magic AI Assistant</h3>
@@ -2383,12 +2383,12 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
 
           <div style={{ padding: '20px 24px', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
             {/* Disclaimer Alert */}
-            <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '10px', padding: '12px 14px', fontSize: '12px', color: '#92400E', lineHeight: 1.4 }}>
+            <div style={{ background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 'var(--ez-radius-card)', padding: '12px 14px', fontSize: '12px', color: '#92400E', lineHeight: 1.4 }}>
               <strong>DRAFT — Periksa dan sesuaikan sebelum digunakan.</strong> Magic AI adalah asisten produktivitas penyusun draft pekerjaan. Seluruh kalkulasi final tetap menggunakan calculation engine deterministik.
             </div>
 
             <div>
-              <label style={{ fontSize: '12.5px', fontWeight: 700, color: '#141412', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', display: 'block', marginBottom: '6px' }}>
                 Deskripsi Proyek / Kebutuhan Pekerjaan
               </label>
               <textarea
@@ -2396,7 +2396,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                 value={aiPromptInput}
                 onChange={(e) => setAiPromptInput(e.target.value)}
                 placeholder="Contoh: Rumah tinggal 2 lantai luas 120m2 di Jakarta, struktur beton bertulang, pondasi batu kali, dinding hebel, atap baja ringan..."
-                style={{ width: '100%', borderRadius: '10px', border: '1px solid #CBD5E1', padding: '12px', fontSize: '13px', outline: 'none' }}
+                style={{ width: '100%', borderRadius: 'var(--ez-radius-control)', border: '1px solid #CBD5E1', padding: '12px', fontSize: '13px', outline: 'none' }}
               />
             </div>
 
@@ -2405,8 +2405,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               disabled={isAiGenerating}
               style={{
                 height: '42px',
-                borderRadius: '12px',
-                background: '#2563EB',
+                borderRadius: 'var(--ez-radius-control)',
+                background: 'var(--ez-color-primary)',
                 color: '#FFFFFF',
                 border: 'none',
                 fontSize: '14px',
@@ -2456,8 +2456,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
         >
           <div
             style={{
-              background: '#FFFFFF',
-              borderRadius: '22px',
+              background: 'var(--ez-color-surface)',
+              borderRadius: 'var(--ez-radius-card)',
               width: '100%',
               maxWidth: '420px',
               padding: '24px',
@@ -2480,7 +2480,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               <Trash2 size={22} />
             </div>
 
-            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#141412', margin: '0 0 6px 0' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
               Hapus Item Pekerjaan?
             </h3>
             <p style={{ fontSize: '13px', color: '#6B6B64', margin: '0 0 20px 0' }}>

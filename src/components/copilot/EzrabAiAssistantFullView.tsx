@@ -1038,7 +1038,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
             style={{
               fontSize: '14.5px',
               fontWeight: 700,
-              color: '#0F172A',
+              color: 'var(--ez-color-text-primary)',
               margin: '14px 0 6px 0',
               letterSpacing: '-0.01em',
             }}
@@ -1095,7 +1095,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
               style={{
                 fontSize: '12px',
                 fontWeight: 700,
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 width: '18px',
                 flexShrink: 0,
               }}
@@ -1168,7 +1168,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
 
       if (firstMatch.type === 'bold') {
         parts.push(
-          <strong key={`bold-${keyIdx++}`} style={{ fontWeight: 650, color: '#0F172A' }}>
+          <strong key={`bold-${keyIdx++}`} style={{ fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>
             {firstMatch.inner}
           </strong>
         );
@@ -1202,7 +1202,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
       style={{
         display: 'flex',
         height: 'calc(100vh - 64px)',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'var(--ez-color-surface)',
         overflow: 'hidden',
         position: 'relative',
       }}
@@ -1250,7 +1250,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                     color: '#6B7280',
                     backgroundColor: '#E5E7EB',
                     padding: '1px 6px',
-                    borderRadius: '999px',
+                    borderRadius: 'var(--ez-radius-pill)',
                   }}
                 >
                   {sessions.length}
@@ -1310,18 +1310,18 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                   padding: '0 10px 0 32px',
                   fontSize: '12.5px',
                   color: '#111827',
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: 'var(--ez-color-surface)',
                   border: '1px solid #E5E7EB',
                   borderRadius: '8px',
                   outline: 'none',
                   transition: 'border-color 150ms ease, box-shadow 150ms ease',
                 }}
                 onFocus={(e) => {
-                  e.currentTarget.style.borderColor = '#2563EB';
+                  e.currentTarget.style.borderColor = 'var(--ez-color-primary)';
                   e.currentTarget.style.boxShadow = '0 0 0 2px rgba(37,99,235,0.1)';
                 }}
                 onBlur={(e) => {
-                  e.currentTarget.style.borderColor = '#E5E7EB';
+                  e.currentTarget.style.borderColor = 'var(--ez-color-border)';
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               />
@@ -1414,7 +1414,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                               <div
                                 style={{
                                   padding: '6px 8px',
-                                  backgroundColor: '#FFFFFF',
+                                  backgroundColor: 'var(--ez-color-surface)',
                                   border: '1px solid #2563EB',
                                   borderRadius: '8px',
                                   display: 'flex',
@@ -1436,14 +1436,14 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                     fontSize: '12px',
                                     border: 'none',
                                     outline: 'none',
-                                    color: '#0F172A',
+                                    color: 'var(--ez-color-text-primary)',
                                   }}
                                 />
                                 <button
                                   type="button"
                                   onClick={() => handleSaveRename(session.id)}
                                   style={{
-                                    background: '#2563EB',
+                                    background: 'var(--ez-color-primary)',
                                     border: 'none',
                                     color: '#FFFFFF',
                                     borderRadius: '4px',
@@ -1494,7 +1494,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                       bottom: '6px',
                                       width: '3px',
                                       borderRadius: '0 4px 4px 0',
-                                      backgroundColor: '#2563EB',
+                                      backgroundColor: 'var(--ez-color-primary)',
                                     }}
                                   />
                                 )}
@@ -1504,7 +1504,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                     style={{
                                       fontSize: '12.5px',
                                       fontWeight: isActive ? 650 : 500,
-                                      color: isActive ? '#1D4ED8' : '#1F2937',
+                                      color: isActive ? 'var(--ez-color-primary-hover)' : '#1F2937',
                                       whiteSpace: 'nowrap',
                                       overflow: 'hidden',
                                       textOverflow: 'ellipsis',
@@ -1559,7 +1559,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                   position: 'absolute',
                                   top: '32px',
                                   right: '6px',
-                                  backgroundColor: '#FFFFFF',
+                                  backgroundColor: 'var(--ez-color-surface)',
                                   border: '1px solid #E5E7EB',
                                   borderRadius: '8px',
                                   boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
@@ -1668,7 +1668,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                 width: '100%',
                 height: '38px',
                 borderRadius: '8px',
-                backgroundColor: '#FFFFFF',
+                backgroundColor: 'var(--ez-color-surface)',
                 color: '#1F2937',
                 border: '1px solid #D1D5DB',
                 fontSize: '12.5px',
@@ -1682,9 +1682,9 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                 transition: 'all 150ms ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#2563EB';
-                e.currentTarget.style.color = '#2563EB';
-                e.currentTarget.style.backgroundColor = '#F8FAFC';
+                e.currentTarget.style.borderColor = 'var(--ez-color-primary)';
+                e.currentTarget.style.color = 'var(--ez-color-primary)';
+                e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = '#D1D5DB';
@@ -1712,7 +1712,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           overflow: 'hidden',
           position: 'relative',
         }}
@@ -1726,7 +1726,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
             alignItems: 'center',
             justifyContent: 'space-between',
             borderBottom: '1px solid #F1F5F9',
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--ez-color-surface)',
             flexShrink: 0,
             zIndex: 10,
           }}
@@ -1740,7 +1740,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                 title="Buka riwayat percakapan"
                 aria-label="Buka riwayat percakapan"
                 style={{
-                  background: '#F8FAFC',
+                  background: 'var(--ez-color-surface-secondary)',
                   border: '1px solid #E2E8F0',
                   color: '#475569',
                   cursor: 'pointer',
@@ -1756,11 +1756,11 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#EFF6FF';
                   e.currentTarget.style.borderColor = '#BFDBFE';
-                  e.currentTarget.style.color = '#2563EB';
+                  e.currentTarget.style.color = 'var(--ez-color-primary)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#F8FAFC';
-                  e.currentTarget.style.borderColor = '#E2E8F0';
+                  e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)';
+                  e.currentTarget.style.borderColor = 'var(--ez-color-border)';
                   e.currentTarget.style.color = '#475569';
                 }}
               >
@@ -1770,14 +1770,14 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
             )}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 650, color: '#0F172A' }}>
+              <span style={{ fontSize: '13px', fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>
                 EZRAB Co Assistant AI
               </span>
               <span
                 style={{
                   fontSize: '10px',
                   fontWeight: 700,
-                  color: '#2563EB',
+                  color: 'var(--ez-color-primary)',
                   backgroundColor: '#EFF6FF',
                   padding: '2px 7px',
                   borderRadius: '4px',
@@ -1802,18 +1802,18 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                 gap: '10px',
                 padding: '6px 12px',
                 borderRadius: '10px',
-                backgroundColor: '#F8FAFC',
+                backgroundColor: 'var(--ez-color-surface-secondary)',
                 border: '1px solid #E2E8F0',
                 cursor: 'pointer',
                 transition: 'all 150ms ease',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#F1F5F9';
-                e.currentTarget.style.borderColor = '#CBD5E1';
+                e.currentTarget.style.borderColor = 'var(--ez-color-border)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#F8FAFC';
-                e.currentTarget.style.borderColor = '#E2E8F0';
+                e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)';
+                e.currentTarget.style.borderColor = 'var(--ez-color-border)';
               }}
             >
               <div style={{ textAlign: 'right' }}>
@@ -1821,7 +1821,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                   style={{
                     fontSize: '10px',
                     fontWeight: 700,
-                    color: '#64748B',
+                    color: 'var(--ez-color-text-muted)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.04em',
                     lineHeight: '1.2',
@@ -1833,7 +1833,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                   style={{
                     fontSize: '12.5px',
                     fontWeight: 700,
-                    color: '#0F172A',
+                    color: 'var(--ez-color-text-primary)',
                     lineHeight: '1.3',
                     maxWidth: '180px',
                     overflow: 'hidden',
@@ -1855,8 +1855,8 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                   right: '0',
                   top: '46px',
                   width: '260px',
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: '12px',
+                  backgroundColor: 'var(--ez-color-surface)',
+                  borderRadius: 'var(--ez-radius-control)',
                   border: '1px solid #E2E8F0',
                   boxShadow: '0 12px 30px rgba(0,0,0,0.1)',
                   zIndex: 40,
@@ -1894,7 +1894,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                         borderRadius: '8px',
                         border: 'none',
                         backgroundColor: isCurrent ? '#EFF6FF' : 'transparent',
-                        color: isCurrent ? '#1D4ED8' : '#334155',
+                        color: isCurrent ? 'var(--ez-color-primary-hover)' : '#334155',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -1902,7 +1902,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                         textAlign: 'left',
                       }}
                       onMouseEnter={(e) => {
-                        if (!isCurrent) e.currentTarget.style.backgroundColor = '#F8FAFC';
+                        if (!isCurrent) e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)';
                       }}
                       onMouseLeave={(e) => {
                         if (!isCurrent) e.currentTarget.style.backgroundColor = 'transparent';
@@ -1987,7 +1987,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                   height: '88px',
                   borderRadius: '50%',
                   padding: '3px',
-                  backgroundColor: '#FFFFFF',
+                  backgroundColor: 'var(--ez-color-surface)',
                   boxShadow: '0 8px 30px rgba(37,99,235,0.18), 0 0 1px rgba(0,0,0,0.1)',
                   marginBottom: '20px',
                   display: 'flex',
@@ -2013,7 +2013,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                 style={{
                   fontSize: '28px',
                   fontWeight: 750,
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   letterSpacing: '-0.025em',
                   margin: '0 0 8px 0',
                 }}
@@ -2025,7 +2025,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
               <p
                 style={{
                   fontSize: '14.5px',
-                  color: '#64748B',
+                  color: 'var(--ez-color-text-muted)',
                   maxWidth: '520px',
                   lineHeight: '1.5',
                   margin: '0 0 36px 0',
@@ -2090,8 +2090,8 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                       }}
                       style={{
                         padding: '14px 16px',
-                        borderRadius: '12px',
-                        backgroundColor: '#FFFFFF',
+                        borderRadius: 'var(--ez-radius-control)',
+                        backgroundColor: 'var(--ez-color-surface)',
                         border: '1px solid #E2E8F0',
                         textAlign: 'left',
                         cursor: 'pointer',
@@ -2103,12 +2103,12 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-1px)';
-                        e.currentTarget.style.borderColor = '#2563EB';
+                        e.currentTarget.style.borderColor = 'var(--ez-color-primary)';
                         e.currentTarget.style.boxShadow = '0 6px 16px rgba(37,99,235,0.08)';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.borderColor = '#E2E8F0';
+                        e.currentTarget.style.borderColor = 'var(--ez-color-border)';
                         e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02)';
                       }}
                     >
@@ -2121,17 +2121,17 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: '#2563EB',
+                          color: 'var(--ez-color-primary)',
                           flexShrink: 0,
                         }}
                       >
                         <Icon size={18} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A', marginBottom: '2px' }}>
+                        <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '2px' }}>
                           {item.title}
                         </div>
-                        <div style={{ fontSize: '12px', color: '#64748B' }}>
+                        <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
                           {item.description}
                         </div>
                       </div>
@@ -2171,7 +2171,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                       style={{
                         padding: '6px 12px',
                         borderRadius: '20px',
-                        backgroundColor: '#F8FAFC',
+                        backgroundColor: 'var(--ez-color-surface-secondary)',
                         border: '1px solid #E2E8F0',
                         color: '#334155',
                         fontSize: '12px',
@@ -2185,11 +2185,11 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = '#EFF6FF';
                         e.currentTarget.style.borderColor = '#93C5FD';
-                        e.currentTarget.style.color = '#1D4ED8';
+                        e.currentTarget.style.color = 'var(--ez-color-primary-hover)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = '#F8FAFC';
-                        e.currentTarget.style.borderColor = '#E2E8F0';
+                        e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)';
+                        e.currentTarget.style.borderColor = 'var(--ez-color-border)';
                         e.currentTarget.style.color = '#334155';
                       }}
                     >
@@ -2235,7 +2235,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                           maxWidth: '82%',
                           borderRadius: '16px 16px 4px 16px',
                           padding: '12px 18px',
-                          backgroundColor: '#2563EB',
+                          backgroundColor: 'var(--ez-color-primary)',
                           color: '#FFFFFF',
                           fontSize: '13.5px',
                           lineHeight: '1.55',
@@ -2311,14 +2311,14 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                         <div style={{ flex: 1, minWidth: 0 }}>
                           {/* Clean EZRAB AI Label */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                            <span style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A' }}>EZRAB AI</span>
+                            <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>EZRAB AI</span>
                           </div>
 
                           {/* Stat Callout Card if present (§36) */}
                           {msg.stats && (
                             <div
                               style={{
-                                backgroundColor: '#F8FAFC',
+                                backgroundColor: 'var(--ez-color-surface-secondary)',
                                 border: '1px solid #E2E8F0',
                                 borderRadius: '10px',
                                 padding: '12px 16px',
@@ -2326,14 +2326,14 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                 maxWidth: '340px',
                               }}
                             >
-                              <div style={{ fontSize: '11px', fontWeight: 650, color: '#64748B' }}>
+                              <div style={{ fontSize: '11px', fontWeight: 650, color: 'var(--ez-color-text-muted)' }}>
                                 {msg.stats.label}
                               </div>
                               <div
                                 style={{
                                   fontSize: '20px',
                                   fontWeight: 800,
-                                  color: msg.stats.color || '#2563EB',
+                                  color: msg.stats.color || 'var(--ez-color-primary)',
                                   margin: '2px 0',
                                   letterSpacing: '-0.02em',
                                 }}
@@ -2341,13 +2341,13 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                 {msg.stats.value}
                               </div>
                               {msg.stats.sub && (
-                                <div style={{ fontSize: '11px', color: '#64748B' }}>{msg.stats.sub}</div>
+                                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>{msg.stats.sub}</div>
                               )}
                             </div>
                           )}
 
                           {/* Formatted Text Content */}
-                          <div style={{ color: '#0F172A' }}>
+                          <div style={{ color: 'var(--ez-color-text-primary)' }}>
                             {renderFormattedAiContent(msg.content)}
                           </div>
 
@@ -2367,11 +2367,11 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                   borderCollapse: 'collapse',
                                   fontSize: '12px',
                                   textAlign: 'left',
-                                  backgroundColor: '#FFFFFF',
+                                  backgroundColor: 'var(--ez-color-surface)',
                                 }}
                               >
                                 <thead>
-                                  <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                                  <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0' }}>
                                     {msg.table.headers.map((h, hIdx) => (
                                       <th
                                         key={hIdx}
@@ -2420,11 +2420,11 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                               style={{
                                 marginTop: '14px',
                                 padding: '14px 16px',
-                                borderRadius: '12px',
+                                borderRadius: 'var(--ez-radius-control)',
                                 backgroundColor:
                                   msg.actionProposal.status === 'ACCEPTED'
                                     ? '#F0FDF4'
-                                    : '#F8FAFC',
+                                    : 'var(--ez-color-surface-secondary)',
                                 border: `1px solid ${
                                   msg.actionProposal.status === 'ACCEPTED'
                                     ? '#BBF7D0'
@@ -2436,7 +2436,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                 style={{
                                   fontSize: '12.5px',
                                   fontWeight: 750,
-                                  color: '#0F172A',
+                                  color: 'var(--ez-color-text-primary)',
                                   marginBottom: '4px',
                                 }}
                               >
@@ -2461,7 +2461,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                     style={{
                                       padding: '6px 14px',
                                       borderRadius: '6px',
-                                      backgroundColor: '#2563EB',
+                                      backgroundColor: 'var(--ez-color-primary)',
                                       color: '#FFFFFF',
                                       fontSize: '12px',
                                       fontWeight: 700,
@@ -2481,8 +2481,8 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                     style={{
                                       padding: '6px 12px',
                                       borderRadius: '6px',
-                                      backgroundColor: '#FFFFFF',
-                                      color: '#64748B',
+                                      backgroundColor: 'var(--ez-color-surface)',
+                                      color: 'var(--ez-color-text-muted)',
                                       fontSize: '12px',
                                       fontWeight: 600,
                                       border: '1px solid #CBD5E1',
@@ -2571,7 +2571,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                 padding: '5px 12px',
                                 borderRadius: '6px',
                                 backgroundColor: '#EFF6FF',
-                                color: '#2563EB',
+                                color: 'var(--ez-color-primary)',
                                 border: '1px solid #BFDBFE',
                                 fontSize: '11.5px',
                                 fontWeight: 700,
@@ -2615,14 +2615,14 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     {streamingContent ? (
-                      <div style={{ color: '#0F172A' }}>
+                      <div style={{ color: 'var(--ez-color-text-primary)' }}>
                         {renderFormattedAiContent(streamingContent)}
                         <span
                           style={{
                             display: 'inline-block',
                             width: '4px',
                             height: '14px',
-                            backgroundColor: '#2563EB',
+                            backgroundColor: 'var(--ez-color-primary)',
                             marginLeft: '4px',
                             verticalAlign: 'middle',
                             animation: 'pulse 1s infinite',
@@ -2637,7 +2637,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                           gap: '10px',
                           padding: '8px 14px',
                           borderRadius: '10px',
-                          backgroundColor: '#F8FAFC',
+                          backgroundColor: 'var(--ez-color-surface-secondary)',
                           border: '1px solid #E2E8F0',
                         }}
                       >
@@ -2651,7 +2651,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                             animation: 'spin 0.8s linear infinite',
                           }}
                         />
-                        <span style={{ fontSize: '12.5px', color: '#64748B', fontWeight: 600 }}>
+                        <span style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
                           {thinkingStep}
                         </span>
                       </div>
@@ -2668,14 +2668,14 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                           gap: '6px',
                           padding: '4px 10px',
                           borderRadius: '6px',
-                          backgroundColor: '#FFFFFF',
+                          backgroundColor: 'var(--ez-color-surface)',
                           border: '1px solid #E2E8F0',
                           fontSize: '11px',
                           fontWeight: 650,
-                          color: '#64748B',
+                          color: 'var(--ez-color-text-muted)',
                           cursor: 'pointer',
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)')}
                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FFFFFF')}
                       >
                         <Square size={10} fill="#64748B" />
@@ -2698,7 +2698,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
         <div
           style={{
             padding: '14px 24px 16px 24px',
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--ez-color-surface)',
             borderTop: '1px solid #F1F5F9',
             display: 'flex',
             flexDirection: 'column',
@@ -2771,7 +2771,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                 alignItems: 'flex-end',
                 gap: '10px',
                 padding: '10px 14px',
-                backgroundColor: '#FFFFFF',
+                backgroundColor: 'var(--ez-color-surface)',
                 border: '1.5px solid #E2E8F0',
                 borderRadius: '14px',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
@@ -2780,14 +2780,14 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
               onFocus={() => {
                 const box = textareaRef.current?.parentElement;
                 if (box) {
-                  box.style.borderColor = '#2563EB';
+                  box.style.borderColor = 'var(--ez-color-primary)';
                   box.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.1)';
                 }
               }}
               onBlur={() => {
                 const box = textareaRef.current?.parentElement;
                 if (box) {
-                  box.style.borderColor = '#E2E8F0';
+                  box.style.borderColor = 'var(--ez-color-border)';
                   box.style.boxShadow = '0 2px 8px rgba(0,0,0,0.03)';
                 }
               }}
@@ -2802,9 +2802,9 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                   width: '36px',
                   height: '36px',
                   borderRadius: '8px',
-                  backgroundColor: '#F8FAFC',
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
                   border: '1px solid #E2E8F0',
-                  color: '#64748B',
+                  color: 'var(--ez-color-text-muted)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -2814,13 +2814,13 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#EFF6FF';
-                  e.currentTarget.style.color = '#2563EB';
+                  e.currentTarget.style.color = 'var(--ez-color-primary)';
                   e.currentTarget.style.borderColor = '#BFDBFE';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#F8FAFC';
-                  e.currentTarget.style.color = '#64748B';
-                  e.currentTarget.style.borderColor = '#E2E8F0';
+                  e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)';
+                  e.currentTarget.style.color = 'var(--ez-color-text-muted)';
+                  e.currentTarget.style.borderColor = 'var(--ez-color-border)';
                 }}
               >
                 <Paperclip size={17} />
@@ -2845,7 +2845,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                   outline: 'none',
                   resize: 'none',
                   fontSize: '13.5px',
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   lineHeight: '1.5',
                   padding: '8px 0',
                   fontFamily: 'inherit',
@@ -2867,7 +2867,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                   borderRadius: '8px',
                   backgroundColor:
                     (inputText.trim() || attachedFiles.length > 0) && !isGenerating
-                      ? '#2563EB'
+                      ? 'var(--ez-color-primary)'
                       : '#F1F5F9',
                   color:
                     (inputText.trim() || attachedFiles.length > 0) && !isGenerating
@@ -2886,12 +2886,12 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                 }}
                 onMouseEnter={(e) => {
                   if ((inputText.trim() || attachedFiles.length > 0) && !isGenerating) {
-                    e.currentTarget.style.backgroundColor = '#1D4ED8';
+                    e.currentTarget.style.backgroundColor = 'var(--ez-color-primary-hover)';
                   }
                 }}
                 onMouseLeave={(e) => {
                   if ((inputText.trim() || attachedFiles.length > 0) && !isGenerating) {
-                    e.currentTarget.style.backgroundColor = '#2563EB';
+                    e.currentTarget.style.backgroundColor = 'var(--ez-color-primary)';
                   }
                 }}
               >

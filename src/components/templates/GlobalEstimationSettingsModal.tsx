@@ -49,7 +49,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
     >
       <div
         style={{
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           borderRadius: '16px',
           width: '100%',
           maxWidth: '480px',
@@ -65,12 +65,12 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: '#F8FAFC'
+            background: 'var(--ez-color-surface-secondary)'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Settings size={18} color="#2563EB" />
-            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Pengaturan Estimasi Universal
             </h3>
           </div>
@@ -131,7 +131,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
                 borderRadius: '8px',
                 border: '1px solid #CBD5E1',
                 fontSize: '12.5px',
-                background: '#FFFFFF'
+                background: 'var(--ez-color-surface)'
               }}
             >
               <option value="OFFICIAL_AHSP">PUPR 2026 Standar Nasional (Resmi)</option>
@@ -196,7 +196,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
           style={{
             padding: '12px 20px',
             borderTop: '1px solid #E2E8F0',
-            background: '#F8FAFC',
+            background: 'var(--ez-color-surface-secondary)',
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '8px'
@@ -208,7 +208,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
               padding: '7px 14px',
               borderRadius: '6px',
               border: '1px solid #CBD5E1',
-              background: '#FFFFFF',
+              background: 'var(--ez-color-surface)',
               color: '#475569',
               fontSize: '12px',
               cursor: 'pointer'
@@ -222,7 +222,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
               padding: '7px 16px',
               borderRadius: '6px',
               border: 'none',
-              background: '#2563EB',
+              background: 'var(--ez-color-primary)',
               color: '#FFFFFF',
               fontSize: '12px',
               fontWeight: 700,

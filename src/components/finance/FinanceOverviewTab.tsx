@@ -117,7 +117,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
       {/* 1. Project Context & Action Bar */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
           border: '1px solid #E2E8F0',
           padding: '20px 24px',
@@ -134,7 +134,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
                 style={{
                   fontSize: '11px',
                   fontWeight: 750,
-                  color: '#2563EB',
+                  color: 'var(--ez-color-primary)',
                   backgroundColor: '#EFF6FF',
                   padding: '2px 8px',
                   borderRadius: '6px',
@@ -145,11 +145,11 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               >
                 Project Financial Control
               </span>
-              <span style={{ fontSize: '12px', color: '#64748B' }}>
+              <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
                 {currentProject?.location || 'Indonesia'} &bull; Durasi: {(currentProject as any)?.duration || '270 Hari'}
               </span>
             </div>
-            <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', margin: '6px 0 0 0', letterSpacing: '-0.02em' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '6px 0 0 0', letterSpacing: '-0.02em' }}>
               {currentProject?.name || 'Pilih Proyek Aktif'}
             </h2>
           </div>
@@ -164,7 +164,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
                 borderRadius: '8px',
                 backgroundColor: '#EFF6FF',
                 border: '1px solid #BFDBFE',
-                color: '#1D4ED8',
+                color: 'var(--ez-color-primary-hover)',
                 fontSize: '12.5px',
                 fontWeight: 650,
                 cursor: 'pointer',
@@ -186,7 +186,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
                 borderRadius: '8px',
                 backgroundColor: '#EFF6FF',
                 border: '1px solid #BFDBFE',
-                color: '#1D4ED8',
+                color: 'var(--ez-color-primary-hover)',
                 fontSize: '12.5px',
                 fontWeight: 650,
                 cursor: 'pointer',
@@ -252,8 +252,8 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 1: Nilai Kontrak */}
         <div className="ez-stat"
           style={{
-            backgroundColor: '#FDF3D8',
-            borderRadius: '22px',
+            backgroundColor: 'var(--ez-pastel-cream)',
+            borderRadius: 'var(--ez-radius-card)',
             padding: '20px',
             display: 'flex',
             flexDirection: 'column',
@@ -262,7 +262,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748B' }}>Nilai Kontrak</span>
+            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Nilai Kontrak</span>
             <span
               style={{
                 fontSize: '10px',
@@ -270,16 +270,16 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
                 padding: '1px 6px',
                 borderRadius: '4px',
                 backgroundColor: kpiData.isContractAvailable ? '#DCFCE7' : '#F1F5F9',
-                color: kpiData.isContractAvailable ? '#166534' : '#64748B',
+                color: kpiData.isContractAvailable ? '#166534' : 'var(--ez-color-text-muted)',
               }}
             >
               {kpiData.isContractAvailable ? 'Available' : 'No Data'}
             </span>
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
             {kpiData.isContractAvailable ? formatRupiah(kpiData.contractValue) : 'Belum Diatur'}
           </div>
-          <div style={{ fontSize: '11px', color: '#64748B' }}>
+          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
             Sumber: Master Kontrak Proyek
           </div>
         </div>
@@ -287,8 +287,8 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 2: Total Budget / RAB */}
         <div className="ez-stat"
           style={{
-            backgroundColor: '#E2F4D8',
-            borderRadius: '22px',
+            backgroundColor: 'var(--ez-pastel-mint)',
+            borderRadius: 'var(--ez-radius-card)',
             padding: '20px',
             display: 'flex',
             flexDirection: 'column',
@@ -297,7 +297,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748B' }}>Total Budget (RAB)</span>
+            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Total Budget (RAB)</span>
             <span
               style={{
                 fontSize: '10px',
@@ -305,16 +305,16 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
                 padding: '1px 6px',
                 borderRadius: '4px',
                 backgroundColor: kpiData.isBudgetAvailable ? '#EFF6FF' : '#F1F5F9',
-                color: kpiData.isBudgetAvailable ? '#1E40AF' : '#64748B',
+                color: kpiData.isBudgetAvailable ? '#1E40AF' : 'var(--ez-color-text-muted)',
               }}
             >
               {kpiData.isBudgetAvailable ? 'Approved RAB' : 'No Data'}
             </span>
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
             {kpiData.isBudgetAvailable ? formatRupiah(kpiData.totalBudget) : 'Belum Ada RAB'}
           </div>
-          <div style={{ fontSize: '11px', color: '#64748B' }}>
+          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
             Komitmen: {formatRupiah(kpiData.committedCost)}
           </div>
         </div>
@@ -322,8 +322,8 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 3: Actual Cost (Pengeluaran Riil) */}
         <div className="ez-stat"
           style={{
-            backgroundColor: '#FFE9D6',
-            borderRadius: '22px',
+            backgroundColor: 'var(--ez-pastel-peach)',
+            borderRadius: 'var(--ez-radius-card)',
             padding: '20px',
             display: 'flex',
             flexDirection: 'column',
@@ -332,13 +332,13 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748B' }}>Actual Cost (Pengeluaran)</span>
+            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Actual Cost (Pengeluaran)</span>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#EF4444' }} />
           </div>
           <div style={{ fontSize: '18px', fontWeight: 800, color: '#DC2626' }}>
             {expenses.length > 0 ? formatRupiah(kpiData.actualCost) : 'Rp 0'}
           </div>
-          <div style={{ fontSize: '11px', color: '#64748B' }}>
+          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
             {expenses.length} Transaksi Terverifikasi
           </div>
         </div>
@@ -346,8 +346,8 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 4: Cash In (Penerimaan Riil) */}
         <div className="ez-stat"
           style={{
-            backgroundColor: '#E3EEFB',
-            borderRadius: '22px',
+            backgroundColor: 'var(--ez-pastel-sky)',
+            borderRadius: 'var(--ez-radius-card)',
             padding: '20px',
             display: 'flex',
             flexDirection: 'column',
@@ -356,13 +356,13 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748B' }}>Cash In (Penerimaan)</span>
+            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Cash In (Penerimaan)</span>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10B981' }} />
           </div>
           <div style={{ fontSize: '18px', fontWeight: 800, color: '#16A34A' }}>
             {payments.length > 0 ? formatRupiah(kpiData.cashIn) : 'Rp 0'}
           </div>
-          <div style={{ fontSize: '11px', color: '#64748B' }}>
+          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
             {payments.length} Pembayaran Diterima
           </div>
         </div>
@@ -370,8 +370,8 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 5: Outstanding Piutang */}
         <div className="ez-stat"
           style={{
-            backgroundColor: '#FDF3D8',
-            borderRadius: '22px',
+            backgroundColor: 'var(--ez-pastel-cream)',
+            borderRadius: 'var(--ez-radius-card)',
             padding: '20px',
             display: 'flex',
             flexDirection: 'column',
@@ -380,7 +380,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748B' }}>Sisa Piutang (Receivable)</span>
+            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Sisa Piutang (Receivable)</span>
             {receivablesData.totalOverdue > 0 && (
               <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', backgroundColor: '#FEE2E2', color: '#991B1B' }}>
                 Overdue
@@ -390,7 +390,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           <div style={{ fontSize: '18px', fontWeight: 800, color: kpiData.receivableOutstanding > 0 ? '#D97706' : '#0F172A' }}>
             {formatRupiah(kpiData.receivableOutstanding)}
           </div>
-          <div style={{ fontSize: '11px', color: '#64748B' }}>
+          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
             Jatuh Tempo: {formatRupiah(receivablesData.totalOverdue)}
           </div>
         </div>
@@ -398,8 +398,8 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 6: Profit Sementara & Margin */}
         <div className="ez-stat"
           style={{
-            backgroundColor: '#E2F4D8',
-            borderRadius: '22px',
+            backgroundColor: 'var(--ez-pastel-mint)',
+            borderRadius: 'var(--ez-radius-card)',
             padding: '20px',
             display: 'flex',
             flexDirection: 'column',
@@ -408,15 +408,15 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748B' }}>Gross Profit Sementara</span>
-            <span style={{ fontSize: '11px', fontWeight: 750, color: '#2563EB' }}>
+            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Gross Profit Sementara</span>
+            <span style={{ fontSize: '11px', fontWeight: 750, color: 'var(--ez-color-primary)' }}>
               {kpiData.isContractAvailable ? `${kpiData.profitMarginPercent}%` : '-'}
             </span>
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: kpiData.currentProfit >= 0 ? '#2563EB' : '#DC2626' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: kpiData.currentProfit >= 0 ? 'var(--ez-color-primary)' : '#DC2626' }}>
             {kpiData.isContractAvailable ? formatRupiah(kpiData.currentProfit) : 'Belum Ada Kontrak'}
           </div>
-          <div style={{ fontSize: '11px', color: '#64748B' }}>
+          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
             Proyeksi Akhir: {profitabilityData.projectedProfit !== null ? formatRupiah(profitabilityData.projectedProfit) : 'N/A'}
           </div>
         </div>
@@ -425,7 +425,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
       {/* 3. Main Visual: Cash Flow Interactive Chart (Section 8, 9, 10, 11) */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
           border: '1px solid #E2E8F0',
           padding: '20px 24px',
@@ -437,10 +437,10 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
           <div>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Arus Kas Proyek (Cash Flow: Aktual vs Proyeksi)
             </h3>
-            <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
               Pantau kas masuk, pengeluaran riil, dan proyeksi titik kritis arus kas secara berkesinambungan.
             </div>
           </div>
@@ -454,9 +454,9 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               gap: '4px',
               padding: '5px 10px',
               borderRadius: '6px',
-              backgroundColor: '#F8FAFC',
+              backgroundColor: 'var(--ez-color-surface-secondary)',
               border: '1px solid #E2E8F0',
-              color: '#2563EB',
+              color: 'var(--ez-color-primary)',
               fontSize: '11.5px',
               fontWeight: 650,
               cursor: 'pointer',
@@ -481,7 +481,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* Budget vs Actual Card */}
         <div
           style={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
             border: '1px solid #E2E8F0',
             padding: '20px',
@@ -492,7 +492,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Budget vs Actual (Paket Pekerjaan)
             </h3>
             <button
@@ -501,7 +501,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               style={{
                 background: 'none',
                 border: 'none',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 fontSize: '11.5px',
                 fontWeight: 650,
                 cursor: 'pointer',
@@ -529,7 +529,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* Cost Breakdown & Profitability Summary Card */}
         <div
           style={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
             border: '1px solid #E2E8F0',
             padding: '20px',
@@ -539,7 +539,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
             gap: '14px',
           }}
         >
-          <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
             Komposisi Pengeluaran & Profitabilitas
           </h3>
 
@@ -552,8 +552,8 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
                   <span style={{ color: '#334155', fontWeight: 600 }}>{item.category}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ color: '#0F172A', fontWeight: 700 }}>{formatRupiah(item.actualAmount)}</span>
-                  <span style={{ color: '#64748B', fontSize: '11px', width: '38px', textAlign: 'right' }}>
+                  <span style={{ color: 'var(--ez-color-text-primary)', fontWeight: 700 }}>{formatRupiah(item.actualAmount)}</span>
+                  <span style={{ color: 'var(--ez-color-text-muted)', fontSize: '11px', width: '38px', textAlign: 'right' }}>
                     {item.percentageOfTotal}%
                   </span>
                 </div>
@@ -565,7 +565,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           <div
             style={{
               marginTop: 'auto',
-              backgroundColor: '#F8FAFC',
+              backgroundColor: 'var(--ez-color-surface-secondary)',
               borderRadius: '10px',
               border: '1px solid #E2E8F0',
               padding: '12px 14px',
@@ -574,15 +574,15 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               gap: '6px',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: '#64748B' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
               <span>Nilai Kontrak:</span>
-              <span style={{ fontWeight: 700, color: '#0F172A' }}>
+              <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                 {profitabilityData.isContractAvailable ? formatRupiah(profitabilityData.contractValue) : '-'}
               </span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: '#64748B' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
               <span>Proyeksi Total Biaya:</span>
-              <span style={{ fontWeight: 700, color: '#0F172A' }}>
+              <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                 {formatRupiah(profitabilityData.projectedTotalCost)}
               </span>
             </div>
@@ -601,7 +601,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* Termin & Receivable Timeline */}
         <div
           style={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
             border: '1px solid #E2E8F0',
             padding: '20px',
@@ -612,7 +612,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Timeline Termin & Piutang
             </h3>
             <button
@@ -621,7 +621,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               style={{
                 background: 'none',
                 border: 'none',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 fontSize: '11.5px',
                 fontWeight: 650,
                 cursor: 'pointer',
@@ -636,7 +636,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           </div>
 
           {terms.length === 0 ? (
-            <div style={{ padding: '24px', textAlign: 'center', color: '#64748B', fontSize: '12px' }}>
+            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--ez-color-text-muted)', fontSize: '12px' }}>
               Belum ada termin kontrak yang dikonfigurasi.
             </div>
           ) : (
@@ -656,21 +656,21 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
                       justifyContent: 'space-between',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      backgroundColor: '#F8FAFC',
+                      backgroundColor: 'var(--ez-color-surface-secondary)',
                       border: '1px solid #F1F5F9',
                       cursor: 'pointer',
                     }}
                   >
                     <div>
-                      <div style={{ fontWeight: 650, fontSize: '12.5px', color: '#0F172A' }}>
+                      <div style={{ fontWeight: 650, fontSize: '12.5px', color: 'var(--ez-color-text-primary)' }}>
                         {t.name} ({t.percentage}%)
                       </div>
-                      <div style={{ fontSize: '11px', color: '#64748B' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
                         Jatuh Tempo: {t.dueDate || '-'}
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: 700, fontSize: '12.5px', color: '#0F172A' }}>
+                      <div style={{ fontWeight: 700, fontSize: '12.5px', color: 'var(--ez-color-text-primary)' }}>
                         {formatRupiah(t.amount)}
                       </div>
                       <span
@@ -696,7 +696,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* Hutang & Supplier Tracking */}
         <div
           style={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
             border: '1px solid #E2E8F0',
             padding: '20px',
@@ -707,7 +707,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Hutang Vendor & Supplier
             </h3>
             <button
@@ -716,7 +716,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               style={{
                 background: 'none',
                 border: 'none',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 fontSize: '11.5px',
                 fontWeight: 650,
                 cursor: 'pointer',
@@ -731,21 +731,21 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div style={{ backgroundColor: '#F8FAFC', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-              <div style={{ fontSize: '11px', color: '#64748B' }}>Total Hutang Pending</div>
+            <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Total Hutang Pending</div>
               <div style={{ fontSize: '15px', fontWeight: 800, color: '#D97706', marginTop: '2px' }}>
                 {formatRupiah(payablesData.totalPayable)}
               </div>
             </div>
-            <div style={{ backgroundColor: '#F8FAFC', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-              <div style={{ fontSize: '11px', color: '#64748B' }}>Total Telah Dibayar</div>
+            <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Total Telah Dibayar</div>
               <div style={{ fontSize: '15px', fontWeight: 800, color: '#16A34A', marginTop: '2px' }}>
                 {formatRupiah(payablesData.totalPaid)}
               </div>
             </div>
           </div>
 
-          <div style={{ fontSize: '11.5px', color: '#64748B', lineHeight: '1.5' }}>
+          <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', lineHeight: '1.5' }}>
             Status hutang dipantau otomatis berdasarkan status komitmen pengadaan barang/jasa dan tanggal jatuh tempo tagihan vendor.
           </div>
         </div>
@@ -754,7 +754,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
       {/* 6. Recent Unified Transactions Table (Section 23, 24, 25) */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
           border: '1px solid #E2E8F0',
           padding: '20px 24px',
@@ -766,10 +766,10 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
           <div>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Transaksi Keuangan Terbaru (Source Traceability)
             </h3>
-            <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
               Seluruh catatan mutasi pemasukan, pengeluaran, termin, dan invoice proyek. Klik baris untuk detail sumber.
             </div>
           </div>
@@ -783,9 +783,9 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               gap: '4px',
               padding: '5px 10px',
               borderRadius: '6px',
-              backgroundColor: '#F8FAFC',
+              backgroundColor: 'var(--ez-color-surface-secondary)',
               border: '1px solid #E2E8F0',
-              color: '#2563EB',
+              color: 'var(--ez-color-primary)',
               fontSize: '11.5px',
               fontWeight: 650,
               cursor: 'pointer',
@@ -819,7 +819,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
       {/* 7. AI Financial Insights Panel (Section 26, 47, 48) */}
       <div
         style={{
-          backgroundColor: '#F8FAFC',
+          backgroundColor: 'var(--ez-color-surface-secondary)',
           borderRadius: '14px',
           border: '1px solid #E2E8F0',
           padding: '16px 20px',
@@ -830,7 +830,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
       >
         <Sparkles size={18} color="#2563EB" style={{ marginTop: '2px', flexShrink: 0 }} />
         <div style={{ fontSize: '12.5px', color: '#334155', lineHeight: '1.5' }}>
-          <div style={{ fontWeight: 750, color: '#0F172A', marginBottom: '4px' }}>
+          <div style={{ fontWeight: 750, color: 'var(--ez-color-text-primary)', marginBottom: '4px' }}>
             EZRAB Financial Core Intelligence
           </div>
           <div>

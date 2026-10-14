@@ -306,7 +306,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
     >
       <div
         style={{
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           borderRadius: '20px',
           width: '100%',
           maxWidth: '920px',
@@ -325,14 +325,14 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: '#F8FAFC'
+            background: 'var(--ez-color-surface-secondary)'
           }}
         >
           <div>
-            <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               {initialTemplate ? 'Edit Template RAB' : 'Buat Template RAB Custom'}
             </h2>
-            <p style={{ fontSize: '12.5px', color: '#64748B', margin: '4px 0 0' }}>
+            <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: '4px 0 0' }}>
               Definisikan parameter, program ruang, dan formula QTO deterministik sesuai standar proyek Anda.
             </p>
           </div>
@@ -355,7 +355,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
         <div
           style={{
             display: 'flex',
-            background: '#FFFFFF',
+            background: 'var(--ez-color-surface)',
             borderBottom: '1px solid #E2E8F0',
             padding: '0 24px',
             overflowX: 'auto'
@@ -376,7 +376,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                   border: 'none',
                   background: 'none',
                   borderBottom: isActive ? '2px solid #2563EB' : '2px solid transparent',
-                  color: isActive ? '#2563EB' : '#64748B',
+                  color: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                   fontWeight: isActive ? 700 : 500,
                   fontSize: '13px',
                   cursor: 'pointer',
@@ -388,8 +388,8 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     width: '20px',
                     height: '20px',
                     borderRadius: '50%',
-                    background: isActive ? '#2563EB' : '#E2E8F0',
-                    color: isActive ? '#FFFFFF' : '#64748B',
+                    background: isActive ? 'var(--ez-color-primary)' : '#E2E8F0',
+                    color: isActive ? '#FFFFFF' : 'var(--ez-color-text-muted)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -443,7 +443,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       borderRadius: '8px',
                       border: '1px solid #CBD5E1',
                       fontSize: '13px',
-                      background: '#FFFFFF'
+                      background: 'var(--ez-color-surface)'
                     }}
                   >
                     {CATEGORY_OPTIONS.map(opt => (
@@ -508,7 +508,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       borderRadius: '8px',
                       border: '1px solid #CBD5E1',
                       fontSize: '13px',
-                      background: '#FFFFFF'
+                      background: 'var(--ez-color-surface)'
                     }}
                   >
                     <option value="m²">Luas Bangunan (m²)</option>
@@ -560,10 +560,10 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <div>
-                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                     Parameter Dinamis Proyek
                   </h3>
-                  <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0' }}>
                     Variabel input yang akan diminta kepada user saat template diterapkan (cth. building_area, road_length).
                   </p>
                 </div>
@@ -576,7 +576,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     padding: '8px 14px',
                     borderRadius: '8px',
                     background: '#EFF6FF',
-                    color: '#2563EB',
+                    color: 'var(--ez-color-primary)',
                     border: '1px solid #BFDBFE',
                     fontSize: '12.5px',
                     fontWeight: 650,
@@ -593,7 +593,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                   <div
                     key={param.id}
                     style={{
-                      background: '#F8FAFC',
+                      background: 'var(--ez-color-surface-secondary)',
                       border: '1px solid #E2E8F0',
                       borderRadius: '10px',
                       padding: '14px 16px',
@@ -604,7 +604,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     }}
                   >
                     <div>
-                      <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginBottom: '2px' }}>Label</span>
+                      <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>Label</span>
                       <input
                         type="text"
                         value={param.label}
@@ -613,7 +613,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       />
                     </div>
                     <div>
-                      <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginBottom: '2px' }}>Variabel Key</span>
+                      <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>Variabel Key</span>
                       <input
                         type="text"
                         value={param.key}
@@ -622,11 +622,11 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       />
                     </div>
                     <div>
-                      <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginBottom: '2px' }}>Tipe Input</span>
+                      <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>Tipe Input</span>
                       <select
                         value={param.type}
                         onChange={e => handleUpdateParameter(param.id, { type: e.target.value as ParameterInputType })}
-                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px', background: '#FFFFFF' }}
+                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px', background: 'var(--ez-color-surface)' }}
                       >
                         <option value="NUMBER">NUMBER</option>
                         <option value="TEXT">TEXT</option>
@@ -635,7 +635,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       </select>
                     </div>
                     <div>
-                      <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginBottom: '2px' }}>Satuan</span>
+                      <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>Satuan</span>
                       <input
                         type="text"
                         placeholder="m², m, unit"
@@ -645,7 +645,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       />
                     </div>
                     <div>
-                      <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginBottom: '2px' }}>Default</span>
+                      <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>Default</span>
                       <input
                         type="text"
                         value={param.defaultValue ?? ''}
@@ -673,10 +673,10 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <div>
-                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                     Program Ruang (Space Planning)
                   </h3>
-                  <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0' }}>
                     Daftar kebutuhan ruang beserta target luas standar untuk kategori bangunan.
                   </p>
                 </div>
@@ -689,7 +689,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     padding: '8px 14px',
                     borderRadius: '8px',
                     background: '#EFF6FF',
-                    color: '#2563EB',
+                    color: 'var(--ez-color-primary)',
                     border: '1px solid #BFDBFE',
                     fontSize: '12.5px',
                     fontWeight: 650,
@@ -706,7 +706,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                   <div
                     key={sp.id}
                     style={{
-                      background: '#F8FAFC',
+                      background: 'var(--ez-color-surface-secondary)',
                       border: '1px solid #E2E8F0',
                       borderRadius: '10px',
                       padding: '14px 16px',
@@ -717,7 +717,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     }}
                   >
                     <div>
-                      <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginBottom: '2px' }}>Nama Ruang</span>
+                      <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>Nama Ruang</span>
                       <input
                         type="text"
                         value={sp.name}
@@ -726,7 +726,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       />
                     </div>
                     <div>
-                      <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginBottom: '2px' }}>Kategori Ruang</span>
+                      <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>Kategori Ruang</span>
                       <input
                         type="text"
                         value={sp.category}
@@ -735,7 +735,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       />
                     </div>
                     <div>
-                      <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginBottom: '2px' }}>Rule Jumlah / Count</span>
+                      <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>Rule Jumlah / Count</span>
                       <input
                         type="text"
                         placeholder="1 atau param"
@@ -745,7 +745,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       />
                     </div>
                     <div>
-                      <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginBottom: '2px' }}>Target Luas (m²)</span>
+                      <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>Target Luas (m²)</span>
                       <input
                         type="number"
                         value={sp.targetArea || 0}
@@ -772,10 +772,10 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <div>
-                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                     Komponen Pekerjaan, Rule QTO & AHSP
                   </h3>
-                  <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0' }}>
                     Setiap komponen dihitung secara deterministik dari parameter melalui formula transparan.
                   </p>
                 </div>
@@ -788,7 +788,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     padding: '8px 14px',
                     borderRadius: '8px',
                     background: '#EFF6FF',
-                    color: '#2563EB',
+                    color: 'var(--ez-color-primary)',
                     border: '1px solid #BFDBFE',
                     fontSize: '12.5px',
                     fontWeight: 650,
@@ -805,7 +805,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                   <div
                     key={comp.id}
                     style={{
-                      background: '#F8FAFC',
+                      background: 'var(--ez-color-surface-secondary)',
                       border: '1px solid #E2E8F0',
                       borderRadius: '10px',
                       padding: '14px 16px',
@@ -816,7 +816,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                   >
                     <div style={{ display: 'grid', gridTemplateColumns: '2.5fr 1.5fr 1fr auto', gap: '12px', alignItems: 'center' }}>
                       <div>
-                        <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginBottom: '2px' }}>
+                        <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>
                           Nama Pekerjaan #{idx + 1}
                         </span>
                         <input
@@ -827,7 +827,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                         />
                       </div>
                       <div>
-                        <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginBottom: '2px' }}>Divisi / Kategori WBS</span>
+                        <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>Divisi / Kategori WBS</span>
                         <input
                           type="text"
                           value={comp.category}
@@ -836,7 +836,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                         />
                       </div>
                       <div>
-                        <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginBottom: '2px' }}>Satuan</span>
+                        <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>Satuan</span>
                         <input
                           type="text"
                           value={comp.unit}
@@ -854,9 +854,9 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px', alignItems: 'center', background: '#FFFFFF', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px', alignItems: 'center', background: 'var(--ez-color-surface)', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
                       <div>
-                        <span style={{ fontSize: '11px', color: '#2563EB', fontWeight: 650, display: 'block', marginBottom: '2px' }}>
+                        <span style={{ fontSize: '11px', color: 'var(--ez-color-primary)', fontWeight: 650, display: 'block', marginBottom: '2px' }}>
                           Formula QTO (Rule Perhitungan)
                         </span>
                         <input
@@ -868,7 +868,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                         />
                       </div>
                       <div>
-                        <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginBottom: '2px' }}>Kode AHSP PUPR</span>
+                        <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>Kode AHSP PUPR</span>
                         <input
                           type="text"
                           placeholder="e.g. A.4.1.1.4"
@@ -878,7 +878,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                         />
                       </div>
                       <div>
-                        <span style={{ fontSize: '11px', color: '#64748B', display: 'block', marginBottom: '2px' }}>Harga Satuan (IDR)</span>
+                        <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>Harga Satuan (IDR)</span>
                         <input
                           type="number"
                           value={comp.unitPrice || 0}
@@ -898,16 +898,16 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <div>
-                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                     Live Preview Kalkulasi RAB
                   </h3>
-                  <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0' }}>
                     Simulasi hasil kalkulasi otomatis berdasarkan default parameter yang Anda tentukan.
                   </p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: '11px', color: '#64748B', display: 'block' }}>Estimasi Total RAB</span>
-                  <strong style={{ fontSize: '17px', color: '#2563EB', fontWeight: 800 }}>
+                  <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'block' }}>Estimasi Total RAB</span>
+                  <strong style={{ fontSize: '17px', color: 'var(--ez-color-primary)', fontWeight: 800 }}>
                     Rp {previewTotal.toLocaleString('id-ID')}
                   </strong>
                 </div>
@@ -915,21 +915,21 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
 
               {/* Summary Stats */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '18px' }}>
-                <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                  <span style={{ fontSize: '11px', color: '#64748B' }}>Kategori</span>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginTop: '2px' }}>{category}</div>
+                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Kategori</span>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>{category}</div>
                 </div>
-                <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                  <span style={{ fontSize: '11px', color: '#64748B' }}>Parameter</span>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginTop: '2px' }}>{parameters.length} Parameter</div>
+                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Parameter</span>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>{parameters.length} Parameter</div>
                 </div>
-                <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                  <span style={{ fontSize: '11px', color: '#64748B' }}>Program Ruang</span>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginTop: '2px' }}>{spaces.length} Ruang</div>
+                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Program Ruang</span>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>{spaces.length} Ruang</div>
                 </div>
-                <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                  <span style={{ fontSize: '11px', color: '#64748B' }}>Item Pekerjaan</span>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A', marginTop: '2px' }}>{components.length} Komponen</div>
+                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Item Pekerjaan</span>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>{components.length} Komponen</div>
                 </div>
               </div>
 
@@ -950,13 +950,13 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                   <tbody>
                     {previewItems.map(item => (
                       <tr key={item.no} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                        <td style={{ padding: '8px 12px', color: '#64748B' }}>{item.no}</td>
-                        <td style={{ padding: '8px 12px', fontWeight: 600, color: '#0F172A' }}>{item.name}</td>
-                        <td style={{ padding: '8px 12px', color: '#64748B' }}>{item.category}</td>
+                        <td style={{ padding: '8px 12px', color: 'var(--ez-color-text-muted)' }}>{item.no}</td>
+                        <td style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>{item.name}</td>
+                        <td style={{ padding: '8px 12px', color: 'var(--ez-color-text-muted)' }}>{item.category}</td>
                         <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700 }}>{item.volume.toLocaleString('id-ID')}</td>
-                        <td style={{ padding: '8px 12px', color: '#64748B' }}>{item.unit}</td>
-                        <td style={{ padding: '8px 12px', textAlign: 'right', color: '#64748B' }}>Rp {item.unitPrice.toLocaleString('id-ID')}</td>
-                        <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#0F172A' }}>Rp {item.subtotal.toLocaleString('id-ID')}</td>
+                        <td style={{ padding: '8px 12px', color: 'var(--ez-color-text-muted)' }}>{item.unit}</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', color: 'var(--ez-color-text-muted)' }}>Rp {item.unitPrice.toLocaleString('id-ID')}</td>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Rp {item.subtotal.toLocaleString('id-ID')}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -974,7 +974,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: '#F8FAFC'
+            background: 'var(--ez-color-surface-secondary)'
           }}
         >
           <button
@@ -984,7 +984,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
               padding: '9px 16px',
               borderRadius: '8px',
               border: '1px solid #CBD5E1',
-              background: '#FFFFFF',
+              background: 'var(--ez-color-surface)',
               color: activeStep === 1 ? '#94A3B8' : '#334155',
               fontSize: '13px',
               fontWeight: 600,
@@ -1006,7 +1006,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                   padding: '9px 18px',
                   borderRadius: '8px',
                   border: 'none',
-                  background: '#2563EB',
+                  background: 'var(--ez-color-primary)',
                   color: '#FFFFFF',
                   fontSize: '13px',
                   fontWeight: 700,

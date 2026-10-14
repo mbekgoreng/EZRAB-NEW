@@ -181,8 +181,15 @@ export const EzrabCoAssistantLauncher: React.FC<EzrabCoAssistantLauncherProps> =
         }
 
         const p = physicsRef.current;
-        p.targetX = targetX;
-        p.targetY = targetY;
+        // Batasi tarikan pegas agar maskot tidak pernah melewati tepi kanan/bawah
+        // viewport (sebelumnya tombol 102px bisa terpotong ~10px saat kursor di pojok).
+        // Arah kiri/atas tetap bebas penuh; hanya arah kanan/bawah yang dijepit
+        // selebar inset anchor (24px desktop, 16px mobile; bawah 76px di mobile
+        // karena bottom-nav).
+        const maxPullX = isMobile ? 16 : 24;
+        const maxPullY = isMobile ? 76 : 24;
+        p.targetX = Math.min(targetX, maxPullX);
+        p.targetY = Math.min(targetY, maxPullY);
 
         // Spring acceleration & damping
         const stiffness = 0.085;

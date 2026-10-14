@@ -26,10 +26,10 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
         style={{
           padding: '40px 20px',
           textAlign: 'center',
-          backgroundColor: '#F8FAFC',
-          borderRadius: '12px',
+          backgroundColor: 'var(--ez-color-surface-secondary)',
+          borderRadius: 'var(--ez-radius-control)',
           border: '1px dashed #CBD5E1',
-          color: '#64748B',
+          color: 'var(--ez-color-text-muted)',
           fontSize: '13px',
         }}
       >
@@ -105,7 +105,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
             <span>Kas Keluar (Outflow)</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <span style={{ width: '14px', height: '2.5px', backgroundColor: '#2563EB', borderRadius: '1px' }} />
+            <span style={{ width: '14px', height: '2.5px', backgroundColor: 'var(--ez-color-primary)', borderRadius: '1px' }} />
             <span>Kumulatif Aktual</span>
           </div>
           {forecastPoints.length > 0 && (
@@ -128,7 +128,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
                   borderRadius: '6px',
                   border: 'none',
                   backgroundColor: granularity === g ? '#FFFFFF' : 'transparent',
-                  color: granularity === g ? '#0F172A' : '#64748B',
+                  color: granularity === g ? '#0F172A' : 'var(--ez-color-text-muted)',
                   fontWeight: granularity === g ? 700 : 500,
                   fontSize: '11px',
                   cursor: 'pointer',
@@ -150,7 +150,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
           width: '100%',
           overflowX: 'auto',
           backgroundColor: '#FAFAFC',
-          borderRadius: '12px',
+          borderRadius: 'var(--ez-radius-control)',
           border: '1px solid #E2E8F0',
           padding: '8px 4px',
         }}
@@ -373,7 +373,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
           </div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#64748B' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
           <Info size={13} color="#94A3B8" />
           <span>
             <em>Proyeksi (Forecast)</em> dihitung secara deterministik berdasarkan sisa jadwal termin dan Kurva-S RAB yang disetujui. Realisasi aktual dapat berbeda.

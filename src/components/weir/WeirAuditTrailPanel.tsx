@@ -60,7 +60,7 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
   return (
     <div
       style={{
-        background: '#FFFFFF',
+        background: 'var(--ez-color-surface)',
         borderRadius: '10px',
         border: '1px solid #E2E8F0',
         overflow: 'hidden',
@@ -71,7 +71,7 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
         style={{
           background: '#0F172A',
           padding: '10px 14px',
-          color: '#F8FAFC',
+          color: 'var(--ez-color-surface-secondary)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -105,7 +105,7 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
                   width: '100%',
                   padding: '8px 12px',
                   border: 'none',
-                  background: isExpanded ? '#F8FAFC' : 'transparent',
+                  background: isExpanded ? 'var(--ez-color-surface-secondary)' : 'transparent',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -140,7 +140,7 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
                   <div
                     style={{
                       fontSize: '9.5px',
-                      color: '#64748B',
+                      color: 'var(--ez-color-text-muted)',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -161,7 +161,7 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
                 <div
                   style={{
                     padding: '8px 12px 12px 46px',
-                    background: '#F8FAFC',
+                    background: 'var(--ez-color-surface-secondary)',
                   }}
                 >
                   <div style={{ fontSize: '9px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '4px' }}>

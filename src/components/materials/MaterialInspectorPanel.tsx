@@ -77,7 +77,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           minWidth: '390px',
           maxWidth: '390px',
           flexShrink: 0,
-          backgroundColor: '#ffffff',
+          backgroundColor: 'var(--ez-color-surface)',
           border: '1px solid #E2E8F0',
           borderRadius: '16px',
           padding: '16px',
@@ -97,15 +97,15 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <h2 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               {labor.name}
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-              <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#2563EB', fontWeight: 700 }}>
+              <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--ez-color-primary)', fontWeight: 700 }}>
                 {labor.code}
               </span>
               {labor.englishName && (
-                <span style={{ fontSize: '11px', color: '#64748B', fontStyle: 'italic' }}>
+                <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontStyle: 'italic' }}>
                   ({labor.englishName})
                 </span>
               )}
@@ -121,7 +121,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
         </div>
 
         {/* Hero Card */}
-        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '12px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', padding: '12px', display: 'flex', gap: '12px', alignItems: 'center' }}>
           <div
             style={{
               width: '60px',
@@ -143,17 +143,17 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
               <span style={{ fontSize: '9.5px', fontWeight: 800, backgroundColor: '#D97706', color: '#FFF', padding: '2px 6px', borderRadius: '4px' }}>
                 {labor.category || 'TENAGA KERJA'}
               </span>
-              <span style={{ fontSize: '9.5px', fontWeight: 700, backgroundColor: '#EFF6FF', color: '#2563EB', padding: '2px 6px', borderRadius: '4px', border: '1px solid #DBEAFE' }}>
+              <span style={{ fontSize: '9.5px', fontWeight: 700, backgroundColor: '#EFF6FF', color: 'var(--ez-color-primary)', padding: '2px 6px', borderRadius: '4px', border: '1px solid #DBEAFE' }}>
                 {labor.skillLevel}
               </span>
             </div>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>{labor.subcategory || labor.roleCategory}</div>
-            <div style={{ fontSize: '10.5px', color: '#64748B' }}>{labor.skkLevel || 'SKK Jenjang Standar'}</div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{labor.subcategory || labor.roleCategory}</div>
+            <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>{labor.skkLevel || 'SKK Jenjang Standar'}</div>
           </div>
         </div>
 
         {/* Current Rate Card */}
-        <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '14px' }}>
+        <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 'var(--ez-radius-control)', padding: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: '#166534', textTransform: 'uppercase' }}>
               Upah Harian Standar (OH)
@@ -186,10 +186,10 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
             <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase', marginBottom: '2px' }}>
               Standar Output Produktivitas
             </div>
-            <div style={{ fontSize: '13px', fontWeight: 800, color: '#1D4ED8' }}>
+            <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-color-primary-hover)' }}>
               {labor.productivity.standardRate} {labor.productivity.unit}
             </div>
-            <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '2px' }}>
+            <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
               {labor.productivity.description}
             </div>
           </div>
@@ -216,7 +216,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', marginBottom: '6px' }}>
             Uraian Tugas Pokok:
           </div>
-          <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px' }}>
+          <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px' }}>
             {labor.duties.map((duty, idx) => (
               <div key={idx} style={{ display: 'flex', gap: '6px', fontSize: '11.5px', color: '#475569', marginBottom: idx !== labor.duties.length - 1 ? '6px' : 0 }}>
                 <Check size={14} color="#059669" style={{ flexShrink: 0, marginTop: '2px' }} />
@@ -254,9 +254,9 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
               { prov: 'Nusantara (IKN)', f: 1.25 },
               { prov: 'Papua', f: 1.48 },
             ].map((reg, idx) => (
-              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', backgroundColor: idx % 2 === 0 ? '#FFF' : '#F8FAFC', borderBottom: idx < 4 ? '1px solid #F1F5F9' : 'none' }}>
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', backgroundColor: idx % 2 === 0 ? '#FFF' : 'var(--ez-color-surface-secondary)', borderBottom: idx < 4 ? '1px solid #F1F5F9' : 'none' }}>
                 <span style={{ color: '#475569' }}>{reg.prov}</span>
-                <span style={{ fontWeight: 700, color: '#0F172A' }}>
+                <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                   Rp {Math.round((labor.basePriceOH * reg.f) / 500 * 500).toLocaleString('id-ID')} / OH
                 </span>
               </div>
@@ -265,7 +265,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
         </div>
 
         {/* Provenance */}
-        <div style={{ padding: '8px 10px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '10.5px', color: '#64748B' }}>
+        <div style={{ padding: '8px 10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>
           <strong>Dasar Regulasi:</strong> {labor.regulationSource}
         </div>
       </aside>
@@ -285,7 +285,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           minWidth: '390px',
           maxWidth: '390px',
           flexShrink: 0,
-          backgroundColor: '#ffffff',
+          backgroundColor: 'var(--ez-color-surface)',
           border: '1px solid #E2E8F0',
           borderRadius: '16px',
           padding: '16px',
@@ -305,15 +305,15 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <h2 style={{ fontSize: '13.5px', fontWeight: 800, color: '#0F172A', margin: 0, lineHeight: 1.3 }}>
+            <h2 style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, lineHeight: 1.3 }}>
               {equipment.name}
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-              <span style={{ fontFamily: 'monospace', fontSize: '11px', color: '#2563EB', fontWeight: 700 }}>
+              <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--ez-color-primary)', fontWeight: 700 }}>
                 {equipment.code}
               </span>
               {equipment.englishName && (
-                <span style={{ fontSize: '11px', color: '#64748B', fontStyle: 'italic' }}>
+                <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontStyle: 'italic' }}>
                   ({equipment.englishName})
                 </span>
               )}
@@ -329,14 +329,14 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
         </div>
 
         {/* Hero Card */}
-        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '12px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', padding: '12px', display: 'flex', gap: '12px', alignItems: 'center' }}>
           <div
             style={{
               width: '60px',
               height: '60px',
               borderRadius: '10px',
               backgroundColor: '#EFF6FF',
-              color: '#2563EB',
+              color: 'var(--ez-color-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -348,20 +348,20 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '4px' }}>
-              <span style={{ fontSize: '9.5px', fontWeight: 800, backgroundColor: '#2563EB', color: '#FFF', padding: '2px 6px', borderRadius: '4px' }}>
+              <span style={{ fontSize: '9.5px', fontWeight: 800, backgroundColor: 'var(--ez-color-primary)', color: '#FFF', padding: '2px 6px', borderRadius: '4px' }}>
                 {equipment.category}
               </span>
               <span style={{ fontSize: '9.5px', fontWeight: 700, backgroundColor: '#ECFDF5', color: '#059669', padding: '2px 6px', borderRadius: '4px', border: '1px solid #A7F3D0' }}>
                 {equipment.ownershipMode || 'RENTED'}
               </span>
             </div>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>{equipment.capacity}</div>
-            <div style={{ fontSize: '10.5px', color: '#64748B' }}>Daya: {equipment.enginePowerHP > 0 ? `${equipment.enginePowerHP} HP` : 'Motor Listrik'}</div>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{equipment.capacity}</div>
+            <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>Daya: {equipment.enginePowerHP > 0 ? `${equipment.enginePowerHP} HP` : 'Motor Listrik'}</div>
           </div>
         </div>
 
         {/* Current Rental Rate Card */}
-        <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '14px' }}>
+        <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 'var(--ez-radius-control)', padding: '14px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
             <span style={{ fontSize: '11px', fontWeight: 700, color: '#166534', textTransform: 'uppercase' }}>
               Tarif Sewa Acuan 2026
@@ -393,10 +393,10 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
             <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase', marginBottom: '2px' }}>
               Kapasitas Output & Produktivitas
             </div>
-            <div style={{ fontSize: '13px', fontWeight: 800, color: '#1D4ED8' }}>
+            <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-color-primary-hover)' }}>
               {equipment.productivity.standardOutputPerHour} {equipment.productivity.unit}
             </div>
-            <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '2px' }}>
+            <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
               {equipment.productivity.description}
             </div>
           </div>
@@ -409,23 +409,23 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
               Rincian Biaya Operasional / Jam:
             </div>
             <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', overflow: 'hidden', fontSize: '11px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 10px', backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0' }}>
                 <span>BBM ({equipment.fuelType}):</span>
                 <strong>Rp {equipment.operatingCosts.fuelCostPerHour.toLocaleString('id-ID')}/jam</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 10px', backgroundColor: '#FFF', borderBottom: '1px solid #E2E8F0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 10px', backgroundColor: 'var(--ez-color-surface)', borderBottom: '1px solid #E2E8F0' }}>
                 <span>Pelumas & Oli:</span>
                 <strong>Rp {equipment.operatingCosts.lubricantCostPerHour.toLocaleString('id-ID')}/jam</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 10px', backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0' }}>
                 <span>Operator:</span>
                 <strong>Rp {equipment.operatingCosts.operatorCostPerHour.toLocaleString('id-ID')}/jam</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 10px', backgroundColor: '#FFF', borderBottom: '1px solid #E2E8F0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 10px', backgroundColor: 'var(--ez-color-surface)', borderBottom: '1px solid #E2E8F0' }}>
                 <span>Maintenance & Part:</span>
                 <strong>Rp {equipment.operatingCosts.maintenanceCostPerHour.toLocaleString('id-ID')}/jam</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', backgroundColor: '#EFF6FF', fontWeight: 800, color: '#1D4ED8' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', backgroundColor: '#EFF6FF', fontWeight: 800, color: 'var(--ez-color-primary-hover)' }}>
                 <span>Total Operasional:</span>
                 <span>Rp {equipment.operatingCosts.totalOperatingCostPerHour.toLocaleString('id-ID')}/jam</span>
               </div>
@@ -435,19 +435,19 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
 
         {/* Technical Specs */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-          <div style={{ padding: '8px 10px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-            <div style={{ fontSize: '10px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ padding: '8px 10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+            <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <Fuel size={12} color="#D97706" /> Konsumsi BBM
             </div>
-            <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginTop: '2px' }}>
+            <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
               {equipment.fuelConsumptionLiterPerHour > 0 ? `${equipment.fuelConsumptionLiterPerHour} L / jam` : 'Listrik / Manual'}
             </div>
           </div>
-          <div style={{ padding: '8px 10px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-            <div style={{ fontSize: '10px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ padding: '8px 10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+            <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <Truck size={12} color="#2563EB" /> Estimasi Mob/Demob
             </div>
-            <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', marginTop: '2px' }}>
+            <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
               Rp {equipment.mobDemobEstimate.toLocaleString('id-ID')}
             </div>
           </div>
@@ -458,7 +458,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', marginBottom: '6px' }}>
             Deskripsi & Lingkup Operasi:
           </div>
-          <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px', fontSize: '11.5px', color: '#475569', lineHeight: 1.5 }}>
+          <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px', fontSize: '11.5px', color: '#475569', lineHeight: 1.5 }}>
             {equipment.specification}
           </div>
         </div>
@@ -478,7 +478,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
         </div>
 
         {/* Provenance */}
-        <div style={{ padding: '8px 10px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '10.5px', color: '#64748B' }}>
+        <div style={{ padding: '8px 10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>
           <strong>Sumber Acuan:</strong> {equipment.provenance.sourceName} ({equipment.provenance.effectiveDate})
         </div>
       </aside>
@@ -497,12 +497,12 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           minWidth: '390px',
           maxWidth: '390px',
           flexShrink: 0,
-          backgroundColor: '#ffffff',
+          backgroundColor: 'var(--ez-color-surface)',
           border: '1px solid #E2E8F0',
           borderRadius: '16px',
           padding: '24px 16px',
           textAlign: 'center',
-          color: '#64748B',
+          color: 'var(--ez-color-text-muted)',
         }}
       >
         <Package size={32} color="#CBD5E1" style={{ margin: '0 auto 8px auto' }} />
@@ -544,7 +544,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
         minWidth: '390px',
         maxWidth: '390px',
         flexShrink: 0,
-        backgroundColor: '#ffffff',
+        backgroundColor: 'var(--ez-color-surface)',
         border: '1px solid #E2E8F0',
         borderRadius: '16px',
         padding: '16px',
@@ -568,7 +568,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
             style={{
               fontSize: '13.5px',
               fontWeight: 800,
-              color: '#0F172A',
+              color: 'var(--ez-color-text-primary)',
               margin: 0,
               lineHeight: 1.35,
               whiteSpace: 'nowrap',
@@ -608,9 +608,9 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
         style={{
           display: 'flex',
           gap: '12px',
-          background: '#F8FAFC',
+          background: 'var(--ez-color-surface-secondary)',
           border: '1px solid #E2E8F0',
-          borderRadius: '12px',
+          borderRadius: 'var(--ez-radius-control)',
           padding: '12px',
           alignItems: 'center',
         }}
@@ -644,7 +644,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
                 borderRadius: '5px',
                 fontSize: '9.5px',
                 fontWeight: 800,
-                backgroundColor: '#2563EB',
+                backgroundColor: 'var(--ez-color-primary)',
                 color: '#ffffff',
                 letterSpacing: '0.04em',
               }}
@@ -658,7 +658,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
                 fontSize: '9.5px',
                 fontWeight: 800,
                 backgroundColor: '#EFF6FF',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 border: '1px solid #DBEAFE',
                 letterSpacing: '0.04em',
               }}
@@ -670,7 +670,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           <div
             style={{
               fontWeight: 800,
-              color: '#0F172A',
+              color: 'var(--ez-color-text-primary)',
               fontSize: '12.5px',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
@@ -683,7 +683,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           <div
             style={{
               fontSize: '10.5px',
-              color: '#64748B',
+              color: 'var(--ez-color-text-muted)',
               whiteSpace: 'nowrap',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -699,7 +699,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
                 padding: '3px 8px',
                 borderRadius: '6px',
                 border: '1px solid #CBD5E1',
-                backgroundColor: '#ffffff',
+                backgroundColor: 'var(--ez-color-surface)',
                 fontSize: '10.5px',
                 fontWeight: 700,
                 color: '#334155',
@@ -721,7 +721,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
                 backgroundColor: '#EFF6FF',
                 fontSize: '10.5px',
                 fontWeight: 700,
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -755,7 +755,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
               style={{
                 border: 'none',
                 background: isSelected ? '#ffffff' : 'transparent',
-                color: isSelected ? '#0F172A' : '#64748B',
+                color: isSelected ? '#0F172A' : 'var(--ez-color-text-muted)',
                 fontWeight: isSelected ? 800 : 600,
                 fontSize: '9.5px',
                 padding: '5px 2px',
@@ -776,25 +776,25 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {/* SECTION: Informasi Material */}
         <div>
-          <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#64748B', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '8px' }}>
+          <div style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--ez-color-text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '8px' }}>
             Informasi Material
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-            <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 10px' }}>
-              <div style={{ fontSize: '10px', color: '#64748B', fontWeight: 600 }}>Sektor</div>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>{material.sector || 'Bangunan'}</div>
+            <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 10px' }}>
+              <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Sektor</div>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>{material.sector || 'Bangunan'}</div>
             </div>
-            <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 10px' }}>
-              <div style={{ fontSize: '10px', color: '#64748B', fontWeight: 600 }}>Kategori</div>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>{material.category || 'Semen & Pasir'}</div>
+            <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 10px' }}>
+              <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Kategori</div>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>{material.category || 'Semen & Pasir'}</div>
             </div>
-            <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 10px' }}>
-              <div style={{ fontSize: '10px', color: '#64748B', fontWeight: 600 }}>Satuan Dasar</div>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>{material.unit}</div>
+            <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 10px' }}>
+              <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Satuan Dasar</div>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>{material.unit}</div>
             </div>
-            <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 10px' }}>
-              <div style={{ fontSize: '10px', color: '#64748B', fontWeight: 600 }}>Tier Harga</div>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>{material.priceTier || 'Standard'}</div>
+            <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 10px' }}>
+              <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Tier Harga</div>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>{material.priceTier || 'Standard'}</div>
             </div>
           </div>
         </div>
@@ -811,18 +811,18 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {/* 1. HARGA REFERENSI NASIONAL */}
-              <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '10px 12px' }}>
+              <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '10px 12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '10px', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
                     1. Harga Referensi Nasional
                   </span>
-                  <span style={{ fontSize: '9.5px', color: '#64748B' }}>EZRAB Master 2026</span>
+                  <span style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)' }}>EZRAB Master 2026</span>
                 </div>
-                <div style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
+                <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                   Rp {(basePrice > 0 ? basePrice : 74000).toLocaleString('id-ID')}
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', marginLeft: '4px' }}>/ {material.unit}</span>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginLeft: '4px' }}>/ {material.unit}</span>
                 </div>
-                <div style={{ fontSize: '10px', color: '#64748B', marginTop: '2px' }}>
+                <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
                   Wilayah: {primaryPriceRec?.region.province || 'Jawa Barat'} • Sumber: {primaryPriceRec?.sourceName || 'Katalog Nasional'}
                 </div>
               </div>
@@ -837,7 +837,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '10px', fontWeight: 800, color: projPrice ? '#1D4ED8' : '#64748B', textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 800, color: projPrice ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
                     2. Harga Proyek ({projectName})
                   </span>
                   {projPrice && (
@@ -852,7 +852,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
                     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
                       <div style={{ fontSize: '16px', fontWeight: 900, color: '#1E40AF' }}>
                         Rp {projPrice.price.toLocaleString('id-ID')}
-                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#2563EB', marginLeft: '4px' }}>/ {projPrice.unit}</span>
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-primary)', marginLeft: '4px' }}>/ {projPrice.unit}</span>
                       </div>
                       <div style={{ fontSize: '11px', fontWeight: 800, color: resolved.varianceAmount < 0 ? '#059669' : '#DC2626' }}>
                         {resolved.varianceAmount < 0 ? '' : '+'}{resolved.varianceAmount.toLocaleString('id-ID')} ({resolved.variancePercent}%)
@@ -864,7 +864,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div style={{ fontSize: '11px', color: '#64748B', margin: '4px 0' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', margin: '4px 0' }}>
                     Belum ada harga khusus proyek ini (mengikuti harga acuan).
                   </div>
                 )}
@@ -876,8 +876,8 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
                       padding: '4px 8px',
                       borderRadius: '6px',
                       border: '1px solid #93C5FD',
-                      backgroundColor: '#ffffff',
-                      color: '#2563EB',
+                      backgroundColor: 'var(--ez-color-surface)',
+                      color: 'var(--ez-color-primary)',
                       fontSize: '10.5px',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -930,7 +930,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
         {/* SECTION: Perbandingan Harga Merek */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#64748B', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--ez-color-text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
               Perbandingan Harga Merek
             </div>
             <button
@@ -938,7 +938,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
               style={{
                 border: 'none',
                 background: 'transparent',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 fontSize: '10.5px',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -964,14 +964,14 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
                 }}
               >
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '11.5px', color: '#0F172A' }}>{b.name}</div>
-                  <div style={{ fontSize: '10px', color: '#64748B' }}>{b.tier}</div>
+                  <div style={{ fontWeight: 700, fontSize: '11.5px', color: 'var(--ez-color-text-primary)' }}>{b.name}</div>
+                  <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>{b.tier}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 800, fontSize: '12px', color: '#0F172A' }}>
+                  <div style={{ fontWeight: 800, fontSize: '12px', color: 'var(--ez-color-text-primary)' }}>
                     Rp {b.price.toLocaleString('id-ID')}
                   </div>
-                  <div style={{ fontSize: '9.5px', color: b.isCurrent ? '#2563EB' : '#64748B', fontWeight: 600 }}>
+                  <div style={{ fontSize: '9.5px', color: b.isCurrent ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)', fontWeight: 600 }}>
                     {b.isCurrent ? 'Current' : 'Alternatif'}
                   </div>
                 </div>
@@ -983,7 +983,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
         {/* SECTION: Harga & Tren */}
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#64748B', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--ez-color-text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
               Harga & Tren
             </div>
             <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#059669', display: 'flex', alignItems: 'center', gap: '2px' }}>
@@ -993,7 +993,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
 
           <div
             style={{
-              backgroundColor: '#F8FAFC',
+              backgroundColor: 'var(--ez-color-surface-secondary)',
               border: '1px solid #E2E8F0',
               borderRadius: '10px',
               padding: '10px',
@@ -1019,21 +1019,21 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
 
         {/* SECTION: Provenance */}
         <div>
-          <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#64748B', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '8px' }}>
+          <div style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--ez-color-text-muted)', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '8px' }}>
             Provenance
           </div>
-          <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11px' }}>
+          <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#64748B' }}>Sumber Acuan:</span>
-              <span style={{ fontWeight: 700, color: '#0F172A' }}>SE DJBK No. 12/2026</span>
+              <span style={{ color: 'var(--ez-color-text-muted)' }}>Sumber Acuan:</span>
+              <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>SE DJBK No. 12/2026</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#64748B' }}>Integritas Mutu:</span>
+              <span style={{ color: 'var(--ez-color-text-muted)' }}>Integritas Mutu:</span>
               <span style={{ fontWeight: 700, color: '#059669' }}>SNI 7064:2014</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#64748B' }}>Hash Dokumen:</span>
-              <span style={{ fontFamily: 'monospace', fontSize: '9.5px', color: '#64748B' }}>sha256:4b91...8c2</span>
+              <span style={{ color: 'var(--ez-color-text-muted)' }}>Hash Dokumen:</span>
+              <span style={{ fontFamily: 'monospace', fontSize: '9.5px', color: 'var(--ez-color-text-muted)' }}>sha256:4b91...8c2</span>
             </div>
           </div>
         </div>

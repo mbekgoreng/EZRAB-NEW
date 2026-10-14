@@ -132,7 +132,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
         style={{
           width: '100%',
           maxWidth: '520px',
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           borderRadius: '16px',
           border: '1px solid #E2E8F0',
           boxShadow: '0 20px 48px rgba(15, 23, 42, 0.16)',
@@ -160,7 +160,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                 height: '36px',
                 borderRadius: '10px',
                 background: '#EFF6FF',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -169,10 +169,10 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
               <UserPlus size={18} />
             </div>
             <div>
-              <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.01em' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
                 Tambah Pengguna
               </h2>
-              <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>
+              <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0' }}>
                 Undang anggota tim baru untuk mengakses workspace Anda
               </p>
             </div>
@@ -187,7 +187,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
               borderRadius: '8px',
               background: 'transparent',
               border: 'none',
-              color: '#64748B',
+              color: 'var(--ez-color-text-muted)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -260,7 +260,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                   borderRadius: '8px',
                   border: '1px solid #CBD5E1',
                   fontSize: '13px',
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   outline: 'none',
                 }}
               />
@@ -287,7 +287,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                   borderRadius: '8px',
                   border: '1px solid #CBD5E1',
                   fontSize: '13px',
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   outline: 'none',
                 }}
               />
@@ -314,7 +314,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                     borderRadius: '8px',
                     border: '1px solid #CBD5E1',
                     fontSize: '13px',
-                    color: '#0F172A',
+                    color: 'var(--ez-color-text-primary)',
                     outline: 'none',
                   }}
                 />
@@ -340,7 +340,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                     borderRadius: '8px',
                     border: '1px solid #CBD5E1',
                     fontSize: '13px',
-                    color: '#0F172A',
+                    color: 'var(--ez-color-text-primary)',
                     outline: 'none',
                   }}
                 />
@@ -366,7 +366,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                       borderRadius: '8px',
                       border: isSel ? '2px solid #2563EB' : '1px solid #CBD5E1',
                       background: isSel ? '#EFF6FF' : '#FFFFFF',
-                      color: isSel ? '#1D4ED8' : '#475569',
+                      color: isSel ? 'var(--ez-color-primary-hover)' : '#475569',
                       fontSize: '12.5px',
                       fontWeight: isSel ? 700 : 500,
                       cursor: 'pointer',
@@ -441,7 +441,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                 height: '38px',
                 padding: '0 20px',
                 borderRadius: '8px',
-                background: '#2563EB',
+                background: 'var(--ez-color-primary)',
                 color: '#FFFFFF',
                 border: 'none',
                 fontSize: '12.5px',

@@ -10,6 +10,7 @@ import {
 import { Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
 import { DeleteProjectModal } from './DeleteProjectModal';
+import { useI18n } from '../../i18n/I18nContext';
 
 interface ArchivedProjectsViewProps {
   projects: Project[];
@@ -27,6 +28,7 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
   onOpenProject,
 }) => {
   const { updateProject, deleteProject, backupProjectData } = useProject();
+  const { t } = useI18n();
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [yearFilter, setYearFilter] = useState<string>('all');
@@ -60,14 +62,14 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
   const handleRestoreProject = (proj: Project) => {
     if (
       window.confirm(
-        `Pulihkan proyek "${proj.name}" kembali ke status aktif (Sedang Dikerjakan)? Proyek akan muncul kembali di daftar proyek aktif.`
+        t('proj.arch.restore_confirm_a') + proj.name + t('proj.arch.restore_confirm_b')
       )
     ) {
       updateProject(proj.id, {
         status: 'in_progress',
         isArchived: false,
       });
-      alert(`Proyek "${proj.name}" berhasil dipulihkan ke Proyek Aktif.`);
+      alert(t('proj.arch.restore_ok_a') + proj.name + t('proj.arch.restore_ok_b'));
     }
   };
 
@@ -76,7 +78,7 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
   };
 
   const handleExportArchiveBundle = (proj: Project) => {
-    alert(`Mengunduh paket arsip digital untuk "${proj.name}" (RAB Spreadsheet, BoQ, dan Dokumen Laporan).`);
+    alert(t('proj.arch.export_ok_a') + proj.name + t('proj.arch.export_ok_b'));
   };
 
   return (
@@ -96,53 +98,53 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
         {/* KPI 1: Total Proyek Diarsipkan */}
         <div className="ezdb-anim ez-stat ez-stat-sky" style={{ animation: 'ezdb-rise 0.6s 0.05s both' }}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
-            Total Berkas Arsip
+            {t('proj.arch.kpi1_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {archivedProjects.length}{' '}
-            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>Proyek</span>
+            <span style={{ fontSize: '13px', color: '#8A8A84', fontWeight: 500, letterSpacing: '0' }}>{t('proj.arch.kpi1_u')}</span>
           </div>
           <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
-            Tersimpan dalam Cold Vault
+            {t('proj.arch.kpi1_s')}
           </div>
         </div>
 
         {/* KPI 2: Total Nilai Historis */}
         <div className="ezdb-anim ez-stat ez-stat-cream" style={{ animation: 'ezdb-rise 0.6s 0.12s both' }}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
-            Total Nilai Arsip
+            {t('proj.arch.kpi2_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
             {totalArchivedValue === 0 ? 'Rp 0' : formatRupiah(totalArchivedValue)}
           </div>
           <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
-            Rekam jejak nilai proyek
+            {t('proj.arch.kpi2_s')}
           </div>
         </div>
 
         {/* KPI 3: Benchmark Database Referensi */}
         <div className="ezdb-anim ez-stat ez-stat-mint" style={{ animation: 'ezdb-rise 0.6s 0.19s both' }}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
-            Benchmark Harga
+            {t('proj.arch.kpi3_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#2C6E2C' }}>
-            Aktif
+            {t('proj.arch.kpi3_v')}
           </div>
           <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
-            Dapat dijadikan referensi AHSP baru
+            {t('proj.arch.kpi3_s')}
           </div>
         </div>
 
         {/* KPI 4: Status Keamanan Vault */}
         <div className="ezdb-anim ez-stat ez-stat-peach" style={{ animation: 'ezdb-rise 0.6s 0.26s both' }}>
           <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>
-            Enkripsi & Keamanan
+            {t('proj.arch.kpi4_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#141412' }}>
-            100% Aman
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+            {t('proj.arch.kpi4_v')}
           </div>
           <div style={{ fontSize: '12px', color: '#6B6B64', marginTop: '6px' }}>
-            Backup Cloud & Restore Instant
+            {t('proj.arch.kpi4_s')}
           </div>
         </div>
       </div>
@@ -154,9 +156,9 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           padding: '16px 20px',
-          borderRadius: '22px',
+          borderRadius: 'var(--ez-radius-card)',
           border: '1px solid #EEF1F6',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           flexWrap: 'wrap',
@@ -169,7 +171,7 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
             <Search size={14} color="#8A8A84" style={{ position: 'absolute', left: '12px', top: '12px' }} />
             <input
               type="text"
-              placeholder="Cari berkas arsip..."
+              placeholder={t('proj.arch.search_ph')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
@@ -177,11 +179,11 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                 height: '38px',
                 paddingLeft: '34px',
                 paddingRight: '12px',
-                borderRadius: '12px',
+                borderRadius: 'var(--ez-radius-control)',
                 border: '1px solid #EEF1F6',
                 background: '#FAFAF8',
                 fontSize: '13px',
-                color: '#141412',
+                color: 'var(--ez-color-text-primary)',
                 outline: 'none',
               }}
             />
@@ -195,23 +197,23 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                 style={{
                   height: '32px',
                   padding: '0 12px',
-                  borderRadius: '999px',
+                  borderRadius: 'var(--ez-radius-pill)',
                   fontSize: '12px',
                   fontWeight: yearFilter === year ? 700 : 600,
-                  background: yearFilter === year ? '#E3EEFB' : '#FAFAF8',
+                  background: yearFilter === year ? 'var(--ez-pastel-sky)' : '#FAFAF8',
                   color: yearFilter === year ? '#2456A8' : '#6B6B64',
                   border: 'none',
                   cursor: 'pointer',
                 }}
               >
-                {year === 'all' ? 'Semua Tahun' : year}
+                {year === 'all' ? t('proj.arch.all_years') : year}
               </button>
             ))}
           </div>
         </div>
 
         <div style={{ fontSize: '12.5px', color: '#6B6B64', fontWeight: 600 }}>
-          Menampilkan <span style={{ color: '#141412', fontWeight: 800 }}>{filteredProjects.length}</span> berkas arsip
+          {t('proj.arch.showing_a')}{' '}<span style={{ color: 'var(--ez-color-text-primary)', fontWeight: 800 }}>{filteredProjects.length}</span>{' '}{t('proj.arch.showing_b')}
         </div>
       </div>
 
@@ -220,8 +222,8 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
         <div
           className="ezdb-anim"
           style={{
-            background: '#FFFFFF',
-            borderRadius: '22px',
+            background: 'var(--ez-color-surface)',
+            borderRadius: 'var(--ez-radius-card)',
             border: '1px solid #EEF1F6',
             boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
             padding: '48px 24px',
@@ -237,9 +239,9 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
             style={{
               width: '56px',
               height: '56px',
-              borderRadius: '18px',
+              borderRadius: 'var(--ez-radius-control)',
               background: '#F1F5F9',
-              color: '#64748B',
+              color: 'var(--ez-color-text-muted)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -248,11 +250,11 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
           >
             <Archive size={26} />
           </div>
-          <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#141412', margin: '0 0 6px 0' }}>
-            Gudang Arsip Kosong
+          <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
+            {t('proj.arch.empty_t')}
           </h3>
           <p style={{ fontSize: '13px', color: '#6B6B64', maxWidth: '380px', margin: '0 0 16px 0', lineHeight: 1.5 }}>
-            Proyek yang telah selesai dapat dipindahkan ke arsip untuk merapikan ruang kerja Anda dan tetap tersimpan sebagai data historis.
+            {t('proj.arch.empty_b')}
           </p>
         </div>
       ) : (
@@ -271,8 +273,8 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                 key={proj.id}
                 className="ezdb-anim"
                 style={{
-                  background: '#FFFFFF',
-                  borderRadius: '22px',
+                  background: 'var(--ez-color-surface)',
+                  borderRadius: 'var(--ez-radius-card)',
                   border: '1px solid #EEF1F6',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
                   padding: '22px',
@@ -291,8 +293,8 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                         fontSize: '11px',
                         fontWeight: 700,
                         padding: '5px 12px',
-                        borderRadius: '999px',
-                        background: '#E3EEFB',
+                        borderRadius: 'var(--ez-radius-pill)',
+                        background: 'var(--ez-pastel-sky)',
                         color: '#2456A8',
                         whiteSpace: 'nowrap',
                       }}
@@ -305,9 +307,9 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                         fontSize: '11px',
                         fontWeight: 700,
                         padding: '5px 12px',
-                        borderRadius: '999px',
+                        borderRadius: 'var(--ez-radius-pill)',
                         background: '#F1F5F9',
-                        color: '#64748B',
+                        color: 'var(--ez-color-text-muted)',
                         whiteSpace: 'nowrap',
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -315,7 +317,7 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                       }}
                     >
                       <Archive size={11} />
-                      <span>ARSIP HISTORIS</span>
+                      <span>{t('proj.arch.badge')}</span>
                     </span>
                   </div>
 
@@ -324,7 +326,7 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                     style={{
                       fontSize: '15px',
                       fontWeight: 800,
-                      color: '#141412',
+                      color: 'var(--ez-color-text-primary)',
                       margin: '0 0 4px 0',
                       lineHeight: 1.3,
                     }}
@@ -334,16 +336,16 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6B6B64', marginBottom: '12px' }}>
                     <MapPin size={12} color="#8A8A84" />
-                    <span>{proj.location || 'Indonesia'}</span>
+                    <span>{proj.location || t('proj.arch.loc_default')}</span>
                     <span>•</span>
-                    <span>{proj.clientName || proj.client || 'Klien'}</span>
+                    <span>{proj.clientName || proj.client || t('proj.arch.client_default')}</span>
                   </div>
 
                   {/* Summary Box */}
                   <div
                     style={{
                       background: '#FAFAF8',
-                      borderRadius: '12px',
+                      borderRadius: 'var(--ez-radius-control)',
                       padding: '10px 12px',
                       border: '1px solid #EEF1F6',
                       fontSize: '12px',
@@ -353,12 +355,12 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6B6B64' }}>
-                      <span>Nilai Historis RAB:</span>
-                      <span style={{ fontWeight: 700, color: '#141412' }}>{formatRupiah(totalCost)}</span>
+                      <span>{t('proj.arch.hist_t')}</span>
+                      <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(totalCost)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6B6B64' }}>
-                      <span>Tipe Bangunan:</span>
-                      <span style={{ fontWeight: 600, color: '#141412' }}>{proj.buildingType || 'Umum'}</span>
+                      <span>{t('proj.arch.type_t')}</span>
+                      <span style={{ fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>{proj.buildingType || t('proj.arch.type_default')}</span>
                     </div>
                   </div>
                 </div>
@@ -370,8 +372,8 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                     style={{
                       height: '36px',
                       padding: '0 16px',
-                      borderRadius: '12px',
-                      background: '#2563EB',
+                      borderRadius: 'var(--ez-radius-control)',
+                      background: 'var(--ez-color-primary)',
                       color: '#FFFFFF',
                       fontSize: '13px',
                       fontWeight: 700,
@@ -384,20 +386,20 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                     }}
                   >
                     <RotateCcw size={13} />
-                    <span>Pulihkan Proyek</span>
+                    <span>{t('proj.arch.restore_btn')}</span>
                   </button>
 
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button
                       onClick={() => handleExportArchiveBundle(proj)}
-                      title="Unduh Berkas Arsip"
+                      title={t('proj.arch.export_title')}
                       style={{
                         height: '36px',
                         padding: '0 12px',
-                        borderRadius: '12px',
-                        background: '#FFFFFF',
+                        borderRadius: 'var(--ez-radius-control)',
+                        background: 'var(--ez-color-surface)',
                         border: '1px solid #E2E8F0',
-                        color: '#141412',
+                        color: 'var(--ez-color-text-primary)',
                         fontSize: '12px',
                         fontWeight: 700,
                         cursor: 'pointer',
@@ -407,16 +409,16 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                       }}
                     >
                       <Download size={13} />
-                      <span>Export</span>
+                      <span>{t('proj.arch.export_btn')}</span>
                     </button>
 
                     <button
                       onClick={() => handleDeletePermanent(proj)}
-                      title="Hapus Permanen"
+                      title={t('proj.arch.delete_title')}
                       style={{
                         height: '36px',
                         width: '36px',
-                        borderRadius: '12px',
+                        borderRadius: 'var(--ez-radius-control)',
                         background: '#FCE9E9',
                         border: '1px solid #F5D5D5',
                         color: '#B54747',

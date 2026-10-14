@@ -349,7 +349,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
                         flexShrink: 0,
                         width: 40,
                         height: 40,
-                        borderRadius: 12,
+                        borderRadius: 'var(--ez-radius-control)',
                         background: 'var(--ezrab-blue-soft, #eff6ff)',
                         display: 'flex',
                         alignItems: 'center',

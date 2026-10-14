@@ -184,7 +184,7 @@ export const AboutWorkflowSection: React.FC = () => {
               height: '42px',
               borderRadius: '10px',
               background: '#EFF6FF',
-              color: '#2563EB',
+              color: 'var(--ez-color-primary)',
               display: 'grid',
               placeItems: 'center',
               flexShrink: 0
@@ -195,7 +195,7 @@ export const AboutWorkflowSection: React.FC = () => {
               <div style={{ fontSize: '15px', fontWeight: 800, color: '#0B1B33', marginBottom: '3px' }}>
                 Tahap {activeStep + 1}: {current.detailTitle}
               </div>
-              <div style={{ fontSize: '13.5px', color: '#64748B', maxWidth: '680px' }}>
+              <div style={{ fontSize: '13.5px', color: 'var(--ez-color-text-muted)', maxWidth: '680px' }}>
                 {current.detailDesc}
               </div>
             </div>
@@ -207,7 +207,7 @@ export const AboutWorkflowSection: React.FC = () => {
             gap: '12px',
             fontFamily: 'monospace',
             fontSize: '11.5px',
-            color: '#2563EB',
+            color: 'var(--ez-color-primary)',
             background: '#EFF6FF',
             padding: '8px 16px',
             borderRadius: '8px',

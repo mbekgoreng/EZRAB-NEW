@@ -165,8 +165,8 @@ export const ProjectFinanceView: React.FC<ProjectFinanceViewProps> = ({
       {/* Navigation Sub-Tabs Bar */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '22px',
+          backgroundColor: 'var(--ez-color-surface)',
+          borderRadius: 'var(--ez-radius-card)',
           border: '1px solid #EEF1F6',
           padding: '6px 8px',
           display: 'flex',
@@ -189,9 +189,9 @@ export const ProjectFinanceView: React.FC<ProjectFinanceViewProps> = ({
                 alignItems: 'center',
                 gap: '6px',
                 padding: '8px 12px',
-                borderRadius: '12px',
+                borderRadius: 'var(--ez-radius-control)',
                 border: 'none',
-                backgroundColor: isActive ? '#2563EB' : 'transparent',
+                backgroundColor: isActive ? 'var(--ez-color-primary)' : 'transparent',
                 color: isActive ? '#FFFFFF' : '#475569',
                 fontSize: '12px',
                 fontWeight: isActive ? 700 : 600,
@@ -208,9 +208,9 @@ export const ProjectFinanceView: React.FC<ProjectFinanceViewProps> = ({
                     fontSize: '10px',
                     fontWeight: 750,
                     padding: '1px 5px',
-                    borderRadius: '999px',
+                    borderRadius: 'var(--ez-radius-pill)',
                     backgroundColor: isActive ? 'rgba(255, 255, 255, 0.25)' : '#F1F5F9',
-                    color: isActive ? '#FFFFFF' : '#64748B',
+                    color: isActive ? '#FFFFFF' : 'var(--ez-color-text-muted)',
                   }}
                 >
                   {tab.count}

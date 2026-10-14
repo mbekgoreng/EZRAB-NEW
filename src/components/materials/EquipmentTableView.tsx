@@ -34,9 +34,9 @@ export const EquipmentTableView: React.FC<EquipmentTableViewProps> = ({
 
   if (equipmentList.length === 0) {
     return (
-      <div style={{ padding: '48px 24px', textAlign: 'center', color: '#64748B' }}>
+      <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>
         <Truck size={40} color="#94A3B8" style={{ margin: '0 auto 12px' }} />
-        <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
+        <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
           Tidak ada peralatan ditemukan
         </div>
         <div style={{ fontSize: '12px', marginTop: '4px' }}>
@@ -72,35 +72,35 @@ export const EquipmentTableView: React.FC<EquipmentTableViewProps> = ({
           <col style={{ width: '110px' }} />
         </colgroup>
         <thead>
-          <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+          <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0' }}>
             <th style={{ padding: '10px 8px', textAlign: 'center' }}>
               <input type="checkbox" style={{ cursor: 'pointer' }} />
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Peralatan & Kapasitas (HSD E)
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Kategori Alat
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Tenaga (HP)
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Satuan
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Sewa / Jam
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Sewa / Hari (7 Jam)
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               BBM (L/jam)
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Operator
             </th>
-            <th style={{ padding: '10px 6px', textAlign: 'center', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 6px', textAlign: 'center', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Aksi
             </th>
           </tr>
@@ -157,7 +157,7 @@ export const EquipmentTableView: React.FC<EquipmentTableViewProps> = ({
                       <div
                         style={{
                           fontWeight: 700,
-                          color: '#0F172A',
+                          color: 'var(--ez-color-text-primary)',
                           fontSize: '12.5px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -180,7 +180,7 @@ export const EquipmentTableView: React.FC<EquipmentTableViewProps> = ({
                         >
                           {eq.code}
                         </span>
-                        <span style={{ fontSize: '10.5px', color: '#64748B' }}>
+                        <span style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>
                           Kap: {eq.capacity}
                         </span>
                       </div>
@@ -222,7 +222,7 @@ export const EquipmentTableView: React.FC<EquipmentTableViewProps> = ({
                       fontSize: '11px',
                       fontWeight: 800,
                       color: '#475569',
-                      backgroundColor: '#F8FAFC',
+                      backgroundColor: 'var(--ez-color-surface-secondary)',
                       padding: '2px 6px',
                       borderRadius: '5px',
                       border: '1px solid #E2E8F0',
@@ -239,7 +239,7 @@ export const EquipmentTableView: React.FC<EquipmentTableViewProps> = ({
                     const isOverridden = Boolean(activeOverride && activeOverride.active);
                     return (
                       <>
-                        <div style={{ fontWeight: 800, color: isOverridden ? '#1D4ED8' : '#0F172A', fontSize: '13px' }}>
+                        <div style={{ fontWeight: 800, color: isOverridden ? 'var(--ez-color-primary-hover)' : '#0F172A', fontSize: '13px' }}>
                           Rp {(isOverridden && activeOverride ? activeOverride.price : eq.rentalPricePerHour).toLocaleString('id-ID')}
                         </div>
                         {isOverridden ? (
@@ -252,7 +252,7 @@ export const EquipmentTableView: React.FC<EquipmentTableViewProps> = ({
                             </span>
                           </div>
                         ) : (
-                          <div style={{ fontSize: '10px', color: '#64748B' }}>per jam kerja</div>
+                          <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>per jam kerja</div>
                         )}
                       </>
                     );
@@ -261,7 +261,7 @@ export const EquipmentTableView: React.FC<EquipmentTableViewProps> = ({
 
                 {/* Sewa / Hari */}
                 <td style={{ padding: `${padY} 10px` }}>
-                  <div style={{ fontWeight: 700, color: '#2563EB', fontSize: '12.5px' }}>
+                  <div style={{ fontWeight: 700, color: 'var(--ez-color-primary)', fontSize: '12.5px' }}>
                     Rp {eq.rentalPricePerDay.toLocaleString('id-ID')}
                   </div>
                   <div style={{ fontSize: '10px', color: '#94A3B8' }}>per hari (8 jam)</div>
@@ -311,8 +311,8 @@ export const EquipmentTableView: React.FC<EquipmentTableViewProps> = ({
                         padding: '4px 6px',
                         borderRadius: '6px',
                         border: '1px solid #E2E8F0',
-                        backgroundColor: '#ffffff',
-                        color: '#64748B',
+                        backgroundColor: 'var(--ez-color-surface)',
+                        color: 'var(--ez-color-text-muted)',
                         fontSize: '10.5px',
                         fontWeight: 700,
                         cursor: 'pointer',
@@ -330,7 +330,7 @@ export const EquipmentTableView: React.FC<EquipmentTableViewProps> = ({
                         borderRadius: '6px',
                         border: '1px solid #DBEAFE',
                         backgroundColor: '#EFF6FF',
-                        color: '#2563EB',
+                        color: 'var(--ez-color-primary)',
                         fontSize: '10.5px',
                         fontWeight: 700,
                         cursor: 'pointer',

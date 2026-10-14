@@ -175,10 +175,10 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
 
   if (!currentProject) {
     return (
-      <div style={{ background: '#ffffff', borderRadius: '22px', padding: '48px 24px', textAlign: 'center', border: '1px solid #EEF1F6', boxShadow: '0 4px 20px rgba(0,0,0,0.045)', fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+      <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-card)', padding: '48px 24px', textAlign: 'center', border: '1px solid #EEF1F6', boxShadow: '0 4px 20px rgba(0,0,0,0.045)', fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
         <FolderKanban size={36} color="#64748B" style={{ margin: '0 auto 12px' }} />
-        <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px' }}>Belum Ada Proyek Aktif</h3>
-        <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>Silakan buat atau pilih proyek di menu utama untuk melihat jadwal dan Kurva S.</p>
+        <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: '0 0 6px' }}>Belum Ada Proyek Aktif</h3>
+        <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', margin: 0 }}>Silakan buat atau pilih proyek di menu utama untuk melihat jadwal dan Kurva S.</p>
       </div>
     );
   }
@@ -188,8 +188,8 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
       {/* Header Card */}
       <div
         style={{
-          background: '#ffffff',
-          borderRadius: '22px',
+          background: 'var(--ez-color-surface)',
+          borderRadius: 'var(--ez-radius-card)',
           border: '1px solid #EEF1F6',
           padding: '20px 24px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
@@ -205,38 +205,38 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
             style={{
               width: '44px',
               height: '44px',
-              borderRadius: '12px',
+              borderRadius: 'var(--ez-radius-control)',
               background: '#EFF6FF',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#2563EB',
+              color: 'var(--ez-color-primary)',
             }}
           >
             <FolderKanban size={24} />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+              <h1 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                 {currentProject.name}
               </h1>
               <span
                 style={{
                   fontSize: '11px',
                   fontWeight: 700,
-                  background: '#E2F4D8',
+                  background: 'var(--ez-pastel-mint)',
                   color: '#2c6e2c',
                   padding: '2px 8px',
-                  borderRadius: '999px',
+                  borderRadius: 'var(--ez-radius-pill)',
                 }}
               >
                 {projectScheduleTasks.length === 0 ? 'Fase Persiapan' : 'Fase Konstruksi'}
               </span>
             </div>
-            <p style={{ fontSize: '12px', color: '#64748B', margin: '4px 0 0' }}>
-              Klien: <strong style={{ color: '#0F172A' }}>{currentProject.client || currentProject.clientName || '-'}</strong> · Lokasi:{' '}
-              <strong style={{ color: '#0F172A' }}>{currentProject.location || '-'}</strong> · Total RAB:{' '}
-              <strong style={{ color: '#2563EB' }}>{formatCurrencyIDR(currentProject.totalRab || 0)}</strong>
+            <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '4px 0 0' }}>
+              Klien: <strong style={{ color: 'var(--ez-color-text-primary)' }}>{currentProject.client || currentProject.clientName || '-'}</strong> · Lokasi:{' '}
+              <strong style={{ color: 'var(--ez-color-text-primary)' }}>{currentProject.location || '-'}</strong> · Total RAB:{' '}
+              <strong style={{ color: 'var(--ez-color-primary)' }}>{formatCurrencyIDR(currentProject.totalRab || 0)}</strong>
             </p>
           </div>
         </div>
@@ -271,7 +271,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
               height: '38px',
               padding: '0 16px',
               borderRadius: '10px',
-              background: '#2563EB',
+              background: 'var(--ez-color-primary)',
               color: '#ffffff',
               fontSize: '12.5px',
               fontWeight: 600,
@@ -291,24 +291,24 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-        <div className="ez-stat" style={{ background: '#FDF3D8', borderRadius: '22px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: 'var(--ez-pastel-cream)', borderRadius: 'var(--ez-radius-card)', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
               Target Rencana
             </span>
             <Clock size={15} color="#2563EB" />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', marginTop: '6px' }}>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '6px' }}>
             {projectScheduleTasks.length === 0 ? '0%' : '100%'}
           </div>
-          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '4px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
             {projectScheduleTasks.length === 0 ? 'Belum ada jadwal tahapan' : `${projectScheduleTasks.length} tahapan terjadwal`}
           </div>
         </div>
 
-        <div className="ez-stat" style={{ background: '#E2F4D8', borderRadius: '22px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: 'var(--ez-pastel-mint)', borderRadius: 'var(--ez-radius-card)', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
               Realisasi Lapangan
             </span>
             <CheckCircle2 size={15} color="#16A34A" />
@@ -316,37 +316,37 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
           <div style={{ fontSize: '24px', fontWeight: 800, color: '#16A34A', marginTop: '6px' }}>
             {currentActualProgress}%
           </div>
-          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '4px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
             Progres kumulatif bobot kerja aktual
           </div>
         </div>
 
-        <div className="ez-stat" style={{ background: '#FFE9D6', borderRadius: '22px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: 'var(--ez-pastel-peach)', borderRadius: 'var(--ez-radius-card)', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
               Total Nilai Proyek
             </span>
             <TrendingUp size={15} color="#2563EB" />
           </div>
-          <div style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', marginTop: '6px' }}>
+          <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '6px' }}>
             {formatCurrencyIDR(currentProject.totalRab || 0)}
           </div>
-          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '4px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
             {projectRabItems.length} item pekerjaan RAB terhubung
           </div>
         </div>
 
-        <div className="ez-stat" style={{ background: '#E3EEFB', borderRadius: '22px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: 'var(--ez-pastel-sky)', borderRadius: 'var(--ez-radius-card)', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
               Status Pelaksanaan
             </span>
             <ShieldCheck size={15} color="#2563EB" />
           </div>
-          <div style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', marginTop: '6px' }}>
+          <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '6px' }}>
             {currentActualProgress >= 100 ? 'Selesai' : (currentActualProgress > 0 ? 'Berjalan' : 'Persiapan')}
           </div>
-          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '4px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
             {projectScheduleTasks.filter((t) => t.status === 'COMPLETED').length} dari {projectScheduleTasks.length} tahapan rampung
           </div>
         </div>
@@ -355,8 +355,8 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
       {/* S-Curve (Kurva S) Visual Canvas */}
       <div
         style={{
-          background: '#ffffff',
-          borderRadius: '22px',
+          background: 'var(--ez-color-surface)',
+          borderRadius: 'var(--ez-radius-card)',
           border: '1px solid #EEF1F6',
           padding: '24px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
@@ -369,23 +369,23 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <LineChart size={18} color="#2563EB" />
-              <h2 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+              <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                 Kurva S (S-Curve): Rencana vs Realisasi
               </h2>
             </div>
-            <p style={{ fontSize: '12px', color: '#64748B', margin: '4px 0 0' }}>
+            <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '4px 0 0' }}>
               Grafik kumulatif bobot (%) pekerjaan selama 12 pekan masa pelaksanaan
             </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px', fontWeight: 600 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '12px', height: '3px', background: '#2563EB', borderRadius: '2px' }} />
-              <span style={{ color: '#0F172A' }}>Rencana (Plan)</span>
+              <div style={{ width: '12px', height: '3px', background: 'var(--ez-color-primary)', borderRadius: '2px' }} />
+              <span style={{ color: 'var(--ez-color-text-primary)' }}>Rencana (Plan)</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{ width: '12px', height: '3px', background: '#16A34A', borderRadius: '2px' }} />
-              <span style={{ color: '#0F172A' }}>Realisasi (Actual)</span>
+              <span style={{ color: 'var(--ez-color-text-primary)' }}>Realisasi (Actual)</span>
             </div>
           </div>
         </div>
@@ -410,7 +410,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
             .scurve-line, .scurve-area, .scurve-dot, .scurve-ping { animation: none !important; opacity: 1 !important; stroke-dashoffset: 0 !important; transform: none !important; }
           }
         `}</style>
-        <div style={{ position: 'relative', width: '100%', height: '240px', background: '#FFFFFF', borderRadius: '16px', padding: '16px', border: '1px solid #EEF1F6' }}>
+        <div style={{ position: 'relative', width: '100%', height: '240px', background: 'var(--ez-color-surface)', borderRadius: '16px', padding: '16px', border: '1px solid #EEF1F6' }}>
           <svg viewBox="0 0 1000 200" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
             <defs>
               <linearGradient id="scurvePlanGrad" x1="0" y1="0" x2="0" y2="1">
@@ -541,8 +541,8 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
       {/* Milestone & Task Table */}
       <div
         style={{
-          background: '#ffffff',
-          borderRadius: '22px',
+          background: 'var(--ez-color-surface)',
+          borderRadius: 'var(--ez-radius-card)',
           border: '1px solid #EEF1F6',
           padding: '20px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
@@ -550,10 +550,10 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>
-            <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Jadwal Tahapan Pelaksanaan (Time Schedule & Gantt)
             </h3>
-            <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>
+            <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0' }}>
               Bobot (%) dan progres aktual tiap tahapan pekerjaan
             </p>
           </div>
@@ -570,13 +570,13 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
               gap: '12px',
             }}
           >
-            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#EFF6FF', color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', background: '#EFF6FF', color: 'var(--ez-color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Calendar size={24} />
             </div>
-            <div style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A' }}>
+            <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
               Belum Ada Jadwal Tahapan
             </div>
-            <p style={{ fontSize: '13px', color: '#64748B', maxWidth: '380px', margin: 0, lineHeight: 1.5 }}>
+            <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', maxWidth: '380px', margin: 0, lineHeight: 1.5 }}>
               Tambahkan tahapan pelaksanaan atau sinkronkan langsung dari RAB untuk mengaktifkan pemantauan Kurva S dan timeline progres proyek.
             </p>
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -608,7 +608,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                   height: '36px',
                   padding: '0 16px',
                   borderRadius: '10px',
-                  background: '#2563EB',
+                  background: 'var(--ez-color-primary)',
                   color: '#ffffff',
                   fontSize: '12.5px',
                   fontWeight: 600,
@@ -628,7 +628,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
-                <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', textAlign: 'left', color: '#64748B', fontSize: '11.5px', fontWeight: 700, textTransform: 'uppercase' }}>
+                <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', textAlign: 'left', color: 'var(--ez-color-text-muted)', fontSize: '11.5px', fontWeight: 700, textTransform: 'uppercase' }}>
                   <th style={{ padding: '10px 14px' }}>Tahapan Pekerjaan</th>
                   <th style={{ padding: '10px 14px' }}>Kategori</th>
                   <th style={{ padding: '10px 14px', textAlign: 'right' }}>Bobot (%)</th>
@@ -641,22 +641,22 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
               <tbody>
                 {projectScheduleTasks.map((task) => (
                   <tr key={task.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <td style={{ padding: '12px 14px', fontWeight: 600, color: '#0F172A' }}>
+                    <td style={{ padding: '12px 14px', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>
                       {task.name}
                     </td>
-                    <td style={{ padding: '12px 14px', color: '#64748B' }}>
+                    <td style={{ padding: '12px 14px', color: 'var(--ez-color-text-muted)' }}>
                       {task.category}
                     </td>
-                    <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700, color: '#2563EB' }}>
+                    <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-primary)' }}>
                       {task.weightPercent}%
                     </td>
-                    <td style={{ padding: '12px 14px', color: '#0F172A' }}>
+                    <td style={{ padding: '12px 14px', color: 'var(--ez-color-text-primary)' }}>
                       {task.startDate} s/d {task.endDate} ({task.durationWeeks} pekan)
                     </td>
                     <td style={{ padding: '12px 14px', textAlign: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                         <div style={{ width: '70px', height: '6px', background: '#E2E8F0', borderRadius: '3px', overflow: 'hidden' }}>
-                          <div style={{ width: `${task.actualProgressPercent}%`, height: '100%', background: task.actualProgressPercent === 100 ? '#16A34A' : '#2563EB' }} />
+                          <div style={{ width: `${task.actualProgressPercent}%`, height: '100%', background: task.actualProgressPercent === 100 ? '#16A34A' : 'var(--ez-color-primary)' }} />
                         </div>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: task.actualProgressPercent === 100 ? '#16A34A' : '#0F172A' }}>
                           {task.actualProgressPercent}%
@@ -669,9 +669,9 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                           fontSize: '11px',
                           fontWeight: 700,
                           padding: '3px 8px',
-                          borderRadius: '999px',
+                          borderRadius: 'var(--ez-radius-pill)',
                           background:
-                            task.status === 'COMPLETED' ? '#E2F4D8' : task.status === 'ON_TRACK' ? '#E3EEFB' : '#FDF3D8',
+                            task.status === 'COMPLETED' ? 'var(--ez-pastel-mint)' : task.status === 'ON_TRACK' ? 'var(--ez-pastel-sky)' : 'var(--ez-pastel-cream)',
                           color:
                             task.status === 'COMPLETED' ? '#2c6e2c' : task.status === 'ON_TRACK' ? '#2456a8' : '#a8780a',
                         }}
@@ -689,9 +689,9 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                           }}
                           style={{
                             padding: '4px 10px',
-                            background: '#E3EEFB',
+                            background: 'var(--ez-pastel-sky)',
                             border: 'none',
-                            borderRadius: '999px',
+                            borderRadius: 'var(--ez-radius-pill)',
                             color: '#2456a8',
                             fontSize: '11.5px',
                             fontWeight: 600,
@@ -710,7 +710,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                             padding: '4px 8px',
                             background: '#FEE2E2',
                             border: 'none',
-                            borderRadius: '999px',
+                            borderRadius: 'var(--ez-radius-pill)',
                             color: '#DC2626',
                             cursor: 'pointer',
                           }}
@@ -730,10 +730,10 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
       {/* Add Task Modal */}
       {isAddModalOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#ffffff', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+          <div style={{ background: 'var(--ez-color-surface)', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: '#0F172A' }}>Tambah Tahapan Proyek</h3>
-              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--ez-color-text-primary)' }}>Tambah Tahapan Proyek</h3>
+              <button onClick={() => setIsAddModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ez-color-text-muted)' }}>
                 <X size={18} />
               </button>
             </div>
@@ -814,7 +814,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                 </button>
                 <button
                   type="submit"
-                  style={{ height: '36px', padding: '0 16px', borderRadius: '10px', background: '#2563EB', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                  style={{ height: '36px', padding: '0 16px', borderRadius: '10px', background: 'var(--ez-color-primary)', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
                 >
                   Simpan Tahapan
                 </button>
@@ -827,10 +827,10 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
       {/* Edit Progress Modal */}
       {editingTask && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#ffffff', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+          <div style={{ background: 'var(--ez-color-surface)', borderRadius: '20px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: '#0F172A' }}>Update Progres: {editingTask.name}</h3>
-              <button onClick={() => setEditingTask(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: 'var(--ez-color-text-primary)' }}>Update Progres: {editingTask.name}</h3>
+              <button onClick={() => setEditingTask(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ez-color-text-muted)' }}>
                 <X size={18} />
               </button>
             </div>

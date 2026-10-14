@@ -129,7 +129,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
   const statusBadge = (st: TerminStatus) => {
     const config: Record<TerminStatus, { bg: string; color: string; label: string }> = {
       PLANNED: { bg: '#F1F5F9', color: '#475569', label: 'Direncanakan' },
-      READY_TO_INVOICE: { bg: '#EFF6FF', color: '#1D4ED8', label: 'Siap Ditagihkan' },
+      READY_TO_INVOICE: { bg: '#EFF6FF', color: 'var(--ez-color-primary-hover)', label: 'Siap Ditagihkan' },
       INVOICED: { bg: '#E0E7FF', color: '#4338CA', label: 'Ditagihkan' },
       PARTIALLY_PAID: { bg: '#FEF3C7', color: '#B45309', label: 'Dibayar Sebagian' },
       PAID: { bg: '#DCFCE7', color: '#15803D', label: 'Lunas' },
@@ -161,7 +161,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
       {/* 1. Header & Allocation Bar */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
           border: '1px solid #E2E8F0',
           padding: '20px 24px',
@@ -173,10 +173,10 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Termin & Penagihan Bertahap
             </h2>
-            <div style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
+            <div style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
               Atur milestone pembayaran berdasarkan progres lapangan atau serah terima pekerjaan.
             </div>
           </div>
@@ -187,7 +187,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
             style={{
               padding: '10px 18px',
               borderRadius: '10px',
-              backgroundColor: '#2563EB',
+              backgroundColor: 'var(--ez-color-primary)',
               color: '#FFFFFF',
               border: 'none',
               fontSize: '13px',
@@ -218,7 +218,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                     ? '#16A34A'
                     : totalAllocatedPercentage > 100
                     ? '#DC2626'
-                    : '#2563EB',
+                    : 'var(--ez-color-primary)',
               }}
             >
               {totalAllocatedPercentage === 100
@@ -232,7 +232,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
           <div
             style={{
               height: '8px',
-              borderRadius: '999px',
+              borderRadius: 'var(--ez-radius-pill)',
               backgroundColor: '#F1F5F9',
               overflow: 'hidden',
               display: 'flex',
@@ -247,7 +247,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                     ? '#16A34A'
                     : totalAllocatedPercentage > 100
                     ? '#DC2626'
-                    : '#2563EB',
+                    : 'var(--ez-color-primary)',
                 transition: 'width 200ms ease',
               }}
             />
@@ -259,7 +259,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
       {terms.length === 0 ? (
         <div
           style={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
             border: '1px solid #E2E8F0',
             padding: '48px 20px',
@@ -270,13 +270,13 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
             gap: '12px',
           }}
         >
-          <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Layers size={24} color="#2563EB" />
           </div>
-          <h3 style={{ fontSize: '16px', fontWeight: 750, color: '#0F172A', margin: 0 }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
             Belum ada termin penagihan
           </h3>
-          <p style={{ fontSize: '13px', color: '#64748B', maxWidth: '420px', margin: 0 }}>
+          <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', maxWidth: '420px', margin: 0 }}>
             Buat termin seperti DP 20%, Progress 30%, Progress 60%, dan Serah Terima untuk menagih pembayaran klien secara terstruktur.
           </p>
           <button
@@ -286,7 +286,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
               marginTop: '8px',
               padding: '8px 16px',
               borderRadius: '8px',
-              backgroundColor: '#2563EB',
+              backgroundColor: 'var(--ez-color-primary)',
               color: '#FFFFFF',
               border: 'none',
               fontSize: '13px',
@@ -307,7 +307,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
             <div
               key={term.id}
               style={{
-                backgroundColor: '#FFFFFF',
+                backgroundColor: 'var(--ez-color-surface)',
                 borderRadius: '14px',
                 border: '1px solid #E2E8F0',
                 padding: '16px 18px',
@@ -327,7 +327,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                         height: '24px',
                         borderRadius: '6px',
                         backgroundColor: '#EFF6FF',
-                        color: '#2563EB',
+                        color: 'var(--ez-color-primary)',
                         fontSize: '12px',
                         fontWeight: 800,
                         display: 'flex',
@@ -337,7 +337,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                     >
                       {idx + 1}
                     </span>
-                    <span style={{ fontSize: '14px', fontWeight: 750, color: '#0F172A' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
                       {term.name}
                     </span>
                   </div>
@@ -345,22 +345,22 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginTop: '2px' }}>
-                  <span style={{ fontSize: '20px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
+                  <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', letterSpacing: '-0.02em' }}>
                     {formatRupiah(term.amount)}
                   </span>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#2563EB', backgroundColor: '#EFF6FF', padding: '1px 6px', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-primary)', backgroundColor: '#EFF6FF', padding: '1px 6px', borderRadius: '4px' }}>
                     {term.percentage}%
                   </span>
                 </div>
 
                 {term.triggerDescription && (
-                  <div style={{ fontSize: '12px', color: '#475569', backgroundColor: '#F8FAFC', padding: '6px 8px', borderRadius: '6px', border: '1px solid #F1F5F9' }}>
+                  <div style={{ fontSize: '12px', color: '#475569', backgroundColor: 'var(--ez-color-surface-secondary)', padding: '6px 8px', borderRadius: '6px', border: '1px solid #F1F5F9' }}>
                     <strong>Syarat / Trigger:</strong> {term.triggerDescription}
                   </div>
                 )}
 
                 {term.dueDate && (
-                  <div style={{ fontSize: '11.5px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Calendar size={13} />
                     <span>Target penagihan: {term.dueDate}</span>
                   </div>
@@ -387,7 +387,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                       width: '30px',
                       height: '30px',
                       borderRadius: '6px',
-                      backgroundColor: '#F8FAFC',
+                      backgroundColor: 'var(--ez-color-surface-secondary)',
                       border: '1px solid #E2E8F0',
                       color: '#475569',
                       display: 'flex',
@@ -410,7 +410,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                       width: '30px',
                       height: '30px',
                       borderRadius: '6px',
-                      backgroundColor: '#F8FAFC',
+                      backgroundColor: 'var(--ez-color-surface-secondary)',
                       border: '1px solid #E2E8F0',
                       color: '#DC2626',
                       display: 'flex',
@@ -432,7 +432,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                       borderRadius: '6px',
                       backgroundColor: '#EFF6FF',
                       border: '1px solid #BFDBFE',
-                      color: '#1D4ED8',
+                      color: 'var(--ez-color-primary-hover)',
                       fontSize: '12px',
                       fontWeight: 650,
                       cursor: 'pointer',
@@ -468,7 +468,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
         >
           <div
             style={{
-              backgroundColor: '#FFFFFF',
+              backgroundColor: 'var(--ez-color-surface)',
               borderRadius: '16px',
               maxWidth: '480px',
               width: '100%',
@@ -480,13 +480,13 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                 {editingTermin ? 'Edit Termin Penagihan' : 'Tambah Termin Penagihan'}
               </h3>
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', fontSize: '18px' }}
+                style={{ background: 'none', border: 'none', color: 'var(--ez-color-text-muted)', cursor: 'pointer', fontSize: '18px' }}
               >
                 &times;
               </button>
@@ -623,7 +623,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                       border: '1px solid #CBD5E1',
                       fontSize: '13px',
                       outline: 'none',
-                      backgroundColor: '#FFFFFF',
+                      backgroundColor: 'var(--ez-color-surface)',
                       boxSizing: 'border-box',
                     }}
                   >
@@ -682,7 +682,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                   style={{
                     padding: '8px 20px',
                     borderRadius: '8px',
-                    backgroundColor: '#2563EB',
+                    backgroundColor: 'var(--ez-color-primary)',
                     color: '#FFFFFF',
                     border: 'none',
                     fontSize: '12.5px',

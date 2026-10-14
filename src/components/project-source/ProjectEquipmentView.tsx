@@ -102,15 +102,15 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
   };
 
   return (
-    <div style={{ background: '#FFFFFF', borderRadius: 12, border: '1px solid #E2E8F0', padding: 20 }}>
+    <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid #E2E8F0', padding: 20 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div>
-          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Truck size={20} color="#2563EB" />
             Daftar Peralatan Utama & Pendukung Proyek
           </h3>
-          <p style={{ margin: '4px 0 0 0', fontSize: 13, color: '#64748B' }}>
+          <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--ez-color-text-muted)' }}>
             Data peralatan berstandar tender untuk proyek {projectName ? `"${projectName}"` : ''} (tersimpan scoped per proyek).
           </p>
         </div>
@@ -118,7 +118,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
           onClick={handleOpenAdd}
           disabled={!projectId}
           style={{
-            background: '#2563EB',
+            background: 'var(--ez-color-primary)',
             color: '#FFFFFF',
             border: 0,
             borderRadius: 8,
@@ -142,23 +142,23 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
           style={{
             textAlign: 'center',
             padding: '40px 20px',
-            background: '#F8FAFC',
+            background: 'var(--ez-color-surface-secondary)',
             borderRadius: 10,
             border: '1px dashed #CBD5E1',
           }}
         >
           <Wrench size={36} color="#94A3B8" style={{ marginBottom: 10 }} />
           <div style={{ fontSize: 14, fontWeight: 700, color: '#334155' }}>Belum ada data peralatan proyek</div>
-          <p style={{ fontSize: 12.5, color: '#64748B', maxWidth: 420, margin: '6px auto 14px' }}>
+          <p style={{ fontSize: 12.5, color: 'var(--ez-color-text-muted)', maxWidth: 420, margin: '6px auto 14px' }}>
             Dokumen teknis seperti Daftar Alat & Personil dan Metode Pelaksanaan membutuhkan data peralatan aktual proyek.
           </p>
           <button
             onClick={handleOpenAdd}
             disabled={!projectId}
             style={{
-              background: '#FFFFFF',
+              background: 'var(--ez-color-surface)',
               border: '1px solid #CBD5E1',
-              color: '#2563EB',
+              color: 'var(--ez-color-primary)',
               borderRadius: 6,
               padding: '7px 14px',
               fontSize: 12.5,
@@ -173,7 +173,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
+              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>No</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Nama Peralatan</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Jenis / Tipe</th>
@@ -187,9 +187,9 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
             <tbody>
               {items.map((item, idx) => (
                 <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '10px 12px', color: '#64748B' }}>{idx + 1}</td>
-                  <td style={{ padding: '10px 12px', fontWeight: 650, color: '#0F172A' }}>{item.name}</td>
-                  <td style={{ padding: '10px 12px', color: '#2563EB', fontWeight: 600 }}>{item.type || '—'}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-muted)' }}>{idx + 1}</td>
+                  <td style={{ padding: '10px 12px', fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>{item.name}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--ez-color-primary)', fontWeight: 600 }}>{item.type || '—'}</td>
                   <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700 }}>{item.quantity ?? 1} unit</td>
                   <td style={{ padding: '10px 12px', color: '#334155' }}>{item.capacity || '—'}</td>
                   <td style={{ padding: '10px 12px' }}>
@@ -211,7 +211,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                     <div style={{ display: 'inline-flex', gap: 6 }}>
                       <button
                         onClick={() => handleOpenEdit(item)}
-                        style={{ border: 0, background: 'transparent', cursor: 'pointer', color: '#64748B', padding: 4 }}
+                        style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ez-color-text-muted)', padding: 4 }}
                         title="Edit Peralatan"
                       >
                         <Edit2 size={15} />
@@ -247,15 +247,15 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
         >
           <div
             style={{
-              background: '#FFFFFF',
-              borderRadius: 12,
+              background: 'var(--ez-color-surface)',
+              borderRadius: 'var(--ez-radius-control)',
               width: '100%',
               maxWidth: 500,
               padding: 24,
               boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)',
             }}
           >
-            <h4 style={{ margin: '0 0 16px 0', fontSize: 16, fontWeight: 750, color: '#0F172A' }}>
+            <h4 style={{ margin: '0 0 16px 0', fontSize: 16, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
               {editingItem ? 'Edit Peralatan Proyek' : 'Tambah Peralatan Proyek'}
             </h4>
             <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -346,7 +346,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                   onClick={() => setShowModal(false)}
                   style={{
                     border: '1px solid #CBD5E1',
-                    background: '#FFFFFF',
+                    background: 'var(--ez-color-surface)',
                     borderRadius: 6,
                     padding: '8px 14px',
                     fontSize: 13,
@@ -358,7 +358,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                 <button
                   type="submit"
                   style={{
-                    background: '#2563EB',
+                    background: 'var(--ez-color-primary)',
                     color: '#FFFFFF',
                     border: 0,
                     borderRadius: 6,

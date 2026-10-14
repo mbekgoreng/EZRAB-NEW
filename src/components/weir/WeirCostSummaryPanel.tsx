@@ -50,7 +50,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
           background: 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%)',
           borderRadius: '10px',
           padding: '14px 16px',
-          color: '#F8FAFC',
+          color: 'var(--ez-color-surface-secondary)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -109,7 +109,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
       {/* ── COST BREAKDOWN TABLE ────────────────────────────────── */}
       <div
         style={{
-          background: '#F8FAFC',
+          background: 'var(--ez-color-surface-secondary)',
           borderRadius: '8px',
           border: '1px solid #CBD5E1',
           overflow: 'hidden',
@@ -136,7 +136,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
       {/* ── WORK ITEMS ──────────────────────────────────────────── */}
       <div
         style={{
-          background: '#F8FAFC',
+          background: 'var(--ez-color-surface-secondary)',
           borderRadius: '8px',
           border: '1px solid #CBD5E1',
           overflow: 'hidden',
@@ -175,15 +175,15 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
               >
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '11px', fontWeight: 600, color: '#1E293B' }}>{wi.name}</div>
-                  <div style={{ fontSize: '9.5px', color: '#64748B', marginTop: '1px' }}>
+                  <div style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)', marginTop: '1px' }}>
                     {wi.quantity} {wi.unit} → AHSP: {wi.ahspCode} | Source: {wi.quantitySource}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'monospace', color: '#0F172A' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'monospace', color: 'var(--ez-color-text-primary)' }}>
                     {wi.priceStatus === 'RESOLVED' ? formatRupiah(wi.finalCost) : wi.priceStatus}
                   </div>
-                  <div style={{ fontSize: '9px', color: '#64748B' }}>
+                  <div style={{ fontSize: '9px', color: 'var(--ez-color-text-muted)' }}>
                     Direct: {formatRupiah(wi.directCost)}
                   </div>
                 </div>
@@ -196,7 +196,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
       {/* ── PARETO ANALYSIS ─────────────────────────────────────── */}
       <div
         style={{
-          background: '#F8FAFC',
+          background: 'var(--ez-color-surface-secondary)',
           borderRadius: '8px',
           border: '1px solid #CBD5E1',
           overflow: 'hidden',
@@ -226,7 +226,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
               <div key={idx} style={{ padding: '4px 0', borderBottom: idx < 4 ? '1px solid #F1F5F9' : 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
                   <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#1E293B' }}>{p.resource}</span>
-                  <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#0F172A' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                     {p.contributionPercent}%
                   </span>
                 </div>
@@ -247,7 +247,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
                     }}
                   />
                 </div>
-                <div style={{ fontSize: '9px', color: '#64748B', marginTop: '1px' }}>
+                <div style={{ fontSize: '9px', color: 'var(--ez-color-text-muted)', marginTop: '1px' }}>
                   {formatRupiah(p.totalExpense)} | Cumulative: {p.cumulativePercent}%
                 </div>
               </div>
@@ -298,7 +298,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
       )}
 
       {/* ── LOCATION INFO ───────────────────────────────────────── */}
-      <div style={{ fontSize: '10px', color: '#64748B', textAlign: 'center', padding: '4px' }}>
+      <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', textAlign: 'center', padding: '4px' }}>
         Location: {result.locationInfo.projectLocation} → {result.locationInfo.resolvedRegion}
         | Price Source: {result.locationInfo.priceSource}
         | Date: {result.locationInfo.priceDate}

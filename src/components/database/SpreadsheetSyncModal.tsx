@@ -218,7 +218,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
     >
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
           width: '100%',
           maxWidth: '720px',
@@ -259,7 +259,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#0F172A' }}>
+                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                   Koneksi & Sinkronisasi Spreadsheet
                 </h3>
                 <span
@@ -267,7 +267,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                     fontSize: '11px',
                     fontWeight: 700,
                     padding: '2px 8px',
-                    borderRadius: '999px',
+                    borderRadius: 'var(--ez-radius-pill)',
                     backgroundColor: '#D1FAE5',
                     color: '#065F46',
                   }}
@@ -275,7 +275,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                   Excel & Google Sheets
                 </span>
               </div>
-              <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#64748B' }}>
+              <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: 'var(--ez-color-text-muted)' }}>
                 Ekspor katalog, unggah berkas CSV/Excel, atau tautkan Google Spreadsheet live.
               </p>
             </div>
@@ -300,7 +300,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
           style={{
             display: 'flex',
             borderBottom: '1px solid #E2E8F0',
-            backgroundColor: '#F8FAFC',
+            backgroundColor: 'var(--ez-color-surface-secondary)',
             padding: '0 24px',
           }}
         >
@@ -310,7 +310,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
               padding: '12px 18px',
               fontSize: '13.5px',
               fontWeight: activeTab === 'EXPORT' ? 700 : 500,
-              color: activeTab === 'EXPORT' ? '#059669' : '#64748B',
+              color: activeTab === 'EXPORT' ? '#059669' : 'var(--ez-color-text-muted)',
               borderBottom: activeTab === 'EXPORT' ? '2px solid #059669' : '2px solid transparent',
               background: 'none',
               borderTop: 'none',
@@ -331,7 +331,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
               padding: '12px 18px',
               fontSize: '13.5px',
               fontWeight: activeTab === 'IMPORT' ? 700 : 500,
-              color: activeTab === 'IMPORT' ? '#059669' : '#64748B',
+              color: activeTab === 'IMPORT' ? '#059669' : 'var(--ez-color-text-muted)',
               borderBottom: activeTab === 'IMPORT' ? '2px solid #059669' : '2px solid transparent',
               background: 'none',
               borderTop: 'none',
@@ -352,7 +352,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
               padding: '12px 18px',
               fontSize: '13.5px',
               fontWeight: activeTab === 'GOOGLE_SHEETS' ? 700 : 500,
-              color: activeTab === 'GOOGLE_SHEETS' ? '#059669' : '#64748B',
+              color: activeTab === 'GOOGLE_SHEETS' ? '#059669' : 'var(--ez-color-text-muted)',
               borderBottom: activeTab === 'GOOGLE_SHEETS' ? '2px solid #059669' : '2px solid transparent',
               background: 'none',
               borderTop: 'none',
@@ -389,10 +389,10 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                       cursor: 'pointer',
                     }}
                   >
-                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '4px' }}>
                       Kategori Aktif ({activeCategory})
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748B' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
                       Hanya mengekspor item dari tab yang sedang dibuka saat ini.
                     </div>
                   </div>
@@ -406,10 +406,10 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                       cursor: 'pointer',
                     }}
                   >
-                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '4px' }}>
                       Seluruh Database Master
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748B' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
                       Gabungan Material, Upah Tenaga Kerja, Peralatan, dan Harga Proyek.
                     </div>
                   </div>
@@ -435,7 +435,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
 
               <div
                 style={{
-                  backgroundColor: '#F8FAFC',
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
                   borderRadius: '10px',
                   padding: '14px',
                   border: '1px solid #E2E8F0',
@@ -443,7 +443,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                   color: '#475569',
                 }}
               >
-                <div style={{ fontWeight: 600, color: '#0F172A', marginBottom: '4px' }}>Kolom Standar Output:</div>
+                <div style={{ fontWeight: 600, color: 'var(--ez-color-text-primary)', marginBottom: '4px' }}>Kolom Standar Output:</div>
                 <code>Kode, Nama Material/Tenaga/Alat, Kategori, Subkategori, Spesifikasi, Brand, Unit, Harga Acuan, Wilayah, Sumber, Tanggal Update</code>
               </div>
 
@@ -537,7 +537,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                       </div>
                     ))}
                     {parsedRows.length > 5 && (
-                      <div style={{ padding: '4px 0', fontStyle: 'italic', color: '#64748B' }}>...dan {parsedRows.length - 5} baris lainnya.</div>
+                      <div style={{ padding: '4px 0', fontStyle: 'italic', color: 'var(--ez-color-text-muted)' }}>...dan {parsedRows.length - 5} baris lainnya.</div>
                     )}
                   </div>
                 </div>
@@ -556,7 +556,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                     onClick={handleParseImport}
                     style={{
                       flex: 1,
-                      backgroundColor: '#2563EB',
+                      backgroundColor: 'var(--ez-color-primary)',
                       color: '#FFFFFF',
                       border: 'none',
                       borderRadius: '8px',
@@ -647,9 +647,9 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
               )}
 
               {/* Status & Sheet Mapping */}
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden' }}>
-                <div style={{ backgroundColor: '#F8FAFC', padding: '12px 16px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>Status Koneksi 4 Sheet Master:</span>
+              <div style={{ border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
+                <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '12px 16px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Status Koneksi 4 Sheet Master:</span>
                   <span style={{ fontSize: '12px', color: '#059669', fontWeight: 600 }}>Tersinkronisasi ({lastSyncTime})</span>
                 </div>
                 <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -684,7 +684,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12.5px', color: '#64748B' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12.5px', color: 'var(--ez-color-text-muted)' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
@@ -697,7 +697,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                   href={sheetsUrl}
                   target="_blank"
                   rel="noreferrer"
-                  style={{ color: '#2563EB', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
+                  style={{ color: 'var(--ez-color-primary)', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
                 >
                   Buka di Google Sheets <ArrowRight size={13} />
                 </a>
@@ -710,7 +710,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
         <div
           style={{
             padding: '14px 24px',
-            backgroundColor: '#F8FAFC',
+            backgroundColor: 'var(--ez-color-surface-secondary)',
             borderTop: '1px solid #E2E8F0',
             display: 'flex',
             justifyContent: 'flex-end',
@@ -722,7 +722,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
               padding: '8px 20px',
               borderRadius: '8px',
               border: '1px solid #CBD5E1',
-              backgroundColor: '#FFFFFF',
+              backgroundColor: 'var(--ez-color-surface)',
               color: '#334155',
               fontSize: '13px',
               fontWeight: 600,

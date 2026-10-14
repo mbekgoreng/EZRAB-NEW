@@ -83,7 +83,7 @@ type SortDirection = 'asc' | 'desc' | null;
 
 const WBS_LETTER_MAP: Record<string, { letter: string; bg: string; text: string; border: string }> = {
   'Pekerjaan Persiapan & Bowplank': { letter: 'A', bg: '#FCE7F3', text: '#BE185D', border: '#FBCFE8' },
-  'Pekerjaan Tanah & Pondasi': { letter: 'B', bg: '#DBEAFE', text: '#1D4ED8', border: '#BFDBFE' },
+  'Pekerjaan Tanah & Pondasi': { letter: 'B', bg: '#DBEAFE', text: 'var(--ez-color-primary-hover)', border: '#BFDBFE' },
   'Pekerjaan Struktur Beton Bertulang': { letter: 'C', bg: '#E0E7FF', text: '#4338CA', border: '#C7D2FE' },
   'Pekerjaan Dinding & Plesteran': { letter: 'D', bg: '#E0F2FE', text: '#0369A1', border: '#BAE6FD' },
   'Pekerjaan Lantai & Keramik': { letter: 'E', bg: '#D1FAE5', text: '#047857', border: '#A7F3D0' },
@@ -93,7 +93,7 @@ const WBS_LETTER_MAP: Record<string, { letter: string; bg: string; text: string;
   'Pekerjaan Instalasi Plumbing & Sanitasi': { letter: 'I', bg: '#CFFAFE', text: '#0E7490', border: '#A5F3FC' },
   'Pekerjaan Instalasi Elektrikal': { letter: 'J', bg: '#FEF9C3', text: '#A16207', border: '#FEF08A' },
   'Pekerjaan Pengecatan': { letter: 'K', bg: '#FEE2E2', text: '#B91C1C', border: '#FECACA' },
-  'Pekerjaan Finishing & Eksterior': { letter: 'L', bg: '#F1F5F9', text: '#334155', border: '#E2E8F0' },
+  'Pekerjaan Finishing & Eksterior': { letter: 'L', bg: '#F1F5F9', text: '#334155', border: 'var(--ez-color-border)' },
 };
 
 const DEFAULT_COMPANY: Company = {
@@ -516,7 +516,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         {
           categoryName: 'Daftar Pekerjaan Seluruhnya (Flat)',
           codeLetter: '★',
-          badgeColor: { bg: '#EFF6FF', text: '#1D4ED8', border: '#BFDBFE' },
+          badgeColor: { bg: '#EFF6FF', text: 'var(--ez-color-primary-hover)', border: '#BFDBFE' },
           items: filteredItems,
           subtotal,
           subtotalVolume,
@@ -544,7 +544,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         letter: String.fromCharCode(65 + (letterIndex % 26)),
         bg: '#F1F5F9',
         text: '#334155',
-        border: '#E2E8F0',
+        border: 'var(--ez-color-border)',
       };
 
       const subtotal = items.reduce(
@@ -838,7 +838,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         minHeight: 'calc(100vh - 64px)',
         position: 'relative',
         overflow: 'hidden',
-        color: '#141412',
+        color: 'var(--ez-color-text-primary)',
         fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
@@ -1247,7 +1247,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         >
           <div
             style={{
-              background: '#FFFFFF',
+              background: 'var(--ez-color-surface)',
               borderRadius: '20px',
               width: '460px',
               maxWidth: '92vw',
@@ -1259,7 +1259,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Keyboard size={18} color="#2563EB" />
-                <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                   Pintasan Keyboard (Shortcuts)
                 </h3>
               </div>
@@ -1272,21 +1272,21 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
                 <span style={{ color: '#334155' }}>Mulai Edit Sel</span>
-                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Double Click / Enter</kbd>
+                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Double Click / Enter</kbd>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
                 <span style={{ color: '#334155' }}>Simpan Perubahan Sel</span>
-                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Enter</kbd>
+                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Enter</kbd>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
                 <span style={{ color: '#334155' }}>Batal Edit Sel</span>
-                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Escape</kbd>
+                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Escape</kbd>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#FFFFFF', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
                 <span style={{ color: '#334155' }}>Pilih Multi Item</span>
-                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Shift + Click</kbd>
+                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Shift + Click</kbd>
               </div>
             </div>
 
@@ -1297,7 +1297,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
                   height: '32px',
                   padding: '0 16px',
                   borderRadius: '10px',
-                  background: '#2563EB',
+                  background: 'var(--ez-color-primary)',
                   color: '#FFFFFF',
                   border: 'none',
                   fontSize: '12px',
@@ -1336,7 +1336,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
             background: '#0F172A',
             color: '#FFFFFF',
             padding: '10px 18px',
-            borderRadius: '12px',
+            borderRadius: 'var(--ez-radius-control)',
             fontSize: '12.5px',
             fontWeight: 650,
             boxShadow: '0 10px 20px -3px rgba(0,0,0,0.3)',

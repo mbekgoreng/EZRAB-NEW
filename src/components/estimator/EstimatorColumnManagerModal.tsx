@@ -50,7 +50,7 @@ export const EstimatorColumnManagerModal: React.FC<EstimatorColumnManagerModalPr
     >
       <div
         style={{
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           borderRadius: '14px',
           width: '380px',
           maxWidth: '92vw',
@@ -61,7 +61,7 @@ export const EstimatorColumnManagerModal: React.FC<EstimatorColumnManagerModalPr
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Columns3 size={18} color="#2563EB" />
-            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Pengaturan Tampilan Kolom
             </h3>
           </div>
@@ -70,7 +70,7 @@ export const EstimatorColumnManagerModal: React.FC<EstimatorColumnManagerModalPr
           </button>
         </div>
 
-        <p style={{ fontSize: '11.5px', color: '#64748B', margin: '0 0 14px 0' }}>
+        <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', margin: '0 0 14px 0' }}>
           Centang kolom yang ingin Anda tampilkan pada spreadsheet estimator RAB.
         </p>
 
@@ -86,11 +86,11 @@ export const EstimatorColumnManagerModal: React.FC<EstimatorColumnManagerModalPr
                   justifyContent: 'space-between',
                   padding: '8px 10px',
                   borderRadius: '6px',
-                  background: isVisible ? '#F8FAFC' : '#FFFFFF',
+                  background: isVisible ? 'var(--ez-color-surface-secondary)' : '#FFFFFF',
                   cursor: col.required ? 'not-allowed' : 'pointer',
                   fontSize: '12px',
                   fontWeight: 550,
-                  color: col.required ? '#64748B' : '#1E293B',
+                  color: col.required ? 'var(--ez-color-text-muted)' : '#1E293B',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -99,7 +99,7 @@ export const EstimatorColumnManagerModal: React.FC<EstimatorColumnManagerModalPr
                     checked={isVisible}
                     disabled={col.required}
                     onChange={() => onToggleColumn(col.key)}
-                    style={{ accentColor: '#2563EB', cursor: col.required ? 'not-allowed' : 'pointer' }}
+                    style={{ accentColor: 'var(--ez-color-primary)', cursor: col.required ? 'not-allowed' : 'pointer' }}
                   />
                   <span>{col.label}</span>
                 </div>
@@ -122,8 +122,8 @@ export const EstimatorColumnManagerModal: React.FC<EstimatorColumnManagerModalPr
               padding: '0 10px',
               borderRadius: '6px',
               border: '1px solid #E2E8F0',
-              background: '#FFFFFF',
-              color: '#64748B',
+              background: 'var(--ez-color-surface)',
+              color: 'var(--ez-color-text-muted)',
               fontSize: '11.5px',
               fontWeight: 600,
               cursor: 'pointer',
@@ -143,7 +143,7 @@ export const EstimatorColumnManagerModal: React.FC<EstimatorColumnManagerModalPr
               padding: '0 16px',
               borderRadius: '6px',
               border: 'none',
-              background: '#2563EB',
+              background: 'var(--ez-color-primary)',
               color: '#FFFFFF',
               fontSize: '12px',
               fontWeight: 700,

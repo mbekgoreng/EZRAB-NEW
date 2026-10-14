@@ -74,7 +74,7 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
       <div
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-xl md:max-w-2xl bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200"
-        style={{ backgroundColor: '#ffffff' }}
+        style={{ backgroundColor: 'var(--ez-color-surface)' }}
         role="dialog"
         aria-modal="true"
       >

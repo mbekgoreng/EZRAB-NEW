@@ -124,16 +124,16 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
 
   const getCategoryColor = (cat: ExpenseCategory): { bg: string; color: string } => {
     const map: Record<ExpenseCategory, { bg: string; color: string }> = {
-      Material: { bg: '#EFF6FF', color: '#1D4ED8' },
+      Material: { bg: '#EFF6FF', color: 'var(--ez-color-primary-hover)' },
       'Tenaga Kerja': { bg: '#F5F3FF', color: '#6D28D9' },
       Subkon: { bg: '#ECFDF5', color: '#047857' },
       Alat: { bg: '#FFFBEB', color: '#B45309' },
       Transport: { bg: '#F0F9FF', color: '#0369A1' },
-      Operasional: { bg: '#F8FAFC', color: '#475569' },
+      Operasional: { bg: 'var(--ez-color-surface-secondary)', color: '#475569' },
       Pajak: { bg: '#FEF2F2', color: '#B91C1C' },
-      Lainnya: { bg: '#F1F5F9', color: '#64748B' },
+      Lainnya: { bg: '#F1F5F9', color: 'var(--ez-color-text-muted)' },
     };
-    return map[cat] || { bg: '#F1F5F9', color: '#64748B' };
+    return map[cat] || { bg: '#F1F5F9', color: 'var(--ez-color-text-muted)' };
   };
 
   return (
@@ -141,7 +141,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
       {/* 1. Header Bar */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
           border: '1px solid #E2E8F0',
           padding: '20px 24px',
@@ -154,17 +154,17 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
         }}
       >
         <div>
-          <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
             Pengeluaran & Biaya Riil Proyek
           </h2>
-          <div style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
             Catat setiap realisasi biaya material, upah kerja, alat, subkontraktor, dan operasional lapangan.
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 650, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 650, textTransform: 'uppercase' }}>
               Total Biaya Riil
             </div>
             <div style={{ fontSize: '18px', fontWeight: 800, color: '#DC2626' }}>
@@ -199,7 +199,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
       {/* 2. Filters & Categories Chips */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '14px',
           border: '1px solid #E2E8F0',
           padding: '12px 16px',
@@ -216,10 +216,10 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
             onClick={() => setSelectedCategoryFilter('ALL')}
             style={{
               padding: '5px 12px',
-              borderRadius: '999px',
-              border: `1px solid ${selectedCategoryFilter === 'ALL' ? '#2563EB' : '#E2E8F0'}`,
+              borderRadius: 'var(--ez-radius-pill)',
+              border: `1px solid ${selectedCategoryFilter === 'ALL' ? 'var(--ez-color-primary)' : 'var(--ez-color-border)'}`,
               backgroundColor: selectedCategoryFilter === 'ALL' ? '#EFF6FF' : '#FFFFFF',
-              color: selectedCategoryFilter === 'ALL' ? '#1D4ED8' : '#64748B',
+              color: selectedCategoryFilter === 'ALL' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
               fontSize: '12px',
               fontWeight: 650,
               cursor: 'pointer',
@@ -238,10 +238,10 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
                 onClick={() => setSelectedCategoryFilter(cat)}
                 style={{
                   padding: '5px 12px',
-                  borderRadius: '999px',
-                  border: `1px solid ${isSel ? '#2563EB' : '#E2E8F0'}`,
+                  borderRadius: 'var(--ez-radius-pill)',
+                  border: `1px solid ${isSel ? 'var(--ez-color-primary)' : 'var(--ez-color-border)'}`,
                   backgroundColor: isSel ? '#EFF6FF' : '#FFFFFF',
-                  color: isSel ? '#1D4ED8' : '#64748B',
+                  color: isSel ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                   fontSize: '12px',
                   fontWeight: 650,
                   cursor: 'pointer',
@@ -277,7 +277,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
       {filteredExpenses.length === 0 ? (
         <div
           style={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
             border: '1px solid #E2E8F0',
             padding: '48px 20px',
@@ -288,13 +288,13 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
             gap: '12px',
           }}
         >
-          <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <ArrowUpRight size={24} color="#DC2626" />
           </div>
-          <h3 style={{ fontSize: '16px', fontWeight: 750, color: '#0F172A', margin: 0 }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
             Tidak ada pengeluaran yang cocok
           </h3>
-          <p style={{ fontSize: '13px', color: '#64748B', maxWidth: '420px', margin: 0 }}>
+          <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', maxWidth: '420px', margin: 0 }}>
             Catat nota belanja material, upah tukang mingguan, atau sewa alat untuk melacak biaya aktual proyek.
           </p>
           <button
@@ -322,7 +322,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
       ) : (
         <div
           style={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
             border: '1px solid #E2E8F0',
             overflow: 'hidden',
@@ -332,7 +332,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
-                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#64748B', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-muted)', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   <th style={{ padding: '12px 16px', fontWeight: 700 }}>Tanggal</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700 }}>Kategori</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700 }}>Deskripsi / Item Biaya</th>
@@ -351,10 +351,10 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
                         borderBottom: '1px solid #F1F5F9',
                         transition: 'background-color 120ms ease',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)')}
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FFFFFF')}
                     >
-                      <td style={{ padding: '14px 16px', verticalAlign: 'middle', fontWeight: 600, color: '#0F172A' }}>
+                      <td style={{ padding: '14px 16px', verticalAlign: 'middle', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>
                         {exp.date}
                       </td>
 
@@ -374,9 +374,9 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
                       </td>
 
                       <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
-                        <div style={{ fontWeight: 700, color: '#0F172A' }}>{exp.description}</div>
+                        <div style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{exp.description}</div>
                         {exp.notes && (
-                          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
                             {exp.notes}
                           </div>
                         )}
@@ -403,7 +403,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
                               width: '28px',
                               height: '28px',
                               borderRadius: '6px',
-                              backgroundColor: '#F8FAFC',
+                              backgroundColor: 'var(--ez-color-surface-secondary)',
                               border: '1px solid #E2E8F0',
                               color: '#475569',
                               display: 'inline-flex',
@@ -426,7 +426,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
                               width: '28px',
                               height: '28px',
                               borderRadius: '6px',
-                              backgroundColor: '#F8FAFC',
+                              backgroundColor: 'var(--ez-color-surface-secondary)',
                               border: '1px solid #E2E8F0',
                               color: '#DC2626',
                               display: 'inline-flex',
@@ -465,7 +465,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
         >
           <div
             style={{
-              backgroundColor: '#FFFFFF',
+              backgroundColor: 'var(--ez-color-surface)',
               borderRadius: '16px',
               maxWidth: '480px',
               width: '100%',
@@ -477,13 +477,13 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                 {editingExpense ? 'Edit Pengeluaran Proyek' : 'Catat Pengeluaran Proyek'}
               </h3>
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', fontSize: '18px' }}
+                style={{ background: 'none', border: 'none', color: 'var(--ez-color-text-muted)', cursor: 'pointer', fontSize: '18px' }}
               >
                 &times;
               </button>
@@ -511,7 +511,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
                       border: '1px solid #CBD5E1',
                       fontSize: '13px',
                       outline: 'none',
-                      backgroundColor: '#FFFFFF',
+                      backgroundColor: 'var(--ez-color-surface)',
                       boxSizing: 'border-box',
                     }}
                   >
@@ -602,7 +602,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
                       border: '1px solid #CBD5E1',
                       fontSize: '13px',
                       outline: 'none',
-                      backgroundColor: '#FFFFFF',
+                      backgroundColor: 'var(--ez-color-surface)',
                       boxSizing: 'border-box',
                     }}
                   >

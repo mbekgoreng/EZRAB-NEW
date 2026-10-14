@@ -111,7 +111,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
       sub: '6.000+ item & varian material konstruksi resmi, keramik multi-merek, semen, baja, finishing & MEP standar 2026.',
       icon: Package,
       badge: 'Material Standar SNI 2026',
-      color: '#2563EB',
+      color: 'var(--ez-color-primary)',
       lightBg: '#EFF6FF',
     },
     LABOR: {
@@ -178,7 +178,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
         display: 'flex',
         flexDirection: 'column',
         gap: '20px',
-        color: '#0F172A',
+        color: 'var(--ez-color-text-primary)',
         fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
       }}
     >
@@ -187,32 +187,32 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
          ========================================================================= */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 500, color: '#64748B', marginBottom: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 500, color: 'var(--ez-color-text-muted)', marginBottom: '4px' }}>
             <span
               onClick={() => onNavigateToTab && onNavigateToTab('dashboard')}
               style={{ cursor: 'pointer', transition: 'color 0.15s' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#2563EB')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#64748B')}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ez-color-primary)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ez-color-text-muted)')}
             >
               Dashboard
             </span>
             <span style={{ color: '#94A3B8' }}>&gt;</span>
-            <span style={{ color: '#64748B' }}>Database Master 2026</span>
+            <span style={{ color: 'var(--ez-color-text-muted)' }}>Database Master 2026</span>
             <span style={{ color: '#94A3B8' }}>&gt;</span>
-            <span style={{ color: '#2563EB', fontWeight: 600 }}>
+            <span style={{ color: 'var(--ez-color-primary)', fontWeight: 600 }}>
               {category === 'MATERIAL' ? 'Material' : category === 'LABOR' ? 'Upah' : 'Alat'}
             </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.025em', color: '#0F172A', margin: 0 }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.025em', color: 'var(--ez-color-text-primary)', margin: 0 }}>
               {categoryMeta.title}
             </h1>
             <span style={{ fontSize: '11px', fontWeight: 700, color: categoryMeta.color, background: categoryMeta.lightBg, padding: '3px 8px', borderRadius: '6px' }}>
               {categoryMeta.badge}
             </span>
           </div>
-          <p style={{ fontSize: '13px', color: '#64748B', margin: '4px 0 0 0' }}>
+          <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', margin: '4px 0 0 0' }}>
             {categoryMeta.sub}
           </p>
         </div>
@@ -225,7 +225,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
               height: '38px',
               padding: '0 16px',
               borderRadius: '10px',
-              background: '#2563EB',
+              background: 'var(--ez-color-primary)',
               color: '#ffffff',
               fontSize: '12.5px',
               fontWeight: 600,
@@ -249,7 +249,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
               height: '38px',
               padding: '0 16px',
               borderRadius: '10px',
-              background: '#ffffff',
+              background: 'var(--ez-color-surface)',
               border: '1px solid #E2E8F0',
               color: '#334155',
               fontSize: '12.5px',
@@ -289,12 +289,12 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                 style={{
                   height: '32px',
                   padding: '0 14px',
-                  borderRadius: '999px',
+                  borderRadius: 'var(--ez-radius-pill)',
                   fontSize: '12px',
                   fontWeight: isSelected ? 700 : 500,
                   whiteSpace: 'nowrap',
-                  background: isSelected ? '#2563EB' : '#ffffff',
-                  color: isSelected ? '#ffffff' : '#64748B',
+                  background: isSelected ? 'var(--ez-color-primary)' : '#ffffff',
+                  color: isSelected ? '#ffffff' : 'var(--ez-color-text-muted)',
                   border: isSelected ? '1px solid #2563EB' : '1px solid #E2E8F0',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
@@ -313,7 +313,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
          ========================================================================= */}
       <div
         style={{
-          background: '#ffffff',
+          background: 'var(--ez-color-surface)',
           borderRadius: '16px',
           border: '1px solid #E8EEF0',
           padding: '16px 20px',
@@ -342,14 +342,14 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
               paddingRight: '12px',
               fontSize: '12.5px',
               outline: 'none',
-              background: '#F8FAFC',
+              background: 'var(--ez-color-surface-secondary)',
             }}
           />
         </div>
 
         {/* Location Dropdown */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>Wilayah:</span>
+          <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Wilayah:</span>
           <select
             value={selectedLocation}
             onChange={(e) => setSelectedLocation(e.target.value)}
@@ -359,8 +359,8 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
               border: '1px solid #CBD5E1',
               padding: '0 12px',
               fontSize: '12.5px',
-              background: '#ffffff',
-              color: '#0F172A',
+              background: 'var(--ez-color-surface)',
+              color: 'var(--ez-color-text-primary)',
             }}
           >
             <option>Semua Wilayah</option>
@@ -373,8 +373,8 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
         </div>
 
         {/* Counter Badge */}
-        <div style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>
-          Menampilkan <strong style={{ color: '#0F172A' }}>{items.length}</strong> item
+        <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
+          Menampilkan <strong style={{ color: 'var(--ez-color-text-primary)' }}>{items.length}</strong> item
         </div>
       </div>
 
@@ -383,7 +383,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
          ========================================================================= */}
       <div
         style={{
-          background: '#ffffff',
+          background: 'var(--ez-color-surface)',
           borderRadius: '20px',
           border: '1px solid #E8EEF0',
           boxShadow: '0 2px 16px rgba(15,23,42,0.04)',
@@ -393,7 +393,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
             <thead>
-              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
                 <th style={{ padding: '12px 14px', width: '75px' }}>Kode</th>
                 {category === 'MATERIAL' && <th className="tablet-up" style={{ padding: '12px 14px', width: '120px' }}>Brand</th>}
                 <th style={{ padding: '12px 14px' }}>Uraian & Nama Item</th>
@@ -419,10 +419,10 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                   <tr
                     key={item.id}
                     style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.15s ease' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
                   >
-                    <td style={{ padding: '10px 14px', color: '#2563EB', fontWeight: 700, fontFamily: 'monospace', fontSize: '11.5px' }}>
+                    <td style={{ padding: '10px 14px', color: 'var(--ez-color-primary)', fontWeight: 700, fontFamily: 'monospace', fontSize: '11.5px' }}>
                       {item.code}
                     </td>
                     {category === 'MATERIAL' && (
@@ -432,13 +432,13 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                         </span>
                       </td>
                     )}
-                    <td style={{ padding: '10px 14px', fontWeight: 600, color: '#0F172A' }}>
+                    <td style={{ padding: '10px 14px', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>
                       <div>{item.name}</div>
                       <div
                         className="mobile-only"
                         style={{
                           fontSize: '11px',
-                          color: '#64748B',
+                          color: 'var(--ez-color-text-muted)',
                           marginTop: '2px',
                           display: 'flex',
                           alignItems: 'center',
@@ -455,16 +455,16 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                         <span>{item.location}</span>
                       </div>
                     </td>
-                    <td className="tablet-up" style={{ padding: '10px 14px', color: '#64748B' }}>
+                    <td className="tablet-up" style={{ padding: '10px 14px', color: 'var(--ez-color-text-muted)' }}>
                       {item.specification || '-'}
                     </td>
-                    <td style={{ padding: '10px 10px', textAlign: 'center', color: '#64748B', fontWeight: 600 }}>
-                      <span style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '2px 6px', borderRadius: '6px', fontSize: '11px' }}>
+                    <td style={{ padding: '10px 10px', textAlign: 'center', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
+                      <span style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', padding: '2px 6px', borderRadius: '6px', fontSize: '11px' }}>
                         {item.unit}
                       </span>
                     </td>
                     {category === 'MATERIAL' && (
-                      <td className="tablet-up" style={{ padding: '10px 14px', textAlign: 'right', color: '#64748B', fontSize: '11.5px' }}>
+                      <td className="tablet-up" style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--ez-color-text-muted)', fontSize: '11.5px' }}>
                         {item.minPrice && item.maxPrice ? (
                           <span>
                             {formatCurrencyIDR(item.minPrice).replace('Rp ', '')} - {formatCurrencyIDR(item.maxPrice).replace('Rp ', '')}
@@ -474,10 +474,10 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                         )}
                       </td>
                     )}
-                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: 'var(--ez-color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
                       {formatCurrencyIDR(item.price)}
                     </td>
-                    <td className="tablet-up" style={{ padding: '10px 14px', color: '#64748B' }}>
+                    <td className="tablet-up" style={{ padding: '10px 14px', color: 'var(--ez-color-text-muted)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}>
                         <MapPin size={11} color="#94A3B8" />
                         <span>{item.location}</span>
@@ -534,7 +534,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
         >
           <div
             style={{
-              background: '#FFFFFF',
+              background: 'var(--ez-color-surface)',
               borderRadius: '20px',
               width: '100%',
               maxWidth: '540px',
@@ -548,7 +548,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                 <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: categoryMeta.lightBg, color: categoryMeta.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Icon size={18} />
                 </div>
-                <h2 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: '#0F172A' }}>
+                <h2 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: 'var(--ez-color-text-primary)' }}>
                   Tambah {category === 'MATERIAL' ? 'Material' : category === 'LABOR' ? 'Upah' : 'Alat'} ke Database
                 </h2>
               </div>
@@ -710,13 +710,13 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  style={{ height: '36px', padding: '0 14px', borderRadius: '8px', border: '1px solid #CBD5E1', background: '#FFFFFF', color: '#475569', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{ height: '36px', padding: '0 14px', borderRadius: '8px', border: '1px solid #CBD5E1', background: 'var(--ez-color-surface)', color: '#475569', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  style={{ height: '36px', padding: '0 16px', borderRadius: '8px', border: 'none', background: '#2563EB', color: '#FFFFFF', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{ height: '36px', padding: '0 16px', borderRadius: '8px', border: 'none', background: 'var(--ez-color-primary)', color: '#FFFFFF', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Simpan Item
                 </button>

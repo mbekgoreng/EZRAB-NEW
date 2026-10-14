@@ -32,7 +32,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
       {/* 1. Summary Bar (+ Tambah Kelompok, counts, Total RAB) */}
       <div
         style={{
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           borderRadius: '10px',
           border: '1px solid #E2E8F0',
           padding: '10px 16px',
@@ -53,11 +53,11 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
               height: '36px',
               padding: '0 14px',
               borderRadius: '6px',
-              background: '#FFFFFF',
+              background: 'var(--ez-color-surface)',
               border: '1px solid #CBD5E1',
               fontSize: '12px',
               fontWeight: 650,
-              color: '#2563EB',
+              color: 'var(--ez-color-primary)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -72,7 +72,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
           </button>
 
           {/* Group & Item counts text */}
-          <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>
+          <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>
             {groupsCount} kelompok • {totalItemsCount} item
           </span>
         </div>
@@ -86,7 +86,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
             style={{
               fontSize: '17px',
               fontWeight: 850,
-              color: '#0F172A',
+              color: 'var(--ez-color-text-primary)',
               fontVariantNumeric: 'tabular-nums',
               letterSpacing: '-0.02em',
             }}
@@ -104,7 +104,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
           justifyContent: 'space-between',
           padding: '4px 8px',
           fontSize: '12px',
-          color: '#64748B',
+          color: 'var(--ez-color-text-muted)',
           flexWrap: 'wrap',
           gap: '10px',
         }}
@@ -121,7 +121,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
                 padding: '0 22px 0 8px',
                 borderRadius: '5px',
                 border: '1px solid #CBD5E1',
-                background: '#FFFFFF',
+                background: 'var(--ez-color-surface)',
                 fontSize: '11.5px',
                 fontWeight: 600,
                 color: '#334155',
@@ -156,7 +156,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
                 height: '26px',
                 borderRadius: '5px',
                 border: '1px solid #CBD5E1',
-                background: '#FFFFFF',
+                background: 'var(--ez-color-surface)',
                 color: currentPage <= 1 ? '#CBD5E1' : '#334155',
                 display: 'flex',
                 alignItems: 'center',
@@ -171,7 +171,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
                 minWidth: '26px',
                 height: '26px',
                 borderRadius: '5px',
-                background: '#2563EB',
+                background: 'var(--ez-color-primary)',
                 color: '#FFFFFF',
                 display: 'flex',
                 alignItems: 'center',
@@ -190,7 +190,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
                 height: '26px',
                 borderRadius: '5px',
                 border: '1px solid #CBD5E1',
-                background: '#FFFFFF',
+                background: 'var(--ez-color-surface)',
                 color: currentPage >= totalPages ? '#CBD5E1' : '#334155',
                 display: 'flex',
                 alignItems: 'center',

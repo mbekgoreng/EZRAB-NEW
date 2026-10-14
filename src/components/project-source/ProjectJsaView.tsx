@@ -102,15 +102,15 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
   };
 
   return (
-    <div style={{ background: '#FFFFFF', borderRadius: 12, border: '1px solid #E2E8F0', padding: 20 }}>
+    <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid #E2E8F0', padding: 20 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div>
-          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <ShieldAlert size={20} color="#D97706" />
             Job Safety Analysis (JSA) & Identifikasi Bahaya K3
           </h3>
-          <p style={{ margin: '4px 0 0 0', fontSize: 13, color: '#64748B' }}>
+          <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--ez-color-text-muted)' }}>
             Analisis keselamatan kerja berstandar SMKK/HSE untuk proyek {projectName ? `"${projectName}"` : ''} (tersimpan scoped per proyek).
           </p>
         </div>
@@ -118,7 +118,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
           onClick={handleOpenAdd}
           disabled={!projectId}
           style={{
-            background: '#2563EB',
+            background: 'var(--ez-color-primary)',
             color: '#FFFFFF',
             border: 0,
             borderRadius: 8,
@@ -156,7 +156,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
             onClick={handleOpenAdd}
             disabled={!projectId}
             style={{
-              background: '#FFFFFF',
+              background: 'var(--ez-color-surface)',
               border: '1px solid #FCD34D',
               color: '#B45309',
               borderRadius: 6,
@@ -173,7 +173,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
+              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>No</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Uraian Aktivitas Kerja</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Potensi Bahaya</th>
@@ -187,8 +187,8 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
             <tbody>
               {items.map((item, idx) => (
                 <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '10px 12px', color: '#64748B' }}>{idx + 1}</td>
-                  <td style={{ padding: '10px 12px', fontWeight: 650, color: '#0F172A' }}>{item.activity}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-muted)' }}>{idx + 1}</td>
+                  <td style={{ padding: '10px 12px', fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>{item.activity}</td>
                   <td style={{ padding: '10px 12px', color: '#DC2626', fontWeight: 600 }}>{item.hazard}</td>
                   <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                     <span
@@ -221,7 +221,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                     <div style={{ display: 'inline-flex', gap: 6 }}>
                       <button
                         onClick={() => handleOpenEdit(item)}
-                        style={{ border: 0, background: 'transparent', cursor: 'pointer', color: '#64748B', padding: 4 }}
+                        style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'var(--ez-color-text-muted)', padding: 4 }}
                         title="Edit JSA"
                       >
                         <Edit2 size={15} />
@@ -257,15 +257,15 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
         >
           <div
             style={{
-              background: '#FFFFFF',
-              borderRadius: 12,
+              background: 'var(--ez-color-surface)',
+              borderRadius: 'var(--ez-radius-control)',
               width: '100%',
               maxWidth: 540,
               padding: 24,
               boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)',
             }}
           >
-            <h4 style={{ margin: '0 0 16px 0', fontSize: 16, fontWeight: 750, color: '#0F172A' }}>
+            <h4 style={{ margin: '0 0 16px 0', fontSize: 16, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
               {editingItem ? 'Edit Item JSA K3' : 'Tambah Identifikasi Bahaya K3 (JSA)'}
             </h4>
             <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -356,7 +356,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                   onClick={() => setShowModal(false)}
                   style={{
                     border: '1px solid #CBD5E1',
-                    background: '#FFFFFF',
+                    background: 'var(--ez-color-surface)',
                     borderRadius: 6,
                     padding: '8px 14px',
                     fontSize: 13,
@@ -368,7 +368,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                 <button
                   type="submit"
                   style={{
-                    background: '#2563EB',
+                    background: 'var(--ez-color-primary)',
                     color: '#FFFFFF',
                     border: 0,
                     borderRadius: 6,
