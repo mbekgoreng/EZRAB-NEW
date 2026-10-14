@@ -35,8 +35,8 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
           fontSize: '13px',
         }}
       >
-        <Scale size={24} style={{ margin: '0 auto 6px', color: '#94A3B8' }} />
-        <div style={{ fontWeight: 600, color: '#334155' }}>Belum Ada Data Anggaran vs Realisasi</div>
+        <Scale size={24} style={{ margin: '0 auto 6px', color: 'var(--ez-color-text-faint)' }} />
+        <div style={{ fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Belum Ada Data Anggaran vs Realisasi</div>
         <div style={{ fontSize: '12px', marginTop: '2px' }}>
           Data akan otomatis terisi saat item RAB dan transaksi pengeluaran tersedia.
         </div>
@@ -109,8 +109,8 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
                 gap: '4px',
                 padding: '8px 10px',
                 borderRadius: '8px',
-                backgroundColor: '#FAFAFC',
-                border: '1px solid #F1F5F9',
+                backgroundColor: 'var(--ez-color-surface-secondary)',
+                border: '1px solid var(--ez-color-border-soft)',
                 cursor: onSelectGroup ? 'pointer' : 'default',
                 transition: 'all 120ms ease',
               }}
@@ -146,7 +146,7 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
                       }}
                     />
                   </div>
-                  <span style={{ width: '75px', textAlign: 'right', fontSize: '10px', color: '#475569', fontWeight: 600 }}>
+                  <span style={{ width: '75px', textAlign: 'right', fontSize: '10px', color: 'var(--ez-color-text-slate)', fontWeight: 600 }}>
                     {formatRupiah(item.budgetAmount)}
                   </span>
                 </div>

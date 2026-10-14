@@ -77,6 +77,15 @@
   --ez-hue-violet-border: #DDD6FE;
   --ez-hue-violet-text: #7C3AED;
   --ez-hue-red-bg: #FEE2E2;
+  --ez-hue-red-text: #991B1B;
+  --ez-hue-rose-bg: #FEF2F2;
+  --ez-hue-rose-border: #FECACA;
+  --ez-hue-rose-text: #DC2626;
+  --ez-hue-amber-text-deep: #D97706;
+  --ez-hue-green-bg-deep: #DCFCE7;
+  --ez-hue-green-text-deep: #166534;
+  --ez-hue-green-text-bright: #16A34A;
+  --ez-hue-blue-text-deep: #1E40AF;
 
   /* ---- Semantic ---- */
   --ez-color-success: #27845B;
@@ -173,6 +182,15 @@
   --ez-hue-violet-border: rgba(139, 92, 246, 0.38);
   --ez-hue-violet-text: #C4B5FD;
   --ez-hue-red-bg: rgba(248, 113, 113, 0.14);
+  --ez-hue-red-text: #FCA5A5;
+  --ez-hue-rose-bg: rgba(251, 113, 133, 0.14);
+  --ez-hue-rose-border: rgba(251, 113, 133, 0.35);
+  --ez-hue-rose-text: #FCA5A5;
+  --ez-hue-amber-text-deep: #FBBF24;
+  --ez-hue-green-bg-deep: rgba(74, 222, 128, 0.14);
+  --ez-hue-green-text-deep: #86EFAC;
+  --ez-hue-green-text-bright: #4ADE80;
+  --ez-hue-blue-text-deep: #93C5FD;
   --ez-color-success: #34D399;
   --ez-color-success-soft: rgba(52, 211, 153, 0.16);
   --ez-color-warning: #FBBF24;

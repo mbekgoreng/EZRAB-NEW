@@ -128,13 +128,13 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
 
   const statusBadge = (st: TerminStatus) => {
     const config: Record<TerminStatus, { bg: string; color: string; label: string }> = {
-      PLANNED: { bg: '#F1F5F9', color: '#475569', label: 'Direncanakan' },
+      PLANNED: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', label: 'Direncanakan' },
       READY_TO_INVOICE: { bg: '#EFF6FF', color: 'var(--ez-color-primary-hover)', label: 'Siap Ditagihkan' },
       INVOICED: { bg: '#E0E7FF', color: '#4338CA', label: 'Ditagihkan' },
       PARTIALLY_PAID: { bg: '#FEF3C7', color: '#B45309', label: 'Dibayar Sebagian' },
       PAID: { bg: '#DCFCE7', color: '#15803D', label: 'Lunas' },
       OVERDUE: { bg: '#FEE2E2', color: '#B91C1C', label: 'Jatuh Tempo' },
-      CANCELLED: { bg: '#F1F5F9', color: '#94A3B8', label: 'Dibatalkan' },
+      CANCELLED: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-faint)', label: 'Dibatalkan' },
     };
     const c = config[st] || config.PLANNED;
     return (
@@ -205,9 +205,9 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
         </div>
 
         {/* Allocation Progress Bar */}
-        <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '12px' }}>
+        <div style={{ borderTop: '1px solid var(--ez-color-border-soft)', paddingTop: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
-            <span style={{ fontWeight: 650, color: '#475569' }}>
+            <span style={{ fontWeight: 650, color: 'var(--ez-color-text-slate)' }}>
               Alokasi Nilai Kontrak: <strong>{formatRupiah(contractValue)}</strong>
             </span>
             <span
@@ -233,7 +233,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
             style={{
               height: '8px',
               borderRadius: 'var(--ez-radius-pill)',
-              backgroundColor: '#F1F5F9',
+              backgroundColor: 'var(--ez-color-surface-tertiary)',
               overflow: 'hidden',
               display: 'flex',
             }}
@@ -354,7 +354,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                 </div>
 
                 {term.triggerDescription && (
-                  <div style={{ fontSize: '12px', color: '#475569', backgroundColor: 'var(--ez-color-surface-secondary)', padding: '6px 8px', borderRadius: '6px', border: '1px solid #F1F5F9' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--ez-color-text-slate)', backgroundColor: 'var(--ez-color-surface-secondary)', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--ez-color-border-soft)' }}>
                     <strong>Syarat / Trigger:</strong> {term.triggerDescription}
                   </div>
                 )}
@@ -370,7 +370,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
               {/* Card Actions */}
               <div
                 style={{
-                  borderTop: '1px solid #F1F5F9',
+                  borderTop: '1px solid var(--ez-color-border-soft)',
                   paddingTop: '10px',
                   display: 'flex',
                   alignItems: 'center',
@@ -389,7 +389,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                       borderRadius: '6px',
                       backgroundColor: 'var(--ez-color-surface-secondary)',
                       border: '1px solid #E2E8F0',
-                      color: '#475569',
+                      color: 'var(--ez-color-text-slate)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -412,7 +412,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                       borderRadius: '6px',
                       backgroundColor: 'var(--ez-color-surface-secondary)',
                       border: '1px solid #E2E8F0',
-                      color: '#DC2626',
+                      color: 'var(--ez-hue-rose-text)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -500,7 +500,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Nama Termin / Milestone
                 </label>
                 <input
@@ -523,7 +523,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '10px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     Persentase (%)
                   </label>
                   <input
@@ -546,7 +546,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     Nominal (Rp)
                   </label>
                   <input
@@ -569,7 +569,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Syarat Pekerjaan / Trigger Progres (Opsional)
                 </label>
                 <input
@@ -591,7 +591,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     Target Jatuh Tempo
                   </label>
                   <input
@@ -610,7 +610,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     Status
                   </label>
                   <select
@@ -639,7 +639,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Catatan Tambahan (Opsional)
                 </label>
                 <textarea
@@ -667,8 +667,8 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                   style={{
                     padding: '8px 16px',
                     borderRadius: '8px',
-                    backgroundColor: '#F1F5F9',
-                    color: '#475569',
+                    backgroundColor: 'var(--ez-color-surface-tertiary)',
+                    color: 'var(--ez-color-text-slate)',
                     border: '1px solid #CBD5E1',
                     fontSize: '12.5px',
                     fontWeight: 600,

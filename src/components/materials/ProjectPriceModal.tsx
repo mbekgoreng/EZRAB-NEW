@@ -598,16 +598,16 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
               <div
                 style={{
                   padding: '12px',
-                  backgroundColor: '#F1F5F9',
-                  border: '1px solid #CBD5E1',
+                  backgroundColor: 'var(--ez-color-surface-tertiary)',
+                  border: '1px solid var(--ez-color-border-strong)',
                   borderRadius: '10px',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10.5px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', textTransform: 'uppercase' }}>
                   <ShieldCheck size={13} color="#059669" />
                   <span>Harga Master Acuan:</span>
                 </div>
-                <div style={{ fontSize: '16px', fontWeight: 800, color: '#334155', marginTop: '4px' }}>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-body)', marginTop: '4px' }}>
                   Rp {masterPrice.toLocaleString('id-ID')}
                 </div>
                 <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>

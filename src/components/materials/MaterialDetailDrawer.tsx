@@ -438,12 +438,12 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
                     {/* Visual SVG Trend Line */}
                     <div className="w-full h-32 bg-white rounded-lg border border-slate-200 p-2 flex items-center justify-center">
                       <svg viewBox="0 0 400 100" className="w-full h-full">
-                        <line x1="20" y1="20" x2="380" y2="20" stroke="#E2E8F0" strokeDasharray="3 3" />
-                        <line x1="20" y1="50" x2="380" y2="50" stroke="#E2E8F0" strokeDasharray="3 3" />
-                        <line x1="20" y1="80" x2="380" y2="80" stroke="#E2E8F0" strokeDasharray="3 3" />
+                        <line x1="20" y1="20" x2="380" y2="20" stroke="var(--ez-color-border-line)" strokeDasharray="3 3" />
+                        <line x1="20" y1="50" x2="380" y2="50" stroke="var(--ez-color-border-line)" strokeDasharray="3 3" />
+                        <line x1="20" y1="80" x2="380" y2="80" stroke="var(--ez-color-border-line)" strokeDasharray="3 3" />
                         <polyline
                           fill="none"
-                          stroke="#059669"
+                          stroke="var(--ez-hue-green-text)"
                           strokeWidth="2.5"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -470,7 +470,7 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
                               cx={x}
                               cy={y}
                               r="3.5"
-                              fill="#047857"
+                              fill="var(--ez-hue-green-text)"
                               stroke="#FFFFFF"
                               strokeWidth="1.5"
                             />

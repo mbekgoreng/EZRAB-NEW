@@ -135,10 +135,10 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
                   fontSize: '11px',
                   fontWeight: 750,
                   color: 'var(--ez-color-primary)',
-                  backgroundColor: '#EFF6FF',
+                  backgroundColor: 'var(--ez-hue-blue-bg)',
                   padding: '2px 8px',
                   borderRadius: '6px',
-                  border: '1px solid #BFDBFE',
+                  border: '1px solid var(--ez-hue-blue-border)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.04em',
                 }}
@@ -162,8 +162,8 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               style={{
                 padding: '8px 14px',
                 borderRadius: '8px',
-                backgroundColor: '#EFF6FF',
-                border: '1px solid #BFDBFE',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-border)',
                 color: 'var(--ez-color-primary-hover)',
                 fontSize: '12.5px',
                 fontWeight: 650,
@@ -184,8 +184,8 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               style={{
                 padding: '8px 14px',
                 borderRadius: '8px',
-                backgroundColor: '#EFF6FF',
-                border: '1px solid #BFDBFE',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-border)',
                 color: 'var(--ez-color-primary-hover)',
                 fontSize: '12.5px',
                 fontWeight: 650,
@@ -206,9 +206,9 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               style={{
                 padding: '8px 14px',
                 borderRadius: '8px',
-                backgroundColor: '#F0FDF4',
-                border: '1px solid #BBF7D0',
-                color: '#15803D',
+                backgroundColor: 'var(--ez-hue-green-bg)',
+                border: '1px solid var(--ez-hue-green-border)',
+                color: 'var(--ez-hue-green-text)',
                 fontSize: '12.5px',
                 fontWeight: 650,
                 cursor: 'pointer',
@@ -228,9 +228,9 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               style={{
                 padding: '8px 14px',
                 borderRadius: '8px',
-                backgroundColor: '#FEF2F2',
-                border: '1px solid #FECACA',
-                color: '#DC2626',
+                backgroundColor: 'var(--ez-hue-rose-bg)',
+                border: '1px solid var(--ez-hue-rose-border)',
+                color: 'var(--ez-hue-rose-text)',
                 fontSize: '12.5px',
                 fontWeight: 650,
                 cursor: 'pointer',
@@ -269,8 +269,8 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
                 fontWeight: 700,
                 padding: '1px 6px',
                 borderRadius: '4px',
-                backgroundColor: kpiData.isContractAvailable ? '#DCFCE7' : '#F1F5F9',
-                color: kpiData.isContractAvailable ? '#166534' : 'var(--ez-color-text-muted)',
+                backgroundColor: kpiData.isContractAvailable ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-color-surface-tertiary)',
+                color: kpiData.isContractAvailable ? 'var(--ez-hue-green-text-deep)' : 'var(--ez-color-text-muted)',
               }}
             >
               {kpiData.isContractAvailable ? 'Available' : 'No Data'}
@@ -304,8 +304,8 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
                 fontWeight: 700,
                 padding: '1px 6px',
                 borderRadius: '4px',
-                backgroundColor: kpiData.isBudgetAvailable ? '#EFF6FF' : '#F1F5F9',
-                color: kpiData.isBudgetAvailable ? '#1E40AF' : 'var(--ez-color-text-muted)',
+                backgroundColor: kpiData.isBudgetAvailable ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-tertiary)',
+                color: kpiData.isBudgetAvailable ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-color-text-muted)',
               }}
             >
               {kpiData.isBudgetAvailable ? 'Approved RAB' : 'No Data'}
@@ -335,7 +335,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
             <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Actual Cost (Pengeluaran)</span>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#EF4444' }} />
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: '#DC2626' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-rose-text)' }}>
             {expenses.length > 0 ? formatRupiah(kpiData.actualCost) : 'Rp 0'}
           </div>
           <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
@@ -359,7 +359,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
             <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Cash In (Penerimaan)</span>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10B981' }} />
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: '#16A34A' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)' }}>
             {payments.length > 0 ? formatRupiah(kpiData.cashIn) : 'Rp 0'}
           </div>
           <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
@@ -382,12 +382,12 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Sisa Piutang (Receivable)</span>
             {receivablesData.totalOverdue > 0 && (
-              <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', backgroundColor: '#FEE2E2', color: '#991B1B' }}>
+              <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', backgroundColor: 'var(--ez-hue-red-bg)', color: 'var(--ez-hue-red-text)' }}>
                 Overdue
               </span>
             )}
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: kpiData.receivableOutstanding > 0 ? '#D97706' : '#0F172A' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: kpiData.receivableOutstanding > 0 ? 'var(--ez-hue-amber-text-deep)' : 'var(--ez-color-text)' }}>
             {formatRupiah(kpiData.receivableOutstanding)}
           </div>
           <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
@@ -413,7 +413,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               {kpiData.isContractAvailable ? `${kpiData.profitMarginPercent}%` : '-'}
             </span>
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: kpiData.currentProfit >= 0 ? 'var(--ez-color-primary)' : '#DC2626' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: kpiData.currentProfit >= 0 ? 'var(--ez-color-primary)' : 'var(--ez-hue-rose-text)' }}>
             {kpiData.isContractAvailable ? formatRupiah(kpiData.currentProfit) : 'Belum Ada Kontrak'}
           </div>
           <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
@@ -549,7 +549,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               <div key={item.category} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: '#3B82F6' }} />
-                  <span style={{ color: '#334155', fontWeight: 600 }}>{item.category}</span>
+                  <span style={{ color: 'var(--ez-color-text-body)', fontWeight: 600 }}>{item.category}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ color: 'var(--ez-color-text-primary)', fontWeight: 700 }}>{formatRupiah(item.actualAmount)}</span>
@@ -586,9 +586,9 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
                 {formatRupiah(profitabilityData.projectedTotalCost)}
               </span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', borderTop: '1px solid #E2E8F0', paddingTop: '6px', color: '#1E293B', fontWeight: 750 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', borderTop: '1px solid var(--ez-color-border-line)', paddingTop: '6px', color: 'var(--ez-color-text-ink)', fontWeight: 750 }}>
               <span>Proyeksi Profit Margin:</span>
-              <span style={{ color: profitabilityData.projectedProfit && profitabilityData.projectedProfit >= 0 ? '#16A34A' : '#DC2626' }}>
+              <span style={{ color: profitabilityData.projectedProfit && profitabilityData.projectedProfit >= 0 ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-hue-rose-text)' }}>
                 {profitabilityData.projectedMarginPercent !== null ? `${profitabilityData.projectedMarginPercent}%` : 'N/A'}
               </span>
             </div>
@@ -679,8 +679,8 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
                           fontWeight: 700,
                           padding: '1px 5px',
                           borderRadius: '4px',
-                          backgroundColor: isPaid ? '#DCFCE7' : (isInvoiced ? '#EFF6FF' : (isOverdue ? '#FEE2E2' : '#F1F5F9')),
-                          color: isPaid ? '#166534' : (isInvoiced ? '#1E40AF' : (isOverdue ? '#991B1B' : '#475569')),
+                          backgroundColor: isPaid ? 'var(--ez-hue-green-bg-deep)' : (isInvoiced ? 'var(--ez-hue-blue-bg)' : (isOverdue ? 'var(--ez-hue-red-bg)' : 'var(--ez-color-surface-tertiary)')),
+                          color: isPaid ? 'var(--ez-hue-green-text-deep)' : (isInvoiced ? 'var(--ez-hue-blue-text-deep)' : (isOverdue ? 'var(--ez-hue-red-text)' : 'var(--ez-color-text-slate)')),
                         }}
                       >
                         {t.status}
@@ -733,13 +733,13 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
               <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Total Hutang Pending</div>
-              <div style={{ fontSize: '15px', fontWeight: 800, color: '#D97706', marginTop: '2px' }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-amber-text-deep)', marginTop: '2px' }}>
                 {formatRupiah(payablesData.totalPayable)}
               </div>
             </div>
             <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
               <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Total Telah Dibayar</div>
-              <div style={{ fontSize: '15px', fontWeight: 800, color: '#16A34A', marginTop: '2px' }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', marginTop: '2px' }}>
                 {formatRupiah(payablesData.totalPaid)}
               </div>
             </div>
@@ -829,18 +829,18 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         }}
       >
         <Sparkles size={18} color="#2563EB" style={{ marginTop: '2px', flexShrink: 0 }} />
-        <div style={{ fontSize: '12.5px', color: '#334155', lineHeight: '1.5' }}>
+        <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-body)', lineHeight: '1.5' }}>
           <div style={{ fontWeight: 750, color: 'var(--ez-color-text-primary)', marginBottom: '4px' }}>
             EZRAB Financial Core Intelligence
           </div>
           <div>
             Kalkulasi keuangan proyek dijalankan secara <strong>deterministik</strong> langsung dari basis data RAB, Termin, Invoice, dan Pengeluaran Riil.
             {kpiData.activeAlerts.length > 0 ? (
-              <span style={{ color: '#DC2626', fontWeight: 600 }}>
+              <span style={{ color: 'var(--ez-hue-rose-text)', fontWeight: 600 }}>
                 {' '}Terdapat {kpiData.activeAlerts.length} peringatan aktif yang membutuhkan perhatian estimator.
               </span>
             ) : (
-              <span style={{ color: '#16A34A', fontWeight: 600 }}>
+              <span style={{ color: 'var(--ez-hue-green-text-bright)', fontWeight: 600 }}>
                 {' '}Status arus kas dan realisasi biaya proyek terpantau seimbang tanpa anomali kritis.
               </span>
             )}

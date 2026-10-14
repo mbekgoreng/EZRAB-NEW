@@ -132,7 +132,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
             <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 650, textTransform: 'uppercase' }}>
               Total Kas Masuk
             </div>
-            <div style={{ fontSize: '18px', fontWeight: 800, color: '#16A34A' }}>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)' }}>
               {formatRupiah(totalReceived)}
             </div>
           </div>
@@ -236,11 +236,11 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
                     <tr
                       key={p.id}
                       style={{
-                        borderBottom: '1px solid #F1F5F9',
+                        borderBottom: '1px solid var(--ez-color-border-soft)',
                         transition: 'background-color 120ms ease',
                       }}
                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FFFFFF')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-surface)')}
                     >
                       <td style={{ padding: '14px 16px', verticalAlign: 'middle', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>
                         {p.paymentDate}
@@ -264,8 +264,8 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
                             fontWeight: 650,
                             padding: '2px 8px',
                             borderRadius: '6px',
-                            backgroundColor: '#F1F5F9',
-                            color: '#334155',
+                            backgroundColor: 'var(--ez-color-surface-tertiary)',
+                            color: 'var(--ez-color-text-body)',
                           }}
                         >
                           {p.paymentMethod}
@@ -278,7 +278,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
                       </td>
 
                       <td style={{ padding: '14px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
-                        <div style={{ fontWeight: 800, color: '#16A34A', fontSize: '14px' }}>
+                        <div style={{ fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', fontSize: '14px' }}>
                           + {formatRupiah(p.amount)}
                         </div>
                       </td>
@@ -302,7 +302,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
                             borderRadius: '6px',
                             backgroundColor: 'var(--ez-color-surface-secondary)',
                             border: '1px solid #E2E8F0',
-                            color: '#DC2626',
+                            color: 'var(--ez-hue-rose-text)',
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -370,7 +370,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Pilih Invoice yang Dibayarkan
                 </label>
                 <select
@@ -381,7 +381,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-color-border-strong)',
                     fontSize: '13px',
                     outline: 'none',
                     backgroundColor: 'var(--ez-color-surface)',
@@ -399,7 +399,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     Nominal Pembayaran (Rp)
                   </label>
                   <input
@@ -412,7 +412,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-color-border-strong)',
                       fontSize: '13px',
                       outline: 'none',
                       boxSizing: 'border-box',
@@ -420,7 +420,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     Tanggal Bayar
                   </label>
                   <input
@@ -432,7 +432,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-color-border-strong)',
                       fontSize: '13px',
                       outline: 'none',
                       boxSizing: 'border-box',
@@ -443,7 +443,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     Metode Pembayaran
                   </label>
                   <select
@@ -453,7 +453,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-color-border-strong)',
                       fontSize: '13px',
                       outline: 'none',
                       backgroundColor: 'var(--ez-color-surface)',
@@ -467,7 +467,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     No. Referensi / Bukti Transfer
                   </label>
                   <input
@@ -479,7 +479,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-color-border-strong)',
                       fontSize: '13px',
                       outline: 'none',
                       boxSizing: 'border-box',
@@ -489,7 +489,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Catatan Penerimaan (Opsional)
                 </label>
                 <textarea
@@ -501,7 +501,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-color-border-strong)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -517,9 +517,9 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
                   style={{
                     padding: '8px 16px',
                     borderRadius: '8px',
-                    backgroundColor: '#F1F5F9',
-                    color: '#475569',
-                    border: '1px solid #CBD5E1',
+                    backgroundColor: 'var(--ez-color-surface-tertiary)',
+                    color: 'var(--ez-color-text-slate)',
+                    border: '1px solid var(--ez-color-border-strong)',
                     fontSize: '12.5px',
                     fontWeight: 600,
                     cursor: 'pointer',

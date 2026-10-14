@@ -33,8 +33,8 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
           fontSize: '13px',
         }}
       >
-        <TrendingUp size={28} style={{ margin: '0 auto 8px', color: '#94A3B8' }} />
-        <div style={{ fontWeight: 600, color: '#334155' }}>Belum Ada Data Arus Kas</div>
+        <TrendingUp size={28} style={{ margin: '0 auto 8px', color: 'var(--ez-color-text-faint)' }} />
+        <div style={{ fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Belum Ada Data Arus Kas</div>
         <div style={{ fontSize: '12px', marginTop: '4px' }}>
           Tambahkan pembayaran masuk atau pengeluaran untuk melihat grafik arus kas proyek.
         </div>
@@ -95,7 +95,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {/* Chart Controls & Legend */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '11.5px', color: '#475569' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '11.5px', color: 'var(--ez-color-text-slate)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
             <span style={{ width: '10px', height: '10px', backgroundColor: '#10B981', borderRadius: '2px' }} />
             <span>Kas Masuk (Inflow)</span>
@@ -117,7 +117,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
         </div>
 
         {onGranularityChange && (
-          <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#F1F5F9', borderRadius: '8px', padding: '2px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', backgroundColor: 'var(--ez-color-surface-tertiary)', borderRadius: '8px', padding: '2px' }}>
             {(['weekly', 'monthly', 'quarterly'] as FinancialGranularity[]).map((g) => (
               <button
                 key={g}
@@ -127,8 +127,8 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
                   padding: '4px 10px',
                   borderRadius: '6px',
                   border: 'none',
-                  backgroundColor: granularity === g ? '#FFFFFF' : 'transparent',
-                  color: granularity === g ? '#0F172A' : 'var(--ez-color-text-muted)',
+                  backgroundColor: granularity === g ? 'var(--ez-color-surface)' : 'transparent',
+                  color: granularity === g ? 'var(--ez-color-text)' : 'var(--ez-color-text-muted)',
                   fontWeight: granularity === g ? 700 : 500,
                   fontSize: '11px',
                   cursor: 'pointer',
@@ -149,9 +149,9 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
           position: 'relative',
           width: '100%',
           overflowX: 'auto',
-          backgroundColor: '#FAFAFC',
+          backgroundColor: 'var(--ez-color-surface-secondary)',
           borderRadius: 'var(--ez-radius-control)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '8px 4px',
         }}
       >
@@ -170,7 +170,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
                   y1={y}
                   x2={svgWidth - paddingRight}
                   y2={y}
-                  stroke={val === 0 ? '#94A3B8' : '#E2E8F0'}
+                  style={{ stroke: val === 0 ? 'var(--ez-color-text-faint)' : 'var(--ez-color-border-line)' }}
                   strokeWidth={val === 0 ? 1.5 : 1}
                   strokeDasharray={val === 0 ? 'none' : '3 3'}
                 />
@@ -179,7 +179,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
                   y={y + 3}
                   textAnchor="end"
                   fontSize="9.5"
-                  fill="#64748B"
+                  style={{ fill: 'var(--ez-color-text-muted)' }}
                   fontFamily="sans-serif"
                 >
                   {formatCompactNumber(val)}
@@ -245,7 +245,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
                   textAnchor="middle"
                   fontSize="10"
                   fontWeight={p.isForecast ? '600' : '500'}
-                  fill={p.isForecast ? '#7C3AED' : '#475569'}
+                  style={{ fill: p.isForecast ? 'var(--ez-hue-violet-text)' : 'var(--ez-color-text-slate)' }}
                   fontFamily="sans-serif"
                 >
                   {p.periodLabel.replace(' (Proj)', '')}
@@ -374,7 +374,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
         )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
-          <Info size={13} color="#94A3B8" />
+          <Info size={13} color="var(--ez-color-text-faint)" />
           <span>
             <em>Proyeksi (Forecast)</em> dihitung secara deterministik berdasarkan sisa jadwal termin dan Kurva-S RAB yang disetujui. Realisasi aktual dapat berbeda.
           </span>

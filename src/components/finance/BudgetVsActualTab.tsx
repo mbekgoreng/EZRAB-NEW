@@ -93,7 +93,7 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
 
         <div style={{ backgroundColor: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid #E2E8F0', padding: '16px' }}>
           <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Total Realisasi Aktual</div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: '#DC2626', marginTop: '4px' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-rose-text)', marginTop: '4px' }}>
             {formatRupiah(budgetVsActual.totalActual)}
           </div>
           <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>Pengeluaran tercatat</div>
@@ -101,7 +101,7 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
 
         <div style={{ backgroundColor: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid #E2E8F0', padding: '16px' }}>
           <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Sisa Anggaran Tersedia</div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: '#16A34A', marginTop: '4px' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', marginTop: '4px' }}>
             {formatRupiah(Math.max(0, budgetVsActual.totalBudget - budgetVsActual.totalActual))}
           </div>
           <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>Tersedia untuk sisa pekerjaan</div>
@@ -170,7 +170,7 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
             <thead>
-              <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
+              <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-slate)' }}>
                 <th style={{ padding: '10px 14px', fontWeight: 700 }}>Kategori Unsur Biaya</th>
                 <th style={{ padding: '10px 14px', fontWeight: 700, textAlign: 'right' }}>Anggaran RAB</th>
                 <th style={{ padding: '10px 14px', fontWeight: 700, textAlign: 'right' }}>Realisasi Aktual</th>
@@ -188,7 +188,7 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
                     <td style={{ padding: '10px 14px', fontWeight: 650, color: '#1E293B' }}>
                       {c.category}
                     </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'right', color: '#475569' }}>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--ez-color-text-slate)' }}>
                       {c.budgetAmount > 0 ? formatRupiah(c.budgetAmount) : '-'}
                     </td>
                     <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>

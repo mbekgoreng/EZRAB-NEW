@@ -127,7 +127,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
                 borderRadius: '8px',
                 border: '1px solid #CBD5E1',
                 fontSize: '12.5px',
-                color: '#334155',
+                color: 'var(--ez-color-text-body)',
                 backgroundColor: 'var(--ez-color-surface)',
                 fontWeight: 600,
                 outline: 'none',
@@ -210,7 +210,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
             <h1 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               {company?.name || 'EZRAB CONSTRUCTION MANAGEMENT'}
             </h1>
-            <div style={{ fontSize: '12px', color: '#475569', marginTop: '4px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--ez-color-text-slate)', marginTop: '4px' }}>
               {company?.address || 'Layanan Estimasi & Manajemen Konstruksi Terintegrasi'}
             </div>
           </div>
@@ -262,11 +262,11 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
             </div>
             <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px' }}>
               <div style={{ color: 'var(--ez-color-text-muted)' }}>Realisasi Pengeluaran</div>
-              <div style={{ fontSize: '15px', fontWeight: 800, color: '#DC2626', marginTop: '4px' }}>{formatRupiah(summary.actualCost)}</div>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-rose-text)', marginTop: '4px' }}>{formatRupiah(summary.actualCost)}</div>
             </div>
             <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px' }}>
               <div style={{ color: 'var(--ez-color-text-muted)' }}>Kas Masuk Diterima</div>
-              <div style={{ fontSize: '15px', fontWeight: 800, color: '#16A34A', marginTop: '4px' }}>{formatRupiah(summary.cashIn)}</div>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', marginTop: '4px' }}>{formatRupiah(summary.cashIn)}</div>
             </div>
             <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px' }}>
               <div style={{ color: 'var(--ez-color-text-muted)' }}>Gross Profit Sementara</div>
@@ -285,7 +285,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
 
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
             <thead>
-              <tr style={{ backgroundColor: '#F1F5F9', borderBottom: '1px solid #CBD5E1' }}>
+              <tr style={{ backgroundColor: 'var(--ez-color-surface-tertiary)', borderBottom: '1px solid #CBD5E1' }}>
                 <th style={{ padding: '8px 10px', fontWeight: 700 }}>Kelompok Pekerjaan</th>
                 <th style={{ padding: '8px 10px', fontWeight: 700, textAlign: 'right' }}>Anggaran RAB</th>
                 <th style={{ padding: '8px 10px', fontWeight: 700, textAlign: 'right' }}>Realisasi Pengeluaran</th>
@@ -295,7 +295,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
             </thead>
             <tbody>
               {budgetVsActual.items.map((i) => (
-                <tr key={i.groupId} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                <tr key={i.groupId} style={{ borderBottom: '1px solid var(--ez-color-border-soft)' }}>
                   <td style={{ padding: '8px 10px', fontWeight: 600 }}>{i.groupName}</td>
                   <td style={{ padding: '8px 10px', textAlign: 'right' }}>{formatRupiah(i.budgetAmount)}</td>
                   <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>{formatRupiah(i.actualAmount)}</td>
@@ -330,7 +330,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
             </div>
             <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
               <div style={{ color: 'var(--ez-color-text-muted)' }}>Piutang Jatuh Tempo</div>
-              <div style={{ fontSize: '14px', fontWeight: 750, color: '#DC2626', marginTop: '2px' }}>{formatRupiah(receivables.totalOverdue)}</div>
+              <div style={{ fontSize: '14px', fontWeight: 750, color: 'var(--ez-hue-rose-text)', marginTop: '2px' }}>{formatRupiah(receivables.totalOverdue)}</div>
             </div>
           </div>
         </div>

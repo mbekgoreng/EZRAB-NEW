@@ -59,7 +59,7 @@ export const UnifiedTransactionsTab: React.FC<UnifiedTransactionsTabProps> = ({
             <span style={{ fontSize: '12px', fontWeight: 700, color: '#166534', backgroundColor: '#DCFCE7', padding: '4px 10px', borderRadius: '6px' }}>
               Total Masuk: {formatRupiah(transactionsData.totalIncome)}
             </span>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: '#DC2626', backgroundColor: '#FEE2E2', padding: '4px 10px', borderRadius: '6px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-rose-text)', backgroundColor: '#FEE2E2', padding: '4px 10px', borderRadius: '6px' }}>
               Total Keluar: {formatRupiah(transactionsData.totalExpense)}
             </span>
           </div>
