@@ -148,8 +148,8 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
           }}
         >
           <AlertTriangle size={36} color="#D97706" style={{ marginBottom: 10 }} />
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#92400E' }}>Belum ada data JSA / K3 proyek</div>
-          <p style={{ fontSize: 12.5, color: '#B45309', maxWidth: 460, margin: '6px auto 14px' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ez-hue-amber-text-dark)' }}>Belum ada data JSA / K3 proyek</div>
+          <p style={{ fontSize: 12.5, color: 'var(--ez-hue-amber-text)', maxWidth: 460, margin: '6px auto 14px' }}>
             Dokumen HSE seperti JSA dan RKK memerlukan identifikasi bahaya, tingkat risiko, dan tindakan pengendalian mitigasi konkret.
           </p>
           <button
@@ -158,7 +158,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
             style={{
               background: 'var(--ez-color-surface)',
               border: '1px solid #FCD34D',
-              color: '#B45309',
+              color: 'var(--ez-hue-amber-text)',
               borderRadius: 6,
               padding: '7px 14px',
               fontSize: 12.5,
@@ -173,7 +173,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569' }}>
+              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)' }}>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>No</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Uraian Aktivitas Kerja</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Potensi Bahaya</th>
@@ -189,7 +189,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                 <tr key={item.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                   <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-muted)' }}>{idx + 1}</td>
                   <td style={{ padding: '10px 12px', fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>{item.activity}</td>
-                  <td style={{ padding: '10px 12px', color: '#DC2626', fontWeight: 600 }}>{item.hazard}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--ez-hue-rose-text)', fontWeight: 600 }}>{item.hazard}</td>
                   <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                     <span
                       style={{
@@ -214,9 +214,9 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                       {item.risk}
                     </span>
                   </td>
-                  <td style={{ padding: '10px 12px', color: '#1E293B', maxWidth: 220 }}>{item.control}</td>
-                  <td style={{ padding: '10px 12px', color: '#475569', fontSize: 11.5 }}>{item.ppe || '—'}</td>
-                  <td style={{ padding: '10px 12px', color: '#334155' }}>{item.responsiblePerson || '—'}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-strong)', maxWidth: 220 }}>{item.control}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-slate)', fontSize: 11.5 }}>{item.ppe || '—'}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-body)' }}>{item.responsiblePerson || '—'}</td>
                   <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                     <div style={{ display: 'inline-flex', gap: 6 }}>
                       <button
@@ -270,7 +270,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
             </h4>
             <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Aktivitas Pekerjaan *
                 </label>
                 <input
@@ -284,7 +284,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Potensi Bahaya *
                   </label>
                   <input
@@ -297,7 +297,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Tingkat Risiko
                   </label>
                   <select
@@ -312,7 +312,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                 </div>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Tindakan Pengendalian & Pencegahan (Mitigasi) *
                 </label>
                 <textarea
@@ -326,7 +326,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Alat Pelindung Diri (APD)
                   </label>
                   <input
@@ -338,7 +338,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Penanggung Jawab (PIC)
                   </label>
                   <input

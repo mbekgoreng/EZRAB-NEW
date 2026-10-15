@@ -63,10 +63,10 @@ type WizardStep = 1 | 2 | 3 | 4 | 5;
 const CATEGORY_META: Record<string, { label: string; icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>; color: string; bg: string }> = {
   ADMINISTRATION: { label: 'Administrasi', icon: ClipboardList, color: 'var(--ez-color-primary)', bg: 'var(--ez-hue-blue-bg)' },
   TECHNICAL: { label: 'Teknis', icon: DraftingCompass, color: '#0D9488', bg: '#F0FDFA' },
-  COMMERCIAL: { label: 'Biaya', icon: Wallet, color: '#16A34A', bg: 'var(--ez-hue-green-bg)' },
-  COST: { label: 'Biaya', icon: Wallet, color: '#16A34A', bg: 'var(--ez-hue-green-bg)' },
-  SCHEDULE: { label: 'Jadwal', icon: CalendarDays, color: '#D97706', bg: 'var(--ez-hue-amber-bg)' },
-  HSE: { label: 'K3 / HSE', icon: ShieldCheck, color: '#DC2626', bg: 'var(--ez-hue-rose-bg)' },
+  COMMERCIAL: { label: 'Biaya', icon: Wallet, color: 'var(--ez-hue-green-text-bright)', bg: 'var(--ez-hue-green-bg)' },
+  COST: { label: 'Biaya', icon: Wallet, color: 'var(--ez-hue-green-text-bright)', bg: 'var(--ez-hue-green-bg)' },
+  SCHEDULE: { label: 'Jadwal', icon: CalendarDays, color: 'var(--ez-hue-amber-text-deep)', bg: 'var(--ez-hue-amber-bg)' },
+  HSE: { label: 'K3 / HSE', icon: ShieldCheck, color: 'var(--ez-hue-rose-text)', bg: 'var(--ez-hue-rose-bg)' },
 };
 
 export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProps> = ({
@@ -645,7 +645,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                                       {doc.name}
                                     </span>
                                     {doc.requirement === 'CORE' && (
-                                      <span style={{ fontSize: '10px', fontWeight: 700, color: '#DC2626', backgroundColor: 'var(--ez-hue-red-bg)', padding: '1px 6px', borderRadius: '4px' }}>
+                                      <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--ez-hue-rose-text)', backgroundColor: 'var(--ez-hue-red-bg)', padding: '1px 6px', borderRadius: '4px' }}>
                                         WAJIB
                                       </span>
                                     )}
@@ -663,7 +663,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                                             padding: '1px 6px',
                                             borderRadius: '4px',
                                             backgroundColor: 'var(--ez-color-surface-tertiary)',
-                                            color: '#475569',
+                                            color: 'var(--ez-color-text-slate)',
                                           }}
                                         >
                                           Sumber: {dep}
@@ -754,10 +754,10 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                 >
                   <AlertTriangle size={20} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
                   <div>
-                    <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#92400E', margin: 0 }}>
+                    <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-hue-amber-text-dark)', margin: 0 }}>
                       Sebagian Sumber Data Belum Lengkap
                     </h4>
-                    <p style={{ fontSize: '12.5px', color: '#B45309', margin: '4px 0 10px 0', lineHeight: 1.5 }}>
+                    <p style={{ fontSize: '12.5px', color: 'var(--ez-hue-amber-text)', margin: '4px 0 10px 0', lineHeight: 1.5 }}>
                       Dokumen tetap dapat dibuat dan di-generate ke dalam status <strong>DRAFT</strong>. Nilai atau jadwal yang belum lengkap akan diberi tanda placeholder yang dapat Anda edit kemudian di dokumen editor.
                     </p>
                     <div style={{ display: 'flex', gap: '10px' }}>
@@ -786,7 +786,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                             padding: '7px 14px',
                             borderRadius: '6px',
                             backgroundColor: 'var(--ez-color-surface)',
-                            color: '#92400E',
+                            color: 'var(--ez-hue-amber-text-dark)',
                             border: '1px solid #FCD34D',
                             fontSize: '12px',
                             fontWeight: 600,
@@ -831,7 +831,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   marginBottom: '20px',
                 }}
               >
-                <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#334155', marginBottom: '12px' }}>
+                <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-body)', marginBottom: '12px' }}>
                   Variabel Otomatis dari Core Proyek:
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
@@ -857,7 +857,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
               {/* USER INPUT OVERRIDES */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                     Nomor Surat Penawaran
                   </label>
                   <input
@@ -876,7 +876,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                     Tanggal Dokumen
                   </label>
                   <input
@@ -895,7 +895,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                     Penerima Dokumen (Pokja / PPK)
                   </label>
                   <input
@@ -914,7 +914,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                     Instansi / Lembaga Penerima
                   </label>
                   <input
@@ -933,8 +933,8 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                    Nama Perusahaan / Kontraktor <span style={{ color: '#DC2626' }}>*</span>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
+                    Nama Perusahaan / Kontraktor <span style={{ color: 'var(--ez-hue-rose-text)' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -953,13 +953,13 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                     }}
                   />
                   {identityError && (
-                    <div style={{ marginTop: '4px', fontSize: '11.5px', color: '#DC2626' }}>{identityError}</div>
+                    <div style={{ marginTop: '4px', fontSize: '11.5px', color: 'var(--ez-hue-rose-text)' }}>{identityError}</div>
                   )}
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                    Penandatangan (Direktur) <span style={{ color: '#DC2626' }}>*</span>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
+                    Penandatangan (Direktur) <span style={{ color: 'var(--ez-hue-rose-text)' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -978,7 +978,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                     Jabatan Penandatangan
                   </label>
                   <input
@@ -1078,7 +1078,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                           {issue.title}
                         </span>
                       </div>
-                      <div style={{ fontSize: '12px', color: '#475569', marginBottom: '4px' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                         {issue.description}
                       </div>
                       {issue.suggestedAction && (
@@ -1099,7 +1099,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   overflow: 'hidden',
                 }}
               >
-                <div style={{ padding: '10px 14px', backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', fontSize: '12.5px', fontWeight: 700, color: '#334155' }}>
+                <div style={{ padding: '10px 14px', backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-body)' }}>
                   Daftar Dokumen yang Akan Dibuat ({selectedDocIds.length} Dokumen):
                 </div>
                 <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
@@ -1146,7 +1146,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   height: '64px',
                   borderRadius: '50%',
                   backgroundColor: 'var(--ez-hue-green-bg-deep)',
-                  color: '#16A34A',
+                  color: 'var(--ez-hue-green-text-bright)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1196,7 +1196,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                     padding: '12px 20px',
                     borderRadius: '10px',
                     backgroundColor: 'var(--ez-color-surface-tertiary)',
-                    color: '#334155',
+                    color: 'var(--ez-color-text-body)',
                     border: '1px solid var(--ez-hue-slate-border)',
                     fontWeight: 600,
                     fontSize: '13.5px',
@@ -1231,7 +1231,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                     borderRadius: '8px',
                     border: '1px solid var(--ez-hue-slate-border)',
                     backgroundColor: 'var(--ez-color-surface)',
-                    color: '#334155',
+                    color: 'var(--ez-color-text-body)',
                     fontWeight: 600,
                     fontSize: '13px',
                     cursor: 'pointer',

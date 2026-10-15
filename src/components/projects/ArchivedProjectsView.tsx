@@ -295,7 +295,7 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                         padding: '5px 12px',
                         borderRadius: 'var(--ez-radius-pill)',
                         background: 'var(--ez-pastel-sky)',
-                        color: '#2456A8',
+                        color: 'var(--ez-hue-blue-text-deep)',
                         whiteSpace: 'nowrap',
                       }}
                     >
@@ -421,7 +421,7 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                         borderRadius: 'var(--ez-radius-control)',
                         background: '#FCE9E9',
                         border: '1px solid #F5D5D5',
-                        color: '#B54747',
+                        color: 'var(--ez-hue-rose-text)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',

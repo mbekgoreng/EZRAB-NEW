@@ -10,11 +10,11 @@
 .keu-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
 .keu-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
 .keu-tab { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 999px; border: 1px solid var(--ez-color-border-soft); background: var(--ez-color-surface); font-size: 13px; font-weight: 700; cursor: pointer; color: var(--ez-color-text-muted); font-family: inherit; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
-.keu-tab:hover { border-color: #2563EB; color: #2563EB; }
+.keu-tab:hover { border-color: #2563EB; color: var(--ez-hue-blue-text); }
 .keu-tab.active { background: #2563EB; border-color: #2563EB; color: #fff; box-shadow: 0 4px 14px rgba(37,99,235,0.28); }
 .keu-card { background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: 22px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
 .keu-card-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--ez-color-text-primary); margin-bottom: 4px; }
-.keu-card-title svg { color: #2563EB; }
+.keu-card-title svg { color: var(--ez-hue-blue-text); }
 .keu-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .keu-table th { text-align: left; padding: 10px 12px; color: var(--ez-color-text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; border-bottom: 1px solid var(--ez-color-border-soft); }
 .keu-table td { padding: 14px 12px; border-bottom: 1px solid var(--ez-color-border-soft); color: var(--ez-color-text-primary); }
@@ -36,5 +36,5 @@
 .keu-row span { color: var(--ez-color-text-muted); }
 .keu-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
 .keu-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px; border-radius: 12px; border: 1px solid var(--ez-color-border-soft); background: var(--ez-color-surface); font-weight: 700; font-size: 13px; cursor: pointer; color: var(--ez-color-text-primary); font-family: inherit; }
-.keu-actions button:hover { border-color: #2563EB; color: #2563EB; }
+.keu-actions button:hover { border-color: #2563EB; color: var(--ez-hue-blue-text); }
 @media (max-width: 700px) { .keu-kpis { grid-template-columns: 1fr 1fr; } .keu-grid { grid-template-columns: 1fr; } }

@@ -143,7 +143,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
           }}
         >
           <Briefcase size={36} color="#94A3B8" style={{ marginBottom: 10 }} />
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#334155' }}>Belum ada data personil proyek</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ez-color-text-body)' }}>Belum ada data personil proyek</div>
           <p style={{ fontSize: 12.5, color: 'var(--ez-color-text-muted)', maxWidth: 420, margin: '6px auto 14px' }}>
             Dokumen seperti Surat Pernyataan Sedia Personil dan Daftar Alat & Personil membutuhkan data personil aktual proyek.
           </p>
@@ -168,7 +168,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569' }}>
+              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)' }}>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>No</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Nama Lengkap</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Jabatan / Posisi</th>
@@ -184,8 +184,8 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
                   <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-muted)' }}>{idx + 1}</td>
                   <td style={{ padding: '10px 12px', fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>{item.name}</td>
                   <td style={{ padding: '10px 12px', color: 'var(--ez-color-primary)', fontWeight: 600 }}>{item.position}</td>
-                  <td style={{ padding: '10px 12px', color: '#334155' }}>{item.qualification || '—'}</td>
-                  <td style={{ padding: '10px 12px', color: '#334155' }}>{item.experience || '—'}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-body)' }}>{item.qualification || '—'}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-body)' }}>{item.experience || '—'}</td>
                   <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-muted)', maxWidth: 220 }}>{item.responsibility || '—'}</td>
                   <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                     <div style={{ display: 'inline-flex', gap: 6 }}>
@@ -240,7 +240,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
             </h4>
             <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Nama Lengkap *
                 </label>
                 <input
@@ -253,7 +253,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Jabatan / Posisi dalam Proyek *
                 </label>
                 <input
@@ -267,7 +267,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Kualifikasi / Sertifikasi
                   </label>
                   <input
@@ -279,7 +279,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Pengalaman Kerja
                   </label>
                   <input
@@ -292,7 +292,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
                 </div>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Tugas & Tanggung Jawab Utama
                 </label>
                 <textarea

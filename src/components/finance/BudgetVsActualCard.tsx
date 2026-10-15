@@ -116,7 +116,7 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
-                <span style={{ fontWeight: 650, color: '#1E293B' }}>{item.groupName}</span>
+                <span style={{ fontWeight: 650, color: 'var(--ez-color-text-strong)' }}>{item.groupName}</span>
                 <span
                   style={{
                     fontSize: '11px',

@@ -134,7 +134,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
                       {tpl.name}
                     </h4>
                     {isSelected && (
-                      <span style={{ background: 'var(--ez-hue-green-bg-deep)', color: '#16A34A', fontSize: 11, fontWeight: 750, padding: '2px 8px', borderRadius: 6 }}>
+                      <span style={{ background: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text-bright)', fontSize: 11, fontWeight: 750, padding: '2px 8px', borderRadius: 6 }}>
                         Aktif
                       </span>
                     )}

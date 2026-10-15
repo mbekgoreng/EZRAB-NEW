@@ -56,15 +56,15 @@ export class ErrorBoundary extends Component<Props, State> {
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 12px',
-              color: '#DC2626',
+              color: 'var(--ez-hue-rose-text)',
             }}
           >
             <AlertTriangle size={24} />
           </div>
-          <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#991B1B', margin: '0 0 6px 0' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-red-text)', margin: '0 0 6px 0' }}>
             {this.props.fallbackTitle || 'Terjadi Kendala pada Tampilan Komponen'}
           </h3>
-          <p style={{ fontSize: '12px', color: '#B91C1C', margin: '0 0 14px 0', lineHeight: 1.5 }}>
+          <p style={{ fontSize: '12px', color: 'var(--ez-hue-red-text)', margin: '0 0 14px 0', lineHeight: 1.5 }}>
             {this.state.error?.message || 'Terjadi kesalahan sistem yang tidak terduga.'}
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
@@ -97,7 +97,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 borderRadius: '6px',
                 border: '1px solid var(--ez-hue-slate-border)',
                 background: 'var(--ez-color-surface)',
-                color: '#475569',
+                color: 'var(--ez-color-text-slate)',
                 fontSize: '12px',
                 fontWeight: 600,
                 cursor: 'pointer',

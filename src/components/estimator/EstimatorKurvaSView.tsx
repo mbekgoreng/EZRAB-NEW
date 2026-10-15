@@ -148,7 +148,7 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12.5px", color: "#475569", fontWeight: 600 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12.5px", color: "var(--ez-color-text-slate)", fontWeight: 600 }}>
               <Clock size={15} color="#2563EB" />
               <span>Durasi Proyek:</span>
               <select
@@ -161,7 +161,7 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
                   border: "1px solid var(--ez-hue-slate-border)",
                   fontSize: "12.5px",
                   fontWeight: 700,
-                  color: "#2563EB",
+                  color: "var(--ez-hue-blue-text)",
                   background: "var(--ez-hue-blue-bg)",
                   outline: "none",
                 }}
@@ -185,7 +185,7 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
                   borderRadius: "8px",
                   border: "1px solid var(--ez-hue-slate-border)",
                   background: "var(--ez-color-surface)",
-                  color: "#334155",
+                  color: "var(--ez-color-text-body)",
                   fontSize: "12.5px",
                   fontWeight: 600,
                   cursor: "pointer",
@@ -332,7 +332,7 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
 
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", minWidth: "800px" }}>
           <thead>
-            <tr style={{ background: "var(--ez-color-surface-secondary)", borderBottom: "2px solid var(--ez-color-border-line)", color: "#475569" }}>
+            <tr style={{ background: "var(--ez-color-surface-secondary)", borderBottom: "2px solid var(--ez-color-border-line)", color: "var(--ez-color-text-slate)" }}>
               <th style={{ padding: "8px 10px", textAlign: "center", width: "40px" }}>No</th>
               <th style={{ padding: "8px 10px", textAlign: "left", width: "240px" }}>Kelompok Pekerjaan</th>
               <th style={{ padding: "8px 10px", textAlign: "right", width: "130px" }}>Biaya (Rp)</th>
@@ -352,7 +352,7 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
                 <td style={{ padding: "8px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                   {formatCurrencyIDR(cat.amount)}
                 </td>
-                <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "#2563EB", fontVariantNumeric: "tabular-nums" }}>
+                <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "var(--ez-hue-blue-text)", fontVariantNumeric: "tabular-nums" }}>
                   {cat.weight.toFixed(2)}%
                 </td>
                 {cat.weeklyDistribution.map((wVal, wIdx) => (
@@ -382,19 +382,19 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
               <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                 {formatCurrencyIDR(totalAmount)}
               </td>
-              <td style={{ padding: "9px 10px", textAlign: "right", color: "#2563EB" }}>100.00%</td>
+              <td style={{ padding: "9px 10px", textAlign: "right", color: "var(--ez-hue-blue-text)" }}>100.00%</td>
               {weeklyTotals.map((wTot, wIdx) => (
                 <td key={wIdx} style={{ padding: "9px 2px", textAlign: "center", fontSize: "11px", color: "var(--ez-color-text-primary)", fontWeight: 700 }}>
                   {wTot.toFixed(1)}%
                 </td>
               ))}
             </tr>
-            <tr style={{ background: "var(--ez-hue-blue-bg)", borderTop: "1px solid var(--ez-hue-blue-border)", fontWeight: 800, color: "#1E3A8A" }}>
+            <tr style={{ background: "var(--ez-hue-blue-bg)", borderTop: "1px solid var(--ez-hue-blue-border)", fontWeight: 800, color: "var(--ez-hue-blue-text-deep)" }}>
               <td colSpan={4} style={{ padding: "10px 10px", textAlign: "right" }}>
                 Bobot Rencana Kumulatif (%)
               </td>
               {cumulativePercentages.map((cVal, cIdx) => (
-                <td key={cIdx} style={{ padding: "10px 2px", textAlign: "center", fontSize: "11px", color: "#2563EB" }}>
+                <td key={cIdx} style={{ padding: "10px 2px", textAlign: "center", fontSize: "11px", color: "var(--ez-hue-blue-text)" }}>
                   {cVal.toFixed(1)}%
                 </td>
               ))}

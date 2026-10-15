@@ -1043,7 +1043,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
               }}
             >
               Proyek saat ini:{' '}
-              <span style={{ color: '#1E40AF', fontWeight: 600 }}>{projectName}</span>
+              <span style={{ color: 'var(--ez-hue-blue-text-deep)', fontWeight: 600 }}>{projectName}</span>
             </p>
           </div>
         </div>
@@ -1262,7 +1262,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                     margin: 0,
                   }}
                 >
-                  Hallo! Saya <strong style={{ color: '#1E40AF', fontWeight: 700 }}>EZRAB AI</strong>, Co Assistant untuk Estimasi RAB Anda. Ada yang bisa saya bantu?
+                  Hallo! Saya <strong style={{ color: 'var(--ez-hue-blue-text-deep)', fontWeight: 700 }}>EZRAB AI</strong>, Co Assistant untuk Estimasi RAB Anda. Ada yang bisa saya bantu?
                 </p>
               </div>
             </div>
@@ -1330,7 +1330,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: '#4F46E5',
+                          color: 'var(--ez-hue-indigo-text)',
                           flexShrink: 0,
                         }}
                       >
@@ -1340,7 +1340,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                         style={{
                           fontSize: '12.5px',
                           fontWeight: 600,
-                          color: '#1E293B',
+                          color: 'var(--ez-color-text-strong)',
                           lineHeight: 1.2,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -1432,7 +1432,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                 )}
                 {/* Error Banner */}
                 {message.isError && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', color: '#DC2626', fontWeight: 600, fontSize: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', color: 'var(--ez-hue-rose-text)', fontWeight: 600, fontSize: '12px' }}>
                     <AlertCircle size={14} />
                     <span>Perhatian Layanan AI</span>
                   </div>
@@ -1457,7 +1457,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                       <thead>
                         <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)' }}>
                           {message.table.headers.map((h, hIdx) => (
-                            <th key={hIdx} style={{ padding: '6px 8px', fontWeight: 700, color: '#475569' }}>{h}</th>
+                            <th key={hIdx} style={{ padding: '6px 8px', fontWeight: 700, color: 'var(--ez-color-text-slate)' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1465,7 +1465,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                         {message.table.rows.map((row, rIdx) => (
                           <tr key={rIdx} style={{ borderBottom: rIdx < message.table!.rows.length - 1 ? '1px solid var(--ez-color-surface-tertiary)' : 'none' }}>
                             {row.map((cell, cIdx) => (
-                              <td key={cIdx} style={{ padding: '6px 8px', color: '#1E293B' }}>{cell}</td>
+                              <td key={cIdx} style={{ padding: '6px 8px', color: 'var(--ez-color-text-strong)' }}>{cell}</td>
                             ))}
                           </tr>
                         ))}
@@ -1486,7 +1486,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                       boxShadow: '0 1px 4px rgba(15, 23, 42, 0.04)',
                     }}
                   >
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#1E40AF', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-hue-blue-text-deep)', marginBottom: '4px' }}>
                       📋 Rekomendasi Aksi Estimasi
                     </div>
                     <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>
@@ -1659,7 +1659,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                   padding: '0 12px',
                   fontSize: '11.5px',
                   fontWeight: 500,
-                  color: '#475569',
+                  color: 'var(--ez-color-text-slate)',
                   maxWidth: 'calc(100% - 32px)',
                   cursor: 'pointer',
                   transition: 'background 0.15s ease',
@@ -1678,7 +1678,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
                     fontWeight: 600,
-                    color: '#1E293B',
+                    color: 'var(--ez-color-text-strong)',
                   }}
                 >
                   Konteks: {projectName}
@@ -1790,7 +1790,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
               gap: '8px',
               marginBottom: '8px',
               fontSize: '12px',
-              color: '#DC2626',
+              color: 'var(--ez-hue-rose-text)',
               fontWeight: 600,
             }}
           >

@@ -142,7 +142,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
                           <div style={{ fontSize: 10.5, color: 'var(--ez-color-text-muted)' }}>{`{{${v.path}}}`}</div>
                         </div>
                         {v.example && (
-                          <span style={{ fontSize: 10.5, color: '#16A34A', background: 'var(--ez-hue-green-bg-deep)', padding: '1px 6px', borderRadius: 4 }}>
+                          <span style={{ fontSize: 10.5, color: 'var(--ez-hue-green-text-bright)', background: 'var(--ez-hue-green-bg-deep)', padding: '1px 6px', borderRadius: 4 }}>
                             {v.example}
                           </span>
                         )}
@@ -166,7 +166,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
               padding: '8px 12px',
               fontSize: 12.5,
               fontWeight: 650,
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               cursor: isReadOnly ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -186,7 +186,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
               padding: '8px 12px',
               fontSize: 12.5,
               fontWeight: 650,
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               cursor: isReadOnly ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -249,7 +249,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
                     onClick={() => onDeleteBlock(block.id)}
                     disabled={isReadOnly}
                     title="Hapus Blok"
-                    style={{ border: 0, background: 'none', color: '#DC2626', cursor: isReadOnly ? 'not-allowed' : 'pointer', padding: 4, marginLeft: 6 }}
+                    style={{ border: 0, background: 'none', color: 'var(--ez-hue-rose-text)', cursor: isReadOnly ? 'not-allowed' : 'pointer', padding: 4, marginLeft: 6 }}
                   >
                     <Trash2 size={15} />
                   </button>
@@ -296,7 +296,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
                     }}
                   />
                   {/* Live Resolved Preview */}
-                  <div style={{ marginTop: 8, padding: '8px 12px', background: 'var(--ez-color-surface-secondary)', borderRadius: 6, fontSize: 11.5, color: '#475569' }}>
+                  <div style={{ marginTop: 8, padding: '8px 12px', background: 'var(--ez-color-surface-secondary)', borderRadius: 6, fontSize: 11.5, color: 'var(--ez-color-text-slate)' }}>
                     <span style={{ fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>Pratinjau Variabel Terisi: </span>
                     {resolveTextWithContext((block as ParagraphBlock).content, contextValues)}
                   </div>
@@ -304,19 +304,19 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
               )}
 
               {block.type === 'header' && (
-                <div style={{ fontSize: 12, color: '#475569', background: 'var(--ez-color-surface-secondary)', padding: 10, borderRadius: 6 }}>
+                <div style={{ fontSize: 12, color: 'var(--ez-color-text-slate)', background: 'var(--ez-color-surface-secondary)', padding: 10, borderRadius: 6 }}>
                   <strong>Kop Perusahaan:</strong> {block.companyName} ({block.address || 'Alamat Perusahaan'})
                 </div>
               )}
 
               {block.type === 'signature' && (
-                <div style={{ fontSize: 12, color: '#475569', background: 'var(--ez-color-surface-secondary)', padding: 10, borderRadius: 6 }}>
+                <div style={{ fontSize: 12, color: 'var(--ez-color-text-slate)', background: 'var(--ez-color-surface-secondary)', padding: 10, borderRadius: 6 }}>
                   <strong>Area Tanda Tangan:</strong> {(block as SignatureBlock).signatories.map((s) => `${s.name} (${s.position})`).join(', ')}
                 </div>
               )}
 
               {block.type === 'table' && (
-                <div style={{ fontSize: 12, color: '#475569', background: 'var(--ez-color-surface-secondary)', padding: 10, borderRadius: 6 }}>
+                <div style={{ fontSize: 12, color: 'var(--ez-color-text-slate)', background: 'var(--ez-color-surface-secondary)', padding: 10, borderRadius: 6 }}>
                   <strong>Tabel Rincian:</strong> {block.caption || 'Tabel Terstruktur'}
                 </div>
               )}

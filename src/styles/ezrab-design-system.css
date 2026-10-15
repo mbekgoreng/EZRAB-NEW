@@ -35,6 +35,13 @@
   --ez-color-text-slate: #475569;
   --ez-color-text-muted: #64748B;
   --ez-color-text-faint: #94A3B8;
+  --ez-color-text-strong: #1E293B;
+  --ez-color-text-body: #334155;
+  --ez-color-text-slate: #475569;
+  --ez-color-text-warm: #6B6B64;
+  --ez-hue-blue-text: #2563EB;
+  --ez-hue-indigo-text: #4338CA;
+  --ez-hue-amber-text-dark: #92400E;
   --ez-color-text-ink: #1E293B;
 
   /* ---- Borders & dividers ---- */
@@ -167,6 +174,13 @@
   --ez-color-text-slate: #A8B6CC;
   --ez-color-text-muted: #8A99B0;
   --ez-color-text-faint: #64748B;
+  --ez-color-text-strong: #E6ECF5;
+  --ez-color-text-body: #CBD5E1;
+  --ez-color-text-slate: #9FB0C3;
+  --ez-color-text-warm: #A8A29E;
+  --ez-hue-blue-text: #60A5FA;
+  --ez-hue-indigo-text: #A5B4FC;
+  --ez-hue-amber-text-dark: #FCD34D;
   --ez-color-text-ink: #DCE6F5;
   --ez-color-border: #26334A;
   --ez-color-border-soft: #1E2A40;

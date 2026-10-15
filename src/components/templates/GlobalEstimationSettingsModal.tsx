@@ -81,7 +81,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
               borderRadius: '6px',
               border: 'none',
               background: '#EDF2F7',
-              color: '#475569',
+              color: 'var(--ez-color-text-slate)',
               cursor: 'pointer'
             }}
           >
@@ -92,7 +92,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
         {/* Form Body */}
         <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
               Tingkat Detail Default
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
@@ -119,7 +119,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
               Sumber Harga Acuan Utama
             </label>
             <select
@@ -142,7 +142,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: '#475569', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                 Overhead Proyek (%)
               </label>
               <input
@@ -153,7 +153,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: '#475569', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                 Profit Kontraktor (%)
               </label>
               <input
@@ -167,7 +167,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: '#475569', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                 Pajak PPN (%)
               </label>
               <input
@@ -178,7 +178,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: '#475569', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                 Material Waste (%)
               </label>
               <input
@@ -209,7 +209,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
               borderRadius: '6px',
               border: '1px solid var(--ez-hue-slate-border)',
               background: 'var(--ez-color-surface)',
-              color: '#475569',
+              color: 'var(--ez-color-text-slate)',
               fontSize: '12px',
               cursor: 'pointer'
             }}

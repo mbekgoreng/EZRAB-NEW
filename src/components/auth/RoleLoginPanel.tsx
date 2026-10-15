@@ -99,7 +99,7 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
             fontSize: '10.5px',
             fontWeight: 800,
             letterSpacing: '0.06em',
-            color: '#7C3AED',
+            color: 'var(--ez-hue-violet-text)',
             background: 'var(--ez-hue-violet-bg)',
             border: '1px solid var(--ez-hue-violet-border)',
             padding: '4px 10px',
@@ -124,7 +124,7 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
           style={{
             display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px',
             backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px',
-            color: '#991b1b', fontSize: '12.5px', lineHeight: 1.4,
+            color: 'var(--ez-hue-red-text)', fontSize: '12.5px', lineHeight: 1.4,
           }}
         >
           <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
@@ -136,7 +136,7 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
           style={{
             display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px',
             backgroundColor: 'var(--ez-hue-green-bg)', border: '1px solid var(--ez-hue-green-border)', borderRadius: '8px',
-            color: '#166534', fontSize: '12.5px', lineHeight: 1.4,
+            color: 'var(--ez-hue-green-text-deep)', fontSize: '12.5px', lineHeight: 1.4,
           }}
         >
           <CheckCircle2 size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
@@ -240,7 +240,7 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
           {/* PIN form */}
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
-              <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '8px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '8px' }}>
                 {t('auth.pin_placeholder')}
               </label>
               <div style={{ position: 'relative' }}>

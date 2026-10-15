@@ -387,7 +387,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
           {/* SECTION A: QUICK PRESETS */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 800, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-slate)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                 PILIH PRESET PAKET RESMI (QUICK PRESETS)
               </label>
               <span style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
@@ -473,7 +473,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 border: '1px solid var(--ez-color-border-line)',
               }}
             >
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 750, color: '#334155', marginBottom: '8px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 750, color: 'var(--ez-color-text-body)', marginBottom: '8px' }}>
                 FORMAT DOKUMEN EXPORT
               </label>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -518,7 +518,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 border: '1px solid var(--ez-color-border-line)',
               }}
             >
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 750, color: '#334155', marginBottom: '8px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 750, color: 'var(--ez-color-text-body)', marginBottom: '8px' }}>
                 PERUNTUKAN DOKUMEN (RECIPIENT)
               </label>
               <select
@@ -601,7 +601,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 background: 'var(--ez-color-surface)',
                 fontSize: '11.5px',
                 fontWeight: 600,
-                color: '#334155',
+                color: 'var(--ez-color-text-body)',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 display: 'flex',
@@ -715,7 +715,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                               fontSize: '9px',
                               fontWeight: 800,
                               background: 'var(--ez-hue-amber-bg-deep)',
-                              color: '#B45309',
+                              color: 'var(--ez-hue-amber-text)',
                               padding: '0 4px',
                               borderRadius: '3px',
                             }}
@@ -754,7 +754,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                   alignItems: 'center',
                   gap: '8px',
                   fontSize: '11px',
-                  color: '#92400E',
+                  color: 'var(--ez-hue-amber-text-dark)',
                 }}
               >
                 <ShieldCheck size={16} />
@@ -783,7 +783,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Sliders size={15} color="#64748B" />
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)' }}>
                   Pengaturan Lanjutan (Formula Live & Pejabat Penandatangan)
                 </span>
               </div>
@@ -811,7 +811,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 {/* Signatures input */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '4px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                       Disusun Oleh (Estimator)
                     </label>
                     <input
@@ -829,7 +829,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                       Diperiksa Oleh (Teknik)
                     </label>
                     <input
@@ -847,7 +847,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                       Disetujui Oleh (Owner)
                     </label>
                     <input
@@ -923,7 +923,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 fontSize: '11.5px',
               }}
             >
-              <div style={{ fontWeight: 800, color: '#334155', marginBottom: '6px' }}>
+              <div style={{ fontWeight: 800, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                 Struktur Sheet Workbook:
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -980,7 +980,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 border: '1px solid var(--ez-hue-slate-border)',
                 fontSize: '12.5px',
                 fontWeight: 650,
-                color: '#475569',
+                color: 'var(--ez-color-text-slate)',
                 cursor: 'pointer',
               }}
             >
@@ -999,7 +999,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 border: '1px solid #86EFAC',
                 fontSize: '12.5px',
                 fontWeight: 700,
-                color: '#15803D',
+                color: 'var(--ez-hue-green-text)',
                 cursor: isExporting ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',

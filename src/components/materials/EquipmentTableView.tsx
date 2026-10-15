@@ -147,7 +147,7 @@ export const EquipmentTableView: React.FC<EquipmentTableViewProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#D97706',
+                        color: 'var(--ez-hue-amber-text-deep)',
                         flexShrink: 0,
                       }}
                     >

@@ -507,7 +507,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 height: '42px',
                 borderRadius: '12px',
                 background: 'var(--ez-hue-violet-bg)',
-                color: '#7C3AED',
+                color: 'var(--ez-hue-violet-text)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

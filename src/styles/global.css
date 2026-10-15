@@ -264,7 +264,7 @@ img, svg {
 
 .ezrab-table th {
   background: var(--ez-hue-slate-bg);
-  color: #475569;
+  color: var(--ez-color-text-slate);
   font-weight: 700;
   font-size: 12px;
   text-transform: uppercase;
@@ -279,7 +279,7 @@ img, svg {
 .ezrab-table td {
   padding: 12px 14px;
   border-bottom: 1px solid var(--ez-color-surface-tertiary);
-  color: #1e293b;
+  color: var(--ez-color-text-strong);
 }
 
 .ezrab-table tr:last-child td {
@@ -552,7 +552,7 @@ img, svg {
 }
 
 .ezrab-bottom-nav-item.is-active {
-  color: #2563EB;
+  color: var(--ez-hue-blue-text);
   font-weight: 750;
 }
 

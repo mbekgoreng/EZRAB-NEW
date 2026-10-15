@@ -623,7 +623,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                           </td>
                           <td style={{ padding: '12px 10px' }}>
                             {overdue ? (
-                              <span style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 'var(--ez-radius-pill)', background: '#FCE9E9', color: '#B54747', whiteSpace: 'nowrap' }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 'var(--ez-radius-pill)', background: '#FCE9E9', color: 'var(--ez-hue-rose-text)', whiteSpace: 'nowrap' }}>
                                 {t('proj.all.overdue')}
                               </span>
                             ) : (

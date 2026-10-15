@@ -251,7 +251,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
               borderRadius: '10px',
               background: 'var(--ez-color-surface)',
               border: '1px solid var(--ez-color-border-line)',
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               fontSize: '12.5px',
               fontWeight: 600,
               cursor: 'pointer',
@@ -393,7 +393,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
             <thead>
-              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569', fontWeight: 700 }}>
+              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)', fontWeight: 700 }}>
                 <th style={{ padding: '12px 14px', width: '75px' }}>Kode</th>
                 {category === 'MATERIAL' && <th className="tablet-up" style={{ padding: '12px 14px', width: '120px' }}>Brand</th>}
                 <th style={{ padding: '12px 14px' }}>Uraian & Nama Item</th>
@@ -426,7 +426,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                       {item.code}
                     </td>
                     {category === 'MATERIAL' && (
-                      <td className="tablet-up" style={{ padding: '10px 14px', color: '#475569', fontWeight: 600 }}>
+                      <td className="tablet-up" style={{ padding: '10px 14px', color: 'var(--ez-color-text-slate)', fontWeight: 600 }}>
                         <span style={{ background: 'var(--ez-color-surface-tertiary)', padding: '2px 8px', borderRadius: '4px', fontSize: '11px' }}>
                           {item.brand || 'Umum'}
                         </span>
@@ -563,7 +563,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
             <form onSubmit={handleAddItem} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Kode Item
                   </label>
                   <input
@@ -577,7 +577,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
 
                 {category === 'MATERIAL' && (
                   <div>
-                    <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                       Brand / Merek
                     </label>
                     <input
@@ -592,7 +592,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
               </div>
 
               <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                   Nama Item *
                 </label>
                 <input
@@ -607,7 +607,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
 
               {category === 'MATERIAL' && (
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Kategori Material
                   </label>
                   <select
@@ -623,7 +623,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
               )}
 
               <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                   Spesifikasi Teknis
                 </label>
                 <input
@@ -637,7 +637,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Satuan
                   </label>
                   <input
@@ -649,7 +649,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Harga Min (Rp)
                   </label>
                   <input
@@ -661,7 +661,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Harga Max (Rp)
                   </label>
                   <input
@@ -675,7 +675,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Harga Standar (Rp) *
                   </label>
                   <input
@@ -689,7 +689,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Wilayah
                   </label>
                   <select
@@ -710,7 +710,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  style={{ height: '36px', padding: '0 14px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', color: '#475569', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{ height: '36px', padding: '0 14px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-slate)', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Batal
                 </button>

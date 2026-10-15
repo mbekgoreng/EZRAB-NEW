@@ -185,7 +185,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 border: '1px solid var(--ez-hue-green-border-deep)',
-                color: '#059669',
+                color: 'var(--ez-hue-green-text)',
               }}
             >
               <Receipt size={22} />
@@ -202,7 +202,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                     padding: '2px 8px',
                     borderRadius: '6px',
                     backgroundColor: 'var(--ez-hue-green-bg-deep)',
-                    color: '#166534',
+                    color: 'var(--ez-hue-green-text-deep)',
                   }}
                 >
                   PHASE 9
@@ -240,7 +240,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
               style={{
                 backgroundColor: 'var(--ez-hue-rose-bg)',
                 border: '1px solid var(--ez-hue-rose-border)',
-                color: '#991B1B',
+                color: 'var(--ez-hue-red-text)',
                 padding: '12px 16px',
                 borderRadius: '10px',
                 marginBottom: '20px',
@@ -260,7 +260,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
               style={{
                 backgroundColor: 'var(--ez-hue-green-bg)',
                 border: '1px solid var(--ez-hue-green-border)',
-                color: '#166534',
+                color: 'var(--ez-hue-green-text-deep)',
                 padding: '12px 16px',
                 borderRadius: '10px',
                 marginBottom: '20px',
@@ -322,7 +322,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
 
                 {selectedFile ? (
                   <div>
-                    <div style={{ fontSize: '15px', fontWeight: 750, color: '#166534' }}>
+                    <div style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-hue-green-text-deep)' }}>
                       ✓ File Siap: {selectedFile.name}
                     </div>
                     <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
@@ -432,7 +432,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                   <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
                     Total Nilai Belanja
                   </div>
-                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#059669', marginTop: '2px' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-hue-green-text)', marginTop: '2px' }}>
                     {formatCurrencyIDR(ocrResult.grandTotal)}
                   </div>
                 </div>
@@ -447,7 +447,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                 <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
-                      <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', textAlign: 'left', color: '#475569' }}>
+                      <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', textAlign: 'left', color: 'var(--ez-color-text-slate)' }}>
                         <th style={{ padding: '10px 14px' }}>Deskripsi Barang Nota</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' }}>Qty</th>
                         <th style={{ padding: '10px 14px', textAlign: 'right' }}>Harga Nota</th>
@@ -466,7 +466,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                             <td style={{ padding: '10px 14px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                               {item.description}
                             </td>
-                            <td style={{ padding: '10px 14px', textAlign: 'center', color: '#475569' }}>
+                            <td style={{ padding: '10px 14px', textAlign: 'center', color: 'var(--ez-color-text-slate)' }}>
                               {item.quantity} {item.unit}
                             </td>
                             <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--ez-color-text-primary)' }}>
@@ -478,7 +478,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                             <td style={{ padding: '10px 14px', color: 'var(--ez-color-text-muted)', fontSize: '12px' }}>
                               {match ? (
                                 <div>
-                                  <div style={{ fontWeight: 600, color: '#334155' }}>{match.masterItemName}</div>
+                                  <div style={{ fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{match.masterItemName}</div>
                                   <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Acuan: {formatCurrencyIDR(match.masterPrice)}</div>
                                 </div>
                               ) : (
@@ -524,7 +524,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                 }}
               >
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '6px' }}>
                     Kategori Pengeluaran (Finance)
                   </label>
                   <select
@@ -552,7 +552,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '6px' }}>
                     Metode Pembayaran
                   </label>
                   <select
@@ -592,7 +592,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                   style={{
                     backgroundColor: 'var(--ez-color-surface)',
                     border: '1px solid var(--ez-hue-slate-border)',
-                    color: '#475569',
+                    color: 'var(--ez-color-text-slate)',
                     padding: '10px 18px',
                     borderRadius: '8px',
                     fontSize: '13px',

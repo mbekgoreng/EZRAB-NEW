@@ -367,7 +367,7 @@ export const PriceResolutionDrawer: React.FC<PriceResolutionDrawerProps> = ({
           <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{itemName}</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
             {itemSpecification && (
-              <span style={{ fontSize: '11px', background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', padding: '2px 8px', borderRadius: '4px', color: '#475569' }}>
+              <span style={{ fontSize: '11px', background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', padding: '2px 8px', borderRadius: '4px', color: 'var(--ez-color-text-slate)' }}>
                 Spec: {itemSpecification}
               </span>
             )}
@@ -375,7 +375,7 @@ export const PriceResolutionDrawer: React.FC<PriceResolutionDrawerProps> = ({
               Satuan: {itemUnit}
             </span>
             {quantity && quantity > 0 && (
-              <span style={{ fontSize: '11px', background: 'var(--ez-hue-amber-bg-deep)', border: '1px solid var(--ez-hue-amber-border)', padding: '2px 8px', borderRadius: '4px', color: '#92400E', fontWeight: 600 }}>
+              <span style={{ fontSize: '11px', background: 'var(--ez-hue-amber-bg-deep)', border: '1px solid var(--ez-hue-amber-border)', padding: '2px 8px', borderRadius: '4px', color: 'var(--ez-hue-amber-text-dark)', fontWeight: 600 }}>
                 Volume: {quantity.toLocaleString('id-ID')} {itemUnit}
               </span>
             )}
@@ -541,7 +541,7 @@ export const PriceResolutionDrawer: React.FC<PriceResolutionDrawerProps> = ({
               {filteredCandidates.length === 0 ? (
                 <div style={{ padding: '24px', textAlign: 'center', background: 'var(--ez-color-surface-secondary)', borderRadius: '8px', border: '1px dashed var(--ez-hue-slate-border)' }}>
                   <AlertCircle size={28} color="#94A3B8" style={{ margin: '0 auto 8px' }} />
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>Belum Ada di Database</div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Belum Ada di Database</div>
                   <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
                     Coba ubah kata kunci di kolom pencarian di atas, atau gunakan <strong>AI Web Search</strong> untuk riset harga pasar terkini.
                   </div>
@@ -570,7 +570,7 @@ export const PriceResolutionDrawer: React.FC<PriceResolutionDrawerProps> = ({
                         padding: '7px 14px',
                         borderRadius: '6px',
                         background: 'var(--ez-color-surface)',
-                        color: '#475569',
+                        color: 'var(--ez-color-text-slate)',
                         border: '1px solid var(--ez-hue-slate-border)',
                         fontSize: '11.5px',
                         fontWeight: 600,
@@ -685,13 +685,13 @@ export const PriceResolutionDrawer: React.FC<PriceResolutionDrawerProps> = ({
 
               {isSearchingWeb && (
                 <div style={{ padding: '30px', textAlign: 'center', color: 'var(--ez-color-text-muted)', fontSize: '12px' }}>
-                  <Loader2 size={24} className="animate-spin" style={{ margin: '0 auto 10px', color: '#7C3AED' }} />
+                  <Loader2 size={24} className="animate-spin" style={{ margin: '0 auto 10px', color: 'var(--ez-hue-violet-text)' }} />
                   Mencari katalog distributor dan referensi pasar konstruksi 2026...
                 </div>
               )}
 
               {webSearchError && !isSearchingWeb && (
-                <div style={{ padding: '12px', background: 'var(--ez-hue-rose-bg)', border: '1px solid #FCA5A5', borderRadius: '6px', color: '#991B1B', fontSize: '12px' }}>
+                <div style={{ padding: '12px', background: 'var(--ez-hue-rose-bg)', border: '1px solid #FCA5A5', borderRadius: '6px', color: 'var(--ez-hue-red-text)', fontSize: '12px' }}>
                   {webSearchError}
                 </div>
               )}
@@ -717,7 +717,7 @@ export const PriceResolutionDrawer: React.FC<PriceResolutionDrawerProps> = ({
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                           <div>
-                            <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: 'var(--ez-hue-purple-bg-deep)', color: '#6D28D9' }}>
+                            <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: 'var(--ez-hue-purple-bg-deep)', color: 'var(--ez-hue-violet-text)' }}>
                               {cand.sourceName}
                             </span>
                             <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-primary)', marginTop: '4px' }}>
@@ -754,7 +754,7 @@ export const PriceResolutionDrawer: React.FC<PriceResolutionDrawerProps> = ({
           {activeTab === 'MANUAL' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Harga Satuan (Rp)
                 </label>
                 <input
@@ -774,7 +774,7 @@ export const PriceResolutionDrawer: React.FC<PriceResolutionDrawerProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Supplier / Vendor / Sumber
                 </label>
                 <input
@@ -793,7 +793,7 @@ export const PriceResolutionDrawer: React.FC<PriceResolutionDrawerProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Catatan / Keterangan
                 </label>
                 <textarea
@@ -826,7 +826,7 @@ export const PriceResolutionDrawer: React.FC<PriceResolutionDrawerProps> = ({
             flexShrink: 0,
           }}
         >
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#475569', cursor: 'pointer' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--ez-color-text-slate)', cursor: 'pointer' }}>
             <input
               type="checkbox"
               checked={alsoSaveToDb}
@@ -843,7 +843,7 @@ export const PriceResolutionDrawer: React.FC<PriceResolutionDrawerProps> = ({
                 borderRadius: '6px',
                 border: '1px solid var(--ez-hue-slate-border)',
                 background: 'var(--ez-color-surface)',
-                color: '#475569',
+                color: 'var(--ez-color-text-slate)',
                 fontSize: '12px',
                 fontWeight: 600,
                 cursor: 'pointer',

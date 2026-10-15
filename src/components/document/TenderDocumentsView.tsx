@@ -314,10 +314,10 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                     <h3 style={{ margin: '6px 0 12px', fontSize: 17, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
                       {proj.name}
                     </h3>
-                    <div style={{ fontSize: 13, color: '#475569', display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
+                    <div style={{ fontSize: 13, color: 'var(--ez-color-text-slate)', display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 18 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><MapPin size={13} color="#94A3B8" /> <strong>Lokasi:</strong> {proj.location || '—'}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Wallet size={13} color="#94A3B8" /> <strong>RAB:</strong> {formatRupiah(proj.totalRab || 0)}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><ClipboardList size={13} color="#94A3B8" /> <strong>Status RAB:</strong> <span style={{ color: '#16A34A', fontWeight: 600 }}>Lengkap</span></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><ClipboardList size={13} color="#94A3B8" /> <strong>Status RAB:</strong> <span style={{ color: 'var(--ez-hue-green-text-bright)', fontWeight: 600 }}>Lengkap</span></div>
                     </div>
                   </div>
 
@@ -419,7 +419,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
           onClick={() => setIsSelectingJob(true)}
           style={{
             background: 'var(--ez-color-surface-secondary)',
-            color: '#334155',
+            color: 'var(--ez-color-text-body)',
             border: '1px solid var(--ez-hue-slate-border)',
             borderRadius: 8,
             padding: '8px 14px',
@@ -480,7 +480,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
             }}
             style={{
               background: 'var(--ez-color-surface)',
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               border: '1px solid var(--ez-hue-slate-border)',
               borderRadius: 9,
               padding: '10px 16px',
@@ -502,9 +502,9 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, marginBottom: 20, background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
         {[
           { label: 'Total Dokumen', val: stats.total, color: 'var(--ez-color-primary)' },
-          { label: 'Selesai / Siap', val: stats.completed, color: '#16A34A' },
-          { label: 'Draft (R0)', val: stats.draft, color: '#D97706' },
-          { label: 'Perlu Data', val: stats.incomplete, color: '#DC2626' },
+          { label: 'Selesai / Siap', val: stats.completed, color: 'var(--ez-hue-green-text-bright)' },
+          { label: 'Draft (R0)', val: stats.draft, color: 'var(--ez-hue-amber-text-deep)' },
+          { label: 'Perlu Data', val: stats.incomplete, color: 'var(--ez-hue-rose-text)' },
         ].map((item, idx, arr) => (
           <div
             key={idx}
@@ -625,7 +625,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
               borderRadius: 8,
               border: '1px solid var(--ez-hue-slate-border)',
               fontSize: 12.5,
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               background: 'var(--ez-color-surface)',
               cursor: 'pointer',
               outline: 'none',
@@ -678,7 +678,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
               }}
               style={{
                 background: 'var(--ez-color-surface)',
-                color: '#334155',
+                color: 'var(--ez-color-text-body)',
                 border: '1px solid var(--ez-hue-slate-border)',
                 borderRadius: 9,
                 padding: '11px 18px',
@@ -710,7 +710,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
               borderRadius: 6,
               background: 'var(--ez-color-surface-tertiary)',
               border: '1px solid var(--ez-hue-slate-border)',
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               fontSize: 12.5,
               fontWeight: 600,
               cursor: 'pointer',
@@ -905,7 +905,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
               <button
                 onClick={() => setDeleteTarget(null)}
                 autoFocus
-                style={{ padding: '9px 18px', background: 'var(--ez-color-surface-tertiary)', border: '1px solid var(--ez-hue-slate-border)', borderRadius: 8, fontWeight: 600, fontSize: 13, color: '#334155', cursor: 'pointer' }}
+                style={{ padding: '9px 18px', background: 'var(--ez-color-surface-tertiary)', border: '1px solid var(--ez-hue-slate-border)', borderRadius: 8, fontWeight: 600, fontSize: 13, color: 'var(--ez-color-text-body)', cursor: 'pointer' }}
               >
                 Batal
               </button>
@@ -1007,13 +1007,13 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                       >
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            {isAlreadyCreated && <CheckCircle2 size={16} style={{ color: '#16A34A' }} />}
+                            {isAlreadyCreated && <CheckCircle2 size={16} style={{ color: 'var(--ez-hue-green-text-bright)' }} />}
                             <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{def.name}</span>
                             {isAlreadyCreated && (
                               <span
                                 style={{
                                   background: 'var(--ez-hue-green-bg-deep)',
-                                  color: '#15803D',
+                                  color: 'var(--ez-hue-green-text)',
                                   fontSize: 11,
                                   fontWeight: 700,
                                   padding: '2px 8px',
@@ -1029,7 +1029,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                           </div>
                           <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
                             {def.autoVariables && def.autoVariables.length > 0 && (
-                              <span style={{ fontSize: 10.5, background: 'var(--ez-hue-green-bg-deep)', color: '#15803D', padding: '1px 6px', borderRadius: 4, fontWeight: 650 }}>
+                              <span style={{ fontSize: 10.5, background: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text)', padding: '1px 6px', borderRadius: 4, fontWeight: 650 }}>
                                 Auto: {def.autoVariables.length} data proyek
                               </span>
                             )}
@@ -1049,7 +1049,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                             }}
                             style={{
                               background: 'var(--ez-color-surface)',
-                              color: '#16A34A',
+                              color: 'var(--ez-hue-green-text-bright)',
                               border: '1px solid var(--ez-hue-green-border)',
                               borderRadius: 7,
                               padding: '6px 14px',
@@ -1110,7 +1110,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                   {selectedDocuments.map((docId) => {
                     const def = getDocumentDefinition(docId);
                     return (
-                      <div key={docId} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, color: '#1E293B' }}>
+                      <div key={docId} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, color: 'var(--ez-color-text-strong)' }}>
                         <FileText size={16} style={{ color: 'var(--ez-color-primary)' }} />
                         <span>{def?.name || docId}</span>
                         <span style={{ fontSize: 11, color: 'var(--ez-color-text-muted)', fontWeight: 400 }}>({def?.category || 'PROYEK'})</span>

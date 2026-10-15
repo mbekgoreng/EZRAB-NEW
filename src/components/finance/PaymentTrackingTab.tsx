@@ -363,7 +363,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
             </div>
 
             {errorMessage && (
-              <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#991B1B' }}>
+              <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: 'var(--ez-hue-red-text)' }}>
                 {errorMessage}
               </div>
             )}

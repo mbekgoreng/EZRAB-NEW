@@ -199,7 +199,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
         }}
       >
         <div style={{ maxWidth: '560px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#A8780A', fontSize: '11.5px', fontWeight: 750, marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ez-hue-amber-text)', fontSize: '11.5px', fontWeight: 750, marginBottom: '6px' }}>
             <Sparkles size={14} />
             <span>{t('proj.draft.banner_tag')}</span>
           </div>
@@ -385,7 +385,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                         padding: '5px 12px',
                         borderRadius: 'var(--ez-radius-pill)',
                         background: 'var(--ez-pastel-cream)',
-                        color: '#A8780A',
+                        color: 'var(--ez-hue-amber-text)',
                         whiteSpace: 'nowrap',
                       }}
                     >
@@ -522,7 +522,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                           border: 'none',
                           fontSize: '12px',
                           fontWeight: 700,
-                          color: '#2456A8',
+                          color: 'var(--ez-hue-blue-text-deep)',
                           cursor: 'pointer',
                         }}
                       >
@@ -558,7 +558,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                           borderRadius: 'var(--ez-radius-control)',
                           background: '#FCE9E9',
                           border: '1px solid #F5D5D5',
-                          color: '#B54747',
+                          color: 'var(--ez-hue-rose-text)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',

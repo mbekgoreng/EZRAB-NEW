@@ -440,7 +440,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          <span style={{ fontWeight: 700, color: '#334155' }}>Konteks:</span>
+          <span style={{ fontWeight: 700, color: 'var(--ez-color-text-body)' }}>Konteks:</span>
           {selectedItem ? (
             <span style={{ color: 'var(--ez-color-primary)', fontWeight: 650 }}>
               {selectedItem.description} ({selectedItem.volume} {selectedItem.unit})
@@ -507,7 +507,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#1E40AF', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-hue-blue-text-deep)', display: 'flex', alignItems: 'center', gap: '5px' }}>
                     <Sparkles size={13} color="#2563EB" />
                     USULAN PERUBAHAN
                   </span>
@@ -543,7 +543,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
                 >
                   <div>
                     <div style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)' }}>Total Sebelum</div>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)' }}>
                       {formatCurrencyIDR(msg.proposal.beforeTotalRab)}
                     </div>
                   </div>
@@ -629,7 +629,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
                       padding: '4px 10px',
                       fontSize: '10.5px',
                       fontWeight: 650,
-                      color: '#334155',
+                      color: 'var(--ez-color-text-body)',
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
                     }}

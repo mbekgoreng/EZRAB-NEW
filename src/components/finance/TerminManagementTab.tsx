@@ -130,10 +130,10 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
     const config: Record<TerminStatus, { bg: string; color: string; label: string }> = {
       PLANNED: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', label: 'Direncanakan' },
       READY_TO_INVOICE: { bg: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)', label: 'Siap Ditagihkan' },
-      INVOICED: { bg: 'var(--ez-hue-indigo-bg)', color: '#4338CA', label: 'Ditagihkan' },
-      PARTIALLY_PAID: { bg: 'var(--ez-hue-amber-bg-deep)', color: '#B45309', label: 'Dibayar Sebagian' },
-      PAID: { bg: 'var(--ez-hue-green-bg-deep)', color: '#15803D', label: 'Lunas' },
-      OVERDUE: { bg: 'var(--ez-hue-red-bg)', color: '#B91C1C', label: 'Jatuh Tempo' },
+      INVOICED: { bg: 'var(--ez-hue-indigo-bg)', color: 'var(--ez-hue-indigo-text)', label: 'Ditagihkan' },
+      PARTIALLY_PAID: { bg: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text)', label: 'Dibayar Sebagian' },
+      PAID: { bg: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text)', label: 'Lunas' },
+      OVERDUE: { bg: 'var(--ez-hue-red-bg)', color: 'var(--ez-hue-red-text)', label: 'Jatuh Tempo' },
       CANCELLED: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-faint)', label: 'Dibatalkan' },
     };
     const c = config[st] || config.PLANNED;
@@ -493,7 +493,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
             </div>
 
             {errorMessage && (
-              <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#991B1B' }}>
+              <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: 'var(--ez-hue-red-text)' }}>
                 {errorMessage}
               </div>
             )}

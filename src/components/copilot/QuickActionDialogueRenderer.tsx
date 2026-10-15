@@ -134,7 +134,7 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
             padding: '2px 8px',
             fontSize: '10px',
             fontWeight: 700,
-            color: '#D97706',
+            color: 'var(--ez-hue-amber-text-deep)',
             border: '1px solid var(--ez-hue-amber-border)'
           }}>
             Perlu Konfirmasi
@@ -147,7 +147,7 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
         <div style={{
           marginBottom: '12px',
           fontSize: '12.5px',
-          color: '#334155',
+          color: 'var(--ez-color-text-body)',
           lineHeight: '1.55',
           whiteSpace: 'pre-line'
         }}>
@@ -243,7 +243,7 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
       {/* 5. STEP C: Preview & Diff Card */}
       {data.previewData && !isConfirmed && (
         <div className="ezrab-dialogue-preview-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#D97706', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-amber-text-deep)', marginBottom: '8px' }}>
             <ShieldAlert className="h-4 w-4" />
             <span>Pratinjau Perubahan (Diff Preview)</span>
           </div>
@@ -256,7 +256,7 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'monospace' }}>
                     <span style={{ color: '#94A3B8', textDecoration: 'line-through' }}>{String(diff.before)}</span>
                     <ArrowRight className="h-3 w-3" style={{ color: '#94A3B8' }} />
-                    <span style={{ fontWeight: 700, color: '#059669' }}>{String(diff.after)}</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-hue-green-text)' }}>{String(diff.after)}</span>
                   </div>
                 </div>
               ))}

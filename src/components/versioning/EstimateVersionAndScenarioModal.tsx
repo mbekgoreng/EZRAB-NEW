@@ -381,7 +381,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
 
                   <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '10px' }}>
                     <div>
-                      <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                         Nomor Versi
                       </label>
                       <input
@@ -400,7 +400,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       />
                     </div>
                     <div>
-                      <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                         Uraian Perubahan / Revisi *
                       </label>
                       <input
@@ -421,7 +421,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                       Catatan Tambahan (Value Engineering & Log Perubahan)
                     </label>
                     <textarea
@@ -449,7 +449,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                         borderRadius: '6px',
                         background: 'var(--ez-color-surface)',
                         border: '1px solid var(--ez-hue-slate-border)',
-                        color: '#475569',
+                        color: 'var(--ez-color-text-slate)',
                         fontSize: '12px',
                         fontWeight: 600,
                         cursor: 'pointer',
@@ -529,7 +529,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                                     fontSize: '10px',
                                     fontWeight: 800,
                                     background: 'var(--ez-hue-blue-bg-deep)',
-                                    color: '#1E40AF',
+                                    color: 'var(--ez-hue-blue-text-deep)',
                                     padding: '1px 6px',
                                     borderRadius: '4px',
                                   }}
@@ -543,7 +543,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                                     fontSize: '10px',
                                     fontWeight: 800,
                                     background: 'var(--ez-color-surface-tertiary)',
-                                    color: '#475569',
+                                    color: 'var(--ez-color-text-slate)',
                                     padding: '1px 6px',
                                     borderRadius: '4px',
                                     display: 'flex',
@@ -571,7 +571,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                             </div>
 
                             {ver.revisionNotes && (
-                              <div style={{ fontSize: '11.5px', color: '#475569', marginTop: '6px', fontStyle: 'italic', background: 'rgba(255,255,255,0.7)', padding: '4px 8px', borderRadius: '4px' }}>
+                              <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-slate)', marginTop: '6px', fontStyle: 'italic', background: 'rgba(255,255,255,0.7)', padding: '4px 8px', borderRadius: '4px' }}>
                                 "{ver.revisionNotes}"
                               </div>
                             )}
@@ -725,7 +725,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                   </div>
 
                   <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-border)' }}>
-                    <div style={{ fontSize: '10.5px', color: '#1E40AF', fontWeight: 700 }}>NILAI VERSI TARGET</div>
+                    <div style={{ fontSize: '10.5px', color: 'var(--ez-hue-blue-text-deep)', fontWeight: 700 }}>NILAI VERSI TARGET</div>
                     <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-primary)', marginTop: '2px' }}>
                       {formatCurrencyIDR(comparisonResult.targetTotal)}
                     </div>
@@ -850,7 +850,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                 }}
               >
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
-                  <thead style={{ background: 'var(--ez-color-surface-tertiary)', color: '#475569', position: 'sticky', top: 0, zIndex: 5 }}>
+                  <thead style={{ background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', position: 'sticky', top: 0, zIndex: 5 }}>
                     <tr>
                       <th style={{ padding: '8px 10px' }}>Status</th>
                       <th style={{ padding: '8px 10px' }}>Kode</th>
@@ -1068,7 +1068,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                   }}
                 >
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
-                    <thead style={{ background: 'var(--ez-color-surface-tertiary)', color: '#475569', position: 'sticky', top: 0 }}>
+                    <thead style={{ background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', position: 'sticky', top: 0 }}>
                       <tr>
                         <th style={{ padding: '8px 10px' }}>Kelompok Pekerjaan (WBS)</th>
                         <th style={{ padding: '8px 10px', textAlign: 'right' }}>Baseline (Rp)</th>
@@ -1079,7 +1079,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     <tbody>
                       {categoryVariances.map((cVar, idx) => (
                         <tr key={idx} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
-                          <td style={{ padding: '6px 10px', fontWeight: 650, color: '#1E293B' }}>
+                          <td style={{ padding: '6px 10px', fontWeight: 650, color: 'var(--ez-color-text-strong)' }}>
                             {cVar.category}
                           </td>
                           <td style={{ padding: '6px 10px', textAlign: 'right', color: 'var(--ez-color-text-muted)' }}>
@@ -1134,7 +1134,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
               borderRadius: '6px',
               background: 'var(--ez-color-surface)',
               border: '1px solid var(--ez-hue-slate-border)',
-              color: '#475569',
+              color: 'var(--ez-color-text-slate)',
               fontSize: '12px',
               fontWeight: 650,
               cursor: 'pointer',

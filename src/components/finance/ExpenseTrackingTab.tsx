@@ -125,12 +125,12 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
   const getCategoryColor = (cat: ExpenseCategory): { bg: string; color: string } => {
     const map: Record<ExpenseCategory, { bg: string; color: string }> = {
       Material: { bg: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)' },
-      'Tenaga Kerja': { bg: 'var(--ez-hue-violet-bg)', color: '#6D28D9' },
-      Subkon: { bg: 'var(--ez-hue-emerald-bg)', color: '#047857' },
-      Alat: { bg: 'var(--ez-hue-amber-bg)', color: '#B45309' },
+      'Tenaga Kerja': { bg: 'var(--ez-hue-violet-bg)', color: 'var(--ez-hue-violet-text)' },
+      Subkon: { bg: 'var(--ez-hue-emerald-bg)', color: 'var(--ez-hue-green-text)' },
+      Alat: { bg: 'var(--ez-hue-amber-bg)', color: 'var(--ez-hue-amber-text)' },
       Transport: { bg: 'var(--ez-hue-sky-bg)', color: '#0369A1' },
       Operasional: { bg: 'var(--ez-color-surface-secondary)', color: 'var(--ez-color-text-slate)' },
-      Pajak: { bg: 'var(--ez-hue-rose-bg)', color: '#B91C1C' },
+      Pajak: { bg: 'var(--ez-hue-rose-bg)', color: 'var(--ez-hue-red-text)' },
       Lainnya: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-muted)' },
     };
     return map[cat] || { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-muted)' };
@@ -490,7 +490,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
             </div>
 
             {errorMessage && (
-              <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#991B1B' }}>
+              <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: 'var(--ez-hue-red-text)' }}>
                 {errorMessage}
               </div>
             )}

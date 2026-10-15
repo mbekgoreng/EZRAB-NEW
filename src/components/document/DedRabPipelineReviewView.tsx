@@ -305,7 +305,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <CheckCircle2 size={16} color="#16A34A" />
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-strong)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {source.sourceName}
                 </span>
               </div>
@@ -313,7 +313,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
                 <span style={{ background: 'var(--ez-color-border-line)', padding: '1px 6px', borderRadius: '4px', fontWeight: 600 }}>{source.classification}</span>
                 <span>{source.pageCount} hlm</span>
                 <span>•</span>
-                <span style={{ color: '#059669', fontWeight: 700 }}>Source verified</span>
+                <span style={{ color: 'var(--ez-hue-green-text)', fontWeight: 700 }}>Source verified</span>
               </div>
               <div style={{ fontSize: '10px', color: '#94A3B8', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 SHA-256: {source.fileHash.slice(0, 16)}...{source.fileHash.slice(-8)}
@@ -344,10 +344,10 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
             <AlertTriangle size={22} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
             <div>
-              <div style={{ fontSize: '14px', fontWeight: 750, color: '#92400E' }}>
+              <div style={{ fontSize: '14px', fontWeight: 750, color: 'var(--ez-hue-amber-text-dark)' }}>
                 MISSING DATA & CONFLICT REVIEW PANEL
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '6px', fontSize: '12px', color: '#B45309' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '6px', fontSize: '12px', color: 'var(--ez-hue-amber-text)' }}>
                 {draft.missingDataSummary.missingAhspCount > 0 && (
                   <span>⚠ {draft.missingDataSummary.missingAhspCount} pekerjaan belum memiliki AHSP</span>
                 )}
@@ -358,7 +358,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
                   <span>⚠ {draft.missingDataSummary.missingQuantityCount} pekerjaan belum memiliki quantity</span>
                 )}
                 {draft.missingDataSummary.conflictCount > 0 && (
-                  <span style={{ color: '#DC2626', fontWeight: 700 }}>⚠ {draft.missingDataSummary.conflictCount} specification conflict</span>
+                  <span style={{ color: 'var(--ez-hue-rose-text)', fontWeight: 700 }}>⚠ {draft.missingDataSummary.conflictCount} specification conflict</span>
                 )}
               </div>
             </div>
@@ -425,7 +425,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
             <thead>
-              <tr style={{ background: 'var(--ez-color-surface-tertiary)', borderBottom: '1.5px solid var(--ez-hue-slate-border)', color: '#334155', fontWeight: 750 }}>
+              <tr style={{ background: 'var(--ez-color-surface-tertiary)', borderBottom: '1.5px solid var(--ez-hue-slate-border)', color: 'var(--ez-color-text-body)', fontWeight: 750 }}>
                 <th style={{ padding: '12px 14px', width: '48px', textAlign: 'center' }}>No</th>
                 <th style={{ padding: '12px 14px' }}>Uraian Pekerjaan</th>
                 <th style={{ padding: '12px 14px', textAlign: 'right' }}>Volume</th>
@@ -443,7 +443,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
                   <td colSpan={9} style={{ padding: '40px 20px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: 'var(--ez-color-text-muted)' }}>
                       <AlertCircle size={36} color="#94A3B8" />
-                      <div style={{ fontSize: '15px', fontWeight: 800, color: '#1E293B' }}>
+                      <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-strong)' }}>
                         {draft.totalItems === 0
                           ? 'Belum Ada Item Pekerjaan DED yang Terdeteksi'
                           : 'Tidak Ada Item untuk Filter Ini'}
@@ -501,12 +501,12 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
                       <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                         <span>{row.category}</span>
                         {isOverridden && (
-                          <span style={{ background: 'var(--ez-hue-purple-bg-soft)', color: '#7E22CE', padding: '1px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '10px' }}>
+                          <span style={{ background: 'var(--ez-hue-purple-bg-soft)', color: 'var(--ez-hue-purple-text)', padding: '1px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '10px' }}>
                             USER_OVERRIDDEN
                           </span>
                         )}
                         {isConflict && (
-                          <span style={{ background: 'var(--ez-hue-red-bg)', color: '#DC2626', padding: '1px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '10px' }}>
+                          <span style={{ background: 'var(--ez-hue-red-bg)', color: 'var(--ez-hue-rose-text)', padding: '1px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '10px' }}>
                             CONFLICT
                           </span>
                         )}
@@ -520,13 +520,13 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
                         </div>
                       )}
                     </td>
-                    <td style={{ padding: '12px 14px', textAlign: 'center', color: '#475569', fontWeight: 600 }}>
+                    <td style={{ padding: '12px 14px', textAlign: 'center', color: 'var(--ez-color-text-slate)', fontWeight: 600 }}>
                       {row.unit}
                     </td>
                     <td style={{ padding: '12px 14px' }}>
                       {row.isCustomItem || row.ahspSourceType === 'AI_CUSTOM' ? (
                         <div style={{ background: 'var(--ez-hue-purple-bg)', border: '1px solid var(--ez-hue-purple-border)', padding: '4px 8px', borderRadius: '6px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 800, color: '#7E22CE', fontSize: '11px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 800, color: 'var(--ez-hue-purple-text)', fontSize: '11px' }}>
                             <span>⚠ {row.customItemCode || row.ahspCode || 'AI-CUSTOM'}</span>
                             <span style={{ background: 'var(--ez-hue-purple-bg-soft)', color: '#6B21A8', padding: '1px 5px', borderRadius: '3px', fontSize: '9.5px' }}>Item Kustom AI</span>
                           </div>
@@ -560,22 +560,22 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
                           )}
                         </div>
                       ) : (
-                        <span style={{ color: '#DC2626', fontWeight: 600, fontSize: '11.5px' }}>AHSP_NOT_FOUND</span>
+                        <span style={{ color: 'var(--ez-hue-rose-text)', fontWeight: 600, fontSize: '11.5px' }}>AHSP_NOT_FOUND</span>
                       )}
                     </td>
                     <td style={{ padding: '12px 14px', textAlign: 'right', color: 'var(--ez-color-text-primary)', fontWeight: 600 }}>
                       {row.unitPrice ? (
                         formatCurrencyIDR(row.unitPrice)
                       ) : (
-                        <span style={{ color: '#DC2626', fontSize: '11.5px' }}>PRICE_NOT_FOUND</span>
+                        <span style={{ color: 'var(--ez-hue-rose-text)', fontSize: '11.5px' }}>PRICE_NOT_FOUND</span>
                       )}
                       <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
                         {row.priceProvenance === 'AI_ESTIMATE' ? (
-                          <span style={{ background: 'var(--ez-hue-purple-bg)', color: '#7E22CE', padding: '1px 5px', borderRadius: '3px', fontWeight: 700 }}>
+                          <span style={{ background: 'var(--ez-hue-purple-bg)', color: 'var(--ez-hue-purple-text)', padding: '1px 5px', borderRadius: '3px', fontWeight: 700 }}>
                             Estimasi AI (Review)
                           </span>
                         ) : row.priceProvenance === 'PROJECT_PRICE' ? (
-                          <span style={{ background: 'var(--ez-hue-green-bg)', color: '#16A34A', padding: '1px 5px', borderRadius: '3px', fontWeight: 700 }}>
+                          <span style={{ background: 'var(--ez-hue-green-bg)', color: 'var(--ez-hue-green-text-bright)', padding: '1px 5px', borderRadius: '3px', fontWeight: 700 }}>
                             Harga Proyek
                           </span>
                         ) : (
@@ -583,7 +583,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
                         )}
                       </div>
                     </td>
-                    <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 800, color: '#1E3A8A' }}>
+                    <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 800, color: 'var(--ez-hue-blue-text-deep)' }}>
                       {formatCurrencyIDR(row.amount)}
                     </td>
                     <td style={{ padding: '12px 14px', textAlign: 'center' }}>
@@ -615,7 +615,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
                         style={{
                           background: 'var(--ez-color-surface-tertiary)',
                           border: '1px solid var(--ez-hue-slate-border)',
-                          color: '#334155',
+                          color: 'var(--ez-color-text-body)',
                           padding: '5px 8px',
                           borderRadius: '6px',
                           cursor: 'pointer',
@@ -656,7 +656,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
             <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatCurrencyIDR(draft.ppnAmount)}</span>
           </div>
           <div>
-            <span style={{ fontSize: '13px', color: '#1E3A8A', fontWeight: 700 }}>Grand Total: </span>
+            <span style={{ fontSize: '13px', color: 'var(--ez-hue-blue-text-deep)', fontWeight: 700 }}>Grand Total: </span>
             <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-primary)' }}>{formatCurrencyIDR(draft.grandTotal)}</span>
           </div>
         </div>
@@ -708,7 +708,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
             </div>
 
             <div>
-              <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#1E3A8A' }}>{selectedEvidenceRow.description}</div>
+              <div style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--ez-hue-blue-text-deep)' }}>{selectedEvidenceRow.description}</div>
               <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>Kategori: {selectedEvidenceRow.category}</div>
             </div>
 
@@ -736,7 +736,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
             {selectedEvidenceRow.evidence?.extractedText && (
               <div>
                 <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 700, marginBottom: '4px' }}>EXTRACTED TEXT DARI SUMBER</div>
-                <div style={{ background: 'var(--ez-color-surface-tertiary)', padding: '10px 12px', borderRadius: '8px', fontSize: '12px', color: '#334155', fontFamily: 'monospace' }}>
+                <div style={{ background: 'var(--ez-color-surface-tertiary)', padding: '10px 12px', borderRadius: '8px', fontSize: '12px', color: 'var(--ez-color-text-body)', fontFamily: 'monospace' }}>
                   {selectedEvidenceRow.evidence.extractedText}
                 </div>
               </div>
@@ -744,14 +744,14 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
 
             {selectedEvidenceRow.calculationDetails && (
               <div style={{ background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-border)', padding: '12px 14px', borderRadius: '10px' }}>
-                <div style={{ fontSize: '11.5px', fontWeight: 750, color: '#1E3A8A', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: 750, color: 'var(--ez-hue-blue-text-deep)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                   <Calculator size={14} />
                   <span>DETERMINISTIC CALCULATION (EZRAB ENGINE)</span>
                 </div>
                 <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-primary-hover)', fontFamily: 'monospace' }}>
                   {selectedEvidenceRow.calculationDetails.formula}
                 </div>
-                <div style={{ fontSize: '11px', color: '#475569', marginTop: '4px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-slate)', marginTop: '4px' }}>
                   Kalkulasi volume dihitung secara deterministik oleh engine EZRAB, bukan prediksi AI.
                 </div>
               </div>
@@ -759,7 +759,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
 
             <div>
               <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 700, marginBottom: '4px' }}>AHSP RESOLUTION & PROVENANCE (PHASE 11)</div>
-              <div style={{ fontSize: '12px', color: '#334155', lineHeight: 1.6, background: 'var(--ez-color-surface-secondary)', padding: '10px 12px', borderRadius: '8px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--ez-color-text-body)', lineHeight: 1.6, background: 'var(--ez-color-surface-secondary)', padding: '10px 12px', borderRadius: '8px' }}>
                 <div>
                   Tipe Sumber AHSP: <strong>{selectedEvidenceRow.ahspSourceType || (selectedEvidenceRow.isCustomItem ? 'AI_CUSTOM' : 'OFFICIAL_AHSP')}</strong>
                   {selectedEvidenceRow.ahspMatchStatus && (
@@ -771,7 +771,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
                 <div>Kode AHSP: <strong>{selectedEvidenceRow.ahspCode || 'Belum terpetakan'}</strong> ({selectedEvidenceRow.ahspName || '-'})</div>
                 <div>Sumber & Provenance Harga: <strong>{selectedEvidenceRow.priceProvenance || selectedEvidenceRow.priceSourceText || 'Standar PUPR 2026'}</strong></div>
                 {selectedEvidenceRow.isCustomItem && (
-                  <div style={{ marginTop: '6px', padding: '6px 8px', background: 'var(--ez-hue-purple-bg)', border: '1px solid var(--ez-hue-purple-border)', borderRadius: '6px', fontSize: '11px', color: '#7E22CE' }}>
+                  <div style={{ marginTop: '6px', padding: '6px 8px', background: 'var(--ez-hue-purple-bg)', border: '1px solid var(--ez-hue-purple-border)', borderRadius: '6px', fontSize: '11px', color: 'var(--ez-hue-purple-text)' }}>
                     <strong>Item Kustom AI:</strong> {selectedEvidenceRow.customItemReason || 'Tidak ditemukan item yang cocok pada katalog resmi AHSP. Memerlukan konfirmasi pengguna sebelum komit.'}
                   </div>
                 )}
@@ -780,11 +780,11 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
 
             {selectedEvidenceRow.conflictDetails && (
               <div style={{ background: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', padding: '12px', borderRadius: '10px' }}>
-                <div style={{ fontSize: '12px', fontWeight: 800, color: '#DC2626' }}>KONFLIK SPESIFIKASI TERDETEKSI</div>
-                <div style={{ fontSize: '11.5px', color: '#991B1B', marginTop: '4px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-hue-rose-text)' }}>KONFLIK SPESIFIKASI TERDETEKSI</div>
+                <div style={{ fontSize: '11.5px', color: 'var(--ez-hue-red-text)', marginTop: '4px' }}>
                   {selectedEvidenceRow.conflictDetails.description}
                 </div>
-                <div style={{ fontSize: '11px', color: '#DC2626', fontWeight: 600, marginTop: '2px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--ez-hue-rose-text)', fontWeight: 600, marginTop: '2px' }}>
                   Tindakan: {selectedEvidenceRow.conflictDetails.actionRequired}
                 </div>
               </div>
@@ -795,7 +795,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
               onClick={() => setSelectedEvidenceRow(null)}
               style={{
                 background: 'var(--ez-color-surface-tertiary)',
-                color: '#334155',
+                color: 'var(--ez-color-text-body)',
                 border: '1px solid var(--ez-hue-slate-border)',
                 padding: '9px 16px',
                 borderRadius: '8px',
@@ -856,7 +856,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
             </div>
 
             <div>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                 Uraian Pekerjaan
               </label>
               <input
@@ -869,7 +869,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                   Volume
                 </label>
                 <input
@@ -881,7 +881,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
                 />
               </div>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                   Satuan
                 </label>
                 <input
@@ -895,7 +895,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                   Kode AHSP
                 </label>
                 <input
@@ -906,7 +906,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
                 />
               </div>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                   Harga Satuan (Rp)
                 </label>
                 <input
@@ -924,7 +924,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
                 onClick={() => setEditingRow(null)}
                 style={{
                   background: 'var(--ez-color-surface-tertiary)',
-                  color: '#475569',
+                  color: 'var(--ez-color-text-slate)',
                   border: '1px solid var(--ez-hue-slate-border)',
                   padding: '8px 16px',
                   borderRadius: '8px',
@@ -990,7 +990,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--ez-hue-green-bg-deep)', color: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text-bright)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <ShieldCheck size={24} />
               </div>
               <div>
@@ -1004,7 +1004,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
             </div>
 
             <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', padding: '16px' }}>
-              <div style={{ fontSize: '12.5px', fontWeight: 750, color: '#1E293B', marginBottom: '10px' }}>
+              <div style={{ fontSize: '12.5px', fontWeight: 750, color: 'var(--ez-color-text-strong)', marginBottom: '10px' }}>
                 RINGKASAN REVISI RAB (DIFF)
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '12px' }}>
@@ -1022,12 +1022,12 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
                 </div>
                 <div>
                   <span style={{ color: 'var(--ez-color-text-muted)' }}>Penambahan (Delta): </span>
-                  <strong style={{ color: '#16A34A' }}>+{formatCurrencyIDR(mutationDiff.deltaTotal)}</strong>
+                  <strong style={{ color: 'var(--ez-hue-green-text-bright)' }}>+{formatCurrencyIDR(mutationDiff.deltaTotal)}</strong>
                 </div>
               </div>
               <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid var(--ez-color-border-line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Perkiraan Total RAB Baru:</span>
-                <span style={{ fontSize: '15px', fontWeight: 800, color: '#1E3A8A' }}>{formatCurrencyIDR(mutationDiff.newTotal)}</span>
+                <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-blue-text-deep)' }}>{formatCurrencyIDR(mutationDiff.newTotal)}</span>
               </div>
             </div>
 
@@ -1042,7 +1042,7 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
                 disabled={isCommiting}
                 style={{
                   background: 'var(--ez-color-surface-tertiary)',
-                  color: '#475569',
+                  color: 'var(--ez-color-text-slate)',
                   border: '1px solid var(--ez-hue-slate-border)',
                   padding: '9px 18px',
                   borderRadius: '8px',

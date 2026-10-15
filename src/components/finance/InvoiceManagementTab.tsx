@@ -198,9 +198,9 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
     const config: Record<InvoiceStatus, { bg: string; color: string; label: string }> = {
       DRAFT: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', label: 'Draft' },
       ISSUED: { bg: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)', label: 'Ditagihkan' },
-      PARTIALLY_PAID: { bg: 'var(--ez-hue-amber-bg-deep)', color: '#B45309', label: 'Dibayar Sebagian' },
-      PAID: { bg: 'var(--ez-hue-green-bg-deep)', color: '#15803D', label: 'Lunas' },
-      OVERDUE: { bg: 'var(--ez-hue-red-bg)', color: '#B91C1C', label: 'Jatuh Tempo' },
+      PARTIALLY_PAID: { bg: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text)', label: 'Dibayar Sebagian' },
+      PAID: { bg: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text)', label: 'Lunas' },
+      OVERDUE: { bg: 'var(--ez-hue-red-bg)', color: 'var(--ez-hue-red-text)', label: 'Jatuh Tempo' },
       CANCELLED: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-faint)', label: 'Dibatalkan' },
     };
     const c = config[st] || config.DRAFT;
@@ -430,7 +430,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                                 borderRadius: '6px',
                                 backgroundColor: 'var(--ez-hue-green-bg)',
                                 border: '1px solid var(--ez-hue-green-border)',
-                                color: '#15803D',
+                                color: 'var(--ez-hue-green-text)',
                                 fontSize: '11.5px',
                                 fontWeight: 650,
                                 cursor: 'pointer',
@@ -565,7 +565,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
             </div>
 
             {errorMessage && (
-              <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#991B1B' }}>
+              <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: 'var(--ez-hue-red-text)' }}>
                 {errorMessage}
               </div>
             )}

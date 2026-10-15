@@ -111,7 +111,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
           {forecastPoints.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
               <span style={{ width: '14px', height: '2px', borderTop: '2px dashed #8B5CF6' }} />
-              <span style={{ color: '#7C3AED', fontWeight: 600 }}>Proyeksi (Forecast)</span>
+              <span style={{ color: 'var(--ez-hue-violet-text)', fontWeight: 600 }}>Proyeksi (Forecast)</span>
             </div>
           )}
         </div>
@@ -359,13 +359,13 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
               border: '1px solid var(--ez-hue-rose-border)',
               padding: '10px 14px',
               fontSize: '12px',
-              color: '#991B1B',
+              color: 'var(--ez-hue-red-text)',
             }}
           >
             <AlertTriangle size={16} color="#DC2626" style={{ marginTop: '2px', flexShrink: 0 }} />
             <div>
               <div style={{ fontWeight: 700 }}>Peringatan Proyeksi Arus Kas (Cash Gap)</div>
-              <div style={{ marginTop: '2px', color: '#B91C1C' }}>
+              <div style={{ marginTop: '2px', color: 'var(--ez-hue-red-text)' }}>
                 Proyeksi menunjukkan potensi kekurangan kas (defisit terdalam: {formatRupiah(Math.abs(futureLowestCumulative || 0))}).
                 Pastikan jadwal penagihan termin selaras dengan jadwal belanja material & pengupahan.
               </div>

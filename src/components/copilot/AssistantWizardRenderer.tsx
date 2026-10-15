@@ -653,7 +653,7 @@ export const AssistantWizardRenderer: React.FC<AssistantWizardRendererProps> = (
             {data.summary.regionInfo && (
               <div className="ezrab-wizard-metric-box">
                 <div className="ezrab-wizard-metric-label">Indeks Wilayah</div>
-                <div className="ezrab-wizard-metric-value" style={{ fontSize: '12.5px', color: '#1E40AF' }}>
+                <div className="ezrab-wizard-metric-value" style={{ fontSize: '12.5px', color: 'var(--ez-hue-blue-text-deep)' }}>
                   {data.summary.regionInfo.name} ({data.summary.regionInfo.percentage}%)
                 </div>
               </div>

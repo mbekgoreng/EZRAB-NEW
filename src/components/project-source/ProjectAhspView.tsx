@@ -138,7 +138,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
             disabled={!projectId}
             style={{
               background: 'var(--ez-color-surface-tertiary)',
-              color: '#1E293B',
+              color: 'var(--ez-color-text-strong)',
               border: '1px solid var(--ez-hue-slate-border)',
               borderRadius: 8,
               padding: '9px 14px',
@@ -187,7 +187,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
           }}
         >
           <Layers size={36} color="#94A3B8" style={{ marginBottom: 10 }} />
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#334155' }}>Belum ada AHSP terpilih untuk proyek ini</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ez-color-text-body)' }}>Belum ada AHSP terpilih untuk proyek ini</div>
           <p style={{ fontSize: 12.5, color: 'var(--ez-color-text-muted)', maxWidth: 460, margin: '6px auto 14px' }}>
             Dokumen AHSP Lampiran Tender membutuhkan daftar analisa harga satuan aktual yang digunakan dalam proyek ini.
           </p>
@@ -214,7 +214,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569' }}>
+              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)' }}>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>No</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Kode AHSP</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Uraian Analisa Pekerjaan</th>
@@ -237,16 +237,16 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                       {item.description}
                     </td>
                     <td style={{ padding: '10px 12px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>{item.unit}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', color: '#334155' }}>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--ez-color-text-body)' }}>
                       Rp {(item.materialCost || 0).toLocaleString('id-ID')}
                     </td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', color: '#334155' }}>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--ez-color-text-body)' }}>
                       Rp {(item.laborCost || 0).toLocaleString('id-ID')}
                     </td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', color: '#334155' }}>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--ez-color-text-body)' }}>
                       Rp {(item.equipmentCost || 0).toLocaleString('id-ID')}
                     </td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: '#16A34A' }}>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-hue-green-text-bright)' }}>
                       Rp {totalUnitPrice.toLocaleString('id-ID')}
                     </td>
                     <td style={{ padding: '10px 12px', textAlign: 'center' }}>
@@ -433,7 +433,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
             <form onSubmit={handleSaveCustom} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Kode AHSP *
                   </label>
                   <input
@@ -446,7 +446,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Satuan Pengukuran *
                   </label>
                   <input
@@ -461,7 +461,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Uraian Analisa Pekerjaan *
                 </label>
                 <textarea
@@ -476,7 +476,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Biaya Bahan (Rp)
                   </label>
                   <input
@@ -488,7 +488,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Biaya Upah (Rp)
                   </label>
                   <input
@@ -500,7 +500,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Biaya Alat (Rp)
                   </label>
                   <input
@@ -514,8 +514,8 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
               </div>
 
               <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '10px 12px', borderRadius: 6, border: '1px solid var(--ez-color-border-line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 12.5, fontWeight: 650, color: '#475569' }}>Total Harga Satuan:</span>
-                <span style={{ fontSize: 14, fontWeight: 750, color: '#16A34A' }}>
+                <span style={{ fontSize: 12.5, fontWeight: 650, color: 'var(--ez-color-text-slate)' }}>Total Harga Satuan:</span>
+                <span style={{ fontSize: 14, fontWeight: 750, color: 'var(--ez-hue-green-text-bright)' }}>
                   Rp {(materialCost + laborCost + equipmentCost).toLocaleString('id-ID')} / {unit}
                 </span>
               </div>

@@ -518,7 +518,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#8A8A84', fontWeight: 600 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--ez-color-text-warm)', fontWeight: 600 }}>
             <span>Workspace</span>
             <span>/</span>
             <span>Database</span>
@@ -531,7 +531,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
             <Database size={22} color="#2563EB" />
             {activeTab === 'MATERIAL' ? 'Material & Harga' : activeTab === 'LABOR' ? 'Database Standar Upah' : activeTab === 'EQUIPMENT' ? 'Database Sewa Peralatan' : 'Daftar Supplier & Vendor'}
           </h1>
-          <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#8A8A84' }}>
+          <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'var(--ez-color-text-warm)' }}>
             {activeTab === 'MATERIAL'
               ? 'Kelola material, spesifikasi, dan harga yang digunakan EZRAB.'
               : 'Standar upah harian dan tarif acuan resmi konstruksi.'}
@@ -553,7 +553,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
           >
             <Building size={14} color="#2563EB" />
             <div style={{ fontSize: '11.5px' }}>
-              <span style={{ color: '#8A8A84' }}>Proyek Aktif: </span>
+              <span style={{ color: 'var(--ez-color-text-warm)' }}>Proyek Aktif: </span>
               <strong style={{ color: 'var(--ez-color-text-primary)' }}>{currentProject ? currentProject.name : 'Semua Proyek'}</strong>
             </div>
           </div>
@@ -644,7 +644,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
           >
             <HardHat size={15} />
             <span>Upah / Tenaga Kerja</span>
-            <span style={{ fontSize: '10.5px', background: 'var(--ez-pastel-mint)', color: '#2C6E2C', padding: '1px 6px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>
+            <span style={{ fontSize: '10.5px', background: 'var(--ez-pastel-mint)', color: 'var(--ez-hue-green-text)', padding: '1px 6px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>
               {priceRecords.filter((r) => r.category === 'LABOR').length}
             </span>
           </button>
@@ -669,7 +669,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
           >
             <Truck size={15} />
             <span>Alat / Peralatan</span>
-            <span style={{ fontSize: '10.5px', background: 'var(--ez-pastel-cream)', color: '#A8780A', padding: '1px 6px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>
+            <span style={{ fontSize: '10.5px', background: 'var(--ez-pastel-cream)', color: 'var(--ez-hue-amber-text)', padding: '1px 6px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>
               {priceRecords.filter((r) => r.category === 'EQUIPMENT').length}
             </span>
           </button>
@@ -698,7 +698,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
         </div>
 
         {/* Price Intelligence Disclaimer Badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#8A8A84' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--ez-color-text-warm)' }}>
           <ShieldCheck size={14} color="#2C6E2C" />
           <span>Multi-source verified (PUPR 2026, Distributor & Jurnal Pasar)</span>
         </div>
@@ -926,7 +926,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                       {supplier.sourceType}
                     </span>
                     {supplier.verified && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#2C6E2C', fontWeight: 700 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--ez-hue-green-text)', fontWeight: 700 }}>
                         <ShieldCheck size={14} /> Terverifikasi
                       </span>
                     )}
@@ -935,11 +935,11 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                   <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
                     {supplier.name}
                   </h3>
-                  <p style={{ fontSize: '12px', color: '#6B6B64', margin: '0 0 12px 0' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--ez-color-text-warm)', margin: '0 0 12px 0' }}>
                     {supplier.category}
                   </p>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11.5px', color: '#8A8A84' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11.5px', color: 'var(--ez-color-text-warm)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <MapPin size={13} color="#8A8A84" />
                       <span>{supplier.location}</span>
@@ -952,7 +952,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                 </div>
 
                 <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #F5F4EF', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '11px', color: '#8A8A84' }}>{supplier.contact}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--ez-color-text-warm)' }}>{supplier.contact}</span>
                   <button
                     onClick={() => {
                       setSearch(supplier.name.split(' ')[1] || supplier.name);
@@ -984,7 +984,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
           <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-card)', border: '1px solid #EEF1F6', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
-                <tr style={{ background: '#FAFAF8', borderBottom: '1px solid #EEF1F6', color: '#6B6B64', fontSize: '11.5px' }}>
+                <tr style={{ background: '#FAFAF8', borderBottom: '1px solid #EEF1F6', color: 'var(--ez-color-text-warm)', fontSize: '11.5px' }}>
                   <th style={{ padding: '10px 14px', textAlign: 'left', width: '18%' }}>Material</th>
                   <th style={{ padding: '10px 12px', textAlign: 'left', width: '14%' }}>Spesifikasi</th>
                   <th style={{ padding: '10px 10px', textAlign: 'left', width: '10%' }}>Brand</th>
@@ -1001,7 +1001,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
               <tbody>
                 {filteredRecords.length === 0 ? (
                   <tr>
-                    <td colSpan={11} style={{ padding: '40px 20px', textAlign: 'center', color: '#8A8A84' }}>
+                    <td colSpan={11} style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--ez-color-text-warm)' }}>
                       Tidak ada data material & harga yang sesuai dengan filter pencarian.
                     </td>
                   </tr>
@@ -1027,7 +1027,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                         </td>
 
                         {/* Spesifikasi */}
-                        <td style={{ padding: '10px 12px', color: '#6B6B64', fontSize: '11.5px' }}>
+                        <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-warm)', fontSize: '11.5px' }}>
                           {item.specification || '-'}
                         </td>
 
@@ -1037,7 +1037,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                         </td>
 
                         {/* Kategori */}
-                        <td style={{ padding: '10px 10px', color: '#8A8A84', fontSize: '11.5px' }}>
+                        <td style={{ padding: '10px 10px', color: 'var(--ez-color-text-warm)', fontSize: '11.5px' }}>
                           {item.subcategory || 'Material'}
                         </td>
 
@@ -1054,19 +1054,19 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                         </td>
 
                         {/* Wilayah */}
-                        <td style={{ padding: '10px 10px', color: '#8A8A84', fontSize: '11.5px' }}>
+                        <td style={{ padding: '10px 10px', color: 'var(--ez-color-text-warm)', fontSize: '11.5px' }}>
                           {item.location || 'Nasional'}
                         </td>
 
                         {/* Sumber */}
-                        <td style={{ padding: '10px 10px', fontSize: '11px', color: '#6B6B64' }}>
+                        <td style={{ padding: '10px 10px', fontSize: '11px', color: 'var(--ez-color-text-warm)' }}>
                           <span style={{ padding: '2px 6px', borderRadius: 'var(--ez-radius-pill)', background: '#F5F4EF', fontWeight: 600, fontSize: '10.5px' }}>
                             {item.supplier ? 'Vendor' : 'Database'}
                           </span>
                         </td>
 
                         {/* Tanggal */}
-                        <td style={{ padding: '10px 10px', textAlign: 'center', color: '#8A8A84', fontSize: '11px' }}>
+                        <td style={{ padding: '10px 10px', textAlign: 'center', color: 'var(--ez-color-text-warm)', fontSize: '11px' }}>
                           {item.effectiveDate || '25 Sep 2026'}
                         </td>
 
@@ -1154,11 +1154,11 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                 <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '4px 0 0' }}>
                   {comparingResource.name}
                 </h2>
-                <span style={{ fontSize: '11.5px', color: '#8A8A84' }}>{comparingResource.specification} ({comparingResource.unit})</span>
+                <span style={{ fontSize: '11.5px', color: 'var(--ez-color-text-warm)' }}>{comparingResource.specification} ({comparingResource.unit})</span>
               </div>
               <button
                 onClick={() => setComparingResource(null)}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', color: '#8A8A84' }}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--ez-color-text-warm)' }}
               >
                 <X size={18} />
               </button>
@@ -1181,25 +1181,25 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                 return (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                     <div style={{ background: '#FAFAF8', padding: '10px', borderRadius: 'var(--ez-radius-control)', border: '1px solid #EEF1F6' }}>
-                      <span style={{ fontSize: '10px', color: '#8A8A84', fontWeight: 700, textTransform: 'uppercase' }}>Minimum</span>
-                      <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#2C6E2C', marginTop: '2px' }}>
+                      <span style={{ fontSize: '10px', color: 'var(--ez-color-text-warm)', fontWeight: 700, textTransform: 'uppercase' }}>Minimum</span>
+                      <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-hue-green-text)', marginTop: '2px' }}>
                         {formatCurrencyIDR(minPrice)}
                       </div>
                     </div>
                     <div style={{ background: '#FAFAF8', padding: '10px', borderRadius: 'var(--ez-radius-control)', border: '1px solid #EEF1F6' }}>
-                      <span style={{ fontSize: '10px', color: '#8A8A84', fontWeight: 700, textTransform: 'uppercase' }}>Maximum</span>
-                      <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#DC2626', marginTop: '2px' }}>
+                      <span style={{ fontSize: '10px', color: 'var(--ez-color-text-warm)', fontWeight: 700, textTransform: 'uppercase' }}>Maximum</span>
+                      <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-hue-rose-text)', marginTop: '2px' }}>
                         {formatCurrencyIDR(maxPrice)}
                       </div>
                     </div>
                     <div style={{ background: '#FAFAF8', padding: '10px', borderRadius: 'var(--ez-radius-control)', border: '1px solid #EEF1F6' }}>
-                      <span style={{ fontSize: '10px', color: '#8A8A84', fontWeight: 700, textTransform: 'uppercase' }}>Median / Rerata</span>
+                      <span style={{ fontSize: '10px', color: 'var(--ez-color-text-warm)', fontWeight: 700, textTransform: 'uppercase' }}>Median / Rerata</span>
                       <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-color-primary)', marginTop: '2px' }}>
                         {formatCurrencyIDR(medianPrice)}
                       </div>
                     </div>
                     <div style={{ background: 'var(--ez-pastel-sky)', padding: '10px', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-hue-blue-border)' }}>
-                      <span style={{ fontSize: '10px', color: '#2456A8', fontWeight: 700, textTransform: 'uppercase' }}>Harga Terpilih</span>
+                      <span style={{ fontSize: '10px', color: 'var(--ez-hue-blue-text-deep)', fontWeight: 700, textTransform: 'uppercase' }}>Harga Terpilih</span>
                       <div style={{ fontSize: '13.5px', fontWeight: 850, color: 'var(--ez-color-primary)', marginTop: '2px' }}>
                         {formatCurrencyIDR(comparingResource.price)}
                       </div>
@@ -1219,9 +1219,9 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '12px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>1. Harga Aktif Proyek</span>
-                      <span style={{ fontSize: '10px', background: 'var(--ez-pastel-sky)', color: '#2456A8', padding: '1px 5px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>SEDANG DIGUNAKAN</span>
+                      <span style={{ fontSize: '10px', background: 'var(--ez-pastel-sky)', color: 'var(--ez-hue-blue-text-deep)', padding: '1px 5px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>SEDANG DIGUNAKAN</span>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#8A8A84', marginTop: '2px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--ez-color-text-warm)', marginTop: '2px' }}>
                       Lokasi: {comparingResource.location} • Update: {comparingResource.lastUpdated}
                     </div>
                   </div>
@@ -1237,14 +1237,14 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '12px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>2. Penawaran Supplier & Distributor</span>
-                      <span style={{ fontSize: '10px', background: 'var(--ez-pastel-mint)', color: '#2C6E2C', padding: '1px 5px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>MARKET QUOTE</span>
+                      <span style={{ fontSize: '10px', background: 'var(--ez-pastel-mint)', color: 'var(--ez-hue-green-text)', padding: '1px 5px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>MARKET QUOTE</span>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#8A8A84', marginTop: '2px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--ez-color-text-warm)', marginTop: '2px' }}>
                       Supplier: {comparingResource.supplier || 'Distributor Utama'} • Tanggal: {comparingResource.lastUpdated}
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '15px', fontWeight: 850, color: '#2C6E2C' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 850, color: 'var(--ez-hue-green-text)' }}>
                       {formatCurrencyIDR(comparingResource.supplierPrice || comparingResource.price)}
                     </span>
                     <button
@@ -1277,14 +1277,14 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '12px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>3. Historis Proyek Internal</span>
-                      <span style={{ fontSize: '10px', background: '#F5F4EF', color: '#6B6B64', padding: '1px 5px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>INTERNAL RECORD</span>
+                      <span style={{ fontSize: '10px', background: '#F5F4EF', color: 'var(--ez-color-text-warm)', padding: '1px 5px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>INTERNAL RECORD</span>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#8A8A84', marginTop: '2px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--ez-color-text-warm)', marginTop: '2px' }}>
                       Rata-rata pengadaan proyek 6 bulan terakhir
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '15px', fontWeight: 850, color: '#6B6B64' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 850, color: 'var(--ez-color-text-warm)' }}>
                       {formatCurrencyIDR(comparingResource.historicalPrice || Math.round(comparingResource.price * 0.95))}
                     </span>
                     <button
@@ -1317,14 +1317,14 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '12px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>4. Standar Acuan Pemerintah (SHST / PUPR)</span>
-                      <span style={{ fontSize: '10px', background: 'var(--ez-pastel-cream)', color: '#A8780A', padding: '1px 5px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>OFFICIAL HSPK</span>
+                      <span style={{ fontSize: '10px', background: 'var(--ez-pastel-cream)', color: 'var(--ez-hue-amber-text)', padding: '1px 5px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>OFFICIAL HSPK</span>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#8A8A84', marginTop: '2px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--ez-color-text-warm)', marginTop: '2px' }}>
                       Pedoman Permen PUPR No. 1 2022 / SE DJBK 2026
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '15px', fontWeight: 850, color: '#A8780A' }}>
+                    <span style={{ fontSize: '15px', fontWeight: 850, color: 'var(--ez-hue-amber-text)' }}>
                       {formatCurrencyIDR(comparingResource.governmentPrice || Math.round(comparingResource.price * 0.98))}
                     </span>
                     <button
@@ -1396,7 +1396,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
               </button>
             </div>
 
-            <p style={{ fontSize: '12.5px', color: '#6B6B64', margin: '0 0 16px 0', lineHeight: 1.5 }}>
+            <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-warm)', margin: '0 0 16px 0', lineHeight: 1.5 }}>
               Anda akan menerapkan harga <strong>{adoptTarget.priceLabel}</strong> untuk komponen <strong>{adoptTarget.resource.name}</strong> ke dalam proyek aktif <strong>({currentProject ? currentProject.name : 'Proyek Utama'})</strong>.
             </p>
 
@@ -1404,19 +1404,19 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
             <div style={{ background: '#FAFAF8', borderRadius: 'var(--ez-radius-control)', border: '1px solid #EEF1F6', padding: '14px', marginBottom: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '12px' }}>
                 <div>
-                  <span style={{ color: '#8A8A84', display: 'block', fontSize: '11px' }}>Harga Sebelumnya</span>
-                  <strong style={{ color: '#6B6B64', fontSize: '13.5px' }}>{formatCurrencyIDR(adoptTarget.resource.price)}</strong>
+                  <span style={{ color: 'var(--ez-color-text-warm)', display: 'block', fontSize: '11px' }}>Harga Sebelumnya</span>
+                  <strong style={{ color: 'var(--ez-color-text-warm)', fontSize: '13.5px' }}>{formatCurrencyIDR(adoptTarget.resource.price)}</strong>
                 </div>
                 <div>
                   <span style={{ color: 'var(--ez-color-primary)', display: 'block', fontSize: '11px', fontWeight: 700 }}>Harga Baru ({adoptTarget.priceLabel})</span>
                   <strong style={{ color: 'var(--ez-color-primary)', fontSize: '13.5px' }}>{formatCurrencyIDR(adoptTarget.newPrice)}</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#8A8A84', display: 'block', fontSize: '11px' }}>Item Pekerjaan Terdampak</span>
+                  <span style={{ color: 'var(--ez-color-text-warm)', display: 'block', fontSize: '11px' }}>Item Pekerjaan Terdampak</span>
                   <strong style={{ color: 'var(--ez-color-text-primary)', fontSize: '13.5px' }}>{impactSummary.affectedWorkItems.length} Pekerjaan</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#8A8A84', display: 'block', fontSize: '11px' }}>Estimasi Dampak Total RAB</span>
+                  <span style={{ color: 'var(--ez-color-text-warm)', display: 'block', fontSize: '11px' }}>Estimasi Dampak Total RAB</span>
                   <strong style={{ color: impactSummary.estimatedCostDelta >= 0 ? '#DC2626' : '#2C6E2C', fontSize: '13.5px' }}>
                     {impactSummary.estimatedCostDelta >= 0 ? `+${formatCurrencyIDR(impactSummary.estimatedCostDelta)}` : formatCurrencyIDR(impactSummary.estimatedCostDelta)} ({impactSummary.percentageChange}%)
                   </strong>
@@ -1434,7 +1434,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                   {impactSummary.affectedWorkItems.map((item, idx) => (
                     <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: idx < impactSummary.affectedWorkItems.length - 1 ? '1px solid #F5F4EF' : 'none' }}>
                       <span style={{ fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>{item.description}</span>
-                      <span style={{ color: '#8A8A84' }}>{item.volume} {item.unit}</span>
+                      <span style={{ color: 'var(--ez-color-text-warm)' }}>{item.volume} {item.unit}</span>
                     </div>
                   ))}
                 </div>
@@ -1503,7 +1503,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
             <form onSubmit={handleCreateNewPriceRecord} style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '70vh', overflowY: 'auto', paddingRight: '4px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B6B64', display: 'block', marginBottom: '3px' }}>Kode</label>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-warm)', display: 'block', marginBottom: '3px' }}>Kode</label>
                   <input
                     type="text"
                     placeholder="e.g. BB-01"
@@ -1513,7 +1513,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B6B64', display: 'block', marginBottom: '3px' }}>Nama Komponen *</label>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-warm)', display: 'block', marginBottom: '3px' }}>Nama Komponen *</label>
                   <input
                     type="text"
                     required
@@ -1527,7 +1527,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B6B64', display: 'block', marginBottom: '3px' }}>Brand / Merk</label>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-warm)', display: 'block', marginBottom: '3px' }}>Brand / Merk</label>
                   <input
                     type="text"
                     placeholder="e.g. Krakatau Steel / Holcim"
@@ -1537,7 +1537,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B6B64', display: 'block', marginBottom: '3px' }}>Subkategori</label>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-warm)', display: 'block', marginBottom: '3px' }}>Subkategori</label>
                   <select
                     value={newSubcat}
                     onChange={(e) => setNewSubcat(e.target.value)}
@@ -1556,7 +1556,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
               </div>
 
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B6B64', display: 'block', marginBottom: '3px' }}>Spesifikasi / Grade / Ukuran</label>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-warm)', display: 'block', marginBottom: '3px' }}>Spesifikasi / Grade / Ukuran</label>
                 <input
                   type="text"
                   placeholder="e.g. BJTS 420B, SNI 2052:2017, Pjg 12m"
@@ -1568,17 +1568,17 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B6B64', display: 'block', marginBottom: '3px' }}>Harga Satuan (Rp) *</label>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-warm)', display: 'block', marginBottom: '3px' }}>Harga Satuan (Rp) *</label>
                   <input
                     type="number"
                     required
                     value={newPrice || ''}
                     onChange={(e) => setNewPrice(parseFloat(e.target.value) || 0)}
-                    style={{ width: '100%', height: '32px', borderRadius: 'var(--ez-radius-control)', border: '1px solid #EEF1F6', padding: '0 8px', fontSize: '12px', fontWeight: 700, color: '#2C6E2C' }}
+                    style={{ width: '100%', height: '32px', borderRadius: 'var(--ez-radius-control)', border: '1px solid #EEF1F6', padding: '0 8px', fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-green-text)' }}
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B6B64', display: 'block', marginBottom: '3px' }}>Harga Toko / Vendor</label>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-warm)', display: 'block', marginBottom: '3px' }}>Harga Toko / Vendor</label>
                   <input
                     type="number"
                     value={newSupplierPrice || ''}
@@ -1587,7 +1587,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B6B64', display: 'block', marginBottom: '3px' }}>Satuan *</label>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-warm)', display: 'block', marginBottom: '3px' }}>Satuan *</label>
                   <input
                     type="text"
                     required
@@ -1600,7 +1600,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B6B64', display: 'block', marginBottom: '3px' }}>Supplier / Vendor / Sumber</label>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-warm)', display: 'block', marginBottom: '3px' }}>Supplier / Vendor / Sumber</label>
                   <input
                     type="text"
                     placeholder="e.g. Toko Bangunan Berkah / Brosur Resmi"
@@ -1610,7 +1610,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B6B64', display: 'block', marginBottom: '3px' }}>Wilayah / Kota</label>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-warm)', display: 'block', marginBottom: '3px' }}>Wilayah / Kota</label>
                   <input
                     type="text"
                     value={newCity}
@@ -1622,7 +1622,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
               </div>
 
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B6B64', display: 'block', marginBottom: '3px' }}>Catatan / Referensi Link</label>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-warm)', display: 'block', marginBottom: '3px' }}>Catatan / Referensi Link</label>
                 <input
                   type="text"
                   placeholder="e.g. Brosur Agustus 2026, franco proyek Jabodetabek"

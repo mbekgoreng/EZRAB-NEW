@@ -42,7 +42,7 @@
 }
 
 .sac-close:hover {
-  color: #0f172a;
+  color: var(--ez-color-text-primary);
   border-color: #94a3b8;
   transform: scale(1.05);
 }
@@ -114,7 +114,7 @@
   margin: 0 0 6px;
   font-size: 22px;
   letter-spacing: -0.02em;
-  color: #0f172a;
+  color: var(--ez-color-text-primary);
 }
 
 .sac-hint {
@@ -163,7 +163,7 @@
   margin: 5px 0;
   width: 100%;
   font-size: 14px;
-  color: #0f172a;
+  color: var(--ez-color-text-primary);
   box-sizing: border-box;
 }
 
@@ -180,7 +180,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #dc2626;
+  color: var(--ez-hue-rose-text);
   font-size: 12.5px;
   margin: 6px 0 2px;
   text-align: left;
@@ -378,7 +378,7 @@
 .sac-loggedin h2 {
   font-size: 22px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--ez-color-text-primary);
   margin: 0;
 }
 
@@ -399,7 +399,7 @@
   border-radius: 22px;
   border: 1px solid var(--ez-hue-slate-border);
   background: var(--ez-color-surface-tertiary);
-  color: #334155;
+  color: var(--ez-color-text-body);
   font-size: 12.5px;
   font-weight: 800;
   padding: 13px 34px;
@@ -440,7 +440,7 @@
 .sac-mobile-toggle button {
   background: none;
   border: none;
-  color: #2563eb;
+  color: var(--ez-hue-blue-text);
   font-weight: 800;
   font-size: 13px;
   cursor: pointer;
@@ -473,7 +473,7 @@
   font-size: 17px;
   font-weight: 900;
   letter-spacing: -0.02em;
-  color: #0f172a;
+  color: var(--ez-color-text-primary);
 }
 
 .sac-mobile-brand-text span {

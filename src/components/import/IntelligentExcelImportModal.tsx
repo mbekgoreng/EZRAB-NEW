@@ -443,7 +443,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                   alignItems: 'flex-start',
                   gap: '10px',
                   fontSize: '11.5px',
-                  color: '#1E40AF',
+                  color: 'var(--ez-hue-blue-text-deep)',
                 }}
               >
                 <Sparkles size={16} color="#2563EB" style={{ flexShrink: 0, marginTop: '2px' }} />
@@ -471,7 +471,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
 
                 {/* Sheet Switcher */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>Sheet:</span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-slate)' }}>Sheet:</span>
                   <select
                     value={selectedSheet}
                     onChange={(e) => handleSheetChange(e.target.value)}
@@ -599,7 +599,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#1E293B' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-strong)' }}>
                           {field.label} {field.req && <span style={{ color: '#EF4444' }}>*</span>}
                         </span>
                         {currentVal !== null && conf > 0 && (
@@ -607,7 +607,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                             style={{
                               fontSize: '10px',
                               fontWeight: 750,
-                              color: '#059669',
+                              color: 'var(--ez-hue-green-text)',
                               background: 'var(--ez-hue-emerald-bg)',
                               padding: '1px 5px',
                               borderRadius: '4px',
@@ -669,7 +669,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                 </div>
 
                 <div style={{ padding: '10px 12px', borderRadius: '8px', background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-border)' }}>
-                  <div style={{ fontSize: '10.5px', color: '#1E40AF', fontWeight: 700 }}>ITEM PEKERJAAN</div>
+                  <div style={{ fontSize: '10.5px', color: 'var(--ez-hue-blue-text-deep)', fontWeight: 700 }}>ITEM PEKERJAAN</div>
                   <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-primary)', marginTop: '2px' }}>
                     {analysisResult.detectedWorkItemsCount} Item
                   </div>
@@ -737,7 +737,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                     borderRadius: '6px',
                     background: 'var(--ez-color-surface)',
                     border: '1px solid var(--ez-hue-slate-border)',
-                    color: '#334155',
+                    color: 'var(--ez-color-text-body)',
                     fontSize: '11.5px',
                     fontWeight: 650,
                     cursor: 'pointer',
@@ -764,7 +764,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
               >
                 {previewTab === 'VALID' && (
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
-                    <thead style={{ background: 'var(--ez-color-surface-tertiary)', color: '#475569', position: 'sticky', top: 0, zIndex: 5 }}>
+                    <thead style={{ background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', position: 'sticky', top: 0, zIndex: 5 }}>
                       <tr>
                         <th style={{ padding: '8px 10px' }}>No</th>
                         <th style={{ padding: '8px 10px' }}>Kode</th>
@@ -794,7 +794,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                           </td>
                           <td style={{ padding: '6px 10px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>{item.unit}</td>
                           <td style={{ padding: '6px 10px', textAlign: 'right' }}>{formatCurrencyIDR(item.unitPrice)}</td>
-                          <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 750, color: '#1E40AF' }}>
+                          <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 750, color: 'var(--ez-hue-blue-text-deep)' }}>
                             {formatCurrencyIDR(item.amount || item.calculatedAmount)}
                           </td>
                         </tr>
@@ -815,7 +815,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                           border: '1px solid var(--ez-color-border-line)',
                           fontSize: '12px',
                           fontWeight: 750,
-                          color: '#1E293B',
+                          color: 'var(--ez-color-text-strong)',
                         }}
                       >
                         {grp.description || grp.groupName} (Baris Excel {grp.rowNumber})
@@ -827,7 +827,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                 {previewTab === 'ANOMALIES' && (
                   <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {analysisResult.allAnomalies.length === 0 ? (
-                      <div style={{ padding: '20px', textAlign: 'center', color: '#059669', fontWeight: 600 }}>
+                      <div style={{ padding: '20px', textAlign: 'center', color: 'var(--ez-hue-green-text)', fontWeight: 600 }}>
                         <CheckCircle2 size={24} color="#10B981" style={{ margin: '0 auto 6px' }} />
                         Tidak ditemukan anomali atau error pada file ini!
                       </div>
@@ -848,7 +848,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                         >
                           <AlertTriangle size={14} color={ano.severity === 'error' ? '#DC2626' : '#D97706'} />
                           <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Baris {ano.rowNumber}:</span>
-                          <span style={{ color: '#475569' }}>{ano.message}</span>
+                          <span style={{ color: 'var(--ez-color-text-slate)' }}>{ano.message}</span>
                         </div>
                       ))
                     )}
@@ -868,7 +868,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          color: '#475569',
+                          color: 'var(--ez-color-text-slate)',
                         }}
                       >
                         <span>
@@ -904,7 +904,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
               borderRadius: '8px',
               background: 'var(--ez-color-surface)',
               border: '1px solid var(--ez-hue-slate-border)',
-              color: '#475569',
+              color: 'var(--ez-color-text-slate)',
               fontSize: '12.5px',
               fontWeight: 650,
               cursor: 'pointer',
@@ -922,7 +922,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                   borderRadius: '8px',
                   background: 'var(--ez-color-surface)',
                   border: '1px solid var(--ez-hue-slate-border)',
-                  color: '#1E293B',
+                  color: 'var(--ez-color-text-strong)',
                   fontSize: '12.5px',
                   fontWeight: 650,
                   cursor: 'pointer',

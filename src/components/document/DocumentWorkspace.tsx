@@ -702,7 +702,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             style={{
               border: '1px solid var(--ez-hue-slate-border)',
               background: 'var(--ez-color-surface)',
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               padding: '8px 14px',
               borderRadius: 8,
               fontSize: 13,
@@ -760,7 +760,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             style={{
               border: '1px solid var(--ez-hue-slate-border)',
               background: 'var(--ez-color-surface)',
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               padding: '8px 14px',
               borderRadius: 8,
               fontSize: 13,
@@ -877,7 +877,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             borderRadius: 10,
             background: 'var(--ez-hue-amber-bg)',
             border: '1px solid #FCD34D',
-            color: '#92400E',
+            color: 'var(--ez-hue-amber-text-dark)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1035,7 +1035,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               borderRadius: 6,
               background: 'var(--ez-color-surface)',
               border: '1px solid var(--ez-hue-slate-border)',
-              color: '#15803D',
+              color: 'var(--ez-hue-green-text)',
               fontSize: 12,
               fontWeight: 650,
               cursor: 'pointer',
@@ -1160,7 +1160,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                       <div style={{ fontSize: 16, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         {activeHeader.companyName || master.companyName || 'PT KONSTRUKSI TAMA'}
                       </div>
-                      <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: 'var(--ez-color-text-slate)', marginTop: 2 }}>
                         {activeHeader.companyAddress || master.companyAddress || 'Jl. Raya Konstruksi No. 10'}
                       </div>
                       <div style={{ fontSize: 10.5, color: 'var(--ez-color-text-muted)', marginTop: 1 }}>
@@ -1174,7 +1174,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     <div style={{ fontSize: 16, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                       {master.companyName || 'PT EZRAB KONSTRUKSI TAMA'}
                     </div>
-                    <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: 'var(--ez-color-text-slate)', marginTop: 2 }}>
                       {master.companyAddress || 'Surabaya, Jawa Timur'}
                     </div>
                   </div>
@@ -1214,7 +1214,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     style={{
                       fontSize: 11.5,
                       lineHeight: 1.6,
-                      color: '#1E293B',
+                      color: 'var(--ez-color-text-strong)',
                       whiteSpace: 'pre-wrap',
                       background: '#FDFEFE',
                       padding: '12px 14px',
@@ -1230,7 +1230,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 <div style={{ borderBottom: '2px solid #2563EB', paddingBottom: 14, marginBottom: 20 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                      <h1 style={{ margin: '0 0 4px 0', fontSize: 22, fontWeight: 800, color: '#1E293B' }}>
+                      <h1 style={{ margin: '0 0 4px 0', fontSize: 22, fontWeight: 800, color: 'var(--ez-color-text-strong)' }}>
                         {renderedDoc.metadata.name}
                       </h1>
                       <div style={{ fontSize: 11, color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
@@ -1269,25 +1269,25 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     marginBottom: 22,
                   }}
                 >
-                  <div style={{ fontSize: 11, fontWeight: 750, color: '#475569', marginBottom: 6, letterSpacing: '0.04em' }}>
+                  <div style={{ fontSize: 11, fontWeight: 750, color: 'var(--ez-color-text-slate)', marginBottom: 6, letterSpacing: '0.04em' }}>
                     INFORMASI PROYEK
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 20px', fontSize: 12 }}>
                     <div>
-                      <strong style={{ color: '#334155' }}>Nama Proyek:</strong> {renderedDoc.metadata.project}
+                      <strong style={{ color: 'var(--ez-color-text-body)' }}>Nama Proyek:</strong> {renderedDoc.metadata.project}
                     </div>
                     <div>
-                      <strong style={{ color: '#334155' }}>Lokasi:</strong> {renderedDoc.metadata.location}
+                      <strong style={{ color: 'var(--ez-color-text-body)' }}>Lokasi:</strong> {renderedDoc.metadata.location}
                     </div>
                     <div>
-                      <strong style={{ color: '#334155' }}>Pemilik (Owner):</strong> {renderedDoc.metadata.owner}
+                      <strong style={{ color: 'var(--ez-color-text-body)' }}>Pemilik (Owner):</strong> {renderedDoc.metadata.owner}
                     </div>
                     <div>
-                      <strong style={{ color: '#334155' }}>Nilai Kontrak:</strong>{' '}
+                      <strong style={{ color: 'var(--ez-color-text-body)' }}>Nilai Kontrak:</strong>{' '}
                       {renderedDoc.metadata.contractValue ? `Rp ${Number(renderedDoc.metadata.contractValue).toLocaleString('id-ID')}` : '—'}
                     </div>
                     <div>
-                      <strong style={{ color: '#334155' }}>Kontraktor:</strong> {renderedDoc.metadata.contractor}
+                      <strong style={{ color: 'var(--ez-color-text-body)' }}>Kontraktor:</strong> {renderedDoc.metadata.contractor}
                     </div>
                   </div>
                 </div>
@@ -1296,7 +1296,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               {/* Scope & Parameter Fields (when not offer-letter) */}
               {definition.id !== 'offer-letter' && definition.fields.length > 0 && (
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: '#1E293B' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: 'var(--ez-color-text-strong)' }}>
                     Ketentuan & Parameter Dokumen
                   </div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
@@ -1309,7 +1309,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     <tbody>
                       {definition.fields.map((f, i) => (
                         <tr key={f.id} style={{ background: i % 2 === 0 ? '#FFFFFF' : 'var(--ez-color-surface-secondary)' }}>
-                          <td style={{ padding: '5px 10px', border: '1px solid var(--ez-color-border-line)', fontWeight: 600, color: '#334155' }}>
+                          <td style={{ padding: '5px 10px', border: '1px solid var(--ez-color-border-line)', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>
                             {f.label}
                           </td>
                           <td style={{ padding: '5px 10px', border: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-primary)' }}>
@@ -1325,7 +1325,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               {/* Data Tables if available */}
               {renderedDoc.tables.length > 0 && renderedDoc.tableColumns && (
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: '#1E293B' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: 'var(--ez-color-text-strong)' }}>
                     Lampiran Data Tabel
                   </div>
                   <div style={{ overflowX: 'auto' }}>
@@ -1375,7 +1375,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                   </div>
                   <div style={{ height: 48, display: 'flex', alignItems: 'center' }}>
                     {master.companySignature ? (
-                      <span style={{ fontSize: 10.5, color: '#16A34A', fontWeight: 600 }}>[Signature Attached]</span>
+                      <span style={{ fontSize: 10.5, color: 'var(--ez-hue-green-text-bright)', fontWeight: 600 }}>[Signature Attached]</span>
                     ) : (
                       <span style={{ color: '#94A3B8' }}>____________________</span>
                     )}
@@ -1394,7 +1394,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {/* Auto Populated Source Summary */}
             <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 10, padding: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#15803D', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--ez-hue-green-text)', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <CheckCircle2 size={15} color="#16A34A" />
                 <span>Data Terisi Otomatis (Auto)</span>
               </div>
@@ -1457,8 +1457,8 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {fieldClassification.userFields.map(f => (
                     <div key={f.id}>
-                      <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
-                        {f.label} <span style={{ color: '#DC2626' }}>*</span>
+                      <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
+                        {f.label} <span style={{ color: 'var(--ez-hue-rose-text)' }}>*</span>
                       </label>
                       <input
                         type="text"
@@ -1481,13 +1481,13 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             {/* Data Opsional (OPTIONAL Fields) */}
             {fieldClassification.optionalFields.length > 0 && (
               <details style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: 10, padding: 12 }}>
-                <summary style={{ fontSize: 12, fontWeight: 700, color: '#475569', cursor: 'pointer' }}>
+                <summary style={{ fontSize: 12, fontWeight: 700, color: 'var(--ez-color-text-slate)', cursor: 'pointer' }}>
                   Data Opsional ({fieldClassification.optionalFields.length})
                 </summary>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
                   {fieldClassification.optionalFields.map(f => (
                     <div key={f.id}>
-                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 3 }}>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--ez-color-text-slate)', marginBottom: 3 }}>
                         {f.label}
                       </label>
                       <input
@@ -1580,7 +1580,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                           </span>
                         )}
                         {!isCurrentActive && (
-                          <span style={{ background: 'var(--ez-color-border-line)', color: '#475569', fontSize: 9.5, padding: '1px 5px', borderRadius: 4, fontWeight: 600 }}>
+                          <span style={{ background: 'var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)', fontSize: 9.5, padding: '1px 5px', borderRadius: 4, fontWeight: 600 }}>
                             READ-ONLY
                           </span>
                         )}
@@ -1589,7 +1589,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     </div>
 
                     {rev.revisionDescription && (
-                      <div style={{ fontSize: 12, color: '#475569', marginTop: 4, fontStyle: 'italic' }}>
+                      <div style={{ fontSize: 12, color: 'var(--ez-color-text-slate)', marginTop: 4, fontStyle: 'italic' }}>
                         "{rev.revisionDescription}"
                       </div>
                     )}
@@ -1712,7 +1712,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                           >
                             {item.format}
                           </span>
-                          <span style={{ fontSize: 12.5, fontWeight: 650, color: '#1E293B' }}>
+                          <span style={{ fontSize: 12.5, fontWeight: 650, color: 'var(--ez-color-text-strong)' }}>
                             {item.fileName}
                           </span>
                         </div>
@@ -1772,7 +1772,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               <strong>REV {String(activeRecord.revision + 1).padStart(2, '0')}</strong>.
             </p>
             <form onSubmit={handleCreateRevisionSubmit}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 6 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 6 }}>
                 Deskripsi Perubahan Revisi:
               </label>
               <textarea
@@ -1859,10 +1859,10 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     <AlertTriangle size={24} color="#D97706" />
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: '#92400E' }}>
+                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--ez-hue-amber-text-dark)' }}>
                       Dokumen belum siap
                     </h3>
-                    <div style={{ fontSize: 12, color: '#B45309', marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: 'var(--ez-hue-amber-text)', marginTop: 2 }}>
                       {validationModal.validation.errors.length} data perlu dilengkapi:
                     </div>
                   </div>
@@ -1876,7 +1876,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     marginBottom: 18,
                   }}
                 >
-                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: '#92400E' }}>
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: 'var(--ez-hue-amber-text-dark)' }}>
                     {validationModal.validation.errors.map((err) => (
                       <li key={err} style={{ marginBottom: 4 }}>• {err}</li>
                     ))}
@@ -1924,11 +1924,11 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                   <div style={{ background: 'var(--ez-hue-amber-bg-deep)', padding: 8, borderRadius: 50 }}>
                     <AlertTriangle size={24} color="#D97706" />
                   </div>
-                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: '#92400E' }}>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--ez-hue-amber-text-dark)' }}>
                     Dokumen siap diekspor dengan catatan
                   </h3>
                 </div>
-                <p style={{ margin: '0 0 12px 0', fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
+                <p style={{ margin: '0 0 12px 0', fontSize: 13, color: 'var(--ez-color-text-slate)', lineHeight: 1.5 }}>
                   Dokumen memenuhi persyaratan utama, namun beberapa asset opsional belum tersedia:
                 </p>
                 <div
@@ -1940,10 +1940,10 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     marginBottom: 18,
                   }}
                 >
-                  <div style={{ fontWeight: 700, fontSize: 12, color: '#B45309', marginBottom: 4 }}>
+                  <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--ez-hue-amber-text)', marginBottom: 4 }}>
                     WARNING:
                   </div>
-                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: '#92400E' }}>
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'var(--ez-hue-amber-text-dark)' }}>
                     {validationModal.validation.warnings.map((w) => (
                       <li key={w}>{w}</li>
                     ))}
@@ -2031,7 +2031,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Nama Label Kop
                 </label>
                 <input
@@ -2044,7 +2044,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Nama Legal Perusahaan
                 </label>
                 <input
@@ -2057,7 +2057,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Alamat Kantor
                 </label>
                 <input
@@ -2071,7 +2071,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Telepon
                   </label>
                   <input
@@ -2083,7 +2083,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Email Resmi
                   </label>
                   <input
@@ -2097,7 +2097,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Upload Gambar Kop / Logo (Opsional PNG/JPG)
                 </label>
                 <input

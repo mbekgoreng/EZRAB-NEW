@@ -85,7 +85,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
         {/* Card 1: Overhead & Keuntungan */}
         <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "14px", padding: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-blue-bg)", color: "#2563EB", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-blue-bg)", color: "var(--ez-hue-blue-text)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Percent size={16} />
             </div>
             <div>
@@ -116,7 +116,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
                 outline: "none",
               }}
             />
-            <span style={{ fontSize: "14px", fontWeight: 700, color: "#475569" }}>%</span>
+            <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--ez-color-text-slate)" }}>%</span>
           </div>
           <p style={{ fontSize: "11.5px", color: "#94A3B8", marginTop: "8px", margin: 0 }}>
             Standar umum PU / LKPP: 5% - 15% untuk pekerjaan konstruksi sipil & gedung.
@@ -126,7 +126,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
         {/* Card 2: Pajak Pertambahan Nilai (PPN) */}
         <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "14px", padding: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-amber-bg-deep)", color: "#B45309", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-amber-bg-deep)", color: "var(--ez-hue-amber-text)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <ShieldCheck size={16} />
             </div>
             <div>
@@ -157,7 +157,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
                 outline: "none",
               }}
             />
-            <span style={{ fontSize: "14px", fontWeight: 700, color: "#475569" }}>%</span>
+            <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--ez-color-text-slate)" }}>%</span>
           </div>
           <p style={{ fontSize: "11.5px", color: "#94A3B8", marginTop: "8px", margin: 0 }}>
             Sesuai UU HPP Republik Indonesia, tarif PPN konstruksi adalah 11% (atau 12% bila berlaku).
@@ -167,7 +167,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
         {/* Card 3: Wilayah & Indeks Kemahalan */}
         <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "14px", padding: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-green-bg)", color: "#16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-green-bg)", color: "var(--ez-hue-green-text-bright)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <MapPin size={16} />
             </div>
             <div>
@@ -212,7 +212,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
         {/* Card 4: Skema Pembulatan Harga */}
         <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "14px", padding: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-purple-bg-soft)", color: "#7E22CE", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-purple-bg-soft)", color: "var(--ez-hue-purple-text)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Coins size={16} />
             </div>
             <div>

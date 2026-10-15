@@ -72,10 +72,10 @@ export const DocxImportModal: React.FC<DocxImportModalProps> = ({
             marginBottom: 20,
           }}
         >
-          <div style={{ fontSize: 12, fontWeight: 750, color: '#166534', marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 750, color: 'var(--ez-hue-green-text-deep)', marginBottom: 8 }}>
             Bagian Terdeteksi:
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, fontSize: 12, color: '#15803D' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, fontSize: 12, color: 'var(--ez-hue-green-text)' }}>
             <div>✓ Header: {importResult.summary.hasHeader ? 'Terdeteksi' : 'Tidak ada'}</div>
             <div>✓ Paragraf: {importResult.summary.paragraphCount} paragraf</div>
             <div>✓ Tabel: {importResult.summary.tableCount} tabel</div>
@@ -86,7 +86,7 @@ export const DocxImportModal: React.FC<DocxImportModalProps> = ({
 
         {/* WARNINGS IF ANY */}
         {importResult.warnings.length > 0 && (
-          <div style={{ background: 'var(--ez-hue-amber-bg)', border: '1px solid #FCD34D', borderRadius: 8, padding: 12, marginBottom: 18, fontSize: 12, color: '#92400E' }}>
+          <div style={{ background: 'var(--ez-hue-amber-bg)', border: '1px solid #FCD34D', borderRadius: 8, padding: 12, marginBottom: 18, fontSize: 12, color: 'var(--ez-hue-amber-text-dark)' }}>
             <div style={{ fontWeight: 700, marginBottom: 4 }}>Catatan Penyesuaian:</div>
             {importResult.warnings.map((w, i) => (
               <div key={i}>• {w}</div>

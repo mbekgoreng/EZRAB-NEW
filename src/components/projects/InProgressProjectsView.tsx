@@ -159,11 +159,11 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
           <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
             {t('proj.active.kpi3_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#B54747' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-hue-rose-text)' }}>
             {behindCount}{' '}
             <span style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi3_u')}</span>
           </div>
-          <div style={{ fontSize: '12px', color: '#B54747', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--ez-hue-rose-text)', marginTop: '6px' }}>
             {t('proj.active.kpi3_s')}
           </div>
         </div>
@@ -393,7 +393,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                         padding: '5px 12px',
                         borderRadius: 'var(--ez-radius-pill)',
                         background: 'var(--ez-pastel-sky)',
-                        color: '#2456A8',
+                        color: 'var(--ez-hue-blue-text-deep)',
                         whiteSpace: 'nowrap',
                       }}
                     >
@@ -492,7 +492,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                         gap: '6px',
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 700, color: '#2456A8' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-hue-blue-text-deep)' }}>
                         <span>{t('proj.active.slider_t')}</span>
                         <span>{newProgressVal}%</span>
                       </div>
@@ -564,7 +564,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                         borderRadius: 'var(--ez-radius-control)',
                         background: 'var(--ez-pastel-sky)',
                         border: 'none',
-                        color: '#2456A8',
+                        color: 'var(--ez-hue-blue-text-deep)',
                         fontSize: '12px',
                         fontWeight: 700,
                         cursor: 'pointer',

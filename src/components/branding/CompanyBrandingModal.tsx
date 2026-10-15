@@ -247,7 +247,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                 borderRadius: '10px',
                 background: 'var(--ez-hue-rose-bg)',
                 border: '1px solid #FCA5A5',
-                color: '#991B1B',
+                color: 'var(--ez-hue-red-text)',
                 fontSize: '13px',
                 display: 'flex',
                 alignItems: 'center',
@@ -266,7 +266,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                 borderRadius: '10px',
                 background: 'var(--ez-hue-green-bg)',
                 border: '1px solid #86EFAC',
-                color: '#166534',
+                color: 'var(--ez-hue-green-text-deep)',
                 fontSize: '13px',
                 display: 'flex',
                 alignItems: 'center',
@@ -330,7 +330,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                   fontWeight: 600,
                   border: '1px solid var(--ez-hue-slate-border)',
                   background: 'var(--ez-color-surface)',
-                  color: '#334155',
+                  color: 'var(--ez-color-text-body)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -372,7 +372,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                     borderRadius: '8px',
                     border: '1px solid #FCA5A5',
                     background: 'var(--ez-hue-rose-bg)',
-                    color: '#B91C1C',
+                    color: 'var(--ez-hue-red-text)',
                     fontSize: '11.5px',
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -480,7 +480,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                       <Upload size={14} />
                       <span>Upload Logo (Terkunci)</span>
                     </button>
-                    <p style={{ fontSize: '11px', color: '#D97706', fontWeight: 600, margin: '6px 0 0 0' }}>
+                    <p style={{ fontSize: '11px', color: 'var(--ez-hue-amber-text-deep)', fontWeight: 600, margin: '6px 0 0 0' }}>
                       Upload logo perusahaan tersedia untuk paket berbayar.
                     </p>
                   </div>
@@ -497,7 +497,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Nama Perusahaan / Studio
                 </label>
                 <input
@@ -517,7 +517,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Nomor NPWP
                 </label>
                 <input
@@ -538,7 +538,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                 Alamat Kantor Lengkap
               </label>
               <input
@@ -559,7 +559,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Nomor Telepon / WhatsApp
                 </label>
                 <input
@@ -579,7 +579,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Email Resmi
                 </label>
                 <input
@@ -599,7 +599,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Website Perusahaan
                 </label>
                 <input
@@ -622,7 +622,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
             {/* Pejabat Penandatangan */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Nama Direktur Utama (Penandatangan)
                 </label>
                 <input
@@ -642,7 +642,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Nama Lead Estimator (Penyusun RAB)
                 </label>
                 <input
@@ -685,7 +685,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
               borderRadius: '8px',
               border: '1px solid var(--ez-hue-slate-border)',
               background: 'var(--ez-color-surface)',
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               fontSize: '12.5px',
               fontWeight: 600,
               cursor: 'pointer',

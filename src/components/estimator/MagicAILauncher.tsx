@@ -68,7 +68,7 @@ export const MagicAILauncher: React.FC<MagicAILauncherProps> = ({ onClick, isOpe
       </div>
 
       {/* Label */}
-      <span style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B' }}>
+      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-strong)' }}>
         Tanya Magic AI...
       </span>
 

@@ -225,7 +225,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                   fontSize: '11px',
                   fontWeight: 700,
                   background: 'var(--ez-pastel-mint)',
-                  color: '#2c6e2c',
+                  color: 'var(--ez-hue-green-text)',
                   padding: '2px 8px',
                   borderRadius: 'var(--ez-radius-pill)',
                 }}
@@ -250,7 +250,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                 padding: '0 14px',
                 borderRadius: '10px',
                 background: 'var(--ez-color-surface-tertiary)',
-                color: '#1E293B',
+                color: 'var(--ez-color-text-strong)',
                 fontSize: '12.5px',
                 fontWeight: 600,
                 border: '1px solid var(--ez-hue-slate-border)',
@@ -313,7 +313,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
             </span>
             <CheckCircle2 size={15} color="#16A34A" />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#16A34A', marginTop: '6px' }}>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', marginTop: '6px' }}>
             {currentActualProgress}%
           </div>
           <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
@@ -588,7 +588,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                     padding: '0 16px',
                     borderRadius: '10px',
                     background: 'var(--ez-color-surface-tertiary)',
-                    color: '#1E293B',
+                    color: 'var(--ez-color-text-strong)',
                     fontSize: '12.5px',
                     fontWeight: 600,
                     border: '1px solid var(--ez-hue-slate-border)',
@@ -692,7 +692,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                             background: 'var(--ez-pastel-sky)',
                             border: 'none',
                             borderRadius: 'var(--ez-radius-pill)',
-                            color: '#2456a8',
+                            color: 'var(--ez-hue-blue-text-deep)',
                             fontSize: '11.5px',
                             fontWeight: 600,
                             cursor: 'pointer',
@@ -711,7 +711,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                             background: 'var(--ez-hue-red-bg)',
                             border: 'none',
                             borderRadius: 'var(--ez-radius-pill)',
-                            color: '#DC2626',
+                            color: 'var(--ez-hue-rose-text)',
                             cursor: 'pointer',
                           }}
                         >
@@ -740,7 +740,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
 
             <form onSubmit={handleCreateTask} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Nama Tahapan</label>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Nama Tahapan</label>
                 <input
                   type="text"
                   placeholder="e.g. Pekerjaan Pondasi Tapak"
@@ -752,7 +752,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
               </div>
 
               <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Kategori Pekerjaan</label>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Kategori Pekerjaan</label>
                 <select
                   value={taskCategory}
                   onChange={(e) => setTaskCategory(e.target.value)}
@@ -768,7 +768,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Mulai Pekan Ke-</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Mulai Pekan Ke-</label>
                   <input
                     type="number"
                     min="1"
@@ -779,7 +779,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Selesai Pekan Ke-</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Selesai Pekan Ke-</label>
                   <input
                     type="number"
                     min="1"
@@ -792,7 +792,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
               </div>
 
               <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Bobot Pekerjaan (%)</label>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Bobot Pekerjaan (%)</label>
                 <input
                   type="number"
                   step="0.1"
@@ -808,7 +808,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  style={{ height: '36px', padding: '0 14px', borderRadius: '10px', background: 'var(--ez-color-surface-tertiary)', color: '#475569', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                  style={{ height: '36px', padding: '0 14px', borderRadius: '10px', background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
                 >
                   Batal
                 </button>
@@ -837,7 +837,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
 
             <form onSubmit={handleSaveProgress} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Progres Realisasi Lapangan (%)</label>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Progres Realisasi Lapangan (%)</label>
                 <input
                   type="number"
                   min="0"
@@ -850,7 +850,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
               </div>
 
               <div>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Status Pelaksanaan</label>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>Status Pelaksanaan</label>
                 <select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value as any)}
@@ -867,7 +867,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                 <button
                   type="button"
                   onClick={() => setEditingTask(null)}
-                  style={{ height: '36px', padding: '0 14px', borderRadius: '10px', background: 'var(--ez-color-surface-tertiary)', color: '#475569', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
+                  style={{ height: '36px', padding: '0 14px', borderRadius: '10px', background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}
                 >
                   Batal
                 </button>

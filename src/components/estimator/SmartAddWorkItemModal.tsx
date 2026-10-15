@@ -602,7 +602,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  color: '#475569',
+                  color: 'var(--ez-color-text-slate)',
                 }}
                 title="Kembali ke Pilihan Metode"
               >
@@ -699,7 +699,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
               padding: '8px 16px',
               background: 'var(--ez-hue-red-bg)',
               borderBottom: '1px solid var(--ez-hue-rose-border)',
-              color: '#B91C1C',
+              color: 'var(--ez-hue-red-text)',
               fontSize: '12px',
               display: 'flex',
               alignItems: 'center',
@@ -761,7 +761,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     >
                       📚
                     </div>
-                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-blue-bg-deep)', color: '#1E40AF' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-blue-bg-deep)', color: 'var(--ez-hue-blue-text-deep)' }}>
                       PUPR 2026
                     </span>
                   </div>
@@ -821,7 +821,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     >
                       ✏️
                     </div>
-                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: '#D1FAE5', color: '#065F46' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: '#D1FAE5', color: 'var(--ez-hue-green-text-deep)' }}>
                       Fleksibel
                     </span>
                   </div>
@@ -832,7 +832,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     Buat pekerjaan sendiri dengan mengisi uraian, volume, satuan, dan harga satuan secara mandiri.
                   </p>
                 </div>
-                <div style={{ marginTop: '16px', fontSize: '12px', fontWeight: 750, color: '#059669', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ marginTop: '16px', fontSize: '12px', fontWeight: 750, color: 'var(--ez-hue-green-text)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span>Buat Manual</span>
                   <span>→</span>
                 </div>
@@ -892,7 +892,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     Jelaskan pekerjaan dalam bahasa natural dan EZRAB membantu menyusun rincian estimasinya.
                   </p>
                 </div>
-                <div style={{ marginTop: '16px', fontSize: '12px', fontWeight: 750, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ marginTop: '16px', fontSize: '12px', fontWeight: 750, color: 'var(--ez-hue-indigo-text)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span>Gunakan AI</span>
                   <span>→</span>
                 </div>
@@ -941,7 +941,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     >
                       📋
                     </div>
-                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-amber-bg-deep)', color: '#92400E' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text-dark)' }}>
                       Paket WBS
                     </span>
                   </div>
@@ -952,7 +952,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     Gunakan paket pekerjaan dari template bangunan (Rumah, Ruko, Gudang, Masjid, Kantor).
                   </p>
                 </div>
-                <div style={{ marginTop: '16px', fontSize: '12px', fontWeight: 750, color: '#D97706', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ marginTop: '16px', fontSize: '12px', fontWeight: 750, color: 'var(--ez-hue-amber-text-deep)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span>Pilih Template</span>
                   <span>→</span>
                 </div>
@@ -1027,13 +1027,13 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Tujuan Kelompok WBS:
                   </label>
                   <select
                     value={targetCategory}
                     onChange={(e) => setTargetCategory(e.target.value)}
-                    style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1.5px solid #2563EB', fontSize: '12px', fontWeight: 650, color: '#1E40AF', background: 'var(--ez-hue-blue-bg)' }}
+                    style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1.5px solid #2563EB', fontSize: '12px', fontWeight: 650, color: 'var(--ez-hue-blue-text-deep)', background: 'var(--ez-hue-blue-bg)' }}
                   >
                     {WORK_CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>
@@ -1044,7 +1044,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Kategori AHSP:
                   </label>
                   <select
@@ -1062,7 +1062,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Cari Kode / Uraian / Keyword:
                   </label>
                   <div style={{ position: 'relative' }}>
@@ -1140,7 +1140,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                             <td style={{ padding: '8px 10px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--ez-color-primary)' }}>
                               {item.code}
                             </td>
-                            <td style={{ padding: '8px 10px', fontWeight: 600, color: '#1E293B' }}>{item.name}</td>
+                            <td style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--ez-color-text-strong)' }}>{item.name}</td>
                             <td style={{ padding: '8px 8px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>{item.unit}</td>
                             <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
                               {(() => {
@@ -1185,7 +1185,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
 
               {bulkSelectedAhspCodes.size > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-border)', padding: '10px 16px', borderRadius: '8px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#1E40AF' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-blue-text-deep)' }}>
                     {bulkSelectedAhspCodes.size} pekerjaan AHSP dipilih untuk kelompok "{targetCategory}"
                   </span>
                   <button
@@ -1235,14 +1235,14 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   </div>
                   <div>
                     <span style={{ color: 'var(--ez-color-text-muted)' }}>Sumber: </span>
-                    <span style={{ fontWeight: 700, color: '#047857' }}>AHSP 2024 / PUPR</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-hue-green-text)' }}>AHSP 2024 / PUPR</span>
                   </div>
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     WBS Tujuan: <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <select
@@ -1259,7 +1259,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Volume ({selectedAhspItem.unit}): <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
@@ -1274,7 +1274,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
               </div>
 
               <div>
-                <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                   Harga Satuan (Otomatis dari Price Engine AHSP):
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -1290,7 +1290,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
               {/* Live Subtotal Card */}
               <div style={{ background: 'var(--ez-hue-blue-bg)', borderRadius: '8px', border: '1px solid var(--ez-hue-blue-border)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <span style={{ fontSize: '11px', color: '#1E40AF', display: 'block' }}>Total Biaya Pekerjaan:</span>
+                  <span style={{ fontSize: '11px', color: 'var(--ez-hue-blue-text-deep)', display: 'block' }}>Total Biaya Pekerjaan:</span>
                   <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-primary-hover)', fontVariantNumeric: 'tabular-nums' }}>
                     {formatCurrencyIDR(Math.round(ahspCustomVolume * ahspCustomPrice))}
                   </span>
@@ -1304,7 +1304,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                       borderRadius: '6px',
                       border: '1px solid var(--ez-hue-slate-border)',
                       background: 'var(--ez-color-surface)',
-                      color: '#475569',
+                      color: 'var(--ez-color-text-slate)',
                       fontSize: '12px',
                       fontWeight: 650,
                       cursor: 'pointer',
@@ -1345,7 +1345,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxWidth: '720px', margin: '0 auto' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Kelompok WBS: <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <select
@@ -1361,7 +1361,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Kode Pekerjaan (Opsional):
                   </label>
                   <input
@@ -1375,7 +1375,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
               </div>
 
               <div>
-                <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                   Uraian Pekerjaan: <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
@@ -1389,7 +1389,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Volume: <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
@@ -1403,7 +1403,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Satuan: <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
@@ -1416,7 +1416,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Harga Satuan (Rp):
                   </label>
                   <input
@@ -1456,7 +1456,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
               </div>
 
               <div>
-                <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                   Catatan Spesifikasi (Opsional):
                 </label>
                 <input
@@ -1517,17 +1517,17 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
           {activeMode === 'ai' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxWidth: '720px', margin: '0 auto' }}>
               <div style={{ background: 'var(--ez-hue-indigo-bg-soft)', border: '1px solid #C7D2FE', borderRadius: '10px', padding: '12px 16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#4338CA', fontWeight: 750, fontSize: '12.5px', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ez-hue-indigo-text)', fontWeight: 750, fontSize: '12.5px', marginBottom: '4px' }}>
                   <Sparkles size={16} />
                   <span>Asisten Estimasi AI Konstruksi</span>
                 </div>
-                <p style={{ fontSize: '11.5px', color: '#4338CA', margin: 0, lineHeight: '1.45' }}>
+                <p style={{ fontSize: '11.5px', color: 'var(--ez-hue-indigo-text)', margin: 0, lineHeight: '1.45' }}>
                   Tuliskan pekerjaan yang Anda butuhkan (contoh: <em>"Tambahkan waterproofing kamar mandi 12 m2"</em>). AI akan menyusun estimasi volume, satuan, dan taksiran biaya wajar untuk dikonfirmasi.
                 </p>
               </div>
 
               <div>
-                <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                   Jelaskan Pekerjaan:
                 </label>
                 <textarea
@@ -1567,7 +1567,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
               {aiGeneratedItem && (
                 <div style={{ border: '1.5px solid #818CF8', borderRadius: 'var(--ez-radius-control)', padding: '16px', background: 'var(--ez-color-surface-secondary)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#4F46E5', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-hue-indigo-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                       Saran EZRAB AI (Perlu Konfirmasi)
                     </span>
                     <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-indigo-bg)', color: '#3730A3', fontWeight: 700 }}>
@@ -1651,7 +1651,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                         borderRadius: '6px',
                         border: '1px solid var(--ez-hue-slate-border)',
                         background: 'var(--ez-color-surface)',
-                        color: '#475569',
+                        color: 'var(--ez-color-text-slate)',
                         fontSize: '12px',
                         fontWeight: 650,
                         cursor: 'pointer',
@@ -1696,7 +1696,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
           {activeMode === 'template' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569' }}>
+                <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)' }}>
                   Pilih Template Bangunan:
                 </label>
                 <select
@@ -1732,7 +1732,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                       background: 'var(--ez-color-surface)',
                       fontSize: '11px',
                       fontWeight: 650,
-                      color: '#475569',
+                      color: 'var(--ez-color-text-slate)',
                       cursor: 'pointer',
                     }}
                   >
@@ -1784,7 +1784,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                         <div style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--ez-color-primary)', width: '90px' }}>
                           {item.wbsCode || 'WBS.' + (idx + 1)}
                         </div>
-                        <div style={{ flex: 1, fontWeight: 550, color: '#334155' }}>{item.name}</div>
+                        <div style={{ flex: 1, fontWeight: 550, color: 'var(--ez-color-text-body)' }}>{item.name}</div>
                         <div style={{ color: 'var(--ez-color-text-muted)', width: '70px' }}>1 {item.unit}</div>
                         <div style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', width: '110px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                           {formatCurrencyIDR(estPrice)}
@@ -1834,7 +1834,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
           {activeMode === 'duplicate' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                   Cari Pekerjaan Eksisting dalam Proyek:
                 </label>
                 <div style={{ position: 'relative' }}>

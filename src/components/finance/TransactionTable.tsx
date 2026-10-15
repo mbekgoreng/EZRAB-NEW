@@ -54,13 +54,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
   const getTypeBadge = (type: FinancialTransactionType) => {
     switch (type) {
       case 'INCOME':
-        return { label: 'Pemasukan', bg: 'var(--ez-hue-green-bg-deep)', color: '#166534', border: 'var(--ez-hue-green-border)', icon: ArrowDownLeft };
+        return { label: 'Pemasukan', bg: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text-deep)', border: 'var(--ez-hue-green-border)', icon: ArrowDownLeft };
       case 'EXPENSE':
-        return { label: 'Pengeluaran', bg: 'var(--ez-hue-red-bg)', color: '#991B1B', border: 'var(--ez-hue-rose-border)', icon: ArrowUpRight };
+        return { label: 'Pengeluaran', bg: 'var(--ez-hue-red-bg)', color: 'var(--ez-hue-red-text)', border: 'var(--ez-hue-rose-border)', icon: ArrowUpRight };
       case 'RECEIVABLE':
-        return { label: 'Piutang', bg: 'var(--ez-hue-blue-bg)', color: '#1E40AF', border: 'var(--ez-hue-blue-border)', icon: Receipt };
+        return { label: 'Piutang', bg: 'var(--ez-hue-blue-bg)', color: 'var(--ez-hue-blue-text-deep)', border: 'var(--ez-hue-blue-border)', icon: Receipt };
       case 'PAYABLE':
-        return { label: 'Hutang', bg: 'var(--ez-hue-amber-bg-deep)', color: '#92400E', border: 'var(--ez-hue-amber-border)', icon: Layers };
+        return { label: 'Hutang', bg: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text-dark)', border: 'var(--ez-hue-amber-border)', icon: Layers };
       default:
         return { label: type, bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', border: 'var(--ez-color-border)', icon: FileText };
     }
@@ -70,12 +70,12 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     switch (status) {
       case 'COMPLETED':
       case 'PAID':
-        return { label: 'Selesai / Lunas', bg: 'var(--ez-hue-green-bg-deep)', color: '#166534' };
+        return { label: 'Selesai / Lunas', bg: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text-deep)' };
       case 'PENDING':
       case 'COMMITTED':
-        return { label: 'Menunggu / Komitmen', bg: 'var(--ez-hue-amber-bg-deep)', color: '#92400E' };
+        return { label: 'Menunggu / Komitmen', bg: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text-dark)' };
       case 'OVERDUE':
-        return { label: 'Jatuh Tempo', bg: 'var(--ez-hue-red-bg)', color: '#991B1B' };
+        return { label: 'Jatuh Tempo', bg: 'var(--ez-hue-red-bg)', color: 'var(--ez-hue-red-text)' };
       case 'PARTIALLY_PAID':
         return { label: 'Dibayar Sebagian', bg: 'var(--ez-hue-indigo-bg)', color: '#3730A3' };
       case 'DRAFT':

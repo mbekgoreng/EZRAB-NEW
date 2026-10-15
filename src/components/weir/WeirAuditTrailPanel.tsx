@@ -134,7 +134,7 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
 
                 {/* Step Name + Detail */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#1E293B' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-strong)' }}>
                     {step.stageName}
                   </div>
                   <div
@@ -171,7 +171,7 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
                     style={{
                       fontSize: '9.5px',
                       fontFamily: 'monospace',
-                      color: '#334155',
+                      color: 'var(--ez-color-text-body)',
                       background: 'var(--ez-color-surface-tertiary)',
                       padding: '8px',
                       borderRadius: '4px',

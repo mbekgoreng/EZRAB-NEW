@@ -65,7 +65,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
         return {
           bg: 'var(--ez-hue-emerald-bg)',
           border: 'var(--ez-hue-green-border-deep)',
-          color: '#047857',
+          color: 'var(--ez-hue-green-text)',
           text: 'HARGA PROYEK',
           desc: 'Berdasarkan penawaran supplier/kontrak khusus proyek ini (Tier 2)',
         };
@@ -73,7 +73,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
         return {
           bg: 'var(--ez-hue-violet-bg)',
           border: 'var(--ez-hue-violet-border)',
-          color: '#6D28D9',
+          color: 'var(--ez-hue-violet-text)',
           text: 'HARGA TERKUNCI (REVISI)',
           desc: 'Dibekukan untuk keutuhan dokumen kontrak RAB resmi',
         };
@@ -81,7 +81,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
         return {
           bg: 'var(--ez-hue-amber-bg)',
           border: 'var(--ez-hue-amber-border)',
-          color: '#B45309',
+          color: 'var(--ez-hue-amber-text)',
           text: 'KEDALUWARSA (FALLBACK)',
           desc: 'Penawaran proyek telah melewati masa berlaku, fallback ke acuan nasional',
         };
@@ -89,7 +89,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
         return {
           bg: 'var(--ez-color-surface-secondary)',
           border: 'var(--ez-color-border)',
-          color: '#475569',
+          color: 'var(--ez-color-text-slate)',
           text: 'HARGA REFERENSI NASIONAL',
           desc: 'Menggunakan Database Acuan Master EZRAB / HSD 2026',
         };
@@ -98,7 +98,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
         return {
           bg: 'var(--ez-hue-rose-bg)',
           border: 'var(--ez-hue-rose-border)',
-          color: '#B91C1C',
+          color: 'var(--ez-hue-red-text)',
           text: 'TIDAK DITEMUKAN',
           desc: 'Fail-closed: tidak ada harga resmi untuk item ini',
         };
@@ -217,7 +217,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
                   {badge.text}
                 </span>
               </div>
-              <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: '#334155', lineHeight: 1.4 }}>
+              <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: 'var(--ez-color-text-body)', lineHeight: 1.4 }}>
                 {resolved.explanation || badge.desc}
               </p>
             </div>
@@ -225,7 +225,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
 
           {/* 3-Tier Price Comparison Matrix */}
           <div>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '10px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-slate)', textTransform: 'uppercase', marginBottom: '10px' }}>
               Perbandingan 3 Tingkat Harga
             </div>
             <div
@@ -242,7 +242,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
               {/* 1. Harga Referensi */}
               <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface)', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
                 <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>1. Acuan Nasional</div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: '#334155', marginTop: '4px' }}>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ez-color-text-body)', marginTop: '4px' }}>
                   {refPrice > 0 ? formatCurrencyIDR(refPrice) : '-'}
                 </div>
                 <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>
@@ -339,7 +339,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
 
           {/* Provenance & Metadata */}
           <div>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '8px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-slate)', textTransform: 'uppercase', marginBottom: '8px' }}>
               Detail Sumber & Dokumen Rujukan
             </div>
             <div
@@ -356,12 +356,12 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
             >
               <div>
                 <span style={{ color: 'var(--ez-color-text-muted)' }}>Sumber Resmi: </span>
-                <strong style={{ color: '#1E293B' }}>{resolved.sourceName || resolved.source}</strong>
+                <strong style={{ color: 'var(--ez-color-text-strong)' }}>{resolved.sourceName || resolved.source}</strong>
               </div>
               {resolved.supplier && (
                 <div>
                   <span style={{ color: 'var(--ez-color-text-muted)' }}>Supplier / Vendor: </span>
-                  <strong style={{ color: '#1E293B' }}>{resolved.supplier}</strong>
+                  <strong style={{ color: 'var(--ez-color-text-strong)' }}>{resolved.supplier}</strong>
                 </div>
               )}
               {resolved.validUntil && (
@@ -375,7 +375,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
               {resolved.provenance?.createdBy && (
                 <div>
                   <span style={{ color: 'var(--ez-color-text-muted)' }}>Ditetapkan Oleh: </span>
-                  <strong style={{ color: '#1E293B' }}>{resolved.provenance.createdBy}</strong>
+                  <strong style={{ color: 'var(--ez-color-text-strong)' }}>{resolved.provenance.createdBy}</strong>
                 </div>
               )}
             </div>
@@ -384,7 +384,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
           {/* Audit History Log */}
           {auditHistory.length > 0 && (
             <div>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-slate)', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <History size={14} /> Riwayat Audit Perubahan Harga Proyek ({auditHistory.length})
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto' }}>
@@ -445,7 +445,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
                 borderRadius: '8px',
                 border: '1px solid var(--ez-hue-slate-border)',
                 backgroundColor: 'var(--ez-color-surface)',
-                color: '#475569',
+                color: 'var(--ez-color-text-slate)',
                 fontSize: '12.5px',
                 fontWeight: 600,
                 cursor: 'pointer',

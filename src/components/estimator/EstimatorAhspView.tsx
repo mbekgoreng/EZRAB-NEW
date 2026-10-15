@@ -72,7 +72,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
               Dekomposisi koefisien upah, material, dan alat berstandar SNI / PUPR 2026 yang aktif pada proyek ini
             </p>
           </div>
-          <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#2563EB", background: "var(--ez-hue-blue-bg)", padding: "6px 12px", borderRadius: "8px", border: "1px solid var(--ez-hue-blue-border)" }}>
+          <div style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--ez-hue-blue-text)", background: "var(--ez-hue-blue-bg)", padding: "6px 12px", borderRadius: "8px", border: "1px solid var(--ez-hue-blue-border)" }}>
             {projectAhspList.length} Analisa AHSP Terhubung
           </div>
         </div>
@@ -108,7 +108,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
               borderRadius: "8px",
               border: "1px solid var(--ez-hue-slate-border)",
               fontSize: "13px",
-              color: "#334155",
+              color: "var(--ez-color-text-body)",
               fontWeight: 500,
               background: "var(--ez-color-surface)",
               outline: "none",
@@ -202,7 +202,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                         fontFamily: "var(--ezrab-font-mono)",
                         fontWeight: 750,
                         fontSize: "12px",
-                        color: "#2563EB",
+                        color: "var(--ez-hue-blue-text)",
                         background: "var(--ez-hue-blue-bg)",
                         padding: "3px 8px",
                         borderRadius: "5px",
@@ -243,7 +243,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                           borderRadius: "7px",
                           border: "1px solid var(--ez-hue-slate-border)",
                           background: "var(--ez-color-surface)",
-                          color: "#2563EB",
+                          color: "var(--ez-hue-blue-text)",
                           fontSize: "12px",
                           fontWeight: 600,
                           cursor: "pointer",
@@ -271,7 +271,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                         {/* Labor Component Table */}
                         {labors.length > 0 && (
                           <div>
-                            <div style={{ fontSize: "12px", fontWeight: 700, color: "#1E293B", marginBottom: "6px" }}>
+                            <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--ez-color-text-strong)", marginBottom: "6px" }}>
                               A. Tenaga Kerja (Upah)
                             </div>
                             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
@@ -304,7 +304,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                         {/* Material Component Table */}
                         {materials.length > 0 && (
                           <div>
-                            <div style={{ fontSize: "12px", fontWeight: 700, color: "#1E293B", marginBottom: "6px" }}>
+                            <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--ez-color-text-strong)", marginBottom: "6px" }}>
                               B. Bahan / Material
                             </div>
                             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>

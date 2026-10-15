@@ -193,7 +193,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={onClose}
-              style={{ height: '34px', padding: '0 14px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface-tertiary)', color: '#475569', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+              style={{ height: '34px', padding: '0 14px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
             >
               Batal
             </button>

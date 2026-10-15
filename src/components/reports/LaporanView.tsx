@@ -1106,13 +1106,13 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     <div style={{ fontSize: '20px', fontWeight: 800, color: '#10B981', letterSpacing: '-0.02em' }}>
                       {activeProject.progress || 35}%
                     </div>
-                    <span style={{ fontSize: '11px', color: '#16A34A', fontWeight: 600 }}>
+                    <span style={{ fontSize: '11px', color: 'var(--ez-hue-green-text-bright)', fontWeight: 600 }}>
                       +3.94% Ahead schedule
                     </span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--ez-hue-green-bg-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16A34A' }}>
+                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--ez-hue-green-bg-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-hue-green-text-bright)' }}>
                       <TrendingUp size={18} />
                     </div>
                     <svg viewBox="0 0 50 25" style={{ width: '50px', height: '25px', opacity: 0.7 }}>
@@ -1505,7 +1505,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                       Analisa Harga Satuan Pekerjaan (AHSP)
                     </h3>
-                    <span style={{ fontSize: '10px', fontWeight: 800, color: '#16A34A', background: 'var(--ez-hue-green-bg-deep)', border: '1px solid var(--ez-hue-green-border)', padding: '2px 8px', borderRadius: '6px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', background: 'var(--ez-hue-green-bg-deep)', border: '1px solid var(--ez-hue-green-border)', padding: '2px 8px', borderRadius: '6px' }}>
                       {activeAhsp.regulationSource || 'Permen PUPR Standar'}
                     </span>
                     <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-primary)', background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-border)', padding: '2px 8px', borderRadius: '6px' }}>
@@ -1865,10 +1865,10 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <AlertCircle size={20} color="#D97706" />
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#92400E' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-hue-amber-text-dark)' }}>
                         Data Kurva S Belum Lengkap
                       </div>
-                      <div style={{ fontSize: '12px', color: '#B45309', marginTop: '2px' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--ez-hue-amber-text)', marginTop: '2px' }}>
                         {kurvaSRequirement.message}
                       </div>
                     </div>
@@ -1922,7 +1922,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     </div>
 
                     <div style={{ background: 'var(--ez-hue-emerald-bg)', border: '1px solid var(--ez-hue-green-border-deep)', borderRadius: 'var(--ez-radius-control)', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '11px', color: '#047857', fontWeight: 600 }}>Progres Realisasi</div>
+                      <div style={{ fontSize: '11px', color: 'var(--ez-hue-green-text)', fontWeight: 600 }}>Progres Realisasi</div>
                       <div style={{ fontSize: '18px', fontWeight: 800, color: '#10B981', marginTop: '2px' }}>
                         {latestActCum > 0 ? `${latestActCum.toFixed(1)}%` : '0.0%'}
                       </div>
@@ -2307,7 +2307,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#16A34A', background: 'var(--ez-hue-green-bg-deep)', border: '1px solid var(--ez-hue-green-border)', padding: '4px 10px', borderRadius: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-hue-green-text-bright)', background: 'var(--ez-hue-green-bg-deep)', border: '1px solid var(--ez-hue-green-border)', padding: '4px 10px', borderRadius: '8px' }}>
                     Total Durasi: 90 Hari Kalender (12 Minggu)
                   </span>
                 </div>
@@ -2482,7 +2482,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
             <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <strong style={{ fontSize: '13.5px', color: 'var(--ez-color-text-primary)' }}>{activeProject.name}</strong>
-                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-green-bg-deep)', color: '#16A34A', border: '1px solid var(--ez-hue-green-border)' }}>
+                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text-bright)', border: '1px solid var(--ez-hue-green-border)' }}>
                   Aktif
                 </span>
               </div>

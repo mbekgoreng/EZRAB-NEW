@@ -254,7 +254,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
               style={{
                 backgroundColor: 'var(--ez-hue-rose-bg)',
                 border: '1px solid var(--ez-hue-rose-border)',
-                color: '#991B1B',
+                color: 'var(--ez-hue-red-text)',
                 padding: '12px 16px',
                 borderRadius: '10px',
                 marginBottom: '20px',
@@ -316,7 +316,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
 
                 {selectedFile ? (
                   <div>
-                    <div style={{ fontSize: '15px', fontWeight: 750, color: '#166534' }}>
+                    <div style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-hue-green-text-deep)' }}>
                       ✓ File Siap: {selectedFile.name}
                     </div>
                     <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
@@ -348,7 +348,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                 }}
               >
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '6px' }}>
                     Skala Gambar Acuan
                   </label>
                   <select
@@ -372,7 +372,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '6px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '6px' }}>
                     Tinggi Dinding Rata-Rata (m)
                   </label>
                   <input
@@ -457,7 +457,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                   style={{
                     backgroundColor: 'var(--ez-hue-amber-bg-deep)',
                     border: '1px solid var(--ez-hue-amber-border)',
-                    color: '#92400E',
+                    color: 'var(--ez-hue-amber-text-dark)',
                     padding: '12px 16px',
                     borderRadius: '10px',
                     fontSize: '12.5px',
@@ -487,7 +487,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-hue-blue-bg)', paddingBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <ShieldCheck size={18} color="#2563EB" />
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-hue-blue-text-deep)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                       AI Evidence & Provenance
                     </span>
                   </div>
@@ -543,7 +543,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
 
                   <div>
                     <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Evidence:</div>
-                    <div style={{ fontWeight: 700, color: '#059669', marginTop: '2px' }}>
+                    <div style={{ fontWeight: 700, color: 'var(--ez-hue-green-text)', marginTop: '2px' }}>
                       {analysisResult.evidenceSummary?.evidence || `${analysisResult.spaces[0]?.dimensions?.length || 4} m × ${analysisResult.spaces[0]?.dimensions?.width || 5} m`}
                     </div>
                   </div>
@@ -580,11 +580,11 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 750, color: '#334155' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 750, color: 'var(--ez-color-text-body)' }}>
                       <Box size={14} color="#64748B" />
                       <span>Production AISourceTrace Audit</span>
                     </div>
-                    <span style={{ fontSize: '11px', color: '#166534', fontWeight: 700 }}>
+                    <span style={{ fontSize: '11px', color: 'var(--ez-hue-green-text-deep)', fontWeight: 700 }}>
                       ✓ 0 Secrets Leaked
                     </span>
                   </div>
@@ -600,7 +600,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                       border: '1px solid var(--ez-color-border-line)',
                       fontFamily: 'monospace',
                       fontSize: '11px',
-                      color: '#475569',
+                      color: 'var(--ez-color-text-slate)',
                     }}
                   >
                     <div><strong style={{ color: 'var(--ez-color-text-primary)' }}>traceId:</strong> {analysisResult.trace.traceId}</div>
@@ -609,7 +609,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                     <div><strong style={{ color: 'var(--ez-color-text-primary)' }}>engine:</strong> EZRAB Vision</div>
                     <div><strong style={{ color: 'var(--ez-color-text-primary)' }}>mode:</strong> Visual DED Analysis</div>
                     <div><strong style={{ color: 'var(--ez-color-text-primary)' }}>requestId:</strong> {analysisResult.trace.requestId}</div>
-                    <div><strong style={{ color: 'var(--ez-color-text-primary)' }}>extractionStatus:</strong> <span style={{ color: '#166534', fontWeight: 700 }}>{analysisResult.trace.extractionStatus}</span></div>
+                    <div><strong style={{ color: 'var(--ez-color-text-primary)' }}>extractionStatus:</strong> <span style={{ color: 'var(--ez-hue-green-text-deep)', fontWeight: 700 }}>{analysisResult.trace.extractionStatus}</span></div>
                     <div><strong style={{ color: 'var(--ez-color-text-primary)' }}>confidence:</strong> {analysisResult.trace.confidence}</div>
                   </div>
                 </div>
@@ -648,13 +648,13 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                 </div>
 
                 <div style={{ backgroundColor: 'var(--ez-hue-green-bg)', padding: '14px', borderRadius: '10px', border: '1px solid var(--ez-hue-green-border)' }}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#166534', textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-hue-green-text-deep)', textTransform: 'uppercase' }}>
                     Draft Pekerjaan RAB
                   </div>
-                  <div style={{ fontSize: '18px', fontWeight: 800, color: '#15803D', marginTop: '4px' }}>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-green-text)', marginTop: '4px' }}>
                     {analysisResult.volumeDraft.length} Item Draft
                   </div>
-                  <div style={{ fontSize: '11px', color: '#166534' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--ez-hue-green-text-deep)' }}>
                     Status: AI ESTIMATE
                   </div>
                 </div>
@@ -663,7 +663,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                   <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-primary-hover)', textTransform: 'uppercase' }}>
                     Skala & Akurasi
                   </div>
-                  <div style={{ fontSize: '18px', fontWeight: 800, color: '#1E40AF', marginTop: '4px' }}>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-blue-text-deep)', marginTop: '4px' }}>
                     {analysisResult.detectedScale}
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--ez-color-primary-hover)' }}>
@@ -728,7 +728,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                 <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
-                      <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', textAlign: 'left', color: '#475569' }}>
+                      <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', textAlign: 'left', color: 'var(--ez-color-text-slate)' }}>
                         <th style={{ padding: '10px 14px' }}>Nama Ruangan</th>
                         <th style={{ padding: '10px 14px' }}>Dimensi (P × L)</th>
                         <th style={{ padding: '10px 14px' }}>Luas (m²)</th>
@@ -743,13 +743,13 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                           <td style={{ padding: '10px 14px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                             {space.name}
                           </td>
-                          <td style={{ padding: '10px 14px', color: '#475569' }}>
+                          <td style={{ padding: '10px 14px', color: 'var(--ez-color-text-slate)' }}>
                             {space.dimensions ? `${space.dimensions.length} × ${space.dimensions.width} m` : '-'}
                           </td>
                           <td style={{ padding: '10px 14px', fontWeight: 700, color: 'var(--ez-color-primary)' }}>
                             {space.area.value} m²
                           </td>
-                          <td style={{ padding: '10px 14px', color: '#475569' }}>
+                          <td style={{ padding: '10px 14px', color: 'var(--ez-color-text-slate)' }}>
                             {space.perimeter.value} m
                           </td>
                           <td style={{ padding: '10px 14px', color: 'var(--ez-color-text-muted)', fontSize: '12px' }}>
@@ -786,7 +786,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                   <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                       <thead>
-                        <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', textAlign: 'left', color: '#475569' }}>
+                        <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', textAlign: 'left', color: 'var(--ez-color-text-slate)' }}>
                           <th style={{ padding: '10px 14px', width: '40px' }}>Pilih</th>
                           <th style={{ padding: '10px 14px' }}>Uraian Pekerjaan (AI ESTIMATE)</th>
                           <th style={{ padding: '10px 14px' }}>Kategori</th>
@@ -823,7 +823,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                             <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: 'var(--ez-color-primary)' }}>
                               {item.volume.toLocaleString('id-ID')}
                             </td>
-                            <td style={{ padding: '10px 14px', color: '#475569' }}>
+                            <td style={{ padding: '10px 14px', color: 'var(--ez-color-text-slate)' }}>
                               {item.unit}
                             </td>
                             <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--ez-color-text-primary)' }}>
@@ -845,7 +845,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                 <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
-                      <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', textAlign: 'left', color: '#475569' }}>
+                      <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', textAlign: 'left', color: 'var(--ez-color-text-slate)' }}>
                         <th style={{ padding: '10px 14px' }}>Disiplin</th>
                         <th style={{ padding: '10px 14px' }}>Elemen Terdeteksi</th>
                         <th style={{ padding: '10px 14px' }}>Kuantitas Terdeteksi</th>
@@ -856,7 +856,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                     <tbody>
                       {analysisResult.elements.map((el) => (
                         <tr key={el.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
-                          <td style={{ padding: '10px 14px', fontWeight: 700, color: '#475569' }}>
+                          <td style={{ padding: '10px 14px', fontWeight: 700, color: 'var(--ez-color-text-slate)' }}>
                             {el.category}
                           </td>
                           <td style={{ padding: '10px 14px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
@@ -907,7 +907,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                   style={{
                     backgroundColor: 'var(--ez-color-surface)',
                     border: '1px solid var(--ez-hue-slate-border)',
-                    color: '#475569',
+                    color: 'var(--ez-color-text-slate)',
                     padding: '10px 18px',
                     borderRadius: '8px',
                     fontSize: '13px',

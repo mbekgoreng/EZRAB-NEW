@@ -228,7 +228,7 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                 <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
                   Selisih Harga Acuan
                 </div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#D97706', marginTop: '4px' }}>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-amber-text-deep)', marginTop: '4px' }}>
                   {summary.priceFindings} Item
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
@@ -383,7 +383,7 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                             padding: '2px 8px',
                             borderRadius: '4px',
                             backgroundColor: 'var(--ez-color-surface-tertiary)',
-                            color: '#475569',
+                            color: 'var(--ez-color-text-slate)',
                           }}
                         >
                           {finding.category}
@@ -404,7 +404,7 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                       </div>
                     </div>
 
-                    <div style={{ fontSize: '13px', color: '#334155' }}>
+                    <div style={{ fontSize: '13px', color: 'var(--ez-color-text-body)' }}>
                       {finding.reason}
                     </div>
 
@@ -414,7 +414,7 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                         padding: '8px 12px',
                         borderRadius: '6px',
                         fontSize: '12px',
-                        color: '#475569',
+                        color: 'var(--ez-color-text-slate)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',

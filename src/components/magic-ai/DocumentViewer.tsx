@@ -227,11 +227,11 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             onClick={() => setActiveTab('PREVIEW')}
             className={`px-3 py-1 rounded-[6px] text-[12px] font-semibold transition-colors flex items-center gap-1.5 ${
               activeTab === 'PREVIEW'
-                ? 'bg-white text-[#0F172A] shadow-xs'
-                : 'text-[#64748B] hover:text-[#0F172A]'
+                ? 'bg-white text-[var(--ez-color-text-primary)] shadow-xs'
+                : 'text-[#64748B] hover:text-[var(--ez-color-text-primary)]'
             }`}
           >
-            <FileText size={13} className={activeTab === 'PREVIEW' ? 'text-[#2563EB]' : ''} />
+            <FileText size={13} className={activeTab === 'PREVIEW' ? 'text-[var(--ez-hue-blue-text)]' : ''} />
             <span>Preview Gambar</span>
           </button>
           <button
@@ -239,14 +239,14 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             onClick={() => setActiveTab('LOGS')}
             className={`px-3 py-1 rounded-[6px] text-[12px] font-semibold transition-colors flex items-center gap-1.5 ${
               activeTab === 'LOGS'
-                ? 'bg-white text-[#0F172A] shadow-xs'
-                : 'text-[#64748B] hover:text-[#0F172A]'
+                ? 'bg-white text-[var(--ez-color-text-primary)] shadow-xs'
+                : 'text-[#64748B] hover:text-[var(--ez-color-text-primary)]'
             }`}
           >
-            <Terminal size={13} className={activeTab === 'LOGS' ? 'text-[#2563EB]' : ''} />
+            <Terminal size={13} className={activeTab === 'LOGS' ? 'text-[var(--ez-hue-blue-text)]' : ''} />
             <span>Log Analisis</span>
             {logs.length > 0 && (
-              <span className="text-[10px] bg-[var(--ez-hue-blue-bg)] text-[#2563EB] px-1.5 py-0.2 rounded-full font-bold">
+              <span className="text-[10px] bg-[var(--ez-hue-blue-bg)] text-[var(--ez-hue-blue-text)] px-1.5 py-0.2 rounded-full font-bold">
                 {logs.length}
               </span>
             )}
@@ -255,18 +255,18 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
 
         {/* Center: Page Navigation (Only for Preview Tab) */}
         {activeTab === 'PREVIEW' && (
-          <div className="flex items-center gap-1.5 text-[12px] text-[#0F172A]">
+          <div className="flex items-center gap-1.5 text-[12px] text-[var(--ez-color-text-primary)]">
             <button
               type="button"
               disabled={currentPageNum <= 1}
               onClick={() => handleSelectPage(currentPageNum - 1)}
-              className="p-1 rounded-[6px] text-[#475569] hover:bg-[var(--ez-color-border-line)] disabled:opacity-30 disabled:hover:bg-transparent transition"
+              className="p-1 rounded-[6px] text-[var(--ez-color-text-slate)] hover:bg-[var(--ez-color-border-line)] disabled:opacity-30 disabled:hover:bg-transparent transition"
               title="Halaman Sebelumnya"
             >
               <ChevronLeft size={15} />
             </button>
             <div className="flex items-center gap-1 font-medium">
-              <span className="font-bold text-[#0F172A]">Hal. {currentPageNum}</span>
+              <span className="font-bold text-[var(--ez-color-text-primary)]">Hal. {currentPageNum}</span>
               <span className="text-[#94A3B8]">/</span>
               <span className="text-[#64748B]">{numPages}</span>
             </div>
@@ -274,7 +274,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               type="button"
               disabled={currentPageNum >= numPages}
               onClick={() => handleSelectPage(currentPageNum + 1)}
-              className="p-1 rounded-[6px] text-[#475569] hover:bg-[var(--ez-color-border-line)] disabled:opacity-30 disabled:hover:bg-transparent transition"
+              className="p-1 rounded-[6px] text-[var(--ez-color-text-slate)] hover:bg-[var(--ez-color-border-line)] disabled:opacity-30 disabled:hover:bg-transparent transition"
               title="Halaman Selanjutnya"
             >
               <ChevronRight size={15} />
@@ -283,14 +283,14 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         )}
 
         {/* Right: Zoom & Fullscreen Controls */}
-        <div className="flex items-center gap-1 text-[#475569]">
+        <div className="flex items-center gap-1 text-[var(--ez-color-text-slate)]">
           {activeTab === 'PREVIEW' && (
             <>
               <button
                 type="button"
                 onClick={handleZoomOut}
                 disabled={zoomScale <= 0.6}
-                className="p-1.5 rounded-[6px] hover:bg-[var(--ez-color-border-line)] text-[#64748B] hover:text-[#0F172A] transition disabled:opacity-30"
+                className="p-1.5 rounded-[6px] hover:bg-[var(--ez-color-border-line)] text-[#64748B] hover:text-[var(--ez-color-text-primary)] transition disabled:opacity-30"
                 title="Perkecil (-)"
               >
                 <ZoomOut size={14} />
@@ -298,7 +298,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               <button
                 type="button"
                 onClick={handleZoomReset}
-                className="px-2 py-0.5 rounded-[6px] hover:bg-[var(--ez-color-border-line)] text-[11px] font-mono font-semibold text-[#475569] transition"
+                className="px-2 py-0.5 rounded-[6px] hover:bg-[var(--ez-color-border-line)] text-[11px] font-mono font-semibold text-[var(--ez-color-text-slate)] transition"
                 title="Reset Zoom (100%)"
               >
                 {Math.round(zoomScale * 100)}%
@@ -307,7 +307,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 type="button"
                 onClick={handleZoomIn}
                 disabled={zoomScale >= 2.5}
-                className="p-1.5 rounded-[6px] hover:bg-[var(--ez-color-border-line)] text-[#64748B] hover:text-[#0F172A] transition disabled:opacity-30"
+                className="p-1.5 rounded-[6px] hover:bg-[var(--ez-color-border-line)] text-[#64748B] hover:text-[var(--ez-color-text-primary)] transition disabled:opacity-30"
                 title="Perbesar (+)"
               >
                 <ZoomIn size={14} />
@@ -319,7 +319,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="p-1.5 rounded-[6px] hover:bg-[var(--ez-color-border-line)] text-[#64748B] hover:text-[#0F172A] transition"
+            className="p-1.5 rounded-[6px] hover:bg-[var(--ez-color-border-line)] text-[#64748B] hover:text-[var(--ez-color-text-primary)] transition"
             title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh'}
           >
             {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
@@ -373,7 +373,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                         <span>A-0{pNum}</span>
                         <span className="font-bold text-[#64748B]">{pNum}</span>
                       </div>
-                      <div className="w-full text-center text-[9px] font-medium text-[#475569] truncate relative z-1 px-0.5">
+                      <div className="w-full text-center text-[9px] font-medium text-[var(--ez-color-text-slate)] truncate relative z-1 px-0.5">
                         {title.split(' ')[0]}
                       </div>
                       <div className="w-full h-1 bg-[var(--ez-color-border-line)] rounded-full overflow-hidden relative z-1">
@@ -385,7 +385,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                     </div>
                     {/* Caption */}
                     <div className="flex items-center justify-between text-[10px]">
-                      <span className={`font-bold ${isSelected ? 'text-[#2563EB]' : 'text-[#0F172A]'}`}>
+                      <span className={`font-bold ${isSelected ? 'text-[var(--ez-hue-blue-text)]' : 'text-[var(--ez-color-text-primary)]'}`}>
                         Hal. {pNum}
                       </span>
                     </div>
@@ -402,8 +402,8 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               {/* Sheet Title Breadcrumb Overlay */}
               <div className="sticky top-0 z-10 mb-3 bg-white/95 backdrop-blur-xs border border-[var(--ez-color-border-line)] px-3.5 py-1.5 rounded-[8px] shadow-xs flex items-center gap-2 text-[12px]">
                 <span className="w-2 h-2 rounded-full bg-[#2563EB]" />
-                <span className="font-bold text-[#0F172A]">Halaman {currentPageNum}:</span>
-                <span className="font-medium text-[#475569]">{sheetTitle}</span>
+                <span className="font-bold text-[var(--ez-color-text-primary)]">Halaman {currentPageNum}:</span>
+                <span className="font-medium text-[var(--ez-color-text-slate)]">{sheetTitle}</span>
                 <span className="text-[#94A3B8]">•</span>
                 <span className="text-[11px] text-[#64748B] font-mono">Skala Asli 1:100</span>
               </div>
@@ -445,10 +445,10 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   {/* Top Drawing Header */}
                   <div className="relative z-1 pt-3 px-3 flex items-start justify-between">
                     <div>
-                      <div className="text-[11px] font-bold text-[#2563EB] tracking-wider uppercase">
+                      <div className="text-[11px] font-bold text-[var(--ez-hue-blue-text)] tracking-wider uppercase">
                         GAMBAR KERJA DED — ARSITEKTUR & STRUKTUR
                       </div>
-                      <div className="text-[18px] font-black text-[#0F172A] tracking-tight mt-0.5">
+                      <div className="text-[18px] font-black text-[var(--ez-color-text-primary)] tracking-tight mt-0.5">
                         {sheetTitle.toUpperCase()}
                       </div>
                       <div className="text-[11px] text-[#64748B] mt-0.5">
@@ -456,7 +456,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                       </div>
                     </div>
                     <div className="text-right border border-[var(--ez-hue-slate-border)] bg-[var(--ez-hue-slate-bg)] p-2 rounded-[6px] text-[10px] font-mono">
-                      <div className="font-bold text-[#0F172A]">LEMBAR: A-0{currentPageNum}</div>
+                      <div className="font-bold text-[var(--ez-color-text-primary)]">LEMBAR: A-0{currentPageNum}</div>
                       <div className="text-[#64748B]">DARI {numPages} LEMBAR</div>
                     </div>
                   </div>
@@ -465,35 +465,35 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   <div className="relative z-1 my-6 flex flex-col items-center justify-center p-6 bg-[var(--ez-hue-slate-bg)] border border-[var(--ez-color-border-line)] rounded-[6px]">
                     <div className="w-full max-w-[520px] space-y-4">
                       {/* Technical Dimension Marks */}
-                      <div className="flex items-center justify-between text-[11px] font-mono text-[#2563EB] border-b border-[#2563EB]/40 pb-1">
+                      <div className="flex items-center justify-between text-[11px] font-mono text-[var(--ez-hue-blue-text)] border-b border-[#2563EB]/40 pb-1">
                         <span>|← 3.00 m →|</span>
                         <span>|← 3.50 m →|</span>
                         <span>|← 3.00 m →|</span>
-                        <span className="font-bold text-[#0F172A]">Total Bentang: 9.50 m</span>
+                        <span className="font-bold text-[var(--ez-color-text-primary)]">Total Bentang: 9.50 m</span>
                       </div>
 
                       {/* Schematic Box Representation based on current sheet */}
                       <div className="grid grid-cols-3 gap-2 h-[160px]">
                         <div className="border border-[#0F172A] bg-white p-2 rounded-[4px] flex flex-col justify-between text-[10px]">
-                          <span className="font-bold text-[#0F172A]">R. Tamu</span>
+                          <span className="font-bold text-[var(--ez-color-text-primary)]">R. Tamu</span>
                           <span className="text-[#64748B]">3.00 × 3.50</span>
-                          <span className="text-[9px] text-[#2563EB] font-mono">+0.00 Keramik</span>
+                          <span className="text-[9px] text-[var(--ez-hue-blue-text)] font-mono">+0.00 Keramik</span>
                         </div>
                         <div className="border border-[#0F172A] bg-white p-2 rounded-[4px] flex flex-col justify-between text-[10px]">
-                          <span className="font-bold text-[#0F172A]">R. Keluarga</span>
+                          <span className="font-bold text-[var(--ez-color-text-primary)]">R. Keluarga</span>
                           <span className="text-[#64748B]">3.50 × 4.00</span>
-                          <span className="text-[9px] text-[#2563EB] font-mono">+0.00 Keramik</span>
+                          <span className="text-[9px] text-[var(--ez-hue-blue-text)] font-mono">+0.00 Keramik</span>
                         </div>
                         <div className="border border-[#0F172A] bg-white p-2 rounded-[4px] flex flex-col justify-between text-[10px]">
-                          <span className="font-bold text-[#0F172A]">K. Tidur 1</span>
+                          <span className="font-bold text-[var(--ez-color-text-primary)]">K. Tidur 1</span>
                           <span className="text-[#64748B]">3.00 × 3.50</span>
-                          <span className="text-[9px] text-[#2563EB] font-mono">+0.00 Keramik</span>
+                          <span className="text-[9px] text-[var(--ez-hue-blue-text)] font-mono">+0.00 Keramik</span>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between text-[10px] text-[#64748B]">
                         <span>Struktur: Sloof 15x20 • Kolom 15x15 • Ringbalk 15x20</span>
-                        <span className="font-mono text-[#0F172A]">Elevasi: ±0.00</span>
+                        <span className="font-mono text-[var(--ez-color-text-primary)]">Elevasi: ±0.00</span>
                       </div>
                     </div>
                   </div>
@@ -502,19 +502,19 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   <div className="relative z-1 border-t-2 border-[#0F172A] pt-2 px-3 grid grid-cols-4 gap-3 text-[10px]">
                     <div>
                       <div className="font-bold text-[#64748B] text-[8.5px] uppercase">Digambar Oleh:</div>
-                      <div className="font-semibold text-[#0F172A]">Drafter & QS Tim</div>
+                      <div className="font-semibold text-[var(--ez-color-text-primary)]">Drafter & QS Tim</div>
                     </div>
                     <div>
                       <div className="font-bold text-[#64748B] text-[8.5px] uppercase">Diperiksa:</div>
-                      <div className="font-semibold text-[#0F172A]">Lead Structural Eng.</div>
+                      <div className="font-semibold text-[var(--ez-color-text-primary)]">Lead Structural Eng.</div>
                     </div>
                     <div>
                       <div className="font-bold text-[#64748B] text-[8.5px] uppercase">Skala / Satuan:</div>
-                      <div className="font-mono text-[#0F172A]">1 : 100 / Centimeter</div>
+                      <div className="font-mono text-[var(--ez-color-text-primary)]">1 : 100 / Centimeter</div>
                     </div>
                     <div>
                       <div className="font-bold text-[#64748B] text-[8.5px] uppercase">Status Gambar:</div>
-                      <div className="font-bold text-[#16A34A]">FOR TENDER & ESTIMATE</div>
+                      <div className="font-bold text-[var(--ez-hue-green-text-bright)]">FOR TENDER & ESTIMATE</div>
                     </div>
                   </div>
                 </div>
@@ -539,7 +539,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               <div className="flex-1 flex flex-col items-center justify-center text-[#64748B] py-12">
                 <Terminal size={28} className="mb-2 opacity-40" />
                 <div>Belum ada log analisis.</div>
-                <div className="text-[10px] text-[#475569]">
+                <div className="text-[10px] text-[var(--ez-color-text-slate)]">
                   Log akan muncul secara real-time saat proses analisis DED dijalankan.
                 </div>
               </div>

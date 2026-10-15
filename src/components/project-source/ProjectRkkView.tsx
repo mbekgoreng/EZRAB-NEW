@@ -105,7 +105,7 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
               borderRadius: 6,
               background: 'var(--ez-hue-green-bg)',
               border: '1px solid var(--ez-hue-green-border)',
-              color: '#15803D',
+              color: 'var(--ez-hue-green-text)',
               fontSize: 12.5,
               fontWeight: 650,
               display: 'flex',
@@ -122,13 +122,13 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
       <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         {/* Section 1: Struktur Organisasi & Personil */}
         <div style={{ background: 'var(--ez-color-surface-secondary)', padding: 16, borderRadius: 10, border: '1px solid var(--ez-color-border-line)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: '#1E293B', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: 'var(--ez-color-text-strong)', marginBottom: 12 }}>
             <Users size={16} color="#2563EB" />
             1. Kepemimpinan & Partisipasi Pekerja dalam Keselamatan Konstruksi
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 5 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 5 }}>
                 Struktur Organisasi Unit Keselamatan Konstruksi (UKK)
               </label>
               <textarea
@@ -140,7 +140,7 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 5 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 5 }}>
                 Petugas / Personil K3 Konstruksi Bertanggung Jawab
               </label>
               <textarea
@@ -156,12 +156,12 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
 
         {/* Section 2: Kebijakan & Sasaran K3 */}
         <div style={{ background: 'var(--ez-color-surface-secondary)', padding: 16, borderRadius: 10, border: '1px solid var(--ez-color-border-line)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: '#1E293B', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: 'var(--ez-color-text-strong)', marginBottom: 12 }}>
             <Target size={16} color="#16A34A" />
             2. Sasaran & Program Keselamatan Konstruksi
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 5 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 5 }}>
               Sasaran K3 & Target Zero Accident
             </label>
             <textarea
@@ -176,13 +176,13 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
 
         {/* Section 3: Mitigasi Risiko & SOP */}
         <div style={{ background: 'var(--ez-color-surface-secondary)', padding: 16, borderRadius: 10, border: '1px solid var(--ez-color-border-line)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: '#1E293B', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: 'var(--ez-color-text-strong)', marginBottom: 12 }}>
             <AlertOctagon size={16} color="#D97706" />
             3. Rencana Pengendalian Risiko & Prosedur Tanggap Darurat
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 5 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 5 }}>
                 Pengendalian Risiko Operasional Konstruksi
               </label>
               <textarea
@@ -194,7 +194,7 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 5 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 5 }}>
                 Prosedur Tanggap Darurat & Penanganan Insiden
               </label>
               <textarea

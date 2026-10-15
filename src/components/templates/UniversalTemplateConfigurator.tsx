@@ -355,7 +355,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                   <span
                     style={{
                       fontSize: '10.5px',
-                      color: '#475569',
+                      color: 'var(--ez-color-text-slate)',
                       background: 'var(--ez-color-surface-tertiary)',
                       padding: '2px 8px',
                       borderRadius: '4px',
@@ -487,14 +487,14 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
 
               {/* Mode Specific Input */}
               {targetMode === 'CURRENT' && currentProject && (
-                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--ez-color-border-line)', fontSize: '12px', color: '#334155' }}>
+                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--ez-color-border-line)', fontSize: '12px', color: 'var(--ez-color-text-body)' }}>
                   Item RAB akan langsung di-generate dan ditambahkan ke lembar kerja <strong>{currentProject.name}</strong>.
                 </div>
               )}
 
               {targetMode === 'EXISTING' && (
                 <div>
-                  <label htmlFor="select-target-project" style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label htmlFor="select-target-project" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Pilih Proyek Terdaftar:
                   </label>
                   <select
@@ -524,7 +524,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
 
               {targetMode === 'NEW' && (
                 <div>
-                  <label htmlFor="input-new-project-name" style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label htmlFor="input-new-project-name" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Nama Proyek Baru:
                   </label>
                   <input
@@ -650,7 +650,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {groupedParameters.map(([grpKey, group]) => (
                   <div key={grpKey}>
-                    <div style={{ fontSize: '11px', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-color-text-slate)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ width: '4px', height: '12px', background: 'var(--ez-color-primary)', borderRadius: '2px', display: 'inline-block' }}></span>
                       <span>{group.label}</span>
                     </div>
@@ -675,7 +675,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                               <label
                                 htmlFor={`param-${param.key}`}
-                                style={{ fontSize: '11.5px', fontWeight: 700, color: '#1E293B', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-strong)', display: 'flex', alignItems: 'center', gap: '4px' }}
                               >
                                 <span>{param.label}</span>
                                 {param.required && <span style={{ color: '#EF4444' }}>*</span>}
@@ -720,7 +720,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                                   onChange={(e) => handleParamChange(param.key, e.target.checked)}
                                   style={{ width: '16px', height: '16px', accentColor: 'var(--ez-color-primary)', cursor: 'pointer' }}
                                 />
-                                <span style={{ fontSize: '12px', color: '#334155' }}>
+                                <span style={{ fontSize: '12px', color: 'var(--ez-color-text-body)' }}>
                                   {val ? 'Aktif' : 'Non-Aktif'}
                                 </span>
                               </label>
@@ -798,7 +798,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       }}
                     >
                       <CheckCircle2 size={13} color="#16A34A" />
-                      <span style={{ fontWeight: 600, color: '#1E293B' }}>{catName}</span>
+                      <span style={{ fontWeight: 600, color: 'var(--ez-color-text-strong)' }}>{catName}</span>
                       <span style={{ fontFamily: 'monospace', color: 'var(--ez-color-primary)', fontWeight: 700 }}>
                         {formatRupiah(amount)}
                       </span>
@@ -853,7 +853,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                           <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '1px' }}>
                             <span>{comp.category}</span>
                             {comp.unitPrice && (
-                              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#059669' }}>
+                              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--ez-hue-green-text)' }}>
                                 {formatRupiah(comp.unitPrice)}/{comp.unit}
                               </span>
                             )}
@@ -876,7 +876,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       06. Spesifikasi Material (Material Library Ecosystem)
                     </span>
                   </div>
-                  <span style={{ fontSize: '11px', color: '#059669', fontWeight: 700 }}>
+                  <span style={{ fontSize: '11px', color: 'var(--ez-hue-green-text)', fontWeight: 700 }}>
                     ✓ Material Terintegrasi
                   </span>
                 </div>
@@ -905,7 +905,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                           fontSize: '11px',
                         }}
                       >
-                        <span style={{ fontWeight: 800, color: '#1E293B', background: 'var(--ez-color-border-line)', padding: '1px 5px', borderRadius: '3px' }}>
+                        <span style={{ fontWeight: 800, color: 'var(--ez-color-text-strong)', background: 'var(--ez-color-border-line)', padding: '1px 5px', borderRadius: '3px' }}>
                           {catKey}
                         </span>
                         <span style={{ color: 'var(--ez-color-text-primary)', fontWeight: 600 }}>
@@ -934,7 +934,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                 {/* Sub-picker for active material category */}
                 {activeMaterialPickerCategory && (
                   <div style={{ marginTop: '10px', padding: '10px', background: 'var(--ez-hue-blue-bg)', borderRadius: '8px', border: '1px solid var(--ez-hue-blue-border)' }}>
-                    <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#1E3A8A', marginBottom: '6px' }}>
+                    <div style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-hue-blue-text-deep)', marginBottom: '6px' }}>
                       Pilih Spesifikasi untuk Kategori {activeMaterialPickerCategory}:
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '6px' }}>
@@ -977,7 +977,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                   cursor: 'pointer',
                   fontSize: '12px',
                   fontWeight: 700,
-                  color: '#334155',
+                  color: 'var(--ez-color-text-body)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -988,7 +988,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
               </button>
 
               {showTransparencyAccordion && (
-                <div style={{ padding: '12px 14px', background: 'var(--ez-color-surface)', fontSize: '11.5px', color: '#475569', lineHeight: 1.6, borderTop: '1px solid var(--ez-color-border-line)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ padding: '12px 14px', background: 'var(--ez-color-surface)', fontSize: '11.5px', color: 'var(--ez-color-text-slate)', lineHeight: 1.6, borderTop: '1px solid var(--ez-color-border-line)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div>
                     <strong>Dasar Hukum & Standardisasi:</strong>
                     <div>• AHSP PUPR S.E. No. 47/SE/M/2026 & Bina Marga 2026.</div>
@@ -1063,7 +1063,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
                   <span>Baseline AHSP:</span>
-                  <span style={{ fontWeight: 600, color: '#059669' }}>PUPR S.E. 2026</span>
+                  <span style={{ fontWeight: 600, color: 'var(--ez-hue-green-text)' }}>PUPR S.E. 2026</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
                   <span>Pekerjaan Opsional:</span>
@@ -1074,7 +1074,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
               {/* WORK CATEGORY SUMMARY BREAKDOWN */}
               {previewResult && (
                 <div style={{ background: 'var(--ez-color-surface)', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)', overflow: 'hidden' }}>
-                  <div style={{ padding: '8px 12px', background: 'var(--ez-color-surface-tertiary)', fontSize: '11px', fontWeight: 800, color: '#334155', textTransform: 'uppercase' }}>
+                  <div style={{ padding: '8px 12px', background: 'var(--ez-color-surface-tertiary)', fontSize: '11px', fontWeight: 800, color: 'var(--ez-color-text-body)', textTransform: 'uppercase' }}>
                     Ringkasan Biaya per Kategori
                   </div>
                   <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
@@ -1090,7 +1090,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                           fontSize: '11px',
                         }}
                       >
-                        <span style={{ color: '#475569', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ color: 'var(--ez-color-text-slate)', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {cat}
                         </span>
                         <span style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--ez-color-text-primary)' }}>
@@ -1104,7 +1104,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
 
               {/* VALIDATION & ERROR STATUS BOX */}
               {validationErrors.length > 0 ? (
-                <div style={{ background: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '10px', fontSize: '11.5px', color: '#B91C1C' }}>
+                <div style={{ background: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '10px', fontSize: '11.5px', color: 'var(--ez-hue-red-text)' }}>
                   <div style={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
                     <AlertCircle size={14} /> Parameter Belum Lengkap:
                   </div>
@@ -1115,7 +1115,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                   </ul>
                 </div>
               ) : (
-                <div style={{ background: 'var(--ez-hue-green-bg)', border: '1px solid var(--ez-hue-green-border)', borderRadius: '8px', padding: '8px 10px', fontSize: '11px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ background: 'var(--ez-hue-green-bg)', border: '1px solid var(--ez-hue-green-border)', borderRadius: '8px', padding: '8px 10px', fontSize: '11px', color: 'var(--ez-hue-green-text-deep)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <CheckCircle2 size={14} color="#16A34A" />
                   <span>Seluruh parameter valid & siap diterapkan ke proyek.</span>
                 </div>
@@ -1131,7 +1131,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                   borderRadius: '6px',
                   background: 'var(--ez-color-surface)',
                   border: '1px solid var(--ez-hue-slate-border)',
-                  color: '#334155',
+                  color: 'var(--ez-color-text-body)',
                   fontSize: '12px',
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -1238,7 +1238,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1.5px solid var(--ez-hue-slate-border)', color: '#334155', fontWeight: 700 }}>
+                  <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1.5px solid var(--ez-hue-slate-border)', color: 'var(--ez-color-text-body)', fontWeight: 700 }}>
                     <th style={{ padding: '8px 10px', width: '36px' }}>No</th>
                     <th style={{ padding: '8px 10px' }}>Uraian Pekerjaan & WBS</th>
                     <th style={{ padding: '8px 10px', textAlign: 'right' }}>Volume</th>
@@ -1265,8 +1265,8 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: 'var(--ez-color-primary)' }}>
                         {formatNumberId(item.volume, 2)}
                       </td>
-                      <td style={{ padding: '7px 10px', color: '#475569' }}>{item.unit}</td>
-                      <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'monospace', color: '#475569' }}>
+                      <td style={{ padding: '7px 10px', color: 'var(--ez-color-text-slate)' }}>{item.unit}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'monospace', color: 'var(--ez-color-text-slate)' }}>
                         {formatRupiah(item.unitPrice)}
                       </td>
                       <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>

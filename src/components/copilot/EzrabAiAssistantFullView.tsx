@@ -167,7 +167,7 @@ const createDefaultSessions = (currentProjId?: string): ChatSession[] => {
             label: 'Potensi Penghematan',
             value: 'Rp 750.000',
             sub: 'Deviasi harga -4.8% terhadap RAB awal',
-            color: '#16A34A',
+            color: 'var(--ez-hue-green-text-bright)',
           },
           actionProposal: {
             id: 'prop-demo-1',
@@ -1016,7 +1016,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
             }}
           >
             {currentListItems.map((item, idx) => (
-              <li key={idx} style={{ fontSize: '13.5px', color: '#1E293B', lineHeight: '1.6' }}>
+              <li key={idx} style={{ fontSize: '13.5px', color: 'var(--ez-color-text-strong)', lineHeight: '1.6' }}>
                 {renderInlineFormatting(item)}
               </li>
             ))}
@@ -1058,7 +1058,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
             style={{
               fontSize: '13.5px',
               fontWeight: 700,
-              color: '#1E293B',
+              color: 'var(--ez-color-text-strong)',
               margin: '12px 0 4px 0',
             }}
           >
@@ -1087,7 +1087,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
               gap: '8px',
               margin: '4px 0',
               fontSize: '13.5px',
-              color: '#1E293B',
+              color: 'var(--ez-color-text-strong)',
               lineHeight: '1.6',
             }}
           >
@@ -1119,7 +1119,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
             style={{
               margin: '4px 0',
               fontSize: '13.5px',
-              color: '#1E293B',
+              color: 'var(--ez-color-text-strong)',
               lineHeight: '1.65',
             }}
           >
@@ -1180,7 +1180,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
               fontFamily: 'monospace',
               fontSize: '12px',
               backgroundColor: 'var(--ez-color-surface-tertiary)',
-              color: '#1E293B',
+              color: 'var(--ez-color-text-strong)',
               padding: '1px 5px',
               borderRadius: '4px',
               border: '1px solid var(--ez-color-border-line)',
@@ -1240,14 +1240,14 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#111827', letterSpacing: '-0.01em' }}>
+                <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', letterSpacing: '-0.01em' }}>
                   Riwayat Percakapan
                 </span>
                 <span
                   style={{
                     fontSize: '11px',
                     fontWeight: 600,
-                    color: '#6B7280',
+                    color: 'var(--ez-color-text-warm)',
                     backgroundColor: '#E5E7EB',
                     padding: '1px 6px',
                     borderRadius: 'var(--ez-radius-pill)',
@@ -1266,7 +1266,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#6B7280',
+                  color: 'var(--ez-color-text-warm)',
                   cursor: 'pointer',
                   padding: '4px',
                   borderRadius: '6px',
@@ -1309,7 +1309,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                   height: '34px',
                   padding: '0 10px 0 32px',
                   fontSize: '12.5px',
-                  color: '#111827',
+                  color: 'var(--ez-color-text-primary)',
                   backgroundColor: 'var(--ez-color-surface)',
                   border: '1px solid #E5E7EB',
                   borderRadius: '8px',
@@ -1367,7 +1367,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                   gap: '8px',
                 }}
               >
-                <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#4B5563' }}>
+                <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-slate)' }}>
                   {historySearchQuery ? 'Riwayat tidak ditemukan.' : 'Belum ada percakapan.'}
                 </div>
                 <div style={{ fontSize: '11.5px', color: '#9CA3AF', lineHeight: '1.4' }}>
@@ -1537,7 +1537,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                   style={{
                                     background: 'none',
                                     border: 'none',
-                                    color: '#6B7280',
+                                    color: 'var(--ez-color-text-warm)',
                                     padding: '2px 4px',
                                     borderRadius: '4px',
                                     cursor: 'pointer',
@@ -1580,7 +1580,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                     gap: '8px',
                                     padding: '6px 10px',
                                     fontSize: '11.5px',
-                                    color: '#374151',
+                                    color: 'var(--ez-color-text-body)',
                                     border: 'none',
                                     background: 'none',
                                     borderRadius: '6px',
@@ -1603,7 +1603,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                     gap: '8px',
                                     padding: '6px 10px',
                                     fontSize: '11.5px',
-                                    color: '#374151',
+                                    color: 'var(--ez-color-text-body)',
                                     border: 'none',
                                     background: 'none',
                                     borderRadius: '6px',
@@ -1669,7 +1669,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                 height: '38px',
                 borderRadius: '8px',
                 backgroundColor: 'var(--ez-color-surface)',
-                color: '#1F2937',
+                color: 'var(--ez-color-text-primary)',
                 border: '1px solid #D1D5DB',
                 fontSize: '12.5px',
                 fontWeight: 600,
@@ -1742,7 +1742,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                 style={{
                   background: 'var(--ez-color-surface-secondary)',
                   border: '1px solid var(--ez-color-border-line)',
-                  color: '#475569',
+                  color: 'var(--ez-color-text-slate)',
                   cursor: 'pointer',
                   padding: '6px 10px',
                   borderRadius: '8px',
@@ -2173,7 +2173,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                         borderRadius: '20px',
                         backgroundColor: 'var(--ez-color-surface-secondary)',
                         border: '1px solid var(--ez-color-border-line)',
-                        color: '#334155',
+                        color: 'var(--ez-color-text-body)',
                         fontSize: '12px',
                         fontWeight: 600,
                         cursor: 'pointer',
@@ -2377,7 +2377,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                         key={hIdx}
                                         style={{
                                           padding: '8px 12px',
-                                          color: '#475569',
+                                          color: 'var(--ez-color-text-slate)',
                                           fontWeight: 700,
                                           fontSize: '11.5px',
                                         }}
@@ -2400,7 +2400,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                           key={cIdx}
                                           style={{
                                             padding: '8px 12px',
-                                            color: '#1E293B',
+                                            color: 'var(--ez-color-text-strong)',
                                             fontWeight: cIdx === 0 ? 600 : 400,
                                           }}
                                         >
@@ -2445,7 +2445,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                               <div
                                 style={{
                                   fontSize: '12px',
-                                  color: '#475569',
+                                  color: 'var(--ez-color-text-slate)',
                                   lineHeight: '1.5',
                                   marginBottom: '12px',
                                 }}
@@ -2500,7 +2500,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                     gap: '6px',
                                     fontSize: '12px',
                                     fontWeight: 700,
-                                    color: '#16A34A',
+                                    color: 'var(--ez-hue-green-text-bright)',
                                   }}
                                 >
                                   <CheckCircle2 size={15} />
@@ -2723,14 +2723,14 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                       border: '1px solid var(--ez-hue-blue-bg-deep)',
                       fontSize: '11.5px',
                       fontWeight: 600,
-                      color: '#1E40AF',
+                      color: 'var(--ez-hue-blue-text-deep)',
                     }}
                   >
                     <Paperclip size={13} />
                     <span style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {file.name}
                     </span>
-                    <span style={{ color: '#6B7280', fontSize: '10.5px' }}>
+                    <span style={{ color: 'var(--ez-color-text-warm)', fontSize: '10.5px' }}>
                       {formatFileSize(file.size)}
                     </span>
                     <button
@@ -2739,7 +2739,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                       style={{
                         background: 'none',
                         border: 'none',
-                        color: '#6B7280',
+                        color: 'var(--ez-color-text-warm)',
                         cursor: 'pointer',
                         padding: '1px',
                         display: 'flex',

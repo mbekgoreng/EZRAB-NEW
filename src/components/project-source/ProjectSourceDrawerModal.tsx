@@ -84,7 +84,7 @@ export const ProjectSourceDrawerModal: React.FC<ProjectSourceDrawerModalProps> =
               borderRadius: 8,
               padding: '6px 10px',
               cursor: 'pointer',
-              color: '#475569',
+              color: 'var(--ez-color-text-slate)',
               display: 'flex',
               alignItems: 'center',
             }}

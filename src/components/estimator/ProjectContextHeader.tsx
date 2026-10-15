@@ -130,7 +130,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
                   fontSize: '11px',
                   fontWeight: 700,
                   background: 'var(--ez-pastel-mint)',
-                  color: '#2c6e2c',
+                  color: 'var(--ez-hue-green-text)',
                 }}
               >
                 <span
@@ -167,7 +167,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
                   fontSize: '11px',
                   fontWeight: 600,
                   background: 'var(--ez-pastel-sky)',
-                  color: '#2456a8',
+                  color: 'var(--ez-hue-blue-text-deep)',
                   padding: '2px 10px',
                   borderRadius: 'var(--ez-radius-pill)',
                 }}
@@ -177,7 +177,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <User size={13} color="#94A3B8" />
-                <span>Klien: <strong style={{ color: '#334155', fontWeight: 650 }}>{projectClient}</strong></span>
+                <span>Klien: <strong style={{ color: 'var(--ez-color-text-body)', fontWeight: 650 }}>{projectClient}</strong></span>
               </div>
             </div>
           </div>
@@ -196,7 +196,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 650,
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -221,7 +221,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 650,
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -246,7 +246,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 650,
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -272,7 +272,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 650,
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -289,7 +289,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
                 fontSize: '10px',
                 fontWeight: 800,
                 background: 'var(--ez-pastel-sky)',
-                color: '#2456a8',
+                color: 'var(--ez-hue-blue-text-deep)',
                 padding: '1px 6px',
                 borderRadius: 'var(--ez-radius-pill)',
               }}

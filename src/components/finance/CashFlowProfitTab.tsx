@@ -86,10 +86,10 @@ export const CashFlowProfitTab: React.FC<CashFlowProfitTabProps> = ({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 750, color: '#166534', backgroundColor: 'var(--ez-hue-green-bg-deep)', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-green-border)' }}>
+            <span style={{ fontSize: '11.5px', fontWeight: 750, color: 'var(--ez-hue-green-text-deep)', backgroundColor: 'var(--ez-hue-green-bg-deep)', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-green-border)' }}>
               AKTUAL: {formatRupiah(cashFlow.totalActualIn)} Masuk
             </span>
-            <span style={{ fontSize: '11.5px', fontWeight: 750, color: '#7C3AED', backgroundColor: 'var(--ez-hue-violet-bg)', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-violet-border)' }}>
+            <span style={{ fontSize: '11.5px', fontWeight: 750, color: 'var(--ez-hue-violet-text)', backgroundColor: 'var(--ez-hue-violet-bg)', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-violet-border)' }}>
               PROYEKSI: {formatRupiah(cashFlow.totalForecastIn)} Sisa Termin
             </span>
           </div>
@@ -175,25 +175,25 @@ export const CashFlowProfitTab: React.FC<CashFlowProfitTabProps> = ({
           </div>
 
           <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', padding: '14px', borderRadius: '10px', border: '1px solid var(--ez-hue-rose-border)' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#991B1B', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-hue-red-text)', textTransform: 'uppercase' }}>
               Biaya Riil Aktual (Spent)
             </div>
             <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-rose-text)', marginTop: '4px' }}>
               {formatRupiah(profitability.actualCost)}
             </div>
-            <div style={{ fontSize: '11px', color: '#991B1B', marginTop: '2px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--ez-hue-red-text)', marginTop: '2px' }}>
               {summary.expensesCount} catatan pengeluaran
             </div>
           </div>
 
           <div style={{ backgroundColor: 'var(--ez-hue-green-bg)', padding: '14px', borderRadius: '10px', border: '1px solid var(--ez-hue-green-border)' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#166534', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-hue-green-text-deep)', textTransform: 'uppercase' }}>
               Proyeksi Margin Profit
             </div>
-            <div style={{ fontSize: '18px', fontWeight: 800, color: '#15803D', marginTop: '4px' }}>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-green-text)', marginTop: '4px' }}>
               {profitability.projectedProfit !== null ? formatRupiah(profitability.projectedProfit) : '-'}
             </div>
-            <div style={{ fontSize: '11px', color: '#166534', marginTop: '2px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--ez-hue-green-text-deep)', marginTop: '2px' }}>
               Margin: <strong>{profitability.projectedMarginPercent !== null ? `${profitability.projectedMarginPercent}%` : '-'}</strong>
             </div>
           </div>

@@ -927,7 +927,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               background: 'var(--ez-hue-rose-bg)',
               border: '1px solid var(--ez-hue-rose-border)',
               borderRadius: '14px',
-              color: '#991B1B',
+              color: 'var(--ez-hue-red-text)',
               fontSize: '13px',
               marginBottom: '24px',
               flexWrap: 'wrap',
@@ -937,7 +937,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <AlertTriangle size={20} color="#DC2626" style={{ flexShrink: 0 }} />
               <div>
-                <div style={{ fontWeight: 800, fontSize: '14px', color: '#991B1B' }}>Analisis belum selesai</div>
+                <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--ez-hue-red-text)' }}>Analisis belum selesai</div>
                 <div style={{ fontSize: '12px', color: '#7F1D1D', marginTop: '2px' }}>
                   EZRAB mengalami kendala saat membaca DED. Data proyek Anda tetap aman.
                 </div>
@@ -1029,7 +1029,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                     fontWeight: 700,
                     background: 'var(--ez-color-surface-tertiary)',
                     border: '1px solid var(--ez-hue-slate-border)',
-                    color: '#334155',
+                    color: 'var(--ez-color-text-body)',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                   }}
@@ -1105,7 +1105,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                         fontSize: '11px',
                         fontWeight: 700,
                         background: 'var(--ez-hue-emerald-bg)',
-                        color: '#059669',
+                        color: 'var(--ez-hue-green-text)',
                         border: '1px solid var(--ez-hue-green-border-deep)',
                       }}
                     >
@@ -1119,7 +1119,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               </div>
 
               {projectCreatedSuccess && (
-                <div style={{ fontSize: '11.5px', color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ fontSize: '11.5px', color: 'var(--ez-hue-green-text)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <CheckCircle2 size={14} />
                   Semua hasil analisis berikutnya akan disimpan ke proyek ini.
                 </div>
@@ -1189,7 +1189,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               {targetProjectMode === 'ACTIVE' && allAvailableProjects.length > 0 ? (
                 /* Select Existing Project */
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)' }}>
                     Pilih Proyek:
                   </label>
                   <select
@@ -1225,7 +1225,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                           fontWeight: 600,
                           background: 'var(--ez-color-surface)',
                           border: '1px solid var(--ez-hue-slate-border)',
-                          color: '#475569',
+                          color: 'var(--ez-color-text-slate)',
                           cursor: 'pointer',
                         }}
                       >
@@ -1237,7 +1237,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               ) : (
                 /* Create New Project Form */
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)' }}>
                     Nama Proyek Baru:
                   </label>
                   <input
@@ -1296,7 +1296,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                           padding: '8px 14px',
                           borderRadius: '8px',
                           background: 'var(--ez-color-surface)',
-                          color: '#334155',
+                          color: 'var(--ez-color-text-body)',
                           fontSize: '12px',
                           fontWeight: 700,
                           border: '1px solid var(--ez-hue-slate-border)',
@@ -1461,7 +1461,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                     ✓ {selectedFile.name}
                   </div>
-                  <div style={{ fontSize: '11.5px', color: '#047857', marginTop: '2px' }}>
+                  <div style={{ fontSize: '11.5px', color: 'var(--ez-hue-green-text)', marginTop: '2px' }}>
                     Ukuran: {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • File DED siap dianalisis
                   </div>
                 </div>
@@ -1475,7 +1475,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   borderRadius: '8px',
                   background: 'var(--ez-color-surface)',
                   border: '1px solid var(--ez-hue-slate-border)',
-                  color: '#334155',
+                  color: 'var(--ez-color-text-body)',
                   fontSize: '12px',
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -1601,7 +1601,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                     AI RAB
                   </span>
                 </div>
-                <div style={{ fontSize: '12.5px', color: '#475569', lineHeight: 1.5 }}>
+                <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-slate)', lineHeight: 1.5 }}>
                   Biarkan EZRAB AI mengerjakan DED sampai menjadi draft RAB tanpa membebani Anda dengan validasi teknis.
                 </div>
                 <div style={{ marginTop: '10px', fontSize: '11px', color: 'var(--ez-color-primary)', fontWeight: 600 }}>
@@ -1628,7 +1628,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                     EZRAB Standard
                   </span>
                 </div>
-                <div style={{ fontSize: '12.5px', color: '#475569', lineHeight: 1.5 }}>
+                <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-slate)', lineHeight: 1.5 }}>
                   Gunakan database dan engine EZRAB untuk hasil yang lebih terkontrol dengan prinsip source-of-truth ketat.
                 </div>
                 <div style={{ marginTop: '10px', fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
@@ -1659,7 +1659,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                   Provinsi
                 </label>
                 <select
@@ -1689,7 +1689,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                   Kabupaten / Kota
                 </label>
                 <input
@@ -1711,7 +1711,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                   Kecamatan (opsional)
                 </label>
                 <input
@@ -1732,7 +1732,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                   Tahun Estimasi
                 </label>
                 <input
@@ -1919,7 +1919,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   <span>Upload DED pada Langkah 2 di atas untuk memulai analisis.</span>
                 </div>
               ) : (
-                <div style={{ fontSize: '12px', color: '#475569', marginBottom: '4px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                   Target: <strong>{effectiveProjectName}</strong> • Lokasi: <strong>{projectCity}, {projectProvince} ({projectYear})</strong>
                 </div>
               )}

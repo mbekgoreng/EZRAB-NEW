@@ -170,7 +170,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
               borderRadius: '8px',
               border: 'none',
               background: '#EDF2F7',
-              color: '#475569',
+              color: 'var(--ez-color-text-slate)',
               cursor: 'pointer'
             }}
           >
@@ -183,7 +183,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
           
           {/* Description */}
           {template.description && (
-            <p style={{ fontSize: '13px', color: '#475569', margin: 0, lineHeight: 1.5 }}>
+            <p style={{ fontSize: '13px', color: 'var(--ez-color-text-slate)', margin: 0, lineHeight: 1.5 }}>
               {template.description}
             </p>
           )}
@@ -206,7 +206,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                     borderRadius: '6px',
                     padding: '4px 10px',
                     fontSize: '11.5px',
-                    color: '#334155'
+                    color: 'var(--ez-color-text-body)'
                   }}
                 >
                   <span style={{ color: 'var(--ez-color-text-muted)' }}>{p.label}: </span>
@@ -232,13 +232,13 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                 fontSize: '11.5px'
               }}
             >
-              <div style={{ color: '#92400E' }}>
+              <div style={{ color: 'var(--ez-hue-amber-text-dark)' }}>
                 <span style={{ fontWeight: 700 }}>
                   {(template.components || []).filter(c => c.isOptional).length} Pekerjaan Opsional
                 </span>{' '}
                 <span>tersedia (dapat dipilih pada tahap Konfigurasi).</span>
               </div>
-              <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--ez-hue-amber-border)', color: '#78350F', padding: '2px 6px', borderRadius: '4px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--ez-hue-amber-border)', color: 'var(--ez-hue-amber-text-dark)', padding: '2px 6px', borderRadius: '4px' }}>
                 OPSIONAL
               </span>
             </div>
@@ -326,7 +326,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
               fontSize: '11.5px'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#166534' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ez-hue-green-text-deep)' }}>
               <span style={{ fontWeight: 700 }}>✓ AHSP & Harga:</span>
               <span>Terpetakan ke Database Resmi PUPR 2026 / Bina Marga</span>
             </div>
@@ -337,7 +337,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                 padding: '2px 6px',
                 borderRadius: '4px',
                 background: 'var(--ez-hue-green-bg-deep)',
-                color: '#15803D'
+                color: 'var(--ez-hue-green-text)'
               }}
             >
               RESMI
@@ -377,14 +377,14 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {isExpanded ? <ChevronDown size={15} color="#64748B" /> : <ChevronRight size={15} color="#64748B" />}
-                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#1E293B' }}>
+                        <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-strong)' }}>
                           {wp.category}
                         </span>
                         <span
                           style={{
                             fontSize: '10.5px',
                             background: 'var(--ez-color-border-line)',
-                            color: '#475569',
+                            color: 'var(--ez-color-text-slate)',
                             padding: '1px 6px',
                             borderRadius: '4px',
                             fontWeight: 650
@@ -412,7 +412,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                           <tbody>
                             {wp.items.map(it => (
                               <tr key={it.id} style={{ borderBottom: '1px solid var(--ez-hue-slate-bg)' }}>
-                                <td style={{ padding: '5px 6px', color: '#1E293B', fontWeight: 500 }}>
+                                <td style={{ padding: '5px 6px', color: 'var(--ez-color-text-strong)', fontWeight: 500 }}>
                                   {it.description}
                                   {it.ahspCode && (
                                     <span style={{ display: 'block', fontSize: '9.5px', color: '#94A3B8' }}>
@@ -462,7 +462,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
               borderRadius: '8px',
               border: '1px solid var(--ez-hue-slate-border)',
               background: 'var(--ez-color-surface)',
-              color: '#475569',
+              color: 'var(--ez-color-text-slate)',
               fontSize: '12.5px',
               fontWeight: 600,
               cursor: 'pointer'

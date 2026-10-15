@@ -185,7 +185,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
         </div>
 
         {exportSuccessMsg && (
-          <div style={{ backgroundColor: 'var(--ez-hue-green-bg-deep)', color: '#166534', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+          <div style={{ backgroundColor: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text-deep)', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
             {exportSuccessMsg}
           </div>
         )}
@@ -326,7 +326,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
             </div>
             <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
               <div style={{ color: 'var(--ez-color-text-muted)' }}>Sisa Piutang Berjalan</div>
-              <div style={{ fontSize: '14px', fontWeight: 750, color: '#D97706', marginTop: '2px' }}>{formatRupiah(receivables.totalReceivable)}</div>
+              <div style={{ fontSize: '14px', fontWeight: 750, color: 'var(--ez-hue-amber-text-deep)', marginTop: '2px' }}>{formatRupiah(receivables.totalReceivable)}</div>
             </div>
             <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
               <div style={{ color: 'var(--ez-color-text-muted)' }}>Piutang Jatuh Tempo</div>

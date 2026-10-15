@@ -332,7 +332,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
     const prov = (item as any).fieldProvenance?.overallProvenance || (item.provenanceDetail as any)?.overallProvenance || item.price?.priceSource;
     if (prov === 'EZRAB_DATABASE' || prov === 'PROJECT_PRICE' || prov === 'OFFICIAL_DATABASE' || prov === 'OFFICIAL_AHSP') {
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: 'var(--ez-hue-emerald-bg)', color: '#047857', border: '1px solid var(--ez-hue-green-border-deep)' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: 'var(--ez-hue-emerald-bg)', color: 'var(--ez-hue-green-text)', border: '1px solid var(--ez-hue-green-border-deep)' }}>
           🟢 Database
         </span>
       );
@@ -346,20 +346,20 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
     }
     if (prov === 'AI_ASSISTED') {
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: 'var(--ez-hue-violet-bg)', color: '#6D28D9', border: '1px solid var(--ez-hue-violet-border)' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: 'var(--ez-hue-violet-bg)', color: 'var(--ez-hue-violet-text)', border: '1px solid var(--ez-hue-violet-border)' }}>
           🟣 AI Assisted
         </span>
       );
     }
     if (prov === 'AI_ESTIMATED' || prov === 'AI_ESTIMATE') {
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: 'var(--ez-hue-amber-bg)', color: '#B45309', border: '1px solid var(--ez-hue-amber-border)' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: 'var(--ez-hue-amber-bg)', color: 'var(--ez-hue-amber-text)', border: '1px solid var(--ez-hue-amber-border)' }}>
           🟠 AI Estimate
         </span>
       );
     }
     return (
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: 'var(--ez-color-surface-tertiary)', color: '#475569', border: '1px solid var(--ez-hue-slate-border)' }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', border: '1px solid var(--ez-hue-slate-border)' }}>
         👤 User
       </span>
     );
@@ -370,7 +370,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
       (item.confidence && item.confidence >= 0.9 ? 'HIGH' : item.confidence && item.confidence >= 0.75 ? 'MEDIUM' : 'LOW');
     if (rating === 'HIGH') {
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 7px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 750, backgroundColor: 'var(--ez-hue-emerald-bg)', color: '#047857' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 7px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 750, backgroundColor: 'var(--ez-hue-emerald-bg)', color: 'var(--ez-hue-green-text)' }}>
           ✓ Tinggi
         </span>
       );
@@ -446,7 +446,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               fontSize: '11px',
               fontWeight: 700,
               backgroundColor: 'var(--ez-hue-amber-bg)',
-              color: '#D97706',
+              color: 'var(--ez-hue-amber-text-deep)',
               border: '1px solid var(--ez-hue-amber-border)',
             }}
           >
@@ -466,7 +466,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               fontSize: '11px',
               fontWeight: 700,
               backgroundColor: 'var(--ez-hue-amber-bg)',
-              color: '#D97706',
+              color: 'var(--ez-hue-amber-text-deep)',
               border: '1px solid var(--ez-hue-amber-border)',
             }}
           >
@@ -486,7 +486,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               fontSize: '11px',
               fontWeight: 700,
               backgroundColor: 'var(--ez-hue-rose-bg)',
-              color: '#DC2626',
+              color: 'var(--ez-hue-rose-text)',
               border: '1px solid var(--ez-hue-rose-border)',
             }}
           >
@@ -509,7 +509,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               fontSize: '11px',
               fontWeight: 700,
               backgroundColor: 'var(--ez-hue-emerald-bg)',
-              color: '#059669',
+              color: 'var(--ez-hue-green-text)',
               border: '1px solid var(--ez-hue-green-border-deep)',
             }}
           >
@@ -547,7 +547,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               fontSize: '11px',
               fontWeight: 700,
               backgroundColor: 'var(--ez-hue-amber-bg)',
-              color: '#D97706',
+              color: 'var(--ez-hue-amber-text-deep)',
               border: '1px solid var(--ez-hue-amber-border)',
             }}
           >
@@ -567,7 +567,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               fontSize: '11px',
               fontWeight: 700,
               backgroundColor: 'var(--ez-hue-rose-bg)',
-              color: '#DC2626',
+              color: 'var(--ez-hue-rose-text)',
               border: '1px solid var(--ez-hue-rose-border)',
             }}
           >
@@ -620,7 +620,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
             height: '64px',
             borderRadius: '50%',
             backgroundColor: 'var(--ez-hue-rose-bg)',
-            color: '#DC2626',
+            color: 'var(--ez-hue-rose-text)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -630,7 +630,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
           <AlertTriangle size={32} />
         </div>
 
-        <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#991B1B', marginBottom: '8px' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-hue-red-text)', marginBottom: '8px' }}>
           ANALISIS DED BELUM BERHASIL
         </h2>
         <p style={{ fontSize: '14px', color: 'var(--ez-color-text-muted)', marginBottom: '24px', lineHeight: 1.6 }}>
@@ -660,11 +660,11 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
             <div><strong>AI calls:</strong> {diagnostics.aiRequests} ({diagnostics.aiSuccessful} sukses, {diagnostics.aiFailed} gagal)</div>
             <div><strong>Evidence:</strong> {diagnostics.evidenceCount}</div>
             <div><strong>DED Items:</strong> {diagnostics.dedItemCount}</div>
-            <div><strong>Current stage:</strong> <span style={{ color: '#DC2626', fontWeight: 700 }}>{diagnostics.stage}</span></div>
+            <div><strong>Current stage:</strong> <span style={{ color: 'var(--ez-hue-rose-text)', fontWeight: 700 }}>{diagnostics.stage}</span></div>
             <div><strong>Duration:</strong> {((diagnostics.durationMs || 0) / 1000).toFixed(1)}s</div>
           </div>
           {diagnostics.error && (
-            <div style={{ marginTop: '12px', padding: '8px 12px', backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '6px', color: '#DC2626', fontWeight: 600 }}>
+            <div style={{ marginTop: '12px', padding: '8px 12px', backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '6px', color: 'var(--ez-hue-rose-text)', fontWeight: 600 }}>
               Error: {diagnostics.error}
             </div>
           )}
@@ -679,7 +679,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               borderRadius: '8px',
               backgroundColor: 'var(--ez-color-surface-tertiary)',
               border: '1px solid var(--ez-hue-slate-border)',
-              color: '#475569',
+              color: 'var(--ez-color-text-slate)',
               fontSize: '13px',
               fontWeight: 600,
               cursor: 'pointer',
@@ -872,10 +872,10 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
         <div style={{ backgroundColor: 'var(--ez-hue-emerald-bg)', border: '1.5px solid var(--ez-hue-green-border-deep)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '20px' }}>🟢</span>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: '#047857' }}>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-green-text)' }}>
               {currentProvenance.ezrabDatabase} Item
             </div>
-            <div style={{ fontSize: '11px', color: '#065F46', fontWeight: 600 }}>
+            <div style={{ fontSize: '11px', color: 'var(--ez-hue-green-text-deep)', fontWeight: 600 }}>
               EZRAB Database
             </div>
           </div>
@@ -887,7 +887,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
             <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-primary-hover)' }}>
               {currentProvenance.marketReference} Item
             </div>
-            <div style={{ fontSize: '11px', color: '#1E40AF', fontWeight: 600 }}>
+            <div style={{ fontSize: '11px', color: 'var(--ez-hue-blue-text-deep)', fontWeight: 600 }}>
               Market Reference
             </div>
           </div>
@@ -896,7 +896,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
         <div style={{ backgroundColor: 'var(--ez-hue-violet-bg)', border: '1.5px solid var(--ez-hue-violet-border)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '20px' }}>🟣</span>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: '#6D28D9' }}>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-violet-text)' }}>
               {currentProvenance.aiAssisted} Item
             </div>
             <div style={{ fontSize: '11px', color: '#5B21B6', fontWeight: 600 }}>
@@ -908,10 +908,10 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
         <div style={{ backgroundColor: 'var(--ez-hue-amber-bg)', border: '1.5px solid var(--ez-hue-amber-border)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '20px' }}>🟠</span>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: '#B45309' }}>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-amber-text)' }}>
               {currentProvenance.aiEstimated} Item
             </div>
-            <div style={{ fontSize: '11px', color: '#78350F', fontWeight: 600 }}>
+            <div style={{ fontSize: '11px', color: 'var(--ez-hue-amber-text-dark)', fontWeight: 600 }}>
               AI Estimated
             </div>
           </div>
@@ -1018,7 +1018,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
           paddingBottom: '4px',
         }}
       >
-        <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', whiteSpace: 'nowrap', marginRight: '4px' }}>
+        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-slate)', whiteSpace: 'nowrap', marginRight: '4px' }}>
           Filter Sumber:
         </span>
         {[
@@ -1099,7 +1099,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 600,
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               cursor: 'pointer',
             }}
           >
@@ -1115,7 +1115,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 600,
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               cursor: 'pointer',
             }}
           >
@@ -1137,7 +1137,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
             <thead>
-              <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569' }}>
+              <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)' }}>
                 <th style={{ padding: '12px 14px', width: '40px', textAlign: 'center' }}>
                   <input
                     type="checkbox"
@@ -1203,7 +1203,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                         {item.materialSpec && <span>• {item.materialSpec}</span>}
                       </div>
                     </td>
-                    <td style={{ padding: '12px 14px', fontWeight: 600, color: '#334155' }}>
+                    <td style={{ padding: '12px 14px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>
                       {item.unit}
                     </td>
                     <td style={{ padding: '12px 14px' }}>
@@ -1220,7 +1220,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                           )}
                         </div>
                       ) : (
-                        <span style={{ fontSize: '11px', color: '#D97706', fontWeight: 600 }}>
+                        <span style={{ fontSize: '11px', color: 'var(--ez-hue-amber-text-deep)', fontWeight: 600 }}>
                           AI Estimated
                         </span>
                       )}
@@ -1232,7 +1232,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                             <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', fontSize: '11.5px' }}>
                               {item.ahspMatch.code}
                             </span>
-                            <span style={{ fontSize: '9.5px', fontWeight: 700, backgroundColor: 'var(--ez-hue-emerald-bg)', color: '#059669', padding: '1px 5px', borderRadius: '4px' }}>
+                            <span style={{ fontSize: '9.5px', fontWeight: 700, backgroundColor: 'var(--ez-hue-emerald-bg)', color: 'var(--ez-hue-green-text)', padding: '1px 5px', borderRadius: '4px' }}>
                               {item.ahspMatch.source || 'PUPR 2026'}
                             </span>
                           </div>
@@ -1252,12 +1252,12 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                           <div style={{ fontWeight: 800, color: 'var(--ez-color-text-primary)', fontSize: '13px' }}>
                             {formatIDR(item.price.unitPrice)}
                           </div>
-                          <div style={{ fontSize: '10.5px', color: '#059669', fontWeight: 600, marginTop: '1px' }}>
+                          <div style={{ fontSize: '10.5px', color: 'var(--ez-hue-green-text)', fontWeight: 600, marginTop: '1px' }}>
                             Subtotal: {formatIDR(item.price.totalPrice || SafeDecimalEngine.safeMultiply(item.price.unitPrice, item.quantity || 1, 2))}
                           </div>
                         </div>
                       ) : (
-                        <div style={{ fontWeight: 700, color: '#B45309', fontSize: '12px' }}>
+                        <div style={{ fontWeight: 700, color: 'var(--ez-hue-amber-text)', fontSize: '12px' }}>
                           Estimasi AI
                         </div>
                       )}
@@ -1278,7 +1278,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                             borderRadius: '6px',
                             border: '1px solid var(--ez-hue-slate-border)',
                             backgroundColor: 'var(--ez-color-surface)',
-                            color: '#334155',
+                            color: 'var(--ez-color-text-body)',
                             fontSize: '11px',
                             fontWeight: 700,
                             cursor: 'pointer',
@@ -1339,34 +1339,34 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                 <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '4px' }}>
                   {formatIDR(grandTotal || reviewSummary.totalEstimatedRab)}
                 </div>
-                <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-slate)', marginTop: '2px' }}>
                   {workItems.length} pekerjaan selesai
                 </div>
               </div>
 
               <div style={{ padding: '16px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-surface-secondary)', border: '1.5px solid var(--ez-hue-slate-border)' }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155' }}>🏗️ DATABASE RESMI EZRAB</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-body)' }}>🏗️ DATABASE RESMI EZRAB</div>
                 <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '4px' }}>
                   {formatIDR(validationComparison?.ezrabStandardGrandTotal || ((grandTotal || reviewSummary.totalEstimatedRab || 37633462) * 1.039))}
                 </div>
-                <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-slate)', marginTop: '2px' }}>
                   Standar PUPR 2026 ketat
                 </div>
               </div>
 
               <div style={{ padding: '16px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-hue-green-bg)', border: '1.5px solid var(--ez-hue-green-border)' }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#047857' }}>SELISIH / VARIANSI</div>
-                <div style={{ fontSize: '20px', fontWeight: 800, color: '#047857', marginTop: '4px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-hue-green-text)' }}>SELISIH / VARIANSI</div>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-hue-green-text)', marginTop: '4px' }}>
                   +{formatIDR(validationComparison?.differenceAmount || Math.round((grandTotal || 37633462) * 0.039))}
                 </div>
-                <div style={{ fontSize: '11px', color: '#065F46', marginTop: '2px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--ez-hue-green-text-deep)', marginTop: '2px' }}>
                   Efisiensi referensi regional
                 </div>
               </div>
             </div>
 
             {/* Reassurance Note */}
-            <div style={{ padding: '14px 18px', background: 'var(--ez-hue-green-bg)', border: '1px solid var(--ez-hue-green-border)', borderRadius: '10px', fontSize: '12px', color: '#065F46', lineHeight: 1.5, marginBottom: '20px' }}>
+            <div style={{ padding: '14px 18px', background: 'var(--ez-hue-green-bg)', border: '1px solid var(--ez-hue-green-border)', borderRadius: '10px', fontSize: '12px', color: 'var(--ez-hue-green-text-deep)', lineHeight: 1.5, marginBottom: '20px' }}>
               💡 <strong>Prinsip Isolasi Data (Section 31 & 33):</strong> Validasi ini adalah perbandingan informatif. Draf AI RAB Anda tetap utuh dan tersimpan secara independen sebagai project snapshot tanpa memodifikasi master database.
             </div>
 
@@ -1374,7 +1374,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowValidationModal(false)}
-                style={{ padding: '9px 18px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', color: '#334155', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
+                style={{ padding: '9px 18px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-body)', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
               >
                 Tutup
               </button>
@@ -1410,7 +1410,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Nama Pekerjaan
                 </label>
                 <input
@@ -1423,7 +1423,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     Volume / Quantity
                   </label>
                   <input
@@ -1435,7 +1435,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     Satuan
                   </label>
                   <input
@@ -1448,7 +1448,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Harga Satuan (IDR)
                 </label>
                 <input
@@ -1461,7 +1461,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Kode AHSP
                 </label>
                 <input
@@ -1477,7 +1477,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               <button
                 type="button"
                 onClick={() => setEditingItem(null)}
-                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', color: '#475569', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-slate)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
               >
                 Batal
               </button>
@@ -1522,7 +1522,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               {/* Evidence Pages */}
               <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)' }}>
                 <div style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '4px' }}>📄 Bukti Lembar Gambar Kerja (DED Evidence):</div>
-                <div style={{ color: '#475569' }}>
+                <div style={{ color: 'var(--ez-color-text-slate)' }}>
                   Halaman Dokumen: <strong>Hal. {detailedAuditItem.sourcePages.join(', ')}</strong> • Evidence ID: <code>{detailedAuditItem.evidenceIds.join(', ')}</code>
                 </div>
               </div>
@@ -1558,7 +1558,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                 <div style={{ color: 'var(--ez-color-text-muted)', fontSize: '11.5px', marginTop: '2px' }}>
                   Sumber Harga: <strong>{detailedAuditItem.price?.priceSource || 'EZRAB_DATABASE'}</strong> • Wilayah: {location?.city || 'Pasuruan'}, {location?.province || 'Jawa Timur'}
                 </div>
-                <div style={{ color: '#059669', fontSize: '11.5px', fontWeight: 700, marginTop: '2px' }}>
+                <div style={{ color: 'var(--ez-hue-green-text)', fontSize: '11.5px', fontWeight: 700, marginTop: '2px' }}>
                   Subtotal: {formatIDR(detailedAuditItem.price?.totalPrice || SafeDecimalEngine.safeMultiply(detailedAuditItem.price?.unitPrice || 0, detailedAuditItem.quantity || 1, 2))}
                 </div>
               </div>
@@ -1566,8 +1566,8 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               {/* Assumptions */}
               {detailedAuditItem.assumptions && detailedAuditItem.assumptions.length > 0 && (
                 <div style={{ background: 'var(--ez-hue-amber-bg)', padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--ez-hue-amber-border)' }}>
-                  <div style={{ fontWeight: 700, color: '#B45309', marginBottom: '4px' }}>💡 Asumsi AI Estimator:</div>
-                  <ul style={{ margin: '4px 0 0 16px', padding: 0, color: '#78350F', fontSize: '11.5px' }}>
+                  <div style={{ fontWeight: 700, color: 'var(--ez-hue-amber-text)', marginBottom: '4px' }}>💡 Asumsi AI Estimator:</div>
+                  <ul style={{ margin: '4px 0 0 16px', padding: 0, color: 'var(--ez-hue-amber-text-dark)', fontSize: '11.5px' }}>
                     {detailedAuditItem.assumptions.map((a, ai) => (
                       <li key={ai}>{a}</li>
                     ))}
@@ -1621,7 +1621,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                   height: '44px',
                   borderRadius: 'var(--ez-radius-control)',
                   backgroundColor: 'var(--ez-hue-emerald-bg)',
-                  color: '#059669',
+                  color: 'var(--ez-hue-green-text)',
                   display: 'grid',
                   placeItems: 'center',
                 }}
@@ -1647,7 +1647,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                 marginBottom: '20px',
               }}
             >
-              <div style={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.6, marginBottom: '12px' }}>
+              <div style={{ fontSize: '13.5px', color: 'var(--ez-color-text-body)', lineHeight: 1.6, marginBottom: '12px' }}>
                 RAB ini akan dimasukkan ke <strong>spreadsheet proyek (9 lembar kerja)</strong> dan disimpan sebagai <strong>RAB resmi proyek</strong> {projectName}.
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid var(--ez-color-border-line)', fontSize: '13px' }}>
@@ -1672,7 +1672,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                   borderRadius: '10px',
                   backgroundColor: 'var(--ez-color-surface-tertiary)',
                   border: '1px solid var(--ez-hue-slate-border)',
-                  color: '#475569',
+                  color: 'var(--ez-color-text-slate)',
                   fontSize: '13px',
                   fontWeight: 650,
                   cursor: isCommitting ? 'not-allowed' : 'pointer',

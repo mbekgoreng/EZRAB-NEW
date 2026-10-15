@@ -12,7 +12,7 @@
 .dbm-search input::placeholder { color: var(--ez-color-text-muted); }
 .dbm-tabs { display: flex; gap: 10px; }
 .dbm-tab { flex: 1; padding: 14px; border-radius: 12px; border: 1px solid var(--ez-color-border-soft); background: var(--ez-color-surface); box-shadow: 0 4px 20px rgba(0,0,0,0.045); font-size: 14px; font-weight: 700; cursor: pointer; color: var(--ez-color-text-muted); display: flex; align-items: center; justify-content: center; gap: 8px; transition: .18s; font-family: inherit; }
-.dbm-tab:hover { border-color: #2563EB; color: #2563EB; }
+.dbm-tab:hover { border-color: #2563EB; color: var(--ez-hue-blue-text); }
 .dbm-tab.active { background: #2563EB; border-color: #2563EB; color: #fff; box-shadow: 0 4px 14px rgba(37,99,235,0.28); }
 .dbm-count { background: var(--ez-pastel-sky); color: var(--ez-pill-run-text); font-size: 11px; padding: 2px 9px; border-radius: 999px; font-weight: 800; }
 .dbm-tab.active .dbm-count { background: rgba(255,255,255,0.25); color: #fff; }
@@ -28,5 +28,5 @@
 .dbm-price { color: var(--ez-color-text-primary); font-size: 14px; }
 .dbm-empty { text-align: center; padding: 50px; color: var(--ez-color-text-muted); font-size: 13px; }
 .dbm-note { display: flex; align-items: flex-start; gap: 10px; margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--ez-color-text-muted); background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); box-shadow: 0 4px 20px rgba(0,0,0,0.045); padding: 14px 16px; border-radius: 22px; }
-.dbm-note svg { color: #2563EB; flex-shrink: 0; margin-top: 1px; }
+.dbm-note svg { color: var(--ez-hue-blue-text); flex-shrink: 0; margin-top: 1px; }
 @media (max-width: 640px) { .dbm-tabs { flex-direction: column; } .dbm-search { min-width: 100%; } }

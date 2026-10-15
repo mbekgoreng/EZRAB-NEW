@@ -288,7 +288,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                         padding: '5px 12px',
                         borderRadius: 'var(--ez-radius-pill)',
                         background: 'var(--ez-pastel-sky)',
-                        color: '#2456A8',
+                        color: 'var(--ez-hue-blue-text-deep)',
                         whiteSpace: 'nowrap',
                       }}
                     >
@@ -387,7 +387,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                         borderRadius: 'var(--ez-radius-control)',
                         background: 'var(--ez-pastel-sky)',
                         border: 'none',
-                        color: '#2456A8',
+                        color: 'var(--ez-hue-blue-text-deep)',
                         fontSize: '12px',
                         fontWeight: 700,
                         cursor: 'pointer',

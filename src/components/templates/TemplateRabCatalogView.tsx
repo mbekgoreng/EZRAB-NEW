@@ -380,7 +380,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                 background: 'var(--ez-hue-green-bg)',
                 border: '1px solid var(--ez-hue-green-border)',
                 fontSize: '11.5px',
-                color: '#166534',
+                color: 'var(--ez-hue-green-text-deep)',
                 fontWeight: 650
               }}
             >
@@ -399,7 +399,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
               borderRadius: '8px',
               border: '1px solid var(--ez-hue-slate-border)',
               background: 'var(--ez-color-surface)',
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               fontSize: '12px',
               fontWeight: 650,
               cursor: 'pointer'
@@ -564,7 +564,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
               border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '11.5px',
               background: 'var(--ez-color-surface)',
-              color: '#334155'
+              color: 'var(--ez-color-text-body)'
             }}
           >
             <option value="POPULAR">Paling Populer</option>
@@ -663,7 +663,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                     border: '1px solid var(--ez-color-border-line)',
                     background: 'var(--ez-color-surface-secondary)',
                     fontSize: '11px',
-                    color: '#475569',
+                    color: 'var(--ez-color-text-slate)',
                     cursor: 'pointer',
                     textAlign: 'center'
                   }}
@@ -945,7 +945,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                       )}
 
                       {/* Primary Dynamic Parameters Summary (Universal for ANY domain) */}
-                      <div style={{ fontSize: '11px', color: '#475569', marginBottom: '10px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-slate)', marginBottom: '10px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                         {tpl.parameters.slice(0, 3).map((p, idx) => (
                           <div
                             key={p.id || p.key}
@@ -961,7 +961,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                             }}
                           >
                             <span style={{ color: 'var(--ez-color-text-muted)' }}>{p.label}:</span>
-                            <span style={{ fontWeight: 650, color: '#1E293B' }}>{String(p.defaultValue ?? '-')} {p.unit || ''}</span>
+                            <span style={{ fontWeight: 650, color: 'var(--ez-color-text-strong)' }}>{String(p.defaultValue ?? '-')} {p.unit || ''}</span>
                           </div>
                         ))}
                         {tpl.parameters.length > 3 && (
@@ -1000,7 +1000,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                                   fontSize: '10px',
                                   fontWeight: 650,
                                   background: 'var(--ez-color-surface-tertiary)',
-                                  color: '#475569',
+                                  color: 'var(--ez-color-text-slate)',
                                   padding: '2px 5px',
                                   borderRadius: '4px'
                                 }}
@@ -1013,7 +1013,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                                 fontSize: '10.5px',
                                 fontWeight: 700,
                                 background: 'var(--ez-hue-green-bg-deep)',
-                                color: '#15803D',
+                                color: 'var(--ez-hue-green-text)',
                                 padding: '2px 6px',
                                 borderRadius: '4px'
                               }}
@@ -1046,7 +1046,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                           borderRadius: '6px',
                           border: '1px solid var(--ez-color-border-line)',
                           background: 'var(--ez-color-surface)',
-                          color: '#475569',
+                          color: 'var(--ez-color-text-slate)',
                           fontSize: '11px',
                           fontWeight: 650,
                           cursor: 'pointer'
@@ -1080,7 +1080,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                               borderRadius: '6px',
                               border: '1px solid var(--ez-hue-red-bg)',
                               background: 'var(--ez-hue-rose-bg)',
-                              color: '#DC2626',
+                              color: 'var(--ez-hue-rose-text)',
                               cursor: 'pointer'
                             }}
                             title="Hapus Template"

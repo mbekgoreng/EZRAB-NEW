@@ -201,7 +201,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                 <span
                   style={{
                     fontSize: '11px',
-                    color: '#059669',
+                    color: 'var(--ez-hue-green-text)',
                     background: 'var(--ez-hue-emerald-bg)',
                     border: '1px solid var(--ez-hue-green-border-deep)',
                     padding: '2px 8px',
@@ -308,7 +308,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                 background: 'transparent',
                 border: 'none',
                 borderRadius: '6px',
-                color: '#334155',
+                color: 'var(--ez-color-text-body)',
                 cursor: 'pointer',
               }}
             >
@@ -338,7 +338,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                 background: 'transparent',
                 border: 'none',
                 borderRadius: '6px',
-                color: '#334155',
+                color: 'var(--ez-color-text-body)',
                 cursor: 'pointer',
               }}
             >
@@ -358,7 +358,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                 borderRadius: '5px',
                 fontSize: '11px',
                 fontWeight: 700,
-                color: '#475569',
+                color: 'var(--ez-color-text-slate)',
                 cursor: 'pointer',
               }}
             >
@@ -376,7 +376,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                 background: 'var(--ez-color-surface)',
                 border: '1px solid var(--ez-hue-slate-border)',
                 borderRadius: '5px',
-                color: '#475569',
+                color: 'var(--ez-color-text-slate)',
                 cursor: 'pointer',
               }}
             >

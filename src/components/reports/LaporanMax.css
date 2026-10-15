@@ -14,7 +14,7 @@
 .lpm-kind { background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: 22px; padding: 16px; cursor: pointer; text-align: left; transition: .15s; font-family: inherit; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
 .lpm-kind:hover { border-color: #2563EB; }
 .lpm-kind.active { border: 1.5px solid #2563EB; }
-.lpm-kind-icon { width: 40px; height: 40px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; background: var(--ez-pastel-sky); color: #2563EB; }
+.lpm-kind-icon { width: 40px; height: 40px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; background: var(--ez-pastel-sky); color: var(--ez-hue-blue-text); }
 .lpm-kind:nth-child(2) .lpm-kind-icon { background: var(--ez-pastel-mint); color: #2C6E2C; }
 .lpm-kind:nth-child(3) .lpm-kind-icon { background: var(--ez-pastel-peach); color: var(--ez-pill-wait-text); }
 .lpm-kind:nth-child(4) .lpm-kind-icon { background: var(--ez-pastel-cream); color: var(--ez-pill-wait-text); }

@@ -628,7 +628,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                   Harga Override Proyek:
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 800, color: '#1E40AF' }}>Rp</span>
+                  <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-hue-blue-text-deep)' }}>Rp</span>
                   <input
                     type="number"
                     value={overridePrice}
@@ -702,7 +702,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
             {/* Justification & Source Metadata */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                   Alasan / Justifikasi Override:
                 </label>
                 <input
@@ -722,7 +722,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
               </div>
 
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                   Sumber Penawaran:
                 </label>
                 <select
@@ -751,7 +751,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
             {/* Optional Vendor & Validity */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                   Nama Supplier / Mandor (Opsional):
                 </label>
                 <input
@@ -771,7 +771,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
               </div>
 
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                   Berlaku Sampai (Opsional):
                 </label>
                 <input
@@ -821,7 +821,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                     borderRadius: '8px',
                     border: '1px solid #FCA5A5',
                     backgroundColor: 'var(--ez-hue-rose-bg)',
-                    color: '#DC2626',
+                    color: 'var(--ez-hue-rose-text)',
                     fontSize: '11.5px',
                     fontWeight: 700,
                     cursor: 'pointer',
@@ -844,7 +844,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                 borderRadius: '8px',
                 border: '1px solid var(--ez-hue-slate-border)',
                 backgroundColor: 'var(--ez-color-surface)',
-                color: '#475569',
+                color: 'var(--ez-color-text-slate)',
                 fontSize: '12px',
                 fontWeight: 700,
                 cursor: 'pointer',

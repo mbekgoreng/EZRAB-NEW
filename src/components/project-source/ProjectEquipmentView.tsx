@@ -148,7 +148,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
           }}
         >
           <Wrench size={36} color="#94A3B8" style={{ marginBottom: 10 }} />
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#334155' }}>Belum ada data peralatan proyek</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ez-color-text-body)' }}>Belum ada data peralatan proyek</div>
           <p style={{ fontSize: 12.5, color: 'var(--ez-color-text-muted)', maxWidth: 420, margin: '6px auto 14px' }}>
             Dokumen teknis seperti Daftar Alat & Personil dan Metode Pelaksanaan membutuhkan data peralatan aktual proyek.
           </p>
@@ -173,7 +173,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569' }}>
+              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)' }}>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>No</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Nama Peralatan</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Jenis / Tipe</th>
@@ -191,7 +191,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                   <td style={{ padding: '10px 12px', fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>{item.name}</td>
                   <td style={{ padding: '10px 12px', color: 'var(--ez-color-primary)', fontWeight: 600 }}>{item.type || '—'}</td>
                   <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700 }}>{item.quantity ?? 1} unit</td>
-                  <td style={{ padding: '10px 12px', color: '#334155' }}>{item.capacity || '—'}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-body)' }}>{item.capacity || '—'}</td>
                   <td style={{ padding: '10px 12px' }}>
                     <span
                       style={{
@@ -206,7 +206,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                       {item.condition || 'Baik'}
                     </span>
                   </td>
-                  <td style={{ padding: '10px 12px', color: '#334155' }}>{item.owner || 'Milik Sendiri'}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-body)' }}>{item.owner || 'Milik Sendiri'}</td>
                   <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                     <div style={{ display: 'inline-flex', gap: 6 }}>
                       <button
@@ -260,7 +260,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
             </h4>
             <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Nama Alat *
                 </label>
                 <input
@@ -274,7 +274,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Jenis / Tipe
                   </label>
                   <input
@@ -286,7 +286,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Jumlah Unit *
                   </label>
                   <input
@@ -300,7 +300,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                 </div>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Kapasitas / Spesifikasi
                 </label>
                 <input
@@ -313,7 +313,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Kondisi
                   </label>
                   <select
@@ -326,7 +326,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Status Kepemilikan
                   </label>
                   <select

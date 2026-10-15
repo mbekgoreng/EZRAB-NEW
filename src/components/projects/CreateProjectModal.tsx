@@ -189,7 +189,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  color: '#475569',
+                  color: 'var(--ez-color-text-slate)',
                 }}
                 title={t('proj.create.back_title')}
               >
@@ -269,18 +269,18 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   >
                     <Sparkles size={19} />
                   </div>
-                  <span style={{ fontSize: '10px', fontWeight: 800, background: 'var(--ez-pastel-sky)', color: '#2456A8', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', border: '1px solid var(--ez-hue-blue-border)' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 800, background: 'var(--ez-pastel-sky)', color: 'var(--ez-hue-blue-text-deep)', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', border: '1px solid var(--ez-hue-blue-border)' }}>
                     {t('proj.create.card1_tag')}
                   </span>
                 </div>
                 <h3 style={{ fontSize: '15px', fontWeight: 750, color: '#1E1B4B', margin: '0 0 4px 0' }}>
                   {t('proj.create.card1_t')}
                 </h3>
-                <p style={{ fontSize: '12px', color: '#4338CA', lineHeight: 1.45, margin: 0 }}>
+                <p style={{ fontSize: '12px', color: 'var(--ez-hue-indigo-text)', lineHeight: 1.45, margin: 0 }}>
                   {t('proj.create.card1_b')}
                 </p>
               </div>
-              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#2456A8' }}>
+              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-blue-text-deep)' }}>
                 <span>{t('proj.create.card1_cta')}</span>
                 <ArrowRight size={14} />
               </div>
@@ -374,7 +374,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                       height: '38px',
                       borderRadius: 'var(--ez-radius-control)',
                       background: 'var(--ez-hue-emerald-bg)',
-                      color: '#059669',
+                      color: 'var(--ez-hue-green-text)',
                       border: '1px solid var(--ez-hue-green-border-deep)',
                       display: 'flex',
                       alignItems: 'center',
@@ -394,7 +394,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   {t('proj.create.card3_b')}
                 </p>
               </div>
-              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#059669' }}>
+              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-green-text)' }}>
                 <span>{t('proj.create.card3_cta')}</span>
                 <ArrowRight size={14} />
               </div>
@@ -431,7 +431,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                       height: '38px',
                       borderRadius: 'var(--ez-radius-control)',
                       background: 'var(--ez-hue-amber-bg)',
-                      color: '#D97706',
+                      color: 'var(--ez-hue-amber-text-deep)',
                       border: '1px solid var(--ez-hue-amber-border)',
                       display: 'flex',
                       alignItems: 'center',
@@ -440,7 +440,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   >
                     <Layers size={19} />
                   </div>
-                  <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--ez-color-success-soft)', color: '#15803D', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--ez-color-success-soft)', color: 'var(--ez-hue-green-text)', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)' }}>
                     {t('proj.create.card4_tag')}
                   </span>
                 </div>
@@ -451,7 +451,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   {t('proj.create.card4_b')}
                 </p>
               </div>
-              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#D97706' }}>
+              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-amber-text-deep)' }}>
                 <span>{t('proj.create.card4_cta')}</span>
                 <ArrowRight size={14} />
               </div>
@@ -465,7 +465,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         {activeStep === 'manual' && (
           <form onSubmit={handleManualSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
+              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
                 {t('proj.create.f_name')}
               </label>
               <input
@@ -488,7 +488,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
                   {t('proj.create.f_type')}
                 </label>
                 <select
@@ -516,7 +516,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
                   {t('proj.create.f_loc')}
                 </label>
                 <input
@@ -539,7 +539,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
                   {t('proj.create.f_area')}
                 </label>
                 <input
@@ -560,7 +560,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
                   {t('proj.create.f_floors')}
                 </label>
                 <input
@@ -584,7 +584,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
                   {t('proj.create.f_client')}
                 </label>
                 <input
@@ -605,7 +605,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
                   {t('proj.create.f_budget')}
                 </label>
                 <input
@@ -670,7 +670,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         {activeStep === 'magic_ai' && (
           <form onSubmit={handleMagicAiSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#2456A8', marginBottom: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-blue-text-deep)', marginBottom: '4px' }}>
                 <Sparkles size={14} />
                 <span>{t('proj.create.ai_fmt')}</span>
               </div>
@@ -680,7 +680,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
+              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
                 {t('proj.create.f_desc')}
               </label>
               <textarea

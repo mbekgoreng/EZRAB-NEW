@@ -185,7 +185,7 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
 
                 return (
                   <tr key={c.category} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
-                    <td style={{ padding: '10px 14px', fontWeight: 650, color: '#1E293B' }}>
+                    <td style={{ padding: '10px 14px', fontWeight: 650, color: 'var(--ez-color-text-strong)' }}>
                       {c.category}
                     </td>
                     <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--ez-color-text-slate)' }}>

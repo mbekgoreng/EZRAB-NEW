@@ -1273,19 +1273,19 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
-                <span style={{ color: '#334155' }}>Mulai Edit Sel</span>
+                <span style={{ color: 'var(--ez-color-text-body)' }}>Mulai Edit Sel</span>
                 <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-hue-slate-border)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Double Click / Enter</kbd>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
-                <span style={{ color: '#334155' }}>Simpan Perubahan Sel</span>
+                <span style={{ color: 'var(--ez-color-text-body)' }}>Simpan Perubahan Sel</span>
                 <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-hue-slate-border)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Enter</kbd>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
-                <span style={{ color: '#334155' }}>Batal Edit Sel</span>
+                <span style={{ color: 'var(--ez-color-text-body)' }}>Batal Edit Sel</span>
                 <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-hue-slate-border)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Escape</kbd>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
-                <span style={{ color: '#334155' }}>Pilih Multi Item</span>
+                <span style={{ color: 'var(--ez-color-text-body)' }}>Pilih Multi Item</span>
                 <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-hue-slate-border)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Shift + Click</kbd>
               </div>
             </div>

@@ -343,7 +343,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
               borderRadius: '8px',
               border: 'none',
               background: '#EDF2F7',
-              color: '#475569',
+              color: 'var(--ez-color-text-slate)',
               cursor: 'pointer'
             }}
           >
@@ -411,7 +411,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
           {activeStep === 1 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                   Nama Template <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
@@ -431,7 +431,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                     Kategori Sektor
                   </label>
                   <select
@@ -455,7 +455,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                     Subkategori (Opsional)
                   </label>
                   <input
@@ -475,7 +475,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                   Deskripsi Singkat
                 </label>
                 <textarea
@@ -496,7 +496,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                     Satuan Proyek
                   </label>
                   <select
@@ -518,7 +518,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                     Default Luas / Dimensi
                   </label>
                   <input
@@ -535,7 +535,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                     Default Jumlah Lantai
                   </label>
                   <input
@@ -656,7 +656,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     <div>
                       <button
                         onClick={() => handleDeleteParameter(param.id)}
-                        style={{ padding: '6px', borderRadius: '6px', border: 'none', background: 'var(--ez-hue-red-bg)', color: '#DC2626', cursor: 'pointer' }}
+                        style={{ padding: '6px', borderRadius: '6px', border: 'none', background: 'var(--ez-hue-red-bg)', color: 'var(--ez-hue-rose-text)', cursor: 'pointer' }}
                         title="Hapus Parameter"
                       >
                         <Trash2 size={15} />
@@ -756,7 +756,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     <div>
                       <button
                         onClick={() => handleDeleteSpace(sp.id)}
-                        style={{ padding: '6px', borderRadius: '6px', border: 'none', background: 'var(--ez-hue-red-bg)', color: '#DC2626', cursor: 'pointer' }}
+                        style={{ padding: '6px', borderRadius: '6px', border: 'none', background: 'var(--ez-hue-red-bg)', color: 'var(--ez-hue-rose-text)', cursor: 'pointer' }}
                       >
                         <Trash2 size={15} />
                       </button>
@@ -847,7 +847,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       <div>
                         <button
                           onClick={() => handleDeleteComponent(comp.id)}
-                          style={{ padding: '6px', borderRadius: '6px', border: 'none', background: 'var(--ez-hue-red-bg)', color: '#DC2626', cursor: 'pointer', marginTop: '16px' }}
+                          style={{ padding: '6px', borderRadius: '6px', border: 'none', background: 'var(--ez-hue-red-bg)', color: 'var(--ez-hue-rose-text)', cursor: 'pointer', marginTop: '16px' }}
                         >
                           <Trash2 size={15} />
                         </button>

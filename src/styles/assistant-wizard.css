@@ -44,7 +44,7 @@
   justify-content: center;
   border-radius: 9px;
   background: var(--ez-hue-blue-bg);
-  color: #2563EB;
+  color: var(--ez-hue-blue-text);
   border: 1px solid var(--ez-hue-blue-bg-deep);
   flex-shrink: 0;
 }
@@ -54,7 +54,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #2563EB;
+  color: var(--ez-hue-blue-text);
   margin-bottom: 2px;
 }
 
@@ -96,7 +96,7 @@
 /* Step Message / Description */
 .ezrab-wizard-message {
   font-size: 12.5px;
-  color: #334155;
+  color: var(--ez-color-text-body);
   line-height: 1.6;
   margin-bottom: 16px;
   white-space: pre-line;
@@ -206,7 +206,7 @@
 .ezrab-wizard-pill-btn.inactive {
   background: var(--ez-color-surface);
   border-color: #CBD5E1;
-  color: #475569;
+  color: var(--ez-color-text-slate);
 }
 
 .ezrab-wizard-pill-btn.inactive:hover {
@@ -309,7 +309,7 @@
   justify-content: center;
   border-radius: 7px;
   background: var(--ez-hue-blue-bg);
-  color: #2563EB;
+  color: var(--ez-hue-blue-text);
   border: 1px solid var(--ez-hue-blue-bg-deep);
   flex-shrink: 0;
   transition: background-color 0.2s, color 0.2s;
@@ -328,7 +328,7 @@
 }
 
 .ezrab-wizard-card:hover .ezrab-card-title {
-  color: #2563EB;
+  color: var(--ez-hue-blue-text);
 }
 
 /* Card Metadata Rows */
@@ -360,7 +360,7 @@
 }
 
 .ezrab-card-meta-val.highlight {
-  color: #2563EB;
+  color: var(--ez-hue-blue-text);
 }
 
 /* Card Badge & Description */
@@ -388,7 +388,7 @@
 
 .ezrab-card-badge.review {
   background: var(--ez-hue-amber-bg);
-  color: #D97706;
+  color: var(--ez-hue-amber-text-deep);
   border: 1px solid var(--ez-hue-amber-border);
 }
 
@@ -479,7 +479,7 @@
   border-radius: 7px;
   border: 1px solid var(--ez-hue-blue-border);
   background: var(--ez-hue-blue-bg);
-  color: #2563EB;
+  color: var(--ez-hue-blue-text);
   padding: 5px 12px;
   font-size: 11.5px;
   font-weight: 600;
@@ -513,7 +513,7 @@
   padding: 6px 13px;
   font-size: 11.5px;
   font-weight: 600;
-  color: #475569;
+  color: var(--ez-color-text-slate);
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -620,7 +620,7 @@
 }
 
 .ezrab-wizard-label .unit {
-  color: #2563EB;
+  color: var(--ez-hue-blue-text);
   font-weight: 600;
   margin-left: 3px;
 }
@@ -734,7 +734,7 @@
 }
 
 .ezrab-wizard-option-btn.selected .ezrab-wizard-option-label {
-  color: #1E40AF;
+  color: var(--ez-hue-blue-text-deep);
 }
 
 .ezrab-wizard-option-desc {
@@ -824,7 +824,7 @@
 }
 
 .ezrab-wizard-cat-name {
-  color: #475569;
+  color: var(--ez-color-text-slate);
 }
 
 .ezrab-wizard-cat-val {
@@ -873,7 +873,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #2563EB;
+  color: var(--ez-hue-blue-text);
 }
 
 .ezrab-dialogue-title {
@@ -905,13 +905,13 @@
 
 .ezrab-dialogue-risk-pill.medium {
   background: var(--ez-hue-amber-bg);
-  color: #D97706;
+  color: var(--ez-hue-amber-text-deep);
   border: 1px solid var(--ez-hue-amber-border);
 }
 
 .ezrab-dialogue-risk-pill.high {
   background: var(--ez-hue-rose-bg);
-  color: #DC2626;
+  color: var(--ez-hue-rose-text);
   border: 1px solid var(--ez-hue-rose-border);
 }
 
@@ -962,7 +962,7 @@
 .ezrab-suggestion-chip:hover:not(:disabled) {
   border-color: #2563EB;
   background: var(--ez-hue-blue-bg-deep);
-  color: #1E40AF;
+  color: var(--ez-hue-blue-text-deep);
   transform: translateY(-1px);
 }
 
@@ -1050,7 +1050,7 @@
 }
 
 .ezrab-confirmation-spec-val.highlight {
-  color: #2563EB;
+  color: var(--ez-hue-blue-text);
 }
 
 .ezrab-btn-open-spreadsheet {

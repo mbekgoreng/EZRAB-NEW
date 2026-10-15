@@ -72,7 +72,7 @@
 .ez-dashboard-kpi-1 .ez-dashboard-kpi-sub { color: var(--ez-color-text-muted) !important; }
 .ez-dashboard-kpi-1 .ez-dashboard-kpi-value { color: var(--ez-color-text-primary) !important; font-size: 26px !important; }
 .ez-dashboard-kpi-1 .ez-dashboard-kpi-icon {
-  color: #2563eb !important;
+  color: var(--ez-hue-blue-text) !important;
   background: var(--ez-hue-blue-bg) !important;
   border: 1px solid var(--ez-hue-blue-border);
 }

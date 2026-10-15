@@ -27,11 +27,11 @@ function formatRupiah(n: number): string {
 }
 
 const CONFIDENCE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
-  A: { bg: 'var(--ez-hue-green-bg-deep)', color: '#166534', label: 'A — Verified' },
-  B: { bg: 'var(--ez-hue-blue-bg-deep)', color: '#1E40AF', label: 'B — 1 Ref. Estimate' },
-  C: { bg: 'var(--ez-hue-amber-bg-deep)', color: '#92400E', label: 'C — Multiple Refs' },
+  A: { bg: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text-deep)', label: 'A — Verified' },
+  B: { bg: 'var(--ez-hue-blue-bg-deep)', color: 'var(--ez-hue-blue-text-deep)', label: 'B — 1 Ref. Estimate' },
+  C: { bg: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text-dark)', label: 'C — Multiple Refs' },
   D: { bg: 'var(--ez-hue-orange-bg-deep)', color: '#9A3412', label: 'D — Many Refs' },
-  BLOCKED: { bg: 'var(--ez-hue-red-bg)', color: '#991B1B', label: 'BLOCKED — Missing Data' },
+  BLOCKED: { bg: 'var(--ez-hue-red-bg)', color: 'var(--ez-hue-red-text)', label: 'BLOCKED — Missing Data' },
 };
 
 export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ result }) => {
@@ -116,7 +116,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
         }}
       >
         <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface-tertiary)' }}>
-          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', textTransform: 'uppercase' }}>
             Cost Breakdown
           </span>
         </div>
@@ -155,7 +155,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
             alignItems: 'center',
           }}
         >
-          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', textTransform: 'uppercase' }}>
             Work Items ({result.workItems.length})
           </span>
           <span style={{ fontSize: '14px', color: '#94A3B8' }}>{showWorkItems ? '−' : '+'}</span>
@@ -174,7 +174,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
                 }}
               >
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#1E293B' }}>{wi.name}</div>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-strong)' }}>{wi.name}</div>
                   <div style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)', marginTop: '1px' }}>
                     {wi.quantity} {wi.unit} → AHSP: {wi.ahspCode} | Source: {wi.quantitySource}
                   </div>
@@ -215,7 +215,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
             alignItems: 'center',
           }}
         >
-          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', textTransform: 'uppercase' }}>
             Pareto Analysis (Top 5)
           </span>
           <span style={{ fontSize: '14px', color: '#94A3B8' }}>{showPareto ? '−' : '+'}</span>
@@ -225,7 +225,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
             {result.paretoAnalysis.slice(0, 5).map((p, idx) => (
               <div key={idx} style={{ padding: '4px 0', borderBottom: idx < 4 ? '1px solid var(--ez-color-surface-tertiary)' : 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#1E293B' }}>{p.resource}</span>
+                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--ez-color-text-strong)' }}>{p.resource}</span>
                   <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                     {p.contributionPercent}%
                   </span>
@@ -279,17 +279,17 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
               alignItems: 'center',
             }}
           >
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#92400E', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-hue-amber-text-dark)', textTransform: 'uppercase' }}>
               Assumptions ({result.assumptions.length})
             </span>
-            <span style={{ fontSize: '14px', color: '#D97706' }}>{showAssumptions ? '−' : '+'}</span>
+            <span style={{ fontSize: '14px', color: 'var(--ez-hue-amber-text-deep)' }}>{showAssumptions ? '−' : '+'}</span>
           </button>
           {showAssumptions && (
             <div style={{ padding: '8px 14px' }}>
               {result.assumptions.map((a, idx) => (
-                <div key={idx} style={{ padding: '4px 0', fontSize: '10.5px', color: '#78350F' }}>
+                <div key={idx} style={{ padding: '4px 0', fontSize: '10.5px', color: 'var(--ez-hue-amber-text-dark)' }}>
                   <strong>{a.field}</strong>: {a.value} ({a.type})
-                  <div style={{ fontSize: '9.5px', color: '#92400E', marginTop: '1px' }}>{a.note}</div>
+                  <div style={{ fontSize: '9.5px', color: 'var(--ez-hue-amber-text-dark)', marginTop: '1px' }}>{a.note}</div>
                 </div>
               ))}
             </div>

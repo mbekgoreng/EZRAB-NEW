@@ -79,7 +79,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
 
         {/* Right: Total RAB */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 650, color: '#475569' }}>
+          <span style={{ fontSize: '13px', fontWeight: 650, color: 'var(--ez-color-text-slate)' }}>
             Total RAB
           </span>
           <span
@@ -124,7 +124,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
                 background: 'var(--ez-color-surface)',
                 fontSize: '11.5px',
                 fontWeight: 600,
-                color: '#334155',
+                color: 'var(--ez-color-text-body)',
                 cursor: 'pointer',
                 outline: 'none',
                 appearance: 'none',

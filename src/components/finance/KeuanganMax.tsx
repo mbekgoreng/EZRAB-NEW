@@ -72,19 +72,19 @@ export const KeuanganMax: React.FC<Props> = ({ currentProject, projects = [], ra
 
       <div className="keu-kpis">
         <div className="ez-stat ez-stat-cream ezdb-anim" style={{ animation: 'ezdb-rise 0.6s 0.05s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>Rencana Anggaran</div>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-warm)', marginBottom: '8px' }}>Rencana Anggaran</div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>{fmtShort(total)}</div>
         </div>
         <div className="ez-stat ez-stat-mint ezdb-anim" style={{ animation: 'ezdb-rise 0.6s 0.12s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>Termin Cair</div>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-warm)', marginBottom: '8px' }}>Termin Cair</div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>{fmtShort(cair)}</div>
         </div>
         <div className="ez-stat ez-stat-peach ezdb-anim" style={{ animation: 'ezdb-rise 0.6s 0.19s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>Menunggu</div>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-warm)', marginBottom: '8px' }}>Menunggu</div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>{fmtShort(total - cair)}</div>
         </div>
         <div className="ez-stat ez-stat-sky ezdb-anim" style={{ animation: 'ezdb-rise 0.6s 0.26s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6B6B64', marginBottom: '8px' }}>Progres</div>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-warm)', marginBottom: '8px' }}>Progres</div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>{total ? Math.round((cair / total) * 100) : 0}%</div>
         </div>
       </div>

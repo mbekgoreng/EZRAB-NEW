@@ -316,7 +316,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
 
         {/* Legend */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexGrow: 1 }}>
-          <div style={{ fontSize: '10.5px', fontWeight: 700, color: '#334155', marginBottom: '2px' }}>
+          <div style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-body)', marginBottom: '2px' }}>
             Progress Estimasi
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>
@@ -324,7 +324,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#10B981' }} />
               Item selesai
             </span>
-            <span style={{ fontWeight: 700, color: '#334155' }}>{completedItemsCount ?? '—'}</span>
+            <span style={{ fontWeight: 700, color: 'var(--ez-color-text-body)' }}>{completedItemsCount ?? '—'}</span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>
@@ -332,7 +332,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#F59E0B' }} />
               Dalam proses
             </span>
-            <span style={{ fontWeight: 700, color: '#334155' }}>{inProgressItemsCount ?? '—'}</span>
+            <span style={{ fontWeight: 700, color: 'var(--ez-color-text-body)' }}>{inProgressItemsCount ?? '—'}</span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>
@@ -340,7 +340,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#3B82F6' }} />
               Belum dihitung
             </span>
-            <span style={{ fontWeight: 700, color: '#334155' }}>{pendingItemsCount ?? '—'}</span>
+            <span style={{ fontWeight: 700, color: 'var(--ez-color-text-body)' }}>{pendingItemsCount ?? '—'}</span>
           </div>
         </div>
       </div>

@@ -34,7 +34,7 @@
 
 .ded-root {
   font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #0F172A;
+  color: var(--ez-color-text-primary);
   background-color: var(--ez-color-surface-secondary);
   background-image: 
     radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 45%),
@@ -224,7 +224,7 @@
 
 .ded-btn-secondary {
   background: var(--ez-color-surface);
-  color: #334155;
+  color: var(--ez-color-text-body);
   font-weight: 650;
   font-size: 12px;
   padding: 9px 16px;
@@ -241,7 +241,7 @@
 .ded-btn-secondary:hover {
   background: var(--ez-color-surface-secondary);
   border-color: var(--ez-color-border-strong);
-  color: #0F172A;
+  color: var(--ez-color-text-primary);
   transform: translateY(-1px);
 }
 
@@ -266,7 +266,7 @@
 /* Status Badges */
 .ded-badge-ready {
   background: var(--ez-hue-green-bg-deep);
-  color: #15803D;
+  color: var(--ez-hue-green-text);
   border: 1px solid #86EFAC;
   font-size: 10.5px;
   font-weight: 700;
@@ -279,7 +279,7 @@
 
 .ded-badge-review {
   background: var(--ez-hue-amber-bg-deep);
-  color: #B45309;
+  color: var(--ez-hue-amber-text);
   border: 1px solid #FCD34D;
   font-size: 10.5px;
   font-weight: 700;
@@ -307,7 +307,7 @@
 }
 
 .ded-tab:hover {
-  color: #0F172A;
+  color: var(--ez-color-text-primary);
   background: var(--ez-color-surface-tertiary);
 }
 
@@ -374,6 +374,6 @@
   border-radius: 8px;
   font-size: 11px;
   font-weight: 600;
-  color: #475569;
+  color: var(--ez-color-text-slate);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
