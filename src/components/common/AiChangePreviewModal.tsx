@@ -532,7 +532,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                             onClick={() => setExpandedRecordId(isExpanded ? null : rec.id)}
                             style={{
                               borderBottom: '1px solid var(--ez-color-surface-tertiary)',
-                              background: isExpanded ? 'var(--ez-hue-blue-bg)' : rIdx % 2 === 0 ? '#FFFFFF' : 'var(--ez-color-surface-faint)',
+                              background: isExpanded ? 'var(--ez-hue-blue-bg)' : rIdx % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-faint)',
                               cursor: 'pointer',
                               transition: 'background 0.1s',
                             }}

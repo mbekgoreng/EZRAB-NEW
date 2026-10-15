@@ -1165,7 +1165,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                     key={item.id}
                     style={{
                       borderBottom: '1px solid var(--ez-color-surface-tertiary)',
-                      backgroundColor: idx % 2 === 0 ? '#FFFFFF' : '#FBFCFE',
+                      backgroundColor: idx % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface)',
                       opacity: isApproved ? 1 : 0.6,
                       transition: 'background-color 100ms ease',
                     }}

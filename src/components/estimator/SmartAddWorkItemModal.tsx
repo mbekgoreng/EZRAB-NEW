@@ -674,7 +674,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   padding: '5px 12px',
                   borderRadius: '6px',
                   border: 'none',
-                  background: isActive ? '#FFFFFF' : 'transparent',
+                  background: isActive ? 'var(--ez-color-surface)' : 'transparent',
                   color: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                   fontSize: '11.5px',
                   fontWeight: isActive ? 750 : 550,

@@ -491,7 +491,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                       padding: '8px 10px',
                       borderRadius: '8px',
                       border: exportFormat === id ? '2px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
-                      background: exportFormat === id ? '#FFFFFF' : 'var(--ez-color-surface-secondary)',
+                      background: exportFormat === id ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)',
                       color: exportFormat === id ? 'var(--ez-color-primary)' : 'var(--ez-color-text-slate)',
                       cursor: 'pointer',
                       display: 'flex',

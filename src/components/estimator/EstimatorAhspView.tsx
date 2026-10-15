@@ -179,7 +179,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                     alignItems: "center",
                     justifyContent: "space-between",
                     cursor: "pointer",
-                    background: isExpanded ? "var(--ez-hue-slate-bg)" : "#FFFFFF",
+                    background: isExpanded ? "var(--ez-hue-slate-bg)" : "var(--ez-color-surface)",
                     borderBottom: isExpanded ? "1px solid var(--ez-color-border-line)" : "none",
                   }}
                 >

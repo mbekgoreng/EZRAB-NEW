@@ -204,7 +204,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               transition: 'all 0.15s ease',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface)')}
           >
             <FolderOpen size={14} color="#64748B" />
             <span>Ganti Proyek</span>
@@ -229,7 +229,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               transition: 'all 0.15s ease',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface)')}
           >
             <Database size={14} color="#64748B" />
             <span>Import AHSP</span>
@@ -254,7 +254,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               transition: 'all 0.15s ease',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface)')}
           >
             <Upload size={14} color="#64748B" />
             <span>Import Excel</span>
@@ -280,7 +280,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               transition: 'all 0.15s ease',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface)')}
           >
             <GitBranch size={14} color="var(--ez-hue-blue-text)" />
             <span>Versi & Skenario</span>
@@ -342,7 +342,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               transition: 'all 0.15s ease',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface)')}
           >
             <MoreHorizontal size={16} />
           </button>

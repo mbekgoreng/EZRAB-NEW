@@ -2621,7 +2621,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                           style={{
                             width: '100%',
                             height: '32px',
-                            background: isFocused ? '#ffffff' : 'var(--ez-color-surface-secondary)',
+                            background: isFocused ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)',
                             border: '1px solid var(--ez-hue-slate-border)',
                             borderRadius: '5px',
                             padding: '0 8px',

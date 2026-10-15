@@ -1066,7 +1066,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                                 onClick={() => setSelectedQtoId(item.id)}
                                 style={{
                                   borderBottom: '1px solid #EEF1F6',
-                                  background: isSelected ? 'var(--ez-hue-blue-bg)' : itemIdx % 2 === 0 ? '#ffffff' : 'var(--ez-color-surface-faint)',
+                                  background: isSelected ? 'var(--ez-hue-blue-bg)' : itemIdx % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-faint)',
                                   cursor: 'pointer',
                                   transition: 'background 0.1s ease',
                                 }}

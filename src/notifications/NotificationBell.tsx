@@ -243,7 +243,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                     borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                     display: 'flex',
                     gap: '12px',
-                    background: item.read ? '#FFFFFF' : 'var(--ez-color-surface-secondary)',
+                    background: item.read ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)',
                     transition: 'background 0.15s ease',
                     cursor: 'pointer',
                   }}

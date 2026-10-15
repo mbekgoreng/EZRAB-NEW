@@ -718,7 +718,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 fontWeight: 700,
                 cursor: 'pointer',
                 border: 'none',
-                background: scope === 'PROJECT' ? '#FFFFFF' : 'transparent',
+                background: scope === 'PROJECT' ? 'var(--ez-color-surface)' : 'transparent',
                 color: scope === 'PROJECT' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                 boxShadow: scope === 'PROJECT' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
                 display: 'flex',

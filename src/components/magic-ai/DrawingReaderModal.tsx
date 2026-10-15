@@ -802,7 +802,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                             key={item.id}
                             style={{
                               borderBottom: '1px solid var(--ez-color-surface-tertiary)',
-                              backgroundColor: selectedDrafts[item.id] ? '#FFFFFF' : 'var(--ez-color-surface-secondary)',
+                              backgroundColor: selectedDrafts[item.id] ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)',
                               opacity: selectedDrafts[item.id] ? 1 : 0.6,
                             }}
                           >

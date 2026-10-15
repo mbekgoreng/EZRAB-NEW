@@ -290,7 +290,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
             if (activeFiltersCount === 0) e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
           }}
           onMouseLeave={(e) => {
-            if (activeFiltersCount === 0) e.currentTarget.style.background = '#FFFFFF';
+            if (activeFiltersCount === 0) e.currentTarget.style.background = 'var(--ez-color-surface)';
           }}
         >
           <Filter size={13} color={activeFiltersCount > 0 ? '#2563EB' : '#64748B'} />
@@ -335,7 +335,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               if (isGrouped) e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
             }}
             onMouseLeave={(e) => {
-              if (isGrouped) e.currentTarget.style.background = '#FFFFFF';
+              if (isGrouped) e.currentTarget.style.background = 'var(--ez-color-surface)';
             }}
           >
             <Layers size={13} color={!isGrouped ? '#2563EB' : '#64748B'} />
@@ -364,7 +364,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
             if (!activeSortLabel) e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
           }}
           onMouseLeave={(e) => {
-            if (!activeSortLabel) e.currentTarget.style.background = '#FFFFFF';
+            if (!activeSortLabel) e.currentTarget.style.background = 'var(--ez-color-surface)';
           }}
         >
           <ArrowUpDown size={13} color={activeSortLabel ? '#2563EB' : '#64748B'} />
@@ -389,7 +389,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
             cursor: 'pointer',
           }}
           onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface)')}
         >
           <Columns3 size={13} color="#64748B" />
           <span>Kolom</span>
@@ -408,7 +408,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               width: '34px',
               borderRadius: '6px',
               border: '1px solid var(--ez-hue-slate-border)',
-              background: canUndo ? '#FFFFFF' : 'var(--ez-color-surface-secondary)',
+              background: canUndo ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)',
               color: canUndo ? 'var(--ez-color-text-strong)' : '#94A3B8',
               display: 'flex',
               alignItems: 'center',
@@ -420,7 +420,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               if (canUndo) e.currentTarget.style.background = 'var(--ez-hue-blue-bg)';
             }}
             onMouseLeave={(e) => {
-              if (canUndo) e.currentTarget.style.background = '#FFFFFF';
+              if (canUndo) e.currentTarget.style.background = 'var(--ez-color-surface)';
             }}
           >
             <Undo2 size={14} />
@@ -435,7 +435,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               width: '34px',
               borderRadius: '6px',
               border: '1px solid var(--ez-hue-slate-border)',
-              background: canRedo ? '#FFFFFF' : 'var(--ez-color-surface-secondary)',
+              background: canRedo ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)',
               color: canRedo ? 'var(--ez-color-text-strong)' : '#94A3B8',
               display: 'flex',
               alignItems: 'center',
@@ -447,7 +447,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
               if (canRedo) e.currentTarget.style.background = 'var(--ez-hue-blue-bg)';
             }}
             onMouseLeave={(e) => {
-              if (canRedo) e.currentTarget.style.background = '#FFFFFF';
+              if (canRedo) e.currentTarget.style.background = 'var(--ez-color-surface)';
             }}
           >
             <Redo2 size={14} />
@@ -751,7 +751,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
             onMouseLeave={(e) => {
-              if (!isMoreMenuOpen) e.currentTarget.style.background = '#FFFFFF';
+              if (!isMoreMenuOpen) e.currentTarget.style.background = 'var(--ez-color-surface)';
             }}
           >
             <MoreHorizontal size={15} />
