@@ -1689,7 +1689,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
               onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = '#D1D5DB';
                 e.currentTarget.style.color = '#1F2937';
-                e.currentTarget.style.backgroundColor = '#FFFFFF';
+                e.currentTarget.style.backgroundColor = 'var(--ez-color-surface)';
               }}
             >
               <Plus size={16} color="var(--ez-hue-blue-text)" />
@@ -2676,7 +2676,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                           cursor: 'pointer',
                         }}
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FFFFFF')}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-surface)')}
                       >
                         <Square size={10} fill="#64748B" />
                         <span>Berhenti</span>

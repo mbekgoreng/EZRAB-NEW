@@ -1,43 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import {
-  X,
-  Download,
-  FileSpreadsheet,
-  FileText,
-  CheckCircle2,
-  Layers,
-  ChevronRight,
-  ChevronDown,
-  Info,
-  ShieldCheck,
-  Building,
-  Calendar,
-  Sparkles,
-  Sliders,
-  Check,
-  Eye,
-  AlertTriangle,
-  FolderArchive,
-  ArrowRight,
-} from 'lucide-react';
-import { Project, Company } from '../../types';
-import {
-  ExportPresetId,
-  ExportSheetKey,
-  ExportFormat,
-  ExportAudience,
-  ExportPackageOptions,
-  ALL_EXPORT_SHEETS,
-  EXPORT_PRESETS,
-} from '../../export/types';
-import { exportRABToProfessionalExcel } from '../../export/excelExportEngine';
-import { exportProjectToPDF } from '../../export/pdfExporter';
-import { generateExportFileName } from '../../export/exportDesignSystem';
-import { brandingClient, WorkspaceBranding } from '../../services/brandingClient';
-import { CompanyBrandingModal } from '../branding/CompanyBrandingModal';
-
-interface ExportProjectPackageModalProps {
-  isOpen: boolean;
+isOpen: boolean;
   onClose: () => void;
   currentProject: Project;
   company?: Company;
@@ -491,7 +452,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                       padding: '8px 10px',
                       borderRadius: '8px',
                       border: exportFormat === id ? '2px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
-                      background: exportFormat === id ? '#FFFFFF' : 'var(--ez-color-surface-secondary)',
+                      background: exportFormat === id ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)',
                       color: exportFormat === id ? 'var(--ez-color-primary)' : 'var(--ez-color-text-slate)',
                       cursor: 'pointer',
                       display: 'flex',

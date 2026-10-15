@@ -1,21 +1,4 @@
-import React, { useState, useMemo } from "react";
-import {
-  Search,
-  Calculator,
-  Layers,
-  ChevronDown,
-  ChevronRight,
-  ExternalLink,
-  ShieldCheck,
-  Filter,
-} from "lucide-react";
-import { Project, RabItem } from "../../types";
-import { formatCurrencyIDR, formatNumberID } from "../../calculations/decimalEngine";
-import { ALL_OFFICIAL_AHSP_ITEMS } from "../../data/nationalCostDatabase/masterRegistry";
-import { priceResolver2026 } from "../../data/priceDatabase2026/resolver";
-
-interface EstimatorAhspViewProps {
-  currentProject: Project | null;
+currentProject: Project | null;
   items: RabItem[];
   onOpenInspector?: (item: RabItem) => void;
 }
@@ -179,7 +162,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                     alignItems: "center",
                     justifyContent: "space-between",
                     cursor: "pointer",
-                    background: isExpanded ? "var(--ez-hue-slate-bg)" : "#FFFFFF",
+                    background: isExpanded ? "var(--ez-hue-slate-bg)" : "var(--ez-color-surface)",
                     borderBottom: isExpanded ? "1px solid var(--ez-color-border-line)" : "none",
                   }}
                 >

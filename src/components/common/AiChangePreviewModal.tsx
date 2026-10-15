@@ -1,39 +1,4 @@
-import React, { useState } from 'react';
-import {
-  Sparkles,
-  ShieldAlert,
-  ShieldCheck,
-  AlertTriangle,
-  ArrowRight,
-  Check,
-  X,
-  Sliders,
-  Search,
-  Layers,
-  FileSpreadsheet,
-  Building2,
-  Database,
-  TrendingUp,
-  TrendingDown,
-  Info,
-  CheckCircle2,
-  Trash2,
-  PlusCircle,
-  RefreshCw,
-  Edit3,
-  ExternalLink,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react';
-import {
-  AiChangeProposalData,
-  AiChangeActionType,
-  AiChangeAffectedRecord,
-} from '../../types';
-import { formatCurrencyIDR } from '../../calculations/decimalEngine';
-
-interface AiChangePreviewModalProps {
-  isOpen: boolean;
+isOpen: boolean;
   onClose: () => void;
   proposal: AiChangeProposalData | null;
   onApply: (proposal: AiChangeProposalData) => void;
@@ -532,7 +497,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                             onClick={() => setExpandedRecordId(isExpanded ? null : rec.id)}
                             style={{
                               borderBottom: '1px solid var(--ez-color-surface-tertiary)',
-                              background: isExpanded ? 'var(--ez-hue-blue-bg)' : rIdx % 2 === 0 ? '#FFFFFF' : 'var(--ez-color-surface-faint)',
+                              background: isExpanded ? 'var(--ez-hue-blue-bg)' : rIdx % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-faint)',
                               cursor: 'pointer',
                               transition: 'background 0.1s',
                             }}

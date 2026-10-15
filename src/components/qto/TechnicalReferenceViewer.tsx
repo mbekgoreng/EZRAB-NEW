@@ -1,28 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
-  Minimize2,
-  RotateCcw,
-  Compass,
-  FileImage,
-  Layers,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
-  Info,
-  CheckCircle2,
-  SlidersHorizontal,
-} from 'lucide-react';
-import {
-  WorkTechnicalReference,
-  TechnicalReferenceImage,
-  getWorkTechnicalReference,
-} from '../../data/volumeTechnicalReferences';
-
-interface TechnicalReferenceViewerProps {
-  workId: string;
+workId: string;
   categoryName?: string;
   workName?: string;
   renderCadDiagram?: () => React.ReactNode;
@@ -248,7 +224,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                   borderRadius: '6px',
                   border: 'none',
                   cursor: 'pointer',
-                  background: viewMode === 'reference_image' ? '#ffffff' : 'transparent',
+                  background: viewMode === 'reference_image' ? 'var(--ez-color-surface)' : 'transparent',
                   color: viewMode === 'reference_image' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                   boxShadow: viewMode === 'reference_image' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
                   transition: 'all 0.15s ease',
@@ -269,7 +245,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                   borderRadius: '6px',
                   border: 'none',
                   cursor: 'pointer',
-                  background: viewMode === 'cad_vector' ? '#ffffff' : 'transparent',
+                  background: viewMode === 'cad_vector' ? 'var(--ez-color-surface)' : 'transparent',
                   color: viewMode === 'cad_vector' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                   boxShadow: viewMode === 'cad_vector' ? '0 1px 4px rgba(0,0,0,0.06)' : 'none',
                   transition: 'all 0.15s ease',

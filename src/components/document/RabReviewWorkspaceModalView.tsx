@@ -1501,7 +1501,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                     transition: 'all 120ms ease',
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-hue-indigo-bg-soft)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FFFFFF')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-surface)')}
                 >
                   <div>
                     <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--ez-hue-indigo-text)', display: 'block' }}>{ahsp.code}</span>

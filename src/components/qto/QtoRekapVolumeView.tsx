@@ -1,48 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import {
-  Ruler,
-  Plus,
-  FileSpreadsheet,
-  Download,
-  Filter,
-  Check,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  Layers,
-  Search,
-  ChevronDown,
-  ChevronRight,
-  Sliders,
-  Eye,
-  Edit3,
-  Trash2,
-  ExternalLink,
-  Sparkles,
-  Maximize2,
-  ZoomIn,
-  ZoomOut,
-  X,
-  Printer,
-  FileText,
-  Copy,
-  FolderPlus,
-  Box,
-  HardHat,
-  Compass,
-  ArrowRight,
-  Share2,
-  MoreVertical,
-} from 'lucide-react';
-import { useProject } from '../../context/ProjectContext';
-import { CONSTRUCTION_CALCULATORS, getCalculatorById } from '../../engine/constructionCalculators/registry';
-import { QTOItem } from '../../types';
-import { formatNumberId, formatRupiah } from '../../engine/formulaEngine';
-import bowplankImg from '../../assets/bowplank-technical.jpg';
-
-interface QtoRekapVolumeViewProps {
-  onNavigateToCalculator?: (calcId?: string, qtoId?: string) => void;
-  onNavigateToTab?: (tab: string) => void;
+tab: string) => void;
 }
 
 export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
@@ -1066,7 +1022,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                                 onClick={() => setSelectedQtoId(item.id)}
                                 style={{
                                   borderBottom: '1px solid #EEF1F6',
-                                  background: isSelected ? 'var(--ez-hue-blue-bg)' : itemIdx % 2 === 0 ? '#ffffff' : 'var(--ez-color-surface-faint)',
+                                  background: isSelected ? 'var(--ez-hue-blue-bg)' : itemIdx % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-faint)',
                                   cursor: 'pointer',
                                   transition: 'background 0.1s ease',
                                 }}
