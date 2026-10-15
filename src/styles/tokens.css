@@ -210,3 +210,15 @@ img, svg {
   box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(12px);
 }
+
+/* Dark mode overrides untuk variabel --ezrab-* */
+[data-theme="dark"] {
+  --ezrab-bg: #0B1220;
+  --ezrab-surface: #1A2438;
+  --ezrab-card-bg: #1A2438;
+  --ezrab-card-border: #26334A;
+  --ezrab-text: #E6ECF5;
+  --ezrab-text-secondary: #9AA8BF;
+  --ezrab-text-muted: #8A99B0;
+  --ezrab-text-inverse: #0B1220;
+}
