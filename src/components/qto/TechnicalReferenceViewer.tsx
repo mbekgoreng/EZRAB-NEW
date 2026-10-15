@@ -151,7 +151,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
         style={{
           padding: '14px 20px',
           borderBottom: '1px solid var(--ez-color-surface-tertiary)',
-          background: 'linear-gradient(180deg, #FFFFFF 0%, var(--ez-hue-slate-bg) 100%)',
+          background: 'linear-gradient(180deg, var(--ez-color-surface) 0%, var(--ez-hue-slate-bg) 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',

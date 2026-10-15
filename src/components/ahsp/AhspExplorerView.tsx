@@ -390,9 +390,9 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               style={{
                 fontSize: '11px',
                 fontWeight: 600,
-                background: '#F4F6FA',
-                color: '#475569',
-                border: '1px solid #EDF1F7',
+                background: 'var(--ez-hue-slate-bg)',
+                color: 'var(--ez-color-text-muted)',
+                border: '1px solid var(--ez-color-border-soft)',
                 padding: '4px 10px',
                 borderRadius: 'var(--ez-radius-pill)',
               }}
@@ -531,7 +531,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               fontSize: '11px',
               padding: '2px 8px',
               borderRadius: 'var(--ez-radius-pill)',
-              background: selectedDomain === 'ALL' ? '#C7DDF8' : '#F4F6FA',
+              background: selectedDomain === 'ALL' ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-hue-slate-bg)',
               color: selectedDomain === 'ALL' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
               fontWeight: 700,
             }}
@@ -567,7 +567,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               fontSize: '11px',
               padding: '2px 8px',
               borderRadius: 'var(--ez-radius-pill)',
-              background: selectedDomain === 'CIPTA_KARYA' ? '#C7DDF8' : '#F4F6FA',
+              background: selectedDomain === 'CIPTA_KARYA' ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-hue-slate-bg)',
               color: selectedDomain === 'CIPTA_KARYA' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
               fontWeight: 700,
             }}
@@ -603,7 +603,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               fontSize: '11px',
               padding: '2px 8px',
               borderRadius: 'var(--ez-radius-pill)',
-              background: selectedDomain === 'BINA_MARGA' ? '#C7DDF8' : '#F4F6FA',
+              background: selectedDomain === 'BINA_MARGA' ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-hue-slate-bg)',
               color: selectedDomain === 'BINA_MARGA' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
               fontWeight: 700,
             }}
@@ -639,7 +639,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               fontSize: '11px',
               padding: '2px 8px',
               borderRadius: 'var(--ez-radius-pill)',
-              background: selectedDomain === 'SUMBER_DAYA_AIR' ? '#C7DDF8' : '#F4F6FA',
+              background: selectedDomain === 'SUMBER_DAYA_AIR' ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-hue-slate-bg)',
               color: selectedDomain === 'SUMBER_DAYA_AIR' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
               fontWeight: 700,
             }}
@@ -675,7 +675,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               fontSize: '11px',
               padding: '2px 8px',
               borderRadius: 'var(--ez-radius-pill)',
-              background: selectedDomain === 'SMKK' ? '#C7DDF8' : '#F4F6FA',
+              background: selectedDomain === 'SMKK' ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-hue-slate-bg)',
               color: selectedDomain === 'SMKK' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
               fontWeight: 700,
             }}
@@ -723,7 +723,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               fontSize: '10.5px',
               padding: '1px 6px',
               borderRadius: 'var(--ez-radius-pill)',
-              background: selectedCategory === 'ALL' ? '#C7DDF8' : 'var(--ez-color-surface-tertiary)',
+              background: selectedCategory === 'ALL' ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
               color: selectedCategory === 'ALL' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
             }}
           >
@@ -759,7 +759,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                 fontSize: '10.5px',
                 padding: '1px 6px',
                 borderRadius: 'var(--ez-radius-pill)',
-                background: selectedCategory === cat.name ? '#C7DDF8' : 'var(--ez-color-surface-tertiary)',
+                background: selectedCategory === cat.name ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
                 color: selectedCategory === cat.name ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                 fontWeight: 700,
               }}
@@ -1133,7 +1133,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                       </span>
                     )}
                     {pricingStatus === 'MISSING' && (
-                      <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: '#F4F6FA', color: 'var(--ez-color-text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-slate-bg)', color: 'var(--ez-color-text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                         — Harga belum tersedia
                       </span>
                     )}
@@ -1144,8 +1144,8 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',
-                      background: '#F4F6FA',
-                      border: '1px solid #EDF1F7',
+                      background: 'var(--ez-hue-slate-bg)',
+                      border: '1px solid var(--ez-color-border-soft)',
                       borderRadius: 'var(--ez-radius-control)',
                       padding: '8px 10px',
                       fontSize: '11px',
@@ -1410,11 +1410,11 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             <div
               style={{
                 padding: '20px 24px',
-                borderBottom: '1px solid #EDF1F7',
+                borderBottom: '1px solid var(--ez-color-border-soft)',
                 display: 'flex',
                 alignItems: 'flex-start',
                 justifyContent: 'space-between',
-                background: '#F9FBFD',
+                background: 'var(--ez-hue-slate-bg)',
               }}
             >
               <div>
@@ -1422,7 +1422,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   <span style={{ fontSize: '12px', fontWeight: 800, color: '#2456A8', background: 'var(--ez-pastel-sky)', border: '1px solid #E3EEFB', padding: '3px 10px', borderRadius: 'var(--ez-radius-pill)' }}>
                     {selectedAhsp.code}
                   </span>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', background: '#F4F6FA', border: '1px solid #EDF1F7', padding: '3px 10px', borderRadius: 'var(--ez-radius-pill)' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', background: 'var(--ez-hue-slate-bg)', border: '1px solid var(--ez-color-border-soft)', padding: '3px 10px', borderRadius: 'var(--ez-radius-pill)' }}>
                     {domainShortLabel(selectedAhsp.domain)}
                   </span>
                   <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
@@ -1461,7 +1461,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                 </div>
               )}
               {selectedAhspComposition?.pricingStatus === 'MISSING' && (
-                <div style={{ background: '#F4F6FA', border: '1px solid #EDF1F7', color: '#475569', padding: '10px 14px', borderRadius: 'var(--ez-radius-card)', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ background: 'var(--ez-hue-slate-bg)', border: '1px solid var(--ez-color-border-soft)', color: '#475569', padding: '10px 14px', borderRadius: 'var(--ez-radius-card)', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Info size={15} style={{ flexShrink: 0 }} />
                   <span><strong>Harga Belum Tersedia:</strong> Belum ada data harga satuan untuk komponen pada analisa ini di database standar 2026. Anda dapat menyesuaikan harga secara manual setelah menambahkan ke proyek.</span>
                 </div>
@@ -1469,7 +1469,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
 
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
                 <thead>
-                  <tr style={{ background: '#F4F6FA', borderBottom: '1.5px solid var(--ez-color-border-line)', color: '#475569', fontWeight: 700 }}>
+                  <tr style={{ background: 'var(--ez-hue-slate-bg)', borderBottom: '1.5px solid var(--ez-color-border-line)', color: '#475569', fontWeight: 700 }}>
                     <th style={{ padding: '10px', textAlign: 'left' }}>Uraian Sumber Daya</th>
                     <th style={{ padding: '10px', textAlign: 'center', width: '80px' }}>Tipe</th>
                     <th style={{ padding: '10px', textAlign: 'right', width: '90px' }}>Koefisien</th>
@@ -1579,7 +1579,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   )}
 
                   {/* Subtotals & Grand Total */}
-                  <tr style={{ fontWeight: 700, background: '#F4F6FA', borderTop: '2px solid var(--ez-color-border-line)' }}>
+                  <tr style={{ fontWeight: 700, background: 'var(--ez-hue-slate-bg)', borderTop: '2px solid var(--ez-color-border-line)' }}>
                     <td colSpan={5} style={{ padding: '10px', textAlign: 'right', fontSize: '12.5px', color: '#475569' }}>
                       Jumlah Biaya Langsung (D = A + B + C):
                     </td>
@@ -1601,7 +1601,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                     </tr>
                   ) : null}
 
-                  <tr style={{ fontWeight: 800, background: 'var(--ez-pastel-sky)', borderTop: '1.5px solid #C7DDF8' }}>
+                  <tr style={{ fontWeight: 800, background: 'var(--ez-pastel-sky)', borderTop: '1.5px solid var(--ez-hue-blue-bg-deep)' }}>
                     <td colSpan={5} style={{ padding: '12px 10px', textAlign: 'right', fontSize: '13.5px', color: '#2456A8' }}>
                       Harga Satuan Pekerjaan (F = D + E):
                     </td>
@@ -1633,10 +1633,10 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                 style={{
                   fontSize: '12px',
                   color: '#334155',
-                  background: '#F4F6FA',
+                  background: 'var(--ez-hue-slate-bg)',
                   padding: '14px 16px',
                   borderRadius: 'var(--ez-radius-card)',
-                  border: '1px solid #EDF1F7',
+                  border: '1px solid var(--ez-color-border-soft)',
                   lineHeight: 1.6,
                 }}
               >
@@ -1658,8 +1658,8 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             <div
               style={{
                 padding: '16px 24px',
-                borderTop: '1px solid #EDF1F7',
-                background: '#F9FBFD',
+                borderTop: '1px solid var(--ez-color-border-soft)',
+                background: 'var(--ez-hue-slate-bg)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -1803,7 +1803,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             </div>
 
             {/* Selected item card summary */}
-            <div style={{ background: '#F4F6FA', border: '1px solid #EDF1F7', borderRadius: 'var(--ez-radius-card)', padding: '12px 14px' }}>
+            <div style={{ background: 'var(--ez-hue-slate-bg)', border: '1px solid var(--ez-color-border-soft)', borderRadius: 'var(--ez-radius-card)', padding: '12px 14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                 <span style={{ fontSize: '11px', fontWeight: 800, color: '#2456A8', background: 'var(--ez-pastel-sky)', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)' }}>
                   {addToRabModalItem.code}

@@ -693,7 +693,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 fontWeight: 700,
                 cursor: 'pointer',
                 border: 'none',
-                background: scope === 'GLOBAL' ? '#FFFFFF' : 'transparent',
+                background: scope === 'GLOBAL' ? 'var(--ez-color-surface)' : 'transparent',
                 color: scope === 'GLOBAL' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                 boxShadow: scope === 'GLOBAL' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
                 display: 'flex',
