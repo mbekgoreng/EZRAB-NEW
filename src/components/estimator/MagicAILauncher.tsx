@@ -33,7 +33,7 @@ export const MagicAILauncher: React.FC<MagicAILauncherProps> = ({ onClick, isOpe
         padding: '0 16px 0 6px',
         borderRadius: 'var(--ez-radius-pill)',
         background: 'var(--ez-color-surface)',
-        border: '1px solid #DBEAFE',
+        border: '1px solid var(--ez-hue-blue-bg-deep)',
         boxShadow: '0 10px 25px -3px rgba(37, 99, 235, 0.25), 0 4px 6px -2px rgba(37, 99, 235, 0.1)',
         display: 'flex',
         alignItems: 'center',
@@ -78,10 +78,10 @@ export const MagicAILauncher: React.FC<MagicAILauncherProps> = ({ onClick, isOpe
           fontSize: '11px',
           fontWeight: 700,
           color: 'var(--ez-color-text-muted)',
-          background: '#F1F5F9',
+          background: 'var(--ez-color-surface-tertiary)',
           padding: '2px 7px',
           borderRadius: '6px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
         }}
       >
         ⌘ J

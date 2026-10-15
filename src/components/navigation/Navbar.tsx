@@ -217,7 +217,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               padding: '10px 22px',
               borderRadius: '9999px',
               background: 'var(--ezrab-blue)',
-              color: '#ffffff',
+              color: '#FFFFFF',
               border: 'none',
               fontSize: '14px',
               fontWeight: 600,

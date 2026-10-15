@@ -130,7 +130,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
       style={{
         background: 'var(--ez-color-surface)',
         borderRadius: '16px',
-        border: '1px solid #E2E8F0',
+        border: '1px solid var(--ez-color-border-line)',
         boxShadow: '0 4px 16px rgba(15, 23, 42, 0.04)',
         display: 'flex',
         flexDirection: 'column',
@@ -150,8 +150,8 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
       <div
         style={{
           padding: '14px 20px',
-          borderBottom: '1px solid #F1F5F9',
-          background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
+          borderBottom: '1px solid var(--ez-color-surface-tertiary)',
+          background: 'linear-gradient(180deg, #FFFFFF 0%, var(--ez-hue-slate-bg) 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -166,8 +166,8 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
               width: '36px',
               height: '36px',
               borderRadius: '10px',
-              background: '#EFF6FF',
-              border: '1px solid #DBEAFE',
+              background: 'var(--ez-hue-blue-bg)',
+              border: '1px solid var(--ez-hue-blue-bg-deep)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -186,7 +186,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                   fontWeight: 800,
                   letterSpacing: '0.06em',
                   color: 'var(--ez-color-primary)',
-                  background: '#EFF6FF',
+                  background: 'var(--ez-hue-blue-bg)',
                   padding: '2px 8px',
                   borderRadius: '5px',
                   textTransform: 'uppercase',
@@ -202,8 +202,8 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                   style={{
                     fontSize: '11px',
                     color: '#059669',
-                    background: '#ECFDF5',
-                    border: '1px solid #A7F3D0',
+                    background: 'var(--ez-hue-emerald-bg)',
+                    border: '1px solid var(--ez-hue-green-border-deep)',
                     padding: '2px 8px',
                     borderRadius: '5px',
                     fontWeight: 700,
@@ -233,7 +233,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                background: '#F1F5F9',
+                background: 'var(--ez-color-surface-tertiary)',
                 padding: '3px',
                 borderRadius: '8px',
                 marginRight: '6px',
@@ -291,7 +291,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
               alignItems: 'center',
               gap: '4px',
               background: 'var(--ez-color-surface-secondary)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               borderRadius: '8px',
               padding: '2px 4px',
             }}
@@ -354,7 +354,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                 alignItems: 'center',
                 justifyContent: 'center',
                 background: 'var(--ez-color-surface)',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 borderRadius: '5px',
                 fontSize: '11px',
                 fontWeight: 700,
@@ -374,7 +374,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                 alignItems: 'center',
                 justifyContent: 'center',
                 background: 'var(--ez-color-surface)',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 borderRadius: '5px',
                 color: '#475569',
                 cursor: 'pointer',
@@ -394,9 +394,9 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              background: isFullscreen ? '#0F172A' : '#EFF6FF',
+              background: isFullscreen ? '#0F172A' : 'var(--ez-hue-blue-bg)',
               color: isFullscreen ? '#ffffff' : 'var(--ez-color-primary)',
-              border: isFullscreen ? 'none' : '1px solid #BFDBFE',
+              border: isFullscreen ? 'none' : '1px solid var(--ez-hue-blue-border)',
               borderRadius: '8px',
               fontSize: '12px',
               fontWeight: 700,
@@ -571,7 +571,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
               TECHNICAL REFERENCE
             </span>
 
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', margin: '0 0 8px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#FFFFFF', margin: '0 0 8px' }}>
               Referensi gambar belum tersedia untuk pekerjaan ini.
             </h3>
 
@@ -587,7 +587,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                   padding: '8px 16px',
                   borderRadius: '8px',
                   background: 'var(--ez-color-primary)',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   fontSize: '12px',
                   fontWeight: 700,
                   border: 'none',
@@ -610,7 +610,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
         <div
           style={{
             padding: '10px 18px',
-            borderTop: '1px solid #F1F5F9',
+            borderTop: '1px solid var(--ez-color-surface-tertiary)',
             background: 'var(--ez-color-surface-secondary)',
             display: 'flex',
             alignItems: 'center',
@@ -640,8 +640,8 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                     gap: '8px',
                     padding: '4px 8px',
                     borderRadius: '8px',
-                    border: isSelected ? '2px solid #2563EB' : '1px solid #E2E8F0',
-                    background: isSelected ? '#EFF6FF' : '#ffffff',
+                    border: isSelected ? '2px solid #2563EB' : '1px solid var(--ez-color-border-line)',
+                    background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
                     boxShadow: isSelected ? '0 2px 6px rgba(37,99,235,0.2)' : 'none',
@@ -655,7 +655,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                       height: '26px',
                       objectFit: 'cover',
                       borderRadius: '4px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                     }}
                   />
                   <div style={{ textAlign: 'left' }}>

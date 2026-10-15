@@ -92,7 +92,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           label: t('dashboard.status_aktif'),
           bg: 'var(--ez-color-primary-soft)',
           color: 'var(--ez-color-primary)',
-          border: '#DBEAFE',
+          border: 'var(--ez-hue-blue-bg-deep)',
         };
       case 'completed':
       case 'approved':
@@ -101,7 +101,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           label: t('dashboard.status_selesai'),
           bg: 'var(--ez-color-success-soft)',
           color: 'var(--ez-color-success)',
-          border: '#DCFCE7',
+          border: 'var(--ez-hue-green-bg-deep)',
         };
       case 'archived':
         return {
@@ -115,7 +115,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           label: t('dashboard.status_draft'),
           bg: 'var(--ez-color-warning-soft)',
           color: 'var(--ez-color-warning)',
-          border: '#FEF3C7',
+          border: 'var(--ez-hue-amber-bg-deep)',
         };
     }
   };
@@ -225,7 +225,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 padding: '0 20px',
                 borderRadius: '12px',
                 background: 'var(--ez-color-primary)',
-                color: 'var(--ez-color-surface)',
+                color: '#FFFFFF',
                 fontSize: '13.5px',
                 fontWeight: 650,
                 border: 'none',
@@ -438,7 +438,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.borderColor = '#BFDBFE';
+              e.currentTarget.style.borderColor = 'var(--ez-hue-blue-border)';
               e.currentTarget.style.boxShadow = '0 6px 20px rgba(37, 99, 235, 0.08)';
             }}
             onMouseLeave={(e) => {
@@ -492,7 +492,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.borderColor = '#DDD6FE';
+              e.currentTarget.style.borderColor = 'var(--ez-hue-violet-border)';
               e.currentTarget.style.boxShadow = '0 6px 20px rgba(124, 58, 237, 0.08)';
             }}
             onMouseLeave={(e) => {
@@ -506,7 +506,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 width: '42px',
                 height: '42px',
                 borderRadius: '12px',
-                background: '#F5F3FF',
+                background: 'var(--ez-hue-violet-bg)',
                 color: '#7C3AED',
                 display: 'flex',
                 alignItems: 'center',
@@ -546,7 +546,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.borderColor = '#A7F3D0';
+              e.currentTarget.style.borderColor = 'var(--ez-hue-green-border-deep)';
               e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.08)';
             }}
             onMouseLeave={(e) => {
@@ -600,7 +600,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.borderColor = '#FDE68A';
+              e.currentTarget.style.borderColor = 'var(--ez-hue-amber-border)';
               e.currentTarget.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.08)';
             }}
             onMouseLeave={(e) => {
@@ -1034,7 +1034,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 borderRadius: '8px',
                 background: 'var(--ez-color-surface)',
                 color: 'var(--ez-color-primary)',
-                border: '1px solid #BFDBFE',
+                border: '1px solid var(--ez-hue-blue-border)',
                 fontSize: '12px',
                 fontWeight: 650,
                 cursor: 'pointer',

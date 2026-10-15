@@ -335,7 +335,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
           style={{
             padding: '16px 20px',
             backgroundColor: 'var(--ez-color-surface-secondary)',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -347,12 +347,12 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                 width: '38px',
                 height: '38px',
                 borderRadius: '10px',
-                backgroundColor: '#EFF6FF',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
                 color: 'var(--ez-color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '1px solid #DBEAFE',
+                border: '1px solid var(--ez-hue-blue-bg-deep)',
               }}
             >
               <Tag size={19} />
@@ -400,7 +400,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                   width: '100%',
                   padding: '9px 12px 9px 34px',
                   borderRadius: '10px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   fontSize: '12.5px',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -432,8 +432,8 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                       fontSize: '11px',
                       fontWeight: 700,
                       cursor: 'pointer',
-                      border: active ? '1px solid #2563EB' : '1px solid #E2E8F0',
-                      backgroundColor: active ? '#EFF6FF' : '#ffffff',
+                      border: active ? '1px solid #2563EB' : '1px solid var(--ez-color-border-line)',
+                      backgroundColor: active ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                       color: active ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                     }}
                   >
@@ -447,7 +447,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
             {/* Search Results List */}
             <div
               style={{
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
                 borderRadius: '10px',
                 maxHeight: '380px',
                 overflowY: 'auto',
@@ -465,7 +465,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                     onClick={() => handleSelectResourceFromPicker(item)}
                     style={{
                       padding: '10px 14px',
-                      borderBottom: '1px solid #F1F5F9',
+                      borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -485,10 +485,10 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                             borderRadius: '4px',
                             backgroundColor:
                               item.category === 'MATERIAL'
-                                ? '#EFF6FF'
+                                ? 'var(--ez-hue-blue-bg)'
                                 : item.category === 'LABOR'
-                                ? '#FEF3C7'
-                                : '#F3E8FF',
+                                ? 'var(--ez-hue-amber-bg-deep)'
+                                : 'var(--ez-hue-purple-bg-soft)',
                             color:
                               item.category === 'MATERIAL'
                                 ? 'var(--ez-color-primary-hover)'
@@ -531,7 +531,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                 style={{
                   padding: '12px 14px',
                   backgroundColor: 'var(--ez-color-surface-secondary)',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
@@ -548,10 +548,10 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                         borderRadius: '4px',
                         backgroundColor:
                           selectedResource.category === 'MATERIAL'
-                            ? '#EFF6FF'
+                            ? 'var(--ez-hue-blue-bg)'
                             : selectedResource.category === 'LABOR'
-                            ? '#FEF3C7'
-                            : '#F3E8FF',
+                            ? 'var(--ez-hue-amber-bg-deep)'
+                            : 'var(--ez-hue-purple-bg-soft)',
                         color:
                           selectedResource.category === 'MATERIAL'
                             ? 'var(--ez-color-primary-hover)'
@@ -579,7 +579,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                   style={{
                     padding: '4px 8px',
                     borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     backgroundColor: 'var(--ez-color-surface)',
                     color: 'var(--ez-color-primary)',
                     fontSize: '11px',
@@ -619,7 +619,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
               <div
                 style={{
                   padding: '12px',
-                  backgroundColor: '#EFF6FF',
+                  backgroundColor: 'var(--ez-hue-blue-bg)',
                   border: '1.5px solid #3B82F6',
                   borderRadius: '10px',
                 }}
@@ -659,11 +659,11 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                 padding: '10px 14px',
                 borderRadius: '8px',
                 border: isIdentical
-                  ? '1px solid #E2E8F0'
+                  ? '1px solid var(--ez-color-border-line)'
                   : isCheaper
-                  ? '1px solid #A7F3D0'
-                  : '1px solid #FECACA',
-                backgroundColor: isIdentical ? 'var(--ez-color-surface-secondary)' : isCheaper ? '#ECFDF5' : '#FEF2F2',
+                  ? '1px solid var(--ez-hue-green-border-deep)'
+                  : '1px solid var(--ez-hue-rose-border)',
+                backgroundColor: isIdentical ? 'var(--ez-color-surface-secondary)' : isCheaper ? 'var(--ez-hue-emerald-bg)' : 'var(--ez-hue-rose-bg)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -714,7 +714,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12px',
                     boxSizing: 'border-box',
                   }}
@@ -732,7 +732,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12px',
                     fontWeight: 600,
                     backgroundColor: 'var(--ez-color-surface)',
@@ -763,7 +763,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12px',
                     boxSizing: 'border-box',
                   }}
@@ -782,7 +782,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                     width: '100%',
                     padding: '7px 10px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12px',
                     boxSizing: 'border-box',
                   }}
@@ -797,7 +797,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
           style={{
             padding: '12px 20px',
             backgroundColor: 'var(--ez-color-surface-secondary)',
-            borderTop: '1px solid #E2E8F0',
+            borderTop: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -820,7 +820,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                     padding: '6px 12px',
                     borderRadius: '8px',
                     border: '1px solid #FCA5A5',
-                    backgroundColor: '#FEF2F2',
+                    backgroundColor: 'var(--ez-hue-rose-bg)',
                     color: '#DC2626',
                     fontSize: '11.5px',
                     fontWeight: 700,
@@ -842,7 +842,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
               style={{
                 padding: '8px 14px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 backgroundColor: 'var(--ez-color-surface)',
                 color: '#475569',
                 fontSize: '12px',
@@ -863,7 +863,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                   borderRadius: '8px',
                   border: 'none',
                   backgroundColor: !selectedResource || overridePrice <= 0 ? '#94A3B8' : 'var(--ez-color-primary)',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   fontSize: '12px',
                   fontWeight: 700,
                   cursor: !selectedResource || overridePrice <= 0 ? 'not-allowed' : 'pointer',

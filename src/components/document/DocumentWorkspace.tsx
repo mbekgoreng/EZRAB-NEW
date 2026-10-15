@@ -648,7 +648,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           background: 'var(--ez-color-surface)',
           padding: '14px 20px',
           borderRadius: 'var(--ez-radius-control)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           boxShadow: '0 1px 3px rgba(15,23,42,0.04)',
         }}
       >
@@ -656,7 +656,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           <button
             onClick={onBack}
             style={{
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               background: 'var(--ez-color-surface-secondary)',
               borderRadius: 8,
               padding: 8,
@@ -674,7 +674,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               </h2>
               <span
                 style={{
-                  background: isViewingReadOnly ? '#FEF3C7' : '#EFF6FF',
+                  background: isViewingReadOnly ? 'var(--ez-hue-amber-bg-deep)' : 'var(--ez-hue-blue-bg)',
                   color: isViewingReadOnly ? '#B45309' : 'var(--ez-color-primary)',
                   padding: '2px 8px',
                   borderRadius: 6,
@@ -700,7 +700,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           <button
             onClick={() => setShowRevisionModal(true)}
             style={{
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               background: 'var(--ez-color-surface)',
               color: '#334155',
               padding: '8px 14px',
@@ -737,8 +737,8 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             }}
             disabled={isViewingReadOnly}
             style={{
-              border: '1px solid #CBD5E1',
-              background: isViewingReadOnly ? '#F1F5F9' : '#FFFFFF',
+              border: '1px solid var(--ez-hue-slate-border)',
+              background: isViewingReadOnly ? 'var(--ez-color-surface-tertiary)' : 'var(--ez-color-surface)',
               color: isViewingReadOnly ? '#94A3B8' : '#334155',
               padding: '8px 14px',
               borderRadius: 8,
@@ -758,7 +758,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           <button
             onClick={() => setDrawerTab('personnel')}
             style={{
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               background: 'var(--ez-color-surface)',
               color: '#334155',
               padding: '8px 14px',
@@ -853,9 +853,9 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             marginBottom: 16,
             padding: '10px 16px',
             borderRadius: 8,
-            background: exportNotice.startsWith('Gagal') ? '#FEF2F2' : '#F0FDF4',
+            background: exportNotice.startsWith('Gagal') ? 'var(--ez-hue-rose-bg)' : 'var(--ez-hue-green-bg)',
             color: exportNotice.startsWith('Gagal') ? '#DC2626' : '#15803D',
-            border: `1px solid ${exportNotice.startsWith('Gagal') ? '#FECACA' : '#BBF7D0'}`,
+            border: `1px solid ${exportNotice.startsWith('Gagal') ? 'var(--ez-hue-rose-border)' : 'var(--ez-hue-green-border)'}`,
             fontSize: 13,
             fontWeight: 600,
             display: 'flex',
@@ -875,7 +875,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             marginBottom: 18,
             padding: '12px 18px',
             borderRadius: 10,
-            background: '#FFFBEB',
+            background: 'var(--ez-hue-amber-bg)',
             border: '1px solid #FCD34D',
             color: '#92400E',
             display: 'flex',
@@ -917,7 +917,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
         style={{
           display: 'flex',
           background: 'var(--ez-color-surface)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           borderRadius: 'var(--ez-radius-control)',
           padding: 6,
           marginBottom: 20,
@@ -963,8 +963,8 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
       {/* ✨ BANTU AI ASSISTANT PANEL */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #F0FDF4 0%, #EFF6FF 100%)',
-          border: '1px solid #BFDBFE',
+          background: 'linear-gradient(135deg, var(--ez-hue-green-bg) 0%, var(--ez-hue-blue-bg) 100%)',
+          border: '1px solid var(--ez-hue-blue-border)',
           borderRadius: 'var(--ez-radius-control)',
           padding: '12px 18px',
           marginBottom: 18,
@@ -1008,7 +1008,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               padding: '6px 12px',
               borderRadius: 6,
               background: 'var(--ez-color-surface)',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               color: 'var(--ez-color-primary-hover)',
               fontSize: 12,
               fontWeight: 650,
@@ -1034,7 +1034,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               padding: '6px 12px',
               borderRadius: 6,
               background: 'var(--ez-color-surface)',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               color: '#15803D',
               fontSize: 12,
               fontWeight: 650,
@@ -1219,7 +1219,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                       background: '#FDFEFE',
                       padding: '12px 14px',
                       borderRadius: 6,
-                      border: '1px solid #F1F5F9',
+                      border: '1px solid var(--ez-color-surface-tertiary)',
                     }}
                   >
                     {resolvedTemplateBody.text}
@@ -1240,7 +1240,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     <div style={{ textAlign: 'right' }}>
                       <div
                         style={{
-                          background: '#EFF6FF',
+                          background: 'var(--ez-hue-blue-bg)',
                           color: 'var(--ez-color-primary)',
                           padding: '3px 8px',
                           borderRadius: 4,
@@ -1263,7 +1263,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 <div
                   style={{
                     background: 'var(--ez-color-surface-secondary)',
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--ez-color-border-line)',
                     borderRadius: 6,
                     padding: '12px 16px',
                     marginBottom: 22,
@@ -1309,10 +1309,10 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     <tbody>
                       {definition.fields.map((f, i) => (
                         <tr key={f.id} style={{ background: i % 2 === 0 ? '#FFFFFF' : 'var(--ez-color-surface-secondary)' }}>
-                          <td style={{ padding: '5px 10px', border: '1px solid #E2E8F0', fontWeight: 600, color: '#334155' }}>
+                          <td style={{ padding: '5px 10px', border: '1px solid var(--ez-color-border-line)', fontWeight: 600, color: '#334155' }}>
                             {f.label}
                           </td>
-                          <td style={{ padding: '5px 10px', border: '1px solid #E2E8F0', color: 'var(--ez-color-text-primary)' }}>
+                          <td style={{ padding: '5px 10px', border: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-primary)' }}>
                             {String(userValues[f.id] ?? master[f.id as keyof ProjectMasterData] ?? '—')}
                           </td>
                         </tr>
@@ -1345,7 +1345,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                             {renderedDoc.tableColumns!.map((col) => {
                               const val = row[col.key];
                               return (
-                                <td key={col.key} style={{ padding: '4px 8px', border: '1px solid #E2E8F0' }}>
+                                <td key={col.key} style={{ padding: '4px 8px', border: '1px solid var(--ez-color-border-line)' }}>
                                   {typeof val === 'number' ? val.toLocaleString('id-ID') : String(val ?? '—')}
                                 </td>
                               );
@@ -1365,7 +1365,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             </div>
 
             {/* Signature Area */}
-            <div style={{ marginTop: 30, borderTop: '1px solid #E2E8F0', paddingTop: 16 }}>
+            <div style={{ marginTop: 30, borderTop: '1px solid var(--ez-color-border-line)', paddingTop: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <div style={{ width: 230, textAlign: 'left', fontSize: 11 }}>
                   <div>{master.location || 'Surabaya'}, {renderedDoc.metadata.date}</div>
@@ -1393,7 +1393,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
         {workspaceTab === 'data' && (
           <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {/* Auto Populated Source Summary */}
-            <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: 10, padding: 14 }}>
+            <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 10, padding: 14 }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: '#15803D', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <CheckCircle2 size={15} color="#16A34A" />
                 <span>Data Terisi Otomatis (Auto)</span>
@@ -1423,7 +1423,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             </div>
 
             {/* KOP Perusahaan Selector */}
-            <div style={{ background: 'var(--ez-color-surface)', border: '1px solid #E2E8F0', borderRadius: 10, padding: 14 }}>
+            <div style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: 10, padding: 14 }}>
               <div style={{ fontSize: 12, fontWeight: 750, color: 'var(--ez-color-text-primary)', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>Kop Perusahaan</span>
                 <button
@@ -1437,7 +1437,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 value={selectedHeaderId}
                 onChange={(e) => setSelectedHeaderId(e.target.value)}
                 disabled={isViewingReadOnly}
-                style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12 }}
+                style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12 }}
               >
                 <option value="">Gunakan Kop Default Perusahaan</option>
                 {headers.map(h => (
@@ -1449,7 +1449,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             </div>
 
             {/* Data yang Perlu Anda Isi (USER Fields) */}
-            <div style={{ background: 'var(--ez-color-surface)', border: '1px solid #E2E8F0', borderRadius: 10, padding: 14 }}>
+            <div style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: 10, padding: 14 }}>
               <div style={{ fontSize: 12, fontWeight: 750, color: 'var(--ez-color-text-primary)', marginBottom: 12 }}>
                 Data yang Perlu Anda Isi
               </div>
@@ -1466,7 +1466,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                         value={userValues[f.id] ?? ''}
                         disabled={isViewingReadOnly}
                         onChange={(e) => handleFieldChange(f.id, e.target.value)}
-                        style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, boxSizing: 'border-box' }}
+                        style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12, boxSizing: 'border-box' }}
                       />
                     </div>
                   ))}
@@ -1480,7 +1480,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
 
             {/* Data Opsional (OPTIONAL Fields) */}
             {fieldClassification.optionalFields.length > 0 && (
-              <details style={{ background: 'var(--ez-color-surface)', border: '1px solid #E2E8F0', borderRadius: 10, padding: 12 }}>
+              <details style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: 10, padding: 12 }}>
                 <summary style={{ fontSize: 12, fontWeight: 700, color: '#475569', cursor: 'pointer' }}>
                   Data Opsional ({fieldClassification.optionalFields.length})
                 </summary>
@@ -1496,7 +1496,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                         value={userValues[f.id] ?? ''}
                         disabled={isViewingReadOnly}
                         onChange={(e) => handleFieldChange(f.id, e.target.value)}
-                        style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: 11.5, boxSizing: 'border-box' }}
+                        style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--ez-color-border-line)', fontSize: 11.5, boxSizing: 'border-box' }}
                       />
                     </div>
                   ))}
@@ -1514,7 +1514,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           <div
             style={{
               background: 'var(--ez-color-surface)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               borderRadius: 'var(--ez-radius-control)',
               padding: 18,
               boxShadow: '0 1px 3px rgba(15,23,42,0.03)',
@@ -1566,7 +1566,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                       padding: 12,
                       borderRadius: 8,
                       border: `1px solid ${isSelected ? 'var(--ez-color-primary)' : 'var(--ez-color-border)'}`,
-                      background: isSelected ? '#EFF6FF' : 'var(--ez-color-surface-secondary)',
+                      background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-secondary)',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1580,7 +1580,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                           </span>
                         )}
                         {!isCurrentActive && (
-                          <span style={{ background: '#E2E8F0', color: '#475569', fontSize: 9.5, padding: '1px 5px', borderRadius: 4, fontWeight: 600 }}>
+                          <span style={{ background: 'var(--ez-color-border-line)', color: '#475569', fontSize: 9.5, padding: '1px 5px', borderRadius: 4, fontWeight: 600 }}>
                             READ-ONLY
                           </span>
                         )}
@@ -1600,7 +1600,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                         style={{
                           flex: 1,
                           padding: '5px 8px',
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid var(--ez-hue-slate-border)',
                           background: 'var(--ez-color-surface)',
                           borderRadius: 6,
                           fontSize: 11.5,
@@ -1647,7 +1647,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           <div
             style={{
               background: 'var(--ez-color-surface)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               borderRadius: 'var(--ez-radius-control)',
               padding: 18,
               boxShadow: '0 1px 3px rgba(15,23,42,0.03)',
@@ -1694,8 +1694,8 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                       style={{
                         padding: '10px 12px',
                         borderRadius: 8,
-                        border: `1px solid ${isSuccess ? 'var(--ez-color-border)' : '#FECACA'}`,
-                        background: isSuccess ? 'var(--ez-color-surface-secondary)' : '#FEF2F2',
+                        border: `1px solid ${isSuccess ? 'var(--ez-color-border)' : 'var(--ez-hue-rose-border)'}`,
+                        background: isSuccess ? 'var(--ez-color-surface-secondary)' : 'var(--ez-hue-rose-bg)',
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1783,7 +1783,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 placeholder="Contoh: Pembaruan volume pekerjaan & spesifikasi material sesuai addendum"
                 style={{
                   width: '100%',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   borderRadius: 8,
                   padding: 10,
                   fontSize: 13,
@@ -1797,7 +1797,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                   onClick={() => setShowRevisionModal(false)}
                   style={{
                     padding: '8px 16px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     background: 'var(--ez-color-surface)',
                     borderRadius: 8,
                     fontSize: 13,
@@ -1855,7 +1855,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             {!validationModal.validation.valid ? (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <div style={{ background: '#FEF3C7', padding: 8, borderRadius: 50 }}>
+                  <div style={{ background: 'var(--ez-hue-amber-bg-deep)', padding: 8, borderRadius: 50 }}>
                     <AlertTriangle size={24} color="#D97706" />
                   </div>
                   <div>
@@ -1869,8 +1869,8 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 </div>
                 <div
                   style={{
-                    background: '#FFFBEB',
-                    border: '1px solid #FDE68A',
+                    background: 'var(--ez-hue-amber-bg)',
+                    border: '1px solid var(--ez-hue-amber-border)',
                     borderRadius: 8,
                     padding: '12px 16px',
                     marginBottom: 18,
@@ -1888,7 +1888,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     style={{
                       padding: '8px 16px',
                       background: 'var(--ez-color-surface)',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       borderRadius: 8,
                       fontSize: 13,
                       fontWeight: 600,
@@ -1921,7 +1921,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               /* If WARNING ONLY -> ALLOW "EXPORT ANYWAY" */
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <div style={{ background: '#FEF3C7', padding: 8, borderRadius: 50 }}>
+                  <div style={{ background: 'var(--ez-hue-amber-bg-deep)', padding: 8, borderRadius: 50 }}>
                     <AlertTriangle size={24} color="#D97706" />
                   </div>
                   <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: '#92400E' }}>
@@ -1933,8 +1933,8 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 </p>
                 <div
                   style={{
-                    background: '#FFFBEB',
-                    border: '1px solid #FDE68A',
+                    background: 'var(--ez-hue-amber-bg)',
+                    border: '1px solid var(--ez-hue-amber-border)',
                     borderRadius: 8,
                     padding: '12px 16px',
                     marginBottom: 18,
@@ -1955,7 +1955,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     style={{
                       padding: '8px 14px',
                       background: 'var(--ez-color-surface)',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       borderRadius: 8,
                       fontSize: 13,
                       fontWeight: 600,
@@ -2039,7 +2039,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                   placeholder="Contoh: Kop Utama PT Mandiri"
                   value={newHeaderName}
                   onChange={(e) => setNewHeaderName(e.target.value)}
-                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12, boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -2052,7 +2052,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                   placeholder="Contoh: PT MANDIRI BANGUN PERSADA"
                   value={newHeaderCompany}
                   onChange={(e) => setNewHeaderCompany(e.target.value)}
-                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12, boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -2065,7 +2065,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                   placeholder="Contoh: Jl. Sudirman No. 45, Jakarta Pusat"
                   value={newHeaderAddress}
                   onChange={(e) => setNewHeaderAddress(e.target.value)}
-                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12, boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -2079,7 +2079,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     placeholder="021-5551234"
                     value={newHeaderPhone}
                     onChange={(e) => setNewHeaderPhone(e.target.value)}
-                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12, boxSizing: 'border-box' }}
                   />
                 </div>
                 <div>
@@ -2091,7 +2091,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     placeholder="info@mandiri.co.id"
                     value={newHeaderEmail}
                     onChange={(e) => setNewHeaderEmail(e.target.value)}
-                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12, boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
@@ -2142,7 +2142,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 style={{
                   padding: '8px 14px',
                   background: 'var(--ez-color-surface)',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   borderRadius: 8,
                   fontSize: 13,
                   fontWeight: 600,

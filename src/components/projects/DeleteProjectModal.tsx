@@ -94,7 +94,7 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
           borderRadius: 'var(--ez-radius-card)',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           overflow: 'hidden',
-          border: '1px solid #FEE2E2',
+          border: '1px solid var(--ez-hue-red-bg)',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -103,8 +103,8 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
         <div
           style={{
             padding: '18px 20px',
-            borderBottom: '1px solid #FEE2E2',
-            backgroundColor: '#FEF2F2',
+            borderBottom: '1px solid var(--ez-hue-red-bg)',
+            backgroundColor: 'var(--ez-hue-rose-bg)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -116,8 +116,8 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
                 width: '36px',
                 height: '36px',
                 borderRadius: 'var(--ez-radius-control)',
-                backgroundColor: '#FEE2E2',
-                border: '1px solid #FECACA',
+                backgroundColor: 'var(--ez-hue-red-bg)',
+                border: '1px solid var(--ez-hue-rose-border)',
                 color: '#DC2626',
                 display: 'flex',
                 alignItems: 'center',
@@ -189,9 +189,9 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
           <div
             style={{
               padding: '14px 16px',
-              backgroundColor: '#EFF6FF',
+              backgroundColor: 'var(--ez-hue-blue-bg)',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #BFDBFE',
+              border: '1px solid var(--ez-hue-blue-border)',
               display: 'flex',
               flexDirection: 'column',
               gap: '10px',
@@ -256,7 +256,7 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
             style={{
               padding: '8px 16px',
               borderRadius: '8px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               backgroundColor: 'var(--ez-color-surface)',
               color: '#475569',
               fontSize: '13px',

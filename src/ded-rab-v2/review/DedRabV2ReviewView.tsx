@@ -332,34 +332,34 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
     const prov = (item as any).fieldProvenance?.overallProvenance || (item.provenanceDetail as any)?.overallProvenance || item.price?.priceSource;
     if (prov === 'EZRAB_DATABASE' || prov === 'PROJECT_PRICE' || prov === 'OFFICIAL_DATABASE' || prov === 'OFFICIAL_AHSP') {
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: 'var(--ez-hue-emerald-bg)', color: '#047857', border: '1px solid var(--ez-hue-green-border-deep)' }}>
           🟢 Database
         </span>
       );
     }
     if (prov === 'MARKET_REFERENCE' || prov === 'REFERENCE_PRICE') {
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: '#EFF6FF', color: 'var(--ez-color-primary-hover)', border: '1px solid #BFDBFE' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)', border: '1px solid var(--ez-hue-blue-border)' }}>
           🔵 Market Ref
         </span>
       );
     }
     if (prov === 'AI_ASSISTED') {
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: '#F5F3FF', color: '#6D28D9', border: '1px solid #DDD6FE' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: 'var(--ez-hue-violet-bg)', color: '#6D28D9', border: '1px solid var(--ez-hue-violet-border)' }}>
           🟣 AI Assisted
         </span>
       );
     }
     if (prov === 'AI_ESTIMATED' || prov === 'AI_ESTIMATE') {
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: '#FFFBEB', color: '#B45309', border: '1px solid #FDE68A' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: 'var(--ez-hue-amber-bg)', color: '#B45309', border: '1px solid var(--ez-hue-amber-border)' }}>
           🟠 AI Estimate
         </span>
       );
     }
     return (
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1' }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 750, backgroundColor: 'var(--ez-color-surface-tertiary)', color: '#475569', border: '1px solid var(--ez-hue-slate-border)' }}>
         👤 User
       </span>
     );
@@ -370,20 +370,20 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
       (item.confidence && item.confidence >= 0.9 ? 'HIGH' : item.confidence && item.confidence >= 0.75 ? 'MEDIUM' : 'LOW');
     if (rating === 'HIGH') {
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 7px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 750, backgroundColor: '#ECFDF5', color: '#047857' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 7px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 750, backgroundColor: 'var(--ez-hue-emerald-bg)', color: '#047857' }}>
           ✓ Tinggi
         </span>
       );
     }
     if (rating === 'MEDIUM') {
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 7px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 750, backgroundColor: '#EFF6FF', color: 'var(--ez-color-primary-hover)' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 7px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 750, backgroundColor: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)' }}>
           ● Sedang
         </span>
       );
     }
     return (
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 7px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 750, backgroundColor: '#FFF7ED', color: '#C2410C' }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '2px 7px', borderRadius: '6px', fontSize: '10.5px', fontWeight: 750, backgroundColor: 'var(--ez-hue-orange-bg-soft)', color: '#C2410C' }}>
         ⚠ Rendah
       </span>
     );
@@ -445,9 +445,9 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               borderRadius: '6px',
               fontSize: '11px',
               fontWeight: 700,
-              backgroundColor: '#FFFBEB',
+              backgroundColor: 'var(--ez-hue-amber-bg)',
               color: '#D97706',
-              border: '1px solid #FDE68A',
+              border: '1px solid var(--ez-hue-amber-border)',
             }}
           >
             <HelpCircle size={12} /> ⚠ Volume belum ditemukan
@@ -465,9 +465,9 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               borderRadius: '6px',
               fontSize: '11px',
               fontWeight: 700,
-              backgroundColor: '#FFFBEB',
+              backgroundColor: 'var(--ez-hue-amber-bg)',
               color: '#D97706',
-              border: '1px solid #FDE68A',
+              border: '1px solid var(--ez-hue-amber-border)',
             }}
           >
             <AlertCircle size={12} /> ⚠ AHSP belum ditemukan
@@ -485,9 +485,9 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               borderRadius: '6px',
               fontSize: '11px',
               fontWeight: 700,
-              backgroundColor: '#FEF2F2',
+              backgroundColor: 'var(--ez-hue-rose-bg)',
               color: '#DC2626',
-              border: '1px solid #FECACA',
+              border: '1px solid var(--ez-hue-rose-border)',
             }}
           >
             <AlertTriangle size={12} /> ⚠ Harga belum tersedia
@@ -508,9 +508,9 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               borderRadius: '6px',
               fontSize: '11px',
               fontWeight: 700,
-              backgroundColor: '#ECFDF5',
+              backgroundColor: 'var(--ez-hue-emerald-bg)',
               color: '#059669',
-              border: '1px solid #A7F3D0',
+              border: '1px solid var(--ez-hue-green-border-deep)',
             }}
           >
             <CheckCircle2 size={12} /> ✓ Siap
@@ -527,9 +527,9 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               borderRadius: '6px',
               fontSize: '11px',
               fontWeight: 700,
-              backgroundColor: '#EFF6FF',
+              backgroundColor: 'var(--ez-hue-blue-bg)',
               color: 'var(--ez-color-primary)',
-              border: '1px solid #BFDBFE',
+              border: '1px solid var(--ez-hue-blue-border)',
             }}
           >
             <Check size={12} /> ✓ Siap Sebagian
@@ -546,9 +546,9 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               borderRadius: '6px',
               fontSize: '11px',
               fontWeight: 700,
-              backgroundColor: '#FFFBEB',
+              backgroundColor: 'var(--ez-hue-amber-bg)',
               color: '#D97706',
-              border: '1px solid #FDE68A',
+              border: '1px solid var(--ez-hue-amber-border)',
             }}
           >
             <HelpCircle size={12} /> ⚠ Perlu diperiksa
@@ -566,9 +566,9 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               borderRadius: '6px',
               fontSize: '11px',
               fontWeight: 700,
-              backgroundColor: '#FEF2F2',
+              backgroundColor: 'var(--ez-hue-rose-bg)',
               color: '#DC2626',
-              border: '1px solid #FECACA',
+              border: '1px solid var(--ez-hue-rose-border)',
             }}
           >
             <AlertTriangle size={12} /> ⚠ Perlu diperiksa
@@ -586,9 +586,9 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               borderRadius: '6px',
               fontSize: '11px',
               fontWeight: 700,
-              backgroundColor: '#F1F5F9',
+              backgroundColor: 'var(--ez-color-surface-tertiary)',
               color: 'var(--ez-color-text-muted)',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
             }}
           >
             <AlertCircle size={12} /> ⚠ Belum cocok
@@ -606,7 +606,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
         style={{
           backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '36px 24px',
           textAlign: 'center',
           maxWidth: '800px',
@@ -619,7 +619,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
             width: '64px',
             height: '64px',
             borderRadius: '50%',
-            backgroundColor: '#FEF2F2',
+            backgroundColor: 'var(--ez-hue-rose-bg)',
             color: '#DC2626',
             display: 'flex',
             alignItems: 'center',
@@ -642,7 +642,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
         <div
           style={{
             backgroundColor: 'var(--ez-color-surface-secondary)',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             borderRadius: 'var(--ez-radius-control)',
             padding: '16px',
             textAlign: 'left',
@@ -664,7 +664,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
             <div><strong>Duration:</strong> {((diagnostics.durationMs || 0) / 1000).toFixed(1)}s</div>
           </div>
           {diagnostics.error && (
-            <div style={{ marginTop: '12px', padding: '8px 12px', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '6px', color: '#DC2626', fontWeight: 600 }}>
+            <div style={{ marginTop: '12px', padding: '8px 12px', backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '6px', color: '#DC2626', fontWeight: 600 }}>
               Error: {diagnostics.error}
             </div>
           )}
@@ -677,8 +677,8 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
             style={{
               padding: '10px 18px',
               borderRadius: '8px',
-              backgroundColor: '#F1F5F9',
-              border: '1px solid #CBD5E1',
+              backgroundColor: 'var(--ez-color-surface-tertiary)',
+              border: '1px solid var(--ez-hue-slate-border)',
               color: '#475569',
               fontSize: '13px',
               fontWeight: 600,
@@ -869,7 +869,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
           gap: '12px',
         }}
       >
-        <div style={{ backgroundColor: '#ECFDF5', border: '1.5px solid #A7F3D0', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ backgroundColor: 'var(--ez-hue-emerald-bg)', border: '1.5px solid var(--ez-hue-green-border-deep)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '20px' }}>🟢</span>
           <div>
             <div style={{ fontSize: '15px', fontWeight: 800, color: '#047857' }}>
@@ -881,7 +881,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
           </div>
         </div>
 
-        <div style={{ backgroundColor: '#EFF6FF', border: '1.5px solid #BFDBFE', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ backgroundColor: 'var(--ez-hue-blue-bg)', border: '1.5px solid var(--ez-hue-blue-border)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '20px' }}>🔵</span>
           <div>
             <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-primary-hover)' }}>
@@ -893,7 +893,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
           </div>
         </div>
 
-        <div style={{ backgroundColor: '#F5F3FF', border: '1.5px solid #DDD6FE', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ backgroundColor: 'var(--ez-hue-violet-bg)', border: '1.5px solid var(--ez-hue-violet-border)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '20px' }}>🟣</span>
           <div>
             <div style={{ fontSize: '15px', fontWeight: 800, color: '#6D28D9' }}>
@@ -905,7 +905,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
           </div>
         </div>
 
-        <div style={{ backgroundColor: '#FFFBEB', border: '1.5px solid #FDE68A', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ backgroundColor: 'var(--ez-hue-amber-bg)', border: '1.5px solid var(--ez-hue-amber-border)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '20px' }}>🟠</span>
           <div>
             <div style={{ fontSize: '15px', fontWeight: 800, color: '#B45309' }}>
@@ -918,7 +918,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
         </div>
 
         {currentConfidence.low > 0 && (
-          <div style={{ backgroundColor: '#FFF7ED', border: '1.5px solid #FED7AA', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ backgroundColor: 'var(--ez-hue-orange-bg-soft)', border: '1.5px solid var(--ez-hue-orange-bg-deep)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '20px' }}>⚠</span>
             <div>
               <div style={{ fontSize: '15px', fontWeight: 800, color: '#C2410C' }}>
@@ -1038,8 +1038,8 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               style={{
                 padding: '7px 14px',
                 borderRadius: '8px',
-                border: isActive ? '1.5px solid #2563EB' : '1px solid #E2E8F0',
-                backgroundColor: isActive ? '#EFF6FF' : '#FFFFFF',
+                border: isActive ? '1.5px solid #2563EB' : '1px solid var(--ez-color-border-line)',
+                backgroundColor: isActive ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                 color: isActive ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                 fontSize: '12px',
                 fontWeight: isActive ? 750 : 500,
@@ -1058,7 +1058,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
       <div
         style={{
           backgroundColor: 'var(--ez-color-surface)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           borderRadius: 'var(--ez-radius-control)',
           padding: '12px 18px',
           display: 'flex',
@@ -1095,8 +1095,8 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
             style={{
               padding: '6px 12px',
               borderRadius: '6px',
-              backgroundColor: '#F1F5F9',
-              border: '1px solid #CBD5E1',
+              backgroundColor: 'var(--ez-color-surface-tertiary)',
+              border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 600,
               color: '#334155',
@@ -1111,8 +1111,8 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
             style={{
               padding: '6px 12px',
               borderRadius: '6px',
-              backgroundColor: '#F1F5F9',
-              border: '1px solid #CBD5E1',
+              backgroundColor: 'var(--ez-color-surface-tertiary)',
+              border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 600,
               color: '#334155',
@@ -1128,7 +1128,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
       <div
         style={{
           backgroundColor: 'var(--ez-color-surface)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           borderRadius: '14px',
           overflow: 'hidden',
           boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
@@ -1137,7 +1137,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
             <thead>
-              <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
+              <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569' }}>
                 <th style={{ padding: '12px 14px', width: '40px', textAlign: 'center' }}>
                   <input
                     type="checkbox"
@@ -1164,7 +1164,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                   <tr
                     key={item.id}
                     style={{
-                      borderBottom: '1px solid #F1F5F9',
+                      borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                       backgroundColor: idx % 2 === 0 ? '#FFFFFF' : '#FBFCFE',
                       opacity: isApproved ? 1 : 0.6,
                       transition: 'background-color 100ms ease',
@@ -1187,9 +1187,9 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                               padding: '1px 5px',
                               borderRadius: '4px',
                               fontWeight: 700,
-                              backgroundColor: item.sourceType === 'DED_VERIFIED' ? '#ECFDF5' : item.sourceType === 'CONSTRUCTION_RULE' ? '#EFF6FF' : '#FEF3C7',
+                              backgroundColor: item.sourceType === 'DED_VERIFIED' ? 'var(--ez-hue-emerald-bg)' : item.sourceType === 'CONSTRUCTION_RULE' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-hue-amber-bg-deep)',
                               color: item.sourceType === 'DED_VERIFIED' ? '#047857' : item.sourceType === 'CONSTRUCTION_RULE' ? 'var(--ez-color-primary-hover)' : '#B45309',
-                              border: `1px solid ${item.sourceType === 'DED_VERIFIED' ? '#A7F3D0' : item.sourceType === 'CONSTRUCTION_RULE' ? '#BFDBFE' : '#FDE68A'}`,
+                              border: `1px solid ${item.sourceType === 'DED_VERIFIED' ? 'var(--ez-hue-green-border-deep)' : item.sourceType === 'CONSTRUCTION_RULE' ? 'var(--ez-hue-blue-border)' : 'var(--ez-hue-amber-border)'}`,
                             }}
                           >
                             {item.sourceType === 'DED_VERIFIED' ? 'DED' : item.sourceType === 'CONSTRUCTION_RULE' ? 'LOGIS' : 'USER'}
@@ -1197,7 +1197,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                         )}
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                        <span style={{ backgroundColor: '#F1F5F9', padding: '1px 6px', borderRadius: '4px' }}>
+                        <span style={{ backgroundColor: 'var(--ez-color-surface-tertiary)', padding: '1px 6px', borderRadius: '4px' }}>
                           {item.category}
                         </span>
                         {item.materialSpec && <span>• {item.materialSpec}</span>}
@@ -1232,7 +1232,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                             <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', fontSize: '11.5px' }}>
                               {item.ahspMatch.code}
                             </span>
-                            <span style={{ fontSize: '9.5px', fontWeight: 700, backgroundColor: '#ECFDF5', color: '#059669', padding: '1px 5px', borderRadius: '4px' }}>
+                            <span style={{ fontSize: '9.5px', fontWeight: 700, backgroundColor: 'var(--ez-hue-emerald-bg)', color: '#059669', padding: '1px 5px', borderRadius: '4px' }}>
                               {item.ahspMatch.source || 'PUPR 2026'}
                             </span>
                           </div>
@@ -1276,7 +1276,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                           style={{
                             padding: '4px 8px',
                             borderRadius: '6px',
-                            border: '1px solid #CBD5E1',
+                            border: '1px solid var(--ez-hue-slate-border)',
                             backgroundColor: 'var(--ez-color-surface)',
                             color: '#334155',
                             fontSize: '11px',
@@ -1293,8 +1293,8 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                           style={{
                             padding: '4px 8px',
                             borderRadius: '6px',
-                            border: '1px solid #BFDBFE',
-                            backgroundColor: '#EFF6FF',
+                            border: '1px solid var(--ez-hue-blue-border)',
+                            backgroundColor: 'var(--ez-hue-blue-bg)',
                             color: 'var(--ez-color-primary-hover)',
                             fontSize: '11px',
                             fontWeight: 700,
@@ -1318,7 +1318,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
       {showValidationModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'grid', placeItems: 'center', padding: '20px' }}>
           <div style={{ backgroundColor: 'var(--ez-color-surface)', borderRadius: '16px', maxWidth: '760px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '28px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', borderBottom: '1px solid #E2E8F0', paddingBottom: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', borderBottom: '1px solid var(--ez-color-border-line)', paddingBottom: '14px' }}>
               <div>
                 <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span>🏗️ Validasi dengan Database Standar EZRAB</span>
@@ -1334,7 +1334,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
 
             {/* 3 KPI comparison cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '20px' }}>
-              <div style={{ padding: '16px', borderRadius: 'var(--ez-radius-control)', background: '#EFF6FF', border: '1.5px solid #BFDBFE' }}>
+              <div style={{ padding: '16px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-hue-blue-bg)', border: '1.5px solid var(--ez-hue-blue-border)' }}>
                 <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-primary-hover)' }}>🤖 DRAF AI RAB</div>
                 <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '4px' }}>
                   {formatIDR(grandTotal || reviewSummary.totalEstimatedRab)}
@@ -1344,7 +1344,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                 </div>
               </div>
 
-              <div style={{ padding: '16px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-surface-secondary)', border: '1.5px solid #CBD5E1' }}>
+              <div style={{ padding: '16px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-surface-secondary)', border: '1.5px solid var(--ez-hue-slate-border)' }}>
                 <div style={{ fontSize: '11px', fontWeight: 700, color: '#334155' }}>🏗️ DATABASE RESMI EZRAB</div>
                 <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '4px' }}>
                   {formatIDR(validationComparison?.ezrabStandardGrandTotal || ((grandTotal || reviewSummary.totalEstimatedRab || 37633462) * 1.039))}
@@ -1354,7 +1354,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                 </div>
               </div>
 
-              <div style={{ padding: '16px', borderRadius: 'var(--ez-radius-control)', background: '#F0FDF4', border: '1.5px solid #BBF7D0' }}>
+              <div style={{ padding: '16px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-hue-green-bg)', border: '1.5px solid var(--ez-hue-green-border)' }}>
                 <div style={{ fontSize: '11px', fontWeight: 700, color: '#047857' }}>SELISIH / VARIANSI</div>
                 <div style={{ fontSize: '20px', fontWeight: 800, color: '#047857', marginTop: '4px' }}>
                   +{formatIDR(validationComparison?.differenceAmount || Math.round((grandTotal || 37633462) * 0.039))}
@@ -1366,7 +1366,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
             </div>
 
             {/* Reassurance Note */}
-            <div style={{ padding: '14px 18px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', fontSize: '12px', color: '#065F46', lineHeight: 1.5, marginBottom: '20px' }}>
+            <div style={{ padding: '14px 18px', background: 'var(--ez-hue-green-bg)', border: '1px solid var(--ez-hue-green-border)', borderRadius: '10px', fontSize: '12px', color: '#065F46', lineHeight: 1.5, marginBottom: '20px' }}>
               💡 <strong>Prinsip Isolasi Data (Section 31 & 33):</strong> Validasi ini adalah perbandingan informatif. Draf AI RAB Anda tetap utuh dan tersimpan secara independen sebagai project snapshot tanpa memodifikasi master database.
             </div>
 
@@ -1374,7 +1374,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               <button
                 type="button"
                 onClick={() => setShowValidationModal(false)}
-                style={{ padding: '9px 18px', borderRadius: '8px', border: '1px solid #CBD5E1', background: 'var(--ez-color-surface)', color: '#334155', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
+                style={{ padding: '9px 18px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', color: '#334155', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
               >
                 Tutup
               </button>
@@ -1394,7 +1394,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
       {editingItem && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'grid', placeItems: 'center', padding: '20px' }}>
           <div style={{ backgroundColor: 'var(--ez-color-surface)', borderRadius: '16px', maxWidth: '520px', width: '100%', padding: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '1px solid #E2E8F0', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '1px solid var(--ez-color-border-line)', paddingBottom: '12px' }}>
               <div>
                 <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                   Edit Pekerjaan Konstruksi
@@ -1417,7 +1417,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                   type="text"
                   defaultValue={editingItem.name}
                   id="edit-item-name"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -1431,7 +1431,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                     step="any"
                     defaultValue={editingItem.quantity || 1}
                     id="edit-item-qty"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box' }}
                   />
                 </div>
                 <div>
@@ -1442,7 +1442,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                     type="text"
                     defaultValue={editingItem.unit || 'unit'}
                     id="edit-item-unit"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
@@ -1456,7 +1456,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                   step="any"
                   defaultValue={editingItem.price?.unitPrice || 0}
                   id="edit-item-price"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -1468,7 +1468,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                   type="text"
                   defaultValue={editingItem.ahspMatch?.code || ''}
                   id="edit-item-ahsp"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', boxSizing: 'border-box' }}
                 />
               </div>
             </div>
@@ -1477,7 +1477,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               <button
                 type="button"
                 onClick={() => setEditingItem(null)}
-                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #CBD5E1', background: 'var(--ez-color-surface)', color: '#475569', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', color: '#475569', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
               >
                 Batal
               </button>
@@ -1504,7 +1504,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
       {detailedAuditItem && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'grid', placeItems: 'center', padding: '20px' }}>
           <div style={{ backgroundColor: 'var(--ez-color-surface)', borderRadius: '16px', maxWidth: '640px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '26px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '1px solid #E2E8F0', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '1px solid var(--ez-color-border-line)', paddingBottom: '12px' }}>
               <div>
                 <div style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span>🔎 Audit Bukti & Rekayasa Nilai AI</span>
@@ -1520,7 +1520,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '12.5px' }}>
               {/* Evidence Pages */}
-              <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+              <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)' }}>
                 <div style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '4px' }}>📄 Bukti Lembar Gambar Kerja (DED Evidence):</div>
                 <div style={{ color: '#475569' }}>
                   Halaman Dokumen: <strong>Hal. {detailedAuditItem.sourcePages.join(', ')}</strong> • Evidence ID: <code>{detailedAuditItem.evidenceIds.join(', ')}</code>
@@ -1528,7 +1528,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               </div>
 
               {/* Volume & Dimensions */}
-              <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+              <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)' }}>
                 <div style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '4px' }}>📐 Volume & Formula Perhitungan:</div>
                 <div style={{ color: 'var(--ez-color-text-primary)', fontWeight: 800, fontSize: '14px' }}>
                   {detailedAuditItem.quantity} {detailedAuditItem.unit}
@@ -1539,7 +1539,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               </div>
 
               {/* AHSP Resolution */}
-              <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+              <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)' }}>
                 <div style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '4px' }}>📑 Analisa Harga Satuan Pekerjaan (AHSP):</div>
                 <div style={{ color: 'var(--ez-color-text-primary)', fontWeight: 700 }}>
                   {detailedAuditItem.ahspMatch?.code || 'N/A'} — {detailedAuditItem.ahspMatch?.name}
@@ -1550,7 +1550,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               </div>
 
               {/* Price Resolution & Provenance */}
-              <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+              <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)' }}>
                 <div style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '4px' }}>💰 Harga Satuan & Provenansi:</div>
                 <div style={{ color: 'var(--ez-color-text-primary)', fontWeight: 800, fontSize: '14px' }}>
                   {formatIDR(detailedAuditItem.price?.unitPrice || 0)} / {detailedAuditItem.unit}
@@ -1565,7 +1565,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
 
               {/* Assumptions */}
               {detailedAuditItem.assumptions && detailedAuditItem.assumptions.length > 0 && (
-                <div style={{ background: '#FFFBEB', padding: '12px 14px', borderRadius: '10px', border: '1px solid #FDE68A' }}>
+                <div style={{ background: 'var(--ez-hue-amber-bg)', padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--ez-hue-amber-border)' }}>
                   <div style={{ fontWeight: 700, color: '#B45309', marginBottom: '4px' }}>💡 Asumsi AI Estimator:</div>
                   <ul style={{ margin: '4px 0 0 16px', padding: 0, color: '#78350F', fontSize: '11.5px' }}>
                     {detailedAuditItem.assumptions.map((a, ai) => (
@@ -1611,7 +1611,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               width: '100%',
               padding: '28px',
               boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
@@ -1620,7 +1620,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                   width: '44px',
                   height: '44px',
                   borderRadius: 'var(--ez-radius-control)',
-                  backgroundColor: '#ECFDF5',
+                  backgroundColor: 'var(--ez-hue-emerald-bg)',
                   color: '#059669',
                   display: 'grid',
                   placeItems: 'center',
@@ -1641,7 +1641,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
             <div
               style={{
                 backgroundColor: 'var(--ez-color-surface-secondary)',
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
                 borderRadius: 'var(--ez-radius-control)',
                 padding: '16px',
                 marginBottom: '20px',
@@ -1650,11 +1650,11 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
               <div style={{ fontSize: '13.5px', color: '#334155', lineHeight: 1.6, marginBottom: '12px' }}>
                 RAB ini akan dimasukkan ke <strong>spreadsheet proyek (9 lembar kerja)</strong> dan disimpan sebagai <strong>RAB resmi proyek</strong> {projectName}.
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid #E2E8F0', fontSize: '13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid var(--ez-color-border-line)', fontSize: '13px' }}>
                 <span style={{ color: 'var(--ez-color-text-muted)' }}>Jumlah Pekerjaan:</span>
                 <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{approvedCount} dari {workItems.length} item</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid #E2E8F0', fontSize: '13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid var(--ez-color-border-line)', fontSize: '13px' }}>
                 <span style={{ color: 'var(--ez-color-text-muted)' }}>Total Nilai RAB:</span>
                 <span style={{ fontWeight: 800, color: 'var(--ez-color-primary)', fontSize: '14px' }}>
                   {formatIDR(grandTotal || reviewSummary.totalEstimatedRab)}
@@ -1670,8 +1670,8 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                 style={{
                   padding: '10px 18px',
                   borderRadius: '10px',
-                  backgroundColor: '#F1F5F9',
-                  border: '1px solid #CBD5E1',
+                  backgroundColor: 'var(--ez-color-surface-tertiary)',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   color: '#475569',
                   fontSize: '13px',
                   fontWeight: 650,

@@ -298,7 +298,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                   key={proj.id}
                   style={{
                     background: 'var(--ez-color-surface)',
-                    border: isSelected ? '2px solid #2563EB' : '1px solid #E2E8F0',
+                    border: isSelected ? '2px solid #2563EB' : '1px solid var(--ez-color-border-line)',
                     borderRadius: 14,
                     padding: 20,
                     boxShadow: '0 2px 8px rgba(15,23,42,0.04)',
@@ -350,7 +350,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
             })}
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '50px 20px', background: 'var(--ez-color-surface)', borderRadius: 14, border: '1px solid #E2E8F0' }}>
+          <div style={{ textAlign: 'center', padding: '50px 20px', background: 'var(--ez-color-surface)', borderRadius: 14, border: '1px solid var(--ez-color-border-line)' }}>
             <Folder size={40} color="#94A3B8" style={{ margin: '0 auto 12px' }} />
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Belum Ada Daftar Pekerjaan</h3>
             <p style={{ margin: '6px 0 0', color: 'var(--ez-color-text-muted)', fontSize: 13 }}>
@@ -368,7 +368,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
       <div
         style={{
           background: 'var(--ez-color-surface)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           borderRadius: 'var(--ez-radius-control)',
           padding: '12px 16px',
           marginBottom: 20,
@@ -386,8 +386,8 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
               width: 38,
               height: 38,
               borderRadius: 9,
-              background: '#EFF6FF',
-              border: '1px solid #BFDBFE',
+              background: 'var(--ez-hue-blue-bg)',
+              border: '1px solid var(--ez-hue-blue-border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -420,7 +420,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
           style={{
             background: 'var(--ez-color-surface-secondary)',
             color: '#334155',
-            border: '1px solid #CBD5E1',
+            border: '1px solid var(--ez-hue-slate-border)',
             borderRadius: 8,
             padding: '8px 14px',
             fontSize: 12.5,
@@ -440,7 +440,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
             <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--ez-color-text-primary)' }}>
               Dokumen Proyek
             </h1>
-            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: '#EFF6FF', color: 'var(--ez-color-primary)', border: '1px solid #BFDBFE' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6, background: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary)', border: '1px solid var(--ez-hue-blue-border)' }}>
               TENDER & KONTRAK
             </span>
           </div>
@@ -481,7 +481,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
             style={{
               background: 'var(--ez-color-surface)',
               color: '#334155',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               borderRadius: 9,
               padding: '10px 16px',
               fontWeight: 650,
@@ -499,7 +499,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
       </div>
 
       {/* STATS OVERVIEW — compact enterprise strip, real data only */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, marginBottom: 20, background: 'var(--ez-color-surface)', border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 0, marginBottom: 20, background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
         {[
           { label: 'Total Dokumen', val: stats.total, color: 'var(--ez-color-primary)' },
           { label: 'Selesai / Siap', val: stats.completed, color: '#16A34A' },
@@ -511,7 +511,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
             style={{
               flex: '1 1 140px',
               padding: '12px 18px',
-              borderRight: idx < arr.length - 1 ? '1px solid #F1F5F9' : 'none',
+              borderRight: idx < arr.length - 1 ? '1px solid var(--ez-color-surface-tertiary)' : 'none',
               display: 'flex',
               alignItems: 'baseline',
               gap: 10,
@@ -530,7 +530,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
         style={{
           background: 'var(--ez-color-surface)',
           borderRadius: 'var(--ez-radius-control)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '12px 16px',
           marginBottom: 20,
           display: 'flex',
@@ -558,8 +558,8 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                 style={{
                   padding: '6px 12px',
                   borderRadius: 8,
-                  border: isTabActive ? '1px solid #2563EB' : '1px solid #E2E8F0',
-                  background: isTabActive ? '#EFF6FF' : '#FFFFFF',
+                  border: isTabActive ? '1px solid #2563EB' : '1px solid var(--ez-color-border-line)',
+                  background: isTabActive ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                   color: isTabActive ? 'var(--ez-color-primary-hover)' : '#475569',
                   fontSize: 12.5,
                   fontWeight: isTabActive ? 700 : 500,
@@ -576,7 +576,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                     fontSize: 10.5,
                     padding: '1px 5px',
                     borderRadius: 'var(--ez-radius-pill)',
-                    background: isTabActive ? 'var(--ez-color-primary)' : '#F1F5F9',
+                    background: isTabActive ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
                     color: isTabActive ? '#FFFFFF' : 'var(--ez-color-text-muted)',
                     fontWeight: 700,
                   }}
@@ -601,7 +601,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                 width: '100%',
                 padding: '7px 10px 7px 30px',
                 borderRadius: 8,
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 fontSize: 12.5,
                 outline: 'none',
                 boxSizing: 'border-box',
@@ -623,7 +623,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
             style={{
               padding: '7px 10px',
               borderRadius: 8,
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               fontSize: 12.5,
               color: '#334155',
               background: 'var(--ez-color-surface)',
@@ -641,8 +641,8 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
 
       {/* EMPTY STATE (NO ACTIVE DOCUMENTS AT ALL) */}
       {activeRecords.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--ez-color-surface)', borderRadius: 14, border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#EFF6FF', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}>
+        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--ez-color-surface)', borderRadius: 14, border: '1px solid var(--ez-color-border-line)', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--ez-hue-blue-bg)', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}>
             <Sparkles size={32} style={{ color: 'var(--ez-color-primary)' }} />
           </div>
           <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Belum Ada Dokumen Proyek</h3>
@@ -679,7 +679,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
               style={{
                 background: 'var(--ez-color-surface)',
                 color: '#334155',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 borderRadius: 9,
                 padding: '11px 18px',
                 fontWeight: 650,
@@ -695,7 +695,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
 
       {/* FILTER EMPTY STATE (FILTER CRITERIA RETURNED 0) */}
       {activeRecords.length > 0 && filteredCardData.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid #E2E8F0' }}>
+        <div style={{ textAlign: 'center', padding: '40px 20px', background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-color-border-line)' }}>
           <p style={{ color: 'var(--ez-color-text-muted)', fontSize: 14, margin: '0 0 12px 0' }}>
             Tidak ada dokumen yang cocok dengan filter atau pencarian Anda.
           </p>
@@ -708,8 +708,8 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
             style={{
               padding: '6px 14px',
               borderRadius: 6,
-              background: '#F1F5F9',
-              border: '1px solid #CBD5E1',
+              background: 'var(--ez-color-surface-tertiary)',
+              border: '1px solid var(--ez-hue-slate-border)',
               color: '#334155',
               fontSize: 12.5,
               fontWeight: 600,
@@ -736,21 +736,21 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
               statusColor = '#475569';
               statusBorder = 'var(--ez-color-border)';
             } else if (record.status === 'INCOMPLETE') {
-              statusBg = '#FEF3C7';
+              statusBg = 'var(--ez-hue-amber-bg-deep)';
               statusColor = '#B45309';
-              statusBorder = '#FDE68A';
+              statusBorder = 'var(--ez-hue-amber-border)';
             } else if (record.status === 'COMPLETE') {
-              statusBg = '#DCFCE7';
+              statusBg = 'var(--ez-hue-green-bg-deep)';
               statusColor = '#15803D';
-              statusBorder = '#BBF7D0';
+              statusBorder = 'var(--ez-hue-green-border)';
             } else if (record.status === 'EXPORTED') {
-              statusBg = '#DBEAFE';
+              statusBg = 'var(--ez-hue-blue-bg-deep)';
               statusColor = 'var(--ez-color-primary-hover)';
-              statusBorder = '#BFDBFE';
+              statusBorder = 'var(--ez-hue-blue-border)';
             }
 
             const revisionCode = record.revision === 2 ? 'R2 • Final' : record.revision === 1 ? 'R1 • Review' : 'R0 • Draft';
-            const revBg = record.revision === 2 ? '#DCFCE7' : record.revision === 1 ? '#EFF6FF' : '#F1F5F9';
+            const revBg = record.revision === 2 ? 'var(--ez-hue-green-bg-deep)' : record.revision === 1 ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-tertiary)';
             const revColor = record.revision === 2 ? '#15803D' : record.revision === 1 ? 'var(--ez-color-primary-hover)' : '#475569';
 
             return (
@@ -759,7 +759,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                 style={{
                   background: 'var(--ez-color-surface)',
                   borderRadius: 'var(--ez-radius-control)',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   padding: 18,
                   boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
                   display: 'flex',
@@ -831,7 +831,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                       </span>
                     </div>
 
-                    <div style={{ width: '100%', height: 6, background: '#E2E8F0', borderRadius: 'var(--ez-radius-pill)', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: 6, background: 'var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-pill)', overflow: 'hidden' }}>
                       <div
                         style={{
                           width: `${comp.completenessPercentage}%`,
@@ -850,16 +850,16 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid #F1F5F9' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid var(--ez-color-surface-tertiary)' }}>
                   <div style={{ fontSize: 11, color: '#94A3B8' }}>
                     {def.requirement === 'CORE' ? 'Wajib LPSE' : 'Rekomendasi'}
                   </div>
                   <button
                     onClick={() => setActiveDocumentDef(def)}
                     style={{
-                      background: isReady ? '#F0FDF4' : '#EFF6FF',
+                      background: isReady ? 'var(--ez-hue-green-bg)' : 'var(--ez-hue-blue-bg)',
                       color: isReady ? '#16A34A' : 'var(--ez-color-primary)',
-                      border: `1px solid ${isReady ? '#BBF7D0' : '#BFDBFE'}`,
+                      border: `1px solid ${isReady ? 'var(--ez-hue-green-border)' : 'var(--ez-hue-blue-border)'}`,
                       borderRadius: 7,
                       padding: '7px 16px',
                       fontWeight: 700,
@@ -892,7 +892,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ background: 'var(--ez-color-surface)', borderRadius: 14, width: 'min(420px, 100%)', padding: 22, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15)', border: '1px solid #E2E8F0' }}
+            style={{ background: 'var(--ez-color-surface)', borderRadius: 14, width: 'min(420px, 100%)', padding: 22, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15)', border: '1px solid var(--ez-color-border-line)' }}
           >
             <h3 id="delete-dialog-title" style={{ margin: 0, fontSize: 16, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
               Hapus Dokumen
@@ -905,7 +905,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
               <button
                 onClick={() => setDeleteTarget(null)}
                 autoFocus
-                style={{ padding: '9px 18px', background: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: 8, fontWeight: 600, fontSize: 13, color: '#334155', cursor: 'pointer' }}
+                style={{ padding: '9px 18px', background: 'var(--ez-color-surface-tertiary)', border: '1px solid var(--ez-hue-slate-border)', borderRadius: 8, fontWeight: 600, fontSize: 13, color: '#334155', cursor: 'pointer' }}
               >
                 Batal
               </button>
@@ -962,7 +962,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                         textAlign: 'left',
                         padding: 16,
                         borderRadius: 'var(--ez-radius-control)',
-                        border: '1px solid #E2E8F0',
+                        border: '1px solid var(--ez-color-border-line)',
                         background: 'var(--ez-color-surface)',
                         cursor: 'pointer',
                         transition: 'all 0.15s ease',
@@ -975,7 +975,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                   ))}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
-                  <button onClick={() => setWizard(false)} style={{ padding: '10px 20px', background: '#F1F5F9', borderRadius: 8, border: 0, cursor: 'pointer', fontWeight: 600 }}>
+                  <button onClick={() => setWizard(false)} style={{ padding: '10px 20px', background: 'var(--ez-color-surface-tertiary)', borderRadius: 8, border: 0, cursor: 'pointer', fontWeight: 600 }}>
                     Batal
                   </button>
                 </div>
@@ -1000,7 +1000,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                           justifyContent: 'space-between',
                           alignItems: 'center',
                           padding: '12px 16px',
-                          border: `1px solid ${isAlreadyCreated ? '#BBF7D0' : isChecked ? '#BFDBFE' : 'var(--ez-color-border)'}`,
+                          border: `1px solid ${isAlreadyCreated ? 'var(--ez-hue-green-border)' : isChecked ? 'var(--ez-hue-blue-border)' : 'var(--ez-color-border)'}`,
                           background: isAlreadyCreated ? 'var(--ez-hue-green-bg)' : isChecked ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                           borderRadius: 10,
                         }}
@@ -1012,7 +1012,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                             {isAlreadyCreated && (
                               <span
                                 style={{
-                                  background: '#DCFCE7',
+                                  background: 'var(--ez-hue-green-bg-deep)',
                                   color: '#15803D',
                                   fontSize: 11,
                                   fontWeight: 700,
@@ -1029,12 +1029,12 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                           </div>
                           <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
                             {def.autoVariables && def.autoVariables.length > 0 && (
-                              <span style={{ fontSize: 10.5, background: '#DCFCE7', color: '#15803D', padding: '1px 6px', borderRadius: 4, fontWeight: 650 }}>
+                              <span style={{ fontSize: 10.5, background: 'var(--ez-hue-green-bg-deep)', color: '#15803D', padding: '1px 6px', borderRadius: 4, fontWeight: 650 }}>
                                 Auto: {def.autoVariables.length} data proyek
                               </span>
                             )}
                             {def.userFields && def.userFields.length > 0 && (
-                              <span style={{ fontSize: 10.5, background: '#EFF6FF', color: 'var(--ez-color-primary)', padding: '1px 6px', borderRadius: 4, fontWeight: 650 }}>
+                              <span style={{ fontSize: 10.5, background: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary)', padding: '1px 6px', borderRadius: 4, fontWeight: 650 }}>
                                 Input: {def.userFields.length} field
                               </span>
                             )}
@@ -1050,7 +1050,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                             style={{
                               background: 'var(--ez-color-surface)',
                               color: '#16A34A',
-                              border: '1px solid #BBF7D0',
+                              border: '1px solid var(--ez-hue-green-border)',
                               borderRadius: 7,
                               padding: '6px 14px',
                               fontSize: 12,
@@ -1078,7 +1078,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
-                  <button onClick={() => setSelectionStep(1)} style={{ padding: '10px 18px', border: '1px solid #E2E8F0', background: 'var(--ez-color-surface)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                  <button onClick={() => setSelectionStep(1)} style={{ padding: '10px 18px', border: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
                     Kembali
                   </button>
                   <button
@@ -1106,7 +1106,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                 <p style={{ color: 'var(--ez-color-text-muted)', fontSize: 13, marginTop: 4 }}>
                   Dokumen berikut akan dibuat dan ditambahkan ke daftar Dokumen Proyek aktif Anda:
                 </p>
-                <div style={{ marginTop: 14, padding: 14, background: 'var(--ez-color-surface-secondary)', borderRadius: 10, border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ marginTop: 14, padding: 14, background: 'var(--ez-color-surface-secondary)', borderRadius: 10, border: '1px solid var(--ez-color-border-line)', display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {selectedDocuments.map((docId) => {
                     const def = getDocumentDefinition(docId);
                     return (
@@ -1119,7 +1119,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                   })}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20 }}>
-                  <button onClick={() => setSelectionStep(2)} style={{ padding: '10px 18px', border: '1px solid #E2E8F0', background: 'var(--ez-color-surface)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+                  <button onClick={() => setSelectionStep(2)} style={{ padding: '10px 18px', border: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface)', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
                     Kembali
                   </button>
                   <button

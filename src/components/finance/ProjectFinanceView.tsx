@@ -209,7 +209,7 @@ export const ProjectFinanceView: React.FC<ProjectFinanceViewProps> = ({
                     fontWeight: 750,
                     padding: '1px 5px',
                     borderRadius: 'var(--ez-radius-pill)',
-                    backgroundColor: isActive ? 'rgba(255, 255, 255, 0.25)' : '#F1F5F9',
+                    backgroundColor: isActive ? 'rgba(255, 255, 255, 0.25)' : 'var(--ez-color-surface-tertiary)',
                     color: isActive ? '#FFFFFF' : 'var(--ez-color-text-muted)',
                   }}
                 >

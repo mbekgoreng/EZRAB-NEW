@@ -321,7 +321,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
         <div
           style={{
             padding: '20px 28px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -356,7 +356,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
           style={{
             display: 'flex',
             background: 'var(--ez-color-surface)',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             padding: '0 24px',
             overflowX: 'auto'
           }}
@@ -388,7 +388,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     width: '20px',
                     height: '20px',
                     borderRadius: '50%',
-                    background: isActive ? 'var(--ez-color-primary)' : '#E2E8F0',
+                    background: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-border-line)',
                     color: isActive ? '#FFFFFF' : 'var(--ez-color-text-muted)',
                     display: 'flex',
                     alignItems: 'center',
@@ -423,7 +423,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13.5px'
                   }}
                 />
@@ -441,7 +441,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       width: '100%',
                       padding: '10px 14px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       background: 'var(--ez-color-surface)'
                     }}
@@ -467,7 +467,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       width: '100%',
                       padding: '10px 14px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px'
                     }}
                   />
@@ -487,7 +487,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     width: '100%',
                     padding: '10px 14px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
                     lineHeight: 1.5
                   }}
@@ -506,7 +506,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       width: '100%',
                       padding: '10px 14px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       background: 'var(--ez-color-surface)'
                     }}
@@ -529,7 +529,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       width: '100%',
                       padding: '10px 14px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px'
                     }}
                   />
@@ -546,7 +546,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       width: '100%',
                       padding: '10px 14px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px'
                     }}
                   />
@@ -575,9 +575,9 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     gap: '6px',
                     padding: '8px 14px',
                     borderRadius: '8px',
-                    background: '#EFF6FF',
+                    background: 'var(--ez-hue-blue-bg)',
                     color: 'var(--ez-color-primary)',
-                    border: '1px solid #BFDBFE',
+                    border: '1px solid var(--ez-hue-blue-border)',
                     fontSize: '12.5px',
                     fontWeight: 650,
                     cursor: 'pointer'
@@ -594,7 +594,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     key={param.id}
                     style={{
                       background: 'var(--ez-color-surface-secondary)',
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid var(--ez-color-border-line)',
                       borderRadius: '10px',
                       padding: '14px 16px',
                       display: 'grid',
@@ -609,7 +609,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                         type="text"
                         value={param.label}
                         onChange={e => handleUpdateParameter(param.id, { label: e.target.value })}
-                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px' }}
+                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px' }}
                       />
                     </div>
                     <div>
@@ -618,7 +618,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                         type="text"
                         value={param.key}
                         onChange={e => handleUpdateParameter(param.id, { key: e.target.value })}
-                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px', fontFamily: 'monospace' }}
+                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px', fontFamily: 'monospace' }}
                       />
                     </div>
                     <div>
@@ -626,7 +626,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                       <select
                         value={param.type}
                         onChange={e => handleUpdateParameter(param.id, { type: e.target.value as ParameterInputType })}
-                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px', background: 'var(--ez-color-surface)' }}
+                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px', background: 'var(--ez-color-surface)' }}
                       >
                         <option value="NUMBER">NUMBER</option>
                         <option value="TEXT">TEXT</option>
@@ -641,7 +641,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                         placeholder="m², m, unit"
                         value={param.unit || ''}
                         onChange={e => handleUpdateParameter(param.id, { unit: e.target.value })}
-                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px' }}
+                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px' }}
                       />
                     </div>
                     <div>
@@ -650,13 +650,13 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                         type="text"
                         value={param.defaultValue ?? ''}
                         onChange={e => handleUpdateParameter(param.id, { defaultValue: isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value) })}
-                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px' }}
+                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px' }}
                       />
                     </div>
                     <div>
                       <button
                         onClick={() => handleDeleteParameter(param.id)}
-                        style={{ padding: '6px', borderRadius: '6px', border: 'none', background: '#FEE2E2', color: '#DC2626', cursor: 'pointer' }}
+                        style={{ padding: '6px', borderRadius: '6px', border: 'none', background: 'var(--ez-hue-red-bg)', color: '#DC2626', cursor: 'pointer' }}
                         title="Hapus Parameter"
                       >
                         <Trash2 size={15} />
@@ -688,9 +688,9 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     gap: '6px',
                     padding: '8px 14px',
                     borderRadius: '8px',
-                    background: '#EFF6FF',
+                    background: 'var(--ez-hue-blue-bg)',
                     color: 'var(--ez-color-primary)',
-                    border: '1px solid #BFDBFE',
+                    border: '1px solid var(--ez-hue-blue-border)',
                     fontSize: '12.5px',
                     fontWeight: 650,
                     cursor: 'pointer'
@@ -707,7 +707,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     key={sp.id}
                     style={{
                       background: 'var(--ez-color-surface-secondary)',
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid var(--ez-color-border-line)',
                       borderRadius: '10px',
                       padding: '14px 16px',
                       display: 'grid',
@@ -722,7 +722,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                         type="text"
                         value={sp.name}
                         onChange={e => handleUpdateSpace(sp.id, { name: e.target.value })}
-                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px' }}
+                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px' }}
                       />
                     </div>
                     <div>
@@ -731,7 +731,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                         type="text"
                         value={sp.category}
                         onChange={e => handleUpdateSpace(sp.id, { category: e.target.value })}
-                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px' }}
+                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px' }}
                       />
                     </div>
                     <div>
@@ -741,7 +741,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                         placeholder="1 atau param"
                         value={sp.quantityRule}
                         onChange={e => handleUpdateSpace(sp.id, { quantityRule: e.target.value })}
-                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px' }}
+                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px' }}
                       />
                     </div>
                     <div>
@@ -750,13 +750,13 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                         type="number"
                         value={sp.targetArea || 0}
                         onChange={e => handleUpdateSpace(sp.id, { targetArea: Number(e.target.value) })}
-                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px' }}
+                        style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px' }}
                       />
                     </div>
                     <div>
                       <button
                         onClick={() => handleDeleteSpace(sp.id)}
-                        style={{ padding: '6px', borderRadius: '6px', border: 'none', background: '#FEE2E2', color: '#DC2626', cursor: 'pointer' }}
+                        style={{ padding: '6px', borderRadius: '6px', border: 'none', background: 'var(--ez-hue-red-bg)', color: '#DC2626', cursor: 'pointer' }}
                       >
                         <Trash2 size={15} />
                       </button>
@@ -787,9 +787,9 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     gap: '6px',
                     padding: '8px 14px',
                     borderRadius: '8px',
-                    background: '#EFF6FF',
+                    background: 'var(--ez-hue-blue-bg)',
                     color: 'var(--ez-color-primary)',
-                    border: '1px solid #BFDBFE',
+                    border: '1px solid var(--ez-hue-blue-border)',
                     fontSize: '12.5px',
                     fontWeight: 650,
                     cursor: 'pointer'
@@ -806,7 +806,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                     key={comp.id}
                     style={{
                       background: 'var(--ez-color-surface-secondary)',
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid var(--ez-color-border-line)',
                       borderRadius: '10px',
                       padding: '14px 16px',
                       display: 'flex',
@@ -823,7 +823,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                           type="text"
                           value={comp.name}
                           onChange={e => handleUpdateComponent(comp.id, { name: e.target.value })}
-                          style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '13px' }}
+                          style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px' }}
                         />
                       </div>
                       <div>
@@ -832,7 +832,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                           type="text"
                           value={comp.category}
                           onChange={e => handleUpdateComponent(comp.id, { category: e.target.value })}
-                          style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px' }}
+                          style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px' }}
                         />
                       </div>
                       <div>
@@ -841,20 +841,20 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                           type="text"
                           value={comp.unit}
                           onChange={e => handleUpdateComponent(comp.id, { unit: e.target.value })}
-                          style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px' }}
+                          style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px' }}
                         />
                       </div>
                       <div>
                         <button
                           onClick={() => handleDeleteComponent(comp.id)}
-                          style={{ padding: '6px', borderRadius: '6px', border: 'none', background: '#FEE2E2', color: '#DC2626', cursor: 'pointer', marginTop: '16px' }}
+                          style={{ padding: '6px', borderRadius: '6px', border: 'none', background: 'var(--ez-hue-red-bg)', color: '#DC2626', cursor: 'pointer', marginTop: '16px' }}
                         >
                           <Trash2 size={15} />
                         </button>
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px', alignItems: 'center', background: 'var(--ez-color-surface)', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '12px', alignItems: 'center', background: 'var(--ez-color-surface)', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
                       <div>
                         <span style={{ fontSize: '11px', color: 'var(--ez-color-primary)', fontWeight: 650, display: 'block', marginBottom: '2px' }}>
                           Formula QTO (Rule Perhitungan)
@@ -874,7 +874,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                           placeholder="e.g. A.4.1.1.4"
                           value={comp.ahspCode || ''}
                           onChange={e => handleUpdateComponent(comp.id, { ahspCode: e.target.value })}
-                          style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                          style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
                         />
                       </div>
                       <div>
@@ -883,7 +883,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                           type="number"
                           value={comp.unitPrice || 0}
                           onChange={e => handleUpdateComponent(comp.id, { unitPrice: Number(e.target.value) })}
-                          style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                          style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
                         />
                       </div>
                     </div>
@@ -915,29 +915,29 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
 
               {/* Summary Stats */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '18px' }}>
-                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)' }}>
                   <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Kategori</span>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>{category}</div>
                 </div>
-                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)' }}>
                   <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Parameter</span>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>{parameters.length} Parameter</div>
                 </div>
-                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)' }}>
                   <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Program Ruang</span>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>{spaces.length} Ruang</div>
                 </div>
-                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)' }}>
                   <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Item Pekerjaan</span>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>{components.length} Komponen</div>
                 </div>
               </div>
 
               {/* Items Table */}
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', overflow: 'hidden' }}>
+              <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                   <thead>
-                    <tr style={{ background: '#F1F5F9', borderBottom: '1px solid #CBD5E1', textAlign: 'left' }}>
+                    <tr style={{ background: 'var(--ez-color-surface-tertiary)', borderBottom: '1px solid var(--ez-hue-slate-border)', textAlign: 'left' }}>
                       <th style={{ padding: '8px 12px', width: '36px' }}>No</th>
                       <th style={{ padding: '8px 12px' }}>Uraian Pekerjaan</th>
                       <th style={{ padding: '8px 12px' }}>Kategori</th>
@@ -949,7 +949,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
                   </thead>
                   <tbody>
                     {previewItems.map(item => (
-                      <tr key={item.no} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <tr key={item.no} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                         <td style={{ padding: '8px 12px', color: 'var(--ez-color-text-muted)' }}>{item.no}</td>
                         <td style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>{item.name}</td>
                         <td style={{ padding: '8px 12px', color: 'var(--ez-color-text-muted)' }}>{item.category}</td>
@@ -970,7 +970,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
         <div
           style={{
             padding: '16px 28px',
-            borderTop: '1px solid #E2E8F0',
+            borderTop: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -983,7 +983,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
             style={{
               padding: '9px 16px',
               borderRadius: '8px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               background: 'var(--ez-color-surface)',
               color: activeStep === 1 ? '#94A3B8' : '#334155',
               fontSize: '13px',

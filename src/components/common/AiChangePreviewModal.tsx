@@ -79,18 +79,18 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
   const getActionBadgeColor = (action: AiChangeActionType) => {
     switch (action) {
       case 'ADD':
-        return { bg: '#ECFDF5', text: '#059669', border: '#A7F3D0', label: 'ADD WORK ITEM' };
+        return { bg: 'var(--ez-hue-emerald-bg)', text: '#059669', border: 'var(--ez-hue-green-border-deep)', label: 'ADD WORK ITEM' };
       case 'DELETE':
-        return { bg: '#FEF2F2', text: '#DC2626', border: '#FECACA', label: 'DELETE RECORD' };
+        return { bg: 'var(--ez-hue-rose-bg)', text: '#DC2626', border: 'var(--ez-hue-rose-border)', label: 'DELETE RECORD' };
       case 'PRICE_UPDATE':
       case 'BULK_UPDATE':
-        return { bg: '#EFF6FF', text: 'var(--ez-color-primary)', border: '#BFDBFE', label: 'PRICE ADJUSTMENT' };
+        return { bg: 'var(--ez-hue-blue-bg)', text: 'var(--ez-color-primary)', border: 'var(--ez-hue-blue-border)', label: 'PRICE ADJUSTMENT' };
       case 'REPLACE':
         return { bg: '#FDF4FF', text: '#9333EA', border: '#F5D0FE', label: 'RESOURCE SUBSTITUTION' };
       case 'AHSP_UPDATE':
-        return { bg: '#FFFBEB', text: '#D97706', border: '#FDE68A', label: 'AHSP RECIPE UPDATE' };
+        return { bg: 'var(--ez-hue-amber-bg)', text: '#D97706', border: 'var(--ez-hue-amber-border)', label: 'AHSP RECIPE UPDATE' };
       default:
-        return { bg: '#F1F5F9', text: '#475569', border: 'var(--ez-color-border)', label: 'DATA UPDATE' };
+        return { bg: 'var(--ez-color-surface-tertiary)', text: '#475569', border: 'var(--ez-color-border)', label: 'DATA UPDATE' };
     }
   };
 
@@ -124,7 +124,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          border: isHighImpact ? '2px solid #F59E0B' : '1px solid #E2E8F0',
+          border: isHighImpact ? '2px solid #F59E0B' : '1px solid var(--ez-color-border-line)',
         }}
       >
         {/* ---------------------------------------------------------------------
@@ -228,7 +228,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
               style={{
                 padding: '12px 16px',
                 borderRadius: '10px',
-                background: '#FFFBEB',
+                background: 'var(--ez-hue-amber-bg)',
                 border: '1px solid #FCD34D',
                 display: 'flex',
                 alignItems: 'flex-start',
@@ -252,7 +252,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
             style={{
               background: 'var(--ez-color-surface-secondary)',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               padding: '16px',
               display: 'flex',
               flexDirection: 'column',
@@ -282,7 +282,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                   fontWeight: 750,
                   padding: '2px 8px',
                   borderRadius: '6px',
-                  background: '#EFF6FF',
+                  background: 'var(--ez-hue-blue-bg)',
                   color: 'var(--ez-color-primary)',
                 }}
               >
@@ -306,7 +306,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                   fontWeight: 750,
                   padding: '2px 8px',
                   borderRadius: '6px',
-                  background: '#ECFDF5',
+                  background: 'var(--ez-hue-emerald-bg)',
                   color: '#059669',
                 }}
               >
@@ -331,7 +331,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                 padding: '14px',
                 borderRadius: '10px',
                 background: 'var(--ez-color-surface-secondary)',
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '4px',
@@ -351,8 +351,8 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
               style={{
                 padding: '14px',
                 borderRadius: '10px',
-                background: '#EFF6FF',
-                border: '1px solid #BFDBFE',
+                background: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-border)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '4px',
@@ -372,8 +372,8 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
               style={{
                 padding: '14px',
                 borderRadius: '10px',
-                background: proposal.deltaAmount >= 0 ? '#FEF2F2' : '#ECFDF5',
-                border: `1px solid ${proposal.deltaAmount >= 0 ? '#FECACA' : '#A7F3D0'}`,
+                background: proposal.deltaAmount >= 0 ? 'var(--ez-hue-rose-bg)' : 'var(--ez-hue-emerald-bg)',
+                border: `1px solid ${proposal.deltaAmount >= 0 ? 'var(--ez-hue-rose-border)' : 'var(--ez-hue-green-border-deep)'}`,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '4px',
@@ -426,7 +426,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
           <div
             style={{
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -437,7 +437,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
               style={{
                 padding: '10px 16px',
                 background: 'var(--ez-color-surface-secondary)',
-                borderBottom: '1px solid #E2E8F0',
+                borderBottom: '1px solid var(--ez-color-border-line)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -455,9 +455,9 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                     style={{
                       padding: '3px 8px',
                       borderRadius: '5px',
-                      background: activeFilter === filterKey ? 'var(--ez-color-primary)' : '#FFFFFF',
+                      background: activeFilter === filterKey ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
                       color: activeFilter === filterKey ? '#FFFFFF' : 'var(--ez-color-text-muted)',
-                      border: activeFilter === filterKey ? 'none' : '1px solid #CBD5E1',
+                      border: activeFilter === filterKey ? 'none' : '1px solid var(--ez-hue-slate-border)',
                       fontSize: '11px',
                       fontWeight: 650,
                       cursor: 'pointer',
@@ -483,7 +483,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                   background: 'var(--ez-color-surface)',
                   borderRadius: '6px',
                   padding: '3px 8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                 }}
               >
                 <Search size={13} color="#94A3B8" />
@@ -505,7 +505,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
             {/* Table List */}
             <div style={{ maxHeight: '240px', overflowY: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
-                <thead style={{ background: '#F1F5F9', color: '#475569', fontSize: '11px', fontWeight: 750, position: 'sticky', top: 0 }}>
+                <thead style={{ background: 'var(--ez-color-surface-tertiary)', color: '#475569', fontSize: '11px', fontWeight: 750, position: 'sticky', top: 0 }}>
                   <tr>
                     <th style={{ padding: '8px 12px' }}>Kode & Uraian</th>
                     <th style={{ padding: '8px 12px', textAlign: 'right' }}>Before</th>
@@ -531,8 +531,8 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                           <tr
                             onClick={() => setExpandedRecordId(isExpanded ? null : rec.id)}
                             style={{
-                              borderBottom: '1px solid #F1F5F9',
-                              background: isExpanded ? '#EFF6FF' : rIdx % 2 === 0 ? '#FFFFFF' : '#FAFAFA',
+                              borderBottom: '1px solid var(--ez-color-surface-tertiary)',
+                              background: isExpanded ? 'var(--ez-hue-blue-bg)' : rIdx % 2 === 0 ? '#FFFFFF' : 'var(--ez-color-surface-faint)',
                               cursor: 'pointer',
                               transition: 'background 0.1s',
                             }}
@@ -572,8 +572,8 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
 
                           {/* EXPANDED INSPECTION DETAIL */}
                           {isExpanded && (
-                            <tr style={{ background: '#EFF6FF' }}>
-                              <td colSpan={5} style={{ padding: '10px 16px', borderBottom: '1px solid #BFDBFE' }}>
+                            <tr style={{ background: 'var(--ez-hue-blue-bg)' }}>
+                              <td colSpan={5} style={{ padding: '10px 16px', borderBottom: '1px solid var(--ez-hue-blue-border)' }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '11.5px' }}>
                                   <div>
                                     <strong style={{ color: '#475569' }}>Rincian Sebelum:</strong>
@@ -606,8 +606,8 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
               style={{
                 padding: '12px 16px',
                 borderRadius: '10px',
-                background: '#F1F5F9',
-                border: '1px solid #CBD5E1',
+                background: 'var(--ez-color-surface-tertiary)',
+                border: '1px solid var(--ez-hue-slate-border)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
@@ -626,7 +626,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                     width: '80px',
                     padding: '4px 8px',
                     borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12px',
                     fontWeight: 700,
                   }}
@@ -663,7 +663,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                 gap: '8px',
                 padding: '10px 14px',
                 borderRadius: '8px',
-                background: '#FEF3C7',
+                background: 'var(--ez-hue-amber-bg-deep)',
                 border: '1px solid #FCD34D',
                 cursor: 'pointer',
                 fontSize: '12px',
@@ -691,7 +691,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
           style={{
             padding: '14px 24px',
             background: 'var(--ez-color-surface-secondary)',
-            borderTop: '1px solid #E2E8F0',
+            borderTop: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -710,7 +710,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                 padding: '8px 16px',
                 borderRadius: '8px',
                 background: 'var(--ez-color-surface)',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 color: '#475569',
                 fontSize: '12.5px',
                 fontWeight: 650,
@@ -725,8 +725,8 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
               style={{
                 padding: '8px 14px',
                 borderRadius: '8px',
-                background: '#F1F5F9',
-                border: '1px solid #CBD5E1',
+                background: 'var(--ez-color-surface-tertiary)',
+                border: '1px solid var(--ez-hue-slate-border)',
                 color: '#1E293B',
                 fontSize: '12.5px',
                 fontWeight: 650,

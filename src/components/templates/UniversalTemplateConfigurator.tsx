@@ -296,7 +296,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           overflow: 'hidden',
         }}
       >
@@ -306,7 +306,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
         <div
           style={{
             padding: '14px 22px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -341,11 +341,11 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                   style={{
                     fontSize: '10.5px',
                     fontWeight: 700,
-                    background: '#EFF6FF',
+                    background: 'var(--ez-hue-blue-bg)',
                     color: 'var(--ez-color-primary-hover)',
                     padding: '2px 8px',
                     borderRadius: '4px',
-                    border: '1px solid #DBEAFE',
+                    border: '1px solid var(--ez-hue-blue-bg-deep)',
                     textTransform: 'uppercase',
                   }}
                 >
@@ -356,7 +356,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                     style={{
                       fontSize: '10.5px',
                       color: '#475569',
-                      background: '#F1F5F9',
+                      background: 'var(--ez-color-surface-tertiary)',
                       padding: '2px 8px',
                       borderRadius: '4px',
                     }}
@@ -379,7 +379,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
             style={{
               padding: '8px',
               borderRadius: '8px',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               background: 'var(--ez-color-surface)',
               color: 'var(--ez-color-text-muted)',
               cursor: 'pointer',
@@ -409,11 +409,11 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
               display: 'flex',
               flexDirection: 'column',
               gap: '20px',
-              borderRight: '1px solid #E2E8F0',
+              borderRight: '1px solid var(--ez-color-border-line)',
             }}
           >
             {/* SECTION 01: PROJECT TARGET SELECTOR */}
-            <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
+            <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Building size={15} color="#2563EB" />
@@ -436,9 +436,9 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       borderRadius: '6px',
                       fontSize: '11.5px',
                       fontWeight: targetMode === 'CURRENT' ? 700 : 500,
-                      background: targetMode === 'CURRENT' ? '#EFF6FF' : 'var(--ez-color-surface-secondary)',
+                      background: targetMode === 'CURRENT' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-secondary)',
                       color: targetMode === 'CURRENT' ? 'var(--ez-color-primary-hover)' : '#475569',
-                      border: targetMode === 'CURRENT' ? '1.5px solid #2563EB' : '1px solid #CBD5E1',
+                      border: targetMode === 'CURRENT' ? '1.5px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                       cursor: 'pointer',
                     }}
                   >
@@ -454,9 +454,9 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       borderRadius: '6px',
                       fontSize: '11.5px',
                       fontWeight: targetMode === 'EXISTING' ? 700 : 500,
-                      background: targetMode === 'EXISTING' ? '#EFF6FF' : 'var(--ez-color-surface-secondary)',
+                      background: targetMode === 'EXISTING' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-secondary)',
                       color: targetMode === 'EXISTING' ? 'var(--ez-color-primary-hover)' : '#475569',
-                      border: targetMode === 'EXISTING' ? '1.5px solid #2563EB' : '1px solid #CBD5E1',
+                      border: targetMode === 'EXISTING' ? '1.5px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                       cursor: 'pointer',
                     }}
                   >
@@ -471,9 +471,9 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                     borderRadius: '6px',
                     fontSize: '11.5px',
                     fontWeight: targetMode === 'NEW' ? 700 : 500,
-                    background: targetMode === 'NEW' ? '#EFF6FF' : 'var(--ez-color-surface-secondary)',
+                    background: targetMode === 'NEW' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-secondary)',
                     color: targetMode === 'NEW' ? 'var(--ez-color-primary-hover)' : '#475569',
-                    border: targetMode === 'NEW' ? '1.5px solid #2563EB' : '1px solid #CBD5E1',
+                    border: targetMode === 'NEW' ? '1.5px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -487,7 +487,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
 
               {/* Mode Specific Input */}
               {targetMode === 'CURRENT' && currentProject && (
-                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '10px 12px', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '12px', color: '#334155' }}>
+                <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--ez-color-border-line)', fontSize: '12px', color: '#334155' }}>
                   Item RAB akan langsung di-generate dan ditambahkan ke lembar kerja <strong>{currentProject.name}</strong>.
                 </div>
               )}
@@ -505,7 +505,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       width: '100%',
                       height: '34px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       background: 'var(--ez-color-surface-secondary)',
                       fontSize: '12px',
                       color: 'var(--ez-color-text-primary)',
@@ -537,7 +537,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       width: '100%',
                       height: '34px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       background: 'var(--ez-color-surface)',
                       fontSize: '12.5px',
                       color: 'var(--ez-color-text-primary)',
@@ -551,7 +551,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
             </div>
 
             {/* SECTION 02: UNIVERSAL 3-TIER DETAIL LEVEL */}
-            <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
+            <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Layers size={15} color="#2563EB" />
@@ -594,8 +594,8 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       style={{
                         padding: '12px 14px',
                         borderRadius: '8px',
-                        border: isSelected ? '2px solid #2563EB' : '1px solid #E2E8F0',
-                        background: isSelected ? '#EFF6FF' : '#ffffff',
+                        border: isSelected ? '2px solid #2563EB' : '1px solid var(--ez-color-border-line)',
+                        background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                         cursor: 'pointer',
                         display: 'flex',
                         flexDirection: 'column',
@@ -614,7 +614,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                             fontWeight: 700,
                             padding: '1px 6px',
                             borderRadius: '4px',
-                            background: isSelected ? 'var(--ez-color-primary)' : '#F1F5F9',
+                            background: isSelected ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
                             color: isSelected ? '#ffffff' : '#475569',
                           }}
                         >
@@ -634,8 +634,8 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
             </div>
 
             {/* SECTION 03: DYNAMIC PARAMETERS (Grouped by Context) */}
-            <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
+            <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', borderBottom: '1px solid var(--ez-color-surface-tertiary)', paddingBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Sliders size={15} color="#2563EB" />
                   <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
@@ -664,7 +664,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                             style={{
                               background: 'var(--ez-color-surface-secondary)',
                               borderRadius: '8px',
-                              border: '1px solid #E2E8F0',
+                              border: '1px solid var(--ez-color-border-line)',
                               padding: '10px 12px',
                               display: 'flex',
                               flexDirection: 'column',
@@ -697,7 +697,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                                   width: '100%',
                                   height: '32px',
                                   borderRadius: '5px',
-                                  border: '1px solid #CBD5E1',
+                                  border: '1px solid var(--ez-hue-slate-border)',
                                   background: 'var(--ez-color-surface)',
                                   fontSize: '12px',
                                   color: 'var(--ez-color-text-primary)',
@@ -739,7 +739,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                                     width: '100%',
                                     height: '32px',
                                     borderRadius: '5px',
-                                    border: '1px solid #CBD5E1',
+                                    border: '1px solid var(--ez-hue-slate-border)',
                                     background: 'var(--ez-color-surface)',
                                     fontSize: '12.5px',
                                     fontFamily: param.type === 'NUMBER' ? 'monospace' : 'inherit',
@@ -768,7 +768,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
             </div>
 
             {/* SECTION 04: WORK PACKAGES INCLUDED */}
-            <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
+            <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Package size={15} color="#2563EB" />
@@ -788,7 +788,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       key={catName}
                       style={{
                         background: 'var(--ez-color-surface-secondary)',
-                        border: '1px solid #E2E8F0',
+                        border: '1px solid var(--ez-color-border-line)',
                         borderRadius: '6px',
                         padding: '6px 10px',
                         display: 'flex',
@@ -809,7 +809,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
 
             {/* SECTION 05: OPTIONAL WORKS (Pekerjaan Tambahan) */}
             {optionalComponents.length > 0 && (
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
+              <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Plus size={15} color="#2563EB" />
@@ -834,8 +834,8 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                           gap: '8px',
                           padding: '8px 10px',
                           borderRadius: '6px',
-                          background: isChecked ? '#EFF6FF' : 'var(--ez-color-surface-secondary)',
-                          border: isChecked ? '1.5px solid #2563EB' : '1px solid #E2E8F0',
+                          background: isChecked ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-secondary)',
+                          border: isChecked ? '1.5px solid #2563EB' : '1px solid var(--ez-color-border-line)',
                           cursor: 'pointer',
                           transition: 'all 0.1s ease',
                         }}
@@ -868,7 +868,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
 
             {/* SECTION 06: MATERIAL & SPECIFICATION LINKAGE */}
             {templateMaterialCategories.length > 0 && (
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
+              <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Wrench size={15} color="#2563EB" />
@@ -896,7 +896,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                         key={catKey}
                         style={{
                           background: 'var(--ez-color-surface-secondary)',
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid var(--ez-hue-slate-border)',
                           borderRadius: '6px',
                           padding: '6px 10px',
                           display: 'flex',
@@ -905,7 +905,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                           fontSize: '11px',
                         }}
                       >
-                        <span style={{ fontWeight: 800, color: '#1E293B', background: '#E2E8F0', padding: '1px 5px', borderRadius: '3px' }}>
+                        <span style={{ fontWeight: 800, color: '#1E293B', background: 'var(--ez-color-border-line)', padding: '1px 5px', borderRadius: '3px' }}>
                           {catKey}
                         </span>
                         <span style={{ color: 'var(--ez-color-text-primary)', fontWeight: 600 }}>
@@ -914,8 +914,8 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                         <button
                           onClick={() => setActiveMaterialPickerCategory(activeMaterialPickerCategory === catKey ? null : catKey)}
                           style={{
-                            background: '#EFF6FF',
-                            border: '1px solid #BFDBFE',
+                            background: 'var(--ez-hue-blue-bg)',
+                            border: '1px solid var(--ez-hue-blue-border)',
                             color: 'var(--ez-color-primary-hover)',
                             borderRadius: '4px',
                             padding: '2px 6px',
@@ -933,7 +933,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
 
                 {/* Sub-picker for active material category */}
                 {activeMaterialPickerCategory && (
-                  <div style={{ marginTop: '10px', padding: '10px', background: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
+                  <div style={{ marginTop: '10px', padding: '10px', background: 'var(--ez-hue-blue-bg)', borderRadius: '8px', border: '1px solid var(--ez-hue-blue-border)' }}>
                     <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#1E3A8A', marginBottom: '6px' }}>
                       Pilih Spesifikasi untuk Kategori {activeMaterialPickerCategory}:
                     </div>
@@ -947,7 +947,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                             padding: '6px 8px',
                             borderRadius: '5px',
                             background: 'var(--ez-color-surface)',
-                            border: materialOverrides[activeMaterialPickerCategory] === m.id ? '2px solid #2563EB' : '1px solid #CBD5E1',
+                            border: materialOverrides[activeMaterialPickerCategory] === m.id ? '2px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                             cursor: 'pointer',
                             fontSize: '11px',
                           }}
@@ -963,7 +963,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
             )}
 
             {/* SECTION 07: TRANSPARENCY & ASSUMPTIONS ACCORDION */}
-            <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', overflow: 'hidden', background: 'var(--ez-color-surface)' }}>
+            <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', overflow: 'hidden', background: 'var(--ez-color-surface)' }}>
               <button
                 onClick={() => setShowTransparencyAccordion(!showTransparencyAccordion)}
                 style={{
@@ -988,7 +988,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
               </button>
 
               {showTransparencyAccordion && (
-                <div style={{ padding: '12px 14px', background: 'var(--ez-color-surface)', fontSize: '11.5px', color: '#475569', lineHeight: 1.6, borderTop: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ padding: '12px 14px', background: 'var(--ez-color-surface)', fontSize: '11.5px', color: '#475569', lineHeight: 1.6, borderTop: '1px solid var(--ez-color-border-line)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div>
                     <strong>Dasar Hukum & Standardisasi:</strong>
                     <div>• AHSP PUPR S.E. No. 47/SE/M/2026 & Bina Marga 2026.</div>
@@ -1025,7 +1025,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                   background: '#0F172A',
                   borderRadius: 'var(--ez-radius-control)',
                   padding: '16px',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   border: '1px solid #1E293B',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                 }}
@@ -1034,7 +1034,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     TOTAL ESTIMASI RAB
                   </span>
-                  <span style={{ fontSize: '10px', background: '#059669', color: '#ffffff', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                  <span style={{ fontSize: '10px', background: '#059669', color: '#FFFFFF', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
                     PUPR 2026
                   </span>
                 </div>
@@ -1045,12 +1045,12 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #1E293B', fontSize: '11.5px', color: 'var(--ez-color-border)' }}>
                   <span>Total Komponen WBS:</span>
-                  <strong style={{ color: '#ffffff' }}>{previewResult?.items.length || 0} Item</strong>
+                  <strong style={{ color: '#FFFFFF' }}>{previewResult?.items.length || 0} Item</strong>
                 </div>
               </div>
 
               {/* ESTIMATION METADATA OVERVIEW */}
-              <div style={{ background: 'var(--ez-color-surface)', borderRadius: '10px', border: '1px solid #E2E8F0', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11.5px' }}>
+              <div style={{ background: 'var(--ez-color-surface)', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11.5px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
                   <span>Detail Level:</span>
                   <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{detailLevel}</span>
@@ -1073,8 +1073,8 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
 
               {/* WORK CATEGORY SUMMARY BREAKDOWN */}
               {previewResult && (
-                <div style={{ background: 'var(--ez-color-surface)', borderRadius: '10px', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-                  <div style={{ padding: '8px 12px', background: '#F1F5F9', fontSize: '11px', fontWeight: 800, color: '#334155', textTransform: 'uppercase' }}>
+                <div style={{ background: 'var(--ez-color-surface)', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)', overflow: 'hidden' }}>
+                  <div style={{ padding: '8px 12px', background: 'var(--ez-color-surface-tertiary)', fontSize: '11px', fontWeight: 800, color: '#334155', textTransform: 'uppercase' }}>
                     Ringkasan Biaya per Kategori
                   </div>
                   <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
@@ -1086,7 +1086,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          borderBottom: '1px solid #F1F5F9',
+                          borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                           fontSize: '11px',
                         }}
                       >
@@ -1104,7 +1104,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
 
               {/* VALIDATION & ERROR STATUS BOX */}
               {validationErrors.length > 0 ? (
-                <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '10px', fontSize: '11.5px', color: '#B91C1C' }}>
+                <div style={{ background: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '10px', fontSize: '11.5px', color: '#B91C1C' }}>
                   <div style={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
                     <AlertCircle size={14} /> Parameter Belum Lengkap:
                   </div>
@@ -1115,7 +1115,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                   </ul>
                 </div>
               ) : (
-                <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', padding: '8px 10px', fontSize: '11px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ background: 'var(--ez-hue-green-bg)', border: '1px solid var(--ez-hue-green-border)', borderRadius: '8px', padding: '8px 10px', fontSize: '11px', color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <CheckCircle2 size={14} color="#16A34A" />
                   <span>Seluruh parameter valid & siap diterapkan ke proyek.</span>
                 </div>
@@ -1130,7 +1130,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                   height: '34px',
                   borderRadius: '6px',
                   background: 'var(--ez-color-surface)',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   color: '#334155',
                   fontSize: '12px',
                   fontWeight: 700,
@@ -1152,7 +1152,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                   height: '42px',
                   borderRadius: '8px',
                   background: isValidToApply ? 'var(--ez-color-primary)' : '#94A3B8',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   fontSize: '13px',
                   fontWeight: 800,
                   border: 'none',
@@ -1218,7 +1218,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
               overflow: 'hidden',
             }}
           >
-            <div style={{ padding: '14px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--ez-color-surface-secondary)' }}>
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--ez-color-border-line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--ez-color-surface-secondary)' }}>
               <div>
                 <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                   Rincian Item Pekerjaan RAB — {template.name} ({detailLevel})
@@ -1238,7 +1238,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1.5px solid #CBD5E1', color: '#334155', fontWeight: 700 }}>
+                  <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1.5px solid var(--ez-hue-slate-border)', color: '#334155', fontWeight: 700 }}>
                     <th style={{ padding: '8px 10px', width: '36px' }}>No</th>
                     <th style={{ padding: '8px 10px' }}>Uraian Pekerjaan & WBS</th>
                     <th style={{ padding: '8px 10px', textAlign: 'right' }}>Volume</th>
@@ -1253,8 +1253,8 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                     <tr
                       key={item.id}
                       style={{
-                        borderBottom: '1px solid #F1F5F9',
-                        background: idx % 2 === 0 ? '#ffffff' : '#FAFAFA',
+                        borderBottom: '1px solid var(--ez-color-surface-tertiary)',
+                        background: idx % 2 === 0 ? '#ffffff' : 'var(--ez-color-surface-faint)',
                       }}
                     >
                       <td style={{ padding: '7px 10px', color: 'var(--ez-color-text-muted)' }}>{idx + 1}</td>
@@ -1281,7 +1281,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
               </table>
             </div>
 
-            <div style={{ padding: '12px 20px', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end', background: 'var(--ez-color-surface-secondary)' }}>
+            <div style={{ padding: '12px 20px', borderTop: '1px solid var(--ez-color-border-line)', display: 'flex', justifyContent: 'flex-end', background: 'var(--ez-color-surface-secondary)' }}>
               <button
                 onClick={() => setShowItemDetailModal(false)}
                 style={{
@@ -1289,7 +1289,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                   padding: '0 16px',
                   borderRadius: '6px',
                   background: '#0F172A',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   fontSize: '12px',
                   fontWeight: 700,
                   border: 'none',

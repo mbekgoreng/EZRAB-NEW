@@ -695,7 +695,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
           justifyContent: 'space-between',
           background: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '14px 24px',
           boxShadow: '0 2px 8px rgba(15, 23, 42, 0.03)',
         }}
@@ -732,9 +732,9 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                       ? '#10B981'
                       : isCurrent
                       ? 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)'
-                      : '#F1F5F9',
+                      : 'var(--ez-color-surface-tertiary)',
                     color: isPassed || isCurrent ? '#ffffff' : 'var(--ez-color-text-muted)',
-                    border: isCurrent ? '2px solid #BFDBFE' : '1px solid transparent',
+                    border: isCurrent ? '2px solid var(--ez-hue-blue-border)' : '1px solid transparent',
                     boxShadow: isCurrent ? '0 2px 8px rgba(37, 99, 235, 0.3)' : 'none',
                     transition: 'all 0.2s ease',
                   }}
@@ -760,7 +760,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   style={{
                     flex: 1,
                     height: '2px',
-                    background: isPassed ? '#10B981' : '#E2E8F0',
+                    background: isPassed ? '#10B981' : 'var(--ez-color-border-line)',
                     margin: '0 16px',
                     borderRadius: '1px',
                     transition: 'background 0.3s ease',
@@ -780,7 +780,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
           gap: '8px',
           background: 'var(--ez-color-surface)',
           borderRadius: 'var(--ez-radius-control)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '12px 16px',
         }}
         className="sm:hidden"
@@ -793,7 +793,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
             {WIZARD_STEPS[currentStep - 1]?.label}
           </span>
         </div>
-        <div style={{ width: '100%', height: '6px', background: '#F1F5F9', borderRadius: '3px', overflow: 'hidden' }}>
+        <div style={{ width: '100%', height: '6px', background: 'var(--ez-color-surface-tertiary)', borderRadius: '3px', overflow: 'hidden' }}>
           <div
             style={{
               width: `${(currentStep / 4) * 100}%`,
@@ -834,7 +834,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               onClick={() => setResultsViewMode('split')}
               style={{
                 padding: '9px 18px', borderRadius: 'var(--ez-radius-control)', border: 'none', fontWeight: 700, fontSize: 13,
-                cursor: 'pointer', background: resultsViewMode === 'split' ? 'linear-gradient(135deg,#1D4ED8,#2563EB)' : '#F1F5F9',
+                cursor: 'pointer', background: resultsViewMode === 'split' ? 'linear-gradient(135deg,#1D4ED8,#2563EB)' : 'var(--ez-color-surface-tertiary)',
                 color: resultsViewMode === 'split' ? '#fff' : 'var(--ez-color-text-muted)',
               }}
             >
@@ -844,7 +844,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               onClick={() => setResultsViewMode('detail')}
               style={{
                 padding: '9px 18px', borderRadius: 'var(--ez-radius-control)', border: 'none', fontWeight: 700, fontSize: 13,
-                cursor: 'pointer', background: resultsViewMode === 'detail' ? 'linear-gradient(135deg,#1D4ED8,#2563EB)' : '#F1F5F9',
+                cursor: 'pointer', background: resultsViewMode === 'detail' ? 'linear-gradient(135deg,#1D4ED8,#2563EB)' : 'var(--ez-color-surface-tertiary)',
                 color: resultsViewMode === 'detail' ? '#fff' : 'var(--ez-color-text-muted)',
               }}
             >
@@ -924,8 +924,8 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               justifyContent: 'space-between',
               gap: '12px',
               padding: '16px 20px',
-              background: '#FEF2F2',
-              border: '1px solid #FECACA',
+              background: 'var(--ez-hue-rose-bg)',
+              border: '1px solid var(--ez-hue-rose-border)',
               borderRadius: '14px',
               color: '#991B1B',
               fontSize: '13px',
@@ -955,7 +955,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   padding: '9px 18px',
                   borderRadius: '8px',
                   background: '#DC2626',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   fontSize: '12px',
                   fontWeight: 700,
                   border: 'none',
@@ -997,7 +997,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                     height: '22px',
                     borderRadius: '50%',
                     background: activeTargetProject ? '#10B981' : 'var(--ez-color-primary)',
-                    color: '#ffffff',
+                    color: '#FFFFFF',
                     fontSize: '11px',
                     fontWeight: 800,
                   }}
@@ -1027,8 +1027,8 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                     borderRadius: '8px',
                     fontSize: '12px',
                     fontWeight: 700,
-                    background: '#F1F5F9',
-                    border: '1px solid #CBD5E1',
+                    background: 'var(--ez-color-surface-tertiary)',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     color: '#334155',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
@@ -1047,8 +1047,8 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                     borderRadius: '8px',
                     fontSize: '12px',
                     fontWeight: 700,
-                    background: '#EFF6FF',
-                    border: '1px solid #BFDBFE',
+                    background: 'var(--ez-hue-blue-bg)',
+                    border: '1px solid var(--ez-hue-blue-border)',
                     color: 'var(--ez-color-primary-hover)',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
@@ -1065,7 +1065,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
             <div
               style={{
                 background: 'var(--ez-color-surface-secondary)',
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
                 borderRadius: 'var(--ez-radius-control)',
                 padding: '16px 20px',
                 display: 'flex',
@@ -1082,7 +1082,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                     height: '42px',
                     borderRadius: '10px',
                     background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
-                    color: '#ffffff',
+                    color: '#FFFFFF',
                     display: 'grid',
                     placeItems: 'center',
                     flexShrink: 0,
@@ -1104,9 +1104,9 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                         borderRadius: '6px',
                         fontSize: '11px',
                         fontWeight: 700,
-                        background: '#ECFDF5',
+                        background: 'var(--ez-hue-emerald-bg)',
                         color: '#059669',
-                        border: '1px solid #A7F3D0',
+                        border: '1px solid var(--ez-hue-green-border-deep)',
                       }}
                     >
                       <CheckCircle2 size={12} /> Dipilih
@@ -1130,7 +1130,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
             <div
               style={{
                 background: 'var(--ez-color-surface-secondary)',
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
                 borderRadius: 'var(--ez-radius-control)',
                 padding: '16px 18px',
                 display: 'flex',
@@ -1139,7 +1139,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               }}
             >
               {/* Mode Switcher Tabs */}
-              <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #E2E8F0', paddingBottom: '10px' }}>
+              <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--ez-color-border-line)', paddingBottom: '10px' }}>
                 {resolvedCurrentProject && (
                   <button
                     type="button"
@@ -1154,7 +1154,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                       fontWeight: 700,
                       border: '1px solid',
                       cursor: 'pointer',
-                      background: targetProjectMode === 'ACTIVE' ? 'var(--ez-color-primary)' : '#ffffff',
+                      background: targetProjectMode === 'ACTIVE' ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
                       borderColor: targetProjectMode === 'ACTIVE' ? 'var(--ez-color-primary)' : 'var(--ez-color-border)',
                       color: targetProjectMode === 'ACTIVE' ? '#ffffff' : '#475569',
                       transition: 'all 0.15s ease',
@@ -1176,7 +1176,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                     fontWeight: 700,
                     border: '1px solid',
                     cursor: 'pointer',
-                    background: targetProjectMode === 'NEW' ? 'var(--ez-color-primary)' : '#ffffff',
+                    background: targetProjectMode === 'NEW' ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
                     borderColor: targetProjectMode === 'NEW' ? 'var(--ez-color-primary)' : 'var(--ez-color-border)',
                     color: targetProjectMode === 'NEW' ? '#ffffff' : '#475569',
                     transition: 'all 0.15s ease',
@@ -1199,7 +1199,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                       width: '100%',
                       padding: '10px 14px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       fontWeight: 600,
                       color: 'var(--ez-color-text-primary)',
@@ -1224,7 +1224,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                           fontSize: '12px',
                           fontWeight: 600,
                           background: 'var(--ez-color-surface)',
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid var(--ez-hue-slate-border)',
                           color: '#475569',
                           cursor: 'pointer',
                         }}
@@ -1249,7 +1249,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                       width: '100%',
                       padding: '10px 14px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       fontWeight: 600,
                       color: 'var(--ez-color-text-primary)',
@@ -1274,7 +1274,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                           padding: '8px 16px',
                           borderRadius: '8px',
                           background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
-                          color: '#ffffff',
+                          color: '#FFFFFF',
                           fontSize: '12px',
                           fontWeight: 700,
                           border: 'none',
@@ -1299,7 +1299,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                           color: '#334155',
                           fontSize: '12px',
                           fontWeight: 700,
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid var(--ez-hue-slate-border)',
                           cursor: 'pointer',
                           transition: 'all 0.15s ease',
                         }}
@@ -1341,7 +1341,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   height: '22px',
                   borderRadius: '50%',
                   background: selectedFile ? '#10B981' : currentStep === 2 ? 'var(--ez-color-primary)' : '#94A3B8',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   fontSize: '11px',
                   fontWeight: 800,
                 }}
@@ -1376,7 +1376,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
               style={{
-                background: isDragging ? '#EFF6FF' : 'var(--ez-color-surface-secondary)',
+                background: isDragging ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-secondary)',
                 border: `2px dashed ${isDragging ? 'var(--ez-color-primary)' : 'var(--ez-color-border)'}`,
                 borderRadius: '14px',
                 padding: '36px 24px',
@@ -1390,7 +1390,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   width: '54px',
                   height: '54px',
                   borderRadius: '14px',
-                  background: '#EFF6FF',
+                  background: 'var(--ez-hue-blue-bg)',
                   color: 'var(--ez-color-primary)',
                   display: 'grid',
                   placeItems: 'center',
@@ -1416,7 +1416,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   padding: '9px 20px',
                   borderRadius: '8px',
                   background: 'var(--ez-color-primary)',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   fontSize: '13px',
                   fontWeight: 700,
                   border: 'none',
@@ -1431,8 +1431,8 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
             /* File Selected Info Card */
             <div
               style={{
-                background: '#F0FDF4',
-                border: '1.5px solid #BBF7D0',
+                background: 'var(--ez-hue-green-bg)',
+                border: '1.5px solid var(--ez-hue-green-border)',
                 borderRadius: '14px',
                 padding: '16px 20px',
                 display: 'flex',
@@ -1449,7 +1449,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                     height: '42px',
                     borderRadius: '10px',
                     background: '#10B981',
-                    color: '#ffffff',
+                    color: '#FFFFFF',
                     display: 'grid',
                     placeItems: 'center',
                     flexShrink: 0,
@@ -1474,7 +1474,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   padding: '7px 14px',
                   borderRadius: '8px',
                   background: 'var(--ez-color-surface)',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   color: '#334155',
                   fontSize: '12px',
                   fontWeight: 700,
@@ -1503,8 +1503,8 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                 borderRadius: '6px',
                 fontSize: '11.5px',
                 fontWeight: 700,
-                background: '#EFF6FF',
-                border: '1px solid #BFDBFE',
+                background: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-border)',
                 color: 'var(--ez-color-primary-hover)',
                 cursor: 'pointer',
               }}
@@ -1520,7 +1520,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               padding: '10px 14px',
               background: 'var(--ez-color-surface-secondary)',
               borderRadius: '8px',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               fontSize: '11.5px',
               color: 'var(--ez-color-text-muted)',
               lineHeight: 1.5,
@@ -1554,7 +1554,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   height: '22px',
                   borderRadius: '50%',
                   background: currentStep >= 3 ? 'var(--ez-color-primary)' : '#94A3B8',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   fontSize: '11px',
                   fontWeight: 800,
                 }}
@@ -1586,7 +1586,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   padding: '18px 20px',
                   borderRadius: '14px',
                   border: `2px solid ${executionMode === 'AI_RAB' ? 'var(--ez-color-primary)' : 'var(--ez-color-border)'}`,
-                  background: executionMode === 'AI_RAB' ? '#EFF6FF' : '#FFFFFF',
+                  background: executionMode === 'AI_RAB' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                   boxShadow: executionMode === 'AI_RAB' ? '0 4px 14px rgba(37, 99, 235, 0.12)' : '0 1px 3px rgba(0,0,0,0.02)',
@@ -1616,7 +1616,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   padding: '18px 20px',
                   borderRadius: '14px',
                   border: `2px solid ${executionMode === 'EZRAB_STANDARD' ? '#0F172A' : 'var(--ez-color-border)'}`,
-                  background: executionMode === 'EZRAB_STANDARD' ? 'var(--ez-color-surface-secondary)' : '#FFFFFF',
+                  background: executionMode === 'EZRAB_STANDARD' ? 'var(--ez-color-surface-secondary)' : 'var(--ez-color-surface)',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                   boxShadow: executionMode === 'EZRAB_STANDARD' ? '0 4px 14px rgba(15, 23, 42, 0.08)' : '0 1px 3px rgba(0,0,0,0.02)',
@@ -1642,7 +1642,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
           <div
             style={{
               background: 'var(--ez-color-surface-secondary)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               borderRadius: '14px',
               padding: '16px 20px',
               marginBottom: '22px',
@@ -1669,7 +1669,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     background: 'var(--ez-color-surface)',
                     fontSize: '12.5px',
                     color: 'var(--ez-color-text-primary)',
@@ -1701,7 +1701,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     background: 'var(--ez-color-surface)',
                     fontSize: '12.5px',
                     color: 'var(--ez-color-text-primary)',
@@ -1723,7 +1723,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     background: 'var(--ez-color-surface)',
                     fontSize: '12.5px',
                     color: 'var(--ez-color-text-primary)',
@@ -1743,7 +1743,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     background: 'var(--ez-color-surface)',
                     fontSize: '12.5px',
                     color: 'var(--ez-color-text-primary)',
@@ -1768,8 +1768,8 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   borderRadius: '6px',
                   fontSize: '11.5px',
                   fontWeight: 700,
-                  background: processingMode === 'FAST' ? '#EFF6FF' : '#F1F5F9',
-                  border: `1px solid ${processingMode === 'FAST' ? '#BFDBFE' : 'var(--ez-color-border)'}`,
+                  background: processingMode === 'FAST' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-tertiary)',
+                  border: `1px solid ${processingMode === 'FAST' ? 'var(--ez-hue-blue-border)' : 'var(--ez-color-border)'}`,
                   color: processingMode === 'FAST' ? 'var(--ez-color-primary-hover)' : '#475569',
                   cursor: 'pointer',
                 }}
@@ -1784,8 +1784,8 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   borderRadius: '6px',
                   fontSize: '11.5px',
                   fontWeight: 700,
-                  background: processingMode === 'DETAIL' ? '#EFF6FF' : '#F1F5F9',
-                  border: `1px solid ${processingMode === 'DETAIL' ? '#BFDBFE' : 'var(--ez-color-border)'}`,
+                  background: processingMode === 'DETAIL' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-tertiary)',
+                  border: `1px solid ${processingMode === 'DETAIL' ? 'var(--ez-hue-blue-border)' : 'var(--ez-color-border)'}`,
                   color: processingMode === 'DETAIL' ? 'var(--ez-color-primary-hover)' : '#475569',
                   cursor: 'pointer',
                 }}
@@ -1800,7 +1800,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
             <div
               style={{
                 background: 'var(--ez-color-surface-secondary)',
-                border: '1.5px solid #DBEAFE',
+                border: '1.5px solid var(--ez-hue-blue-bg-deep)',
                 borderRadius: '16px',
                 padding: '26px',
                 display: 'flex',
@@ -1816,7 +1816,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                     height: '44px',
                     borderRadius: 'var(--ez-radius-control)',
                     background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
-                    color: '#ffffff',
+                    color: '#FFFFFF',
                     display: 'grid',
                     placeItems: 'center',
                     boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
@@ -1835,7 +1835,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
               </div>
 
               {/* Progress Bar */}
-              <div style={{ width: '100%', height: '8px', background: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
+              <div style={{ width: '100%', height: '8px', background: 'var(--ez-color-border-line)', borderRadius: '4px', overflow: 'hidden' }}>
                 <div
                   style={{
                     width: `${pipelineProgress?.progress || 10}%`,
@@ -1874,8 +1874,8 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                           placeItems: 'center',
                           fontSize: '11px',
                           fontWeight: 800,
-                          background: isDone ? '#ECFDF5' : isCurrent ? '#EFF6FF' : '#F1F5F9',
-                          border: `1.5px solid ${isDone ? '#A7F3D0' : isCurrent ? '#BFDBFE' : 'var(--ez-color-border)'}`,
+                          background: isDone ? 'var(--ez-hue-emerald-bg)' : isCurrent ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-tertiary)',
+                          border: `1.5px solid ${isDone ? 'var(--ez-hue-green-border-deep)' : isCurrent ? 'var(--ez-hue-blue-border)' : 'var(--ez-color-border)'}`,
                           color: isDone ? '#059669' : isCurrent ? 'var(--ez-color-primary)' : '#94A3B8',
                         }}
                       >
@@ -1895,7 +1895,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   padding: '14px',
                   borderRadius: '10px',
                   background: '#94A3B8',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   fontSize: '14px',
                   fontWeight: 750,
                   border: 'none',
@@ -1938,11 +1938,11 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
                   maxWidth: '440px',
                   borderRadius: 'var(--ez-radius-control)',
                   background: !selectedFile
-                    ? '#E2E8F0'
+                    ? 'var(--ez-color-border-line)'
                     : executionMode === 'AI_RAB'
                       ? 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)'
                       : 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
-                  color: !selectedFile ? '#94A3B8' : '#ffffff',
+                  color: !selectedFile ? '#94A3B8' : 'var(--ez-color-surface)',
                   fontSize: '15px',
                   fontWeight: 800,
                   border: 'none',

@@ -683,7 +683,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
             padding: '7px 12px',
             borderRadius: '8px',
             background: 'var(--ez-color-surface)',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             fontSize: '12px',
             fontWeight: 600,
             color: 'var(--ez-color-text-muted)',
@@ -764,7 +764,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
           <div
             style={{
               background: 'var(--ez-color-surface)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               borderRadius: '10px',
               padding: '6px 14px',
               display: 'flex',
@@ -774,7 +774,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
               cursor: 'pointer',
             }}
           >
-            <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
+            <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
               <Building size={14} />
             </div>
             <div>
@@ -790,7 +790,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
           <div
             style={{
               background: 'var(--ez-color-surface)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               borderRadius: '10px',
               padding: '6px 14px',
               display: 'flex',
@@ -944,7 +944,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
               padding: '0 18px',
               borderRadius: '10px',
               background: 'var(--ez-color-primary)',
-              color: '#ffffff',
+              color: '#FFFFFF',
               fontSize: '12.5px',
               fontWeight: 600,
               border: 'none',
@@ -1016,7 +1016,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
+                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
                       <FileText size={18} />
                     </div>
                     <svg viewBox="0 0 50 25" style={{ width: '50px', height: '25px', opacity: 0.7 }}>
@@ -1048,7 +1048,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
+                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
                       <Layers size={18} />
                     </div>
                     <svg viewBox="0 0 50 25" style={{ width: '50px', height: '25px', opacity: 0.7 }}>
@@ -1080,7 +1080,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
+                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
                       <Activity size={18} />
                     </div>
                     <svg viewBox="0 0 50 25" style={{ width: '50px', height: '25px', opacity: 0.7 }}>
@@ -1112,7 +1112,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16A34A' }}>
+                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--ez-hue-green-bg-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16A34A' }}>
                       <TrendingUp size={18} />
                     </div>
                     <svg viewBox="0 0 50 25" style={{ width: '50px', height: '25px', opacity: 0.7 }}>
@@ -1144,7 +1144,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                       <thead>
-                        <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
+                        <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
                           <th style={{ padding: '8px 10px', textAlign: 'center', width: '36px' }}>No</th>
                           <th style={{ padding: '8px 10px', textAlign: 'left' }}>Uraian</th>
                           <th style={{ padding: '8px 10px', textAlign: 'right', width: '120px' }}>Nilai (Rp)</th>
@@ -1155,7 +1155,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                         {rekapCategories.map((cat) => {
                           const pct = totalRekapValue > 0 ? ((cat.value / totalRekapValue) * 100).toFixed(2) : '0,00';
                           return (
-                            <tr key={cat.no} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                            <tr key={cat.no} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                               <td style={{ padding: '6px 10px', textAlign: 'center', color: '#94A3B8' }}>{cat.no}</td>
                               <td style={{ padding: '6px 10px', fontWeight: 500, color: 'var(--ez-color-text-primary)' }}>{cat.name}</td>
                               <td style={{ padding: '6px 10px', textAlign: 'right', color: 'var(--ez-color-text-primary)' }}>{cat.value.toLocaleString('id-ID')}</td>
@@ -1179,7 +1179,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     <div style={{ position: 'relative', width: '130px', height: '130px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
                         <path
-                          stroke="#F1F5F9"
+                          stroke="var(--ez-color-surface-tertiary)"
                           strokeWidth="3.8"
                           fill="none"
                           d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
@@ -1245,7 +1245,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                     <thead>
-                      <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
+                      <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
                         <th style={{ padding: '8px 10px', textAlign: 'center', width: '36px' }}>No</th>
                         <th style={{ padding: '8px 10px', textAlign: 'left', width: '80px' }}>Kode</th>
                         <th style={{ padding: '8px 12px', textAlign: 'left' }}>Uraian Pekerjaan</th>
@@ -1257,7 +1257,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     </thead>
                     <tbody>
                       {/* Category Header A */}
-                      <tr style={{ background: 'var(--ez-hue-blue-bg)', borderTop: '1px solid #DBEAFE', borderBottom: '1px solid #DBEAFE' }}>
+                      <tr style={{ background: 'var(--ez-hue-blue-bg)', borderTop: '1px solid var(--ez-hue-blue-bg-deep)', borderBottom: '1px solid var(--ez-hue-blue-bg-deep)' }}>
                         <td style={{ textAlign: 'center', padding: '6px' }}>
                           <button
                             onClick={() => toggleCategory('cat-A')}
@@ -1274,7 +1274,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
                       {expandedCategories['cat-A'] && (
                         <>
-                          <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                             <td style={{ textAlign: 'center', color: '#94A3B8', padding: '8px' }}>1</td>
                             <td style={{ color: 'var(--ez-color-primary)', fontWeight: 600, padding: '8px 10px' }}>1.1.01</td>
                             <td style={{ fontWeight: 500, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>Pembersihan lahan</td>
@@ -1283,7 +1283,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                             <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>25.000</td>
                             <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>3.000.000</td>
                           </tr>
-                          <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                             <td style={{ textAlign: 'center', color: '#94A3B8', padding: '8px' }}>2</td>
                             <td style={{ color: 'var(--ez-color-primary)', fontWeight: 600, padding: '8px 10px' }}>1.1.02</td>
                             <td style={{ fontWeight: 500, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>Pengukuran dan pasang bouwplank</td>
@@ -1292,7 +1292,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                             <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>500.000</td>
                             <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>500.000</td>
                           </tr>
-                          <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                             <td style={{ textAlign: 'center', color: '#94A3B8', padding: '8px' }}>3</td>
                             <td style={{ color: 'var(--ez-color-primary)', fontWeight: 600, padding: '8px 10px' }}>1.1.03</td>
                             <td style={{ fontWeight: 500, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>Direksi keet</td>
@@ -1301,7 +1301,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                             <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>3.000.000</td>
                             <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>3.000.000</td>
                           </tr>
-                          <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                             <td style={{ textAlign: 'center', color: '#94A3B8', padding: '8px' }}>4</td>
                             <td style={{ color: 'var(--ez-color-primary)', fontWeight: 600, padding: '8px 10px' }}>1.1.04</td>
                             <td style={{ fontWeight: 500, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>Mobilisasi alat</td>
@@ -1310,7 +1310,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                             <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>2.500.000</td>
                             <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>2.500.000</td>
                           </tr>
-                          <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                             <td style={{ textAlign: 'center', color: '#94A3B8', padding: '8px' }}>5</td>
                             <td style={{ color: 'var(--ez-color-primary)', fontWeight: 600, padding: '8px 10px' }}>1.1.05</td>
                             <td style={{ fontWeight: 500, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>Pembuatan jalan kerja</td>
@@ -1365,7 +1365,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-primary)', background: '#EFF6FF', padding: '4px 10px', borderRadius: '8px', border: '1px solid #DBEAFE' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-primary)', background: 'var(--ez-hue-blue-bg)', padding: '4px 10px', borderRadius: '8px', border: '1px solid var(--ez-hue-blue-bg-deep)' }}>
                     Formula: Volume × Harga Satuan
                   </span>
                 </div>
@@ -1373,21 +1373,21 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
               {/* BOQ Summary Pill Bar */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px' }}>
+                <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px' }}>
                   <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Total Akumulasi BOQ</div>
                   <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
                     {formatCurrencyIDR(totalBoqAmount)}
                   </div>
                 </div>
 
-                <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px' }}>
+                <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px' }}>
                   <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Kategori Pekerjaan</div>
                   <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-primary)', marginTop: '2px' }}>
                     5 Divisi Utama
                   </div>
                 </div>
 
-                <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px' }}>
+                <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px' }}>
                   <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Total Item Pekerjaan</div>
                   <div style={{ fontSize: '18px', fontWeight: 800, color: '#10B981', marginTop: '2px' }}>
                     19 Item Rinci
@@ -1396,10 +1396,10 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
               </div>
 
               {/* BOQ Table */}
-              <div style={{ overflowX: 'auto', border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)' }}>
+              <div style={{ overflowX: 'auto', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                   <thead>
-                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-slate)', fontWeight: 700 }}>
+                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)', fontWeight: 700 }}>
                       <th style={{ padding: '10px 12px', textAlign: 'center', width: '50px' }}>No</th>
                       <th style={{ padding: '10px 12px', textAlign: 'left', width: '90px' }}>Kode</th>
                       <th style={{ padding: '10px 14px', textAlign: 'left' }}>Uraian Pekerjaan</th>
@@ -1419,7 +1419,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       return (
                         <React.Fragment key={catGroup.categoryCode}>
                           {/* Category Header Bar */}
-                          <tr style={{ background: 'var(--ez-hue-blue-bg)', borderTop: '1px solid #DBEAFE', borderBottom: '1px solid #DBEAFE' }}>
+                          <tr style={{ background: 'var(--ez-hue-blue-bg)', borderTop: '1px solid var(--ez-hue-blue-bg-deep)', borderBottom: '1px solid var(--ez-hue-blue-bg-deep)' }}>
                             <td style={{ textAlign: 'center', padding: '8px' }}>
                               <button
                                 onClick={() => toggleCategory(`cat-${catGroup.categoryCode}`)}
@@ -1445,7 +1445,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                             catGroup.items.map((item, idx) => {
                               const itemBobot = ((item.amount / totalBoqAmount) * 100).toFixed(2);
                               return (
-                                <tr key={item.no} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                                <tr key={item.no} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                                   <td style={{ textAlign: 'center', color: '#94A3B8', padding: '8px' }}>{idx + 1}</td>
                                   <td style={{ color: 'var(--ez-color-primary)', fontWeight: 600, padding: '8px 12px' }}>{item.no}</td>
                                   <td style={{ fontWeight: 500, color: 'var(--ez-color-text-primary)', padding: '8px 14px' }}>{item.desc}</td>
@@ -1505,10 +1505,10 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                       Analisa Harga Satuan Pekerjaan (AHSP)
                     </h3>
-                    <span style={{ fontSize: '10px', fontWeight: 800, color: '#16A34A', background: '#DCFCE7', border: '1px solid #BBF7D0', padding: '2px 8px', borderRadius: '6px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, color: '#16A34A', background: 'var(--ez-hue-green-bg-deep)', border: '1px solid var(--ez-hue-green-border)', padding: '2px 8px', borderRadius: '6px' }}>
                       {activeAhsp.regulationSource || 'Permen PUPR Standar'}
                     </span>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-primary)', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '2px 8px', borderRadius: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-primary)', background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-border)', padding: '2px 8px', borderRadius: '6px' }}>
                       {allAhspItems.length} Item Tersedia
                     </span>
                   </div>
@@ -1533,7 +1533,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                         width: '100%',
                         padding: '8px 12px 8px 32px',
                         borderRadius: '10px',
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid var(--ez-hue-slate-border)',
                         fontSize: '12px',
                         outline: 'none',
                         background: 'var(--ez-color-surface-secondary)',
@@ -1617,7 +1617,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
               <div
                 style={{
                   background: 'var(--ez-color-surface-secondary)',
-                  border: '1px solid #DBEAFE',
+                  border: '1px solid var(--ez-hue-blue-bg-deep)',
                   borderRadius: '14px',
                   padding: '16px 20px',
                   display: 'flex',
@@ -1647,8 +1647,8 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 
                 {/* 1. MATERIAL SECTION */}
                 {activeAhsp.materials.length > 0 ? (
-                  <div style={{ border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
-                    <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0' }}>
+                  <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
+                    <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-color-border-line)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, fontSize: '12.5px', color: 'var(--ez-color-text-primary)' }}>
                         <Package size={14} color="#2563EB" />
                         <span>A. KEBUTUHAN BAHAN / MATERIAL</span>
@@ -1660,7 +1660,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
                       <thead>
-                        <tr style={{ borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
+                        <tr style={{ borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
                           <th style={{ padding: '8px 12px', textAlign: 'left', width: '80px' }}>Kode</th>
                           <th style={{ padding: '8px 12px', textAlign: 'left' }}>Uraian Bahan</th>
                           <th style={{ padding: '8px 10px', textAlign: 'center', width: '60px' }}>Satuan</th>
@@ -1671,7 +1671,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       </thead>
                       <tbody>
                         {activeAhsp.materials.map((m) => (
-                          <tr key={m.code} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <tr key={m.code} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                             <td style={{ color: 'var(--ez-color-primary)', fontWeight: 600, padding: '7px 12px' }}>{m.code}</td>
                             <td style={{ fontWeight: 500, color: 'var(--ez-color-text-primary)', padding: '7px 12px' }}>{m.name}</td>
                             <td style={{ textAlign: 'center', color: 'var(--ez-color-text-muted)', padding: '7px 10px' }}>{m.unit}</td>
@@ -1684,7 +1684,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     </table>
                   </div>
                 ) : (
-                  <div style={{ border: '1px dashed #CBD5E1', borderRadius: '10px', padding: '10px 16px', background: 'var(--ez-color-surface-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
+                  <div style={{ border: '1px dashed var(--ez-hue-slate-border)', borderRadius: '10px', padding: '10px 16px', background: 'var(--ez-color-surface-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Package size={14} color="#94A3B8" />
                       <span><strong>A. Kebutuhan Bahan / Material:</strong> Tidak membutuhkan material langsung (pekerjaan berbasis jasa/tenaga/alat).</span>
@@ -1695,8 +1695,8 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
                 {/* 2. LABOR SECTION */}
                 {activeAhsp.labors.length > 0 ? (
-                  <div style={{ border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
-                    <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0' }}>
+                  <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
+                    <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-color-border-line)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, fontSize: '12.5px', color: 'var(--ez-color-text-primary)' }}>
                         <HardHat size={14} color="#F59E0B" />
                         <span>B. KEBUTUHAN TENAGA KERJA / UPAH</span>
@@ -1708,7 +1708,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
                       <thead>
-                        <tr style={{ borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
+                        <tr style={{ borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
                           <th style={{ padding: '8px 12px', textAlign: 'left', width: '80px' }}>Kode</th>
                           <th style={{ padding: '8px 12px', textAlign: 'left' }}>Jenis Tenaga</th>
                           <th style={{ padding: '8px 10px', textAlign: 'center', width: '60px' }}>Satuan</th>
@@ -1719,7 +1719,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       </thead>
                       <tbody>
                         {activeAhsp.labors.map((l) => (
-                          <tr key={l.code} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <tr key={l.code} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                             <td style={{ color: '#F59E0B', fontWeight: 600, padding: '7px 12px' }}>{l.code}</td>
                             <td style={{ fontWeight: 500, color: 'var(--ez-color-text-primary)', padding: '7px 12px' }}>{l.name}</td>
                             <td style={{ textAlign: 'center', color: 'var(--ez-color-text-muted)', padding: '7px 10px' }}>{l.unit}</td>
@@ -1732,7 +1732,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     </table>
                   </div>
                 ) : (
-                  <div style={{ border: '1px dashed #CBD5E1', borderRadius: '10px', padding: '10px 16px', background: 'var(--ez-color-surface-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
+                  <div style={{ border: '1px dashed var(--ez-hue-slate-border)', borderRadius: '10px', padding: '10px 16px', background: 'var(--ez-color-surface-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <HardHat size={14} color="#94A3B8" />
                       <span><strong>B. Kebutuhan Tenaga Kerja:</strong> Menggunakan pengadaan langsung/otomatisasi pabrik.</span>
@@ -1743,8 +1743,8 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
                 {/* 3. EQUIPMENT SECTION */}
                 {activeAhsp.equipments.length > 0 ? (
-                  <div style={{ border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
-                    <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0' }}>
+                  <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
+                    <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-color-border-line)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, fontSize: '12.5px', color: 'var(--ez-color-text-primary)' }}>
                         <Truck size={14} color="#10B981" />
                         <span>C. KEBUTUHAN PERALATAN</span>
@@ -1756,7 +1756,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
                       <thead>
-                        <tr style={{ borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
+                        <tr style={{ borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
                           <th style={{ padding: '8px 12px', textAlign: 'left', width: '80px' }}>Kode</th>
                           <th style={{ padding: '8px 12px', textAlign: 'left' }}>Nama Alat</th>
                           <th style={{ padding: '8px 10px', textAlign: 'center', width: '60px' }}>Satuan</th>
@@ -1767,7 +1767,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       </thead>
                       <tbody>
                         {activeAhsp.equipments.map((e) => (
-                          <tr key={e.code} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <tr key={e.code} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                             <td style={{ color: '#10B981', fontWeight: 600, padding: '7px 12px' }}>{e.code}</td>
                             <td style={{ fontWeight: 500, color: 'var(--ez-color-text-primary)', padding: '7px 12px' }}>{e.name}</td>
                             <td style={{ textAlign: 'center', color: 'var(--ez-color-text-muted)', padding: '7px 10px' }}>{e.unit}</td>
@@ -1780,7 +1780,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     </table>
                   </div>
                 ) : (
-                  <div style={{ border: '1px dashed #CBD5E1', borderRadius: '10px', padding: '10px 16px', background: 'var(--ez-color-surface-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
+                  <div style={{ border: '1px dashed var(--ez-hue-slate-border)', borderRadius: '10px', padding: '10px 16px', background: 'var(--ez-color-surface-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Truck size={14} color="#94A3B8" />
                       <span><strong>C. Kebutuhan Peralatan:</strong> Dikerjakan secara manual menggunakan perkakas standar tukang (tanpa sewa alat berat).</span>
@@ -1790,7 +1790,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 )}
 
                 {/* Final Recapitulation Calculation Box */}
-                <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
+                <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
                     <span>Jumlah Biaya Langsung (A + B + C)</span>
                     <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatCurrencyIDR(baseHsp)}</span>
@@ -1799,7 +1799,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     <span>Overhead & Profit ({activeAhsp.overheadPct}%)</span>
                     <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatCurrencyIDR(overheadVal)}</span>
                   </div>
-                  <div style={{ borderTop: '1px solid #CBD5E1', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 800 }}>
+                  <div style={{ borderTop: '1px solid var(--ez-hue-slate-border)', paddingTop: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 800 }}>
                     <span style={{ color: 'var(--ez-color-text-primary)' }}>Total Harga Satuan Pekerjaan (Dibulatkan)</span>
                     <span style={{ color: 'var(--ez-color-primary)' }}>{formatCurrencyIDR(grandHsp)}</span>
                   </div>
@@ -1852,8 +1852,8 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
               {!kurvaSRequirement.isComplete && (
                 <div
                   style={{
-                    background: '#FFFBEB',
-                    border: '1px solid #FDE68A',
+                    background: 'var(--ez-hue-amber-bg)',
+                    border: '1px solid var(--ez-hue-amber-border)',
                     borderRadius: 'var(--ez-radius-control)',
                     padding: '14px 18px',
                     display: 'flex',
@@ -1878,7 +1878,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       onClick={() => onNavigateToTab('jadwal')}
                       style={{
                         background: '#D97706',
-                        color: '#ffffff',
+                        color: '#FFFFFF',
                         border: 'none',
                         borderRadius: '8px',
                         padding: '6px 14px',
@@ -1905,7 +1905,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
                 return (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-                    <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', padding: '14px 16px' }}>
+                    <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', padding: '14px 16px' }}>
                       <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Total Durasi Proyek</div>
                       <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
                         {totalWeeksCount} Minggu
@@ -1913,7 +1913,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px' }}>Target: {lastPlanned}% Selesai</div>
                     </div>
 
-                    <div style={{ background: '#EFF6FF', border: '1px solid #DBEAFE', borderRadius: 'var(--ez-radius-control)', padding: '14px 16px' }}>
+                    <div style={{ background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-bg-deep)', borderRadius: 'var(--ez-radius-control)', padding: '14px 16px' }}>
                       <div style={{ fontSize: '11px', color: 'var(--ez-color-primary-hover)', fontWeight: 600 }}>Progres Rencana</div>
                       <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-primary)', marginTop: '2px' }}>
                         {currentPlanAtAct > 0 ? `${currentPlanAtAct.toFixed(1)}%` : '0.0%'}
@@ -1921,7 +1921,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       <div style={{ fontSize: '11px', color: '#60A5FA', marginTop: '2px' }}>Kumulatif Baseline</div>
                     </div>
 
-                    <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 'var(--ez-radius-control)', padding: '14px 16px' }}>
+                    <div style={{ background: 'var(--ez-hue-emerald-bg)', border: '1px solid var(--ez-hue-green-border-deep)', borderRadius: 'var(--ez-radius-control)', padding: '14px 16px' }}>
                       <div style={{ fontSize: '11px', color: '#047857', fontWeight: 600 }}>Progres Realisasi</div>
                       <div style={{ fontSize: '18px', fontWeight: 800, color: '#10B981', marginTop: '2px' }}>
                         {latestActCum > 0 ? `${latestActCum.toFixed(1)}%` : '0.0%'}
@@ -1929,7 +1929,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       <div style={{ fontSize: '11px', color: '#34D399', marginTop: '2px' }}>Fisik Lapangan</div>
                     </div>
 
-                    <div style={{ background: totalDev >= 0 ? '#F0FDF4' : '#FEF2F2', border: totalDev >= 0 ? '1px solid #BBF7D0' : '1px solid #FECACA', borderRadius: 'var(--ez-radius-control)', padding: '14px 16px' }}>
+                    <div style={{ background: totalDev >= 0 ? 'var(--ez-hue-green-bg)' : 'var(--ez-hue-rose-bg)', border: totalDev >= 0 ? '1px solid var(--ez-hue-green-border)' : '1px solid var(--ez-hue-rose-border)', borderRadius: 'var(--ez-radius-control)', padding: '14px 16px' }}>
                       <div style={{ fontSize: '11px', color: totalDev >= 0 ? '#16A34A' : '#DC2626', fontWeight: 600 }}>Deviasi Waktu/Biaya</div>
                       <div style={{ fontSize: '18px', fontWeight: 800, color: totalDev >= 0 ? '#16A34A' : '#DC2626', marginTop: '2px' }}>
                         {totalDev > 0 ? `+${totalDev.toFixed(2)}%` : `${totalDev.toFixed(2)}%`}
@@ -1994,7 +1994,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       const y = 30 + ((100 - pct) / 100) * 180;
                       return (
                         <g key={pct}>
-                          <line x1="50" y1={y} x2="790" y2={y} stroke={pct === 0 ? '#CBD5E1' : '#E2E8F0'} strokeDasharray={pct === 0 ? undefined : '4,4'} strokeWidth={pct === 0 ? 1.5 : 1} />
+                          <line x1="50" y1={y} x2="790" y2={y} stroke={pct === 0 ? 'var(--ez-hue-slate-border)' : 'var(--ez-color-border-line)'} strokeDasharray={pct === 0 ? undefined : '4,4'} strokeWidth={pct === 0 ? 1.5 : 1} />
                           <text x="42" y={y + 3.5} fontSize="10" fontWeight="600" textAnchor="end" style={{ fill: 'var(--ez-color-text-muted)' }}>{pct}%</text>
                         </g>
                       );
@@ -2159,7 +2159,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     top: '20px',
                     right: '24px',
                     background: 'var(--ez-color-surface)',
-                    border: '1px solid #BBF7D0',
+                    border: '1px solid var(--ez-hue-green-border)',
                     borderRadius: 'var(--ez-radius-control)',
                     padding: '10px 14px',
                     boxShadow: '0 4px 12px rgba(16,185,129,0.1)',
@@ -2179,10 +2179,10 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
               </div>
 
               {/* Kurva S Data Matrix Table */}
-              <div style={{ overflowX: 'auto', border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)' }}>
+              <div style={{ overflowX: 'auto', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
                   <thead>
-                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-slate)', fontWeight: 700 }}>
+                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)', fontWeight: 700 }}>
                       <th style={{ padding: '10px 14px', textAlign: 'left', minWidth: '160px' }}>Indikator Progres</th>
                       {sCurveWeeks.map((w, idx) => (
                         <th
@@ -2203,7 +2203,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   </thead>
                   <tbody>
                     {/* Row 1: Rencana Mingguan */}
-                    <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                       <td style={{ padding: '8px 14px', fontWeight: 600, color: 'var(--ez-color-primary)' }}>Rencana Mingguan (%)</td>
                       {sCurveWeeks.map((w, idx) => (
                         <td
@@ -2220,7 +2220,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       ))}
                     </tr>
                     {/* Row 2: Rencana Kumulatif */}
-                    <tr style={{ borderBottom: '1px solid #F1F5F9', background: 'var(--ez-color-surface-secondary)' }}>
+                    <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)', background: 'var(--ez-color-surface-secondary)' }}>
                       <td style={{ padding: '8px 14px', fontWeight: 700, color: 'var(--ez-color-primary-hover)' }}>Rencana Kumulatif (%)</td>
                       {sCurveWeeks.map((w, idx) => (
                         <td
@@ -2230,7 +2230,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                             textAlign: 'center',
                             fontWeight: 700,
                             color: 'var(--ez-color-primary-hover)',
-                            background: hoveredWeekIndex === idx ? '#DBEAFE' : undefined,
+                            background: hoveredWeekIndex === idx ? 'var(--ez-hue-blue-bg-deep)' : undefined,
                           }}
                         >
                           {w.planCum.toFixed(1)}%
@@ -2238,7 +2238,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       ))}
                     </tr>
                     {/* Row 3: Realisasi Kumulatif */}
-                    <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                       <td style={{ padding: '8px 14px', fontWeight: 700, color: '#10B981' }}>Realisasi Kumulatif (%)</td>
                       {sCurveWeeks.map((w, idx) => (
                         <td
@@ -2247,8 +2247,8 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                             padding: '8px 6px',
                             textAlign: 'center',
                             fontWeight: 700,
-                            color: w.actCum !== null ? '#10B981' : '#CBD5E1',
-                            background: hoveredWeekIndex === idx ? '#DCFCE7' : 'transparent',
+                            color: w.actCum !== null ? '#10B981' : 'var(--ez-hue-slate-border)',
+                            background: hoveredWeekIndex === idx ? 'var(--ez-hue-green-bg-deep)' : 'transparent',
                           }}
                         >
                           {w.actCum !== null ? `${w.actCum.toFixed(1)}%` : '-'}
@@ -2256,7 +2256,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       ))}
                     </tr>
                     {/* Row 4: Deviasi */}
-                    <tr style={{ borderTop: '1px solid #E2E8F0', background: 'var(--ez-color-surface-secondary)' }}>
+                    <tr style={{ borderTop: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface-secondary)' }}>
                       <td style={{ padding: '8px 14px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>Deviasi (%)</td>
                       {sCurveWeeks.map((w, idx) => (
                         <td
@@ -2307,17 +2307,17 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#16A34A', background: '#DCFCE7', border: '1px solid #BBF7D0', padding: '4px 10px', borderRadius: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#16A34A', background: 'var(--ez-hue-green-bg-deep)', border: '1px solid var(--ez-hue-green-border)', padding: '4px 10px', borderRadius: '8px' }}>
                     Total Durasi: 90 Hari Kalender (12 Minggu)
                   </span>
                 </div>
               </div>
 
               {/* Gantt Interactive Board */}
-              <div style={{ overflowX: 'auto', border: '1px solid #E2E8F0', borderRadius: '14px' }}>
+              <div style={{ overflowX: 'auto', border: '1px solid var(--ez-color-border-line)', borderRadius: '14px' }}>
                 <table style={{ width: '100%', minWidth: '920px', borderCollapse: 'collapse', fontSize: '11.5px' }}>
                   <thead>
-                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-slate)', fontWeight: 700 }}>
+                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)', fontWeight: 700 }}>
                       <th style={{ padding: '10px 12px', textAlign: 'left', width: '50px' }}>WBS</th>
                       <th style={{ padding: '10px 14px', textAlign: 'left', width: '220px' }}>Uraian Aktivitas</th>
                       <th style={{ padding: '10px 8px', textAlign: 'center', width: '60px' }}>Durasi</th>
@@ -2333,7 +2333,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                             width: '42px',
                             background: i === 4 ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-secondary)',
                             color: i === 4 ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
-                            borderLeft: '1px solid #E2E8F0',
+                            borderLeft: '1px solid var(--ez-color-border-line)',
                           }}
                         >
                           W{i + 1}
@@ -2343,7 +2343,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   </thead>
                   <tbody>
                     {ganttTasks.map((t) => (
-                      <tr key={t.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <tr key={t.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                         <td style={{ color: 'var(--ez-color-primary)', fontWeight: 700, padding: '10px 12px' }}>{t.wbs}</td>
                         <td style={{ fontWeight: 600, color: 'var(--ez-color-text-primary)', padding: '10px 14px' }}>{t.name}</td>
                         <td style={{ textAlign: 'center', color: 'var(--ez-color-text-muted)', padding: '10px 8px' }}>{t.duration} hr</td>
@@ -2355,7 +2355,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                               fontWeight: 700,
                               padding: '2px 6px',
                               borderRadius: '4px',
-                              background: t.status === 'Selesai' ? '#DCFCE7' : t.status === 'On Progress' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-tertiary)',
+                              background: t.status === 'Selesai' ? 'var(--ez-hue-green-bg-deep)' : t.status === 'On Progress' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-tertiary)',
                               color: t.status === 'Selesai' ? '#16A34A' : t.status === 'On Progress' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                             }}
                           >
@@ -2374,7 +2374,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                               key={weekIdx}
                               style={{
                                 padding: '6px 2px',
-                                borderLeft: '1px solid #F1F5F9',
+                                borderLeft: '1px solid var(--ez-color-surface-tertiary)',
                                 background: weekIdx === 4 ? 'var(--ez-color-surface-secondary)' : 'transparent',
                                 position: 'relative',
                               }}
@@ -2390,7 +2390,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    color: '#ffffff',
+                                    color: '#FFFFFF',
                                     fontSize: '9.5px',
                                     fontWeight: 700,
                                   }}
@@ -2429,7 +2429,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
             }}
           >
             {/* Header */}
-            <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9' }}>
+            <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
               <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                 Informasi Proyek
               </h3>
@@ -2461,7 +2461,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   right: '8px',
                   background: 'rgba(15, 23, 42, 0.75)',
                   backdropFilter: 'blur(4px)',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   border: 'none',
                   borderRadius: '6px',
                   padding: '4px 8px',
@@ -2482,7 +2482,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
             <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <strong style={{ fontSize: '13.5px', color: 'var(--ez-color-text-primary)' }}>{activeProject.name}</strong>
-                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: '#DCFCE7', color: '#16A34A', border: '1px solid #BBF7D0' }}>
+                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-green-bg-deep)', color: '#16A34A', border: '1px solid var(--ez-hue-green-border)' }}>
                   Aktif
                 </span>
               </div>
@@ -2541,7 +2541,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
               <select
                 value={reportFormat}
                 onChange={(e) => setReportFormat(e.target.value)}
-                style={{ width: '100%', height: '34px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '12px', padding: '0 8px', marginTop: '4px', background: 'var(--ez-color-surface)' }}
+                style={{ width: '100%', height: '34px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px', padding: '0 8px', marginTop: '4px', background: 'var(--ez-color-surface)' }}
               >
                 <option>Lengkap (RAB + QTO + Kurva S + Jadwal)</option>
                 <option>Ringkas (Rekapitulasi Saja)</option>
@@ -2554,7 +2554,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
               <select
                 value={reportTemplate}
                 onChange={(e) => setReportTemplate(e.target.value)}
-                style={{ width: '100%', height: '34px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '12px', padding: '0 8px', marginTop: '4px', background: 'var(--ez-color-surface)' }}
+                style={{ width: '100%', height: '34px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px', padding: '0 8px', marginTop: '4px', background: 'var(--ez-color-surface)' }}
               >
                 <option>Standar EZRAB</option>
                 <option>Formal SNI</option>
@@ -2603,7 +2603,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 height: '38px',
                 borderRadius: '10px',
                 background: isExportingPdf ? '#94A3B8' : 'var(--ez-color-primary)',
-                color: '#ffffff',
+                color: '#FFFFFF',
                 fontSize: '12.5px',
                 fontWeight: 600,
                 border: 'none',
@@ -2664,7 +2664,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
               gap: '16px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-color-border-line)', paddingBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Camera size={18} color="#2563EB" />
                 <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
@@ -2683,7 +2683,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
             <div
               onClick={() => fileInputRef.current?.click()}
               style={{
-                border: '2px dashed #CBD5E1',
+                border: '2px dashed var(--ez-hue-slate-border)',
                 borderRadius: 'var(--ez-radius-control)',
                 padding: '30px 20px',
                 textAlign: 'center',
@@ -2727,7 +2727,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
               <button
                 onClick={() => setPhotoUploadModalOpen(false)}
-                style={{ height: '36px', padding: '0 16px', borderRadius: '8px', border: '1px solid #CBD5E1', background: 'var(--ez-color-surface)', fontSize: '12.5px', cursor: 'pointer' }}
+                style={{ height: '36px', padding: '0 16px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', fontSize: '12.5px', cursor: 'pointer' }}
               >
                 Batal
               </button>
@@ -2739,7 +2739,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   padding: '0 20px',
                   borderRadius: '8px',
                   background: tempPhotoUrl ? 'var(--ez-color-primary)' : '#94A3B8',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   border: 'none',
                   fontSize: '12.5px',
                   fontWeight: 600,

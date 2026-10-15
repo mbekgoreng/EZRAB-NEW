@@ -227,18 +227,18 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
           flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           overflow: 'hidden',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
         }}
       >
         {/* Header */}
         <div
           style={{
             padding: '18px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(to right, #F8FAFC, #FFFFFF)',
+            background: 'linear-gradient(to right, var(--ez-hue-slate-bg), #FFFFFF)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -247,12 +247,12 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                backgroundColor: '#ECFDF5',
+                backgroundColor: 'var(--ez-hue-emerald-bg)',
                 color: '#059669',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '1px solid #A7F3D0',
+                border: '1px solid var(--ez-hue-green-border-deep)',
               }}
             >
               <FileSpreadsheet size={22} />
@@ -299,7 +299,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
         <div
           style={{
             display: 'flex',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             backgroundColor: 'var(--ez-color-surface-secondary)',
             padding: '0 24px',
           }}
@@ -382,8 +382,8 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                   <div
                     onClick={() => setExportScope('CURRENT')}
                     style={{
-                      border: exportScope === 'CURRENT' ? '2px solid #059669' : '1px solid #CBD5E1',
-                      backgroundColor: exportScope === 'CURRENT' ? '#F0FDF4' : '#FFFFFF',
+                      border: exportScope === 'CURRENT' ? '2px solid #059669' : '1px solid var(--ez-hue-slate-border)',
+                      backgroundColor: exportScope === 'CURRENT' ? 'var(--ez-hue-green-bg)' : 'var(--ez-color-surface)',
                       borderRadius: '10px',
                       padding: '14px',
                       cursor: 'pointer',
@@ -399,8 +399,8 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                   <div
                     onClick={() => setExportScope('ALL')}
                     style={{
-                      border: exportScope === 'ALL' ? '2px solid #059669' : '1px solid #CBD5E1',
-                      backgroundColor: exportScope === 'ALL' ? '#F0FDF4' : '#FFFFFF',
+                      border: exportScope === 'ALL' ? '2px solid #059669' : '1px solid var(--ez-hue-slate-border)',
+                      backgroundColor: exportScope === 'ALL' ? 'var(--ez-hue-green-bg)' : 'var(--ez-color-surface)',
                       borderRadius: '10px',
                       padding: '14px',
                       cursor: 'pointer',
@@ -438,7 +438,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                   backgroundColor: 'var(--ez-color-surface-secondary)',
                   borderRadius: '10px',
                   padding: '14px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   fontSize: '12.5px',
                   color: '#475569',
                 }}
@@ -473,9 +473,9 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                 <button
                   onClick={handleCopyClipboard}
                   style={{
-                    backgroundColor: '#F1F5F9',
+                    backgroundColor: 'var(--ez-color-surface-tertiary)',
                     color: '#334155',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     borderRadius: '8px',
                     padding: '11px 16px',
                     fontSize: '13.5px',
@@ -508,7 +508,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                 style={{
                   width: '100%',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   padding: '12px',
                   fontFamily: 'monospace',
                   fontSize: '12.5px',
@@ -517,21 +517,21 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
               />
 
               {importError && (
-                <div style={{ backgroundColor: '#FEF2F2', color: '#DC2626', padding: '10px 14px', borderRadius: '8px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', color: '#DC2626', padding: '10px 14px', borderRadius: '8px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <AlertTriangle size={16} />
                   <span>{importError}</span>
                 </div>
               )}
 
               {importStatus === 'PARSED' && (
-                <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '8px', padding: '12px 14px' }}>
+                <div style={{ backgroundColor: 'var(--ez-hue-green-bg)', border: '1px solid #86EFAC', borderRadius: '8px', padding: '12px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#166534', fontWeight: 700, fontSize: '13.5px', marginBottom: '8px' }}>
                     <CheckCircle2 size={16} />
                     <span>{parsedRows.length} Baris Data Berhasil Divalidasi</span>
                   </div>
                   <div style={{ maxHeight: '140px', overflowY: 'auto', fontSize: '12px', color: '#334155' }}>
                     {parsedRows.slice(0, 5).map((r, idx) => (
-                      <div key={idx} style={{ padding: '4px 0', borderBottom: '1px solid #DCFCE7', display: 'flex', justifyContent: 'space-between' }}>
+                      <div key={idx} style={{ padding: '4px 0', borderBottom: '1px solid var(--ez-hue-green-bg-deep)', display: 'flex', justifyContent: 'space-between' }}>
                         <span><strong>{r.code}</strong> — {r.name} ({r.category})</span>
                         <span style={{ fontWeight: 700 }}>Rp {r.price.toLocaleString('id-ID')} / {r.unit}</span>
                       </div>
@@ -544,7 +544,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
               )}
 
               {importStatus === 'SAVED' && (
-                <div style={{ backgroundColor: '#ECFDF5', border: '1px solid #6EE7B7', color: '#065F46', padding: '14px', borderRadius: '8px', fontSize: '13.5px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ backgroundColor: 'var(--ez-hue-emerald-bg)', border: '1px solid #6EE7B7', color: '#065F46', padding: '14px', borderRadius: '8px', fontSize: '13.5px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <CheckCircle2 size={18} />
                   <span>Berhasil mengimpor {parsedRows.length} item ke database! Data kini aktif dan dapat langsung digunakan pada kalkulator RAB.</span>
                 </div>
@@ -611,7 +611,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                     style={{
                       flex: 1,
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       padding: '9px 12px',
                       fontSize: '13px',
                     }}
@@ -641,42 +641,42 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
               </div>
 
               {syncFeedback && (
-                <div style={{ backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', color: '#065F46', padding: '12px 14px', borderRadius: '8px', fontSize: '12.5px' }}>
+                <div style={{ backgroundColor: 'var(--ez-hue-emerald-bg)', border: '1px solid var(--ez-hue-green-border-deep)', color: '#065F46', padding: '12px 14px', borderRadius: '8px', fontSize: '12.5px' }}>
                   {syncFeedback}
                 </div>
               )}
 
               {/* Status & Sheet Mapping */}
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
-                <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '12px 16px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
+                <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '12px 16px', borderBottom: '1px solid var(--ez-color-border-line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Status Koneksi 4 Sheet Master:</span>
                   <span style={{ fontSize: '12px', color: '#059669', fontWeight: 600 }}>Tersinkronisasi ({lastSyncTime})</span>
                 </div>
                 <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12.5px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '11px' }}>01_MATERIAL</span>
+                      <span style={{ backgroundColor: 'var(--ez-hue-blue-bg-deep)', color: '#1E40AF', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '11px' }}>01_MATERIAL</span>
                       <span style={{ color: '#334155' }}>Master Bahan Bangunan Nasional & Regional</span>
                     </div>
                     <span style={{ color: '#059669', fontWeight: 600 }}>6.164 baris ✔</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12.5px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ backgroundColor: '#FEF3C7', color: '#92400E', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '11px' }}>02_UPAH</span>
+                      <span style={{ backgroundColor: 'var(--ez-hue-amber-bg-deep)', color: '#92400E', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '11px' }}>02_UPAH</span>
                       <span style={{ color: '#334155' }}>Standar Upah Tenaga Kerja, Mandor & Sertifikasi SKK</span>
                     </div>
                     <span style={{ color: '#059669', fontWeight: 600 }}>14 klasifikasi ✔</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12.5px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ backgroundColor: '#E0E7FF', color: '#3730A3', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '11px' }}>03_ALAT</span>
+                      <span style={{ backgroundColor: 'var(--ez-hue-indigo-bg)', color: '#3730A3', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '11px' }}>03_ALAT</span>
                       <span style={{ color: '#334155' }}>Persewaan Alat Berat, Molen, Crane & Stamper</span>
                     </div>
                     <span style={{ color: '#059669', fontWeight: 600 }}>16 jenis mesin ✔</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12.5px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ backgroundColor: '#FCE7F3', color: '#9D174D', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '11px' }}>04_HARGA_PROYEK</span>
+                      <span style={{ backgroundColor: 'var(--ez-hue-pink-bg)', color: '#9D174D', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '11px' }}>04_HARGA_PROYEK</span>
                       <span style={{ color: '#334155' }}>Harga Kesepakatan Khusus Project Override</span>
                     </div>
                     <span style={{ color: '#059669', fontWeight: 600 }}>Aktif terhubung ✔</span>
@@ -711,7 +711,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
           style={{
             padding: '14px 24px',
             backgroundColor: 'var(--ez-color-surface-secondary)',
-            borderTop: '1px solid #E2E8F0',
+            borderTop: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             justifyContent: 'flex-end',
           }}
@@ -721,7 +721,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
             style={{
               padding: '8px 20px',
               borderRadius: '8px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               backgroundColor: 'var(--ez-color-surface)',
               color: '#334155',
               fontSize: '13px',

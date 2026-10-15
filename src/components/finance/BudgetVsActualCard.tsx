@@ -30,7 +30,7 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
           textAlign: 'center',
           backgroundColor: 'var(--ez-color-surface-secondary)',
           borderRadius: 'var(--ez-radius-control)',
-          border: '1px dashed #CBD5E1',
+          border: '1px dashed var(--ez-hue-slate-border)',
           color: 'var(--ez-color-text-muted)',
           fontSize: '13px',
         }}
@@ -56,8 +56,8 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
           justifyContent: 'space-between',
           padding: '10px 14px',
           borderRadius: '8px',
-          backgroundColor: status === 'OVER_BUDGET' ? '#FEF2F2' : (status === 'UNDER_BUDGET' ? '#F0FDF4' : 'var(--ez-color-surface-secondary)'),
-          border: `1px solid ${status === 'OVER_BUDGET' ? '#FECACA' : (status === 'UNDER_BUDGET' ? '#BBF7D0' : 'var(--ez-color-border)')}`,
+          backgroundColor: status === 'OVER_BUDGET' ? 'var(--ez-hue-rose-bg)' : (status === 'UNDER_BUDGET' ? 'var(--ez-hue-green-bg)' : 'var(--ez-color-surface-secondary)'),
+          border: `1px solid ${status === 'OVER_BUDGET' ? 'var(--ez-hue-rose-border)' : (status === 'UNDER_BUDGET' ? 'var(--ez-hue-green-border)' : 'var(--ez-color-border)')}`,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -122,7 +122,7 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
                     fontSize: '11px',
                     fontWeight: 700,
                     color: isOver ? '#DC2626' : '#16A34A',
-                    backgroundColor: isOver ? '#FEF2F2' : '#F0FDF4',
+                    backgroundColor: isOver ? 'var(--ez-hue-rose-bg)' : 'var(--ez-hue-green-bg)',
                     padding: '2px 6px',
                     borderRadius: '4px',
                   }}
@@ -136,7 +136,7 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
                 {/* Budget Bar */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ width: '45px', fontSize: '10px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>RAB</span>
-                  <div style={{ flex: 1, height: '6px', backgroundColor: '#E2E8F0', borderRadius: 'var(--ez-radius-pill)', overflow: 'hidden' }}>
+                  <div style={{ flex: 1, height: '6px', backgroundColor: 'var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-pill)', overflow: 'hidden' }}>
                     <div
                       style={{
                         width: `${budgetPct}%`,
@@ -154,7 +154,7 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
                 {/* Actual Bar */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ width: '45px', fontSize: '10px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Aktual</span>
-                  <div style={{ flex: 1, height: '6px', backgroundColor: '#E2E8F0', borderRadius: 'var(--ez-radius-pill)', overflow: 'hidden' }}>
+                  <div style={{ flex: 1, height: '6px', backgroundColor: 'var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-pill)', overflow: 'hidden' }}>
                     <div
                       style={{
                         width: `${actualPct}%`,

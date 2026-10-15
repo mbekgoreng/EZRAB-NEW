@@ -45,7 +45,7 @@ export const MagicAIQuickRail: React.FC<MagicAIQuickRailProps> = ({
         alignItems: 'center',
         background: 'var(--ez-color-surface)',
         borderRadius: '24px',
-        border: '1px solid #E2E8F0',
+        border: '1px solid var(--ez-color-border-line)',
         padding: collapsed ? '6px 4px' : '8px 6px',
         boxShadow: '0 10px 25px -4px rgba(15, 23, 42, 0.12), 0 4px 6px -2px rgba(15, 23, 42, 0.05)',
         gap: '8px',
@@ -96,7 +96,7 @@ export const MagicAIQuickRail: React.FC<MagicAIQuickRailProps> = ({
                 transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#EFF6FF';
+                e.currentTarget.style.background = 'var(--ez-hue-blue-bg)';
                 e.currentTarget.style.color = 'var(--ez-color-primary)';
               }}
               onMouseLeave={(e) => {
@@ -121,7 +121,7 @@ export const MagicAIQuickRail: React.FC<MagicAIQuickRailProps> = ({
           width: '24px',
           height: '24px',
           borderRadius: '50%',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           background: 'var(--ez-color-surface-secondary)',
           color: 'var(--ez-color-text-muted)',
           display: 'flex',

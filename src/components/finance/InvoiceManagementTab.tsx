@@ -196,12 +196,12 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
 
   const statusBadge = (st: InvoiceStatus) => {
     const config: Record<InvoiceStatus, { bg: string; color: string; label: string }> = {
-      DRAFT: { bg: '#F1F5F9', color: 'var(--ez-color-text-slate)', label: 'Draft' },
-      ISSUED: { bg: '#EFF6FF', color: 'var(--ez-color-primary-hover)', label: 'Ditagihkan' },
-      PARTIALLY_PAID: { bg: '#FEF3C7', color: '#B45309', label: 'Dibayar Sebagian' },
-      PAID: { bg: '#DCFCE7', color: '#15803D', label: 'Lunas' },
-      OVERDUE: { bg: '#FEE2E2', color: '#B91C1C', label: 'Jatuh Tempo' },
-      CANCELLED: { bg: '#F1F5F9', color: 'var(--ez-color-text-faint)', label: 'Dibatalkan' },
+      DRAFT: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', label: 'Draft' },
+      ISSUED: { bg: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)', label: 'Ditagihkan' },
+      PARTIALLY_PAID: { bg: 'var(--ez-hue-amber-bg-deep)', color: '#B45309', label: 'Dibayar Sebagian' },
+      PAID: { bg: 'var(--ez-hue-green-bg-deep)', color: '#15803D', label: 'Lunas' },
+      OVERDUE: { bg: 'var(--ez-hue-red-bg)', color: '#B91C1C', label: 'Jatuh Tempo' },
+      CANCELLED: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-faint)', label: 'Dibatalkan' },
     };
     const c = config[st] || config.DRAFT;
     return (
@@ -230,7 +230,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
         style={{
           backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -278,7 +278,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
           style={{
             backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             padding: '48px 20px',
             textAlign: 'center',
             display: 'flex',
@@ -287,7 +287,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
             gap: '12px',
           }}
         >
-          <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <FileText size={24} color="#2563EB" />
           </div>
           <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
@@ -323,7 +323,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
           style={{
             backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             overflow: 'hidden',
             boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           }}
@@ -331,7 +331,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
-                <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-muted)', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-muted)', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   <th style={{ padding: '12px 16px', fontWeight: 700 }}>No. Invoice</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700 }}>Klien / Proyek</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700 }}>Tanggal / Jatuh Tempo</th>
@@ -404,8 +404,8 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                               style={{
                                 padding: '4px 8px',
                                 borderRadius: '6px',
-                                backgroundColor: '#EFF6FF',
-                                border: '1px solid #BFDBFE',
+                                backgroundColor: 'var(--ez-hue-blue-bg)',
+                                border: '1px solid var(--ez-hue-blue-border)',
                                 color: 'var(--ez-color-primary-hover)',
                                 fontSize: '11.5px',
                                 fontWeight: 650,
@@ -428,8 +428,8 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                               style={{
                                 padding: '4px 8px',
                                 borderRadius: '6px',
-                                backgroundColor: '#F0FDF4',
-                                border: '1px solid #BBF7D0',
+                                backgroundColor: 'var(--ez-hue-green-bg)',
+                                border: '1px solid var(--ez-hue-green-border)',
                                 color: '#15803D',
                                 fontSize: '11.5px',
                                 fontWeight: 650,
@@ -453,7 +453,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                               padding: '4px 8px',
                               borderRadius: '6px',
                               backgroundColor: 'var(--ez-color-surface-secondary)',
-                              border: '1px solid #E2E8F0',
+                              border: '1px solid var(--ez-color-border-line)',
                               color: 'var(--ez-color-text-slate)',
                               fontSize: '11.5px',
                               fontWeight: 600,
@@ -476,7 +476,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                               height: '28px',
                               borderRadius: '6px',
                               backgroundColor: 'var(--ez-color-surface-secondary)',
-                              border: '1px solid #E2E8F0',
+                              border: '1px solid var(--ez-color-border-line)',
                               color: 'var(--ez-color-text-slate)',
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -500,7 +500,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                               height: '28px',
                               borderRadius: '6px',
                               backgroundColor: 'var(--ez-color-surface-secondary)',
-                              border: '1px solid #E2E8F0',
+                              border: '1px solid var(--ez-color-border-line)',
                               color: 'var(--ez-hue-rose-text)',
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -565,7 +565,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
             </div>
 
             {errorMessage && (
-              <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#991B1B' }}>
+              <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#991B1B' }}>
                 {errorMessage}
               </div>
             )}
@@ -716,7 +716,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
               </div>
 
               {/* Amount & Tax Breakdown */}
-              <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '10px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
@@ -762,7 +762,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #E2E8F0', paddingTop: '8px', fontSize: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--ez-color-border-line)', paddingTop: '8px', fontSize: '12px' }}>
                   <span style={{ color: 'var(--ez-color-text-muted)' }}>PPN ({taxPercent}%):</span>
                   <span style={{ fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(taxAmount)}</span>
                 </div>

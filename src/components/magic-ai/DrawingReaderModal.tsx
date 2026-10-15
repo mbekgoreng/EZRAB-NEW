@@ -170,7 +170,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           overflow: 'hidden',
         }}
       >
@@ -178,7 +178,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -191,11 +191,11 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                 width: '42px',
                 height: '42px',
                 borderRadius: 'var(--ez-radius-control)',
-                backgroundColor: '#EFF6FF',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '1px solid #DBEAFE',
+                border: '1px solid var(--ez-hue-blue-bg-deep)',
                 color: 'var(--ez-color-primary)',
               }}
             >
@@ -212,7 +212,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                     fontWeight: 700,
                     padding: '2px 8px',
                     borderRadius: '6px',
-                    backgroundColor: '#DBEAFE',
+                    backgroundColor: 'var(--ez-hue-blue-bg-deep)',
                     color: 'var(--ez-color-primary-hover)',
                   }}
                 >
@@ -234,7 +234,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
               width: '36px',
               height: '36px',
               borderRadius: '10px',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               backgroundColor: 'var(--ez-color-surface)',
               display: 'flex',
               alignItems: 'center',
@@ -252,8 +252,8 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
           {errorMsg && (
             <div
               style={{
-                backgroundColor: '#FEF2F2',
-                border: '1px solid #FECACA',
+                backgroundColor: 'var(--ez-hue-rose-bg)',
+                border: '1px solid var(--ez-hue-rose-border)',
                 color: '#991B1B',
                 padding: '12px 16px',
                 borderRadius: '10px',
@@ -274,11 +274,11 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div
                 style={{
-                  border: '2px dashed #CBD5E1',
+                  border: '2px dashed var(--ez-hue-slate-border)',
                   borderRadius: '16px',
                   padding: '36px 20px',
                   textAlign: 'center',
-                  backgroundColor: selectedFile ? '#F0FDF4' : 'var(--ez-color-surface-secondary)',
+                  backgroundColor: selectedFile ? 'var(--ez-hue-green-bg)' : 'var(--ez-color-surface-secondary)',
                   borderColor: selectedFile ? '#86EFAC' : 'var(--ez-color-border)',
                   cursor: 'pointer',
                   position: 'relative',
@@ -303,7 +303,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                     width: '54px',
                     height: '54px',
                     borderRadius: '50%',
-                    backgroundColor: selectedFile ? '#DCFCE7' : '#EFF6FF',
+                    backgroundColor: selectedFile ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-blue-bg)',
                     color: selectedFile ? '#166534' : 'var(--ez-color-primary)',
                     display: 'flex',
                     alignItems: 'center',
@@ -344,7 +344,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                   backgroundColor: 'var(--ez-color-surface-secondary)',
                   padding: '16px 20px',
                   borderRadius: 'var(--ez-radius-control)',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                 }}
               >
                 <div>
@@ -358,7 +358,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       backgroundColor: 'var(--ez-color-surface)',
                       color: 'var(--ez-color-text-primary)',
@@ -386,7 +386,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       backgroundColor: 'var(--ez-color-surface)',
                       color: 'var(--ez-color-text-primary)',
@@ -407,7 +407,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                       maxHeight: '220px',
                       maxWidth: '100%',
                       borderRadius: 'var(--ez-radius-control)',
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid var(--ez-color-border-line)',
                       objectFit: 'contain',
                     }}
                   />
@@ -455,8 +455,8 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
               {analysisResult.scaleWarning && (
                 <div
                   style={{
-                    backgroundColor: '#FEF3C7',
-                    border: '1px solid #FDE68A',
+                    backgroundColor: 'var(--ez-hue-amber-bg-deep)',
+                    border: '1px solid var(--ez-hue-amber-border)',
                     color: '#92400E',
                     padding: '12px 16px',
                     borderRadius: '10px',
@@ -476,7 +476,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                 style={{
                   backgroundColor: 'var(--ez-color-surface)',
                   borderRadius: '14px',
-                  border: '1.5px solid #BFDBFE',
+                  border: '1.5px solid var(--ez-hue-blue-border)',
                   padding: '16px 20px',
                   boxShadow: '0 2px 8px rgba(37, 99, 235, 0.06)',
                   display: 'flex',
@@ -484,7 +484,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                   gap: '12px',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #EFF6FF', paddingBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-hue-blue-bg)', paddingBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <ShieldCheck size={18} color="#2563EB" />
                     <span style={{ fontSize: '13px', fontWeight: 800, color: '#1E40AF', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -498,7 +498,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                         fontWeight: 750,
                         padding: '3px 10px',
                         borderRadius: '6px',
-                        backgroundColor: (analysisResult.evidenceSummary?.status || analysisResult.overallStatus) === 'VERIFIED' ? '#DCFCE7' : (analysisResult.evidenceSummary?.status || analysisResult.overallStatus) === 'UNREADABLE' ? '#FEE2E2' : '#FEF3C7',
+                        backgroundColor: (analysisResult.evidenceSummary?.status || analysisResult.overallStatus) === 'VERIFIED' ? 'var(--ez-hue-green-bg-deep)' : (analysisResult.evidenceSummary?.status || analysisResult.overallStatus) === 'UNREADABLE' ? 'var(--ez-hue-red-bg)' : 'var(--ez-hue-amber-bg-deep)',
                         color: (analysisResult.evidenceSummary?.status || analysisResult.overallStatus) === 'VERIFIED' ? '#166534' : (analysisResult.evidenceSummary?.status || analysisResult.overallStatus) === 'UNREADABLE' ? '#991B1B' : '#92400E',
                       }}
                     >
@@ -510,7 +510,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                         fontWeight: 750,
                         padding: '3px 10px',
                         borderRadius: '6px',
-                        backgroundColor: (analysisResult.scaleStatus || (analysisResult.detectedScale && !analysisResult.scaleWarning ? 'VERIFIED' : 'UNVERIFIED')) === 'VERIFIED' ? '#EFF6FF' : '#FEF3C7',
+                        backgroundColor: (analysisResult.scaleStatus || (analysisResult.detectedScale && !analysisResult.scaleWarning ? 'VERIFIED' : 'UNVERIFIED')) === 'VERIFIED' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-hue-amber-bg-deep)',
                         color: (analysisResult.scaleStatus || (analysisResult.detectedScale && !analysisResult.scaleWarning ? 'VERIFIED' : 'UNVERIFIED')) === 'VERIFIED' ? 'var(--ez-color-primary-hover)' : '#92400E',
                       }}
                     >
@@ -557,7 +557,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                           fontWeight: 750,
                           padding: '2px 8px',
                           borderRadius: '6px',
-                          backgroundColor: analysisResult.overallConfidence === 'HIGH' ? '#DCFCE7' : analysisResult.overallConfidence === 'LOW' ? '#FEE2E2' : '#FEF3C7',
+                          backgroundColor: analysisResult.overallConfidence === 'HIGH' ? 'var(--ez-hue-green-bg-deep)' : analysisResult.overallConfidence === 'LOW' ? 'var(--ez-hue-red-bg)' : 'var(--ez-hue-amber-bg-deep)',
                           color: analysisResult.overallConfidence === 'HIGH' ? '#166534' : analysisResult.overallConfidence === 'LOW' ? '#991B1B' : '#92400E',
                         }}
                       >
@@ -574,7 +574,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                   style={{
                     backgroundColor: 'var(--ez-color-surface-secondary)',
                     borderRadius: 'var(--ez-radius-control)',
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--ez-color-border-line)',
                     padding: '12px 16px',
                     fontSize: '12px',
                   }}
@@ -597,7 +597,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                       backgroundColor: 'var(--ez-color-surface)',
                       padding: '10px 14px',
                       borderRadius: '8px',
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid var(--ez-color-border-line)',
                       fontFamily: 'monospace',
                       fontSize: '11px',
                       color: '#475569',
@@ -623,7 +623,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                   gap: '12px',
                 }}
               >
-                <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '14px', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)' }}>
                   <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
                     Total Luas Bangunan
                   </div>
@@ -635,7 +635,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                   </div>
                 </div>
 
-                <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '14px', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)' }}>
                   <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
                     Total Keliling Dinding
                   </div>
@@ -647,7 +647,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                   </div>
                 </div>
 
-                <div style={{ backgroundColor: '#F0FDF4', padding: '14px', borderRadius: '10px', border: '1px solid #BBF7D0' }}>
+                <div style={{ backgroundColor: 'var(--ez-hue-green-bg)', padding: '14px', borderRadius: '10px', border: '1px solid var(--ez-hue-green-border)' }}>
                   <div style={{ fontSize: '11px', fontWeight: 700, color: '#166534', textTransform: 'uppercase' }}>
                     Draft Pekerjaan RAB
                   </div>
@@ -659,7 +659,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                   </div>
                 </div>
 
-                <div style={{ backgroundColor: '#EFF6FF', padding: '14px', borderRadius: '10px', border: '1px solid #BFDBFE' }}>
+                <div style={{ backgroundColor: 'var(--ez-hue-blue-bg)', padding: '14px', borderRadius: '10px', border: '1px solid var(--ez-hue-blue-border)' }}>
                   <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-primary-hover)', textTransform: 'uppercase' }}>
                     Skala & Akurasi
                   </div>
@@ -673,7 +673,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
               </div>
 
               {/* Subtabs Header */}
-              <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #E2E8F0', paddingBottom: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--ez-color-border-line)', paddingBottom: '8px' }}>
                 <button
                   onClick={() => setActiveSubTab('SPACES')}
                   style={{
@@ -683,7 +683,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                     fontWeight: 750,
                     fontSize: '13px',
                     cursor: 'pointer',
-                    backgroundColor: activeSubTab === 'SPACES' ? 'var(--ez-color-primary)' : '#F1F5F9',
+                    backgroundColor: activeSubTab === 'SPACES' ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
                     color: activeSubTab === 'SPACES' ? '#FFFFFF' : 'var(--ez-color-text-muted)',
                   }}
                 >
@@ -699,7 +699,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                     fontWeight: 750,
                     fontSize: '13px',
                     cursor: 'pointer',
-                    backgroundColor: activeSubTab === 'VOLUMES' ? 'var(--ez-color-primary)' : '#F1F5F9',
+                    backgroundColor: activeSubTab === 'VOLUMES' ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
                     color: activeSubTab === 'VOLUMES' ? '#FFFFFF' : 'var(--ez-color-text-muted)',
                   }}
                 >
@@ -715,7 +715,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                     fontWeight: 750,
                     fontSize: '13px',
                     cursor: 'pointer',
-                    backgroundColor: activeSubTab === 'ELEMENTS' ? 'var(--ez-color-primary)' : '#F1F5F9',
+                    backgroundColor: activeSubTab === 'ELEMENTS' ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
                     color: activeSubTab === 'ELEMENTS' ? '#FFFFFF' : 'var(--ez-color-text-muted)',
                   }}
                 >
@@ -725,10 +725,10 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
 
               {/* Tab 1: Spaces Table */}
               {activeSubTab === 'SPACES' && (
-                <div style={{ border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
+                <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
-                      <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
+                      <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', textAlign: 'left', color: '#475569' }}>
                         <th style={{ padding: '10px 14px' }}>Nama Ruangan</th>
                         <th style={{ padding: '10px 14px' }}>Dimensi (P × L)</th>
                         <th style={{ padding: '10px 14px' }}>Luas (m²)</th>
@@ -739,7 +739,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                     </thead>
                     <tbody>
                       {analysisResult.spaces.map((space) => (
-                        <tr key={space.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <tr key={space.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                           <td style={{ padding: '10px 14px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                             {space.name}
                           </td>
@@ -762,7 +762,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                                 fontWeight: 700,
                                 padding: '2px 8px',
                                 borderRadius: '6px',
-                                backgroundColor: space.confidence === 'HIGH' ? '#DCFCE7' : '#FEF3C7',
+                                backgroundColor: space.confidence === 'HIGH' ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-amber-bg-deep)',
                                 color: space.confidence === 'HIGH' ? '#166534' : '#92400E',
                               }}
                             >
@@ -783,10 +783,10 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                     Pilih item draft volume yang ingin dimasukkan ke dalam spreadsheet RAB proyek:
                   </div>
 
-                  <div style={{ border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
+                  <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                       <thead>
-                        <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
+                        <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', textAlign: 'left', color: '#475569' }}>
                           <th style={{ padding: '10px 14px', width: '40px' }}>Pilih</th>
                           <th style={{ padding: '10px 14px' }}>Uraian Pekerjaan (AI ESTIMATE)</th>
                           <th style={{ padding: '10px 14px' }}>Kategori</th>
@@ -801,7 +801,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                           <tr
                             key={item.id}
                             style={{
-                              borderBottom: '1px solid #F1F5F9',
+                              borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                               backgroundColor: selectedDrafts[item.id] ? '#FFFFFF' : 'var(--ez-color-surface-secondary)',
                               opacity: selectedDrafts[item.id] ? 1 : 0.6,
                             }}
@@ -842,10 +842,10 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
 
               {/* Tab 3: Elements */}
               {activeSubTab === 'ELEMENTS' && (
-                <div style={{ border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
+                <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
-                      <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
+                      <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', textAlign: 'left', color: '#475569' }}>
                         <th style={{ padding: '10px 14px' }}>Disiplin</th>
                         <th style={{ padding: '10px 14px' }}>Elemen Terdeteksi</th>
                         <th style={{ padding: '10px 14px' }}>Kuantitas Terdeteksi</th>
@@ -855,7 +855,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                     </thead>
                     <tbody>
                       {analysisResult.elements.map((el) => (
-                        <tr key={el.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <tr key={el.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                           <td style={{ padding: '10px 14px', fontWeight: 700, color: '#475569' }}>
                             {el.category}
                           </td>
@@ -872,7 +872,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                                 fontWeight: 700,
                                 padding: '2px 8px',
                                 borderRadius: '6px',
-                                backgroundColor: el.status === 'Detected' ? '#DCFCE7' : '#FEF3C7',
+                                backgroundColor: el.status === 'Detected' ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-amber-bg-deep)',
                                 color: el.status === 'Detected' ? '#166534' : '#92400E',
                               }}
                             >
@@ -895,7 +895,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  borderTop: '1px solid #E2E8F0',
+                  borderTop: '1px solid var(--ez-color-border-line)',
                   paddingTop: '16px',
                   marginTop: '10px',
                   flexWrap: 'wrap',
@@ -906,7 +906,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                   onClick={() => setAnalysisResult(null)}
                   style={{
                     backgroundColor: 'var(--ez-color-surface)',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     color: '#475569',
                     padding: '10px 18px',
                     borderRadius: '8px',
@@ -926,8 +926,8 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                         onClose();
                       }}
                       style={{
-                        backgroundColor: '#F1F5F9',
-                        border: '1px solid #CBD5E1',
+                        backgroundColor: 'var(--ez-color-surface-tertiary)',
+                        border: '1px solid var(--ez-hue-slate-border)',
                         color: 'var(--ez-color-text-primary)',
                         padding: '10px 18px',
                         borderRadius: '8px',

@@ -62,7 +62,7 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
       style={{
         background: 'var(--ez-color-surface)',
         borderRadius: '10px',
-        border: '1px solid #E2E8F0',
+        border: '1px solid var(--ez-color-border-line)',
         overflow: 'hidden',
       }}
     >
@@ -95,7 +95,7 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
             <div
               key={step.stepIndex}
               style={{
-                borderBottom: step.stepIndex < 14 ? '1px solid #F1F5F9' : 'none',
+                borderBottom: step.stepIndex < 14 ? '1px solid var(--ez-color-surface-tertiary)' : 'none',
               }}
             >
               {/* Step Header */}
@@ -172,7 +172,7 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
                       fontSize: '9.5px',
                       fontFamily: 'monospace',
                       color: '#334155',
-                      background: '#F1F5F9',
+                      background: 'var(--ez-color-surface-tertiary)',
                       padding: '8px',
                       borderRadius: '4px',
                       overflow: 'auto',

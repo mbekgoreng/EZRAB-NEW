@@ -1333,7 +1333,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             padding: '0 20px',
             borderRadius: '10px',
             background: 'var(--ez-color-primary)',
-            color: '#ffffff',
+            color: '#FFFFFF',
             fontSize: '13px',
             fontWeight: 600,
             border: 'none',
@@ -1436,7 +1436,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             bottom: '24px',
             right: '24px',
             background: toastMsg.type === 'success' ? '#0F172A' : toastMsg.type === 'warning' ? '#B45309' : '#1E293B',
-            color: '#ffffff',
+            color: '#FFFFFF',
             padding: '14px 22px',
             borderRadius: 'var(--ez-radius-control)',
             fontSize: '13px',
@@ -1487,7 +1487,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: 'var(--ez-radius-control)', background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#EF4444' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-hue-rose-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#EF4444' }}>
                 <RefreshCw size={20} />
               </div>
               <div>
@@ -1506,8 +1506,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   height: '36px',
                   padding: '0 16px',
                   borderRadius: '8px',
-                  background: '#F1F5F9',
-                  border: '1px solid #CBD5E1',
+                  background: 'var(--ez-color-surface-tertiary)',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   color: '#475569',
                   fontSize: '12px',
                   fontWeight: 600,
@@ -1524,7 +1524,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   borderRadius: '8px',
                   background: '#EF4444',
                   border: 'none',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   fontSize: '12px',
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -1554,7 +1554,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             padding: '24px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', color: '#ffffff' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', color: '#FFFFFF' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Compass size={20} color="#38BDF8" />
               <span style={{ fontSize: '15px', fontWeight: 800 }}>
@@ -1564,27 +1564,27 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <button
                 onClick={() => setZoomLevel((z) => Math.min(2.5, z + 0.25))}
-                style={{ background: '#1E293B', color: '#ffffff', border: '1px solid #334155', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                style={{ background: '#1E293B', color: '#FFFFFF', border: '1px solid #334155', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                 title="Zoom In"
               >
                 <ZoomIn size={16} />
               </button>
               <button
                 onClick={() => setZoomLevel((z) => Math.max(0.5, z - 0.25))}
-                style={{ background: '#1E293B', color: '#ffffff', border: '1px solid #334155', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                style={{ background: '#1E293B', color: '#FFFFFF', border: '1px solid #334155', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                 title="Zoom Out"
               >
                 <ZoomOut size={16} />
               </button>
               <button
                 onClick={() => setZoomLevel(1)}
-                style={{ background: '#1E293B', color: '#ffffff', border: '1px solid #334155', borderRadius: '8px', padding: '0 12px', height: '36px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                style={{ background: '#1E293B', color: '#FFFFFF', border: '1px solid #334155', borderRadius: '8px', padding: '0 12px', height: '36px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
               >
                 Reset Zoom ({Math.round(zoomLevel * 100)}%)
               </button>
               <button
                 onClick={() => setLightboxOpen(false)}
-                style={{ background: '#EF4444', color: '#ffffff', border: 'none', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginLeft: '8px' }}
+                style={{ background: '#EF4444', color: '#FFFFFF', border: 'none', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginLeft: '8px' }}
                 title="Tutup"
               >
                 <X size={18} />
@@ -1642,11 +1642,11 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   fontSize: '10px',
                   fontWeight: 800,
                   letterSpacing: '0.04em',
-                  background: '#EFF6FF',
+                  background: 'var(--ez-hue-blue-bg)',
                   color: 'var(--ez-color-primary)',
                   padding: '1px 6px',
                   borderRadius: 'var(--ez-radius-pill)',
-                  border: '1px solid #DBEAFE',
+                  border: '1px solid var(--ez-hue-blue-bg-deep)',
                 }}
               >
                 QTO WORKSTATION
@@ -1671,7 +1671,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               padding: '0 14px',
               borderRadius: 'var(--ez-radius-control)',
               background: 'var(--ez-color-surface)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               color: '#334155',
               fontSize: '12px',
               fontWeight: 600,
@@ -1693,7 +1693,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               padding: '0 14px',
               borderRadius: 'var(--ez-radius-control)',
               background: 'var(--ez-color-surface)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               color: hasUnsavedChanges ? '#D97706' : 'var(--ez-color-text-muted)',
               fontSize: '12px',
               fontWeight: 600,
@@ -1715,7 +1715,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               padding: '0 14px',
               borderRadius: 'var(--ez-radius-control)',
               background: 'var(--ez-color-surface)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               color: '#059669',
               fontSize: '12px',
               fontWeight: 700,
@@ -1736,7 +1736,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               padding: '0 10px',
               borderRadius: 'var(--ez-radius-control)',
               background: 'var(--ez-color-surface)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               color: '#475569',
               fontSize: '12px',
               fontWeight: 600,
@@ -1793,8 +1793,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                       height: '24px',
                       padding: '0 8px',
                       borderRadius: '5px',
-                      background: isSelected ? '#EFF6FF' : '#ffffff',
-                      border: isSelected ? '1px solid #2563EB' : '1px solid #CBD5E1',
+                      background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                      border: isSelected ? '1px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                       color: isSelected ? 'var(--ez-color-primary-hover)' : '#334155',
                       fontSize: '11px',
                       fontWeight: isSelected ? 700 : 500,
@@ -1822,8 +1822,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               height: '24px',
               padding: '0 9px',
               borderRadius: '5px',
-              background: filterFavoritesOnly ? '#FEF3C7' : '#ffffff',
-              border: filterFavoritesOnly ? '1px solid #F59E0B' : '1px solid #CBD5E1',
+              background: filterFavoritesOnly ? 'var(--ez-hue-amber-bg-deep)' : 'var(--ez-color-surface)',
+              border: filterFavoritesOnly ? '1px solid #F59E0B' : '1px solid var(--ez-hue-slate-border)',
               color: filterFavoritesOnly ? '#B45309' : '#475569',
               fontSize: '11px',
               fontWeight: 700,
@@ -1859,8 +1859,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             height: '36px',
             padding: '0 12px 0 6px',
             borderRadius: 'var(--ez-radius-control)',
-            background: activeDomain === 'ALL' ? '#EFF6FF' : '#ffffff',
-            border: activeDomain === 'ALL' ? '1.5px solid #2563EB' : '1px solid #E2E8F0',
+            background: activeDomain === 'ALL' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+            border: activeDomain === 'ALL' ? '1.5px solid #2563EB' : '1px solid var(--ez-color-border-line)',
             color: activeDomain === 'ALL' ? 'var(--ez-color-primary-hover)' : '#334155',
             fontSize: '12px',
             fontWeight: activeDomain === 'ALL' ? 700 : 600,
@@ -1879,7 +1879,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               width: '24px',
               height: '24px',
               borderRadius: '8px',
-              background: activeDomain === 'ALL' ? '#DBEAFE' : '#F1F5F9',
+              background: activeDomain === 'ALL' ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
               color: activeDomain === 'ALL' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
               display: 'inline-flex',
               alignItems: 'center',
@@ -1894,7 +1894,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             style={{
               fontSize: '10px',
               fontWeight: 700,
-              background: activeDomain === 'ALL' ? 'var(--ez-color-primary)' : '#F1F5F9',
+              background: activeDomain === 'ALL' ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
               color: activeDomain === 'ALL' ? '#ffffff' : 'var(--ez-color-text-muted)',
               padding: '1px 5px',
               borderRadius: 'var(--ez-radius-pill)',
@@ -1916,8 +1916,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 height: '36px',
                 padding: '0 12px 0 6px',
                 borderRadius: 'var(--ez-radius-control)',
-                background: isActive ? '#EFF6FF' : '#ffffff',
-                border: isActive ? '1.5px solid #2563EB' : '1px solid #E2E8F0',
+                background: isActive ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                border: isActive ? '1.5px solid #2563EB' : '1px solid var(--ez-color-border-line)',
                 color: isActive ? 'var(--ez-color-primary-hover)' : '#334155',
                 fontSize: '12px',
                 fontWeight: isActive ? 700 : 600,
@@ -1936,7 +1936,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   width: '24px',
                   height: '24px',
                   borderRadius: '8px',
-                  background: isActive ? '#DBEAFE' : '#F1F5F9',
+                  background: isActive ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
                   color: isActive ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -1951,7 +1951,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 style={{
                   fontSize: '10px',
                   fontWeight: 700,
-                  background: isActive ? 'var(--ez-color-primary)' : '#F1F5F9',
+                  background: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
                   color: isActive ? '#ffffff' : 'var(--ez-color-text-muted)',
                   padding: '1px 5px',
                   borderRadius: 'var(--ez-radius-pill)',
@@ -2012,7 +2012,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   paddingLeft: '34px',
                   paddingRight: searchQuery ? '32px' : '12px',
                   borderRadius: 'var(--ez-radius-control)',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   fontSize: '12px',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -2058,7 +2058,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                     width: '100%',
                     height: '32px',
                     borderRadius: '10px',
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--ez-color-border-line)',
                     background: 'var(--ez-color-surface)',
                     fontSize: '11px',
                     color: '#334155',
@@ -2088,7 +2088,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                     width: '100%',
                     height: '32px',
                     borderRadius: '10px',
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--ez-color-border-line)',
                     background: 'var(--ez-color-surface)',
                     fontSize: '11px',
                     color: '#334155',
@@ -2172,7 +2172,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   textAlign: 'center',
                   background: 'var(--ez-color-surface-secondary)',
                   borderRadius: '8px',
-                  border: '1px dashed #CBD5E1',
+                  border: '1px dashed var(--ez-hue-slate-border)',
                   flexShrink: 0,
                 }}
               >
@@ -2201,7 +2201,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                       padding: '0 12px',
                       borderRadius: '6px',
                       background: 'var(--ez-color-primary)',
-                      color: '#ffffff',
+                      color: '#FFFFFF',
                       fontSize: '11px',
                       fontWeight: 600,
                       border: 'none',
@@ -2254,7 +2254,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                             width: '26px',
                             height: '26px',
                             borderRadius: '8px',
-                            background: '#EFF6FF',
+                            background: 'var(--ez-hue-blue-bg)',
                             color: 'var(--ez-color-primary)',
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -2274,7 +2274,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                           style={{
                             fontSize: '10px',
                             fontWeight: 700,
-                            background: '#E2E8F0',
+                            background: 'var(--ez-color-border-line)',
                             color: '#475569',
                             padding: '1px 6px',
                             borderRadius: 'var(--ez-radius-pill)',
@@ -2303,9 +2303,9 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                               className={`ezrab-calc-compact-row ${isSelected ? 'active' : ''}`}
                               style={{
                                 flexShrink: 0,
-                                background: isSelected ? '#EFF6FF' : '#ffffff',
-                                border: isSelected ? '1.5px solid #2563EB' : '1px solid #E2E8F0',
-                                borderLeft: isSelected ? '3.5px solid #2563EB' : '1px solid #E2E8F0',
+                                background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                                border: isSelected ? '1.5px solid #2563EB' : '1px solid var(--ez-color-border-line)',
+                                borderLeft: isSelected ? '3.5px solid #2563EB' : '1px solid var(--ez-color-border-line)',
                               }}
                             >
                               {/* Left Info: Star + Name + Description */}
@@ -2318,7 +2318,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                                     border: 'none',
                                     cursor: 'pointer',
                                     padding: '2px 0 0',
-                                    color: item.isFavorite ? '#F59E0B' : '#CBD5E1',
+                                    color: item.isFavorite ? '#F59E0B' : 'var(--ez-hue-slate-border)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -2358,7 +2358,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                                     fontSize: '10.5px',
                                     fontWeight: 700,
                                     color: '#475569',
-                                    background: '#F1F5F9',
+                                    background: 'var(--ez-color-surface-tertiary)',
                                     padding: '2px 6px',
                                     borderRadius: 'var(--ez-radius-pill)',
                                     border: '1px solid #EEF1F6',
@@ -2366,7 +2366,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                                 >
                                   {item.primaryUnit}
                                 </span>
-                                <span style={{ color: isSelected ? 'var(--ez-color-primary)' : '#CBD5E1', display: 'flex', alignItems: 'center' }}>
+                                <span style={{ color: isSelected ? 'var(--ez-color-primary)' : 'var(--ez-hue-slate-border)', display: 'flex', alignItems: 'center' }}>
                                   <ChevronRight size={14} />
                                 </span>
                               </div>
@@ -2386,7 +2386,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             style={{
               flexShrink: 0,
               paddingTop: '8px',
-              borderTop: '1px solid #F1F5F9',
+              borderTop: '1px solid var(--ez-color-surface-tertiary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -2421,7 +2421,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
           {/* Workbench Header */}
           <div
             style={{
-              borderBottom: '1px solid #F1F5F9',
+              borderBottom: '1px solid var(--ez-color-surface-tertiary)',
               paddingBottom: '14px',
               display: 'flex',
               alignItems: 'flex-start',
@@ -2432,13 +2432,13 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
           >
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                <span style={{ fontSize: '10.5px', fontWeight: 800, background: '#0F172A', color: '#ffffff', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>
+                <span style={{ fontSize: '10.5px', fontWeight: 800, background: '#0F172A', color: '#FFFFFF', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>
                   {(activeSpec as any)?.code || selectedCalcId}
                 </span>
-                <span style={{ fontSize: '11px', background: '#EFF6FF', color: 'var(--ez-color-primary-hover)', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700, border: '1px solid #DBEAFE' }}>
+                <span style={{ fontSize: '11px', background: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700, border: '1px solid var(--ez-hue-blue-bg-deep)' }}>
                   {activeSpec.category}
                 </span>
-                <span style={{ fontSize: '10.5px', color: '#15803D', background: '#DCFCE7', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ fontSize: '10.5px', color: '#15803D', background: 'var(--ez-hue-green-bg-deep)', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                   <ShieldCheck size={12} /> SNI-STANDARDIZED
                 </span>
               </div>
@@ -2459,8 +2459,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   height: '32px',
                   padding: '0 10px',
                   borderRadius: '6px',
-                  background: favoriteIds.includes(selectedCalcId) ? '#FEF3C7' : '#ffffff',
-                  border: favoriteIds.includes(selectedCalcId) ? '1px solid #F59E0B' : '1px solid #CBD5E1',
+                  background: favoriteIds.includes(selectedCalcId) ? 'var(--ez-hue-amber-bg-deep)' : 'var(--ez-color-surface)',
+                  border: favoriteIds.includes(selectedCalcId) ? '1px solid #F59E0B' : '1px solid var(--ez-hue-slate-border)',
                   color: favoriteIds.includes(selectedCalcId) ? '#B45309' : '#475569',
                   fontSize: '11.5px',
                   fontWeight: 700,
@@ -2480,8 +2480,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   height: '32px',
                   padding: '0 10px',
                   borderRadius: '6px',
-                  background: showCadDiagram ? '#EFF6FF' : '#ffffff',
-                  border: showCadDiagram ? '1px solid #2563EB' : '1px solid #CBD5E1',
+                  background: showCadDiagram ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                  border: showCadDiagram ? '1px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                   color: showCadDiagram ? 'var(--ez-color-primary-hover)' : '#475569',
                   fontSize: '11.5px',
                   fontWeight: 600,
@@ -2503,7 +2503,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   padding: '0 10px',
                   borderRadius: '6px',
                   background: 'var(--ez-color-surface)',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   color: '#475569',
                   fontSize: '11.5px',
                   fontWeight: 600,
@@ -2547,7 +2547,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 gap: '12px',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-color-surface-tertiary)', paddingBottom: '8px' }}>
                 <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                   Formulir Parameter Geometris
                 </span>
@@ -2574,12 +2574,12 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                         gap: '8px',
                         padding: '6px 8px',
                         borderRadius: '6px',
-                        background: isFocused ? '#EFF6FF' : '#ffffff',
+                        background: isFocused ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                         border: isInvalid
                           ? '1px solid #EF4444'
                           : isFocused
                           ? '1.5px solid #2563EB'
-                          : '1px solid #E2E8F0',
+                          : '1px solid var(--ez-color-border-line)',
                         transition: 'all 0.1s ease',
                       }}
                     >
@@ -2590,7 +2590,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                               fontSize: '10.5px',
                               fontFamily: 'monospace',
                               fontWeight: 800,
-                              background: isFocused ? '#DBEAFE' : '#F1F5F9',
+                              background: isFocused ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
                               color: isFocused ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                               padding: '1px 5px',
                               borderRadius: '4px',
@@ -2622,7 +2622,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                             width: '100%',
                             height: '32px',
                             background: isFocused ? '#ffffff' : 'var(--ez-color-surface-secondary)',
-                            border: '1px solid #CBD5E1',
+                            border: '1px solid var(--ez-hue-slate-border)',
                             borderRadius: '5px',
                             padding: '0 8px',
                             fontSize: '12.5px',
@@ -2652,7 +2652,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 style={{
                   background: 'var(--ez-color-surface-secondary)',
                   borderRadius: '6px',
-                  border: '1px dashed #CBD5E1',
+                  border: '1px dashed var(--ez-hue-slate-border)',
                   padding: '8px 10px',
                   display: 'flex',
                   alignItems: 'center',
@@ -2752,8 +2752,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                             <tr
                               key={key}
                               style={{
-                                borderBottom: '1px solid #F1F5F9',
-                                background: idx % 2 === 0 ? '#ffffff' : '#FAFAFA',
+                                borderBottom: '1px solid var(--ez-color-surface-tertiary)',
+                                background: idx % 2 === 0 ? '#ffffff' : 'var(--ez-color-surface-faint)',
                               }}
                             >
                               <td style={{ padding: '5px 8px', color: '#1E293B', fontWeight: 500 }}>
@@ -2779,15 +2779,15 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 <div
                   style={{
                     background:
-                      scopeCost.status === 'RESOLVED' ? '#F0FDF4'
-                        : scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL' ? '#FFFBEB'
-                          : scopeCost.status === 'AHSP_MISSING' ? '#FEF2F2'
+                      scopeCost.status === 'RESOLVED' ? 'var(--ez-hue-green-bg)'
+                        : scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL' ? 'var(--ez-hue-amber-bg)'
+                          : scopeCost.status === 'AHSP_MISSING' ? 'var(--ez-hue-rose-bg)'
                             : 'var(--ez-color-surface-secondary)',
                     border:
-                      scopeCost.status === 'RESOLVED' ? '1px solid #BBF7D0'
-                        : scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL' ? '1px solid #FDE68A'
-                          : scopeCost.status === 'AHSP_MISSING' ? '1px solid #FECACA'
-                            : '1px solid #CBD5E1',
+                      scopeCost.status === 'RESOLVED' ? '1px solid var(--ez-hue-green-border)'
+                        : scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL' ? '1px solid var(--ez-hue-amber-border)'
+                          : scopeCost.status === 'AHSP_MISSING' ? '1px solid var(--ez-hue-rose-border)'
+                            : '1px solid var(--ez-hue-slate-border)',
                     borderRadius: '20px',
                     padding: '12px 14px',
                     display: 'flex',
@@ -2819,9 +2819,9 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                         fontSize: '9.5px',
                         fontWeight: 700,
                         background:
-                          scopeCost.status === 'RESOLVED' ? '#DCFCE7'
-                            : scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL' ? '#FEF3C7'
-                              : '#FEE2E2',
+                          scopeCost.status === 'RESOLVED' ? 'var(--ez-hue-green-bg-deep)'
+                            : scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL' ? 'var(--ez-hue-amber-bg-deep)'
+                              : 'var(--ez-hue-red-bg)',
                         color:
                           scopeCost.status === 'RESOLVED' ? '#15803D'
                             : scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL' ? '#B45309'
@@ -2862,7 +2862,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                         Namun data harga HSD (Upah/Bahan/Alat) untuk wilayah <em>{priceContext.location}</em> belum lengkap di database nasional.
                       </p>
                       {scopeCost.missingPrices.length > 0 && (
-                        <div style={{ background: '#FEF3C7', padding: '6px 8px', borderRadius: 'var(--ez-radius-pill)', fontSize: '10.5px' }}>
+                        <div style={{ background: 'var(--ez-hue-amber-bg-deep)', padding: '6px 8px', borderRadius: 'var(--ez-radius-pill)', fontSize: '10.5px' }}>
                           <span style={{ fontWeight: 700 }}>Komponen belum ada harga: </span>
                           <span>
                             {scopeCost.missingPrices.slice(0, 3).map((mp) => `${mp.componentName} (${mp.type})`).join(', ')}
@@ -2915,7 +2915,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 <span
                   style={{
                     fontSize: '10px',
-                    background: scopeCost.hasMapping ? '#EFF6FF' : '#DCFCE7',
+                    background: scopeCost.hasMapping ? 'var(--ez-hue-blue-bg)' : 'var(--ez-hue-green-bg-deep)',
                     color: scopeCost.hasMapping ? 'var(--ez-color-primary-hover)' : '#15803D',
                     padding: '2px 6px',
                     borderRadius: 'var(--ez-radius-pill)',
@@ -2936,7 +2936,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                     height: '40px',
                     borderRadius: '8px',
                     background: 'var(--ez-color-primary)',
-                    color: '#ffffff',
+                    color: '#FFFFFF',
                     fontSize: '12.5px',
                     fontWeight: 700,
                     border: 'none',
@@ -2960,7 +2960,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                     height: '36px',
                     borderRadius: '8px',
                     background: '#059669',
-                    color: '#ffffff',
+                    color: '#FFFFFF',
                     fontSize: '12px',
                     fontWeight: 700,
                     border: 'none',
@@ -3051,7 +3051,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 Daftar Volume Tersimpan ({effectiveProject.name})
               </h3>
-              <span style={{ fontSize: '11px', background: '#EFF6FF', color: 'var(--ez-color-primary)', padding: '1px 6px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>
+              <span style={{ fontSize: '11px', background: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary)', padding: '1px 6px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>
                 {projectQtoItems.length} Item QTO
               </span>
             </div>
@@ -3066,8 +3066,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               height: '30px',
               padding: '0 12px',
               borderRadius: '6px',
-              background: '#EFF6FF',
-              border: '1px solid #BFDBFE',
+              background: 'var(--ez-hue-blue-bg)',
+              border: '1px solid var(--ez-hue-blue-border)',
               color: 'var(--ez-color-primary-hover)',
               fontSize: '11.5px',
               fontWeight: 700,
@@ -3083,7 +3083,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         </div>
 
         {projectQtoItems.length === 0 ? (
-          <div style={{ padding: '24px', textAlign: 'center', color: '#94A3B8', fontSize: '12px', background: 'var(--ez-color-surface-secondary)', borderRadius: '20px', border: '1px dashed #CBD5E1' }}>
+          <div style={{ padding: '24px', textAlign: 'center', color: '#94A3B8', fontSize: '12px', background: 'var(--ez-color-surface-secondary)', borderRadius: '20px', border: '1px dashed var(--ez-hue-slate-border)' }}>
             Belum ada item QTO yang disimpan. Klik <strong>Tambahkan ke QTO</strong> di atas untuk menyimpan volume pekerjaan aktif.
           </div>
         ) : (
@@ -3104,8 +3104,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   <tr
                     key={item.id}
                     style={{
-                      borderBottom: '1px solid #F1F5F9',
-                      background: item.calculatorId === selectedCalcId ? '#EFF6FF' : idx % 2 === 0 ? '#ffffff' : '#FAFAFA',
+                      borderBottom: '1px solid var(--ez-color-surface-tertiary)',
+                      background: item.calculatorId === selectedCalcId ? 'var(--ez-hue-blue-bg)' : idx % 2 === 0 ? '#ffffff' : 'var(--ez-color-surface-faint)',
                     }}
                   >
                     <td style={{ padding: '7px 10px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>{idx + 1}</td>
@@ -3118,17 +3118,17 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                     </td>
                     <td style={{ padding: '7px 10px', color: '#475569', fontWeight: 600 }}>{item.unit}</td>
                     <td style={{ padding: '7px 10px', fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>
-                      <span style={{ background: '#F1F5F9', padding: '1px 5px', borderRadius: 'var(--ez-radius-pill)', fontFamily: 'monospace' }}>
+                      <span style={{ background: 'var(--ez-color-surface-tertiary)', padding: '1px 5px', borderRadius: 'var(--ez-radius-pill)', fontFamily: 'monospace' }}>
                         {item.calculationRunId || 'CALC-DIRECT'}
                       </span>
                     </td>
                     <td style={{ padding: '7px 10px' }}>
                       {item.status === 'SYNCED_TO_RAB' ? (
-                        <span style={{ color: '#16A34A', background: '#DCFCE7', padding: '1px 6px', borderRadius: 'var(--ez-radius-pill)', fontSize: '10px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ color: '#16A34A', background: 'var(--ez-hue-green-bg-deep)', padding: '1px 6px', borderRadius: 'var(--ez-radius-pill)', fontSize: '10px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <Check size={10} /> Tersinkron RAB
                         </span>
                       ) : (
-                        <span style={{ color: '#D97706', background: '#FEF3C7', padding: '1px 6px', borderRadius: 'var(--ez-radius-pill)', fontSize: '10px', fontWeight: 600 }}>
+                        <span style={{ color: '#D97706', background: 'var(--ez-hue-amber-bg-deep)', padding: '1px 6px', borderRadius: 'var(--ez-radius-pill)', fontSize: '10px', fontWeight: 600 }}>
                           QTO Tersimpan
                         </span>
                       )}

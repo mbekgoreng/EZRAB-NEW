@@ -129,11 +129,11 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
   const statusBadge = (st: TerminStatus) => {
     const config: Record<TerminStatus, { bg: string; color: string; label: string }> = {
       PLANNED: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', label: 'Direncanakan' },
-      READY_TO_INVOICE: { bg: '#EFF6FF', color: 'var(--ez-color-primary-hover)', label: 'Siap Ditagihkan' },
-      INVOICED: { bg: '#E0E7FF', color: '#4338CA', label: 'Ditagihkan' },
-      PARTIALLY_PAID: { bg: '#FEF3C7', color: '#B45309', label: 'Dibayar Sebagian' },
-      PAID: { bg: '#DCFCE7', color: '#15803D', label: 'Lunas' },
-      OVERDUE: { bg: '#FEE2E2', color: '#B91C1C', label: 'Jatuh Tempo' },
+      READY_TO_INVOICE: { bg: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)', label: 'Siap Ditagihkan' },
+      INVOICED: { bg: 'var(--ez-hue-indigo-bg)', color: '#4338CA', label: 'Ditagihkan' },
+      PARTIALLY_PAID: { bg: 'var(--ez-hue-amber-bg-deep)', color: '#B45309', label: 'Dibayar Sebagian' },
+      PAID: { bg: 'var(--ez-hue-green-bg-deep)', color: '#15803D', label: 'Lunas' },
+      OVERDUE: { bg: 'var(--ez-hue-red-bg)', color: '#B91C1C', label: 'Jatuh Tempo' },
       CANCELLED: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-faint)', label: 'Dibatalkan' },
     };
     const c = config[st] || config.PLANNED;
@@ -163,7 +163,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
         style={{
           backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -261,7 +261,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
           style={{
             backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             padding: '48px 20px',
             textAlign: 'center',
             display: 'flex',
@@ -270,7 +270,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
             gap: '12px',
           }}
         >
-          <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Layers size={24} color="#2563EB" />
           </div>
           <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
@@ -309,7 +309,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
               style={{
                 backgroundColor: 'var(--ez-color-surface)',
                 borderRadius: '14px',
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
                 padding: '16px 18px',
                 boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
                 display: 'flex',
@@ -326,7 +326,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                         width: '24px',
                         height: '24px',
                         borderRadius: '6px',
-                        backgroundColor: '#EFF6FF',
+                        backgroundColor: 'var(--ez-hue-blue-bg)',
                         color: 'var(--ez-color-primary)',
                         fontSize: '12px',
                         fontWeight: 800,
@@ -348,7 +348,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                   <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', letterSpacing: '-0.02em' }}>
                     {formatRupiah(term.amount)}
                   </span>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-primary)', backgroundColor: '#EFF6FF', padding: '1px 6px', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-primary)', backgroundColor: 'var(--ez-hue-blue-bg)', padding: '1px 6px', borderRadius: '4px' }}>
                     {term.percentage}%
                   </span>
                 </div>
@@ -388,7 +388,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                       height: '30px',
                       borderRadius: '6px',
                       backgroundColor: 'var(--ez-color-surface-secondary)',
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid var(--ez-color-border-line)',
                       color: 'var(--ez-color-text-slate)',
                       display: 'flex',
                       alignItems: 'center',
@@ -411,7 +411,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                       height: '30px',
                       borderRadius: '6px',
                       backgroundColor: 'var(--ez-color-surface-secondary)',
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid var(--ez-color-border-line)',
                       color: 'var(--ez-hue-rose-text)',
                       display: 'flex',
                       alignItems: 'center',
@@ -430,8 +430,8 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                     style={{
                       padding: '6px 12px',
                       borderRadius: '6px',
-                      backgroundColor: '#EFF6FF',
-                      border: '1px solid #BFDBFE',
+                      backgroundColor: 'var(--ez-hue-blue-bg)',
+                      border: '1px solid var(--ez-hue-blue-border)',
                       color: 'var(--ez-color-primary-hover)',
                       fontSize: '12px',
                       fontWeight: 650,
@@ -493,7 +493,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
             </div>
 
             {errorMessage && (
-              <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#991B1B' }}>
+              <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#991B1B' }}>
                 {errorMessage}
               </div>
             )}
@@ -513,7 +513,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -538,7 +538,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       outline: 'none',
                       boxSizing: 'border-box',
@@ -559,7 +559,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       outline: 'none',
                       boxSizing: 'border-box',
@@ -581,7 +581,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -602,7 +602,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       outline: 'none',
                       boxSizing: 'border-box',
@@ -620,7 +620,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       outline: 'none',
                       backgroundColor: 'var(--ez-color-surface)',
@@ -651,7 +651,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -669,7 +669,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                     borderRadius: '8px',
                     backgroundColor: 'var(--ez-color-surface-tertiary)',
                     color: 'var(--ez-color-text-slate)',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12.5px',
                     fontWeight: 600,
                     cursor: 'pointer',

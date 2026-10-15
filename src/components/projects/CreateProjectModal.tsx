@@ -235,7 +235,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               onClick={() => setActiveStep('magic_ai')}
               style={{
                 background: 'var(--ez-pastel-sky)',
-                border: '1.5px solid #BFDBFE',
+                border: '1.5px solid var(--ez-hue-blue-border)',
                 borderRadius: 'var(--ez-radius-control)',
                 padding: '16px',
                 cursor: 'pointer',
@@ -250,7 +250,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.borderColor = '#BFDBFE';
+                e.currentTarget.style.borderColor = 'var(--ez-hue-blue-border)';
               }}
             >
               <div>
@@ -261,7 +261,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                       height: '38px',
                       borderRadius: 'var(--ez-radius-control)',
                       background: 'var(--ez-color-primary)',
-                      color: '#ffffff',
+                      color: '#FFFFFF',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -269,7 +269,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   >
                     <Sparkles size={19} />
                   </div>
-                  <span style={{ fontSize: '10px', fontWeight: 800, background: 'var(--ez-pastel-sky)', color: '#2456A8', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', border: '1px solid #BFDBFE' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 800, background: 'var(--ez-pastel-sky)', color: '#2456A8', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', border: '1px solid var(--ez-hue-blue-border)' }}>
                     {t('proj.create.card1_tag')}
                   </span>
                 </div>
@@ -316,9 +316,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                       width: '38px',
                       height: '38px',
                       borderRadius: 'var(--ez-radius-control)',
-                      background: '#EFF6FF',
+                      background: 'var(--ez-hue-blue-bg)',
                       color: 'var(--ez-color-primary)',
-                      border: '1px solid #DBEAFE',
+                      border: '1px solid var(--ez-hue-blue-bg-deep)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -373,9 +373,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                       width: '38px',
                       height: '38px',
                       borderRadius: 'var(--ez-radius-control)',
-                      background: '#ECFDF5',
+                      background: 'var(--ez-hue-emerald-bg)',
                       color: '#059669',
-                      border: '1px solid #A7F3D0',
+                      border: '1px solid var(--ez-hue-green-border-deep)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -430,9 +430,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                       width: '38px',
                       height: '38px',
                       borderRadius: 'var(--ez-radius-control)',
-                      background: '#FFFBEB',
+                      background: 'var(--ez-hue-amber-bg)',
                       color: '#D97706',
-                      border: '1px solid #FDE68A',
+                      border: '1px solid var(--ez-hue-amber-border)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -478,7 +478,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   width: '100%',
                   padding: '9px 12px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   fontSize: '13px',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -498,7 +498,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
                     background: 'var(--ez-color-surface)',
                     outline: 'none',
@@ -528,7 +528,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -551,7 +551,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -573,7 +573,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -596,7 +596,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -617,7 +617,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -650,7 +650,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   padding: '9px 20px',
                   borderRadius: '8px',
                   background: 'var(--ez-color-primary)',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   border: 'none',
                   fontSize: '13px',
                   fontWeight: 650,
@@ -693,7 +693,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   width: '100%',
                   padding: '12px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   fontSize: '13px',
                   color: 'var(--ez-color-text-primary)',
                   outline: 'none',
@@ -730,7 +730,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   padding: '9px 20px',
                   borderRadius: '8px',
                   background: 'var(--ez-color-primary)',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   border: 'none',
                   fontSize: '13px',
                   fontWeight: 650,

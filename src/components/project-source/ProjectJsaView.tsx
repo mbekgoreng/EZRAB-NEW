@@ -102,7 +102,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
   };
 
   return (
-    <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid #E2E8F0', padding: 20 }}>
+    <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-color-border-line)', padding: 20 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div>
@@ -142,9 +142,9 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
           style={{
             textAlign: 'center',
             padding: '40px 20px',
-            background: '#FFFBEB',
+            background: 'var(--ez-hue-amber-bg)',
             borderRadius: 10,
-            border: '1px dashed #FDE68A',
+            border: '1px dashed var(--ez-hue-amber-border)',
           }}
         >
           <AlertTriangle size={36} color="#D97706" style={{ marginBottom: 10 }} />
@@ -173,7 +173,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
+              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569' }}>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>No</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Uraian Aktivitas Kerja</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Potensi Bahaya</th>
@@ -186,7 +186,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
             </thead>
             <tbody>
               {items.map((item, idx) => (
-                <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                <tr key={item.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                   <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-muted)' }}>{idx + 1}</td>
                   <td style={{ padding: '10px 12px', fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>{item.activity}</td>
                   <td style={{ padding: '10px 12px', color: '#DC2626', fontWeight: 600 }}>{item.hazard}</td>
@@ -199,10 +199,10 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                         fontWeight: 700,
                         background:
                           item.risk.toLowerCase().includes('tinggi') || item.risk.toLowerCase().includes('high')
-                            ? '#FEF2F2'
+                            ? 'var(--ez-hue-rose-bg)'
                             : item.risk.toLowerCase().includes('rendah') || item.risk.toLowerCase().includes('low')
-                            ? '#F0FDF4'
-                            : '#FFFBEB',
+                            ? 'var(--ez-hue-green-bg)'
+                            : 'var(--ez-hue-amber-bg)',
                         color:
                           item.risk.toLowerCase().includes('tinggi') || item.risk.toLowerCase().includes('high')
                             ? '#DC2626'
@@ -279,7 +279,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                   value={activity}
                   onChange={(e) => setActivity(e.target.value)}
                   placeholder="Contoh: Pekerjaan Penggalian Tanah Pondasi > 2m"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                 />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -293,7 +293,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                     value={hazard}
                     onChange={(e) => setHazard(e.target.value)}
                     placeholder="Contoh: Tebing galian longsor"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                   />
                 </div>
                 <div>
@@ -303,7 +303,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                   <select
                     value={risk}
                     onChange={(e) => setRisk(e.target.value)}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                   >
                     <option value="Tinggi">Tinggi (High Risk)</option>
                     <option value="Sedang">Sedang (Medium Risk)</option>
@@ -321,7 +321,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                   value={control}
                   onChange={(e) => setControl(e.target.value)}
                   placeholder="Contoh: Pemasangan turap penyangga, kemiringan lereng aman (slope), batas pagar pengaman."
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13, resize: 'vertical' }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13, resize: 'vertical' }}
                 />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -334,7 +334,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                     value={ppe}
                     onChange={(e) => setPpe(e.target.value)}
                     placeholder="Contoh: Helm, Sepatu Safety, Rompi"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                   />
                 </div>
                 <div>
@@ -346,7 +346,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                     value={responsiblePerson}
                     onChange={(e) => setResponsiblePerson(e.target.value)}
                     placeholder="Contoh: Mandor / Ahli K3"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                   />
                 </div>
               </div>
@@ -355,7 +355,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                   type="button"
                   onClick={() => setShowModal(false)}
                   style={{
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     background: 'var(--ez-color-surface)',
                     borderRadius: 6,
                     padding: '8px 14px',

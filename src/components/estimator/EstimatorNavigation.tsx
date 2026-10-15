@@ -40,7 +40,7 @@ export const EstimatorNavigation: React.FC<EstimatorNavigationProps> = ({
         display: 'flex',
         alignItems: 'center',
         gap: '24px',
-        borderBottom: '1px solid #E2E8F0',
+        borderBottom: '1px solid var(--ez-color-border-line)',
         marginBottom: '16px',
         paddingLeft: '4px',
         overflowX: 'auto',

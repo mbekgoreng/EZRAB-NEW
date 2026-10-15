@@ -61,7 +61,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
         <div
           style={{
             padding: '16px 20px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -104,8 +104,8 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
                   style={{
                     padding: '8px',
                     borderRadius: '8px',
-                    border: formData.detailLevel === lvl ? '2px solid #2563EB' : '1px solid #CBD5E1',
-                    background: formData.detailLevel === lvl ? '#EFF6FF' : '#FFFFFF',
+                    border: formData.detailLevel === lvl ? '2px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
+                    background: formData.detailLevel === lvl ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                     color: formData.detailLevel === lvl ? '#1E40AF' : '#475569',
                     fontSize: '11.5px',
                     fontWeight: formData.detailLevel === lvl ? 700 : 500,
@@ -129,7 +129,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
                 width: '100%',
                 padding: '8px 10px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 fontSize: '12.5px',
                 background: 'var(--ez-color-surface)'
               }}
@@ -149,7 +149,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
                 type="number"
                 value={formData.overheadPercent}
                 onChange={e => setFormData({ ...formData, overheadPercent: Number(e.target.value) })}
-                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
               />
             </div>
             <div>
@@ -160,7 +160,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
                 type="number"
                 value={formData.profitPercent}
                 onChange={e => setFormData({ ...formData, profitPercent: Number(e.target.value) })}
-                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
               />
             </div>
           </div>
@@ -174,7 +174,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
                 type="number"
                 value={formData.taxPercent}
                 onChange={e => setFormData({ ...formData, taxPercent: Number(e.target.value) })}
-                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
               />
             </div>
             <div>
@@ -185,7 +185,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
                 type="number"
                 value={formData.wastePercent}
                 onChange={e => setFormData({ ...formData, wastePercent: Number(e.target.value) })}
-                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
               />
             </div>
           </div>
@@ -195,7 +195,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
         <div
           style={{
             padding: '12px 20px',
-            borderTop: '1px solid #E2E8F0',
+            borderTop: '1px solid var(--ez-color-border-line)',
             background: 'var(--ez-color-surface-secondary)',
             display: 'flex',
             justifyContent: 'flex-end',
@@ -207,7 +207,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
             style={{
               padding: '7px 14px',
               borderRadius: '6px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               background: 'var(--ez-color-surface)',
               color: '#475569',
               fontSize: '12px',

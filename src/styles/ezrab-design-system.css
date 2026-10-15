@@ -15,9 +15,9 @@
      Light-mode rendering of token consumers is unchanged/pixel-identical. */
   --ez-color-background: #F2F7FF;
   --ez-color-surface: #FFFFFF;
-  --ez-color-surface-secondary: #F8FAFC;
-  --ez-color-surface-tertiary: #F1F5F9;
-  --ez-color-surface-faint: #FAFAFA;
+  --ez-color-surface-secondary: var(--ez-hue-slate-bg);
+  --ez-color-surface-tertiary: var(--ez-color-surface-tertiary);
+  --ez-color-surface-faint: var(--ez-color-surface-faint);
   --ez-color-on-primary: #FFFFFF;
 
   /* ---- Sidebar & navigation ---- */
@@ -40,8 +40,8 @@
   /* ---- Borders & dividers ---- */
   --ez-color-border: #DCE4EE;
   --ez-color-border-soft: #EDF1F7;
-  --ez-color-border-line: #E2E8F0;
-  --ez-color-border-strong: #CBD5E1;
+  --ez-color-border-line: var(--ez-color-border-line);
+  --ez-color-border-strong: var(--ez-hue-slate-border);
   --ez-color-border-neutral: #E5E7EB;
 
   /* ---- Primary / accent ---- */
@@ -60,32 +60,48 @@
      Light values are pixel-identical to the hexes previously hardcoded in
      components. Dark values are desaturated translucent tints over the dark
      canvas — never bright pastels on dark. */
-  --ez-hue-blue-bg: #EFF6FF;
-  --ez-hue-blue-border: #BFDBFE;
-  --ez-hue-green-bg: #F0FDF4;
-  --ez-hue-green-border: #BBF7D0;
+  --ez-hue-blue-bg: var(--ez-hue-blue-bg);
+  --ez-hue-blue-border: var(--ez-hue-blue-border);
+  --ez-hue-green-bg: var(--ez-hue-green-bg);
+  --ez-hue-green-border: var(--ez-hue-green-border);
   --ez-hue-green-text: #15803D;
-  --ez-hue-purple-bg: #FAF5FF;
-  --ez-hue-purple-border: #E9D5FF;
+  --ez-hue-purple-bg: var(--ez-hue-purple-bg);
+  --ez-hue-purple-border: var(--ez-hue-purple-border);
   --ez-hue-purple-text: #7E22CE;
-  --ez-hue-amber-bg: #FFFBEB;
-  --ez-hue-amber-border: #FDE68A;
+  --ez-hue-amber-bg: var(--ez-hue-amber-bg);
+  --ez-hue-amber-border: var(--ez-hue-amber-border);
   --ez-hue-amber-text: #B45309;
-  --ez-hue-slate-border: #CBD5E1;
+  --ez-hue-slate-border: var(--ez-hue-slate-border);
   --ez-hue-slate-text: #475569;
-  --ez-hue-violet-bg: #F5F3FF;
-  --ez-hue-violet-border: #DDD6FE;
+  --ez-hue-violet-bg: var(--ez-hue-violet-bg);
+  --ez-hue-violet-border: var(--ez-hue-violet-border);
   --ez-hue-violet-text: #7C3AED;
-  --ez-hue-red-bg: #FEE2E2;
+  --ez-hue-red-bg: var(--ez-hue-red-bg);
   --ez-hue-red-text: #991B1B;
-  --ez-hue-rose-bg: #FEF2F2;
-  --ez-hue-rose-border: #FECACA;
+  --ez-hue-rose-bg: var(--ez-hue-rose-bg);
+  --ez-hue-rose-border: var(--ez-hue-rose-border);
   --ez-hue-rose-text: #DC2626;
   --ez-hue-amber-text-deep: #D97706;
-  --ez-hue-green-bg-deep: #DCFCE7;
+  --ez-hue-green-bg-deep: var(--ez-hue-green-bg-deep);
   --ez-hue-green-text-deep: #166534;
   --ez-hue-green-text-bright: #16A34A;
   --ez-hue-blue-text-deep: #1E40AF;
+  --ez-hue-amber-bg-deep: var(--ez-hue-amber-bg-deep);
+  --ez-hue-pink-bg: var(--ez-hue-pink-bg);
+  --ez-hue-indigo-bg: var(--ez-hue-indigo-bg);
+  --ez-hue-blue-bg-deep: var(--ez-hue-blue-bg-deep);
+  --ez-hue-purple-bg-deep: var(--ez-hue-purple-bg-deep);
+  --ez-hue-purple-bg-soft: var(--ez-hue-purple-bg-soft);
+  --ez-hue-orange-bg-soft: var(--ez-hue-orange-bg-soft);
+  --ez-hue-orange-bg: var(--ez-hue-orange-bg);
+  --ez-hue-orange-bg-deep: var(--ez-hue-orange-bg-deep);
+  --ez-hue-yellow-bg: var(--ez-hue-yellow-bg);
+  --ez-hue-slate-bg: var(--ez-hue-slate-bg);
+  --ez-hue-emerald-bg: var(--ez-hue-emerald-bg);
+  --ez-hue-sky-bg: var(--ez-hue-sky-bg);
+  --ez-hue-pink-bg-soft: var(--ez-hue-pink-bg-soft);
+  --ez-hue-indigo-bg-soft: var(--ez-hue-indigo-bg-soft);
+  --ez-hue-green-border-deep: var(--ez-hue-green-border-deep);
 
   /* ---- Semantic ---- */
   --ez-color-success: #27845B;
@@ -191,6 +207,22 @@
   --ez-hue-green-text-deep: #86EFAC;
   --ez-hue-green-text-bright: #4ADE80;
   --ez-hue-blue-text-deep: #93C5FD;
+  --ez-hue-amber-bg-deep: rgba(251, 191, 36, 0.18);
+  --ez-hue-pink-bg: rgba(244, 114, 182, 0.14);
+  --ez-hue-indigo-bg: rgba(129, 140, 248, 0.14);
+  --ez-hue-blue-bg-deep: rgba(96, 165, 250, 0.18);
+  --ez-hue-purple-bg-deep: rgba(167, 139, 250, 0.18);
+  --ez-hue-purple-bg-soft: rgba(167, 139, 250, 0.14);
+  --ez-hue-orange-bg-soft: rgba(251, 146, 60, 0.12);
+  --ez-hue-orange-bg: rgba(251, 146, 60, 0.14);
+  --ez-hue-orange-bg-deep: rgba(251, 146, 60, 0.18);
+  --ez-hue-yellow-bg: rgba(250, 204, 21, 0.14);
+  --ez-hue-slate-bg: rgba(148, 163, 184, 0.12);
+  --ez-hue-emerald-bg: rgba(52, 211, 153, 0.12);
+  --ez-hue-sky-bg: rgba(56, 189, 248, 0.14);
+  --ez-hue-pink-bg-soft: rgba(244, 114, 182, 0.12);
+  --ez-hue-indigo-bg-soft: rgba(129, 140, 248, 0.12);
+  --ez-hue-green-border-deep: rgba(52, 211, 153, 0.40);
   --ez-color-success: #34D399;
   --ez-color-success-soft: rgba(52, 211, 153, 0.16);
   --ez-color-warning: #FBBF24;

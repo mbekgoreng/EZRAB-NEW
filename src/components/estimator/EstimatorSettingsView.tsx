@@ -46,7 +46,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", maxWidth: "1600px", margin: "0 auto" }}>
       {/* 1. HEADER */}
-      <div style={{ background: "var(--ez-color-surface)", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
+      <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
           <div>
             <h3 style={{ fontSize: "16px", fontWeight: 800, color: "var(--ez-color-text-primary)", margin: 0 }}>
@@ -83,9 +83,9 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
       {/* 2. SETTINGS CARDS GRID */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "18px" }}>
         {/* Card 1: Overhead & Keuntungan */}
-        <div style={{ background: "var(--ez-color-surface)", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "20px" }}>
+        <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "14px", padding: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#EFF6FF", color: "#2563EB", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-blue-bg)", color: "#2563EB", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Percent size={16} />
             </div>
             <div>
@@ -109,7 +109,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
                 height: "38px",
                 padding: "0 12px",
                 borderRadius: "8px",
-                border: "1px solid #CBD5E1",
+                border: "1px solid var(--ez-hue-slate-border)",
                 fontSize: "14px",
                 fontWeight: 700,
                 color: "var(--ez-color-text-primary)",
@@ -124,9 +124,9 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
         </div>
 
         {/* Card 2: Pajak Pertambahan Nilai (PPN) */}
-        <div style={{ background: "var(--ez-color-surface)", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "20px" }}>
+        <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "14px", padding: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#FEF3C7", color: "#B45309", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-amber-bg-deep)", color: "#B45309", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <ShieldCheck size={16} />
             </div>
             <div>
@@ -150,7 +150,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
                 height: "38px",
                 padding: "0 12px",
                 borderRadius: "8px",
-                border: "1px solid #CBD5E1",
+                border: "1px solid var(--ez-hue-slate-border)",
                 fontSize: "14px",
                 fontWeight: 700,
                 color: "var(--ez-color-text-primary)",
@@ -165,9 +165,9 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
         </div>
 
         {/* Card 3: Wilayah & Indeks Kemahalan */}
-        <div style={{ background: "var(--ez-color-surface)", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "20px" }}>
+        <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "14px", padding: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#F0FDF4", color: "#16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-green-bg)", color: "#16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <MapPin size={16} />
             </div>
             <div>
@@ -186,7 +186,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
               height: "38px",
               padding: "0 12px",
               borderRadius: "8px",
-              border: "1px solid #CBD5E1",
+              border: "1px solid var(--ez-hue-slate-border)",
               fontSize: "13px",
               color: "var(--ez-color-text-primary)",
               fontWeight: 600,
@@ -210,9 +210,9 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
         </div>
 
         {/* Card 4: Skema Pembulatan Harga */}
-        <div style={{ background: "var(--ez-color-surface)", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "20px" }}>
+        <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "14px", padding: "20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#F3E8FF", color: "#7E22CE", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-purple-bg-soft)", color: "#7E22CE", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Coins size={16} />
             </div>
             <div>
@@ -231,7 +231,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
               height: "38px",
               padding: "0 12px",
               borderRadius: "8px",
-              border: "1px solid #CBD5E1",
+              border: "1px solid var(--ez-hue-slate-border)",
               fontSize: "13px",
               color: "var(--ez-color-text-primary)",
               fontWeight: 600,

@@ -112,7 +112,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
       icon: Package,
       badge: 'Material Standar SNI 2026',
       color: 'var(--ez-color-primary)',
-      lightBg: '#EFF6FF',
+      lightBg: 'var(--ez-hue-blue-bg)',
     },
     LABOR: {
       title: 'Database Standar Upah Tenaga Kerja 2026',
@@ -120,7 +120,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
       icon: HardHat,
       badge: 'Standar Upah OH 2026',
       color: '#F59E0B',
-      lightBg: '#FEF3C7',
+      lightBg: 'var(--ez-hue-amber-bg-deep)',
     },
     EQUIPMENT: {
       title: 'Database Sewa Peralatan Konstruksi 2026',
@@ -128,7 +128,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
       icon: Truck,
       badge: 'Tarif Sewa Peralatan 2026',
       color: '#10B981',
-      lightBg: '#DCFCE7',
+      lightBg: 'var(--ez-hue-green-bg-deep)',
     },
   }[category];
 
@@ -226,7 +226,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
               padding: '0 16px',
               borderRadius: '10px',
               background: 'var(--ez-color-primary)',
-              color: '#ffffff',
+              color: '#FFFFFF',
               fontSize: '12.5px',
               fontWeight: 600,
               border: 'none',
@@ -250,7 +250,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
               padding: '0 16px',
               borderRadius: '10px',
               background: 'var(--ez-color-surface)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               color: '#334155',
               fontSize: '12.5px',
               fontWeight: 600,
@@ -293,9 +293,9 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                   fontSize: '12px',
                   fontWeight: isSelected ? 700 : 500,
                   whiteSpace: 'nowrap',
-                  background: isSelected ? 'var(--ez-color-primary)' : '#ffffff',
+                  background: isSelected ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
                   color: isSelected ? '#ffffff' : 'var(--ez-color-text-muted)',
-                  border: isSelected ? '1px solid #2563EB' : '1px solid #E2E8F0',
+                  border: isSelected ? '1px solid #2563EB' : '1px solid var(--ez-color-border-line)',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                   boxShadow: isSelected ? '0 2px 6px rgba(37,99,235,0.2)' : 'none',
@@ -337,7 +337,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
               width: '100%',
               height: '38px',
               borderRadius: '10px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               paddingLeft: '36px',
               paddingRight: '12px',
               fontSize: '12.5px',
@@ -356,7 +356,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
             style={{
               height: '38px',
               borderRadius: '10px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               padding: '0 12px',
               fontSize: '12.5px',
               background: 'var(--ez-color-surface)',
@@ -393,7 +393,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
             <thead>
-              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569', fontWeight: 700 }}>
                 <th style={{ padding: '12px 14px', width: '75px' }}>Kode</th>
                 {category === 'MATERIAL' && <th className="tablet-up" style={{ padding: '12px 14px', width: '120px' }}>Brand</th>}
                 <th style={{ padding: '12px 14px' }}>Uraian & Nama Item</th>
@@ -418,7 +418,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                 items.map((item) => (
                   <tr
                     key={item.id}
-                    style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.15s ease' }}
+                    style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)', transition: 'background 0.15s ease' }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
                   >
@@ -427,7 +427,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                     </td>
                     {category === 'MATERIAL' && (
                       <td className="tablet-up" style={{ padding: '10px 14px', color: '#475569', fontWeight: 600 }}>
-                        <span style={{ background: '#F1F5F9', padding: '2px 8px', borderRadius: '4px', fontSize: '11px' }}>
+                        <span style={{ background: 'var(--ez-color-surface-tertiary)', padding: '2px 8px', borderRadius: '4px', fontSize: '11px' }}>
                           {item.brand || 'Umum'}
                         </span>
                       </td>
@@ -448,7 +448,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                         }}
                       >
                         {item.brand && (
-                          <span style={{ background: '#F1F5F9', padding: '1px 5px', borderRadius: '3px' }}>
+                          <span style={{ background: 'var(--ez-color-surface-tertiary)', padding: '1px 5px', borderRadius: '3px' }}>
                             {item.brand}
                           </span>
                         )}
@@ -459,7 +459,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                       {item.specification || '-'}
                     </td>
                     <td style={{ padding: '10px 10px', textAlign: 'center', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
-                      <span style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', padding: '2px 6px', borderRadius: '6px', fontSize: '11px' }}>
+                      <span style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', padding: '2px 6px', borderRadius: '6px', fontSize: '11px' }}>
                         {item.unit}
                       </span>
                     </td>
@@ -571,7 +571,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                     placeholder="Contoh: KP.100"
                     value={newItemCode}
                     onChange={(e) => setNewItemCode(e.target.value)}
-                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 12px', fontSize: '13px' }}
+                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 12px', fontSize: '13px' }}
                   />
                 </div>
 
@@ -585,7 +585,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                       placeholder="Contoh: Roman / TOTO"
                       value={newItemBrand}
                       onChange={(e) => setNewItemBrand(e.target.value)}
-                      style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 12px', fontSize: '13px' }}
+                      style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 12px', fontSize: '13px' }}
                     />
                   </div>
                 )}
@@ -601,7 +601,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                   placeholder={`Nama ${category === 'MATERIAL' ? 'material' : category === 'LABOR' ? 'profesi/tukang' : 'alat'}...`}
                   value={newItemName}
                   onChange={(e) => setNewItemName(e.target.value)}
-                  style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 12px', fontSize: '13px' }}
+                  style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 12px', fontSize: '13px' }}
                 />
               </div>
 
@@ -613,7 +613,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                   <select
                     value={newItemSubcat}
                     onChange={(e) => setNewItemSubcat(e.target.value)}
-                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 10px', fontSize: '13px' }}
+                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 10px', fontSize: '13px' }}
                   >
                     {materialSubcategories.filter(s => s !== 'Semua Kategori').map((s) => (
                       <option key={s} value={s}>{s}</option>
@@ -631,7 +631,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                   placeholder="Contoh: Ukuran 60x60 / SNI / Tebal 10mm"
                   value={newItemSpec}
                   onChange={(e) => setNewItemSpec(e.target.value)}
-                  style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 12px', fontSize: '13px' }}
+                  style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 12px', fontSize: '13px' }}
                 />
               </div>
 
@@ -644,7 +644,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                     type="text"
                     value={newItemUnit}
                     onChange={(e) => setNewItemUnit(e.target.value)}
-                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 10px', fontSize: '13px' }}
+                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 10px', fontSize: '13px' }}
                   />
                 </div>
 
@@ -656,7 +656,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                     type="number"
                     value={newItemMinPrice}
                     onChange={(e) => setNewItemMinPrice(Number(e.target.value))}
-                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 10px', fontSize: '13px' }}
+                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 10px', fontSize: '13px' }}
                   />
                 </div>
 
@@ -668,7 +668,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                     type="number"
                     value={newItemMaxPrice}
                     onChange={(e) => setNewItemMaxPrice(Number(e.target.value))}
-                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 10px', fontSize: '13px' }}
+                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 10px', fontSize: '13px' }}
                   />
                 </div>
               </div>
@@ -684,7 +684,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                     min="0"
                     value={newItemPrice}
                     onChange={(e) => setNewItemPrice(Number(e.target.value))}
-                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 12px', fontSize: '13px' }}
+                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 12px', fontSize: '13px' }}
                   />
                 </div>
 
@@ -695,7 +695,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                   <select
                     value={newItemLocation}
                     onChange={(e) => setNewItemLocation(e.target.value)}
-                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 10px', fontSize: '13px' }}
+                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 10px', fontSize: '13px' }}
                   >
                     <option>Jabodetabek</option>
                     <option>Jawa Barat</option>
@@ -710,7 +710,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  style={{ height: '36px', padding: '0 14px', borderRadius: '8px', border: '1px solid #CBD5E1', background: 'var(--ez-color-surface)', color: '#475569', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{ height: '36px', padding: '0 14px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', color: '#475569', fontSize: '12.5px', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Batal
                 </button>

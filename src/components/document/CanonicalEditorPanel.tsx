@@ -54,7 +54,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
       <div
         style={{
           background: 'var(--ez-color-surface)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           borderRadius: 'var(--ez-radius-control)',
           padding: '12px 16px',
           display: 'flex',
@@ -99,7 +99,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
                   left: 0,
                   marginTop: 6,
                   background: 'var(--ez-color-surface)',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   borderRadius: 10,
                   boxShadow: '0 10px 25px -5px rgba(15,23,42,0.15)',
                   width: 320,
@@ -114,7 +114,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
                 </div>
                 {AVAILABLE_CANONICAL_VARIABLES.map((cat) => (
                   <div key={cat.category} style={{ marginBottom: 8 }}>
-                    <div style={{ padding: '4px 8px', fontSize: 11, fontWeight: 750, color: 'var(--ez-color-primary)', background: '#F1F5F9', borderRadius: 4 }}>
+                    <div style={{ padding: '4px 8px', fontSize: 11, fontWeight: 750, color: 'var(--ez-color-primary)', background: 'var(--ez-color-surface-tertiary)', borderRadius: 4 }}>
                       {cat.category}
                     </div>
                     {cat.variables.map((v) => (
@@ -134,7 +134,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
                           alignItems: 'center',
                           fontSize: 12,
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = '#EFF6FF')}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-hue-blue-bg)')}
                         onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                       >
                         <div>
@@ -142,7 +142,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
                           <div style={{ fontSize: 10.5, color: 'var(--ez-color-text-muted)' }}>{`{{${v.path}}}`}</div>
                         </div>
                         {v.example && (
-                          <span style={{ fontSize: 10.5, color: '#16A34A', background: '#DCFCE7', padding: '1px 6px', borderRadius: 4 }}>
+                          <span style={{ fontSize: 10.5, color: '#16A34A', background: 'var(--ez-hue-green-bg-deep)', padding: '1px 6px', borderRadius: 4 }}>
                             {v.example}
                           </span>
                         )}
@@ -154,14 +154,14 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
             )}
           </div>
 
-          <div style={{ height: 24, width: 1, background: '#E2E8F0' }} />
+          <div style={{ height: 24, width: 1, background: 'var(--ez-color-border-line)' }} />
 
           <button
             onClick={onAddParagraph}
             disabled={isReadOnly}
             style={{
               background: 'var(--ez-color-surface)',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               borderRadius: 8,
               padding: '8px 12px',
               fontSize: 12.5,
@@ -181,7 +181,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
             disabled={isReadOnly}
             style={{
               background: 'var(--ez-color-surface)',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               borderRadius: 8,
               padding: '8px 12px',
               fontSize: 12.5,
@@ -213,7 +213,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
               key={block.id}
               style={{
                 background: 'var(--ez-color-surface)',
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
                 borderRadius: 'var(--ez-radius-control)',
                 padding: 16,
                 boxShadow: '0 1px 3px rgba(15,23,42,0.03)',
@@ -222,7 +222,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
               {/* Block Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 11, fontWeight: 750, color: 'var(--ez-color-primary)', background: '#EFF6FF', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' }}>
+                  <span style={{ fontSize: 11, fontWeight: 750, color: 'var(--ez-color-primary)', background: 'var(--ez-hue-blue-bg)', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' }}>
                     {block.type}
                   </span>
                   <span style={{ fontSize: 11, color: '#94A3B8' }}>#{idx + 1}</span>
@@ -269,7 +269,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
                       padding: '8px 12px',
                       fontSize: 16,
                       fontWeight: 750,
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       borderRadius: 8,
                       boxSizing: 'border-box',
                     }}
@@ -289,7 +289,7 @@ export const CanonicalEditorPanel: React.FC<CanonicalEditorPanelProps> = ({
                       padding: '10px 12px',
                       fontSize: 13,
                       lineHeight: 1.6,
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       borderRadius: 8,
                       boxSizing: 'border-box',
                       fontFamily: 'inherit',

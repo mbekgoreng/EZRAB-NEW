@@ -19,7 +19,7 @@
   justify-content: center;
   padding: 24px 20px;
   background:
-    radial-gradient(1000px 520px at 50% -8%, #dbeafe 0%, #eef2f7 55%, #e2e8f0 100%);
+    radial-gradient(1000px 520px at 50% -8%, var(--ez-hue-blue-bg-deep) 0%, #eef2f7 55%, var(--ez-color-border-line) 100%);
   font-family: var(--ezrab-font-sans, 'Plus Jakarta Sans', system-ui, sans-serif);
   overflow-y: auto;
 }
@@ -31,8 +31,8 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
+  border: 1px solid var(--ez-color-border-line);
+  background: var(--ez-color-surface);
   color: #64748b;
   display: grid;
   place-items: center;
@@ -48,7 +48,7 @@
 }
 
 .sac-container {
-  background-color: #ffffff;
+  background-color: var(--ez-color-surface);
   border-radius: 18px;
   box-shadow:
     0 24px 70px -18px rgba(37, 99, 235, 0.35),
@@ -99,7 +99,7 @@
 }
 
 .sac-form-container form {
-  background-color: #ffffff;
+  background-color: var(--ez-color-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -131,8 +131,8 @@
 }
 
 .sac-social-btn {
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
+  border: 1px solid var(--ez-color-border-line);
+  background: var(--ez-color-surface);
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
@@ -173,7 +173,7 @@
 
 .sac-form-container input:focus {
   outline: 2px solid #93c5fd;
-  background-color: #ffffff;
+  background-color: var(--ez-color-surface);
 }
 
 .sac-error {
@@ -365,7 +365,7 @@
   position: absolute;
   inset: 0;
   z-index: 200;
-  background: #ffffff;
+  background: var(--ez-color-surface);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -397,8 +397,8 @@
 
 .sac-btn-secondary {
   border-radius: 22px;
-  border: 1px solid #cbd5e1;
-  background: #f1f5f9;
+  border: 1px solid var(--ez-hue-slate-border);
+  background: var(--ez-color-surface-tertiary);
   color: #334155;
   font-size: 12.5px;
   font-weight: 800;

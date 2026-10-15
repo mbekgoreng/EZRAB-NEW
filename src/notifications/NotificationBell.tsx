@@ -108,7 +108,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
           width: '38px',
           height: '38px',
           borderRadius: '9px',
-          background: open ? '#EFF6FF' : 'transparent',
+          background: open ? 'var(--ez-hue-blue-bg)' : 'transparent',
           border: 'none',
           display: 'flex',
           alignItems: 'center',
@@ -178,11 +178,11 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
           <div
             style={{
               padding: '14px 16px',
-              borderBottom: '1px solid #F1F5F9',
+              borderBottom: '1px solid var(--ez-color-surface-tertiary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              background: '#FAFAFA',
+              background: 'var(--ez-color-surface-faint)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -192,7 +192,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                   style={{
                     fontSize: '11px',
                     fontWeight: 700,
-                    background: '#EFF6FF',
+                    background: 'var(--ez-hue-blue-bg)',
                     color: 'var(--ez-color-primary)',
                     padding: '1px 7px',
                     borderRadius: 'var(--ez-radius-pill)',
@@ -240,7 +240,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                   }}
                   style={{
                     padding: '12px 16px',
-                    borderBottom: '1px solid #F1F5F9',
+                    borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                     display: 'flex',
                     gap: '12px',
                     background: item.read ? '#FFFFFF' : 'var(--ez-color-surface-secondary)',
@@ -248,7 +248,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                     cursor: 'pointer',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#F1F5F9';
+                    e.currentTarget.style.background = 'var(--ez-color-surface-tertiary)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = item.read ? '#FFFFFF' : 'var(--ez-color-surface-secondary)';
@@ -264,7 +264,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                           fontSize: '10px',
                           fontWeight: 700,
                           color: 'var(--ez-color-text-muted)',
-                          background: '#F1F5F9',
+                          background: 'var(--ez-color-surface-tertiary)',
                           padding: '1px 5px',
                           borderRadius: '4px',
                         }}
@@ -290,8 +290,8 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
           <div
             style={{
               padding: '10px 16px',
-              background: '#FAFAFA',
-              borderTop: '1px solid #F1F5F9',
+              background: 'var(--ez-color-surface-faint)',
+              borderTop: '1px solid var(--ez-color-surface-tertiary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -305,7 +305,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                 border: 'none',
                 fontSize: '12px',
                 fontWeight: 600,
-                color: !notifications.some((n) => n.read) ? '#CBD5E1' : '#94A3B8',
+                color: !notifications.some((n) => n.read) ? 'var(--ez-hue-slate-border)' : '#94A3B8',
                 cursor: !notifications.some((n) => n.read) ? 'default' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',

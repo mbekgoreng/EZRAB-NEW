@@ -36,7 +36,7 @@ const CAT_META: Record<string, { icon: LucideIcon; label: string; bg: string; co
 
 const CAT_DEFAULT: { icon: LucideIcon; bg: string; color: string } = {
   icon: FileText,
-  bg: '#F1F5F9',
+  bg: 'var(--ez-color-surface-tertiary)',
   color: 'var(--ez-color-text-muted)',
 };
 

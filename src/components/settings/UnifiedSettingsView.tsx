@@ -449,11 +449,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
   const renderRoleBadge = (role: UserRole) => {
     const styles: Record<UserRole, { bg: string; color: string; border: string; label: string }> = {
-      SUPER_ADMIN: { bg: '#EFF6FF', color: 'var(--ez-color-primary-hover)', border: '#BFDBFE', label: 'Super Admin' },
-      ESTIMATOR: { bg: '#F0FDF4', color: '#15803D', border: '#BBF7D0', label: 'Estimator' },
-      DIREKSI: { bg: '#FAF5FF', color: '#7E22CE', border: '#E9D5FF', label: 'Direksi' },
-      CLIENT: { bg: '#FFFBEB', color: '#B45309', border: '#FDE68A', label: 'Client' },
-      EDITOR: { bg: '#F1F5F9', color: '#475569', border: 'var(--ez-color-border)', label: 'Editor' },
+      SUPER_ADMIN: { bg: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)', border: 'var(--ez-hue-blue-border)', label: 'Super Admin' },
+      ESTIMATOR: { bg: 'var(--ez-hue-green-bg)', color: '#15803D', border: 'var(--ez-hue-green-border)', label: 'Estimator' },
+      DIREKSI: { bg: 'var(--ez-hue-purple-bg)', color: '#7E22CE', border: 'var(--ez-hue-purple-border)', label: 'Direksi' },
+      CLIENT: { bg: 'var(--ez-hue-amber-bg)', color: '#B45309', border: 'var(--ez-hue-amber-border)', label: 'Client' },
+      EDITOR: { bg: 'var(--ez-color-surface-tertiary)', color: '#475569', border: 'var(--ez-color-border)', label: 'Editor' },
     };
     const s = styles[role] || styles.SUPER_ADMIN;
     return (
@@ -612,8 +612,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 width: '42px',
                 height: '42px',
                 borderRadius: 'var(--ez-radius-control)',
-                background: '#EFF6FF',
-                border: '1px solid #DBEAFE',
+                background: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-bg-deep)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -634,9 +634,9 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     fontWeight: 800,
                     padding: '2px 8px',
                     borderRadius: 'var(--ez-radius-pill)',
-                    background: scope === 'PROJECT' ? '#FEF3C7' : '#EFF6FF',
+                    background: scope === 'PROJECT' ? 'var(--ez-hue-amber-bg-deep)' : 'var(--ez-hue-blue-bg)',
                     color: scope === 'PROJECT' ? '#92400E' : 'var(--ez-color-primary-hover)',
-                    border: scope === 'PROJECT' ? '1px solid #FDE68A' : '1px solid #DBEAFE',
+                    border: scope === 'PROJECT' ? '1px solid var(--ez-hue-amber-border)' : '1px solid var(--ez-hue-blue-bg-deep)',
                   }}
                 >
                   {scope === 'PROJECT' ? 'Scope: Khusus Proyek' : 'Scope: Global Workspace'}
@@ -678,9 +678,9 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
         </div>
 
         {/* Scope Switcher Bar & Live Search */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', borderTop: '1px solid #F1F5F9', paddingTop: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', borderTop: '1px solid var(--ez-color-surface-tertiary)', paddingTop: '12px' }}>
           {/* Level Switcher (Level 1/2 vs Level 3) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#F1F5F9', padding: '3px', borderRadius: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--ez-color-surface-tertiary)', padding: '3px', borderRadius: '10px' }}>
             <button
               onClick={() => {
                 setScope('GLOBAL');
@@ -766,8 +766,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   height: '34px',
                   padding: '0 12px',
                   borderRadius: '10px',
-                  border: '1px solid #DBEAFE',
-                  background: '#EFF6FF',
+                  border: '1px solid var(--ez-hue-blue-bg-deep)',
+                  background: 'var(--ez-hue-blue-bg)',
                   color: 'var(--ez-color-primary-hover)',
                   fontSize: '12px',
                   fontWeight: 700,
@@ -857,7 +857,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{item.title}</span>
-                      <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-primary)', background: '#EFF6FF', padding: '1px 5px', borderRadius: '4px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-primary)', background: 'var(--ez-hue-blue-bg)', padding: '1px 5px', borderRadius: '4px' }}>
                         {item.categoryLabel}
                       </span>
                     </div>
@@ -952,7 +952,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       padding: '0 12px',
                       borderRadius: '9px',
                       border: 'none',
-                      background: isActive ? '#FEF3C7' : 'transparent',
+                      background: isActive ? 'var(--ez-hue-amber-bg-deep)' : 'transparent',
                       color: isActive ? '#92400E' : '#475569',
                       fontSize: '12.5px',
                       fontWeight: isActive ? 700 : 500,
@@ -1087,7 +1087,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       style={{
                         display: 'flex', alignItems: 'center', gap: '6px',
                         height: '34px', padding: '0 14px', borderRadius: '10px',
-                        border: '1px solid #FECACA', background: 'var(--ez-color-surface)', color: '#DC2626',
+                        border: '1px solid var(--ez-hue-rose-border)', background: 'var(--ez-color-surface)', color: '#DC2626',
                         fontSize: '12.5px', fontWeight: 700, cursor: 'pointer',
                       }}
                     >
@@ -1322,7 +1322,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   />
                 </div>
 
-                <div style={{ padding: '12px 14px', background: '#EFF6FF', borderRadius: '16px', border: '1px solid #DBEAFE', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ padding: '12px 14px', background: 'var(--ez-hue-blue-bg)', borderRadius: '16px', border: '1px solid var(--ez-hue-blue-bg-deep)', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <ShieldCheck size={18} color="#2563EB" />
                   <span style={{ fontSize: '12px', color: '#1E40AF', fontWeight: 500 }}>
                     Autentikasi dua faktor (2FA) aktif untuk akun Super Admin ini.
@@ -1462,7 +1462,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               <div style={{ border: '1px solid #EEF1F6', borderRadius: '16px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
                   <thead>
-                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569', fontWeight: 700 }}>
                       <th style={{ padding: '12px 16px' }}>Nama</th>
                       <th style={{ padding: '12px 16px' }}>Email</th>
                       <th style={{ padding: '12px 16px' }}>Role</th>
@@ -1476,7 +1476,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       <tr
                         key={user.id}
                         style={{
-                          borderBottom: idx < usersList.length - 1 ? '1px solid #F1F5F9' : 'none',
+                          borderBottom: idx < usersList.length - 1 ? '1px solid var(--ez-color-surface-tertiary)' : 'none',
                           background: 'var(--ez-color-surface)',
                         }}
                       >
@@ -1487,7 +1487,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                                 width: '28px',
                                 height: '28px',
                                 borderRadius: '50%',
-                                background: '#EFF6FF',
+                                background: 'var(--ez-hue-blue-bg)',
                                 color: 'var(--ez-color-primary)',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -1513,7 +1513,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                               fontWeight: 700,
                               padding: '2px 7px',
                               borderRadius: 'var(--ez-radius-pill)',
-                              background: user.status === 'ACTIVE' ? '#F0FDF4' : '#FFFBEB',
+                              background: user.status === 'ACTIVE' ? 'var(--ez-hue-green-bg)' : 'var(--ez-hue-amber-bg)',
                               color: user.status === 'ACTIVE' ? '#166534' : '#B45309',
                             }}
                           >
@@ -1561,7 +1561,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               <div style={{ border: '1px solid #EEF1F6', borderRadius: '16px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                   <thead>
-                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569', fontWeight: 700 }}>
                       <th style={{ padding: '12px 16px' }}>Wewenang / Fitur</th>
                       <th style={{ padding: '12px 14px', textAlign: 'center' }}>Super Admin</th>
                       <th style={{ padding: '12px 14px', textAlign: 'center' }}>Estimator</th>
@@ -1578,7 +1578,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       { feat: 'Kelola Master Data & Standar AHSP', sa: true, est: true, dir: false, cli: false },
                       { feat: 'Kelola Anggota & Billing Workspace', sa: true, est: false, dir: false, cli: false },
                     ].map((row, idx) => (
-                      <tr key={row.feat} style={{ borderBottom: idx < 5 ? '1px solid #F1F5F9' : 'none', background: 'var(--ez-color-surface)' }}>
+                      <tr key={row.feat} style={{ borderBottom: idx < 5 ? '1px solid var(--ez-color-surface-tertiary)' : 'none', background: 'var(--ez-color-surface)' }}>
                         <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>{row.feat}</td>
                         <td style={{ padding: '12px 14px', textAlign: 'center' }}>{row.sa ? <Check size={16} color="#059669" style={{ margin: '0 auto' }} /> : <X size={16} color="#94A3B8" style={{ margin: '0 auto' }} />}</td>
                         <td style={{ padding: '12px 14px', textAlign: 'center' }}>{row.est ? <Check size={16} color="#059669" style={{ margin: '0 auto' }} /> : <X size={16} color="#94A3B8" style={{ margin: '0 auto' }} />}</td>
@@ -1606,7 +1606,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </p>
               </div>
 
-              <div style={{ padding: '20px', borderRadius: '14px', background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)', border: '1px solid #BFDBFE' }}>
+              <div style={{ padding: '20px', borderRadius: '14px', background: 'linear-gradient(135deg, var(--ez-hue-blue-bg) 0%, var(--ez-hue-blue-bg-deep) 100%)', border: '1px solid var(--ez-hue-blue-border)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-color-primary-hover)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -1699,7 +1699,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                           textAlign: 'left',
                           transition: 'all 0.15s ease',
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = '#EFF6FF')}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-hue-blue-bg)')}
                         onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                       >
                         <Icon size={18} color="#2563EB" />
@@ -1980,16 +1980,16 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 {/* 2. EZRAB AI Engine Audit & Status */}
-                <div style={{ padding: '20px', borderRadius: '14px', background: 'var(--ez-color-surface)', border: '1.5px solid #DBEAFE', boxShadow: '0 2px 8px rgba(37,99,235,0.04)' }}>
+                <div style={{ padding: '20px', borderRadius: '14px', background: 'var(--ez-color-surface)', border: '1.5px solid var(--ez-hue-blue-bg-deep)', boxShadow: '0 2px 8px rgba(37,99,235,0.04)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)', border: '1px solid #BFDBFE' }}>
+                      <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)', border: '1px solid var(--ez-hue-blue-border)' }}>
                         <Bot size={22} />
                       </div>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>Audit EZRAB AI Engine</span>
-                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#15803D', background: '#DCFCE7', border: '1px solid #86EFAC', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#15803D', background: 'var(--ez-hue-green-bg-deep)', border: '1px solid #86EFAC', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                             <CheckCircle2 size={12} />
                             {aiAuditResult?.connected ? 'Terhubung & Aktif' : 'Memeriksa...'}
                           </span>
@@ -2061,7 +2061,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   </div>
 
                   {/* Audit Rules & Compliance Checklist */}
-                  <div style={{ padding: '14px', borderRadius: '10px', background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+                  <div style={{ padding: '14px', borderRadius: '10px', background: 'var(--ez-hue-green-bg)', border: '1px solid var(--ez-hue-green-border)' }}>
                     <div style={{ fontSize: '12px', fontWeight: 750, color: '#166534', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <ShieldCheck size={16} color="#16A34A" />
                       <span>Hasil Audit Kepatuhan & Keamanan Peraturan AI EZRAB:</span>
@@ -2116,7 +2116,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               <div style={{ border: '1px solid #EEF1F6', borderRadius: '16px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                   <thead>
-                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569', fontWeight: 700 }}>
                       <th style={{ padding: '10px 14px' }}>Waktu</th>
                       <th style={{ padding: '10px 14px' }}>Aktor</th>
                       <th style={{ padding: '10px 14px' }}>Scope</th>
@@ -2127,7 +2127,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   </thead>
                   <tbody>
                     {auditLogs.map((log) => (
-                      <tr key={log.id} style={{ borderBottom: '1px solid #F1F5F9', background: 'var(--ez-color-surface)' }}>
+                      <tr key={log.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)', background: 'var(--ez-color-surface)' }}>
                         <td style={{ padding: '10px 14px', color: 'var(--ez-color-text-muted)', whiteSpace: 'nowrap' }}>
                           {new Date(log.timestamp).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
                         </td>
@@ -2142,7 +2142,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                               fontWeight: 800,
                               padding: '2px 6px',
                               borderRadius: '4px',
-                              background: log.scope === 'PROJECT' ? '#FEF3C7' : '#EFF6FF',
+                              background: log.scope === 'PROJECT' ? 'var(--ez-hue-amber-bg-deep)' : 'var(--ez-hue-blue-bg)',
                               color: log.scope === 'PROJECT' ? '#92400E' : 'var(--ez-color-primary-hover)',
                             }}
                           >
@@ -2206,7 +2206,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                     Informasi & Metadata Proyek
                   </h3>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#92400E', background: '#FEF3C7', padding: '2px 10px', borderRadius: 'var(--ez-radius-pill)' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#92400E', background: 'var(--ez-hue-amber-bg-deep)', padding: '2px 10px', borderRadius: 'var(--ez-radius-pill)' }}>
                     {activeProject?.name || 'Proyek'}
                   </span>
                 </div>
@@ -2293,7 +2293,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                     Parameter Estimasi & Pajak Proyek
                   </h3>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#92400E', background: '#FEF3C7', padding: '2px 10px', borderRadius: 'var(--ez-radius-pill)' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#92400E', background: 'var(--ez-hue-amber-bg-deep)', padding: '2px 10px', borderRadius: 'var(--ez-radius-pill)' }}>
                     {activeProject?.name || 'Proyek'}
                   </span>
                 </div>
@@ -2356,7 +2356,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               </div>
 
               {/* Direct Banner to Project Price Overrides */}
-              <div style={{ padding: '16px', borderRadius: 'var(--ez-radius-control)', background: '#EFF6FF', border: '1px solid #DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px' }}>
+              <div style={{ padding: '16px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-bg-deep)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <Tag size={20} color="#2563EB" />
                   <div>

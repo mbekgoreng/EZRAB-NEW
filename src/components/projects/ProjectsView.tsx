@@ -159,7 +159,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               padding: '0 16px',
               borderRadius: 'var(--ez-radius-control)',
               background: 'var(--ez-color-primary)',
-              color: '#ffffff',
+              color: '#FFFFFF',
               fontSize: '14px',
               fontWeight: 700,
               border: 'none',
@@ -195,7 +195,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
               boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#EFF6FF')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-hue-blue-bg)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
           >
             <Sparkles size={15} color="#2563EB" />

@@ -37,7 +37,7 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
       highlight: t('onboarding.highlight_1'),
       icon: Sparkles,
       iconColor: '#4F46E5',
-      iconBg: '#EEF2FF',
+      iconBg: 'var(--ez-hue-indigo-bg-soft)',
     },
     {
       stepNumber: 2,
@@ -62,7 +62,7 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
       highlight: t('onboarding.highlight_3'),
       icon: Calculator,
       iconColor: '#059669',
-      iconBg: '#ECFDF5',
+      iconBg: 'var(--ez-hue-emerald-bg)',
     },
     {
       stepNumber: 4,
@@ -72,7 +72,7 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
       highlight: t('onboarding.highlight_4'),
       icon: FileSpreadsheet,
       iconColor: '#D97706',
-      iconBg: '#FFFBEB',
+      iconBg: 'var(--ez-hue-amber-bg)',
     },
   ];
 
@@ -207,7 +207,7 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
           <div
             style={{
               background: 'var(--ez-color-primary-soft)',
-              border: '1px solid #BFDBFE',
+              border: '1px solid var(--ez-hue-blue-border)',
               borderRadius: '12px',
               padding: '10px 14px',
               fontSize: '12px',
@@ -290,7 +290,7 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
                 padding: '8px 18px',
                 borderRadius: '12px',
                 background: 'var(--ez-color-primary)',
-                color: 'var(--ez-color-surface)',
+                color: '#FFFFFF',
                 border: 'none',
                 fontSize: '13px',
                 fontWeight: 650,

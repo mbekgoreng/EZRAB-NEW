@@ -226,7 +226,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -236,11 +236,11 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
         <div
           style={{
             padding: '18px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
+            background: 'linear-gradient(180deg, #FFFFFF 0%, var(--ez-hue-slate-bg) 100%)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -249,8 +249,8 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 width: '42px',
                 height: '42px',
                 borderRadius: '10px',
-                backgroundColor: '#EFF6FF',
-                border: '1px solid #DBEAFE',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-bg-deep)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -270,9 +270,9 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                     fontWeight: 700,
                     padding: '2px 8px',
                     borderRadius: '999px',
-                    backgroundColor: '#EFF6FF',
+                    backgroundColor: 'var(--ez-hue-blue-bg)',
                     color: '#2563EB',
-                    border: '1px solid #BFDBFE',
+                    border: '1px solid var(--ez-hue-blue-border)',
                   }}
                 >
                   {currentProject.currentVersion || 'Rev 00'}
@@ -291,7 +291,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               height: '32px',
               borderRadius: '8px',
               border: 'none',
-              backgroundColor: '#F1F5F9',
+              backgroundColor: 'var(--ez-color-surface-tertiary)',
               color: '#64748B',
               display: 'flex',
               alignItems: 'center',
@@ -299,8 +299,8 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#E2E8F0')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#F1F5F9')}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-border-line)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-tertiary)')}
           >
             <X size={18} />
           </button>
@@ -339,13 +339,13 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                       padding: '12px',
                       borderRadius: '10px',
                       background: isSelected
-                        ? '#EFF6FF'
+                        ? 'var(--ez-hue-blue-bg)'
                         : '#FFFFFF',
                       border: isSelected
                         ? '2px solid #2563EB'
                         : isMc0
                         ? '1px solid #FCD34D'
-                        : '1px solid #E2E8F0',
+                        : '1px solid var(--ez-color-border-line)',
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
                       position: 'relative',
@@ -354,10 +354,10 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                       gap: '4px',
                     }}
                     onMouseEnter={(e) => {
-                      if (!isSelected) e.currentTarget.style.borderColor = '#CBD5E1';
+                      if (!isSelected) e.currentTarget.style.borderColor = 'var(--ez-hue-slate-border)';
                     }}
                     onMouseLeave={(e) => {
-                      if (!isSelected) e.currentTarget.style.borderColor = isMc0 ? '#FCD34D' : '#E2E8F0';
+                      if (!isSelected) e.currentTarget.style.borderColor = isMc0 ? '#FCD34D' : 'var(--ez-color-border-line)';
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -367,7 +367,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                           fontWeight: 800,
                           padding: '1px 6px',
                           borderRadius: '4px',
-                          background: isMc0 ? '#FEF3C7' : isComplete ? '#DCFCE7' : isSelected ? '#DBEAFE' : '#F1F5F9',
+                          background: isMc0 ? 'var(--ez-hue-amber-bg-deep)' : isComplete ? 'var(--ez-hue-green-bg-deep)' : isSelected ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
                           color: isMc0 ? '#B45309' : isComplete ? '#15803D' : isSelected ? '#1D4ED8' : '#64748B',
                         }}
                       >
@@ -396,8 +396,8 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               style={{
                 padding: '14px',
                 borderRadius: '10px',
-                background: '#F8FAFC',
-                border: '1px solid #E2E8F0',
+                background: 'var(--ez-hue-slate-bg)',
+                border: '1px solid var(--ez-color-border-line)',
               }}
             >
               <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 750, color: '#334155', marginBottom: '8px' }}>
@@ -417,8 +417,8 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                       flex: 1,
                       padding: '8px 10px',
                       borderRadius: '8px',
-                      border: exportFormat === id ? '2px solid #2563EB' : '1px solid #CBD5E1',
-                      background: exportFormat === id ? '#FFFFFF' : '#F8FAFC',
+                      border: exportFormat === id ? '2px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
+                      background: exportFormat === id ? '#FFFFFF' : 'var(--ez-hue-slate-bg)',
                       color: exportFormat === id ? '#2563EB' : '#475569',
                       cursor: 'pointer',
                       display: 'flex',
@@ -441,8 +441,8 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               style={{
                 padding: '14px',
                 borderRadius: '10px',
-                background: '#F8FAFC',
-                border: '1px solid #E2E8F0',
+                background: 'var(--ez-hue-slate-bg)',
+                border: '1px solid var(--ez-color-border-line)',
               }}
             >
               <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 750, color: '#334155', marginBottom: '8px' }}>
@@ -455,7 +455,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                   width: '100%',
                   height: '36px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   background: '#FFFFFF',
                   padding: '0 10px',
                   fontSize: '12.5px',
@@ -482,7 +482,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               padding: '16px',
               borderRadius: '12px',
               background: '#FFFFFF',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -551,8 +551,8 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                     style={{
                       padding: '8px 10px',
                       borderRadius: '8px',
-                      border: isChecked ? '1px solid #BFDBFE' : '1px solid #E2E8F0',
-                      background: isChecked ? '#EFF6FF' : '#F8FAFC',
+                      border: isChecked ? '1px solid var(--ez-hue-blue-border)' : '1px solid var(--ez-color-border-line)',
+                      background: isChecked ? 'var(--ez-hue-blue-bg)' : 'var(--ez-hue-slate-bg)',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'flex-start',
@@ -576,7 +576,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                             style={{
                               fontSize: '9px',
                               fontWeight: 800,
-                              background: '#FEF3C7',
+                              background: 'var(--ez-hue-amber-bg-deep)',
                               color: '#B45309',
                               padding: '0 4px',
                               borderRadius: '3px',
@@ -610,7 +610,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                   marginTop: '10px',
                   padding: '8px 12px',
                   borderRadius: '6px',
-                  background: '#FEF3C7',
+                  background: 'var(--ez-hue-amber-bg-deep)',
                   border: '1px solid #FCD34D',
                   display: 'flex',
                   alignItems: 'center',
@@ -628,14 +628,14 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
           </div>
 
           {/* SECTION D: ADVANCED SETTINGS & SIGNATURE ACCORDION */}
-          <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', overflow: 'hidden' }}>
+          <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', overflow: 'hidden' }}>
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
               style={{
                 width: '100%',
                 padding: '10px 14px',
-                background: '#F8FAFC',
+                background: 'var(--ez-hue-slate-bg)',
                 border: 'none',
                 cursor: 'pointer',
                 display: 'flex',
@@ -684,7 +684,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                         width: '100%',
                         height: '32px',
                         borderRadius: '6px',
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid var(--ez-hue-slate-border)',
                         padding: '0 8px',
                         fontSize: '11.5px',
                       }}
@@ -702,7 +702,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                         width: '100%',
                         height: '32px',
                         borderRadius: '6px',
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid var(--ez-hue-slate-border)',
                         padding: '0 8px',
                         fontSize: '11.5px',
                       }}
@@ -720,7 +720,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                         width: '100%',
                         height: '32px',
                         borderRadius: '6px',
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid var(--ez-hue-slate-border)',
                         padding: '0 8px',
                         fontSize: '11.5px',
                       }}
@@ -736,8 +736,8 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
             style={{
               padding: '12px 16px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%)',
-              border: '1px solid #BFDBFE',
+              background: 'linear-gradient(135deg, var(--ez-hue-slate-bg) 0%, var(--ez-hue-blue-bg) 100%)',
+              border: '1px solid var(--ez-hue-blue-border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -757,7 +757,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               onClick={() => setShowStructurePreview(!showStructurePreview)}
               style={{
                 background: '#FFFFFF',
-                border: '1px solid #BFDBFE',
+                border: '1px solid var(--ez-hue-blue-border)',
                 borderRadius: '6px',
                 padding: '6px 12px',
                 fontSize: '11.5px',
@@ -781,7 +781,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 padding: '12px',
                 borderRadius: '8px',
                 background: '#FFFFFF',
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
                 fontSize: '11.5px',
               }}
             >
@@ -796,8 +796,8 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '4px',
-                      background: '#F1F5F9',
-                      border: '1px solid #CBD5E1',
+                      background: 'var(--ez-color-surface-tertiary)',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       padding: '2px 8px',
                       borderRadius: '4px',
                       color: '#0F172A',
@@ -818,7 +818,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
         <div
           style={{
             padding: '16px 24px',
-            borderTop: '1px solid #E2E8F0',
+            borderTop: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -839,7 +839,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 padding: '0 16px',
                 borderRadius: '8px',
                 background: '#FFFFFF',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 fontSize: '12.5px',
                 fontWeight: 650,
                 color: '#475569',

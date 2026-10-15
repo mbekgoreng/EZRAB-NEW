@@ -119,7 +119,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         style={{
           backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -427,7 +427,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         style={{
           backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -455,7 +455,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               padding: '5px 10px',
               borderRadius: '6px',
               backgroundColor: 'var(--ez-color-surface-secondary)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               color: 'var(--ez-color-primary)',
               fontSize: '11.5px',
               fontWeight: 650,
@@ -483,7 +483,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           style={{
             backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             padding: '20px',
             boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
             display: 'flex',
@@ -531,7 +531,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           style={{
             backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             padding: '20px',
             boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
             display: 'flex',
@@ -567,7 +567,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               marginTop: 'auto',
               backgroundColor: 'var(--ez-color-surface-secondary)',
               borderRadius: '10px',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               padding: '12px 14px',
               display: 'flex',
               flexDirection: 'column',
@@ -603,7 +603,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           style={{
             backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             padding: '20px',
             boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
             display: 'flex',
@@ -657,7 +657,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
                       padding: '8px 12px',
                       borderRadius: '8px',
                       backgroundColor: 'var(--ez-color-surface-secondary)',
-                      border: '1px solid #F1F5F9',
+                      border: '1px solid var(--ez-color-surface-tertiary)',
                       cursor: 'pointer',
                     }}
                   >
@@ -698,7 +698,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           style={{
             backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             padding: '20px',
             boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
             display: 'flex',
@@ -731,13 +731,13 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+            <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '10px', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
               <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Total Hutang Pending</div>
               <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-amber-text-deep)', marginTop: '2px' }}>
                 {formatRupiah(payablesData.totalPayable)}
               </div>
             </div>
-            <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+            <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '10px', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
               <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>Total Telah Dibayar</div>
               <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', marginTop: '2px' }}>
                 {formatRupiah(payablesData.totalPaid)}
@@ -756,7 +756,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         style={{
           backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -784,7 +784,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
               padding: '5px 10px',
               borderRadius: '6px',
               backgroundColor: 'var(--ez-color-surface-secondary)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               color: 'var(--ez-color-primary)',
               fontSize: '11.5px',
               fontWeight: 650,
@@ -821,7 +821,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         style={{
           backgroundColor: 'var(--ez-color-surface-secondary)',
           borderRadius: '14px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '16px 20px',
           display: 'flex',
           alignItems: 'flex-start',

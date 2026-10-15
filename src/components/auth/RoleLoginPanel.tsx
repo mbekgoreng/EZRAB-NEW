@@ -100,8 +100,8 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
             fontWeight: 800,
             letterSpacing: '0.06em',
             color: '#7C3AED',
-            background: '#F5F3FF',
-            border: '1px solid #DDD6FE',
+            background: 'var(--ez-hue-violet-bg)',
+            border: '1px solid var(--ez-hue-violet-border)',
             padding: '4px 10px',
             borderRadius: 'var(--ez-radius-pill)',
             marginBottom: '10px',
@@ -123,7 +123,7 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
         <div
           style={{
             display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px',
-            backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px',
+            backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px',
             color: '#991b1b', fontSize: '12.5px', lineHeight: 1.4,
           }}
         >
@@ -135,7 +135,7 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
         <div
           style={{
             display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px',
-            backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px',
+            backgroundColor: 'var(--ez-hue-green-bg)', border: '1px solid var(--ez-hue-green-border)', borderRadius: '8px',
             color: '#166534', fontSize: '12.5px', lineHeight: 1.4,
           }}
         >
@@ -158,7 +158,7 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
                   style={{
                     display: 'flex', alignItems: 'center', gap: '14px', textAlign: 'left',
                     padding: '12px 14px', borderRadius: 'var(--ez-radius-control)',
-                    border: '1px solid #e2e8f0', background: 'var(--ez-color-surface)', cursor: 'pointer',
+                    border: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface)', cursor: 'pointer',
                     transition: 'all 0.15s',
                   }}
                   onMouseEnter={(e) => {
@@ -255,7 +255,7 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
                   maxLength={6}
                   style={{
                     width: '100%', height: '52px', padding: '0 14px 0 44px',
-                    borderRadius: '10px', border: '1px solid #cbd5e1', background: 'var(--ez-color-surface)',
+                    borderRadius: '10px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)',
                     fontSize: '22px', fontWeight: 700, letterSpacing: '0.5em', textAlign: 'center',
                     color: 'var(--ez-color-text-primary)', outline: 'none',
                   }}
@@ -280,7 +280,7 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
                     key={i}
                     style={{
                       width: '12px', height: '12px', borderRadius: '50%',
-                      background: i < pin.length ? '#7C3AED' : '#e2e8f0',
+                      background: i < pin.length ? '#7C3AED' : 'var(--ez-color-border-line)',
                       transition: 'background 0.15s',
                     }}
                   />
@@ -294,7 +294,7 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
               style={{
                 width: '100%', height: '44px', marginTop: '4px',
                 background: loading || pin.length !== 6 ? '#c4b5fd' : '#7C3AED',
-                color: '#ffffff', border: 'none', borderRadius: '8px',
+                color: '#FFFFFF', border: 'none', borderRadius: '8px',
                 fontSize: '14.5px', fontWeight: 650,
                 cursor: loading || pin.length !== 6 ? 'not-allowed' : 'pointer',
                 transition: 'background 0.2s, transform 0.15s',

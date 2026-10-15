@@ -211,7 +211,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`bg-white border border-[#E2E8F0] rounded-[12px] flex flex-col overflow-hidden transition-all duration-200 ${
+      className={`bg-white border border-[var(--ez-color-border-line)] rounded-[12px] flex flex-col overflow-hidden transition-all duration-200 ${
         isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'h-[620px]'
       }`}
       style={{ boxShadow: '0 1px 3px rgba(15,23,42,0.04)' }}
@@ -219,9 +219,9 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
       {/* =========================================================================
           VIEWER TOP TOOLBAR
          ========================================================================= */}
-      <div className="h-[46px] border-b border-[#E2E8F0] bg-[#F8FAFC] px-3 flex items-center justify-between shrink-0 select-none">
+      <div className="h-[46px] border-b border-[var(--ez-color-border-line)] bg-[var(--ez-hue-slate-bg)] px-3 flex items-center justify-between shrink-0 select-none">
         {/* Left: Tab Switcher */}
-        <div className="flex items-center gap-1 bg-[#E2E8F0]/60 p-0.5 rounded-[8px]">
+        <div className="flex items-center gap-1 bg-[var(--ez-color-border-line)]/60 p-0.5 rounded-[8px]">
           <button
             type="button"
             onClick={() => setActiveTab('PREVIEW')}
@@ -246,7 +246,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             <Terminal size={13} className={activeTab === 'LOGS' ? 'text-[#2563EB]' : ''} />
             <span>Log Analisis</span>
             {logs.length > 0 && (
-              <span className="text-[10px] bg-[#EFF6FF] text-[#2563EB] px-1.5 py-0.2 rounded-full font-bold">
+              <span className="text-[10px] bg-[var(--ez-hue-blue-bg)] text-[#2563EB] px-1.5 py-0.2 rounded-full font-bold">
                 {logs.length}
               </span>
             )}
@@ -260,7 +260,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               type="button"
               disabled={currentPageNum <= 1}
               onClick={() => handleSelectPage(currentPageNum - 1)}
-              className="p-1 rounded-[6px] text-[#475569] hover:bg-[#E2E8F0] disabled:opacity-30 disabled:hover:bg-transparent transition"
+              className="p-1 rounded-[6px] text-[#475569] hover:bg-[var(--ez-color-border-line)] disabled:opacity-30 disabled:hover:bg-transparent transition"
               title="Halaman Sebelumnya"
             >
               <ChevronLeft size={15} />
@@ -274,7 +274,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               type="button"
               disabled={currentPageNum >= numPages}
               onClick={() => handleSelectPage(currentPageNum + 1)}
-              className="p-1 rounded-[6px] text-[#475569] hover:bg-[#E2E8F0] disabled:opacity-30 disabled:hover:bg-transparent transition"
+              className="p-1 rounded-[6px] text-[#475569] hover:bg-[var(--ez-color-border-line)] disabled:opacity-30 disabled:hover:bg-transparent transition"
               title="Halaman Selanjutnya"
             >
               <ChevronRight size={15} />
@@ -290,7 +290,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 type="button"
                 onClick={handleZoomOut}
                 disabled={zoomScale <= 0.6}
-                className="p-1.5 rounded-[6px] hover:bg-[#E2E8F0] text-[#64748B] hover:text-[#0F172A] transition disabled:opacity-30"
+                className="p-1.5 rounded-[6px] hover:bg-[var(--ez-color-border-line)] text-[#64748B] hover:text-[#0F172A] transition disabled:opacity-30"
                 title="Perkecil (-)"
               >
                 <ZoomOut size={14} />
@@ -298,7 +298,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               <button
                 type="button"
                 onClick={handleZoomReset}
-                className="px-2 py-0.5 rounded-[6px] hover:bg-[#E2E8F0] text-[11px] font-mono font-semibold text-[#475569] transition"
+                className="px-2 py-0.5 rounded-[6px] hover:bg-[var(--ez-color-border-line)] text-[11px] font-mono font-semibold text-[#475569] transition"
                 title="Reset Zoom (100%)"
               >
                 {Math.round(zoomScale * 100)}%
@@ -307,19 +307,19 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 type="button"
                 onClick={handleZoomIn}
                 disabled={zoomScale >= 2.5}
-                className="p-1.5 rounded-[6px] hover:bg-[#E2E8F0] text-[#64748B] hover:text-[#0F172A] transition disabled:opacity-30"
+                className="p-1.5 rounded-[6px] hover:bg-[var(--ez-color-border-line)] text-[#64748B] hover:text-[#0F172A] transition disabled:opacity-30"
                 title="Perbesar (+)"
               >
                 <ZoomIn size={14} />
               </button>
-              <div className="h-3.5 w-px bg-[#CBD5E1] mx-1" />
+              <div className="h-3.5 w-px bg-[var(--ez-hue-slate-border)] mx-1" />
             </>
           )}
 
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="p-1.5 rounded-[6px] hover:bg-[#E2E8F0] text-[#64748B] hover:text-[#0F172A] transition"
+            className="p-1.5 rounded-[6px] hover:bg-[var(--ez-color-border-line)] text-[#64748B] hover:text-[#0F172A] transition"
             title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh'}
           >
             {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
@@ -330,11 +330,11 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
       {/* =========================================================================
           VIEWER BODY: TWO-PANE (THUMBNAIL STRIP + CANVAS VIEWPORT)
          ========================================================================= */}
-      <div className="flex-1 flex overflow-hidden bg-[#F1F5F9]">
+      <div className="flex-1 flex overflow-hidden bg-[var(--ez-color-surface-tertiary)]">
         {activeTab === 'PREVIEW' ? (
           <>
             {/* Left Thumbnail Strip */}
-            <div className="w-[140px] shrink-0 border-r border-[#E2E8F0] bg-[#FFFFFF] overflow-y-auto p-2 flex flex-col gap-2">
+            <div className="w-[140px] shrink-0 border-r border-[var(--ez-color-border-line)] bg-[#FFFFFF] overflow-y-auto p-2 flex flex-col gap-2">
               <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider px-1 mb-1">
                 Daftar Halaman ({numPages})
               </div>
@@ -348,16 +348,16 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                     onClick={() => handleSelectPage(pNum)}
                     className={`group w-full text-left p-1.5 rounded-[8px] border transition-all ${
                       isSelected
-                        ? 'border-[#2563EB] bg-[#EFF6FF] shadow-xs'
-                        : 'border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#CBD5E1] hover:bg-white'
+                        ? 'border-[#2563EB] bg-[var(--ez-hue-blue-bg)] shadow-xs'
+                        : 'border-[var(--ez-color-border-line)] bg-[var(--ez-hue-slate-bg)] hover:border-[var(--ez-hue-slate-border)] hover:bg-white'
                     }`}
                   >
                     {/* Thumbnail Sheet Preview Box */}
                     <div
                       className={`h-[68px] w-full rounded-[4px] border flex flex-col items-center justify-between p-1.5 mb-1 relative overflow-hidden transition-colors ${
                         isSelected
-                          ? 'border-[#BFDBFE] bg-white'
-                          : 'border-[#E2E8F0] bg-white/80 group-hover:bg-white'
+                          ? 'border-[var(--ez-hue-blue-border)] bg-white'
+                          : 'border-[var(--ez-color-border-line)] bg-white/80 group-hover:bg-white'
                       }`}
                     >
                       {/* Blueprint Grid Watermark */}
@@ -376,7 +376,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                       <div className="w-full text-center text-[9px] font-medium text-[#475569] truncate relative z-1 px-0.5">
                         {title.split(' ')[0]}
                       </div>
-                      <div className="w-full h-1 bg-[#E2E8F0] rounded-full overflow-hidden relative z-1">
+                      <div className="w-full h-1 bg-[var(--ez-color-border-line)] rounded-full overflow-hidden relative z-1">
                         <div
                           className={`h-full ${isSelected ? 'bg-[#2563EB]' : 'bg-[#94A3B8]'}`}
                           style={{ width: `${(pNum / numPages) * 100}%` }}
@@ -400,7 +400,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             {/* Center Canvas Viewport */}
             <div className="flex-1 overflow-auto p-4 flex flex-col items-center justify-start relative">
               {/* Sheet Title Breadcrumb Overlay */}
-              <div className="sticky top-0 z-10 mb-3 bg-white/95 backdrop-blur-xs border border-[#E2E8F0] px-3.5 py-1.5 rounded-[8px] shadow-xs flex items-center gap-2 text-[12px]">
+              <div className="sticky top-0 z-10 mb-3 bg-white/95 backdrop-blur-xs border border-[var(--ez-color-border-line)] px-3.5 py-1.5 rounded-[8px] shadow-xs flex items-center gap-2 text-[12px]">
                 <span className="w-2 h-2 rounded-full bg-[#2563EB]" />
                 <span className="font-bold text-[#0F172A]">Halaman {currentPageNum}:</span>
                 <span className="font-medium text-[#475569]">{sheetTitle}</span>
@@ -411,7 +411,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               {/* Real PDF Canvas (if PDF is loaded) */}
               {pdfDoc && !pdfRenderError ? (
                 <div
-                  className="bg-white rounded-[6px] shadow-md border border-[#CBD5E1] p-2 flex items-center justify-center transition-transform duration-150"
+                  className="bg-white rounded-[6px] shadow-md border border-[var(--ez-hue-slate-border)] p-2 flex items-center justify-center transition-transform duration-150"
                   style={{
                     transform: `scale(${zoomScale})`,
                     transformOrigin: 'top center',
@@ -422,7 +422,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               ) : (
                 /* Crisp Architectural Blueprint Wireframe (Fallback / Sample View) */
                 <div
-                  className="bg-white rounded-[8px] shadow-md border border-[#CBD5E1] p-6 w-full max-w-[780px] min-h-[460px] flex flex-col justify-between relative transition-transform duration-150"
+                  className="bg-white rounded-[8px] shadow-md border border-[var(--ez-hue-slate-border)] p-6 w-full max-w-[780px] min-h-[460px] flex flex-col justify-between relative transition-transform duration-150"
                   style={{
                     transform: `scale(${zoomScale})`,
                     transformOrigin: 'top center',
@@ -455,14 +455,14 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                         Proyek Rumah Tinggal 1 Lantai • Standar Teknis PU Cipta Karya
                       </div>
                     </div>
-                    <div className="text-right border border-[#CBD5E1] bg-[#F8FAFC] p-2 rounded-[6px] text-[10px] font-mono">
+                    <div className="text-right border border-[var(--ez-hue-slate-border)] bg-[var(--ez-hue-slate-bg)] p-2 rounded-[6px] text-[10px] font-mono">
                       <div className="font-bold text-[#0F172A]">LEMBAR: A-0{currentPageNum}</div>
                       <div className="text-[#64748B]">DARI {numPages} LEMBAR</div>
                     </div>
                   </div>
 
                   {/* Center Architectural Illustration Diagram */}
-                  <div className="relative z-1 my-6 flex flex-col items-center justify-center p-6 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[6px]">
+                  <div className="relative z-1 my-6 flex flex-col items-center justify-center p-6 bg-[var(--ez-hue-slate-bg)] border border-[var(--ez-color-border-line)] rounded-[6px]">
                     <div className="w-full max-w-[520px] space-y-4">
                       {/* Technical Dimension Marks */}
                       <div className="flex items-center justify-between text-[11px] font-mono text-[#2563EB] border-b border-[#2563EB]/40 pb-1">

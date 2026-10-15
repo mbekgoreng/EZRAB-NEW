@@ -471,7 +471,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               padding: '6px 10px',
               borderRadius: 'var(--ez-radius-control)',
               background: 'var(--ez-color-surface)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               color: '#2C6E2C',
               fontSize: '11px',
               fontWeight: 700,
@@ -708,9 +708,9 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             borderRadius: 'var(--ez-radius-pill)',
             fontSize: '12px',
             fontWeight: selectedCategory === 'ALL' ? 700 : 500,
-            background: selectedCategory === 'ALL' ? 'var(--ez-pastel-sky)' : '#ffffff',
+            background: selectedCategory === 'ALL' ? 'var(--ez-pastel-sky)' : 'var(--ez-color-surface)',
             color: selectedCategory === 'ALL' ? 'var(--ez-color-primary-hover)' : '#475569',
-            border: selectedCategory === 'ALL' ? '1px solid #BFDBFE' : '1px solid #E2E8F0',
+            border: selectedCategory === 'ALL' ? '1px solid var(--ez-hue-blue-border)' : '1px solid var(--ez-color-border-line)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -723,7 +723,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               fontSize: '10.5px',
               padding: '1px 6px',
               borderRadius: 'var(--ez-radius-pill)',
-              background: selectedCategory === 'ALL' ? '#C7DDF8' : '#F1F5F9',
+              background: selectedCategory === 'ALL' ? '#C7DDF8' : 'var(--ez-color-surface-tertiary)',
               color: selectedCategory === 'ALL' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
             }}
           >
@@ -744,9 +744,9 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               borderRadius: 'var(--ez-radius-pill)',
               fontSize: '12px',
               fontWeight: selectedCategory === cat.name ? 700 : 500,
-              background: selectedCategory === cat.name ? 'var(--ez-pastel-sky)' : '#ffffff',
+              background: selectedCategory === cat.name ? 'var(--ez-pastel-sky)' : 'var(--ez-color-surface)',
               color: selectedCategory === cat.name ? 'var(--ez-color-primary-hover)' : '#475569',
-              border: selectedCategory === cat.name ? '1px solid #BFDBFE' : '1px solid #E2E8F0',
+              border: selectedCategory === cat.name ? '1px solid var(--ez-hue-blue-border)' : '1px solid var(--ez-color-border-line)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -759,7 +759,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                 fontSize: '10.5px',
                 padding: '1px 6px',
                 borderRadius: 'var(--ez-radius-pill)',
-                background: selectedCategory === cat.name ? '#C7DDF8' : '#F1F5F9',
+                background: selectedCategory === cat.name ? '#C7DDF8' : 'var(--ez-color-surface-tertiary)',
                 color: selectedCategory === cat.name ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                 fontWeight: 700,
               }}
@@ -806,7 +806,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               paddingLeft: '40px',
               paddingRight: '14px',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1.5px solid #E2E8F0',
+              border: '1.5px solid var(--ez-color-border-line)',
               fontSize: '13.5px',
               color: 'var(--ez-color-text-primary)',
               outline: 'none',
@@ -828,7 +828,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               height: '42px',
               padding: '0 12px',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               fontSize: '12.5px',
               background: 'var(--ez-color-surface)',
               color: '#334155',
@@ -855,7 +855,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               height: '42px',
               padding: '0 12px',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               fontSize: '12.5px',
               background: 'var(--ez-color-surface)',
               color: '#334155',
@@ -880,7 +880,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               height: '42px',
               padding: '0 12px',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               fontSize: '12.5px',
               background: 'var(--ez-color-surface)',
               color: '#334155',
@@ -905,7 +905,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                 height: '42px',
                 padding: '0 12px',
                 borderRadius: 'var(--ez-radius-control)',
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
                 fontSize: '12.5px',
                 background: 'var(--ez-color-surface)',
                 color: '#334155',
@@ -954,7 +954,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             style={{
               padding: '4px 8px',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               fontSize: '12px',
               fontWeight: 600,
               background: 'var(--ez-color-surface)',
@@ -1005,7 +1005,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               marginTop: '8px',
               padding: '8px 18px',
               background: 'var(--ez-color-primary)',
-              color: '#ffffff',
+              color: '#FFFFFF',
               borderRadius: 'var(--ez-radius-control)',
               border: 'none',
               fontSize: '12.5px',
@@ -1034,7 +1034,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             const hspPrice = composition.hspPrice ?? composition.unitPrice ?? item.unitPrice;
             const pricingStatus = (hspPrice && hspPrice > 0 && item.domain === 'SMKK') ? 'FULL' : composition.pricingStatus;
 
-            const domainColor = DOMAIN_COLOR_MAP[item.domain] || { bg: '#F1F5F9', text: '#475569', border: 'var(--ez-color-border)' };
+            const domainColor = DOMAIN_COLOR_MAP[item.domain] || { bg: 'var(--ez-color-surface-tertiary)', text: '#475569', border: 'var(--ez-color-border)' };
 
             return (
               <div
@@ -1114,7 +1114,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   </h3>
 
                   {/* Clean Divider */}
-                  <div style={{ height: '1px', background: '#F1F5F9', margin: '12px 0 10px' }} />
+                  <div style={{ height: '1px', background: 'var(--ez-color-surface-tertiary)', margin: '12px 0 10px' }} />
 
                   {/* Metadata Row: Satuan & Status */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', marginBottom: '10px' }}>
@@ -1165,7 +1165,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                       display: 'flex',
                       alignItems: 'baseline',
                       justifyContent: 'space-between',
-                      borderTop: '1px solid #F1F5F9',
+                      borderTop: '1px solid var(--ez-color-surface-tertiary)',
                       paddingTop: '12px',
                       marginBottom: '14px',
                     }}
@@ -1191,7 +1191,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                         borderRadius: 'var(--ez-radius-control)',
                         background: 'var(--ez-color-surface)',
                         color: '#334155',
-                        border: '1px solid #E2E8F0',
+                        border: '1px solid var(--ez-color-border-line)',
                         fontSize: '12px',
                         fontWeight: 650,
                         cursor: 'pointer',
@@ -1216,7 +1216,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                         padding: '0 16px',
                         borderRadius: 'var(--ez-radius-control)',
                         background: 'var(--ez-color-primary)',
-                        color: '#ffffff',
+                        color: '#FFFFFF',
                         border: 'none',
                         fontSize: '12.5px',
                         fontWeight: 700,
@@ -1258,7 +1258,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             style={{
               padding: '8px 12px',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               background: 'var(--ez-color-surface)',
               color: safeCurrentPage === 1 ? '#94A3B8' : 'var(--ez-color-text)',
               cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer',
@@ -1279,7 +1279,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             style={{
               padding: '8px 12px',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               background: 'var(--ez-color-surface)',
               color: safeCurrentPage === 1 ? '#94A3B8' : 'var(--ez-color-text)',
               cursor: safeCurrentPage === 1 ? 'not-allowed' : 'pointer',
@@ -1336,7 +1336,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             style={{
               padding: '8px 12px',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               background: 'var(--ez-color-surface)',
               color: safeCurrentPage === totalPages ? '#94A3B8' : 'var(--ez-color-text)',
               cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer',
@@ -1357,7 +1357,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             style={{
               padding: '8px 12px',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               background: 'var(--ez-color-surface)',
               color: safeCurrentPage === totalPages ? '#94A3B8' : 'var(--ez-color-text)',
               cursor: safeCurrentPage === totalPages ? 'not-allowed' : 'pointer',
@@ -1469,7 +1469,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
 
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
                 <thead>
-                  <tr style={{ background: '#F4F6FA', borderBottom: '1.5px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+                  <tr style={{ background: '#F4F6FA', borderBottom: '1.5px solid var(--ez-color-border-line)', color: '#475569', fontWeight: 700 }}>
                     <th style={{ padding: '10px', textAlign: 'left' }}>Uraian Sumber Daya</th>
                     <th style={{ padding: '10px', textAlign: 'center', width: '80px' }}>Tipe</th>
                     <th style={{ padding: '10px', textAlign: 'right', width: '90px' }}>Koefisien</th>
@@ -1488,7 +1488,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                         </td>
                       </tr>
                       {selectedAhspComposition!.labor.components.map((r, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <tr key={i} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                           <td style={{ padding: '8px 10px', color: 'var(--ez-color-text-primary)', fontWeight: 500 }}>
                             {r.itemName} {r.itemCode && <span style={{ color: '#94A3B8', fontSize: '11px' }}>({r.itemCode})</span>}
                           </td>
@@ -1521,7 +1521,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                         </td>
                       </tr>
                       {selectedAhspComposition!.material.components.map((r, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <tr key={i} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                           <td style={{ padding: '8px 10px', color: 'var(--ez-color-text-primary)', fontWeight: 500 }}>
                             {r.itemName} {r.itemCode && <span style={{ color: '#94A3B8', fontSize: '11px' }}>({r.itemCode})</span>}
                           </td>
@@ -1548,18 +1548,18 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   {/* 3. Equipment Components */}
                   {(selectedAhspComposition?.equipment.components.length ?? 0) > 0 && (
                     <>
-                      <tr style={{ background: '#F3E8FF', fontWeight: 800, color: '#6B21A8' }}>
+                      <tr style={{ background: 'var(--ez-hue-purple-bg-soft)', fontWeight: 800, color: '#6B21A8' }}>
                         <td colSpan={6} style={{ padding: '6px 10px', fontSize: '11.5px' }}>
                           C. PERALATAN
                         </td>
                       </tr>
                       {selectedAhspComposition!.equipment.components.map((r, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <tr key={i} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                           <td style={{ padding: '8px 10px', color: 'var(--ez-color-text-primary)', fontWeight: 500 }}>
                             {r.itemName} {r.itemCode && <span style={{ color: '#94A3B8', fontSize: '11px' }}>({r.itemCode})</span>}
                           </td>
                           <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: 'var(--ez-radius-pill)', background: '#EDE9FE', color: '#6D28D9' }}>
+                            <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-purple-bg-deep)', color: '#6D28D9' }}>
                               ALAT
                             </span>
                           </td>
@@ -1579,7 +1579,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   )}
 
                   {/* Subtotals & Grand Total */}
-                  <tr style={{ fontWeight: 700, background: '#F4F6FA', borderTop: '2px solid #E2E8F0' }}>
+                  <tr style={{ fontWeight: 700, background: '#F4F6FA', borderTop: '2px solid var(--ez-color-border-line)' }}>
                     <td colSpan={5} style={{ padding: '10px', textAlign: 'right', fontSize: '12.5px', color: '#475569' }}>
                       Jumlah Biaya Langsung (D = A + B + C):
                     </td>
@@ -1672,7 +1672,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   padding: '0 14px',
                   borderRadius: 'var(--ez-radius-control)',
                   background: 'var(--ez-color-surface)',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   fontSize: '12px',
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -1693,7 +1693,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                     padding: '0 18px',
                     borderRadius: 'var(--ez-radius-control)',
                     background: 'var(--ez-color-surface)',
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--ez-color-border-line)',
                     fontSize: '12.5px',
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -1708,9 +1708,9 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                       height: '38px',
                       padding: '0 16px',
                       borderRadius: 'var(--ez-radius-control)',
-                      background: '#F1F5F9',
+                      background: 'var(--ez-color-surface-tertiary)',
                       color: '#1E293B',
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid var(--ez-color-border-line)',
                       fontSize: '12.5px',
                       fontWeight: 650,
                       cursor: 'pointer',
@@ -1734,7 +1734,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                     padding: '0 20px',
                     borderRadius: 'var(--ez-radius-control)',
                     background: 'var(--ez-color-primary)',
-                    color: '#ffffff',
+                    color: '#FFFFFF',
                     border: 'none',
                     fontSize: '12.5px',
                     fontWeight: 700,
@@ -1842,7 +1842,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   height: '42px',
                   padding: '0 12px',
                   borderRadius: 'var(--ez-radius-control)',
-                  border: '1.5px solid #E2E8F0',
+                  border: '1.5px solid var(--ez-color-border-line)',
                   fontSize: '15px',
                   fontWeight: 700,
                   color: 'var(--ez-color-text-primary)',
@@ -1884,7 +1884,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   height: '40px',
                   borderRadius: 'var(--ez-radius-control)',
                   background: 'var(--ez-color-surface)',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   fontSize: '13px',
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -1900,7 +1900,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   height: '40px',
                   borderRadius: 'var(--ez-radius-control)',
                   background: inputVolume > 0 ? 'var(--ez-color-primary)' : '#94A3B8',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   border: 'none',
                   fontSize: '13px',
                   fontWeight: 700,
@@ -2015,7 +2015,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                 height: '42px',
                 borderRadius: 'var(--ez-radius-control)',
                 background: 'var(--ez-color-primary)',
-                color: '#ffffff',
+                color: '#FFFFFF',
                 border: 'none',
                 fontWeight: 700,
                 fontSize: '14px',

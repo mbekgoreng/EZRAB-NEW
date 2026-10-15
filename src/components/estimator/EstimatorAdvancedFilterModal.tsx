@@ -94,7 +94,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
             <select
               value={localFilters.category}
               onChange={(e) => setLocalFilters({ ...localFilters, category: e.target.value })}
-              style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+              style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
             >
               <option value="ALL">Semua Kelompok Pekerjaan</option>
               {WORK_CATEGORIES.map((c) => (
@@ -113,7 +113,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
             <select
               value={localFilters.source}
               onChange={(e) => setLocalFilters({ ...localFilters, source: e.target.value })}
-              style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+              style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
             >
               <option value="ALL">Semua Sumber</option>
               <option value="MANUAL">MANUAL</option>
@@ -134,14 +134,14 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
                 placeholder="Min Rp"
                 value={localFilters.minPrice || ''}
                 onChange={(e) => setLocalFilters({ ...localFilters, minPrice: e.target.value ? parseFloat(e.target.value) : null })}
-                style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
               />
               <input
                 type="number"
                 placeholder="Max Rp"
                 value={localFilters.maxPrice || ''}
                 onChange={(e) => setLocalFilters({ ...localFilters, maxPrice: e.target.value ? parseFloat(e.target.value) : null })}
-                style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
               />
             </div>
           </div>
@@ -160,7 +160,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
                   ahspLinkedOnly: v === 'ALL' ? null : v === 'LINKED',
                 });
               }}
-              style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+              style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
             >
               <option value="ALL">Semua Item (Terpetakan & Manual)</option>
               <option value="LINKED">Hanya yang Terhubung AHSP Resmi</option>
@@ -176,7 +176,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
               height: '34px',
               padding: '0 12px',
               borderRadius: '6px',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               background: 'var(--ez-color-surface)',
               color: 'var(--ez-color-text-muted)',
               fontSize: '12px',
@@ -193,7 +193,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={onClose}
-              style={{ height: '34px', padding: '0 14px', borderRadius: '6px', border: '1px solid #CBD5E1', background: '#F1F5F9', color: '#475569', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+              style={{ height: '34px', padding: '0 14px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface-tertiary)', color: '#475569', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
             >
               Batal
             </button>

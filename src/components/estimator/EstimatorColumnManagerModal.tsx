@@ -74,7 +74,7 @@ export const EstimatorColumnManagerModal: React.FC<EstimatorColumnManagerModalPr
           Centang kolom yang ingin Anda tampilkan pada spreadsheet estimator RAB.
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', padding: '8px' }}>
           {AVAILABLE_COLUMNS.map((col) => {
             const isVisible = visibleColumns[col.key] !== false;
             return (
@@ -86,7 +86,7 @@ export const EstimatorColumnManagerModal: React.FC<EstimatorColumnManagerModalPr
                   justifyContent: 'space-between',
                   padding: '8px 10px',
                   borderRadius: '6px',
-                  background: isVisible ? 'var(--ez-color-surface-secondary)' : '#FFFFFF',
+                  background: isVisible ? 'var(--ez-color-surface-secondary)' : 'var(--ez-color-surface)',
                   cursor: col.required ? 'not-allowed' : 'pointer',
                   fontSize: '12px',
                   fontWeight: 550,
@@ -121,7 +121,7 @@ export const EstimatorColumnManagerModal: React.FC<EstimatorColumnManagerModalPr
               height: '32px',
               padding: '0 10px',
               borderRadius: '6px',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               background: 'var(--ez-color-surface)',
               color: 'var(--ez-color-text-muted)',
               fontSize: '11.5px',

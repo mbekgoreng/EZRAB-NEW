@@ -100,7 +100,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
         style={{
           backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -125,7 +125,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
               style={{
                 padding: '8px 12px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 fontSize: '12.5px',
                 color: 'var(--ez-color-text-body)',
                 backgroundColor: 'var(--ez-color-surface)',
@@ -185,7 +185,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
         </div>
 
         {exportSuccessMsg && (
-          <div style={{ backgroundColor: '#DCFCE7', color: '#166534', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
+          <div style={{ backgroundColor: 'var(--ez-hue-green-bg-deep)', color: '#166534', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}>
             {exportSuccessMsg}
           </div>
         )}
@@ -196,7 +196,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
         style={{
           backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '36px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -228,7 +228,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
         </div>
 
         {/* Project Metadata Box */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', backgroundColor: 'var(--ez-color-surface-secondary)', padding: '16px', borderRadius: '10px', border: '1px solid #E2E8F0', fontSize: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', backgroundColor: 'var(--ez-color-surface-secondary)', padding: '16px', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)', fontSize: '12px' }}>
           <div>
             <div style={{ color: 'var(--ez-color-text-muted)', fontSize: '11px' }}>Nama Proyek</div>
             <div style={{ fontWeight: 750, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>{currentProject?.name || 'Proyek Tanpa Judul'}</div>
@@ -256,19 +256,19 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', fontSize: '12px' }}>
-            <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px' }}>
+            <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', padding: '10px' }}>
               <div style={{ color: 'var(--ez-color-text-muted)' }}>Total Anggaran RAB</div>
               <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '4px' }}>{formatRupiah(summary.totalBudget)}</div>
             </div>
-            <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px' }}>
+            <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', padding: '10px' }}>
               <div style={{ color: 'var(--ez-color-text-muted)' }}>Realisasi Pengeluaran</div>
               <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-rose-text)', marginTop: '4px' }}>{formatRupiah(summary.actualCost)}</div>
             </div>
-            <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px' }}>
+            <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', padding: '10px' }}>
               <div style={{ color: 'var(--ez-color-text-muted)' }}>Kas Masuk Diterima</div>
               <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', marginTop: '4px' }}>{formatRupiah(summary.cashIn)}</div>
             </div>
-            <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px' }}>
+            <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', padding: '10px' }}>
               <div style={{ color: 'var(--ez-color-text-muted)' }}>Gross Profit Sementara</div>
               <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-primary)', marginTop: '4px' }}>
                 {summary.isContractAvailable ? `${formatRupiah(summary.currentProfit)} (${summary.profitMarginPercent}%)` : '-'}
@@ -285,7 +285,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
 
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
             <thead>
-              <tr style={{ backgroundColor: 'var(--ez-color-surface-tertiary)', borderBottom: '1px solid #CBD5E1' }}>
+              <tr style={{ backgroundColor: 'var(--ez-color-surface-tertiary)', borderBottom: '1px solid var(--ez-hue-slate-border)' }}>
                 <th style={{ padding: '8px 10px', fontWeight: 700 }}>Kelompok Pekerjaan</th>
                 <th style={{ padding: '8px 10px', fontWeight: 700, textAlign: 'right' }}>Anggaran RAB</th>
                 <th style={{ padding: '8px 10px', fontWeight: 700, textAlign: 'right' }}>Realisasi Pengeluaran</th>
@@ -320,15 +320,15 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', fontSize: '12px' }}>
-            <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+            <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
               <div style={{ color: 'var(--ez-color-text-muted)' }}>Total Telah Ditagihkan</div>
               <div style={{ fontSize: '14px', fontWeight: 750, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>{formatRupiah(receivables.totalInvoiced)}</div>
             </div>
-            <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+            <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
               <div style={{ color: 'var(--ez-color-text-muted)' }}>Sisa Piutang Berjalan</div>
               <div style={{ fontSize: '14px', fontWeight: 750, color: '#D97706', marginTop: '2px' }}>{formatRupiah(receivables.totalReceivable)}</div>
             </div>
-            <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+            <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
               <div style={{ color: 'var(--ez-color-text-muted)' }}>Piutang Jatuh Tempo</div>
               <div style={{ fontSize: '14px', fontWeight: 750, color: 'var(--ez-hue-rose-text)', marginTop: '2px' }}>{formatRupiah(receivables.totalOverdue)}</div>
             </div>
@@ -336,7 +336,7 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
         </div>
 
         {/* Signatures & Approval Footer */}
-        <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #CBD5E1', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', textAlign: 'center', fontSize: '12px' }}>
+        <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--ez-hue-slate-border)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', textAlign: 'center', fontSize: '12px' }}>
           <div>
             <div style={{ color: 'var(--ez-color-text-muted)', marginBottom: '40px' }}>Dipersiapkan Oleh,</div>
             <div style={{ fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>Quantity Surveyor / Estimator</div>

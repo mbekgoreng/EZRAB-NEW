@@ -7,7 +7,7 @@
      Primary blue: #2563EB, #3B82F6
      Electric blue: #00A8FF
      Accent cyan: #38BDF8
-     Light background: #FFFFFF, #F8FAFC, #F1F5F9
+     Light background: #FFFFFF, var(--ez-hue-slate-bg), var(--ez-color-surface-tertiary)
      Primary text: #0B1B33, #0F172A
      Secondary text: #64748B
      Borders: #DCE5F0, rgba(56, 189, 248, 0.22)
@@ -24,8 +24,8 @@
   --ez-accent-cyan: #38BDF8;
   --ez-orange-accent: #F59E0B;
   --ez-light-bg: #FFFFFF;
-  --ez-light-alt: #F8FAFC;
-  --ez-light-slate: #F1F5F9;
+  --ez-light-alt: var(--ez-hue-slate-bg);
+  --ez-light-slate: var(--ez-color-surface-tertiary);
   --ez-border-light: #DCE5F0;
   --ez-border-dark: rgba(56, 189, 248, 0.2);
   --ez-text-dark: #0B1B33;
@@ -567,7 +567,7 @@
   left: 0;
   right: 0;
   height: 90px;
-  background: linear-gradient(180deg, transparent 0%, #F8FAFC 100%);
+  background: linear-gradient(180deg, transparent 0%, var(--ez-hue-slate-bg) 100%);
   pointer-events: none;
   z-index: 2;
 }
@@ -599,7 +599,7 @@
   color: var(--ez-primary-blue);
   background: rgba(239, 246, 255, 0.9);
   backdrop-filter: blur(8px);
-  border: 1px solid #BFDBFE;
+  border: 1px solid var(--ez-hue-blue-border);
   padding: 6px 14px;
   border-radius: 999px;
   margin-bottom: 24px;
@@ -627,7 +627,7 @@
   padding: 7px 14px;
   background: rgba(241, 245, 249, 0.85);
   backdrop-filter: blur(8px);
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--ez-color-border-line);
   border-radius: 8px;
   font-size: 13.5px;
   font-weight: 700;
@@ -637,7 +637,7 @@
 }
 
 .ez-about-why-pill:hover {
-  background: #EFF6FF;
+  background: var(--ez-hue-blue-bg);
   border-color: #93C5FD;
   color: var(--ez-primary-blue);
   transform: translateY(-1px);
@@ -676,7 +676,7 @@
   justify-content: space-between;
   padding-bottom: 14px;
   margin-bottom: 16px;
-  border-bottom: 1px solid #E2E8F0;
+  border-bottom: 1px solid var(--ez-color-border-line);
 }
 
 .ez-about-why-converge-list {
@@ -692,7 +692,7 @@
   justify-content: space-between;
   padding: 10px 14px;
   background: rgba(248, 250, 252, 0.9);
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--ez-color-border-line);
   border-radius: 10px;
   font-size: 13px;
   font-weight: 650;
@@ -702,7 +702,7 @@
 .ez-about-why-converge-row b {
   font-size: 11px;
   color: var(--ez-primary-blue);
-  background: #EFF6FF;
+  background: var(--ez-hue-blue-bg);
   padding: 2px 8px;
   border-radius: 4px;
   font-family: var(--ez-font-mono);
@@ -718,7 +718,7 @@
 }
 
 /* ==========================================================================
-   SECTION 03 — ONE CONNECTED WORKFLOW (LIGHT #F8FAFC)
+   SECTION 03 — ONE CONNECTED WORKFLOW (LIGHT var(--ez-hue-slate-bg))
    ========================================================================== */
 .ez-about-workflow-section {
   position: relative;
@@ -805,7 +805,7 @@
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: #F1F5F9;
+  background: var(--ez-color-surface-tertiary);
   color: #475569;
   display: grid;
   place-items: center;
@@ -989,7 +989,7 @@
 }
 
 .ez-about-role-card {
-  background: #F8FAFC;
+  background: var(--ez-hue-slate-bg);
   border: 1.5px solid var(--ez-border-light);
   border-radius: 16px;
   padding: 28px 22px;
@@ -1010,7 +1010,7 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: #EFF6FF;
+  background: var(--ez-hue-blue-bg);
   color: var(--ez-primary-blue);
   display: grid;
   place-items: center;
@@ -1098,7 +1098,7 @@
 .ez-about-statement-section {
   position: relative;
   width: 100%;
-  background: #f8fafc;
+  background: var(--ez-hue-slate-bg);
   overflow: visible;
 }
 

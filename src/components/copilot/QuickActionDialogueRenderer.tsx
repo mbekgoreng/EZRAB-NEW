@@ -113,9 +113,9 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: '7px',
-            backgroundColor: '#EFF6FF',
+            backgroundColor: 'var(--ez-hue-blue-bg)',
             color: 'var(--ez-color-primary)',
-            border: '1px solid #DBEAFE'
+            border: '1px solid var(--ez-hue-blue-bg-deep)'
           }}>
             <Sparkles className="h-3.5 w-3.5" />
           </div>
@@ -130,12 +130,12 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
         {data.requiresConfirmation && (
           <span style={{
             borderRadius: '9999px',
-            backgroundColor: '#FFFBEB',
+            backgroundColor: 'var(--ez-hue-amber-bg)',
             padding: '2px 8px',
             fontSize: '10px',
             fontWeight: 700,
             color: '#D97706',
-            border: '1px solid #FDE68A'
+            border: '1px solid var(--ez-hue-amber-border)'
           }}>
             Perlu Konfirmasi
           </span>
@@ -251,7 +251,7 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
           {data.previewData.diffs && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {data.previewData.diffs.map((diff, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', padding: '4px 0', fontSize: '11px' }}>
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-color-border-line)', padding: '4px 0', fontSize: '11px' }}>
                   <span style={{ color: 'var(--ez-color-text-muted)' }}>{diff.label}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'monospace' }}>
                     <span style={{ color: '#94A3B8', textDecoration: 'line-through' }}>{String(diff.before)}</span>

@@ -231,7 +231,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
           <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-body)', textTransform: 'uppercase', marginBottom: '6px' }}>
             Standar APD & Keselamatan Kerja (SMKK):
           </div>
-          <div style={{ backgroundColor: 'var(--ez-color-danger-soft)', border: '1px solid #FECACA', borderRadius: '8px', padding: '10px' }}>
+          <div style={{ backgroundColor: 'var(--ez-color-danger-soft)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '10px' }}>
             {labor.safetyRequirements.map((req, idx) => (
               <div key={idx} style={{ display: 'flex', gap: '6px', fontSize: '11px', color: 'var(--ez-color-danger-strong)', marginBottom: idx !== labor.safetyRequirements.length - 1 ? '4px' : 0 }}>
                 <Shield size={13} color="var(--ez-color-danger-strong)" style={{ flexShrink: 0, marginTop: '2px' }} />
@@ -645,7 +645,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
                 fontSize: '9.5px',
                 fontWeight: 800,
                 backgroundColor: 'var(--ez-color-primary)',
-                color: '#ffffff',
+                color: '#FFFFFF',
                 letterSpacing: '0.04em',
               }}
             >

@@ -82,18 +82,18 @@ type SortField = 'no' | 'code' | 'description' | 'volume' | 'unit' | 'unitPrice'
 type SortDirection = 'asc' | 'desc' | null;
 
 const WBS_LETTER_MAP: Record<string, { letter: string; bg: string; text: string; border: string }> = {
-  'Pekerjaan Persiapan & Bowplank': { letter: 'A', bg: '#FCE7F3', text: '#BE185D', border: '#FBCFE8' },
-  'Pekerjaan Tanah & Pondasi': { letter: 'B', bg: '#DBEAFE', text: 'var(--ez-color-primary-hover)', border: '#BFDBFE' },
-  'Pekerjaan Struktur Beton Bertulang': { letter: 'C', bg: '#E0E7FF', text: '#4338CA', border: '#C7D2FE' },
+  'Pekerjaan Persiapan & Bowplank': { letter: 'A', bg: 'var(--ez-hue-pink-bg)', text: '#BE185D', border: '#FBCFE8' },
+  'Pekerjaan Tanah & Pondasi': { letter: 'B', bg: 'var(--ez-hue-blue-bg-deep)', text: 'var(--ez-color-primary-hover)', border: 'var(--ez-hue-blue-border)' },
+  'Pekerjaan Struktur Beton Bertulang': { letter: 'C', bg: 'var(--ez-hue-indigo-bg)', text: '#4338CA', border: '#C7D2FE' },
   'Pekerjaan Dinding & Plesteran': { letter: 'D', bg: '#E0F2FE', text: '#0369A1', border: '#BAE6FD' },
-  'Pekerjaan Lantai & Keramik': { letter: 'E', bg: '#D1FAE5', text: '#047857', border: '#A7F3D0' },
-  'Pekerjaan Plafon & Partisi': { letter: 'F', bg: '#FEF3C7', text: '#B45309', border: '#FDE68A' },
-  'Pekerjaan Atap & Rangka Baja Ringan': { letter: 'G', bg: '#FFEDD5', text: '#C2410C', border: '#FED7AA' },
-  'Pekerjaan Pintu, Jendela & Kaca': { letter: 'H', bg: '#F3E8FF', text: '#7E22CE', border: '#E9D5FF' },
+  'Pekerjaan Lantai & Keramik': { letter: 'E', bg: '#D1FAE5', text: '#047857', border: 'var(--ez-hue-green-border-deep)' },
+  'Pekerjaan Plafon & Partisi': { letter: 'F', bg: 'var(--ez-hue-amber-bg-deep)', text: '#B45309', border: 'var(--ez-hue-amber-border)' },
+  'Pekerjaan Atap & Rangka Baja Ringan': { letter: 'G', bg: 'var(--ez-hue-orange-bg)', text: '#C2410C', border: 'var(--ez-hue-orange-bg-deep)' },
+  'Pekerjaan Pintu, Jendela & Kaca': { letter: 'H', bg: 'var(--ez-hue-purple-bg-soft)', text: '#7E22CE', border: 'var(--ez-hue-purple-border)' },
   'Pekerjaan Instalasi Plumbing & Sanitasi': { letter: 'I', bg: '#CFFAFE', text: '#0E7490', border: '#A5F3FC' },
-  'Pekerjaan Instalasi Elektrikal': { letter: 'J', bg: '#FEF9C3', text: '#A16207', border: '#FEF08A' },
-  'Pekerjaan Pengecatan': { letter: 'K', bg: '#FEE2E2', text: '#B91C1C', border: '#FECACA' },
-  'Pekerjaan Finishing & Eksterior': { letter: 'L', bg: '#F1F5F9', text: '#334155', border: 'var(--ez-color-border)' },
+  'Pekerjaan Instalasi Elektrikal': { letter: 'J', bg: 'var(--ez-hue-yellow-bg)', text: '#A16207', border: '#FEF08A' },
+  'Pekerjaan Pengecatan': { letter: 'K', bg: 'var(--ez-hue-red-bg)', text: '#B91C1C', border: 'var(--ez-hue-rose-border)' },
+  'Pekerjaan Finishing & Eksterior': { letter: 'L', bg: 'var(--ez-color-surface-tertiary)', text: '#334155', border: 'var(--ez-color-border)' },
 };
 
 const DEFAULT_COMPANY: Company = {
@@ -516,7 +516,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         {
           categoryName: 'Daftar Pekerjaan Seluruhnya (Flat)',
           codeLetter: '★',
-          badgeColor: { bg: '#EFF6FF', text: 'var(--ez-color-primary-hover)', border: '#BFDBFE' },
+          badgeColor: { bg: 'var(--ez-hue-blue-bg)', text: 'var(--ez-color-primary-hover)', border: 'var(--ez-hue-blue-border)' },
           items: filteredItems,
           subtotal,
           subtotalVolume,
@@ -542,7 +542,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
 
       const letterInfo = WBS_LETTER_MAP[categoryName] || {
         letter: String.fromCharCode(65 + (letterIndex % 26)),
-        bg: '#F1F5F9',
+        bg: 'var(--ez-color-surface-tertiary)',
         text: '#334155',
         border: 'var(--ez-color-border)',
       };
@@ -1274,19 +1274,19 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
                 <span style={{ color: '#334155' }}>Mulai Edit Sel</span>
-                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Double Click / Enter</kbd>
+                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-hue-slate-border)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Double Click / Enter</kbd>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
                 <span style={{ color: '#334155' }}>Simpan Perubahan Sel</span>
-                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Enter</kbd>
+                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-hue-slate-border)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Enter</kbd>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
                 <span style={{ color: '#334155' }}>Batal Edit Sel</span>
-                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Escape</kbd>
+                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-hue-slate-border)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Escape</kbd>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
                 <span style={{ color: '#334155' }}>Pilih Multi Item</span>
-                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Shift + Click</kbd>
+                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-hue-slate-border)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Shift + Click</kbd>
               </div>
             </div>
 

@@ -191,11 +191,11 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
         <div
           style={{
             padding: '18px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(to right, #F8FAFC, #FFFFFF)',
+            background: 'linear-gradient(to right, var(--ez-hue-slate-bg), #FFFFFF)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -204,7 +204,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                background: '#EFF6FF',
+                background: 'var(--ez-hue-blue-bg)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -245,7 +245,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
               style={{
                 padding: '12px 16px',
                 borderRadius: '10px',
-                background: '#FEF2F2',
+                background: 'var(--ez-hue-rose-bg)',
                 border: '1px solid #FCA5A5',
                 color: '#991B1B',
                 fontSize: '13px',
@@ -264,7 +264,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
               style={{
                 padding: '12px 16px',
                 borderRadius: '10px',
-                background: '#F0FDF4',
+                background: 'var(--ez-hue-green-bg)',
                 border: '1px solid #86EFAC',
                 color: '#166534',
                 fontSize: '13px',
@@ -283,8 +283,8 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
             style={{
               padding: '14px 18px',
               borderRadius: 'var(--ez-radius-control)',
-              background: isPaid ? '#F0FDF4' : '#FFFBEB',
-              border: `1px solid ${isPaid ? '#BBF7D0' : '#FDE68A'}`,
+              background: isPaid ? 'var(--ez-hue-green-bg)' : 'var(--ez-hue-amber-bg)',
+              border: `1px solid ${isPaid ? 'var(--ez-hue-green-border)' : 'var(--ez-hue-amber-border)'}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -303,7 +303,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                       fontWeight: 800,
                       padding: '2px 8px',
                       borderRadius: '6px',
-                      background: isPaid ? '#DCFCE7' : '#FEF3C7',
+                      background: isPaid ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-amber-bg-deep)',
                       color: isPaid ? '#15803D' : '#B45309',
                     }}
                   >
@@ -328,7 +328,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                   borderRadius: '8px',
                   fontSize: '11px',
                   fontWeight: 600,
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   background: 'var(--ez-color-surface)',
                   color: '#334155',
                   cursor: 'pointer',
@@ -349,7 +349,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
             style={{
               padding: '16px',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               background: 'var(--ez-color-surface-secondary)',
             }}
           >
@@ -371,7 +371,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                     padding: '6px 12px',
                     borderRadius: '8px',
                     border: '1px solid #FCA5A5',
-                    background: '#FEF2F2',
+                    background: 'var(--ez-hue-rose-bg)',
                     color: '#B91C1C',
                     fontSize: '11.5px',
                     fontWeight: 600,
@@ -394,7 +394,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                   width: '140px',
                   height: '80px',
                   borderRadius: '10px',
-                  border: '1px dashed #CBD5E1',
+                  border: '1px dashed var(--ez-hue-slate-border)',
                   background: 'var(--ez-color-surface)',
                   display: 'flex',
                   alignItems: 'center',
@@ -466,7 +466,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                       style={{
                         padding: '9px 18px',
                         borderRadius: '8px',
-                        background: '#E2E8F0',
+                        background: 'var(--ez-color-border-line)',
                         color: '#94A3B8',
                         fontSize: '12.5px',
                         fontWeight: 600,
@@ -510,7 +510,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                     height: '36px',
                     padding: '0 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12.5px',
                   }}
                 />
@@ -530,7 +530,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                     height: '36px',
                     padding: '0 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12.5px',
                   }}
                 />
@@ -551,7 +551,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                   height: '36px',
                   padding: '0 12px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   fontSize: '12.5px',
                 }}
               />
@@ -572,7 +572,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                     height: '36px',
                     padding: '0 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12.5px',
                   }}
                 />
@@ -592,7 +592,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                     height: '36px',
                     padding: '0 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12.5px',
                   }}
                 />
@@ -612,7 +612,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                     height: '36px',
                     padding: '0 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12.5px',
                   }}
                 />
@@ -635,7 +635,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                     height: '36px',
                     padding: '0 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12.5px',
                   }}
                 />
@@ -655,7 +655,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                     height: '36px',
                     padding: '0 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12.5px',
                   }}
                 />
@@ -668,7 +668,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
         <div
           style={{
             padding: '14px 24px',
-            borderTop: '1px solid #E2E8F0',
+            borderTop: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
@@ -683,7 +683,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
               height: '38px',
               padding: '0 16px',
               borderRadius: '8px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               background: 'var(--ez-color-surface)',
               color: '#334155',
               fontSize: '12.5px',

@@ -409,7 +409,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
               <h1 style={{ fontSize: '20px', color: 'var(--ez-color-text-primary)', marginBottom: '8px' }}>{route.scope === 'project' ? t('dash.err_project_title') : t('dash.err_page_title')}</h1>
               <p style={{ color: 'var(--ez-color-text-muted)', fontSize: '13px', lineHeight: 1.6, marginBottom: '20px' }}>{route.scope === 'project' ? t('dash.err_project_desc') : t('dash.err_page_desc')}</p>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button onClick={() => setActiveMenu('dashboard')} style={{ padding: '10px 16px', background: 'var(--ez-color-primary)', color: 'var(--ez-color-surface)', borderRadius: '8px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>{t('dash.err_go_dashboard')}</button>
+                <button onClick={() => setActiveMenu('dashboard')} style={{ padding: '10px 16px', background: 'var(--ez-color-primary)', color: '#FFFFFF', borderRadius: '8px', fontWeight: 700, border: 'none', cursor: 'pointer' }}>{t('dash.err_go_dashboard')}</button>
                 <button onClick={() => setActiveMenu('proyek', null)} style={{ padding: '10px 16px', background: 'var(--ez-color-surface-secondary)', color: 'var(--ez-color-text-primary)', borderRadius: '8px', fontWeight: 600, border: '1px solid var(--ez-color-border)', cursor: 'pointer' }}>{t('dash.err_view_projects')}</button>
               </div>
             </section>

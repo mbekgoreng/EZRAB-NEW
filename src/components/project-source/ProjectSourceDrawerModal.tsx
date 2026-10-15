@@ -53,7 +53,7 @@ export const ProjectSourceDrawerModal: React.FC<ProjectSourceDrawerModalProps> =
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           overflow: 'hidden',
         }}
       >
@@ -65,7 +65,7 @@ export const ProjectSourceDrawerModal: React.FC<ProjectSourceDrawerModalProps> =
             alignItems: 'center',
             padding: '16px 24px',
             background: 'var(--ez-color-surface)',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
           }}
         >
           <div>
@@ -80,7 +80,7 @@ export const ProjectSourceDrawerModal: React.FC<ProjectSourceDrawerModalProps> =
             onClick={onClose}
             style={{
               border: 0,
-              background: '#F1F5F9',
+              background: 'var(--ez-color-surface-tertiary)',
               borderRadius: 8,
               padding: '6px 10px',
               cursor: 'pointer',
@@ -100,7 +100,7 @@ export const ProjectSourceDrawerModal: React.FC<ProjectSourceDrawerModalProps> =
             gap: 6,
             padding: '10px 24px',
             background: 'var(--ez-color-surface)',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
           }}
         >
           {[
@@ -125,7 +125,7 @@ export const ProjectSourceDrawerModal: React.FC<ProjectSourceDrawerModalProps> =
                   fontSize: 13,
                   fontWeight: 650,
                   cursor: 'pointer',
-                  background: isActive ? '#EFF6FF' : 'transparent',
+                  background: isActive ? 'var(--ez-hue-blue-bg)' : 'transparent',
                   color: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                   borderBottom: isActive ? '2px solid #2563EB' : '2px solid transparent',
                   transition: 'all 0.15s ease',
@@ -164,7 +164,7 @@ export const ProjectSourceDrawerModal: React.FC<ProjectSourceDrawerModalProps> =
             justifyContent: 'flex-end',
             padding: '12px 24px',
             background: 'var(--ez-color-surface)',
-            borderTop: '1px solid #E2E8F0',
+            borderTop: '1px solid var(--ez-color-border-line)',
           }}
         >
           <button

@@ -2,8 +2,8 @@
   /* EZRAB Clean Modern Light Palette */
   --ezrab-bg: #ffffff;
   --ezrab-surface: #ffffff;
-  --ezrab-surface-soft: #f8fafc;
-  --ezrab-surface-subtle: #f1f5f9;
+  --ezrab-surface-soft: var(--ez-hue-slate-bg);
+  --ezrab-surface-subtle: var(--ez-color-surface-tertiary);
   --ezrab-card-bg: #ffffff;
   --ezrab-card-border: #e5e7eb;
 
@@ -16,23 +16,23 @@
   --ezrab-blue: #2563eb;
   --ezrab-blue-hover: #1d4ed8;
   --ezrab-blue-light: #60a5fa;
-  --ezrab-blue-soft: #eff6ff;
+  --ezrab-blue-soft: var(--ez-hue-blue-bg);
   --ezrab-blue-subtle: rgba(37, 99, 235, 0.05);
-  --ezrab-blue-border: #dbeafe;
+  --ezrab-blue-border: var(--ez-hue-blue-bg-deep);
 
   /* Status Colors */
   --ezrab-success: #16a34a;
-  --ezrab-success-soft: #f0fdf4;
+  --ezrab-success-soft: var(--ez-hue-green-bg);
   --ezrab-warning: #d97706;
-  --ezrab-warning-soft: #fffbeb;
+  --ezrab-warning-soft: var(--ez-hue-amber-bg);
   --ezrab-cyan: #0891b2;
   --ezrab-cyan-soft: #ecfeff;
   --ezrab-purple: #7c3aed;
-  --ezrab-purple-soft: #f5f3ff;
+  --ezrab-purple-soft: var(--ez-hue-violet-bg);
 
   /* Borders & Radius */
   --ezrab-border: #e5e7eb;
-  --ezrab-border-light: #f1f5f9;
+  --ezrab-border-light: var(--ez-color-surface-tertiary);
   --ezrab-border-strong: #d1d5db;
 
   --ezrab-radius-xs: 6px;

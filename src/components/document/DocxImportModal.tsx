@@ -65,8 +65,8 @@ export const DocxImportModal: React.FC<DocxImportModalProps> = ({
         {/* SUMMARY BADGES */}
         <div
           style={{
-            background: '#F0FDF4',
-            border: '1px solid #BBF7D0',
+            background: 'var(--ez-hue-green-bg)',
+            border: '1px solid var(--ez-hue-green-border)',
             borderRadius: 10,
             padding: 14,
             marginBottom: 20,
@@ -86,7 +86,7 @@ export const DocxImportModal: React.FC<DocxImportModalProps> = ({
 
         {/* WARNINGS IF ANY */}
         {importResult.warnings.length > 0 && (
-          <div style={{ background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: 8, padding: 12, marginBottom: 18, fontSize: 12, color: '#92400E' }}>
+          <div style={{ background: 'var(--ez-hue-amber-bg)', border: '1px solid #FCD34D', borderRadius: 8, padding: 12, marginBottom: 18, fontSize: 12, color: '#92400E' }}>
             <div style={{ fontWeight: 700, marginBottom: 4 }}>Catatan Penyesuaian:</div>
             {importResult.warnings.map((w, i) => (
               <div key={i}>• {w}</div>
@@ -117,7 +117,7 @@ export const DocxImportModal: React.FC<DocxImportModalProps> = ({
                       background: 'var(--ez-color-surface-secondary)',
                       padding: '10px 12px',
                       borderRadius: 8,
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid var(--ez-color-border-line)',
                     }}
                   >
                     <div style={{ flex: 1, fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
@@ -132,7 +132,7 @@ export const DocxImportModal: React.FC<DocxImportModalProps> = ({
                           width: '100%',
                           padding: '7px 10px',
                           borderRadius: 6,
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid var(--ez-hue-slate-border)',
                           fontSize: 12,
                           background: 'var(--ez-color-surface)',
                         }}
@@ -167,7 +167,7 @@ export const DocxImportModal: React.FC<DocxImportModalProps> = ({
             style={{
               padding: '9px 18px',
               background: 'var(--ez-color-surface)',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               borderRadius: 8,
               fontSize: 13,
               fontWeight: 600,

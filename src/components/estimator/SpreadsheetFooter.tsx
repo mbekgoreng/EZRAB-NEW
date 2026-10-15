@@ -34,7 +34,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
         style={{
           background: 'var(--ez-color-surface)',
           borderRadius: '10px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '10px 16px',
           display: 'flex',
           alignItems: 'center',
@@ -54,7 +54,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
               padding: '0 14px',
               borderRadius: '6px',
               background: 'var(--ez-color-surface)',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 650,
               color: 'var(--ez-color-primary)',
@@ -64,7 +64,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
               gap: '6px',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#EFF6FF')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-hue-blue-bg)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
           >
             <Plus size={14} color="#2563EB" />
@@ -120,7 +120,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
                 height: '28px',
                 padding: '0 22px 0 8px',
                 borderRadius: '5px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 background: 'var(--ez-color-surface)',
                 fontSize: '11.5px',
                 fontWeight: 600,
@@ -155,9 +155,9 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
                 width: '26px',
                 height: '26px',
                 borderRadius: '5px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 background: 'var(--ez-color-surface)',
-                color: currentPage <= 1 ? '#CBD5E1' : '#334155',
+                color: currentPage <= 1 ? 'var(--ez-hue-slate-border)' : '#334155',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -189,9 +189,9 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
                 width: '26px',
                 height: '26px',
                 borderRadius: '5px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 background: 'var(--ez-color-surface)',
-                color: currentPage >= totalPages ? '#CBD5E1' : '#334155',
+                color: currentPage >= totalPages ? 'var(--ez-hue-slate-border)' : '#334155',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

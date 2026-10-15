@@ -55,32 +55,32 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
     switch (status) {
       case 'OVERRIDE':
         return {
-          bg: '#EFF6FF',
-          border: '#BFDBFE',
+          bg: 'var(--ez-hue-blue-bg)',
+          border: 'var(--ez-hue-blue-border)',
           color: 'var(--ez-color-primary-hover)',
           text: 'HARGA OVERRIDE (AKTIF)',
           desc: 'Dipilih secara manual oleh Estimator (Prioritas Tertinggi Tier 1)',
         };
       case 'PROJECT_PRICE':
         return {
-          bg: '#ECFDF5',
-          border: '#A7F3D0',
+          bg: 'var(--ez-hue-emerald-bg)',
+          border: 'var(--ez-hue-green-border-deep)',
           color: '#047857',
           text: 'HARGA PROYEK',
           desc: 'Berdasarkan penawaran supplier/kontrak khusus proyek ini (Tier 2)',
         };
       case 'LOCKED':
         return {
-          bg: '#F5F3FF',
-          border: '#DDD6FE',
+          bg: 'var(--ez-hue-violet-bg)',
+          border: 'var(--ez-hue-violet-border)',
           color: '#6D28D9',
           text: 'HARGA TERKUNCI (REVISI)',
           desc: 'Dibekukan untuk keutuhan dokumen kontrak RAB resmi',
         };
       case 'EXPIRED':
         return {
-          bg: '#FFFBEB',
-          border: '#FDE68A',
+          bg: 'var(--ez-hue-amber-bg)',
+          border: 'var(--ez-hue-amber-border)',
           color: '#B45309',
           text: 'KEDALUWARSA (FALLBACK)',
           desc: 'Penawaran proyek telah melewati masa berlaku, fallback ke acuan nasional',
@@ -96,8 +96,8 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
       case 'NOT_FOUND':
       default:
         return {
-          bg: '#FEF2F2',
-          border: '#FECACA',
+          bg: 'var(--ez-hue-rose-bg)',
+          border: 'var(--ez-hue-rose-border)',
           color: '#B91C1C',
           text: 'TIDAK DITEMUKAN',
           desc: 'Fail-closed: tidak ada harga resmi untuk item ini',
@@ -137,7 +137,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -145,11 +145,11 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #F1F5F9',
+            borderBottom: '1px solid var(--ez-color-surface-tertiary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            backgroundColor: '#FAFAFA',
+            backgroundColor: 'var(--ez-color-surface-faint)',
           }}
         >
           <div>
@@ -236,11 +236,11 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
                 backgroundColor: 'var(--ez-color-surface-secondary)',
                 padding: '16px',
                 borderRadius: 'var(--ez-radius-control)',
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
               }}
             >
               {/* 1. Harga Referensi */}
-              <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface)', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+              <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface)', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
                 <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>1. Acuan Nasional</div>
                 <div style={{ fontSize: '15px', fontWeight: 700, color: '#334155', marginTop: '4px' }}>
                   {refPrice > 0 ? formatCurrencyIDR(refPrice) : '-'}
@@ -254,9 +254,9 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
               <div
                 style={{
                   padding: '10px',
-                  backgroundColor: resolved.projectPrice ? '#ECFDF5' : '#FFFFFF',
+                  backgroundColor: resolved.projectPrice ? 'var(--ez-hue-emerald-bg)' : 'var(--ez-color-surface)',
                   borderRadius: '8px',
-                  border: `1px solid ${resolved.projectPrice ? '#A7F3D0' : 'var(--ez-color-border)'}`,
+                  border: `1px solid ${resolved.projectPrice ? 'var(--ez-hue-green-border-deep)' : 'var(--ez-color-border)'}`,
                 }}
               >
                 <div style={{ fontSize: '11px', color: resolved.projectPrice ? '#047857' : 'var(--ez-color-text-muted)', fontWeight: 600 }}>
@@ -274,9 +274,9 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
               <div
                 style={{
                   padding: '10px',
-                  backgroundColor: resolved.overridePrice ? '#EFF6FF' : '#FFFFFF',
+                  backgroundColor: resolved.overridePrice ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                   borderRadius: '8px',
-                  border: `1px solid ${resolved.overridePrice ? '#BFDBFE' : 'var(--ez-color-border)'}`,
+                  border: `1px solid ${resolved.overridePrice ? 'var(--ez-hue-blue-border)' : 'var(--ez-color-border)'}`,
                 }}
               >
                 <div style={{ fontSize: '11px', color: resolved.overridePrice ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)', fontWeight: 600 }}>
@@ -345,7 +345,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
             <div
               style={{
                 backgroundColor: 'var(--ez-color-surface-secondary)',
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
                 borderRadius: '10px',
                 padding: '12px 16px',
                 fontSize: '12.5px',
@@ -394,7 +394,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
                     style={{
                       padding: '8px 12px',
                       backgroundColor: 'var(--ez-color-surface-secondary)',
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid var(--ez-color-border-line)',
                       borderRadius: '8px',
                       fontSize: '11.5px',
                       display: 'flex',
@@ -427,8 +427,8 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
         <div
           style={{
             padding: '16px 24px',
-            borderTop: '1px solid #F1F5F9',
-            backgroundColor: '#FAFAFA',
+            borderTop: '1px solid var(--ez-color-surface-tertiary)',
+            backgroundColor: 'var(--ez-color-surface-faint)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -443,7 +443,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
               style={{
                 padding: '8px 16px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 backgroundColor: 'var(--ez-color-surface)',
                 color: '#475569',
                 fontSize: '12.5px',

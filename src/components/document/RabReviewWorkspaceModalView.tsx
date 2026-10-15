@@ -333,9 +333,9 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                   borderRadius: 'var(--ez-radius-pill)',
                   fontSize: '11.5px',
                   fontWeight: 700,
-                  backgroundColor: '#F0FDF4',
+                  backgroundColor: 'var(--ez-hue-green-bg)',
                   color: '#16A34A',
-                  border: '1px solid #DCFCE7',
+                  border: '1px solid var(--ez-hue-green-bg-deep)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '5px',
@@ -350,9 +350,9 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                   borderRadius: '6px',
                   fontSize: '11px',
                   fontWeight: 600,
-                  backgroundColor: '#EFF6FF',
+                  backgroundColor: 'var(--ez-hue-blue-bg)',
                   color: 'var(--ez-color-primary)',
-                  border: '1px solid #DBEAFE',
+                  border: '1px solid var(--ez-hue-blue-bg-deep)',
                 }}
               >
                 Approval Gate
@@ -421,8 +421,8 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
           }}
         >
           {[
-            { label: 'Total Pages', val: reviewCounts.totalPages, col: '#FFFFFF' },
-            { label: 'Total Entities', val: reviewCounts.totalEntities, col: '#FFFFFF' },
+            { label: 'Total Pages', val: reviewCounts.totalPages, col: 'var(--ez-color-surface)' },
+            { label: 'Total Entities', val: reviewCounts.totalEntities, col: 'var(--ez-color-surface)' },
             { label: 'Mapped', val: reviewCounts.mappedCount, col: '#34D399' },
             { label: 'Unmapped', val: reviewCounts.unmappedCount, col: '#94A3B8' },
             { label: 'Needs Review', val: reviewCounts.needsReviewCount, col: '#FBBF24' },
@@ -453,7 +453,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          borderBottom: '1px solid #E2E8F0',
+          borderBottom: '1px solid var(--ez-color-border-line)',
           paddingBottom: '6px',
           overflowX: 'auto',
         }}
@@ -485,7 +485,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                 cursor: 'pointer',
                 transition: 'all 140ms ease',
                 flexShrink: 0,
-                backgroundColor: isActive ? '#4F46E5' : '#FFFFFF',
+                backgroundColor: isActive ? '#4F46E5' : 'var(--ez-color-surface)',
                 color: isActive ? '#FFFFFF' : '#475569',
                 border: `1px solid ${isActive ? '#4F46E5' : 'var(--ez-color-border)'}`,
                 boxShadow: isActive ? '0 2px 6px rgba(79, 70, 229, 0.25)' : 'none',
@@ -512,7 +512,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               backgroundColor: 'var(--ez-color-surface)',
               padding: '12px 16px',
               borderRadius: 'var(--ez-radius-control)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
             }}
           >
@@ -532,7 +532,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                       fontWeight: isSelected ? 700 : 600,
                       cursor: 'pointer',
                       border: 'none',
-                      backgroundColor: isSelected ? '#4F46E5' : '#F1F5F9',
+                      backgroundColor: isSelected ? '#4F46E5' : 'var(--ez-color-surface-tertiary)',
                       color: isSelected ? '#FFFFFF' : '#475569',
                       transition: 'all 120ms ease',
                       flexShrink: 0,
@@ -555,7 +555,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                   padding: '7px 12px 7px 32px',
                   fontSize: '12px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   width: '100%',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -572,7 +572,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                 <div
                   key={group.wbsCode}
                   style={{
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--ez-color-border-line)',
                     borderRadius: 'var(--ez-radius-control)',
                     overflow: 'hidden',
                     backgroundColor: 'var(--ez-color-surface)',
@@ -589,7 +589,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      borderBottom: isExp ? '1px solid #E2E8F0' : 'none',
+                      borderBottom: isExp ? '1px solid var(--ez-color-border-line)' : 'none',
                       transition: 'background-color 120ms ease',
                     }}
                   >
@@ -618,7 +618,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                   {isExp && (
                     <div style={{ overflowX: 'auto', width: '100%' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
-                        <thead style={{ backgroundColor: '#F1F5F9', borderBottom: '1px solid #E2E8F0', color: '#475569', fontSize: '11px', fontWeight: 700 }}>
+                        <thead style={{ backgroundColor: 'var(--ez-color-surface-tertiary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569', fontSize: '11px', fontWeight: 700 }}>
                           <tr>
                             <th style={{ padding: '10px 8px', textAlign: 'center', width: '36px' }}>No</th>
                             <th style={{ padding: '10px 8px', width: '50px' }}>WBS</th>
@@ -641,8 +641,8 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                               <tr
                                 key={item.rabDraftItemId}
                                 style={{
-                                  borderBottom: '1px solid #F1F5F9',
-                                  backgroundColor: isExcluded ? 'var(--ez-color-surface-secondary)' : '#FFFFFF',
+                                  borderBottom: '1px solid var(--ez-color-surface-tertiary)',
+                                  backgroundColor: isExcluded ? 'var(--ez-color-surface-secondary)' : 'var(--ez-color-surface)',
                                   color: isExcluded ? '#94A3B8' : '#1E293B',
                                   textDecoration: isExcluded ? 'line-through' : 'none',
                                 }}
@@ -664,7 +664,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                                         fontFamily: 'monospace',
                                         color: '#4338CA',
                                         fontWeight: 600,
-                                        backgroundColor: '#EEF2FF',
+                                        backgroundColor: 'var(--ez-hue-indigo-bg-soft)',
                                         padding: '2px 6px',
                                         borderRadius: '4px',
                                         border: '1px solid #C7D2FE',
@@ -687,10 +687,10 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                                       style={{
                                         fontSize: '10.5px',
                                         color: '#D97706',
-                                        backgroundColor: '#FEF3C7',
+                                        backgroundColor: 'var(--ez-hue-amber-bg-deep)',
                                         padding: '2px 6px',
                                         borderRadius: '4px',
-                                        border: '1px solid #FDE68A',
+                                        border: '1px solid var(--ez-hue-amber-border)',
                                         cursor: 'pointer',
                                       }}
                                     >
@@ -737,9 +737,9 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                                       padding: '2px 6px',
                                       borderRadius: '4px',
                                       fontWeight: 600,
-                                      backgroundColor: '#F1F5F9',
+                                      backgroundColor: 'var(--ez-color-surface-tertiary)',
                                       color: '#475569',
-                                      border: '1px solid #E2E8F0',
+                                      border: '1px solid var(--ez-color-border-line)',
                                     }}
                                   >
                                     {item.sourceTrace.primaryDrawingNumber || 'DED'}
@@ -749,23 +749,23 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                                 {/* Status */}
                                 <td style={{ padding: '10px 8px', textAlign: 'center' }}>
                                   {item.status === 'APPROVED' ? (
-                                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#DCFCE7', color: '#15803D', border: '1px solid #BBF7D0' }}>
+                                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: 'var(--ez-hue-green-bg-deep)', color: '#15803D', border: '1px solid var(--ez-hue-green-border)' }}>
                                       APPROVED
                                     </span>
                                   ) : item.status === 'CONFLICT' ? (
                                     <button
                                       type="button"
                                       onClick={() => handleOpenConflict(item)}
-                                      style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#FEE2E2', color: '#B91C1C', border: '1px solid #FECACA', cursor: 'pointer' }}
+                                      style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: 'var(--ez-hue-red-bg)', color: '#B91C1C', border: '1px solid var(--ez-hue-rose-border)', cursor: 'pointer' }}
                                     >
                                       CONFLICT ⚠
                                     </button>
                                   ) : item.status === 'REJECTED' || isExcluded ? (
-                                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#F1F5F9', color: 'var(--ez-color-text-muted)' }}>
+                                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-muted)' }}>
                                       EXCLUDED
                                     </span>
                                   ) : (
-                                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#FEF3C7', color: '#B45309', border: '1px solid #FDE68A' }}>
+                                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: 'var(--ez-hue-amber-bg-deep)', color: '#B45309', border: '1px solid var(--ez-hue-amber-border)' }}>
                                       {item.status}
                                     </span>
                                   )}
@@ -798,7 +798,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                                         type="button"
                                         onClick={() => handleApprove(item.rabDraftItemId)}
                                         title="Setujui Item"
-                                        style={{ background: '#DCFCE7', border: '1px solid #BBF7D0', color: '#15803D', borderRadius: '5px', padding: '4px', cursor: 'pointer' }}
+                                        style={{ background: 'var(--ez-hue-green-bg-deep)', border: '1px solid var(--ez-hue-green-border)', color: '#15803D', borderRadius: '5px', padding: '4px', cursor: 'pointer' }}
                                       >
                                         <Check size={13} strokeWidth={3} />
                                       </button>
@@ -807,7 +807,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                                       type="button"
                                       onClick={() => handleOpenEdit(item)}
                                       title="Edit Parameter"
-                                      style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', color: 'var(--ez-color-primary)', borderRadius: '5px', padding: '4px', cursor: 'pointer' }}
+                                      style={{ background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-border)', color: 'var(--ez-color-primary)', borderRadius: '5px', padding: '4px', cursor: 'pointer' }}
                                     >
                                       <Edit2 size={13} />
                                     </button>
@@ -816,7 +816,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                                         type="button"
                                         onClick={() => handleReject(item.rabDraftItemId)}
                                         title="Tolak / Kecualikan"
-                                        style={{ background: '#FEE2E2', border: '1px solid #FECACA', color: '#DC2626', borderRadius: '5px', padding: '4px', cursor: 'pointer' }}
+                                        style={{ background: 'var(--ez-hue-red-bg)', border: '1px solid var(--ez-hue-rose-border)', color: '#DC2626', borderRadius: '5px', padding: '4px', cursor: 'pointer' }}
                                       >
                                         <Trash2 size={13} />
                                       </button>
@@ -824,7 +824,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                                       <button
                                         type="button"
                                         onClick={() => handleApprove(item.rabDraftItemId)}
-                                        style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', color: 'var(--ez-color-primary)', fontSize: '10px', fontWeight: 700, borderRadius: '4px', padding: '2px 6px', cursor: 'pointer' }}
+                                        style={{ background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-border)', color: 'var(--ez-color-primary)', fontSize: '10px', fontWeight: 700, borderRadius: '4px', padding: '2px 6px', cursor: 'pointer' }}
                                       >
                                         Restore
                                       </button>
@@ -833,7 +833,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                                       type="button"
                                       onClick={() => setSelectedItemForAudit(item)}
                                       title="Riwayat Audit"
-                                      style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', color: 'var(--ez-color-text-muted)', borderRadius: '5px', padding: '4px', cursor: 'pointer' }}
+                                      style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-muted)', borderRadius: '5px', padding: '4px', cursor: 'pointer' }}
                                     >
                                       <History size={13} />
                                     </button>
@@ -857,11 +857,11 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                   padding: '48px 24px',
                   backgroundColor: 'var(--ez-color-surface)',
                   borderRadius: 'var(--ez-radius-control)',
-                  border: '1px dashed #CBD5E1',
+                  border: '1px dashed var(--ez-hue-slate-border)',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
                 }}
               >
-                <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: '#EEF2FF', color: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px auto' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: 'var(--ez-hue-indigo-bg-soft)', color: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px auto' }}>
                   <FileSpreadsheet size={24} />
                 </div>
                 <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
@@ -880,7 +880,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
 
       {/* OTHER TABS */}
       {activeTab === 'doc_map' && (
-        <div style={{ backgroundColor: 'var(--ez-color-surface)', padding: '24px', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
+        <div style={{ backgroundColor: 'var(--ez-color-surface)', padding: '24px', borderRadius: '16px', border: '1px solid var(--ez-color-border-line)' }}>
           <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FolderOpen size={16} color="#4F46E5" />
             <span>Whole Document Map & Page Roles</span>
@@ -890,7 +890,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
             {summary.items.slice(0, 8).map((itm, i) => (
-              <div key={i} style={{ padding: '12px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '10px', border: '1px solid #E2E8F0', fontSize: '12px' }}>
+              <div key={i} style={{ padding: '12px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)', fontSize: '12px' }}>
                 <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#4338CA', display: 'block', marginBottom: '2px' }}>
                   {itm.sourceTrace.primaryDrawingNumber}
                 </span>
@@ -907,7 +907,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
       )}
 
       {activeTab === 'entities' && (
-        <div style={{ backgroundColor: 'var(--ez-color-surface)', padding: '24px', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
+        <div style={{ backgroundColor: 'var(--ez-color-surface)', padding: '24px', borderRadius: '16px', border: '1px solid var(--ez-color-border-line)' }}>
           <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Layers size={16} color="#4F46E5" />
             <span>Canonical Construction Entities ({items.length})</span>
@@ -915,7 +915,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
           <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginBottom: '16px' }}>
             Entitas kanonikal fisik hasil resolusi anti-duplikasi:
           </p>
-          <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', overflow: 'hidden' }}>
+          <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', overflow: 'hidden' }}>
             {items.map((item, idx) => (
               <div
                 key={item.rabDraftItemId}
@@ -924,7 +924,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  borderBottom: idx < items.length - 1 ? '1px solid #F1F5F9' : 'none',
+                  borderBottom: idx < items.length - 1 ? '1px solid var(--ez-color-surface-tertiary)' : 'none',
                   backgroundColor: 'var(--ez-color-surface)',
                   fontSize: '12.5px',
                 }}
@@ -935,7 +935,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#334155' }}>{item.volume} {item.unit}</span>
-                  <span style={{ fontSize: '10px', fontWeight: 700, backgroundColor: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, backgroundColor: 'var(--ez-hue-green-bg-deep)', color: '#15803D', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)' }}>
                     RESOLVED
                   </span>
                 </div>
@@ -946,7 +946,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
       )}
 
       {activeTab === 'qto' && (
-        <div style={{ backgroundColor: 'var(--ez-color-surface)', padding: '24px', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
+        <div style={{ backgroundColor: 'var(--ez-color-surface)', padding: '24px', borderRadius: '16px', border: '1px solid var(--ez-color-border-line)' }}>
           <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Hash size={16} color="#4F46E5" />
             <span>Deterministic Quantity Takeoff Formulas</span>
@@ -959,7 +959,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                   padding: '12px 16px',
                   backgroundColor: 'var(--ez-color-surface-secondary)',
                   borderRadius: '10px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -980,7 +980,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
       )}
 
       {activeTab === 'wbs' && (
-        <div style={{ backgroundColor: 'var(--ez-color-surface)', padding: '24px', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
+        <div style={{ backgroundColor: 'var(--ez-color-surface)', padding: '24px', borderRadius: '16px', border: '1px solid var(--ez-color-border-line)' }}>
           <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <LayoutTemplate size={16} color="#4F46E5" />
             <span>Adaptive WBS Hierarchy</span>
@@ -991,7 +991,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                 key={group.wbsCode}
                 style={{
                   padding: '14px 18px',
-                  backgroundColor: '#EEF2FF',
+                  backgroundColor: 'var(--ez-hue-indigo-bg-soft)',
                   borderRadius: '10px',
                   border: '1px solid #C7D2FE',
                   fontSize: '12.5px',
@@ -1011,7 +1011,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
       )}
 
       {activeTab === 'findings' && (
-        <div style={{ backgroundColor: 'var(--ez-color-surface)', padding: '24px', borderRadius: '16px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ backgroundColor: 'var(--ez-color-surface)', padding: '24px', borderRadius: '16px', border: '1px solid var(--ez-color-border-line)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <AlertTriangle size={16} color="#D97706" />
             <span>Review Findings & Validation Audit</span>
@@ -1021,9 +1021,9 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               key={idx}
               style={{
                 padding: '12px 16px',
-                backgroundColor: '#FFFBEB',
+                backgroundColor: 'var(--ez-hue-amber-bg)',
                 borderRadius: '10px',
-                border: '1px solid #FDE68A',
+                border: '1px solid var(--ez-hue-amber-border)',
                 display: 'flex',
                 alignItems: 'flex-start',
                 justifyContent: 'space-between',
@@ -1060,7 +1060,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
       )}
 
       {activeTab === 'source_trace' && (
-        <div style={{ backgroundColor: 'var(--ez-color-surface)', padding: '24px', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
+        <div style={{ backgroundColor: 'var(--ez-color-surface)', padding: '24px', borderRadius: '16px', border: '1px solid var(--ez-color-border-line)' }}>
           <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Compass size={16} color="#4F46E5" />
             <span>Source Traceability Inspector</span>
@@ -1076,7 +1076,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                 style={{
                   padding: '12px 14px',
                   borderRadius: '10px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   backgroundColor: 'var(--ez-color-surface-secondary)',
                   cursor: 'pointer',
                   transition: 'all 120ms ease',
@@ -1125,7 +1125,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
             }}
           >
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '16px', borderBottom: '1px solid #E2E8F0', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '16px', borderBottom: '1px solid var(--ez-color-border-line)', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Compass size={18} color="#4F46E5" />
                   <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
@@ -1142,7 +1142,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '12px' }}>
-                <div style={{ backgroundColor: '#EEF2FF', padding: '14px', borderRadius: '10px', border: '1px solid #C7D2FE' }}>
+                <div style={{ backgroundColor: 'var(--ez-hue-indigo-bg-soft)', padding: '14px', borderRadius: '10px', border: '1px solid #C7D2FE' }}>
                   <span style={{ fontSize: '10.5px', color: '#4338CA', fontWeight: 800, textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                     RAB Work Item
                   </span>
@@ -1152,7 +1152,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                   </div>
                 </div>
 
-                <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', display: 'block' }}>Drawing & Evidence Pointers</span>
                   <div>
                     <span style={{ color: 'var(--ez-color-text-muted)', fontSize: '11px', display: 'block' }}>Primary Drawing:</span>
@@ -1172,7 +1172,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                   </div>
                 </div>
 
-                <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px', backgroundColor: 'var(--ez-color-surface-secondary)' }}>
+                <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px', backgroundColor: 'var(--ez-color-surface-secondary)' }}>
                   <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', display: 'block' }}>Deterministic Calculation</span>
                   <div>
                     <span style={{ color: 'var(--ez-color-text-muted)', fontSize: '11px', display: 'block' }}>Rumus Geometri:</span>
@@ -1194,7 +1194,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               </div>
             </div>
 
-            <div style={{ paddingTop: '16px', borderTop: '1px solid #E2E8F0' }}>
+            <div style={{ paddingTop: '16px', borderTop: '1px solid var(--ez-color-border-line)' }}>
               <button
                 type="button"
                 onClick={() => setSelectedItemForTrace(null)}
@@ -1237,7 +1237,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               backgroundColor: 'var(--ez-color-surface)',
               borderRadius: '16px',
               boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               maxWidth: '460px',
               width: '100%',
               padding: '24px',
@@ -1247,7 +1247,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               fontSize: '12px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid var(--ez-color-border-line)' }}>
               <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                 Edit Parameter Pekerjaan
               </h3>
@@ -1263,7 +1263,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                   type="text"
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px', fontSize: '12px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--ez-hue-slate-border)', borderRadius: '8px', fontSize: '12px', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -1275,7 +1275,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                     step="0.01"
                     value={editVolume}
                     onChange={(e) => setEditVolume(parseFloat(e.target.value) || 0)}
-                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--ez-hue-slate-border)', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', boxSizing: 'border-box' }}
                   />
                 </div>
                 <div>
@@ -1284,7 +1284,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                     type="text"
                     value={editUnit}
                     onChange={(e) => setEditUnit(e.target.value)}
-                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px', fontSize: '12px', boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--ez-hue-slate-border)', borderRadius: '8px', fontSize: '12px', boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
@@ -1301,7 +1301,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                     const parsed = parseFloat(raw);
                     setEditUnitPrice(Number.isFinite(parsed) ? parsed : null);
                   }}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--ez-hue-slate-border)', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -1311,7 +1311,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                   type="text"
                   value={editAhspCode}
                   onChange={(e) => setEditAhspCode(e.target.value)}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--ez-hue-slate-border)', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -1322,16 +1322,16 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                   value={editReason}
                   onChange={(e) => setEditReason(e.target.value)}
                   placeholder="Contoh: Revisi volume sesuai addendum..."
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px', fontSize: '12px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--ez-hue-slate-border)', borderRadius: '8px', fontSize: '12px', boxSizing: 'border-box' }}
                 />
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', paddingTop: '12px', borderTop: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', paddingTop: '12px', borderTop: '1px solid var(--ez-color-border-line)' }}>
               <button
                 type="button"
                 onClick={() => setEditingItem(null)}
-                style={{ padding: '8px 14px', color: '#475569', backgroundColor: '#F1F5F9', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+                style={{ padding: '8px 14px', color: '#475569', backgroundColor: 'var(--ez-color-surface-tertiary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
               >
                 Batal
               </button>
@@ -1367,7 +1367,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               backgroundColor: 'var(--ez-color-surface)',
               borderRadius: '16px',
               boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               maxWidth: '460px',
               width: '100%',
               padding: '24px',
@@ -1377,7 +1377,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               fontSize: '12px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid var(--ez-color-border-line)' }}>
               <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#B91C1C', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <AlertTriangle size={16} color="#DC2626" />
                 <span>Resolusi Konflik Dimensi</span>
@@ -1399,7 +1399,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                   step="0.01"
                   value={conflictChosenVolume}
                   onChange={(e) => setConflictChosenVolume(parseFloat(e.target.value) || 0)}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--ez-hue-slate-border)', borderRadius: '8px', fontSize: '12px', fontFamily: 'monospace', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -1409,13 +1409,13 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                   value={conflictReason}
                   onChange={(e) => setConflictReason(e.target.value)}
                   rows={2}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #CBD5E1', borderRadius: '8px', fontSize: '12px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--ez-hue-slate-border)', borderRadius: '8px', fontSize: '12px', boxSizing: 'border-box' }}
                 />
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', paddingTop: '12px', borderTop: '1px solid #E2E8F0' }}>
-              <button type="button" onClick={() => setConflictItem(null)} style={{ padding: '8px 14px', color: '#475569', backgroundColor: '#F1F5F9', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', paddingTop: '12px', borderTop: '1px solid var(--ez-color-border-line)' }}>
+              <button type="button" onClick={() => setConflictItem(null)} style={{ padding: '8px 14px', color: '#475569', backgroundColor: 'var(--ez-color-surface-tertiary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
                 Batal
               </button>
               <button type="button" onClick={handleSaveConflict} style={{ padding: '8px 16px', backgroundColor: '#DC2626', color: '#FFFFFF', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}>
@@ -1446,7 +1446,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               backgroundColor: 'var(--ez-color-surface)',
               borderRadius: '16px',
               boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               maxWidth: '560px',
               width: '100%',
               padding: '24px',
@@ -1457,7 +1457,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               maxHeight: '80vh',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid var(--ez-color-border-line)' }}>
               <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Database size={16} color="#4F46E5" />
                 <span>Pilih AHSP Resmi PUPR</span>
@@ -1474,11 +1474,11 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                 placeholder="Cari kode atau nama AHSP resmi..."
                 value={ahspSearch}
                 onChange={(e) => setAhspSearch(e.target.value)}
-                style={{ padding: '8px 12px 8px 32px', fontSize: '12px', borderRadius: '8px', border: '1px solid #CBD5E1', width: '100%', outline: 'none', boxSizing: 'border-box' }}
+                style={{ padding: '8px 12px 8px 32px', fontSize: '12px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', width: '100%', outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', padding: '8px' }}>
               {ALL_OFFICIAL_AHSP_ITEMS.filter(a =>
                 !ahspSearch ||
                 a.code.toLowerCase().includes(ahspSearch.toLowerCase()) ||
@@ -1497,10 +1497,10 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     backgroundColor: 'var(--ez-color-surface)',
-                    border: '1px solid #F1F5F9',
+                    border: '1px solid var(--ez-color-surface-tertiary)',
                     transition: 'all 120ms ease',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#EEF2FF')}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-hue-indigo-bg-soft)')}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FFFFFF')}
                 >
                   <div>
@@ -1516,8 +1516,8 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               })}
             </div>
 
-            <div style={{ paddingTop: '12px', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => setAhspPickerItem(null)} style={{ padding: '8px 16px', color: '#475569', backgroundColor: '#F1F5F9', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+            <div style={{ paddingTop: '12px', borderTop: '1px solid var(--ez-color-border-line)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setAhspPickerItem(null)} style={{ padding: '8px 16px', color: '#475569', backgroundColor: 'var(--ez-color-surface-tertiary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
                 Tutup
               </button>
             </div>
@@ -1545,7 +1545,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               backgroundColor: 'var(--ez-color-surface)',
               borderRadius: '16px',
               boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               maxWidth: '500px',
               width: '100%',
               padding: '24px',
@@ -1556,7 +1556,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               maxHeight: '80vh',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid var(--ez-color-border-line)' }}>
               <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <History size={16} color="#4F46E5" />
                 <span>Riwayat Audit Perubahan</span>
@@ -1566,16 +1566,16 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               </button>
             </div>
 
-            <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '10px 14px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+            <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
               <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', display: 'block' }}>{selectedItemForAudit.description}</span>
               <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontFamily: 'monospace' }}>WBS: {selectedItemForAudit.wbsCode} | ID: {selectedItemForAudit.rabDraftItemId}</span>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {selectedItemForAudit.auditHistory.map(entry => (
-                <div key={entry.id} style={{ padding: '10px 12px', backgroundColor: 'var(--ez-color-surface)', border: '1px solid #E2E8F0', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div key={entry.id} style={{ padding: '10px 12px', backgroundColor: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 700, fontSize: '10px', backgroundColor: '#EEF2FF', color: '#4338CA' }}>
+                    <span style={{ padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 700, fontSize: '10px', backgroundColor: 'var(--ez-hue-indigo-bg-soft)', color: '#4338CA' }}>
                       {entry.action}
                     </span>
                     <span style={{ fontSize: '10px', color: '#94A3B8' }}>{new Date(entry.timestamp).toLocaleString('id-ID')}</span>
@@ -1587,8 +1587,8 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               ))}
             </div>
 
-            <div style={{ paddingTop: '12px', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => setSelectedItemForAudit(null)} style={{ padding: '8px 16px', color: '#475569', backgroundColor: '#F1F5F9', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+            <div style={{ paddingTop: '12px', borderTop: '1px solid var(--ez-color-border-line)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setSelectedItemForAudit(null)} style={{ padding: '8px 16px', color: '#475569', backgroundColor: 'var(--ez-color-surface-tertiary)', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
                 Tutup
               </button>
             </div>
@@ -1616,7 +1616,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               backgroundColor: 'var(--ez-color-surface)',
               borderRadius: '20px',
               boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               maxWidth: '520px',
               width: '100%',
               padding: '24px',
@@ -1626,7 +1626,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               fontSize: '12px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1px solid var(--ez-color-border-line)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <ShieldCheck size={20} color="#10B981" />
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
@@ -1642,7 +1642,7 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
               Anda akan menerapkan draf hasil telaah DED ke lembar kerja Spreadsheet RAB definitif. Seluruh baris pekerjaan aktif akan dikonversi menjadi struktur WBS dan RAB resmi.
             </p>
 
-            <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '16px', borderRadius: 'var(--ez-radius-control)', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '16px', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-color-border-line)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--ez-color-text-muted)' }}>Proyek Definitif:</span>
                 <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{projectName} ({projectId})</span>
@@ -1669,31 +1669,31 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
                 <span style={{ color: 'var(--ez-color-text-muted)' }}>PPN (11%):</span>
                 <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatCurrencyIDR(livePpn)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid #E2E8F0', fontSize: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid var(--ez-color-border-line)', fontSize: '14px' }}>
                 <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Grand Total:</span>
                 <span style={{ fontFamily: 'monospace', fontWeight: 900, color: '#15803D' }}>{formatCurrencyIDR(liveGrandTotal)}</span>
               </div>
             </div>
 
             {submitError && (
-              <div style={{ padding: '12px', backgroundColor: '#FEE2E2', border: '1px solid #FECACA', borderRadius: '8px', color: '#B91C1C', fontSize: '12px' }}>
+              <div style={{ padding: '12px', backgroundColor: 'var(--ez-hue-red-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', color: '#B91C1C', fontSize: '12px' }}>
                 {submitError}
               </div>
             )}
 
             {submitSuccess && (
-              <div style={{ padding: '12px', backgroundColor: '#DCFCE7', border: '1px solid #BBF7D0', borderRadius: '8px', color: '#15803D', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ padding: '12px', backgroundColor: 'var(--ez-hue-green-bg-deep)', border: '1px solid var(--ez-hue-green-border)', borderRadius: '8px', color: '#15803D', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <CheckCircle2 size={16} color="#15803D" />
                 <span>Berhasil! {submitSuccess.createdItemsCount} item telah disinkronkan ke Spreadsheet.</span>
               </div>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', paddingTop: '12px', borderTop: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', paddingTop: '12px', borderTop: '1px solid var(--ez-color-border-line)' }}>
               <button
                 type="button"
                 onClick={() => setShowConfirmModal(false)}
                 disabled={isSubmitting}
-                style={{ padding: '10px 16px', color: '#475569', backgroundColor: '#F1F5F9', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                style={{ padding: '10px 16px', color: '#475569', backgroundColor: 'var(--ez-color-surface-tertiary)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
               >
                 Batal
               </button>

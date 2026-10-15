@@ -159,7 +159,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           overflow: 'hidden',
         }}
       >
@@ -167,7 +167,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -180,11 +180,11 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                 width: '42px',
                 height: '42px',
                 borderRadius: 'var(--ez-radius-control)',
-                backgroundColor: '#ECFDF5',
+                backgroundColor: 'var(--ez-hue-emerald-bg)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '1px solid #A7F3D0',
+                border: '1px solid var(--ez-hue-green-border-deep)',
                 color: '#059669',
               }}
             >
@@ -201,7 +201,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                     fontWeight: 700,
                     padding: '2px 8px',
                     borderRadius: '6px',
-                    backgroundColor: '#DCFCE7',
+                    backgroundColor: 'var(--ez-hue-green-bg-deep)',
                     color: '#166534',
                   }}
                 >
@@ -220,7 +220,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
               width: '36px',
               height: '36px',
               borderRadius: '10px',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               backgroundColor: 'var(--ez-color-surface)',
               display: 'flex',
               alignItems: 'center',
@@ -238,8 +238,8 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
           {errorMsg && (
             <div
               style={{
-                backgroundColor: '#FEF2F2',
-                border: '1px solid #FECACA',
+                backgroundColor: 'var(--ez-hue-rose-bg)',
+                border: '1px solid var(--ez-hue-rose-border)',
                 color: '#991B1B',
                 padding: '12px 16px',
                 borderRadius: '10px',
@@ -258,8 +258,8 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
           {successMsg && (
             <div
               style={{
-                backgroundColor: '#F0FDF4',
-                border: '1px solid #BBF7D0',
+                backgroundColor: 'var(--ez-hue-green-bg)',
+                border: '1px solid var(--ez-hue-green-border)',
                 color: '#166534',
                 padding: '12px 16px',
                 borderRadius: '10px',
@@ -280,11 +280,11 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div
                 style={{
-                  border: '2px dashed #CBD5E1',
+                  border: '2px dashed var(--ez-hue-slate-border)',
                   borderRadius: '16px',
                   padding: '36px 20px',
                   textAlign: 'center',
-                  backgroundColor: selectedFile ? '#F0FDF4' : 'var(--ez-color-surface-secondary)',
+                  backgroundColor: selectedFile ? 'var(--ez-hue-green-bg)' : 'var(--ez-color-surface-secondary)',
                   borderColor: selectedFile ? '#86EFAC' : 'var(--ez-color-border)',
                   cursor: 'pointer',
                   position: 'relative',
@@ -309,7 +309,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                     width: '54px',
                     height: '54px',
                     borderRadius: '50%',
-                    backgroundColor: selectedFile ? '#DCFCE7' : '#ECFDF5',
+                    backgroundColor: selectedFile ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-emerald-bg)',
                     color: selectedFile ? '#166534' : '#059669',
                     display: 'flex',
                     alignItems: 'center',
@@ -353,7 +353,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                       maxHeight: '220px',
                       maxWidth: '100%',
                       borderRadius: 'var(--ez-radius-control)',
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid var(--ez-color-border-line)',
                       objectFit: 'contain',
                     }}
                   />
@@ -403,7 +403,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                   backgroundColor: 'var(--ez-color-surface-secondary)',
                   borderRadius: 'var(--ez-radius-control)',
                   padding: '16px 20px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
                   gap: '12px',
@@ -444,10 +444,10 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                   Rincian Barang & Pencocokan Harga Acuan (Master Price):
                 </div>
 
-                <div style={{ border: '1px solid #E2E8F0', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
+                <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                     <thead>
-                      <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', textAlign: 'left', color: '#475569' }}>
+                      <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', textAlign: 'left', color: '#475569' }}>
                         <th style={{ padding: '10px 14px' }}>Deskripsi Barang Nota</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' }}>Qty</th>
                         <th style={{ padding: '10px 14px', textAlign: 'right' }}>Harga Nota</th>
@@ -462,7 +462,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                         const isHigher = match && match.priceDifferencePercent > 0;
 
                         return (
-                          <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <tr key={item.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                             <td style={{ padding: '10px 14px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                               {item.description}
                             </td>
@@ -493,7 +493,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                                     fontWeight: 750,
                                     padding: '2px 8px',
                                     borderRadius: '6px',
-                                    backgroundColor: isHigher ? '#FEF2F2' : '#F0FDF4',
+                                    backgroundColor: isHigher ? 'var(--ez-hue-rose-bg)' : 'var(--ez-hue-green-bg)',
                                     color: isHigher ? '#B91C1C' : '#15803D',
                                   }}
                                 >
@@ -520,7 +520,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                   backgroundColor: 'var(--ez-color-surface-secondary)',
                   padding: '16px 20px',
                   borderRadius: 'var(--ez-radius-control)',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                 }}
               >
                 <div>
@@ -534,7 +534,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       backgroundColor: 'var(--ez-color-surface)',
                       color: 'var(--ez-color-text-primary)',
@@ -562,7 +562,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       backgroundColor: 'var(--ez-color-surface)',
                       color: 'var(--ez-color-text-primary)',
@@ -582,7 +582,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  borderTop: '1px solid #E2E8F0',
+                  borderTop: '1px solid var(--ez-color-border-line)',
                   paddingTop: '16px',
                   marginTop: '10px',
                 }}
@@ -591,7 +591,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                   onClick={() => setOcrResult(null)}
                   style={{
                     backgroundColor: 'var(--ez-color-surface)',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     color: '#475569',
                     padding: '10px 18px',
                     borderRadius: '8px',

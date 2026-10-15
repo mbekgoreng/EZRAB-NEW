@@ -124,16 +124,16 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
 
   const getCategoryColor = (cat: ExpenseCategory): { bg: string; color: string } => {
     const map: Record<ExpenseCategory, { bg: string; color: string }> = {
-      Material: { bg: '#EFF6FF', color: 'var(--ez-color-primary-hover)' },
-      'Tenaga Kerja': { bg: '#F5F3FF', color: '#6D28D9' },
-      Subkon: { bg: '#ECFDF5', color: '#047857' },
-      Alat: { bg: '#FFFBEB', color: '#B45309' },
-      Transport: { bg: '#F0F9FF', color: '#0369A1' },
+      Material: { bg: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)' },
+      'Tenaga Kerja': { bg: 'var(--ez-hue-violet-bg)', color: '#6D28D9' },
+      Subkon: { bg: 'var(--ez-hue-emerald-bg)', color: '#047857' },
+      Alat: { bg: 'var(--ez-hue-amber-bg)', color: '#B45309' },
+      Transport: { bg: 'var(--ez-hue-sky-bg)', color: '#0369A1' },
       Operasional: { bg: 'var(--ez-color-surface-secondary)', color: 'var(--ez-color-text-slate)' },
-      Pajak: { bg: '#FEF2F2', color: '#B91C1C' },
-      Lainnya: { bg: '#F1F5F9', color: 'var(--ez-color-text-muted)' },
+      Pajak: { bg: 'var(--ez-hue-rose-bg)', color: '#B91C1C' },
+      Lainnya: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-muted)' },
     };
-    return map[cat] || { bg: '#F1F5F9', color: 'var(--ez-color-text-muted)' };
+    return map[cat] || { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-muted)' };
   };
 
   return (
@@ -143,7 +143,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
         style={{
           backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -201,7 +201,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
         style={{
           backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '14px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '12px 16px',
           display: 'flex',
           alignItems: 'center',
@@ -279,7 +279,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
           style={{
             backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             padding: '48px 20px',
             textAlign: 'center',
             display: 'flex',
@@ -288,7 +288,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
             gap: '12px',
           }}
         >
-          <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: 'var(--ez-hue-rose-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <ArrowUpRight size={24} color="#DC2626" />
           </div>
           <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
@@ -324,7 +324,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
           style={{
             backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             overflow: 'hidden',
             boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           }}
@@ -332,7 +332,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
-                <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-muted)', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-muted)', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   <th style={{ padding: '12px 16px', fontWeight: 700 }}>Tanggal</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700 }}>Kategori</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700 }}>Deskripsi / Item Biaya</th>
@@ -404,7 +404,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
                               height: '28px',
                               borderRadius: '6px',
                               backgroundColor: 'var(--ez-color-surface-secondary)',
-                              border: '1px solid #E2E8F0',
+                              border: '1px solid var(--ez-color-border-line)',
                               color: 'var(--ez-color-text-slate)',
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -427,7 +427,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
                               height: '28px',
                               borderRadius: '6px',
                               backgroundColor: 'var(--ez-color-surface-secondary)',
-                              border: '1px solid #E2E8F0',
+                              border: '1px solid var(--ez-color-border-line)',
                               color: 'var(--ez-hue-rose-text)',
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -490,7 +490,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
             </div>
 
             {errorMessage && (
-              <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#991B1B' }}>
+              <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#991B1B' }}>
                 {errorMessage}
               </div>
             )}

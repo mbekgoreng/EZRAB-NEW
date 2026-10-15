@@ -166,7 +166,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
         }}
       >
         {/* ---------------------------------------------------------------------
@@ -245,7 +245,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
           style={{
             padding: '8px 24px',
             background: 'var(--ez-color-surface-secondary)',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -360,7 +360,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     padding: '16px',
                     borderRadius: 'var(--ez-radius-control)',
                     background: 'var(--ez-color-surface-secondary)',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '12px',
@@ -393,7 +393,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                           width: '100%',
                           padding: '6px 8px',
                           borderRadius: '6px',
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid var(--ez-hue-slate-border)',
                           fontSize: '12px',
                           fontWeight: 700,
                         }}
@@ -413,7 +413,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                           width: '100%',
                           padding: '6px 10px',
                           borderRadius: '6px',
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid var(--ez-hue-slate-border)',
                           fontSize: '12px',
                         }}
                       />
@@ -433,7 +433,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                         width: '100%',
                         padding: '6px 10px',
                         borderRadius: '6px',
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid var(--ez-hue-slate-border)',
                         fontSize: '12px',
                         resize: 'none',
                       }}
@@ -448,7 +448,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                         padding: '6px 12px',
                         borderRadius: '6px',
                         background: 'var(--ez-color-surface)',
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid var(--ez-hue-slate-border)',
                         color: '#475569',
                         fontSize: '12px',
                         fontWeight: 600,
@@ -492,8 +492,8 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                         style={{
                           padding: '14px 18px',
                           borderRadius: 'var(--ez-radius-control)',
-                          background: isLatest ? '#EFF6FF' : '#FFFFFF',
-                          border: isLatest ? '1px solid #BFDBFE' : '1px solid #E2E8F0',
+                          background: isLatest ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                          border: isLatest ? '1px solid var(--ez-hue-blue-border)' : '1px solid var(--ez-color-border-line)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -528,7 +528,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                                   style={{
                                     fontSize: '10px',
                                     fontWeight: 800,
-                                    background: '#DBEAFE',
+                                    background: 'var(--ez-hue-blue-bg-deep)',
                                     color: '#1E40AF',
                                     padding: '1px 6px',
                                     borderRadius: '4px',
@@ -542,7 +542,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                                   style={{
                                     fontSize: '10px',
                                     fontWeight: 800,
-                                    background: '#F1F5F9',
+                                    background: 'var(--ez-color-surface-tertiary)',
                                     color: '#475569',
                                     padding: '1px 6px',
                                     borderRadius: '4px',
@@ -612,7 +612,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                                 padding: '6px 12px',
                                 borderRadius: '6px',
                                 background: 'var(--ez-color-surface)',
-                                border: '1px solid #CBD5E1',
+                                border: '1px solid var(--ez-hue-slate-border)',
                                 color: 'var(--ez-color-primary)',
                                 fontSize: '12px',
                                 fontWeight: 700,
@@ -650,7 +650,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                   background: 'var(--ez-color-surface-secondary)',
                   padding: '12px 16px',
                   borderRadius: '10px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                 }}
               >
                 <div>
@@ -664,7 +664,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       width: '100%',
                       padding: '6px 10px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '12px',
                       fontWeight: 700,
                       background: 'var(--ez-color-surface)',
@@ -693,7 +693,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       width: '100%',
                       padding: '6px 10px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '12px',
                       fontWeight: 700,
                       background: 'var(--ez-color-surface)',
@@ -717,14 +717,14 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     gap: '12px',
                   }}
                 >
-                  <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0' }}>
+                  <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)' }}>
                     <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', fontWeight: 700 }}>NILAI VERSI DASAR</div>
                     <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
                       {formatCurrencyIDR(comparisonResult.baseTotal)}
                     </div>
                   </div>
 
-                  <div style={{ padding: '10px 14px', borderRadius: '8px', background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
+                  <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-border)' }}>
                     <div style={{ fontSize: '10.5px', color: '#1E40AF', fontWeight: 700 }}>NILAI VERSI TARGET</div>
                     <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-primary)', marginTop: '2px' }}>
                       {formatCurrencyIDR(comparisonResult.targetTotal)}
@@ -735,8 +735,8 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     style={{
                       padding: '10px 14px',
                       borderRadius: '8px',
-                      background: comparisonResult.totalDelta >= 0 ? '#FEF2F2' : '#ECFDF5',
-                      border: `1px solid ${comparisonResult.totalDelta >= 0 ? '#FECACA' : '#A7F3D0'}`,
+                      background: comparisonResult.totalDelta >= 0 ? 'var(--ez-hue-rose-bg)' : 'var(--ez-hue-emerald-bg)',
+                      border: `1px solid ${comparisonResult.totalDelta >= 0 ? 'var(--ez-hue-rose-border)' : 'var(--ez-hue-green-border-deep)'}`,
                     }}
                   >
                     <div style={{ fontSize: '10.5px', color: comparisonResult.totalDelta >= 0 ? '#DC2626' : '#059669', fontWeight: 700 }}>
@@ -760,7 +760,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                   background: 'var(--ez-color-surface-secondary)',
                   padding: '8px 12px',
                   borderRadius: '8px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -769,9 +769,9 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     style={{
                       padding: '4px 10px',
                       borderRadius: '6px',
-                      background: diffFilter === 'ALL' ? 'var(--ez-color-primary)' : '#FFFFFF',
+                      background: diffFilter === 'ALL' ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
                       color: diffFilter === 'ALL' ? '#FFFFFF' : '#475569',
-                      border: diffFilter === 'ALL' ? 'none' : '1px solid #CBD5E1',
+                      border: diffFilter === 'ALL' ? 'none' : '1px solid var(--ez-hue-slate-border)',
                       fontSize: '11.5px',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -784,9 +784,9 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     style={{
                       padding: '4px 10px',
                       borderRadius: '6px',
-                      background: diffFilter === 'ADDED' ? '#059669' : '#FFFFFF',
+                      background: diffFilter === 'ADDED' ? '#059669' : 'var(--ez-color-surface)',
                       color: diffFilter === 'ADDED' ? '#FFFFFF' : '#059669',
-                      border: diffFilter === 'ADDED' ? 'none' : '1px solid #A7F3D0',
+                      border: diffFilter === 'ADDED' ? 'none' : '1px solid var(--ez-hue-green-border-deep)',
                       fontSize: '11.5px',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -799,9 +799,9 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     style={{
                       padding: '4px 10px',
                       borderRadius: '6px',
-                      background: diffFilter === 'REMOVED' ? '#DC2626' : '#FFFFFF',
+                      background: diffFilter === 'REMOVED' ? '#DC2626' : 'var(--ez-color-surface)',
                       color: diffFilter === 'REMOVED' ? '#FFFFFF' : '#DC2626',
-                      border: diffFilter === 'REMOVED' ? 'none' : '1px solid #FECACA',
+                      border: diffFilter === 'REMOVED' ? 'none' : '1px solid var(--ez-hue-rose-border)',
                       fontSize: '11.5px',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -814,9 +814,9 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     style={{
                       padding: '4px 10px',
                       borderRadius: '6px',
-                      background: diffFilter === 'CHANGED' ? '#D97706' : '#FFFFFF',
+                      background: diffFilter === 'CHANGED' ? '#D97706' : 'var(--ez-color-surface)',
                       color: diffFilter === 'CHANGED' ? '#FFFFFF' : '#D97706',
-                      border: diffFilter === 'CHANGED' ? 'none' : '1px solid #FDE68A',
+                      border: diffFilter === 'CHANGED' ? 'none' : '1px solid var(--ez-hue-amber-border)',
                       fontSize: '11.5px',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -826,7 +826,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--ez-color-surface)', padding: '3px 8px', borderRadius: '6px', border: '1px solid #CBD5E1' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--ez-color-surface)', padding: '3px 8px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)' }}>
                   <Search size={13} color="#94A3B8" />
                   <input
                     type="text"
@@ -841,7 +841,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
               {/* Granular Diff Table */}
               <div
                 style={{
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   borderRadius: '10px',
                   overflow: 'hidden',
                   background: 'var(--ez-color-surface)',
@@ -850,7 +850,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                 }}
               >
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
-                  <thead style={{ background: '#F1F5F9', color: '#475569', position: 'sticky', top: 0, zIndex: 5 }}>
+                  <thead style={{ background: 'var(--ez-color-surface-tertiary)', color: '#475569', position: 'sticky', top: 0, zIndex: 5 }}>
                     <tr>
                       <th style={{ padding: '8px 10px' }}>Status</th>
                       <th style={{ padding: '8px 10px' }}>Kode</th>
@@ -869,7 +869,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       </tr>
                     ) : (
                       filteredDiffItems.map((dItem, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                           <td style={{ padding: '6px 10px' }}>
                             <span
                               style={{
@@ -879,12 +879,12 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                                 borderRadius: '4px',
                                 background:
                                   dItem.status === 'ADDED'
-                                    ? '#ECFDF5'
+                                    ? 'var(--ez-hue-emerald-bg)'
                                     : dItem.status === 'REMOVED'
-                                    ? '#FEF2F2'
+                                    ? 'var(--ez-hue-rose-bg)'
                                     : dItem.status === 'UNCHANGED'
-                                    ? '#F1F5F9'
-                                    : '#FFFBEB',
+                                    ? 'var(--ez-color-surface-tertiary)'
+                                    : 'var(--ez-hue-amber-bg)',
                                 color:
                                   dItem.status === 'ADDED'
                                     ? '#059669'
@@ -953,8 +953,8 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       style={{
                         padding: '12px',
                         borderRadius: '10px',
-                        background: isSelected ? '#EFF6FF' : '#FFFFFF',
-                        border: isSelected ? '2px solid #2563EB' : '1px solid #CBD5E1',
+                        background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                        border: isSelected ? '2px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                         cursor: 'pointer',
                         display: 'flex',
                         flexDirection: 'column',
@@ -970,7 +970,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                             fontWeight: 800,
                             padding: '1px 6px',
                             borderRadius: '4px',
-                            background: scen.isBaseline ? '#0F172A' : isSelected ? 'var(--ez-color-primary)' : '#E2E8F0',
+                            background: scen.isBaseline ? '#0F172A' : isSelected ? 'var(--ez-color-primary)' : 'var(--ez-color-border-line)',
                             color: isSelected || scen.isBaseline ? '#FFFFFF' : '#475569',
                           }}
                         >
@@ -1010,7 +1010,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                 style={{
                   background: 'var(--ez-color-surface-secondary)',
                   borderRadius: 'var(--ez-radius-control)',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   padding: '16px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1059,7 +1059,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                 {/* CATEGORY VALUE ENGINEERING VARIANCE TABLE */}
                 <div
                   style={{
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--ez-color-border-line)',
                     borderRadius: '8px',
                     overflow: 'hidden',
                     background: 'var(--ez-color-surface)',
@@ -1068,7 +1068,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                   }}
                 >
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
-                    <thead style={{ background: '#F1F5F9', color: '#475569', position: 'sticky', top: 0 }}>
+                    <thead style={{ background: 'var(--ez-color-surface-tertiary)', color: '#475569', position: 'sticky', top: 0 }}>
                       <tr>
                         <th style={{ padding: '8px 10px' }}>Kelompok Pekerjaan (WBS)</th>
                         <th style={{ padding: '8px 10px', textAlign: 'right' }}>Baseline (Rp)</th>
@@ -1078,7 +1078,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     </thead>
                     <tbody>
                       {categoryVariances.map((cVar, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                           <td style={{ padding: '6px 10px', fontWeight: 650, color: '#1E293B' }}>
                             {cVar.category}
                           </td>
@@ -1117,7 +1117,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
           style={{
             padding: '12px 24px',
             background: 'var(--ez-color-surface-secondary)',
-            borderTop: '1px solid #E2E8F0',
+            borderTop: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -1133,7 +1133,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
               padding: '6px 16px',
               borderRadius: '6px',
               background: 'var(--ez-color-surface)',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               color: '#475569',
               fontSize: '12px',
               fontWeight: 650,

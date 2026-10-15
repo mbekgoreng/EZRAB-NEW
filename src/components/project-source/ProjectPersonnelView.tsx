@@ -97,7 +97,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
   };
 
   return (
-    <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid #E2E8F0', padding: 20 }}>
+    <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-color-border-line)', padding: 20 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div>
@@ -139,7 +139,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
             padding: '40px 20px',
             background: 'var(--ez-color-surface-secondary)',
             borderRadius: 10,
-            border: '1px dashed #CBD5E1',
+            border: '1px dashed var(--ez-hue-slate-border)',
           }}
         >
           <Briefcase size={36} color="#94A3B8" style={{ marginBottom: 10 }} />
@@ -152,7 +152,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
             disabled={!projectId}
             style={{
               background: 'var(--ez-color-surface)',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               color: 'var(--ez-color-primary)',
               borderRadius: 6,
               padding: '7px 14px',
@@ -168,7 +168,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
+              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569' }}>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>No</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Nama Lengkap</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Jabatan / Posisi</th>
@@ -180,7 +180,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
             </thead>
             <tbody>
               {items.map((item, idx) => (
-                <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                <tr key={item.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                   <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-muted)' }}>{idx + 1}</td>
                   <td style={{ padding: '10px 12px', fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>{item.name}</td>
                   <td style={{ padding: '10px 12px', color: 'var(--ez-color-primary)', fontWeight: 600 }}>{item.position}</td>
@@ -249,7 +249,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Contoh: Ir. Hendra Saputra, S.T., M.T."
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                 />
               </div>
               <div>
@@ -262,7 +262,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
                   value={position}
                   onChange={(e) => setPosition(e.target.value)}
                   placeholder="Contoh: Project Manager / Ahli K3 Konstruksi"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                 />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -275,7 +275,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
                     value={qualification}
                     onChange={(e) => setQualification(e.target.value)}
                     placeholder="Contoh: S1 Teknik Sipil / SKA Madya"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                   />
                 </div>
                 <div>
@@ -287,7 +287,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
                     value={experience}
                     onChange={(e) => setExperience(e.target.value)}
                     placeholder="Contoh: 7 Tahun"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                   />
                 </div>
               </div>
@@ -300,7 +300,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
                   value={responsibility}
                   onChange={(e) => setResponsibility(e.target.value)}
                   placeholder="Uraian singkat tanggung jawab dalam proyek..."
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13, resize: 'vertical' }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13, resize: 'vertical' }}
                 />
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
@@ -308,7 +308,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
                   type="button"
                   onClick={() => setShowModal(false)}
                   style={{
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     background: 'var(--ez-color-surface)',
                     borderRadius: 6,
                     padding: '8px 14px',

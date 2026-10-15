@@ -108,7 +108,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
         style={{
           backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -167,7 +167,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
           style={{
             backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             padding: '48px 20px',
             textAlign: 'center',
             display: 'flex',
@@ -176,7 +176,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
             gap: '12px',
           }}
         >
-          <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: 'var(--ez-hue-green-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <ArrowDownLeft size={24} color="#16A34A" />
           </div>
           <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
@@ -212,7 +212,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
           style={{
             backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             overflow: 'hidden',
             boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           }}
@@ -220,7 +220,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
-                <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-muted)', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-muted)', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   <th style={{ padding: '12px 16px', fontWeight: 700 }}>Tanggal</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700 }}>No. Invoice</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700 }}>Metode & Referensi</th>
@@ -301,7 +301,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
                             height: '28px',
                             borderRadius: '6px',
                             backgroundColor: 'var(--ez-color-surface-secondary)',
-                            border: '1px solid #E2E8F0',
+                            border: '1px solid var(--ez-color-border-line)',
                             color: 'var(--ez-hue-rose-text)',
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -363,7 +363,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
             </div>
 
             {errorMessage && (
-              <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#991B1B' }}>
+              <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#991B1B' }}>
                 {errorMessage}
               </div>
             )}

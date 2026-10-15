@@ -119,7 +119,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
                 key={tpl.id}
                 style={{
                   background: 'var(--ez-color-surface)',
-                  border: isSelected ? '2px solid #2563EB' : '1px solid #E2E8F0',
+                  border: isSelected ? '2px solid #2563EB' : '1px solid var(--ez-color-border-line)',
                   borderRadius: 'var(--ez-radius-control)',
                   padding: 16,
                   display: 'flex',
@@ -134,7 +134,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
                       {tpl.name}
                     </h4>
                     {isSelected && (
-                      <span style={{ background: '#DCFCE7', color: '#16A34A', fontSize: 11, fontWeight: 750, padding: '2px 8px', borderRadius: 6 }}>
+                      <span style={{ background: 'var(--ez-hue-green-bg-deep)', color: '#16A34A', fontSize: 11, fontWeight: 750, padding: '2px 8px', borderRadius: 6 }}>
                         Aktif
                       </span>
                     )}
@@ -153,7 +153,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
                     width: '100%',
                     padding: '8px 14px',
                     borderRadius: 8,
-                    border: isSelected ? '1px solid #2563EB' : '1px solid #CBD5E1',
+                    border: isSelected ? '1px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                     background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                     color: isSelected ? 'var(--ez-color-primary)' : '#334155',
                     fontSize: 12.5,
@@ -189,7 +189,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
                   key={tpl.id}
                   style={{
                     background: 'var(--ez-color-surface)',
-                    border: isSelected ? '2px solid #2563EB' : '1px solid #E2E8F0',
+                    border: isSelected ? '2px solid #2563EB' : '1px solid var(--ez-color-border-line)',
                     borderRadius: 'var(--ez-radius-control)',
                     padding: 16,
                     display: 'flex',
@@ -227,7 +227,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
                       width: '100%',
                       padding: '8px 14px',
                       borderRadius: 8,
-                      border: isSelected ? '1px solid #2563EB' : '1px solid #CBD5E1',
+                      border: isSelected ? '1px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                       background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                       color: isSelected ? 'var(--ez-color-primary)' : '#334155',
                       fontSize: 12.5,

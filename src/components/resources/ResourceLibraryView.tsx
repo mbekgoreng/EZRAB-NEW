@@ -962,7 +962,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                       padding: '4px 10px',
                       borderRadius: 'var(--ez-radius-pill)',
                       background: 'var(--ez-pastel-sky)',
-                      border: '1px solid #BFDBFE',
+                      border: '1px solid var(--ez-hue-blue-border)',
                       color: 'var(--ez-color-primary)',
                       fontSize: '11.5px',
                       fontWeight: 700,
@@ -1014,7 +1014,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                         key={item.id}
                         style={{
                           borderBottom: '1px solid #F5F4EF',
-                          background: isProjectOverride ? 'var(--ez-pastel-sky)' : '#FFFFFF',
+                          background: isProjectOverride ? 'var(--ez-pastel-sky)' : 'var(--ez-color-surface)',
                           transition: 'background 0.1s',
                         }}
                       >
@@ -1095,7 +1095,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                               padding: '0 8px',
                               borderRadius: 'var(--ez-radius-pill)',
                               background: 'var(--ez-pastel-sky)',
-                              border: '1px solid #BFDBFE',
+                              border: '1px solid var(--ez-hue-blue-border)',
                               color: 'var(--ez-color-primary)',
                               fontSize: '10.5px',
                               fontWeight: 700,
@@ -1198,7 +1198,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                         {formatCurrencyIDR(medianPrice)}
                       </div>
                     </div>
-                    <div style={{ background: 'var(--ez-pastel-sky)', padding: '10px', borderRadius: 'var(--ez-radius-control)', border: '1px solid #BFDBFE' }}>
+                    <div style={{ background: 'var(--ez-pastel-sky)', padding: '10px', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-hue-blue-border)' }}>
                       <span style={{ fontSize: '10px', color: '#2456A8', fontWeight: 700, textTransform: 'uppercase' }}>Harga Terpilih</span>
                       <div style={{ fontSize: '13.5px', fontWeight: 850, color: 'var(--ez-color-primary)', marginTop: '2px' }}>
                         {formatCurrencyIDR(comparingResource.price)}

@@ -126,7 +126,7 @@ export const App: React.FC = () => {
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          background: 'var(--ezrab-bg, #f8fafc)',
+          background: 'var(--ezrab-bg, var(--ez-hue-slate-bg))',
           color: 'var(--ezrab-text, #0f172a)',
         }}
       >

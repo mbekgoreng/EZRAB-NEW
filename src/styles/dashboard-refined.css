@@ -51,7 +51,7 @@
 
 .ez-dashboard-kpi-card:hover {
   transform: translateY(-2px);
-  border-color: var(--ez-hue-blue-border) !important;
+  border-color: #BFDBFE !important;
   box-shadow: 0 6px 18px rgba(37, 99, 235, .06) !important;
 }
 
@@ -73,7 +73,7 @@
 .ez-dashboard-kpi-1 .ez-dashboard-kpi-value { color: var(--ez-color-text-primary) !important; font-size: 26px !important; }
 .ez-dashboard-kpi-1 .ez-dashboard-kpi-icon {
   color: #2563eb !important;
-  background: #eff6ff !important;
+  background: var(--ez-hue-blue-bg) !important;
   border: 1px solid var(--ez-hue-blue-border);
 }
 
@@ -176,7 +176,7 @@
 
 .ez-dashboard-quick-button:hover {
   background: #f1f6ff !important;
-  border-color: var(--ez-hue-blue-border) !important;
+  border-color: #BFDBFE !important;
 }
 
 .ez-dashboard-quick-button svg {

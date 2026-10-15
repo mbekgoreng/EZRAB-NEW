@@ -338,7 +338,7 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
               borderRadius: '8px',
               border: 'none',
               backgroundColor: 'var(--ez-color-primary)',
-              color: '#ffffff',
+              color: '#FFFFFF',
               fontSize: '12px',
               fontWeight: 700,
               cursor: 'pointer',
@@ -378,7 +378,7 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                 borderRadius: '8px',
                 border: 'none',
                 backgroundColor: 'var(--ez-color-primary)',
-                color: '#ffffff',
+                color: '#FFFFFF',
                 fontSize: '12.5px',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -714,7 +714,7 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                   backgroundColor: 'var(--ez-color-danger-strong)',
                   fontSize: '12px',
                   fontWeight: 700,
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   cursor: 'pointer',
                 }}
               >

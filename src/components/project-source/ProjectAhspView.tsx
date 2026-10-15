@@ -120,7 +120,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
   };
 
   return (
-    <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid #E2E8F0', padding: 20 }}>
+    <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-color-border-line)', padding: 20 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div>
@@ -137,9 +137,9 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
             onClick={() => setShowCatalogModal(true)}
             disabled={!projectId}
             style={{
-              background: '#F1F5F9',
+              background: 'var(--ez-color-surface-tertiary)',
               color: '#1E293B',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               borderRadius: 8,
               padding: '9px 14px',
               fontSize: 13,
@@ -183,7 +183,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
             padding: '40px 20px',
             background: 'var(--ez-color-surface-secondary)',
             borderRadius: 10,
-            border: '1px dashed #CBD5E1',
+            border: '1px dashed var(--ez-hue-slate-border)',
           }}
         >
           <Layers size={36} color="#94A3B8" style={{ marginBottom: 10 }} />
@@ -214,7 +214,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
+              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569' }}>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>No</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Kode AHSP</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Uraian Analisa Pekerjaan</th>
@@ -230,7 +230,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
               {items.map((item, idx) => {
                 const totalUnitPrice = (item.materialCost || 0) + (item.laborCost || 0) + (item.equipmentCost || 0);
                 return (
-                  <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                  <tr key={item.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                     <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-muted)' }}>{idx + 1}</td>
                     <td style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--ez-color-primary)' }}>{item.ahspCode}</td>
                     <td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--ez-color-text-primary)', maxWidth: 280 }}>
@@ -322,13 +322,13 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                   value={catalogSearch}
                   onChange={(e) => setCatalogSearch(e.target.value)}
                   placeholder="Cari kode atau nama analisa (misal: galian, beton, pasangan batu)..."
-                  style={{ width: '100%', padding: '8px 12px 8px 32px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                  style={{ width: '100%', padding: '8px 12px 8px 32px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                 />
               </div>
               <select
                 value={catalogDomain}
                 onChange={(e) => setCatalogDomain(e.target.value)}
-                style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
               >
                 <option value="ALL">Semua Domain</option>
                 <option value="CIPTA_KARYA">Cipta Karya (Gedung)</option>
@@ -339,7 +339,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
             </div>
 
             {/* Items List */}
-            <div style={{ flex: 1, overflowY: 'auto', border: '1px solid #E2E8F0', borderRadius: 8 }}>
+            <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--ez-color-border-line)', borderRadius: 8 }}>
               {filteredCatalog.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: 30, color: 'var(--ez-color-text-muted)', fontSize: 13 }}>
                   Tidak ada analisa yang sesuai dengan pencarian.
@@ -347,7 +347,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
               ) : (
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                   <thead>
-                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', position: 'sticky', top: 0 }}>
+                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', position: 'sticky', top: 0 }}>
                       <th style={{ padding: '8px 10px', textAlign: 'left' }}>Kode</th>
                       <th style={{ padding: '8px 10px', textAlign: 'left' }}>Uraian Analisa</th>
                       <th style={{ padding: '8px 10px', textAlign: 'center' }}>Satuan</th>
@@ -360,7 +360,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                       const comp = priceResolver2026.resolveAhspUnitPrice(catItem);
                       const unitPrice = comp.unitPrice;
                       return (
-                        <tr key={catItem.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <tr key={catItem.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                           <td style={{ padding: '8px 10px', fontWeight: 700, color: 'var(--ez-color-primary)' }}>{catItem.code}</td>
                           <td style={{ padding: '8px 10px', color: 'var(--ez-color-text-primary)' }}>{catItem.name}</td>
                           <td style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>{catItem.unit}</td>
@@ -395,7 +395,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
               <button
                 onClick={() => setShowCatalogModal(false)}
-                style={{ border: '1px solid #CBD5E1', background: 'var(--ez-color-surface)', borderRadius: 6, padding: '7px 14px', fontSize: 13, cursor: 'pointer' }}
+                style={{ border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', borderRadius: 6, padding: '7px 14px', fontSize: 13, cursor: 'pointer' }}
               >
                 Tutup
               </button>
@@ -442,7 +442,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                     value={ahspCode}
                     onChange={(e) => setAhspCode(e.target.value)}
                     placeholder="Contoh: A.2.2.1.9"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                   />
                 </div>
                 <div>
@@ -455,7 +455,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                     value={unit}
                     onChange={(e) => setUnit(e.target.value)}
                     placeholder="Contoh: m3, m2, m', kg"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                   />
                 </div>
               </div>
@@ -470,7 +470,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Contoh: 1 m3 Pembongkaran Pasangan Batu Kali..."
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13, resize: 'vertical' }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13, resize: 'vertical' }}
                 />
               </div>
 
@@ -484,7 +484,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                     min={0}
                     value={materialCost}
                     onChange={(e) => setMaterialCost(Number(e.target.value) || 0)}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                   />
                 </div>
                 <div>
@@ -496,7 +496,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                     min={0}
                     value={laborCost}
                     onChange={(e) => setLaborCost(Number(e.target.value) || 0)}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                   />
                 </div>
                 <div>
@@ -508,12 +508,12 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                     min={0}
                     value={equipmentCost}
                     onChange={(e) => setEquipmentCost(Number(e.target.value) || 0)}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                   />
                 </div>
               </div>
 
-              <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '10px 12px', borderRadius: 6, border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '10px 12px', borderRadius: 6, border: '1px solid var(--ez-color-border-line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 12.5, fontWeight: 650, color: '#475569' }}>Total Harga Satuan:</span>
                 <span style={{ fontSize: 14, fontWeight: 750, color: '#16A34A' }}>
                   Rp {(materialCost + laborCost + equipmentCost).toLocaleString('id-ID')} / {unit}
@@ -525,7 +525,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                   type="button"
                   onClick={() => setShowCustomModal(false)}
                   style={{
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     background: 'var(--ez-color-surface)',
                     borderRadius: 6,
                     padding: '8px 14px',

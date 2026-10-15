@@ -117,7 +117,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
         <div
           style={{
             padding: '18px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             background: 'var(--ez-color-surface-secondary)',
             display: 'flex',
             alignItems: 'center',
@@ -132,7 +132,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                   fontWeight: 700,
                   padding: '2px 8px',
                   borderRadius: '6px',
-                  background: template.metadata.source === 'EZRAB_OFFICIAL' ? '#DBEAFE' : '#FEF3C7',
+                  background: template.metadata.source === 'EZRAB_OFFICIAL' ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-hue-amber-bg-deep)',
                   color: template.metadata.source === 'EZRAB_OFFICIAL' ? '#1E40AF' : '#92400E'
                 }}
               >
@@ -149,7 +149,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                       fontSize: '11.5px',
                       fontWeight: 600,
                       color: 'var(--ez-color-primary)',
-                      background: '#EFF6FF',
+                      background: 'var(--ez-hue-blue-bg)',
                       padding: '1px 6px',
                       borderRadius: '4px'
                     }}
@@ -201,8 +201,8 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                 <div
                   key={p.id || p.key}
                   style={{
-                    background: '#F1F5F9',
-                    border: '1px solid #E2E8F0',
+                    background: 'var(--ez-color-surface-tertiary)',
+                    border: '1px solid var(--ez-color-border-line)',
                     borderRadius: '6px',
                     padding: '4px 10px',
                     fontSize: '11.5px',
@@ -222,8 +222,8 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
           {(template.components || []).some(c => c.isOptional) && (
             <div
               style={{
-                background: '#FEF3C7',
-                border: '1px solid #FDE68A',
+                background: 'var(--ez-hue-amber-bg-deep)',
+                border: '1px solid var(--ez-hue-amber-border)',
                 borderRadius: '8px',
                 padding: '8px 12px',
                 display: 'flex',
@@ -238,7 +238,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                 </span>{' '}
                 <span>tersedia (dapat dipilih pada tahap Konfigurasi).</span>
               </div>
-              <span style={{ fontSize: '10px', fontWeight: 700, background: '#FDE68A', color: '#78350F', padding: '2px 6px', borderRadius: '4px' }}>
+              <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--ez-hue-amber-border)', color: '#78350F', padding: '2px 6px', borderRadius: '4px' }}>
                 OPSIONAL
               </span>
             </div>
@@ -264,8 +264,8 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                     style={{
                       padding: '8px 10px',
                       borderRadius: '8px',
-                      border: isSelected ? '2px solid #2563EB' : '1px solid #E2E8F0',
-                      background: isSelected ? '#EFF6FF' : '#FFFFFF',
+                      border: isSelected ? '2px solid #2563EB' : '1px solid var(--ez-color-border-line)',
+                      background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                       color: isSelected ? '#1E40AF' : '#475569',
                       fontWeight: isSelected ? 700 : 500,
                       fontSize: '12px',
@@ -316,8 +316,8 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
           {/* Engine Verification & Traceability Status */}
           <div
             style={{
-              background: '#F0FDF4',
-              border: '1px solid #BBF7D0',
+              background: 'var(--ez-hue-green-bg)',
+              border: '1px solid var(--ez-hue-green-border)',
               borderRadius: '8px',
               padding: '10px 12px',
               display: 'flex',
@@ -336,7 +336,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                 fontWeight: 700,
                 padding: '2px 6px',
                 borderRadius: '4px',
-                background: '#DCFCE7',
+                background: 'var(--ez-hue-green-bg-deep)',
                 color: '#15803D'
               }}
             >
@@ -357,7 +357,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                   <div
                     key={wp.category}
                     style={{
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid var(--ez-color-border-line)',
                       borderRadius: '8px',
                       overflow: 'hidden',
                       background: 'var(--ez-color-surface)'
@@ -383,7 +383,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                         <span
                           style={{
                             fontSize: '10.5px',
-                            background: '#E2E8F0',
+                            background: 'var(--ez-color-border-line)',
                             color: '#475569',
                             padding: '1px 6px',
                             borderRadius: '4px',
@@ -399,10 +399,10 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                     </div>
 
                     {isExpanded && (
-                      <div style={{ padding: '8px 12px', background: 'var(--ez-color-surface)', borderTop: '1px solid #E2E8F0' }}>
+                      <div style={{ padding: '8px 12px', background: 'var(--ez-color-surface)', borderTop: '1px solid var(--ez-color-border-line)' }}>
                         <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse' }}>
                           <thead>
-                            <tr style={{ color: 'var(--ez-color-text-muted)', textAlign: 'left', borderBottom: '1px solid #F1F5F9' }}>
+                            <tr style={{ color: 'var(--ez-color-text-muted)', textAlign: 'left', borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                               <th style={{ padding: '4px 6px' }}>Item</th>
                               <th style={{ padding: '4px 6px', textAlign: 'right' }}>Vol</th>
                               <th style={{ padding: '4px 6px', textAlign: 'right' }}>Harga</th>
@@ -411,7 +411,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                           </thead>
                           <tbody>
                             {wp.items.map(it => (
-                              <tr key={it.id} style={{ borderBottom: '1px solid #F8FAFC' }}>
+                              <tr key={it.id} style={{ borderBottom: '1px solid var(--ez-hue-slate-bg)' }}>
                                 <td style={{ padding: '5px 6px', color: '#1E293B', fontWeight: 500 }}>
                                   {it.description}
                                   {it.ahspCode && (
@@ -447,7 +447,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
         <div
           style={{
             padding: '16px 24px',
-            borderTop: '1px solid #E2E8F0',
+            borderTop: '1px solid var(--ez-color-border-line)',
             background: 'var(--ez-color-surface-secondary)',
             display: 'flex',
             alignItems: 'center',
@@ -460,7 +460,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
             style={{
               padding: '9px 16px',
               borderRadius: '8px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               background: 'var(--ez-color-surface)',
               color: '#475569',
               fontSize: '12.5px',

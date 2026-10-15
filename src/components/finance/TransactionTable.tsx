@@ -54,13 +54,13 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
   const getTypeBadge = (type: FinancialTransactionType) => {
     switch (type) {
       case 'INCOME':
-        return { label: 'Pemasukan', bg: '#DCFCE7', color: '#166534', border: '#BBF7D0', icon: ArrowDownLeft };
+        return { label: 'Pemasukan', bg: 'var(--ez-hue-green-bg-deep)', color: '#166534', border: 'var(--ez-hue-green-border)', icon: ArrowDownLeft };
       case 'EXPENSE':
-        return { label: 'Pengeluaran', bg: '#FEE2E2', color: '#991B1B', border: '#FECACA', icon: ArrowUpRight };
+        return { label: 'Pengeluaran', bg: 'var(--ez-hue-red-bg)', color: '#991B1B', border: 'var(--ez-hue-rose-border)', icon: ArrowUpRight };
       case 'RECEIVABLE':
-        return { label: 'Piutang', bg: '#EFF6FF', color: '#1E40AF', border: '#BFDBFE', icon: Receipt };
+        return { label: 'Piutang', bg: 'var(--ez-hue-blue-bg)', color: '#1E40AF', border: 'var(--ez-hue-blue-border)', icon: Receipt };
       case 'PAYABLE':
-        return { label: 'Hutang', bg: '#FEF3C7', color: '#92400E', border: '#FDE68A', icon: Layers };
+        return { label: 'Hutang', bg: 'var(--ez-hue-amber-bg-deep)', color: '#92400E', border: 'var(--ez-hue-amber-border)', icon: Layers };
       default:
         return { label: type, bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', border: 'var(--ez-color-border)', icon: FileText };
     }
@@ -70,14 +70,14 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
     switch (status) {
       case 'COMPLETED':
       case 'PAID':
-        return { label: 'Selesai / Lunas', bg: '#DCFCE7', color: '#166534' };
+        return { label: 'Selesai / Lunas', bg: 'var(--ez-hue-green-bg-deep)', color: '#166534' };
       case 'PENDING':
       case 'COMMITTED':
-        return { label: 'Menunggu / Komitmen', bg: '#FEF3C7', color: '#92400E' };
+        return { label: 'Menunggu / Komitmen', bg: 'var(--ez-hue-amber-bg-deep)', color: '#92400E' };
       case 'OVERDUE':
-        return { label: 'Jatuh Tempo', bg: '#FEE2E2', color: '#991B1B' };
+        return { label: 'Jatuh Tempo', bg: 'var(--ez-hue-red-bg)', color: '#991B1B' };
       case 'PARTIALLY_PAID':
-        return { label: 'Dibayar Sebagian', bg: '#E0E7FF', color: '#3730A3' };
+        return { label: 'Dibayar Sebagian', bg: 'var(--ez-hue-indigo-bg)', color: '#3730A3' };
       case 'DRAFT':
         return { label: 'Draf', bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)' };
       default:
@@ -136,7 +136,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                 width: '100%',
                 padding: '6px 10px 6px 30px',
                 borderRadius: '8px',
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
                 fontSize: '12px',
                 color: 'var(--ez-color-text-primary)',
                 backgroundColor: 'var(--ez-color-surface)',
@@ -151,7 +151,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             style={{
               padding: '6px 10px',
               borderRadius: '8px',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               fontSize: '12px',
               color: 'var(--ez-color-text-body)',
               backgroundColor: 'var(--ez-color-surface)',
@@ -174,14 +174,14 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
         style={{
           backgroundColor: 'var(--ez-color-surface)',
           borderRadius: 'var(--ez-radius-control)',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           overflowX: 'auto',
           boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
         }}
       >
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
           <thead>
-            <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-slate)' }}>
+            <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)' }}>
               <th style={{ padding: '10px 14px', fontWeight: 700 }}>Tanggal</th>
               <th style={{ padding: '10px 14px', fontWeight: 700 }}>Tipe</th>
               <th style={{ padding: '10px 14px', fontWeight: 700 }}>Kategori</th>
@@ -291,10 +291,10 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                           fontSize: '10.5px',
                           fontWeight: 600,
                           color: 'var(--ez-color-primary)',
-                          backgroundColor: '#EFF6FF',
+                          backgroundColor: 'var(--ez-hue-blue-bg)',
                           padding: '2px 6px',
                           borderRadius: '4px',
-                          border: '1px solid #BFDBFE',
+                          border: '1px solid var(--ez-hue-blue-border)',
                         }}
                       >
                         {tx.source}
@@ -330,7 +330,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             style={{
               backgroundColor: 'var(--ez-color-surface)',
               borderRadius: '16px',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               padding: '24px',
               maxWidth: '520px',
               width: '100%',
@@ -342,7 +342,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-color-border-line)', paddingBottom: '12px' }}>
               <div>
                 <span style={{ fontSize: '11px', fontWeight: 750, color: 'var(--ez-color-primary)', textTransform: 'uppercase' }}>
                   Source Traceability & Detail
@@ -409,7 +409,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
             )}
 
             {/* Modal Actions */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #E2E8F0', paddingTop: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid var(--ez-color-border-line)', paddingTop: '12px' }}>
               <button
                 type="button"
                 onClick={() => setSelectedTx(null)}
@@ -417,7 +417,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                   padding: '7px 14px',
                   borderRadius: '8px',
                   backgroundColor: 'var(--ez-color-surface-tertiary)',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   color: 'var(--ez-color-text-slate)',
                   fontSize: '12px',
                   fontWeight: 600,

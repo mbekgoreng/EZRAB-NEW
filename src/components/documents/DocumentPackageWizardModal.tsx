@@ -61,12 +61,12 @@ export interface DocumentPackageWizardModalProps {
 type WizardStep = 1 | 2 | 3 | 4 | 5;
 
 const CATEGORY_META: Record<string, { label: string; icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>; color: string; bg: string }> = {
-  ADMINISTRATION: { label: 'Administrasi', icon: ClipboardList, color: 'var(--ez-color-primary)', bg: '#EFF6FF' },
+  ADMINISTRATION: { label: 'Administrasi', icon: ClipboardList, color: 'var(--ez-color-primary)', bg: 'var(--ez-hue-blue-bg)' },
   TECHNICAL: { label: 'Teknis', icon: DraftingCompass, color: '#0D9488', bg: '#F0FDFA' },
-  COMMERCIAL: { label: 'Biaya', icon: Wallet, color: '#16A34A', bg: '#F0FDF4' },
-  COST: { label: 'Biaya', icon: Wallet, color: '#16A34A', bg: '#F0FDF4' },
-  SCHEDULE: { label: 'Jadwal', icon: CalendarDays, color: '#D97706', bg: '#FFFBEB' },
-  HSE: { label: 'K3 / HSE', icon: ShieldCheck, color: '#DC2626', bg: '#FEF2F2' },
+  COMMERCIAL: { label: 'Biaya', icon: Wallet, color: '#16A34A', bg: 'var(--ez-hue-green-bg)' },
+  COST: { label: 'Biaya', icon: Wallet, color: '#16A34A', bg: 'var(--ez-hue-green-bg)' },
+  SCHEDULE: { label: 'Jadwal', icon: CalendarDays, color: '#D97706', bg: 'var(--ez-hue-amber-bg)' },
+  HSE: { label: 'K3 / HSE', icon: ShieldCheck, color: '#DC2626', bg: 'var(--ez-hue-rose-bg)' },
 };
 
 export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProps> = ({
@@ -372,18 +372,18 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
         }}
       >
         {/* MODAL HEADER */}
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)',
+            background: 'linear-gradient(180deg, var(--ez-hue-slate-bg) 0%, #FFFFFF 100%)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -413,9 +413,9 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                     fontWeight: 700,
                     padding: '2px 8px',
                     borderRadius: '6px',
-                    backgroundColor: '#EFF6FF',
+                    backgroundColor: 'var(--ez-hue-blue-bg)',
                     color: 'var(--ez-color-primary)',
-                    border: '1px solid #BFDBFE',
+                    border: '1px solid var(--ez-hue-blue-border)',
                   }}
                 >
                   TENDER SUITE
@@ -430,7 +430,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
           <button
             onClick={onClose}
             style={{
-              background: '#F1F5F9',
+              background: 'var(--ez-color-surface-tertiary)',
               border: 'none',
               borderRadius: '8px',
               padding: '8px',
@@ -450,7 +450,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
           style={{
             padding: '12px 24px',
             backgroundColor: 'var(--ez-color-surface-secondary)',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -486,7 +486,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    backgroundColor: isActive ? 'var(--ez-color-primary)' : isDone ? '#16A34A' : '#CBD5E1',
+                    backgroundColor: isActive ? 'var(--ez-color-primary)' : isDone ? '#16A34A' : 'var(--ez-hue-slate-border)',
                     color: '#FFFFFF',
                     display: 'flex',
                     alignItems: 'center',
@@ -538,8 +538,8 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                       style={{
                         padding: '8px 14px',
                         borderRadius: '8px',
-                        border: isSelected ? '1.5px solid #2563EB' : '1px solid #CBD5E1',
-                        backgroundColor: isSelected ? '#EFF6FF' : '#FFFFFF',
+                        border: isSelected ? '1.5px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
+                        backgroundColor: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                         color: isSelected ? 'var(--ez-color-primary-hover)' : '#334155',
                         fontSize: '12px',
                         fontWeight: isSelected ? 700 : 500,
@@ -570,7 +570,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                     <div
                       key={catKey}
                       style={{
-                        border: '1px solid #E2E8F0',
+                        border: '1px solid var(--ez-color-border-line)',
                         borderRadius: 'var(--ez-radius-control)',
                         overflow: 'hidden',
                         backgroundColor: 'var(--ez-color-surface)',
@@ -624,8 +624,8 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                                   gap: '12px',
                                   padding: '10px 12px',
                                   borderRadius: '8px',
-                                  backgroundColor: isChecked ? 'var(--ez-color-surface-secondary)' : '#FFFFFF',
-                                  border: isChecked ? '1px solid #BFDBFE' : '1px solid #F1F5F9',
+                                  backgroundColor: isChecked ? 'var(--ez-color-surface-secondary)' : 'var(--ez-color-surface)',
+                                  border: isChecked ? '1px solid var(--ez-hue-blue-border)' : '1px solid var(--ez-color-surface-tertiary)',
                                   cursor: 'pointer',
                                   transition: 'all 100ms ease',
                                 }}
@@ -645,7 +645,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                                       {doc.name}
                                     </span>
                                     {doc.requirement === 'CORE' && (
-                                      <span style={{ fontSize: '10px', fontWeight: 700, color: '#DC2626', backgroundColor: '#FEE2E2', padding: '1px 6px', borderRadius: '4px' }}>
+                                      <span style={{ fontSize: '10px', fontWeight: 700, color: '#DC2626', backgroundColor: 'var(--ez-hue-red-bg)', padding: '1px 6px', borderRadius: '4px' }}>
                                         WAJIB
                                       </span>
                                     )}
@@ -662,7 +662,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                                             fontSize: '10px',
                                             padding: '1px 6px',
                                             borderRadius: '4px',
-                                            backgroundColor: '#F1F5F9',
+                                            backgroundColor: 'var(--ez-color-surface-tertiary)',
                                             color: '#475569',
                                           }}
                                         >
@@ -713,8 +713,8 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   <div
                     key={idx}
                     style={{
-                      border: src.ready ? '1px solid #BBF7D0' : '1px solid #FED7AA',
-                      backgroundColor: src.ready ? '#F0FDF4' : '#FFFBEB',
+                      border: src.ready ? '1px solid var(--ez-hue-green-border)' : '1px solid var(--ez-hue-orange-bg-deep)',
+                      backgroundColor: src.ready ? 'var(--ez-hue-green-bg)' : 'var(--ez-hue-amber-bg)',
                       borderRadius: '10px',
                       padding: '12px 14px',
                     }}
@@ -727,7 +727,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                           fontWeight: 700,
                           padding: '2px 7px',
                           borderRadius: '4px',
-                          backgroundColor: src.ready ? '#DCFCE7' : '#FEF3C7',
+                          backgroundColor: src.ready ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-amber-bg-deep)',
                           color: src.ready ? '#15803D' : '#B45309',
                         }}
                       >
@@ -743,8 +743,8 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
               {(!sourceStatus.rab || !sourceStatus.schedule) && (
                 <div
                   style={{
-                    backgroundColor: '#FFFBEB',
-                    border: '1px solid #FDE68A',
+                    backgroundColor: 'var(--ez-hue-amber-bg)',
+                    border: '1px solid var(--ez-hue-amber-border)',
                     borderRadius: 'var(--ez-radius-control)',
                     padding: '16px',
                     display: 'flex',
@@ -825,7 +825,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
               <div
                 style={{
                   backgroundColor: 'var(--ez-color-surface-secondary)',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   borderRadius: 'var(--ez-radius-control)',
                   padding: '16px',
                   marginBottom: '20px',
@@ -841,10 +841,10 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                     { label: 'Durasi Pekerjaan', val: masterData.duration, tag: 'ⓘ Berdasarkan data proyek' },
                     { label: 'Penyedia Jasa (Kontraktor)', val: masterData.companyName, tag: 'ⓘ Profil Perusahaan' },
                   ].map((item, i) => (
-                    <div key={i} style={{ padding: '8px 12px', backgroundColor: 'var(--ez-color-surface)', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                    <div key={i} style={{ padding: '8px 12px', backgroundColor: 'var(--ez-color-surface)', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3px' }}>
                         <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>{item.label}</span>
-                        <span style={{ fontSize: '9.5px', fontWeight: 600, color: 'var(--ez-color-primary)', backgroundColor: '#EFF6FF', padding: '1px 5px', borderRadius: '3px' }}>
+                        <span style={{ fontSize: '9.5px', fontWeight: 600, color: 'var(--ez-color-primary)', backgroundColor: 'var(--ez-hue-blue-bg)', padding: '1px 5px', borderRadius: '3px' }}>
                           {item.tag}
                         </span>
                       </div>
@@ -868,7 +868,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                       width: '100%',
                       padding: '9px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       boxSizing: 'border-box',
                     }}
@@ -887,7 +887,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                       width: '100%',
                       padding: '9px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       boxSizing: 'border-box',
                     }}
@@ -906,7 +906,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                       width: '100%',
                       padding: '9px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       boxSizing: 'border-box',
                     }}
@@ -925,7 +925,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                       width: '100%',
                       padding: '9px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       boxSizing: 'border-box',
                     }}
@@ -970,7 +970,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                       width: '100%',
                       padding: '9px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       boxSizing: 'border-box',
                     }}
@@ -989,7 +989,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                       width: '100%',
                       padding: '9px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '13px',
                       boxSizing: 'border-box',
                     }}
@@ -1018,8 +1018,8 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                 style={{
                   padding: '16px 20px',
                   borderRadius: 'var(--ez-radius-control)',
-                  border: consistencyReport.valid ? '1px solid #BBF7D0' : '1px solid #FED7AA',
-                  backgroundColor: consistencyReport.valid ? '#F0FDF4' : '#FFFBEB',
+                  border: consistencyReport.valid ? '1px solid var(--ez-hue-green-border)' : '1px solid var(--ez-hue-orange-bg-deep)',
+                  backgroundColor: consistencyReport.valid ? 'var(--ez-hue-green-bg)' : 'var(--ez-hue-amber-bg)',
                   marginBottom: '18px',
                   display: 'flex',
                   alignItems: 'center',
@@ -1057,8 +1057,8 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                       style={{
                         padding: '12px 14px',
                         borderRadius: '8px',
-                        border: issue.severity === 'ERROR' ? '1px solid #FCA5A5' : '1px solid #FDE68A',
-                        backgroundColor: issue.severity === 'ERROR' ? '#FEF2F2' : '#FFFBEB',
+                        border: issue.severity === 'ERROR' ? '1px solid #FCA5A5' : '1px solid var(--ez-hue-amber-border)',
+                        backgroundColor: issue.severity === 'ERROR' ? 'var(--ez-hue-rose-bg)' : 'var(--ez-hue-amber-bg)',
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
@@ -1094,12 +1094,12 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
               {/* SUMMARY TABLE OF DOCUMENTS TO CREATE */}
               <div
                 style={{
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   borderRadius: '10px',
                   overflow: 'hidden',
                 }}
               >
-                <div style={{ padding: '10px 14px', backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', fontSize: '12.5px', fontWeight: 700, color: '#334155' }}>
+                <div style={{ padding: '10px 14px', backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', fontSize: '12.5px', fontWeight: 700, color: '#334155' }}>
                   Daftar Dokumen yang Akan Dibuat ({selectedDocIds.length} Dokumen):
                 </div>
                 <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
@@ -1111,7 +1111,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                         key={docId}
                         style={{
                           padding: '8px 14px',
-                          borderBottom: '1px solid #F1F5F9',
+                          borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -1124,7 +1124,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                           </span>
                           <span style={{ fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>{def.name}</span>
                         </div>
-                        <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', backgroundColor: '#F1F5F9', padding: '2px 6px', borderRadius: '4px' }}>
+                        <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', backgroundColor: 'var(--ez-color-surface-tertiary)', padding: '2px 6px', borderRadius: '4px' }}>
                           REV-00 DRAFT
                         </span>
                       </div>
@@ -1145,7 +1145,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   width: '64px',
                   height: '64px',
                   borderRadius: '50%',
-                  backgroundColor: '#DCFCE7',
+                  backgroundColor: 'var(--ez-hue-green-bg-deep)',
                   color: '#16A34A',
                   display: 'flex',
                   alignItems: 'center',
@@ -1195,9 +1195,9 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   style={{
                     padding: '12px 20px',
                     borderRadius: '10px',
-                    backgroundColor: '#F1F5F9',
+                    backgroundColor: 'var(--ez-color-surface-tertiary)',
                     color: '#334155',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontWeight: 600,
                     fontSize: '13.5px',
                     cursor: 'pointer',
@@ -1216,7 +1216,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
             style={{
               padding: '16px 24px',
               backgroundColor: 'var(--ez-color-surface-secondary)',
-              borderTop: '1px solid #E2E8F0',
+              borderTop: '1px solid var(--ez-color-border-line)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -1229,7 +1229,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   style={{
                     padding: '9px 16px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     backgroundColor: 'var(--ez-color-surface)',
                     color: '#334155',
                     fontWeight: 600,

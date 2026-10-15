@@ -250,7 +250,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
                   width: i === step ? 24 : 8,
                   height: 8,
                   borderRadius: 'var(--ezrab-radius-full, 9999px)',
-                  background: i <= step ? 'var(--ezrab-blue, #2563eb)' : 'var(--ezrab-surface-subtle, #f1f5f9)',
+                  background: i <= step ? 'var(--ezrab-blue, #2563eb)' : 'var(--ezrab-surface-subtle, var(--ez-color-surface-tertiary))',
                   transition: 'all 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
                 }}
               />
@@ -267,7 +267,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
               borderRadius: 'var(--ezrab-radius-sm, 8px)',
               minHeight: 'var(--ezrab-touch-min, 44px)',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ezrab-surface-soft, #f8fafc)')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ezrab-surface-soft, var(--ez-hue-slate-bg))')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
             Lewati
@@ -339,8 +339,8 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
                       gap: 12,
                       alignItems: 'flex-start',
                       padding: 14,
-                      background: 'var(--ezrab-surface-soft, #f8fafc)',
-                      border: '1px solid var(--ezrab-border-light, #f1f5f9)',
+                      background: 'var(--ezrab-surface-soft, var(--ez-hue-slate-bg))',
+                      border: '1px solid var(--ezrab-border-light, var(--ez-color-surface-tertiary))',
                       borderRadius: 'var(--ezrab-radius-md, 14px)',
                     }}
                   >
@@ -350,7 +350,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
                         width: 40,
                         height: 40,
                         borderRadius: 'var(--ez-radius-control)',
-                        background: 'var(--ezrab-blue-soft, #eff6ff)',
+                        background: 'var(--ezrab-blue-soft, var(--ez-hue-blue-bg))',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -411,8 +411,8 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
                       gap: 12,
                       alignItems: 'flex-start',
                       padding: 14,
-                      background: 'var(--ezrab-surface-soft, #f8fafc)',
-                      border: '1px solid var(--ezrab-border-light, #f1f5f9)',
+                      background: 'var(--ezrab-surface-soft, var(--ez-hue-slate-bg))',
+                      border: '1px solid var(--ezrab-border-light, var(--ez-color-surface-tertiary))',
                       borderRadius: 'var(--ezrab-radius-md, 14px)',
                     }}
                   >

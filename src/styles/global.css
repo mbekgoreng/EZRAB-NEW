@@ -263,7 +263,7 @@ img, svg {
 }
 
 .ezrab-table th {
-  background: #f8fafc;
+  background: var(--ez-hue-slate-bg);
   color: #475569;
   font-weight: 700;
   font-size: 12px;
@@ -278,7 +278,7 @@ img, svg {
 
 .ezrab-table td {
   padding: 12px 14px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--ez-color-surface-tertiary);
   color: #1e293b;
 }
 
@@ -354,7 +354,7 @@ img, svg {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #f1f5f9;
+  background: var(--ez-color-surface-tertiary);
   padding: 4px;
   border-radius: 10px;
 }
@@ -524,7 +524,7 @@ img, svg {
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid #E2E8F0;
+  border-top: 1px solid var(--ez-color-border-line);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -606,7 +606,7 @@ img, svg {
   width: 36px;
   height: 4px;
   border-radius: 999px;
-  background: #CBD5E1;
+  background: var(--ez-hue-slate-border);
   margin: 10px auto 4px;
   flex-shrink: 0;
 }
@@ -656,7 +656,7 @@ img, svg {
 .ezrab-workstation-sidebar {
   background: var(--ez-color-surface);
   border-radius: 12px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--ez-color-border-line);
   padding: 14px 14px 10px;
   display: flex;
   flex-direction: column;
@@ -691,7 +691,7 @@ img, svg {
 /* Category Group Card in Catalog Tree (Strictly flex-shrink: 0 to prevent squashing) */
 .ezrab-calc-group-card {
   flex-shrink: 0;
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--ez-color-border-line);
   border-radius: 8px;
   background: var(--ez-color-surface);
   overflow: hidden;
@@ -707,11 +707,11 @@ img, svg {
   width: 5px;
 }
 .ezrab-workstation-scrollable::-webkit-scrollbar-track {
-  background: #F1F5F9;
+  background: var(--ez-color-surface-tertiary);
   border-radius: 4px;
 }
 .ezrab-workstation-scrollable::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: var(--ez-hue-slate-border);
   border-radius: 4px;
 }
 .ezrab-workstation-scrollable::-webkit-scrollbar-thumb:hover {
@@ -727,7 +727,7 @@ img, svg {
   justify-content: space-between;
   padding: 8px 12px;
   border-radius: 8px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--ez-color-border-line);
   background: var(--ez-color-surface);
   cursor: pointer;
   transition: all 0.12s ease;
@@ -736,20 +736,20 @@ img, svg {
 }
 
 .ezrab-calc-compact-row:hover {
-  background: #F8FAFC;
+  background: var(--ez-hue-slate-bg);
   border-color: #CBD5E1;
   transform: translateX(1px);
 }
 
 .ezrab-calc-compact-row.active {
-  background: #EFF6FF;
+  background: var(--ez-hue-blue-bg);
   border-color: #2563EB;
   border-left: 3.5px solid #2563EB;
   box-shadow: 0 1px 4px rgba(37, 99, 235, 0.12);
 }
 
 .ezrab-calc-compact-row.active:hover {
-  background: #DBEAFE;
+  background: var(--ez-hue-blue-bg-deep);
 }
 
 

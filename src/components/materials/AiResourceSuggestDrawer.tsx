@@ -102,7 +102,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             backgroundColor: 'var(--ez-color-surface-secondary)',
             display: 'flex',
             alignItems: 'center',
@@ -115,8 +115,8 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                 width: '36px',
                 height: '36px',
                 borderRadius: '10px',
-                backgroundColor: '#EFF6FF',
-                border: '1px solid #DBEAFE',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-bg-deep)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -156,7 +156,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
             style={{
               padding: '16px',
               backgroundColor: 'var(--ez-color-surface-secondary)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               borderRadius: 'var(--ez-radius-control)',
               display: 'flex',
               flexDirection: 'column',
@@ -176,7 +176,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                   width: '100%',
                   padding: '9px 12px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   fontSize: '12.5px',
                   boxSizing: 'border-box',
                   outline: 'none',
@@ -196,7 +196,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                     setDurationDays(p.days);
                   }}
                   style={{
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--ez-color-border-line)',
                     backgroundColor: 'var(--ez-color-surface)',
                     color: '#475569',
                     fontSize: '10.5px',
@@ -224,7 +224,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                     width: '100%',
                     padding: '7px 10px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12px',
                     boxSizing: 'border-box',
                   }}
@@ -242,7 +242,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                     width: '100%',
                     padding: '7px 10px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12px',
                     boxSizing: 'border-box',
                   }}
@@ -261,7 +261,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                       width: '100%',
                       padding: '7px 10px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '12px',
                       boxSizing: 'border-box',
                     }}
@@ -279,7 +279,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                 borderRadius: '8px',
                 border: 'none',
                 backgroundColor: 'var(--ez-color-primary)',
-                color: '#ffffff',
+                color: '#FFFFFF',
                 fontSize: '12.5px',
                 fontWeight: 700,
                 display: 'flex',
@@ -301,8 +301,8 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
               <div
                 style={{
                   padding: '12px 14px',
-                  backgroundColor: '#EFF6FF',
-                  border: '1px solid #DBEAFE',
+                  backgroundColor: 'var(--ez-hue-blue-bg)',
+                  border: '1px solid var(--ez-hue-blue-bg-deep)',
                   borderRadius: '10px',
                   fontSize: '12px',
                   color: '#1E40AF',
@@ -317,7 +317,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                     style={{
                       fontSize: '10.5px',
                       fontWeight: 800,
-                      backgroundColor: '#DBEAFE',
+                      backgroundColor: 'var(--ez-hue-blue-bg-deep)',
                       color: 'var(--ez-color-primary-hover)',
                       padding: '2px 7px',
                       borderRadius: '4px',
@@ -341,8 +341,8 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                       key={idx}
                       style={{
                         padding: '10px 12px',
-                        backgroundColor: '#FFFBEB',
-                        border: '1px solid #FDE68A',
+                        backgroundColor: 'var(--ez-hue-amber-bg)',
+                        border: '1px solid var(--ez-hue-amber-border)',
                         borderRadius: '8px',
                         display: 'flex',
                         alignItems: 'center',
@@ -372,7 +372,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                       style={{
                         padding: '10px 12px',
                         backgroundColor: 'var(--ez-color-surface-secondary)',
-                        border: '1px solid #E2E8F0',
+                        border: '1px solid var(--ez-color-border-line)',
                         borderRadius: '8px',
                         display: 'flex',
                         alignItems: 'center',
@@ -405,7 +405,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                   <span>Kebutuhan Alat Berat & Mesin:</span>
                 </div>
                 {breakdown.equipment.primary.length === 0 && breakdown.equipment.supporting.length === 0 ? (
-                  <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface-secondary)', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
+                  <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
                     Pekerjaan ini tidak membutuhkan alat berat khusus (cukup peralatan tukang standar).
                   </div>
                 ) : (
@@ -415,8 +415,8 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                         key={idx}
                         style={{
                           padding: '10px 12px',
-                          backgroundColor: '#EFF6FF',
-                          border: '1px solid #BFDBFE',
+                          backgroundColor: 'var(--ez-hue-blue-bg)',
+                          border: '1px solid var(--ez-hue-blue-border)',
                           borderRadius: '8px',
                           display: 'flex',
                           alignItems: 'center',
@@ -446,7 +446,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                         style={{
                           padding: '10px 12px',
                           backgroundColor: 'var(--ez-color-surface-secondary)',
-                          border: '1px solid #E2E8F0',
+                          border: '1px solid var(--ez-color-border-line)',
                           borderRadius: '8px',
                           display: 'flex',
                           alignItems: 'center',
@@ -477,8 +477,8 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
               <div
                 style={{
                   padding: '14px',
-                  backgroundColor: '#F0FDF4',
-                  border: '1px solid #BBF7D0',
+                  backgroundColor: 'var(--ez-hue-green-bg)',
+                  border: '1px solid var(--ez-hue-green-border)',
                   borderRadius: '10px',
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -503,7 +503,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                     borderRadius: '8px',
                     border: 'none',
                     backgroundColor: '#16A34A',
-                    color: '#ffffff',
+                    color: '#FFFFFF',
                     fontSize: '12px',
                     fontWeight: 700,
                     cursor: 'pointer',

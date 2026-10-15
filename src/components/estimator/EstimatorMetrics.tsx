@@ -283,7 +283,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               fill="none"
-              stroke="#E2E8F0"
+              stroke="var(--ez-color-border-line)"
               strokeWidth="3.2"
             />
             <path

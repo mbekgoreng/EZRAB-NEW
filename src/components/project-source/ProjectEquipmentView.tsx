@@ -102,7 +102,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
   };
 
   return (
-    <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid #E2E8F0', padding: 20 }}>
+    <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-color-border-line)', padding: 20 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div>
@@ -144,7 +144,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
             padding: '40px 20px',
             background: 'var(--ez-color-surface-secondary)',
             borderRadius: 10,
-            border: '1px dashed #CBD5E1',
+            border: '1px dashed var(--ez-hue-slate-border)',
           }}
         >
           <Wrench size={36} color="#94A3B8" style={{ marginBottom: 10 }} />
@@ -157,7 +157,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
             disabled={!projectId}
             style={{
               background: 'var(--ez-color-surface)',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               color: 'var(--ez-color-primary)',
               borderRadius: 6,
               padding: '7px 14px',
@@ -173,7 +173,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
+              <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: '#475569' }}>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>No</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Nama Peralatan</th>
                 <th style={{ padding: '10px 12px', textAlign: 'left' }}>Jenis / Tipe</th>
@@ -186,7 +186,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
             </thead>
             <tbody>
               {items.map((item, idx) => (
-                <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                <tr key={item.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                   <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-muted)' }}>{idx + 1}</td>
                   <td style={{ padding: '10px 12px', fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>{item.name}</td>
                   <td style={{ padding: '10px 12px', color: 'var(--ez-color-primary)', fontWeight: 600 }}>{item.type || '—'}</td>
@@ -199,7 +199,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                         borderRadius: 4,
                         fontSize: 11,
                         fontWeight: 650,
-                        background: (item.condition || '').toLowerCase() === 'baik' ? '#F0FDF4' : '#FFFBEB',
+                        background: (item.condition || '').toLowerCase() === 'baik' ? 'var(--ez-hue-green-bg)' : 'var(--ez-hue-amber-bg)',
                         color: (item.condition || '').toLowerCase() === 'baik' ? '#15803D' : '#B45309',
                       }}
                     >
@@ -269,7 +269,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Contoh: Excavator / Dump Truck / Concrete Mixer"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                 />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -282,7 +282,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                     value={type}
                     onChange={(e) => setType(e.target.value)}
                     placeholder="Contoh: PC 200 / 8 Ton"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                   />
                 </div>
                 <div>
@@ -295,7 +295,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                     required
                     value={quantity}
                     onChange={(e) => setQuantity(Number(e.target.value) || 1)}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                   />
                 </div>
               </div>
@@ -308,7 +308,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                   value={capacity}
                   onChange={(e) => setCapacity(e.target.value)}
                   placeholder="Contoh: 0.9 m³ Bucket / 150 HP"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                 />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -319,7 +319,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                   <select
                     value={condition}
                     onChange={(e) => setCondition(e.target.value)}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                   >
                     <option value="Baik">Baik (100% Siap Kerja)</option>
                     <option value="Sedang">Sedang (Dalam Perawatan)</option>
@@ -332,7 +332,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                   <select
                     value={owner}
                     onChange={(e) => setOwner(e.target.value)}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 13 }}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 13 }}
                   >
                     <option value="Milik Sendiri">Milik Sendiri</option>
                     <option value="Sewa">Sewa / Rental</option>
@@ -345,7 +345,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                   type="button"
                   onClick={() => setShowModal(false)}
                   style={{
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     background: 'var(--ez-color-surface)',
                     borderRadius: 6,
                     padding: '8px 14px',

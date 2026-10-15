@@ -378,7 +378,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             padding: '0 22px',
             borderRadius: 'var(--ez-radius-control)',
             background: 'var(--ez-color-primary)',
-            color: '#ffffff',
+            color: '#FFFFFF',
             fontSize: '14px',
             fontWeight: 700,
             border: 'none',
@@ -411,7 +411,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             bottom: '24px',
             right: '24px',
             background: '#0F172A',
-            color: '#ffffff',
+            color: '#FFFFFF',
             padding: '12px 20px',
             borderRadius: '10px',
             fontSize: '13px',
@@ -489,7 +489,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
               padding: '0 16px',
               borderRadius: 'var(--ez-radius-control)',
               background: 'var(--ez-color-primary)',
-              color: '#ffffff',
+              color: '#FFFFFF',
               fontSize: '14px',
               fontWeight: 700,
               border: 'none',
@@ -511,7 +511,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
               padding: '0 14px',
               borderRadius: 'var(--ez-radius-control)',
               background: 'var(--ez-color-surface)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               color: '#334155',
               fontSize: '12.5px',
               fontWeight: 600,
@@ -533,7 +533,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                 padding: '0 14px',
                 borderRadius: 'var(--ez-radius-control)',
                 background: 'var(--ez-color-surface)',
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
                 color: '#334155',
                 fontSize: '12.5px',
                 fontWeight: 600,
@@ -581,7 +581,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                     alignItems: 'center',
                     gap: '8px',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#F1F5F9')}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-tertiary)')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
                   <FileSpreadsheet size={14} color="#059669" />
@@ -606,7 +606,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                     alignItems: 'center',
                     gap: '8px',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#F1F5F9')}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-tertiary)')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
                   <Printer size={14} color="#2563EB" />
@@ -623,7 +623,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
               padding: '0 14px',
               borderRadius: 'var(--ez-radius-control)',
               background: 'var(--ez-color-surface)',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               color: '#334155',
               fontSize: '12.5px',
               fontWeight: 600,
@@ -756,9 +756,9 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                 borderRadius: 'var(--ez-radius-pill)',
                 fontSize: '12.5px',
                 fontWeight: isActive ? 700 : 600,
-                background: isActive ? 'var(--ez-color-primary)' : '#ffffff',
+                background: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
                 color: isActive ? '#ffffff' : '#475569',
-                border: isActive ? 'none' : '1px solid #E2E8F0',
+                border: isActive ? 'none' : '1px solid var(--ez-color-border-line)',
                 cursor: 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -771,7 +771,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                 style={{
                   fontSize: '10.5px',
                   fontWeight: 700,
-                  background: isActive ? 'rgba(255,255,255,0.25)' : '#F1F5F9',
+                  background: isActive ? 'rgba(255,255,255,0.25)' : 'var(--ez-color-surface-tertiary)',
                   color: isActive ? '#ffffff' : '#6B6B64',
                   padding: '1px 6px',
                   borderRadius: 'var(--ez-radius-pill)',
@@ -815,7 +815,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
               paddingLeft: '34px',
               paddingRight: '12px',
               borderRadius: '8px',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12.5px',
               outline: 'none',
               boxSizing: 'border-box',
@@ -835,7 +835,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                 height: '34px',
                 padding: '0 10px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 fontSize: '12px',
                 fontWeight: 600,
                 color: '#1E293B',
@@ -859,7 +859,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
               padding: '0 12px',
               borderRadius: '8px',
               background: 'var(--ez-color-surface)',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 600,
               color: '#334155',
@@ -880,7 +880,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
               padding: '0 12px',
               borderRadius: '8px',
               background: 'var(--ez-color-surface)',
-              border: '1px solid #CBD5E1',
+              border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 600,
               color: '#334155',
@@ -925,7 +925,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   width: '56px',
                   height: '56px',
                   borderRadius: '16px',
-                  background: '#F1F5F9',
+                  background: 'var(--ez-color-surface-tertiary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -949,7 +949,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                     padding: '0 18px',
                     borderRadius: 'var(--ez-radius-control)',
                     background: 'var(--ez-color-primary)',
-                    color: '#ffffff',
+                    color: '#FFFFFF',
                     fontSize: '12.5px',
                     fontWeight: 700,
                     border: 'none',
@@ -969,7 +969,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                     padding: '0 16px',
                     borderRadius: 'var(--ez-radius-control)',
                     background: 'var(--ez-color-surface)',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     color: '#334155',
                     fontSize: '12.5px',
                     fontWeight: 600,
@@ -1016,7 +1016,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                         <tr
                           onClick={() => toggleGroupCollapse(groupName)}
                           style={{
-                            background: '#F1F5F9',
+                            background: 'var(--ez-color-surface-tertiary)',
                             borderBottom: '1px solid #EEF1F6',
                             cursor: 'pointer',
                             userSelect: 'none',
@@ -1031,7 +1031,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                                   height: '20px',
                                   borderRadius: '50%',
                                   background: 'var(--ez-color-primary)',
-                                  color: '#ffffff',
+                                  color: '#FFFFFF',
                                   fontSize: '11px',
                                   fontWeight: 800,
                                   display: 'flex',
@@ -1066,7 +1066,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                                 onClick={() => setSelectedQtoId(item.id)}
                                 style={{
                                   borderBottom: '1px solid #EEF1F6',
-                                  background: isSelected ? '#EFF6FF' : itemIdx % 2 === 0 ? '#ffffff' : '#FAFAFA',
+                                  background: isSelected ? 'var(--ez-hue-blue-bg)' : itemIdx % 2 === 0 ? '#ffffff' : 'var(--ez-color-surface-faint)',
                                   cursor: 'pointer',
                                   transition: 'background 0.1s ease',
                                 }}
@@ -1216,7 +1216,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                                     }}
                                     onMouseEnter={(e) => {
                                       e.currentTarget.style.color = '#EF4444';
-                                      e.currentTarget.style.background = '#FEE2E2';
+                                      e.currentTarget.style.background = 'var(--ez-hue-red-bg)';
                                     }}
                                     onMouseLeave={(e) => {
                                       e.currentTarget.style.color = '#8A8A84';
@@ -1252,9 +1252,9 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   Menampilkan 1 - {filteredQtoItems.length} dari {projectQtoItems.length} data
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <button style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #E2E8F0', background: 'var(--ez-color-surface)', cursor: 'pointer' }}>&lt;</button>
-                  <button style={{ width: '28px', height: '28px', borderRadius: '6px', border: 'none', background: 'var(--ez-color-primary)', color: '#ffffff', fontWeight: 700 }}>1</button>
-                  <button style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid #E2E8F0', background: 'var(--ez-color-surface)', cursor: 'pointer' }}>&gt;</button>
+                  <button style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface)', cursor: 'pointer' }}>&lt;</button>
+                  <button style={{ width: '28px', height: '28px', borderRadius: '6px', border: 'none', background: 'var(--ez-color-primary)', color: '#FFFFFF', fontWeight: 700 }}>1</button>
+                  <button style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface)', cursor: 'pointer' }}>&gt;</button>
                 </div>
               </div>
             </div>
@@ -1298,7 +1298,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             {/* Title & Badges */}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 700, background: '#EFF6FF', color: 'var(--ez-color-primary-hover)', padding: '5px 12px', borderRadius: 'var(--ez-radius-pill)' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, background: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)', padding: '5px 12px', borderRadius: 'var(--ez-radius-pill)' }}>
                   {getSectionHeadingOfItem(activeSelectedItem)}
                 </span>
                 <span
@@ -1345,7 +1345,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   bottom: '6px',
                   right: '6px',
                   background: 'rgba(0,0,0,0.65)',
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   padding: '2px 8px',
                   borderRadius: '6px',
                   fontSize: '10px',
@@ -1442,8 +1442,8 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   width: '100%',
                   height: '38px',
                   borderRadius: 'var(--ez-radius-control)',
-                  background: '#EFF6FF',
-                  border: '1px solid #BFDBFE',
+                  background: 'var(--ez-hue-blue-bg)',
+                  border: '1px solid var(--ez-hue-blue-border)',
                   color: 'var(--ez-color-primary-hover)',
                   fontSize: '12.5px',
                   fontWeight: 700,
@@ -1531,7 +1531,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
               <span>EZRAB Construction Technical Vector Model</span>
               <button
                 onClick={() => setImageViewerOpen(false)}
-                style={{ padding: '6px 14px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-primary)', color: '#ffffff', border: 'none', fontWeight: 600, cursor: 'pointer' }}
+                style={{ padding: '6px 14px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-primary)', color: '#FFFFFF', border: 'none', fontWeight: 600, cursor: 'pointer' }}
               >
                 Tutup
               </button>
@@ -1609,7 +1609,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                     transition: 'all 0.15s ease',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#EFF6FF';
+                    e.currentTarget.style.background = 'var(--ez-hue-blue-bg)';
                     e.currentTarget.style.borderColor = '#93C5FD';
                   }}
                   onMouseLeave={(e) => {
@@ -1618,7 +1618,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '10px', background: '#DBEAFE', color: 'var(--ez-color-primary-hover)', padding: '1px 6px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>
+                    <span style={{ fontSize: '10px', background: 'var(--ez-hue-blue-bg-deep)', color: 'var(--ez-color-primary-hover)', padding: '1px 6px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>
                       {calc.category.toUpperCase()}
                     </span>
                     <span style={{ fontSize: '11px', color: '#6B6B64', fontWeight: 600 }}>{calc.primaryUnit}</span>
@@ -1689,7 +1689,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   placeholder="Contoh: 1.1.05"
                   value={manualKode}
                   onChange={(e) => setManualKode(e.target.value)}
-                  style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 10px', fontSize: '13px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 10px', fontSize: '13px', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -1703,7 +1703,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   placeholder="Contoh: Pekerjaan Pagar Pengaman Proyek"
                   value={manualUraian}
                   onChange={(e) => setManualUraian(e.target.value)}
-                  style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 10px', fontSize: '13px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 10px', fontSize: '13px', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -1718,7 +1718,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                     placeholder="Contoh: 45.50"
                     value={manualVolume}
                     onChange={(e) => setManualVolume(e.target.value)}
-                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 10px', fontSize: '13px', boxSizing: 'border-box' }}
+                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 10px', fontSize: '13px', boxSizing: 'border-box' }}
                   />
                 </div>
 
@@ -1729,7 +1729,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   <select
                     value={manualUnit}
                     onChange={(e) => setManualUnit(e.target.value)}
-                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '0 10px', fontSize: '13px', boxSizing: 'border-box', background: 'var(--ez-color-surface)' }}
+                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 10px', fontSize: '13px', boxSizing: 'border-box', background: 'var(--ez-color-surface)' }}
                   >
                     <option value="m¹">m¹ (meter panjang)</option>
                     <option value="m²">m² (meter persegi)</option>
@@ -1751,7 +1751,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   rows={2}
                   value={manualReason}
                   onChange={(e) => setManualReason(e.target.value)}
-                  style={{ width: '100%', borderRadius: '8px', border: '1px solid #CBD5E1', padding: '8px 10px', fontSize: '12px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', padding: '8px 10px', fontSize: '12px', boxSizing: 'border-box' }}
                 />
               </div>
 
@@ -1759,13 +1759,13 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setManualModalOpen(false)}
-                  style={{ height: '36px', padding: '0 14px', borderRadius: 'var(--ez-radius-control)', background: '#F1F5F9', border: '1px solid #CBD5E1', color: '#334155', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{ height: '36px', padding: '0 14px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-surface-tertiary)', border: '1px solid var(--ez-hue-slate-border)', color: '#334155', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  style={{ height: '36px', padding: '0 18px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-primary)', border: 'none', color: '#ffffff', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
+                  style={{ height: '36px', padding: '0 18px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-color-primary)', border: 'none', color: '#FFFFFF', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
                 >
                   Simpan Item
                 </button>
@@ -1830,7 +1830,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
 
             <button
               onClick={() => setColumnsModalOpen(false)}
-              style={{ width: '100%', marginTop: '16px', height: '34px', background: 'var(--ez-color-primary)', color: '#ffffff', border: 'none', borderRadius: 'var(--ez-radius-control)', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
+              style={{ width: '100%', marginTop: '16px', height: '34px', background: 'var(--ez-color-primary)', color: '#FFFFFF', border: 'none', borderRadius: 'var(--ez-radius-control)', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}
             >
               Terapkan
             </button>

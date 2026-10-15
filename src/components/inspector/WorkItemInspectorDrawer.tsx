@@ -554,7 +554,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
         {/* Mobile Swipe Handle Indicator */}
         {isMobile && (
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '8px', paddingBottom: '2px', background: 'var(--ez-color-surface-secondary)' }}>
-            <div style={{ width: '40px', height: '4px', borderRadius: 'var(--ez-radius-pill)', background: '#CBD5E1' }} />
+            <div style={{ width: '40px', height: '4px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-slate-border)' }} />
           </div>
         )}
 
@@ -564,7 +564,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
         <div
           style={{
             padding: '14px 20px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             background: 'var(--ez-color-surface-secondary)',
             display: 'flex',
             alignItems: 'center',
@@ -578,7 +578,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                 width: '32px',
                 height: '32px',
                 borderRadius: '8px',
-                background: '#EFF6FF',
+                background: 'var(--ez-hue-blue-bg)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -638,8 +638,8 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                   height: '30px',
                   padding: '0 10px',
                   borderRadius: '6px',
-                  background: '#F0FDF4',
-                  border: '1px solid #BBF7D0',
+                  background: 'var(--ez-hue-green-bg)',
+                  border: '1px solid var(--ez-hue-green-border)',
                   color: '#166534',
                   fontSize: '11.5px',
                   fontWeight: 700,
@@ -660,7 +660,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                 width: '30px',
                 height: '30px',
                 borderRadius: '6px',
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
                 background: 'var(--ez-color-surface)',
                 display: 'flex',
                 alignItems: 'center',
@@ -681,42 +681,42 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
           style={{
             padding: isMobile ? '10px 14px' : '12px 20px',
             background: 'var(--ez-color-surface)',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'grid',
             gridTemplateColumns: isMobile ? 'repeat(auto-fit, minmax(130px, 1fr))' : 'repeat(5, 1fr)',
             gap: isMobile ? '8px' : '10px',
             flexShrink: 0,
           }}
         >
-          <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '8px 10px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+          <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--ez-color-border-line)' }}>
             <span style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', fontWeight: 650, display: 'block', textTransform: 'uppercase' }}>Volume</span>
             <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
               {initialData.volume.toLocaleString('id-ID')} <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>{initialData.unit}</span>
             </div>
           </div>
 
-          <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '8px 10px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+          <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--ez-color-border-line)' }}>
             <span style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', fontWeight: 650, display: 'block', textTransform: 'uppercase' }}>Harga Satuan (Awal)</span>
             <div style={{ fontSize: '13px', fontWeight: 700, color: '#475569', marginTop: '2px' }}>
               {formatCurrencyIDR(baselineUnitPrice)}
             </div>
           </div>
 
-          <div style={{ background: '#EFF6FF', padding: '8px 10px', borderRadius: '6px', border: '1px solid #BFDBFE' }}>
+          <div style={{ background: 'var(--ez-hue-blue-bg)', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-blue-border)' }}>
             <span style={{ fontSize: '10px', color: '#1E40AF', fontWeight: 700, display: 'block', textTransform: 'uppercase' }}>Harga Satuan (Hasil)</span>
             <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-color-primary-hover)', marginTop: '2px' }}>
               {formatCurrencyIDR(calculatedUnitPrice)}
             </div>
           </div>
 
-          <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '8px 10px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+          <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--ez-color-border-line)' }}>
             <span style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', fontWeight: 650, display: 'block', textTransform: 'uppercase' }}>Total Nilai Item</span>
             <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
               {formatCurrencyIDR(calculatedTotalItemPrice)}
             </div>
           </div>
 
-          <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '8px 10px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+          <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--ez-color-border-line)' }}>
             <span style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', fontWeight: 650, display: 'block', textTransform: 'uppercase' }}>Sumber Volume</span>
             <div style={{ marginTop: '2px' }}>
               <span
@@ -725,7 +725,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                   fontWeight: 750,
                   padding: '2px 5px',
                   borderRadius: '4px',
-                  background: initialData.source === 'CALCULATOR' ? '#DCFCE7' : '#F1F5F9',
+                  background: initialData.source === 'CALCULATOR' ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-color-surface-tertiary)',
                   color: initialData.source === 'CALCULATOR' ? '#166534' : '#334155',
                   textTransform: 'uppercase',
                 }}
@@ -743,8 +743,8 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
           style={{
             display: 'flex',
             padding: '0 20px',
-            borderBottom: '1px solid #E2E8F0',
-            background: '#FAFAFA',
+            borderBottom: '1px solid var(--ez-color-border-line)',
+            background: 'var(--ez-color-surface-faint)',
             gap: '16px',
             flexShrink: 0,
           }}
@@ -798,7 +798,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                   fontWeight: 800,
                   padding: '1px 5px',
                   borderRadius: '10px',
-                  background: unitPriceDifference > 0 ? '#FEE2E2' : '#DCFCE7',
+                  background: unitPriceDifference > 0 ? 'var(--ez-hue-red-bg)' : 'var(--ez-hue-green-bg-deep)',
                   color: unitPriceDifference > 0 ? '#991B1B' : '#166534',
                 }}
               >
@@ -859,15 +859,15 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
           {activeTab === 'AHSP' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               {/* SECTION A: MATERIAL */}
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', overflow: 'hidden' }}>
+              <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', overflow: 'hidden' }}>
                 <div
                   style={{
-                    background: '#F1F5F9',
+                    background: 'var(--ez-color-surface-tertiary)',
                     padding: '8px 12px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    borderBottom: '1px solid #CBD5E1',
+                    borderBottom: '1px solid var(--ez-hue-slate-border)',
                   }}
                 >
                   <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -881,7 +881,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
 
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                   <thead>
-                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-muted)', fontSize: '11px' }}>
+                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-muted)', fontSize: '11px' }}>
                       <th style={{ padding: '6px 10px', textAlign: 'left', width: '38%' }}>Komponen Bahan</th>
                       <th style={{ padding: '6px 8px', textAlign: 'center', width: '16%' }}>Koefisien</th>
                       <th style={{ padding: '6px 8px', textAlign: 'center', width: '12%' }}>Satuan</th>
@@ -892,7 +892,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                   </thead>
                   <tbody>
                     {materials.map((m, idx) => (
-                      <tr key={m.id || idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <tr key={m.id || idx} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                         <td style={{ padding: '6px 10px' }}>
                           <input
                             type="text"
@@ -912,7 +912,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                               textAlign: 'center',
                               height: '24px',
                               borderRadius: '4px',
-                              border: '1px solid #CBD5E1',
+                              border: '1px solid var(--ez-hue-slate-border)',
                               fontSize: '11.5px',
                               fontWeight: 700,
                               background: 'var(--ez-color-surface-secondary)',
@@ -929,7 +929,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                               textAlign: 'center',
                               height: '24px',
                               borderRadius: '4px',
-                              border: '1px solid #CBD5E1',
+                              border: '1px solid var(--ez-hue-slate-border)',
                               fontSize: '11.5px',
                               color: 'var(--ez-color-text-muted)',
                             }}
@@ -945,7 +945,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                               textAlign: 'right',
                               height: '24px',
                               borderRadius: '4px',
-                              border: '1px solid #CBD5E1',
+                              border: '1px solid var(--ez-hue-slate-border)',
                               fontSize: '11.5px',
                               fontWeight: 650,
                             }}
@@ -969,15 +969,15 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
               </div>
 
               {/* SECTION B: UPAH / LABOR */}
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', overflow: 'hidden' }}>
+              <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', overflow: 'hidden' }}>
                 <div
                   style={{
-                    background: '#F1F5F9',
+                    background: 'var(--ez-color-surface-tertiary)',
                     padding: '8px 12px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    borderBottom: '1px solid #CBD5E1',
+                    borderBottom: '1px solid var(--ez-hue-slate-border)',
                   }}
                 >
                   <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -991,7 +991,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
 
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                   <thead>
-                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-muted)', fontSize: '11px' }}>
+                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-muted)', fontSize: '11px' }}>
                       <th style={{ padding: '6px 10px', textAlign: 'left', width: '38%' }}>Jenis Tenaga</th>
                       <th style={{ padding: '6px 8px', textAlign: 'center', width: '16%' }}>Koefisien</th>
                       <th style={{ padding: '6px 8px', textAlign: 'center', width: '12%' }}>Satuan</th>
@@ -1002,7 +1002,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                   </thead>
                   <tbody>
                     {labors.map((l, idx) => (
-                      <tr key={l.id || idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <tr key={l.id || idx} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                         <td style={{ padding: '6px 10px' }}>
                           <input
                             type="text"
@@ -1022,7 +1022,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                               textAlign: 'center',
                               height: '24px',
                               borderRadius: '4px',
-                              border: '1px solid #CBD5E1',
+                              border: '1px solid var(--ez-hue-slate-border)',
                               fontSize: '11.5px',
                               fontWeight: 700,
                               background: 'var(--ez-color-surface-secondary)',
@@ -1039,7 +1039,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                               textAlign: 'center',
                               height: '24px',
                               borderRadius: '4px',
-                              border: '1px solid #CBD5E1',
+                              border: '1px solid var(--ez-hue-slate-border)',
                               fontSize: '11.5px',
                               color: 'var(--ez-color-text-muted)',
                             }}
@@ -1055,7 +1055,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                               textAlign: 'right',
                               height: '24px',
                               borderRadius: '4px',
-                              border: '1px solid #CBD5E1',
+                              border: '1px solid var(--ez-hue-slate-border)',
                               fontSize: '11.5px',
                               fontWeight: 650,
                             }}
@@ -1079,15 +1079,15 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
               </div>
 
               {/* SECTION C: ALAT / EQUIPMENT */}
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', overflow: 'hidden' }}>
+              <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', overflow: 'hidden' }}>
                 <div
                   style={{
-                    background: '#F1F5F9',
+                    background: 'var(--ez-color-surface-tertiary)',
                     padding: '8px 12px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    borderBottom: '1px solid #CBD5E1',
+                    borderBottom: '1px solid var(--ez-hue-slate-border)',
                   }}
                 >
                   <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1101,7 +1101,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
 
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                   <thead>
-                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0', color: 'var(--ez-color-text-muted)', fontSize: '11px' }}>
+                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-muted)', fontSize: '11px' }}>
                       <th style={{ padding: '6px 10px', textAlign: 'left', width: '38%' }}>Nama Alat</th>
                       <th style={{ padding: '6px 8px', textAlign: 'center', width: '16%' }}>Koefisien</th>
                       <th style={{ padding: '6px 8px', textAlign: 'center', width: '12%' }}>Satuan</th>
@@ -1119,7 +1119,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                       </tr>
                     ) : (
                       equipments.map((e, idx) => (
-                        <tr key={e.id || idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <tr key={e.id || idx} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                           <td style={{ padding: '6px 10px' }}>
                             <input
                               type="text"
@@ -1139,7 +1139,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                                 textAlign: 'center',
                                 height: '24px',
                                 borderRadius: '4px',
-                                border: '1px solid #CBD5E1',
+                                border: '1px solid var(--ez-hue-slate-border)',
                                 fontSize: '11.5px',
                                 fontWeight: 700,
                                 background: 'var(--ez-color-surface-secondary)',
@@ -1156,7 +1156,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                                 textAlign: 'center',
                                 height: '24px',
                                 borderRadius: '4px',
-                                border: '1px solid #CBD5E1',
+                                border: '1px solid var(--ez-hue-slate-border)',
                                 fontSize: '11.5px',
                                 color: 'var(--ez-color-text-muted)',
                               }}
@@ -1172,7 +1172,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                                 textAlign: 'right',
                                 height: '24px',
                                 borderRadius: '4px',
-                                border: '1px solid #CBD5E1',
+                                border: '1px solid var(--ez-hue-slate-border)',
                                 fontSize: '11.5px',
                                 fontWeight: 650,
                               }}
@@ -1204,7 +1204,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                     style={{
                       padding: '6px 12px',
                       borderRadius: '6px',
-                      background: '#F1F5F9',
+                      background: 'var(--ez-color-surface-tertiary)',
                       border: '1px dashed #94A3B8',
                       color: 'var(--ez-color-primary)',
                       fontSize: '11.5px',
@@ -1219,7 +1219,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                     <span>+ Tambah Komponen Baru ke Analisa Ini</span>
                   </button>
                 ) : (
-                  <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px', borderRadius: '8px', border: '1px solid #CBD5E1' }}>
+                  <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)' }}>
                     <div style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '8px' }}>
                       Tambah Komponen Baru
                     </div>
@@ -1227,7 +1227,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                       <select
                         value={newResCategory}
                         onChange={(e: any) => setNewResCategory(e.target.value)}
-                        style={{ height: '30px', borderRadius: '4px', border: '1px solid #CBD5E1', fontSize: '11.5px', padding: '0 4px' }}
+                        style={{ height: '30px', borderRadius: '4px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '11.5px', padding: '0 4px' }}
                       >
                         <option value="MATERIAL">A. Material</option>
                         <option value="LABOR">B. Upah</option>
@@ -1239,7 +1239,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                         placeholder="Nama Komponen..."
                         value={newResName}
                         onChange={(e) => setNewResName(e.target.value)}
-                        style={{ height: '30px', borderRadius: '4px', border: '1px solid #CBD5E1', padding: '0 8px', fontSize: '11.5px' }}
+                        style={{ height: '30px', borderRadius: '4px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 8px', fontSize: '11.5px' }}
                       />
 
                       <input
@@ -1248,7 +1248,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                         placeholder="Koef"
                         value={newResCoeff}
                         onChange={(e) => setNewResCoeff(parseFloat(e.target.value) || 0)}
-                        style={{ height: '30px', borderRadius: '4px', border: '1px solid #CBD5E1', padding: '0 6px', textAlign: 'center', fontSize: '11.5px' }}
+                        style={{ height: '30px', borderRadius: '4px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 6px', textAlign: 'center', fontSize: '11.5px' }}
                       />
 
                       <input
@@ -1256,7 +1256,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                         placeholder="Satuan"
                         value={newResUnit}
                         onChange={(e) => setNewResUnit(e.target.value)}
-                        style={{ height: '30px', borderRadius: '4px', border: '1px solid #CBD5E1', padding: '0 6px', textAlign: 'center', fontSize: '11.5px' }}
+                        style={{ height: '30px', borderRadius: '4px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 6px', textAlign: 'center', fontSize: '11.5px' }}
                       />
 
                       <input
@@ -1264,7 +1264,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                         placeholder="Harga (Rp)"
                         value={newResPrice}
                         onChange={(e) => setNewResPrice(parseFloat(e.target.value) || 0)}
-                        style={{ height: '30px', borderRadius: '4px', border: '1px solid #CBD5E1', padding: '0 8px', textAlign: 'right', fontSize: '11.5px' }}
+                        style={{ height: '30px', borderRadius: '4px', border: '1px solid var(--ez-hue-slate-border)', padding: '0 8px', textAlign: 'right', fontSize: '11.5px' }}
                       />
 
                       <div style={{ display: 'flex', gap: '4px' }}>
@@ -1290,7 +1290,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                             height: '30px',
                             padding: '0 8px',
                             borderRadius: '4px',
-                            background: '#E2E8F0',
+                            background: 'var(--ez-color-border-line)',
                             border: 'none',
                             fontSize: '11.5px',
                             cursor: 'pointer',
@@ -1311,7 +1311,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                 style={{
                   background: 'var(--ez-color-surface-secondary)',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   padding: '14px',
                   marginTop: '6px',
                 }}
@@ -1323,7 +1323,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
                   {/* Direct Cost */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px dashed #E2E8F0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px dashed var(--ez-color-border-line)' }}>
                     <span style={{ color: '#475569', fontWeight: 600 }}>Biaya Langsung (Direct Cost = A + B + C)</span>
                     <span style={{ fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>{formatCurrencyIDR(directCost)}</span>
                   </div>
@@ -1341,7 +1341,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                           height: '22px',
                           textAlign: 'center',
                           borderRadius: '4px',
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid var(--ez-hue-slate-border)',
                           fontSize: '11px',
                           fontWeight: 700,
                         }}
@@ -1364,7 +1364,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                           height: '22px',
                           textAlign: 'center',
                           borderRadius: '4px',
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid var(--ez-hue-slate-border)',
                           fontSize: '11px',
                           fontWeight: 700,
                         }}
@@ -1387,7 +1387,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                           height: '22px',
                           textAlign: 'center',
                           borderRadius: '4px',
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid var(--ez-hue-slate-border)',
                           fontSize: '11px',
                           fontWeight: 700,
                         }}
@@ -1404,7 +1404,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       paddingTop: '8px',
-                      borderTop: '2px solid #CBD5E1',
+                      borderTop: '2px solid var(--ez-hue-slate-border)',
                       marginTop: '4px',
                     }}
                   >
@@ -1425,9 +1425,9 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div
                 style={{
-                  background: '#F0FDF4',
+                  background: 'var(--ez-hue-green-bg)',
                   borderRadius: '8px',
-                  border: '1px solid #BBF7D0',
+                  border: '1px solid var(--ez-hue-green-border)',
                   padding: '14px',
                   display: 'flex',
                   alignItems: 'flex-start',
@@ -1441,10 +1441,10 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
               </div>
 
               {/* Comparison Table */}
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', overflow: 'hidden' }}>
+              <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
                   <thead>
-                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid #E2E8F0' }}>
+                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)' }}>
                       <th style={{ padding: '10px 14px', textAlign: 'left', color: 'var(--ez-color-text-muted)' }}>Komponen Metrik</th>
                       <th style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--ez-color-text-muted)' }}>Sebelum (Baseline)</th>
                       <th style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--ez-color-primary)' }}>Sesudah (Modifikasi)</th>
@@ -1452,7 +1452,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                     </tr>
                   </thead>
                   <tbody>
-                    <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                       <td style={{ padding: '10px 14px', fontWeight: 650, color: '#334155' }}>Harga Satuan (Unit Price)</td>
                       <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--ez-color-text-muted)' }}>{formatCurrencyIDR(baselineUnitPrice)}</td>
                       <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 750, color: 'var(--ez-color-primary)' }}>{formatCurrencyIDR(calculatedUnitPrice)}</td>
@@ -1462,7 +1462,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                       </td>
                     </tr>
 
-                    <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                       <td style={{ padding: '10px 14px', fontWeight: 650, color: '#334155' }}>Subtotal Item ({initialData.volume} {initialData.unit})</td>
                       <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--ez-color-text-muted)' }}>{formatCurrencyIDR(baselineTotalItemPrice)}</td>
                       <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 750, color: 'var(--ez-color-primary)' }}>{formatCurrencyIDR(calculatedTotalItemPrice)}</td>
@@ -1488,7 +1488,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
           {/* TAB 3: REGULATORY SOURCE */}
           {activeTab === 'SOURCE' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '14px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+              <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '14px', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
                 <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginBottom: '6px' }}>
                   Pedoman & Standar Acuan AHSP
                 </div>
@@ -1521,7 +1521,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
               </div>
 
               {(!initialData.auditTrail || initialData.auditTrail.length === 0) ? (
-                <div style={{ textAlign: 'center', padding: '30px 10px', color: '#94A3B8', fontSize: '12px', border: '1px dashed #CBD5E1', borderRadius: '8px' }}>
+                <div style={{ textAlign: 'center', padding: '30px 10px', color: '#94A3B8', fontSize: '12px', border: '1px dashed var(--ez-hue-slate-border)', borderRadius: '8px' }}>
                   Belum ada catatan modifikasi untuk item pekerjaan ini.
                 </div>
               ) : (
@@ -1533,7 +1533,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                         padding: '10px 12px',
                         background: 'var(--ez-color-surface-secondary)',
                         borderRadius: '6px',
-                        border: '1px solid #E2E8F0',
+                        border: '1px solid var(--ez-color-border-line)',
                         fontSize: '11.5px',
                       }}
                     >
@@ -1566,7 +1566,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
         <div
           style={{
             padding: isMobile ? '12px 16px max(12px, env(safe-area-inset-bottom, 12px))' : '12px 20px',
-            borderTop: '1px solid #E2E8F0',
+            borderTop: '1px solid var(--ez-color-border-line)',
             background: 'var(--ez-color-surface-secondary)',
             display: 'flex',
             alignItems: 'center',
@@ -1585,7 +1585,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                 padding: '0 12px',
                 borderRadius: '6px',
                 background: 'var(--ez-color-surface)',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 color: '#475569',
                 fontSize: '12px',
                 fontWeight: 650,
@@ -1609,7 +1609,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                 padding: '0 14px',
                 borderRadius: '6px',
                 background: 'var(--ez-color-surface)',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 color: '#475569',
                 fontSize: '12px',
                 fontWeight: 650,

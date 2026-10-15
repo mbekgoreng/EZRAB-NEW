@@ -80,7 +80,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               width: 36,
               height: 36,
               borderRadius: '50%',
-              border: '1px solid #e2e8f0',
+              border: '1px solid var(--ez-color-border-line)',
               background: 'var(--ez-color-surface)',
               color: 'var(--ez-color-text-muted)',
               display: 'grid',

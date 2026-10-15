@@ -24,7 +24,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #F1F5F9;
+  border-bottom: 1px solid var(--ez-color-surface-tertiary);
   padding-bottom: 12px;
   margin-bottom: 14px;
   gap: 12px;
@@ -43,9 +43,9 @@
   align-items: center;
   justify-content: center;
   border-radius: 9px;
-  background: #EFF6FF;
+  background: var(--ez-hue-blue-bg);
   color: #2563EB;
-  border: 1px solid #DBEAFE;
+  border: 1px solid var(--ez-hue-blue-bg-deep);
   flex-shrink: 0;
 }
 
@@ -133,7 +133,7 @@
 .ezrab-wizard-search-input {
   width: 100%;
   border-radius: 8px;
-  border: 1px solid #CBD5E1;
+  border: 1px solid var(--ez-hue-slate-border);
   background: var(--ez-color-surface);
   padding: 7px 32px 7px 32px;
   font-size: 12px;
@@ -210,7 +210,7 @@
 }
 
 .ezrab-wizard-pill-btn.inactive:hover {
-  background: #F1F5F9;
+  background: var(--ez-color-surface-tertiary);
   color: var(--ez-color-text-primary);
   border-color: #94A3B8;
 }
@@ -225,7 +225,7 @@
 
 .ezrab-wizard-floor-dropdown {
   border-radius: 6px;
-  border: 1px solid #CBD5E1;
+  border: 1px solid var(--ez-hue-slate-border);
   background: var(--ez-color-surface);
   padding: 3px 8px;
   font-size: 11px;
@@ -274,14 +274,14 @@
 
 .ezrab-wizard-card.coming-soon {
   background: var(--ez-color-surface-secondary);
-  border-color: var(--ez-color-border-line);
+  border-color: #E2E8F0;
   opacity: 0.75;
 }
 
 .ezrab-wizard-card.coming-soon:hover {
   transform: none;
   box-shadow: none;
-  border-color: var(--ez-color-border-line);
+  border-color: #E2E8F0;
 }
 
 .ezrab-wizard-card.engineering-review {
@@ -308,9 +308,9 @@
   align-items: center;
   justify-content: center;
   border-radius: 7px;
-  background: #EFF6FF;
+  background: var(--ez-hue-blue-bg);
   color: #2563EB;
-  border: 1px solid #DBEAFE;
+  border: 1px solid var(--ez-hue-blue-bg-deep);
   flex-shrink: 0;
   transition: background-color 0.2s, color 0.2s;
 }
@@ -341,7 +341,7 @@
   padding: 6px 8px;
   background: var(--ez-color-surface-secondary);
   border-radius: 7px;
-  border: 1px solid #F1F5F9;
+  border: 1px solid var(--ez-color-surface-tertiary);
 }
 
 .ezrab-card-meta-row {
@@ -375,21 +375,21 @@
 }
 
 .ezrab-card-badge.ready {
-  background: #ECFDF5;
+  background: var(--ez-hue-emerald-bg);
   color: #059669;
-  border: 1px solid #A7F3D0;
+  border: 1px solid var(--ez-hue-green-border-deep);
 }
 
 .ezrab-card-badge.coming-soon {
-  background: #F1F5F9;
+  background: var(--ez-color-surface-tertiary);
   color: #94A3B8;
   border: 1px solid var(--ez-color-border-line);
 }
 
 .ezrab-card-badge.review {
-  background: #FFFBEB;
+  background: var(--ez-hue-amber-bg);
   color: #D97706;
-  border: 1px solid #FDE68A;
+  border: 1px solid var(--ez-hue-amber-border);
 }
 
 .ezrab-card-desc {
@@ -407,7 +407,7 @@
 .ezrab-card-footer {
   margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px solid #F1F5F9;
+  border-top: 1px solid var(--ez-color-surface-tertiary);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -442,7 +442,7 @@
 }
 
 .ezrab-card-btn-choose:disabled {
-  background: #F1F5F9;
+  background: var(--ez-color-surface-tertiary);
   color: #94A3B8;
   border: 1px solid var(--ez-color-border-line);
   box-shadow: none;
@@ -452,7 +452,7 @@
 /* Empty Catalog Results */
 .ezrab-wizard-empty {
   border-radius: 12px;
-  border: 1.5px dashed #CBD5E1;
+  border: 1.5px dashed var(--ez-hue-slate-border);
   background: var(--ez-color-surface-secondary);
   padding: 24px;
   text-align: center;
@@ -477,8 +477,8 @@
   margin-top: 10px;
   display: inline-flex;
   border-radius: 7px;
-  border: 1px solid #BFDBFE;
-  background: #EFF6FF;
+  border: 1px solid var(--ez-hue-blue-border);
+  background: var(--ez-hue-blue-bg);
   color: #2563EB;
   padding: 5px 12px;
   font-size: 11.5px;
@@ -488,7 +488,7 @@
 }
 
 .ezrab-wizard-reset-btn:hover {
-  background: #DBEAFE;
+  background: var(--ez-hue-blue-bg-deep);
 }
 
 /* Step Actions Bar (Back / Cancel / Submit) */
@@ -496,7 +496,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid #F1F5F9;
+  border-top: 1px solid var(--ez-color-surface-tertiary);
   padding-top: 12px;
   margin-top: 8px;
   gap: 8px;
@@ -508,7 +508,7 @@
   align-items: center;
   gap: 5px;
   border-radius: 7px;
-  border: 1px solid #CBD5E1;
+  border: 1px solid var(--ez-hue-slate-border);
   background: var(--ez-color-surface);
   padding: 6px 13px;
   font-size: 11.5px;
@@ -519,7 +519,7 @@
 }
 
 .ezrab-wizard-btn-back:hover:not(:disabled) {
-  background: #F1F5F9;
+  background: var(--ez-color-surface-tertiary);
   color: var(--ez-color-text-primary);
   border-color: #94A3B8;
 }
@@ -644,7 +644,7 @@
 .ezrab-wizard-input {
   width: 100%;
   border-radius: 7px;
-  border: 1.5px solid #CBD5E1;
+  border: 1.5px solid var(--ez-hue-slate-border);
   background: var(--ez-color-surface);
   padding: 6.5px 10px;
   font-size: 12px;
@@ -678,7 +678,7 @@
 .ezrab-wizard-select {
   width: 100%;
   border-radius: 7px;
-  border: 1.5px solid #CBD5E1;
+  border: 1.5px solid var(--ez-hue-slate-border);
   background: var(--ez-color-surface);
   padding: 8px 12px;
   font-size: 12px;
@@ -721,7 +721,7 @@
 
 .ezrab-wizard-option-btn.selected {
   border-color: #2563EB;
-  background: #EFF6FF;
+  background: var(--ez-hue-blue-bg);
 }
 
 .ezrab-wizard-option-label {
@@ -759,7 +759,7 @@
 }
 
 .ezrab-wizard-metric-box.highlight {
-  background: #ECFDF5;
+  background: var(--ez-hue-emerald-bg);
   border-color: #A7F3D0;
 }
 
@@ -816,7 +816,7 @@
   justify-content: space-between;
   font-size: 11px;
   padding: 6px 0;
-  border-bottom: 1px solid #F1F5F9;
+  border-bottom: 1px solid var(--ez-color-surface-tertiary);
 }
 
 .ezrab-wizard-category-row:last-child {
@@ -863,7 +863,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #F1F5F9;
+  border-bottom: 1px solid var(--ez-color-surface-tertiary);
   padding-bottom: 10px;
   margin-bottom: 12px;
 }
@@ -898,21 +898,21 @@
 }
 
 .ezrab-dialogue-risk-pill.low {
-  background: #ECFDF5;
+  background: var(--ez-hue-emerald-bg);
   color: #059669;
-  border: 1px solid #A7F3D0;
+  border: 1px solid var(--ez-hue-green-border-deep);
 }
 
 .ezrab-dialogue-risk-pill.medium {
-  background: #FFFBEB;
+  background: var(--ez-hue-amber-bg);
   color: #D97706;
-  border: 1px solid #FDE68A;
+  border: 1px solid var(--ez-hue-amber-border);
 }
 
 .ezrab-dialogue-risk-pill.high {
-  background: #FEF2F2;
+  background: var(--ez-hue-rose-bg);
   color: #DC2626;
-  border: 1px solid #FECACA;
+  border: 1px solid var(--ez-hue-rose-border);
 }
 
 /* =============================================================================
@@ -948,8 +948,8 @@
   align-items: center;
   gap: 5px;
   border-radius: 9999px;
-  border: 1px solid #BFDBFE;
-  background: #EFF6FF;
+  border: 1px solid var(--ez-hue-blue-border);
+  background: var(--ez-hue-blue-bg);
   padding: 4px 11px;
   font-size: 11px;
   font-weight: 600;
@@ -961,7 +961,7 @@
 
 .ezrab-suggestion-chip:hover:not(:disabled) {
   border-color: #2563EB;
-  background: #DBEAFE;
+  background: var(--ez-hue-blue-bg-deep);
   color: #1E40AF;
   transform: translateY(-1px);
 }
@@ -977,7 +977,7 @@
 
 .ezrab-confirmation-card {
   background: var(--ez-color-surface-secondary);
-  border: 1.5px solid #CBD5E1;
+  border: 1.5px solid var(--ez-hue-slate-border);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 16px;
@@ -996,9 +996,9 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: #ECFDF5;
+  background: var(--ez-hue-emerald-bg);
   color: #059669;
-  border: 1px solid #A7F3D0;
+  border: 1px solid var(--ez-hue-green-border-deep);
   border-radius: 9999px;
   padding: 3px 10px;
   font-size: 11px;

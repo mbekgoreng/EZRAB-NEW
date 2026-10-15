@@ -85,7 +85,7 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
   };
 
   return (
-    <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid #E2E8F0', padding: 24 }}>
+    <div style={{ background: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-color-border-line)', padding: 24 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div>
@@ -103,8 +103,8 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
             style={{
               padding: '6px 14px',
               borderRadius: 6,
-              background: '#F0FDF4',
-              border: '1px solid #BBF7D0',
+              background: 'var(--ez-hue-green-bg)',
+              border: '1px solid var(--ez-hue-green-border)',
               color: '#15803D',
               fontSize: 12.5,
               fontWeight: 650,
@@ -121,7 +121,7 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
 
       <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         {/* Section 1: Struktur Organisasi & Personil */}
-        <div style={{ background: 'var(--ez-color-surface-secondary)', padding: 16, borderRadius: 10, border: '1px solid #E2E8F0' }}>
+        <div style={{ background: 'var(--ez-color-surface-secondary)', padding: 16, borderRadius: 10, border: '1px solid var(--ez-color-border-line)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: '#1E293B', marginBottom: 12 }}>
             <Users size={16} color="#2563EB" />
             1. Kepemimpinan & Partisipasi Pekerja dalam Keselamatan Konstruksi
@@ -136,7 +136,7 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
                 value={organization}
                 onChange={(e) => setOrganization(e.target.value)}
                 placeholder="Contoh: Penanggung Jawab Keselamatan: Direktur, Ahli K3 Konstruksi: Budi Santoso, Supervisor Lapangan: Joko Widodo..."
-                style={{ width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12.5, resize: 'vertical' }}
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12.5, resize: 'vertical' }}
               />
             </div>
             <div>
@@ -148,14 +148,14 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
                 value={hsePersonnel}
                 onChange={(e) => setHsePersonnel(e.target.value)}
                 placeholder="Contoh: Ahli Muda K3 Konstruksi (Ir. Ahmad Yusuf, S.T. - SKA 603), Petugas P3K (Rian Pratama)..."
-                style={{ width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12.5, resize: 'vertical' }}
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12.5, resize: 'vertical' }}
               />
             </div>
           </div>
         </div>
 
         {/* Section 2: Kebijakan & Sasaran K3 */}
-        <div style={{ background: 'var(--ez-color-surface-secondary)', padding: 16, borderRadius: 10, border: '1px solid #E2E8F0' }}>
+        <div style={{ background: 'var(--ez-color-surface-secondary)', padding: 16, borderRadius: 10, border: '1px solid var(--ez-color-border-line)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: '#1E293B', marginBottom: 12 }}>
             <Target size={16} color="#16A34A" />
             2. Sasaran & Program Keselamatan Konstruksi
@@ -169,13 +169,13 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
               value={safetyObjectives}
               onChange={(e) => setSafetyObjectives(e.target.value)}
               placeholder="Contoh: Target Zero Fatality, 100% kepatuhan APD wajib di area kerja, pelaksanaan Toolbox Meeting setiap pagi hari sebelum memulai pekerjaan..."
-              style={{ width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12.5, resize: 'vertical' }}
+              style={{ width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12.5, resize: 'vertical' }}
             />
           </div>
         </div>
 
         {/* Section 3: Mitigasi Risiko & SOP */}
-        <div style={{ background: 'var(--ez-color-surface-secondary)', padding: 16, borderRadius: 10, border: '1px solid #E2E8F0' }}>
+        <div style={{ background: 'var(--ez-color-surface-secondary)', padding: 16, borderRadius: 10, border: '1px solid var(--ez-color-border-line)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: '#1E293B', marginBottom: 12 }}>
             <AlertOctagon size={16} color="#D97706" />
             3. Rencana Pengendalian Risiko & Prosedur Tanggap Darurat
@@ -190,7 +190,7 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
                 value={riskControls}
                 onChange={(e) => setRiskControls(e.target.value)}
                 placeholder="Contoh: Pemasangan safety net pada pekerjaan elevasi, proteksi area galian dengan barikade dan rambu peringatan, inspeksi berkala alat berat..."
-                style={{ width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12.5, resize: 'vertical' }}
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12.5, resize: 'vertical' }}
               />
             </div>
             <div>
@@ -202,7 +202,7 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
                 value={procedures}
                 onChange={(e) => setProcedures(e.target.value)}
                 placeholder="Contoh: Prosedur evakuasi darurat gempa dan kebakaran, penanganan kecelakaan kerja, kotak P3K siap pakai, ambulans siaga rujukan RS terdekat..."
-                style={{ width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12.5, resize: 'vertical' }}
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12.5, resize: 'vertical' }}
               />
             </div>
           </div>
