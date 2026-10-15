@@ -43,6 +43,7 @@ import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { exportProjectToExcel } from '../../export/excelExportEngine';
 import { useProject } from '../../context/ProjectContext';
 import { ProjectHistory } from '../../lib/projectHistory';
+import { buildRabCellUpdates } from './rabCellEdit';
 import { WorkItemInspectorDrawer } from '../inspector/WorkItemInspectorDrawer';
 import { IntelligentExcelImportModal } from '../import/IntelligentExcelImportModal';
 import { EstimateVersionAndScenarioModal } from '../versioning/EstimateVersionAndScenarioModal';
@@ -699,26 +700,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       return;
     }
 
-    const updates: Partial<RabItem> = {} as any;
-    if (column === 'code') updates.code = editValue.trim();
-    if (column === 'description') updates.description = editValue.trim() || targetItem.description;
-    if (column === 'volume') updates.volume = Math.max(0, parseFloat(editValue.replace(',', '.')) || 0);
-    if (column === 'unit') updates.unit = editValue.trim() || targetItem.unit;
-    // Phase 2J P0/P2 fix: empty price field → null (UNRESOLVED), not 0.
-    // Distinguishes "belum diisi" (null) from explicit zero (0), per Phase 4A.
-    if (column === 'unitPrice') {
-      const raw = editValue.replace(/[^0-9.]/g, '').trim();
-      (updates as any).unitPrice = raw === '' ? null : Math.max(0, parseFloat(raw) || 0);
-      // Keep priceStatus in sync with the edit.
-      (updates as any).priceStatus = (updates as any).unitPrice == null ? 'PRICE_UNRESOLVED' : 'PRICE_RESOLVED';
-    }
-    if (column === 'volumeSource') updates.volumeSource = editValue as VolumeSourceType;
-
-    // Recalculate amount — null price stays null (never 0).
-    const finalVol = updates.volume !== undefined ? updates.volume : targetItem.volume;
-    const finalPrice = (updates as any).unitPrice !== undefined ? (updates as any).unitPrice : (targetItem as any).unitPrice;
-    (updates as any).amount = finalPrice == null ? null : Math.round(finalVol * finalPrice);
-    (updates as any).totalPrice = (updates as any).amount;
+    const updates = buildRabCellUpdates(targetItem, column, editValue);
 
     updateRabItemFull(itemId, updates);
     setEditingCell(null);

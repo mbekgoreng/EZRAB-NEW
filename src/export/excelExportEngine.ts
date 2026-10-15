@@ -12,6 +12,7 @@ import {
   ExportSheetKey,
   EXPORT_PRESETS,
 } from './types';
+import { extractConversionTrail } from './conversionTrail';
 import {
   EXCEL_COLORS,
   FONT_FAMILY,
@@ -793,23 +794,7 @@ export async function exportRABToProfessionalExcel(
         // Fase 4A: tandai item yang harganya belum tersedia secara eksplisit,
         // jangan biarkan Rp0 terlihat seperti harga resmi.
         // Price Fallback Layer: tampilkan label sumber harga.
-        const isPriceUnresolved = (itm as any).priceStatus === 'PRICE_UNRESOLVED';
-        const srcKind = (itm as any).priceSourceKind as string | undefined;
-        const srcLabel = (itm as any).priceSourceLabel as string | undefined;
-        let sumberText: string;
-        if (srcKind === 'EZRAB_ASSUMPTION') {
-          sumberText = `ASUMSI — PERLU VERIFIKASI${(itm as any).priceSourceExplanation ? ' — ' + (itm as any).priceSourceExplanation : ''}`;
-        } else if (srcKind === 'MARKET_REFERENCE') {
-          sumberText = `REFERENSI PASAR${(itm as any).priceSourceExplanation ? ' — ' + (itm as any).priceSourceExplanation : ''}`;
-        } else if (srcKind === 'OFFICIAL_AHSP') {
-          sumberText = (itm as any).volumeSource || itm.ahspCode || 'RESMI AHSP';
-        } else if (isPriceUnresolved || srcKind === 'UNRESOLVED') {
-          sumberText = 'HARGA BELUM TERSEDIA — ' + ((itm as any).volumeSource || itm.ahspCode || 'MANUAL');
-        } else {
-          // legacy: no source kind recorded
-          sumberText = (srcLabel || (itm as any).volumeSource || itm.ahspCode || 'MANUAL');
-        }
-        iRow.getCell(9).value = sumberText;
+        iRow.getCell(9).value = buildExcelSourceText(itm as any);
 
         for (let c = 1; c <= 9; c++) {
           iRow.getCell(c).border = { bottom: BORDER_THIN_LIGHT };
@@ -2011,3 +1996,52 @@ export async function exportRABToProfessionalExcel(
 }
 
 export const exportProjectToExcel = exportRABToProfessionalExcel;
+
+/**
+ * Bangun teks kolom "Sumber" untuk satu item RAB (dipakai sheet RAB).
+ * Diekstrak sebagai fungsi murni agar dapat diuji unit.
+ *
+ * Aturan:
+ * - PRICE_MANUAL → "INPUT MANUAL" (jangan tampilkan seolah harga resmi AHSP).
+ * - OFFICIAL_AHSP + jejak UNIT_CONVERTED → tambah penanda konversi ringkas
+ *   namun dapat diaudit (satuan & harga sumber, satuan hasil, faktor, dasar).
+ * - OFFICIAL_AHSP tanpa konversi → tampil seperti sebelumnya (tanpa penanda).
+ * - PRICE_UNRESOLVED → "HARGA BELUM TERSEDIA".
+ */
+export function buildExcelSourceText(itm: {
+  priceStatus?: string;
+  priceSourceKind?: string;
+  priceSourceLabel?: string;
+  priceSourceExplanation?: string;
+  volumeSource?: string;
+  ahspCode?: string;
+}): string {
+  const priceStatus = itm.priceStatus;
+  const isPriceUnresolved = priceStatus === 'PRICE_UNRESOLVED';
+  const isManualPrice = priceStatus === 'PRICE_MANUAL';
+  const srcKind = itm.priceSourceKind;
+  const srcLabel = itm.priceSourceLabel;
+  const srcExpl = itm.priceSourceExplanation;
+  if (isManualPrice) {
+    // Harga dioverride pengguna — jangan tampilkan seolah harga resmi AHSP.
+    return `INPUT MANUAL${srcExpl ? ' — ' + srcExpl : ''}`;
+  }
+  if (srcKind === 'EZRAB_ASSUMPTION') {
+    return `ASUMSI — PERLU VERIFIKASI${srcExpl ? ' — ' + srcExpl : ''}`;
+  }
+  if (srcKind === 'MARKET_REFERENCE') {
+    return `REFERENSI PASAR${srcExpl ? ' — ' + srcExpl : ''}`;
+  }
+  if (srcKind === 'OFFICIAL_AHSP') {
+    const base = itm.volumeSource || itm.ahspCode || 'RESMI AHSP';
+    // Transparansi konversi: hanya item yang benar-benar memakai konversi
+    // whitelist (ada jejak UNIT_CONVERTED di provenance) yang diberi penanda.
+    const trail = extractConversionTrail(srcExpl);
+    return trail ? `${base} — KONVERSI SATUAN: ${trail}` : base;
+  }
+  if (isPriceUnresolved || srcKind === 'UNRESOLVED') {
+    return 'HARGA BELUM TERSEDIA — ' + (itm.volumeSource || itm.ahspCode || 'MANUAL');
+  }
+  // legacy: no source kind recorded
+  return srcLabel || itm.volumeSource || itm.ahspCode || 'MANUAL';
+}

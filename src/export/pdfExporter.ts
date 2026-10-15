@@ -9,6 +9,32 @@ import { renderPdfWatermark } from './pdfWatermark';
 import { loadOfficialEzrabEmblem, loadOfficialEzrabLogo } from './pdfAssets';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
 import { loadVersioned } from '../engine/storage/hardenedStorage';
+import { extractConversionTrail } from './conversionTrail';
+
+/**
+ * Bangun anotasi sumber harga untuk sel deskripsi item di PDF.
+ * Diekstrak sebagai fungsi murni agar dapat diuji unit.
+ *
+ * - PRICE_MANUAL → penanda [INPUT MANUAL — bukan harga resmi AHSP].
+ * - Jejak UNIT_CONVERTED → penanda [KONVERSI SATUAN: ...] ringkas namun
+ *   dapat diaudit. Item resmi tanpa konversi tidak mendapat penanda.
+ */
+export function buildPdfSourceAnnotations(item: {
+  priceStatus?: string;
+  priceSourceKind?: string;
+  priceSourceExplanation?: string;
+}): string {
+  const isUnresolved = item.priceStatus === 'PRICE_UNRESOLVED';
+  const isManualPrice = item.priceStatus === 'PRICE_MANUAL';
+  const isAssumption = item.priceSourceKind === 'EZRAB_ASSUMPTION';
+  const conversionTrail = extractConversionTrail(item.priceSourceExplanation);
+  return (
+    (isUnresolved ? '\n(Harga belum tersedia — bukan Rp0)' : '') +
+    (isAssumption ? '\n[ASUMSI — PERLU VERIFIKASI, bukan harga resmi AHSP]' : '') +
+    (isManualPrice ? '\n[INPUT MANUAL — bukan harga resmi AHSP]' : '') +
+    (conversionTrail ? `\n[KONVERSI SATUAN: ${conversionTrail}]` : '')
+  );
+}
 // PHASE 1 (audit §16): single canonical default set, so the PDF agrees with the screen.
 import { resolvePolicyValue } from '../engine/cost/policy/costPolicyDefaults';
 
@@ -732,8 +758,6 @@ export async function exportProjectToPDF(
       // priceStatus kanonis — bukan sekadar unitPrice === 0.
       // Price Fallback Layer: label asumsi.
       const isUnresolved = (item as any).priceStatus === 'PRICE_UNRESOLVED';
-      const srcKind = (item as any).priceSourceKind as string | undefined;
-      const isAssumption = srcKind === 'EZRAB_ASSUMPTION';
       const unitPriceCell = isUnresolved
         ? { content: 'HARGA BELUM TERSEDIA', styles: { halign: 'center' as const, textColor: [180, 83, 9] } }
         : formatRupiah(item.unitPrice);
@@ -745,8 +769,7 @@ export async function exportProjectToPDF(
         globalItemIndex.toString(),
         item.code || '-',
         item.description + (item.specification ? `\nSpesifikasi: ${item.specification}` : '') +
-          (isUnresolved ? '\n(Harga belum tersedia — bukan Rp0)' : '') +
-          (isAssumption ? '\n[ASUMSI — PERLU VERIFIKASI, bukan harga resmi AHSP]' : ''),
+          buildPdfSourceAnnotations(item as any),
         item.unit || 'ls',
         item.volume.toLocaleString('id-ID', { maximumFractionDigits: 2 }),
         unitPriceCell,
