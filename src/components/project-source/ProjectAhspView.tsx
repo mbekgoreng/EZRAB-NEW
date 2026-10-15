@@ -125,7 +125,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div>
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Database size={20} color="#2563EB" />
+            <Database size={20} color="var(--ez-hue-blue-text)" />
             Daftar Analisa Harga Satuan Pekerjaan (AHSP) Proyek
           </h3>
           <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--ez-color-text-muted)' }}>
@@ -364,7 +364,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                           <td style={{ padding: '8px 10px', fontWeight: 700, color: 'var(--ez-color-primary)' }}>{catItem.code}</td>
                           <td style={{ padding: '8px 10px', color: 'var(--ez-color-text-primary)' }}>{catItem.name}</td>
                           <td style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>{catItem.unit}</td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 650, color: unitPrice ? '#16A34A' : '#94A3B8' }}>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 650, color: unitPrice ? 'var(--ez-hue-green-text-bright)' : '#94A3B8' }}>
                             {unitPrice ? `Rp ${unitPrice.toLocaleString('id-ID')}` : 'Belum ada harga'}
                           </td>
                           <td style={{ padding: '8px 10px', textAlign: 'center' }}>

@@ -51,10 +51,10 @@ function TypeIcon({ type }: { type: NotificationType }): React.ReactElement {
     case 'error':
       return <AlertCircle size={16} color="#EF4444" />;
     case 'ai':
-      return <Sparkles size={16} color="#7C3AED" />;
+      return <Sparkles size={16} color="var(--ez-hue-violet-text)" />;
     case 'info':
     default:
-      return <Info size={16} color="#2563EB" />;
+      return <Info size={16} color="var(--ez-hue-blue-text)" />;
   }
 }
 

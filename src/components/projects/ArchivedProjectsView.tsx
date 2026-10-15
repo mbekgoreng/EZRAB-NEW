@@ -201,7 +201,7 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
                   fontSize: '12px',
                   fontWeight: yearFilter === year ? 700 : 600,
                   background: yearFilter === year ? 'var(--ez-pastel-sky)' : 'var(--ez-color-surface-faint)',
-                  color: yearFilter === year ? '#2456A8' : 'var(--ez-color-text-muted)',
+                  color: yearFilter === year ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-color-text-muted)',
                   border: 'none',
                   cursor: 'pointer',
                 }}

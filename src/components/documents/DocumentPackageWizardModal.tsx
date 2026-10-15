@@ -477,7 +477,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   opacity: isActive || isDone ? 1 : 0.45,
                   fontWeight: isActive ? 700 : 500,
                   fontSize: '12.5px',
-                  color: isActive ? 'var(--ez-color-primary)' : isDone ? '#16A34A' : 'var(--ez-color-text-muted)',
+                  color: isActive ? 'var(--ez-color-primary)' : isDone ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-color-text-muted)',
                   whiteSpace: 'nowrap',
                 }}
               >
@@ -540,7 +540,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                         borderRadius: '8px',
                         border: isSelected ? '1.5px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                         backgroundColor: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                        color: isSelected ? 'var(--ez-color-primary-hover)' : '#334155',
+                        color: isSelected ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
                         fontSize: '12px',
                         fontWeight: isSelected ? 700 : 500,
                         cursor: 'pointer',
@@ -550,7 +550,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                         transition: 'all 120ms ease',
                       }}
                     >
-                      {isSelected && <CheckCircle2 size={13} color="#2563EB" />}
+                      {isSelected && <CheckCircle2 size={13} color="var(--ez-hue-blue-text)" />}
                       <span>{preset.label}</span>
                     </button>
                   );
@@ -728,7 +728,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                           padding: '2px 7px',
                           borderRadius: '4px',
                           backgroundColor: src.ready ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-amber-bg-deep)',
-                          color: src.ready ? '#15803D' : '#B45309',
+                          color: src.ready ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-amber-text)',
                         }}
                       >
                         {src.ready ? '✓ Data tersedia' : '⚠ Belum tersedia'}
@@ -752,7 +752,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                     gap: '12px',
                   }}
                 >
-                  <AlertTriangle size={20} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <AlertTriangle size={20} color="var(--ez-hue-amber-text-deep)" style={{ flexShrink: 0, marginTop: '2px' }} />
                   <div>
                     <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-hue-amber-text-dark)', margin: 0 }}>
                       Sebagian Sumber Data Belum Lengkap
@@ -1041,7 +1041,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
                   style={{
                     fontSize: '18px',
                     fontWeight: 800,
-                    color: consistencyReport.score >= 80 ? '#16A34A' : '#D97706',
+                    color: consistencyReport.score >= 80 ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-hue-amber-text-deep)',
                   }}
                 >
                   {consistencyReport.score}/100 Skor

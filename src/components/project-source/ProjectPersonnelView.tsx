@@ -102,7 +102,7 @@ export const ProjectPersonnelView: React.FC<ProjectPersonnelViewProps> = ({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div>
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <UserCheck size={20} color="#2563EB" />
+            <UserCheck size={20} color="var(--ez-hue-blue-text)" />
             Daftar Personil Manajerial & Teknis Proyek
           </h3>
           <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--ez-color-text-muted)' }}>

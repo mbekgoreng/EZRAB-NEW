@@ -215,7 +215,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                 gap: '8px',
               }}
             >
-              <AlertCircle size={16} color="#DC2626" />
+              <AlertCircle size={16} color="var(--ez-hue-rose-text)" />
               <span>{errorMsg}</span>
             </div>
           )}
@@ -234,7 +234,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                 gap: '8px',
               }}
             >
-              <CheckCircle2 size={16} color="#16A34A" />
+              <CheckCircle2 size={16} color="var(--ez-hue-green-text-bright)" />
               <span>{successMsg}</span>
             </div>
           )}
@@ -366,7 +366,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                       borderRadius: '8px',
                       border: isSel ? '2px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                       background: isSel ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                      color: isSel ? 'var(--ez-color-primary-hover)' : '#475569',
+                      color: isSel ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-slate)',
                       fontSize: '12.5px',
                       fontWeight: isSel ? 700 : 500,
                       cursor: 'pointer',

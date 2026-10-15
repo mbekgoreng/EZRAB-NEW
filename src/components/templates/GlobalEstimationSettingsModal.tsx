@@ -69,7 +69,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Settings size={18} color="#2563EB" />
+            <Settings size={18} color="var(--ez-hue-blue-text)" />
             <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Pengaturan Estimasi Universal
             </h3>
@@ -106,7 +106,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
                     borderRadius: '8px',
                     border: formData.detailLevel === lvl ? '2px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                     background: formData.detailLevel === lvl ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                    color: formData.detailLevel === lvl ? '#1E40AF' : '#475569',
+                    color: formData.detailLevel === lvl ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-color-text-slate)',
                     fontSize: '11.5px',
                     fontWeight: formData.detailLevel === lvl ? 700 : 500,
                     cursor: 'pointer'

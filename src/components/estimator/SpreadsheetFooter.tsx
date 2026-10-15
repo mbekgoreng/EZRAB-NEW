@@ -67,7 +67,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
             onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-hue-blue-bg)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
           >
-            <Plus size={14} color="#2563EB" />
+            <Plus size={14} color="var(--ez-hue-blue-text)" />
             <span>Tambah Kelompok</span>
           </button>
 
@@ -157,7 +157,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
                 borderRadius: '5px',
                 border: '1px solid var(--ez-hue-slate-border)',
                 background: 'var(--ez-color-surface)',
-                color: currentPage <= 1 ? 'var(--ez-hue-slate-border)' : '#334155',
+                color: currentPage <= 1 ? 'var(--ez-hue-slate-border)' : 'var(--ez-color-text-body)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -191,7 +191,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
                 borderRadius: '5px',
                 border: '1px solid var(--ez-hue-slate-border)',
                 background: 'var(--ez-color-surface)',
-                color: currentPage >= totalPages ? 'var(--ez-hue-slate-border)' : '#334155',
+                color: currentPage >= totalPages ? 'var(--ez-hue-slate-border)' : 'var(--ez-color-text-body)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -213,7 +213,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
               background: isSaving ? '#F59E0B' : '#10B981',
             }}
           />
-          <span style={{ fontSize: '11.5px', fontWeight: 600, color: isSaving ? '#D97706' : '#059669' }}>
+          <span style={{ fontSize: '11.5px', fontWeight: 600, color: isSaving ? 'var(--ez-hue-amber-text-deep)' : 'var(--ez-hue-green-text)' }}>
             {isSaving ? 'Menyimpan perubahan...' : 'Semua perubahan disimpan'}
           </span>
         </div>

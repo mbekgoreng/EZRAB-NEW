@@ -301,7 +301,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                   alignItems: 'center',
                   gap: '6px',
                   cursor: uploadedFile ? 'pointer' : 'default',
-                  color: currentStep === s.step ? 'var(--ez-color-primary)' : currentStep > s.step ? '#059669' : '#94A3B8',
+                  color: currentStep === s.step ? 'var(--ez-color-primary)' : currentStep > s.step ? 'var(--ez-hue-green-text)' : '#94A3B8',
                   fontWeight: currentStep === s.step ? 800 : 600,
                 }}
               >
@@ -329,7 +329,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
 
           {uploadedFile && (
             <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <FileSpreadsheet size={13} color="#2563EB" />
+              <FileSpreadsheet size={13} color="var(--ez-hue-blue-text)" />
               <strong>{uploadedFile.name}</strong> ({(uploadedFile.size / 1024).toFixed(1)} KB)
             </span>
           )}
@@ -400,7 +400,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                     justifyContent: 'center',
                   }}
                 >
-                  <Upload size={28} color="#2563EB" />
+                  <Upload size={28} color="var(--ez-hue-blue-text)" />
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
@@ -446,7 +446,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                   color: 'var(--ez-hue-blue-text-deep)',
                 }}
               >
-                <Sparkles size={16} color="#2563EB" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <Sparkles size={16} color="var(--ez-hue-blue-text)" style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div>
                   <strong>Deteksi Cerdas Tanpa Format Kaku:</strong> Mesin akan otomatis mengenali variasi nama kolom (e.g. <em>Vol, Kuantitas, HSP, Sat, Uraian Pekerjaan</em>) serta memisahkan grup judul WBS dan baris subtotal secara otomatis.
                 </div>
@@ -529,7 +529,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                                 key={cIdx}
                                 style={{
                                   padding: '6px 10px',
-                                  color: isSelectedHeader ? '#1E40AF' : '#334155',
+                                  color: isSelectedHeader ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-color-text-body)',
                                   fontWeight: isSelectedHeader ? 800 : 500,
                                 }}
                               >
@@ -683,10 +683,10 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                 </div>
 
                 <div style={{ padding: '10px 12px', borderRadius: '8px', background: analysisResult.allAnomalies.length > 0 ? 'var(--ez-hue-amber-bg-deep)' : 'var(--ez-hue-emerald-bg)', border: `1px solid ${analysisResult.allAnomalies.length > 0 ? '#FCD34D' : 'var(--ez-hue-green-border-deep)'}` }}>
-                  <div style={{ fontSize: '10.5px', color: analysisResult.allAnomalies.length > 0 ? '#92400E' : '#065F46', fontWeight: 700 }}>
+                  <div style={{ fontSize: '10.5px', color: analysisResult.allAnomalies.length > 0 ? 'var(--ez-hue-amber-text-dark)' : 'var(--ez-hue-green-text-deep)', fontWeight: 700 }}>
                     ANOMALI / WARNING
                   </div>
-                  <div style={{ fontSize: '16px', fontWeight: 800, color: analysisResult.allAnomalies.length > 0 ? '#D97706' : '#059669', marginTop: '2px' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: analysisResult.allAnomalies.length > 0 ? 'var(--ez-hue-amber-text-deep)' : 'var(--ez-hue-green-text)', marginTop: '2px' }}>
                     {analysisResult.allAnomalies.length} Catatan
                   </div>
                 </div>
@@ -718,7 +718,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                         padding: '4px 10px',
                         borderRadius: '6px',
                         background: previewTab === t.key ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
-                        color: previewTab === t.key ? '#FFFFFF' : '#475569',
+                        color: previewTab === t.key ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                         border: previewTab === t.key ? 'none' : '1px solid var(--ez-hue-slate-border)',
                         fontSize: '11.5px',
                         fontWeight: 700,
@@ -746,7 +746,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                     gap: '4px',
                   }}
                 >
-                  <Download size={13} color="#2563EB" />
+                  <Download size={13} color="var(--ez-hue-blue-text)" />
                   Unduh Laporan Audit CSV
                 </button>
               </div>

@@ -299,11 +299,11 @@ export const FinancialReportsTab: React.FC<FinancialReportsTabProps> = ({
                   <td style={{ padding: '8px 10px', fontWeight: 600 }}>{i.groupName}</td>
                   <td style={{ padding: '8px 10px', textAlign: 'right' }}>{formatRupiah(i.budgetAmount)}</td>
                   <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>{formatRupiah(i.actualAmount)}</td>
-                  <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: i.varianceAmount > 0 ? '#DC2626' : '#16A34A' }}>
+                  <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: i.varianceAmount > 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text-bright)' }}>
                     {i.varianceAmount >= 0 ? '+' : ''}{formatRupiah(i.varianceAmount)} ({i.variancePercent >= 0 ? '+' : ''}{i.variancePercent}%)
                   </td>
                   <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                    <span style={{ fontSize: '10.5px', fontWeight: 700, color: i.status === 'OVER_BUDGET' ? '#DC2626' : '#16A34A' }}>
+                    <span style={{ fontSize: '10.5px', fontWeight: 700, color: i.status === 'OVER_BUDGET' ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text-bright)' }}>
                       {i.status}
                     </span>
                   </td>

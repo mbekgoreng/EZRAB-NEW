@@ -1504,7 +1504,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                                     style={{
                                       fontSize: '12.5px',
                                       fontWeight: isActive ? 650 : 500,
-                                      color: isActive ? 'var(--ez-color-primary-hover)' : '#1F2937',
+                                      color: isActive ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-primary)',
                                       whiteSpace: 'nowrap',
                                       overflow: 'hidden',
                                       textOverflow: 'ellipsis',
@@ -1692,7 +1692,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                 e.currentTarget.style.backgroundColor = '#FFFFFF';
               }}
             >
-              <Plus size={16} color="#2563EB" />
+              <Plus size={16} color="var(--ez-hue-blue-text)" />
               <span>+ Percakapan Baru</span>
             </button>
           </div>
@@ -1894,7 +1894,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                         borderRadius: '8px',
                         border: 'none',
                         backgroundColor: isCurrent ? 'var(--ez-hue-blue-bg)' : 'transparent',
-                        color: isCurrent ? 'var(--ez-color-primary-hover)' : '#334155',
+                        color: isCurrent ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -1916,7 +1916,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                           {proj.location || 'Indonesia'}
                         </div>
                       </div>
-                      {isCurrent && <Check size={14} color="#2563EB" />}
+                      {isCurrent && <Check size={14} color="var(--ez-hue-blue-text)" />}
                     </button>
                   );
                 })}

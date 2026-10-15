@@ -437,7 +437,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
           <div style={{ padding: '8px 10px', backgroundColor: 'var(--ez-color-surface-secondary)', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
             <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Fuel size={12} color="#D97706" /> Konsumsi BBM
+              <Fuel size={12} color="var(--ez-hue-amber-text-deep)" /> Konsumsi BBM
             </div>
             <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
               {equipment.fuelConsumptionLiterPerHour > 0 ? `${equipment.fuelConsumptionLiterPerHour} L / jam` : 'Listrik / Manual'}

@@ -332,7 +332,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
               {/* Labor Recommendation Section */}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginBottom: '8px' }}>
-                  <HardHat size={16} color="#D97706" />
+                  <HardHat size={16} color="var(--ez-hue-amber-text-deep)" />
                   <span>Kebutuhan Tenaga Kerja:</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -401,7 +401,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
               {/* Equipment Recommendation Section */}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginBottom: '8px' }}>
-                  <Truck size={16} color="#2563EB" />
+                  <Truck size={16} color="var(--ez-hue-blue-text)" />
                   <span>Kebutuhan Alat Berat & Mesin:</span>
                 </div>
                 {breakdown.equipment.primary.length === 0 && breakdown.equipment.supporting.length === 0 ? (

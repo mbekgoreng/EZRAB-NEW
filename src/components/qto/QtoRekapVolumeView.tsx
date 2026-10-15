@@ -584,7 +584,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-tertiary)')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <FileSpreadsheet size={14} color="#059669" />
+                  <FileSpreadsheet size={14} color="var(--ez-hue-green-text)" />
                   <span>Export Excel / CSV</span>
                 </button>
 
@@ -609,7 +609,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-tertiary)')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <Printer size={14} color="#2563EB" />
+                  <Printer size={14} color="var(--ez-hue-blue-text)" />
                   <span>Print QTO Report</span>
                 </button>
               </div>
@@ -757,7 +757,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                 fontSize: '12.5px',
                 fontWeight: isActive ? 700 : 600,
                 background: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
-                color: isActive ? '#ffffff' : '#475569',
+                color: isActive ? '#ffffff' : 'var(--ez-color-text-slate)',
                 border: isActive ? 'none' : '1px solid var(--ez-color-border-line)',
                 cursor: 'pointer',
                 display: 'inline-flex',
@@ -772,7 +772,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   fontSize: '10.5px',
                   fontWeight: 700,
                   background: isActive ? 'rgba(255,255,255,0.25)' : 'var(--ez-color-surface-tertiary)',
-                  color: isActive ? '#ffffff' : '#6B6B64',
+                  color: isActive ? '#ffffff' : 'var(--ez-color-text-warm)',
                   padding: '1px 6px',
                   borderRadius: 'var(--ez-radius-pill)',
                 }}
@@ -1282,7 +1282,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             {/* Panel Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <FileText size={16} color="#2563EB" />
+                <FileText size={16} color="var(--ez-hue-blue-text)" />
                 <h3 style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                   Detail QTO
                 </h3>
@@ -1306,7 +1306,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                     fontSize: '11px',
                     fontWeight: 700,
                     background: activeSelectedItem.status === 'SYNCED_TO_RAB' ? 'var(--ez-pastel-mint)' : 'var(--ez-pastel-sky)',
-                    color: activeSelectedItem.status === 'SYNCED_TO_RAB' ? '#2C6E2C' : '#2456A8',
+                    color: activeSelectedItem.status === 'SYNCED_TO_RAB' ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-blue-text-deep)',
                     padding: '5px 12px',
                     borderRadius: 'var(--ez-radius-pill)',
                   }}
@@ -1362,7 +1362,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             {/* Informasi Volume Box */}
             <div style={{ borderTop: '1px solid #EEF1F6', paddingTop: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                <FileSpreadsheet size={14} color="#2563EB" />
+                <FileSpreadsheet size={14} color="var(--ez-hue-blue-text)" />
                 <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-strong)', textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: FONT }}>
                   Informasi Volume
                 </span>
@@ -1412,7 +1412,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             {/* Parameter Box */}
             <div style={{ borderTop: '1px solid #EEF1F6', paddingTop: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                <Sliders size={14} color="#2563EB" />
+                <Sliders size={14} color="var(--ez-hue-blue-text)" />
                 <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-strong)', textTransform: 'uppercase', letterSpacing: '0.02em', fontFamily: FONT }}>
                   Parameter Perhitungan
                 </span>

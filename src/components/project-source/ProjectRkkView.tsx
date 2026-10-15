@@ -90,7 +90,7 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div>
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Shield size={20} color="#16A34A" />
+            <Shield size={20} color="var(--ez-hue-green-text-bright)" />
             Rencana Keselamatan Konstruksi (RKK) Proyek
           </h3>
           <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--ez-color-text-muted)' }}>
@@ -123,7 +123,7 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
         {/* Section 1: Struktur Organisasi & Personil */}
         <div style={{ background: 'var(--ez-color-surface-secondary)', padding: 16, borderRadius: 10, border: '1px solid var(--ez-color-border-line)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: 'var(--ez-color-text-strong)', marginBottom: 12 }}>
-            <Users size={16} color="#2563EB" />
+            <Users size={16} color="var(--ez-hue-blue-text)" />
             1. Kepemimpinan & Partisipasi Pekerja dalam Keselamatan Konstruksi
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
@@ -157,7 +157,7 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
         {/* Section 2: Kebijakan & Sasaran K3 */}
         <div style={{ background: 'var(--ez-color-surface-secondary)', padding: 16, borderRadius: 10, border: '1px solid var(--ez-color-border-line)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: 'var(--ez-color-text-strong)', marginBottom: 12 }}>
-            <Target size={16} color="#16A34A" />
+            <Target size={16} color="var(--ez-hue-green-text-bright)" />
             2. Sasaran & Program Keselamatan Konstruksi
           </div>
           <div>
@@ -177,7 +177,7 @@ export const ProjectRkkView: React.FC<ProjectRkkViewProps> = ({
         {/* Section 3: Mitigasi Risiko & SOP */}
         <div style={{ background: 'var(--ez-color-surface-secondary)', padding: 16, borderRadius: 10, border: '1px solid var(--ez-color-border-line)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 700, color: 'var(--ez-color-text-strong)', marginBottom: 12 }}>
-            <AlertOctagon size={16} color="#D97706" />
+            <AlertOctagon size={16} color="var(--ez-hue-amber-text-deep)" />
             3. Rencana Pengendalian Risiko & Prosedur Tanggap Darurat
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>

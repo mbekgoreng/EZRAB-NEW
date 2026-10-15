@@ -663,7 +663,7 @@ export const TechnicalReferenceViewer: React.FC<TechnicalReferenceViewerProps> =
                       style={{
                         fontSize: '11px',
                         fontWeight: 700,
-                        color: isSelected ? 'var(--ez-color-primary-hover)' : '#334155',
+                        color: isSelected ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
                         whiteSpace: 'nowrap',
                       }}
                     >

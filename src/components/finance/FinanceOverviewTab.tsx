@@ -828,7 +828,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           gap: '12px',
         }}
       >
-        <Sparkles size={18} color="#2563EB" style={{ marginTop: '2px', flexShrink: 0 }} />
+        <Sparkles size={18} color="var(--ez-hue-blue-text)" style={{ marginTop: '2px', flexShrink: 0 }} />
         <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-body)', lineHeight: '1.5' }}>
           <div style={{ fontWeight: 750, color: 'var(--ez-color-text-primary)', marginBottom: '4px' }}>
             EZRAB Financial Core Intelligence

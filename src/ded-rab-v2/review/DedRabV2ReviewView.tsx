@@ -1188,7 +1188,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                               borderRadius: '4px',
                               fontWeight: 700,
                               backgroundColor: item.sourceType === 'DED_VERIFIED' ? 'var(--ez-hue-emerald-bg)' : item.sourceType === 'CONSTRUCTION_RULE' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-hue-amber-bg-deep)',
-                              color: item.sourceType === 'DED_VERIFIED' ? '#047857' : item.sourceType === 'CONSTRUCTION_RULE' ? 'var(--ez-color-primary-hover)' : '#B45309',
+                              color: item.sourceType === 'DED_VERIFIED' ? 'var(--ez-hue-green-text)' : item.sourceType === 'CONSTRUCTION_RULE' ? 'var(--ez-color-primary-hover)' : 'var(--ez-hue-amber-text)',
                               border: `1px solid ${item.sourceType === 'DED_VERIFIED' ? 'var(--ez-hue-green-border-deep)' : item.sourceType === 'CONSTRUCTION_RULE' ? 'var(--ez-hue-blue-border)' : 'var(--ez-hue-amber-border)'}`,
                             }}
                           >

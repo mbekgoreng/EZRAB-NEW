@@ -395,7 +395,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
                       style={{
                         fontSize: '11px',
                         fontWeight: 700,
-                        color: readiness >= 75 ? 'var(--ez-pill-ok-text)' : '#A8780A',
+                        color: readiness >= 75 ? 'var(--ez-pill-ok-text)' : 'var(--ez-hue-amber-text)',
                       }}
                     >
                       {t('proj.draft.readiness')} {readiness}%

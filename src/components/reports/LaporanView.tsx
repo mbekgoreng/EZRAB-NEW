@@ -843,12 +843,12 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
           >
             {isExportingPdf ? (
               <>
-                <Loader2 size={14} color="#2563EB" className="animate-spin" />
+                <Loader2 size={14} color="var(--ez-hue-blue-text)" className="animate-spin" />
                 <span>Membuat PDF...</span>
               </>
             ) : (
               <>
-                <Upload size={14} color="#2563EB" />
+                <Upload size={14} color="var(--ez-hue-blue-text)" />
                 <span>Export PDF</span>
               </>
             )}
@@ -1650,7 +1650,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
                     <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-color-border-line)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, fontSize: '12.5px', color: 'var(--ez-color-text-primary)' }}>
-                        <Package size={14} color="#2563EB" />
+                        <Package size={14} color="var(--ez-hue-blue-text)" />
                         <span>A. KEBUTUHAN BAHAN / MATERIAL</span>
                       </div>
                       <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-primary)' }}>
@@ -1863,7 +1863,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <AlertCircle size={20} color="#D97706" />
+                    <AlertCircle size={20} color="var(--ez-hue-amber-text-deep)" />
                     <div>
                       <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-hue-amber-text-dark)' }}>
                         Data Kurva S Belum Lengkap
@@ -1930,11 +1930,11 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     </div>
 
                     <div style={{ background: totalDev >= 0 ? 'var(--ez-hue-green-bg)' : 'var(--ez-hue-rose-bg)', border: totalDev >= 0 ? '1px solid var(--ez-hue-green-border)' : '1px solid var(--ez-hue-rose-border)', borderRadius: 'var(--ez-radius-control)', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '11px', color: totalDev >= 0 ? '#16A34A' : '#DC2626', fontWeight: 600 }}>Deviasi Waktu/Biaya</div>
-                      <div style={{ fontSize: '18px', fontWeight: 800, color: totalDev >= 0 ? '#16A34A' : '#DC2626', marginTop: '2px' }}>
+                      <div style={{ fontSize: '11px', color: totalDev >= 0 ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-hue-rose-text)', fontWeight: 600 }}>Deviasi Waktu/Biaya</div>
+                      <div style={{ fontSize: '18px', fontWeight: 800, color: totalDev >= 0 ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-hue-rose-text)', marginTop: '2px' }}>
                         {totalDev > 0 ? `+${totalDev.toFixed(2)}%` : `${totalDev.toFixed(2)}%`}
                       </div>
-                      <div style={{ fontSize: '11px', color: totalDev >= 0 ? '#15803D' : '#B91C1C', marginTop: '2px' }}>
+                      <div style={{ fontSize: '11px', color: totalDev >= 0 ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-red-text)', marginTop: '2px' }}>
                         {totalDev > 0 ? 'Lebih Cepat (Ahead)' : totalDev === 0 ? 'Tepat Waktu (On Track)' : 'Terlambat (Behind)'}
                       </div>
                     </div>
@@ -2171,7 +2171,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: kurvaSRequirement.isComplete ? '#10B981' : '#F59E0B' }} />
                   <div>
                     <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Status Jadwal & Kurva-S</div>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: kurvaSRequirement.isComplete ? '#16A34A' : '#D97706' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 800, color: kurvaSRequirement.isComplete ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-hue-amber-text-deep)' }}>
                       {kurvaSRequirement.isComplete ? 'Terverifikasi 100%' : 'Perlu Kelengkapan'}
                     </div>
                   </div>
@@ -2265,7 +2265,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                             padding: '8px 6px',
                             textAlign: 'center',
                             fontWeight: 800,
-                            color: w.dev !== null ? (w.dev >= 0 ? '#16A34A' : '#DC2626') : '#94A3B8',
+                            color: w.dev !== null ? (w.dev >= 0 ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-hue-rose-text)') : '#94A3B8',
                             background: hoveredWeekIndex === idx ? 'var(--ez-color-surface-tertiary)' : undefined,
                           }}
                         >
@@ -2356,7 +2356,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                               padding: '2px 6px',
                               borderRadius: '4px',
                               background: t.status === 'Selesai' ? 'var(--ez-hue-green-bg-deep)' : t.status === 'On Progress' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-tertiary)',
-                              color: t.status === 'Selesai' ? '#16A34A' : t.status === 'On Progress' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
+                              color: t.status === 'Selesai' ? 'var(--ez-hue-green-text-bright)' : t.status === 'On Progress' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                             }}
                           >
                             {t.status}
@@ -2666,7 +2666,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-color-border-line)', paddingBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Camera size={18} color="#2563EB" />
+                <Camera size={18} color="var(--ez-hue-blue-text)" />
                 <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                   Foto Sampul Proyek
                 </h3>

@@ -233,7 +233,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                 fontSize: '12px',
                 fontWeight: statusSubFilter === 'all' ? 700 : 600,
                 background: statusSubFilter === 'all' ? 'var(--ez-pastel-sky)' : 'var(--ez-color-surface-faint)',
-                color: statusSubFilter === 'all' ? '#2456A8' : 'var(--ez-color-text-muted)',
+                color: statusSubFilter === 'all' ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-color-text-muted)',
                 border: 'none',
                 cursor: 'pointer',
               }}
@@ -265,7 +265,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                 fontSize: '12px',
                 fontWeight: statusSubFilter === 'behind' ? 700 : 600,
                 background: statusSubFilter === 'behind' ? '#FCE9E9' : 'var(--ez-color-surface-faint)',
-                color: statusSubFilter === 'behind' ? '#B54747' : 'var(--ez-color-text-muted)',
+                color: statusSubFilter === 'behind' ? 'var(--ez-hue-rose-text)' : 'var(--ez-color-text-muted)',
                 border: 'none',
                 cursor: 'pointer',
               }}
@@ -407,7 +407,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                         padding: '5px 12px',
                         borderRadius: 'var(--ez-radius-pill)',
                         background: isAhead ? 'var(--ez-pastel-mint)' : '#FCE9E9',
-                        color: isAhead ? 'var(--ez-pill-ok-text)' : '#B54747',
+                        color: isAhead ? 'var(--ez-pill-ok-text)' : 'var(--ez-hue-rose-text)',
                         whiteSpace: 'nowrap',
                       }}
                     >
@@ -473,7 +473,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
 
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
                       <span>{t('proj.active.planned_t')}<strong>{planned}%</strong></span>
-                      <span style={{ fontWeight: 700, color: isAhead ? 'var(--ez-pill-ok-text)' : '#B54747' }}>
+                      <span style={{ fontWeight: 700, color: isAhead ? 'var(--ez-pill-ok-text)' : 'var(--ez-hue-rose-text)' }}>
                         {t('proj.active.dev_t')}{deviation >= 0 ? `+${deviation}%` : `${deviation}%`}
                       </span>
                     </div>

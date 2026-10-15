@@ -310,7 +310,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                     height: '54px',
                     borderRadius: '50%',
                     backgroundColor: selectedFile ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-emerald-bg)',
-                    color: selectedFile ? '#166534' : '#059669',
+                    color: selectedFile ? 'var(--ez-hue-green-text-deep)' : 'var(--ez-hue-green-text)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -414,7 +414,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                     Supplier / Toko
                   </div>
                   <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Store size={16} color="#059669" />
+                    <Store size={16} color="var(--ez-hue-green-text)" />
                     <span>{ocrResult.supplierName}</span>
                   </div>
                 </div>
@@ -494,7 +494,7 @@ export const ReceiptReaderModal: React.FC<ReceiptReaderModalProps> = ({
                                     padding: '2px 8px',
                                     borderRadius: '6px',
                                     backgroundColor: isHigher ? 'var(--ez-hue-rose-bg)' : 'var(--ez-hue-green-bg)',
-                                    color: isHigher ? '#B91C1C' : '#15803D',
+                                    color: isHigher ? 'var(--ez-hue-red-text)' : 'var(--ez-hue-green-text)',
                                   }}
                                 >
                                   {match.priceDifferencePercent > 0 ? `+${match.priceDifferencePercent}%` : `${match.priceDifferencePercent}%`}

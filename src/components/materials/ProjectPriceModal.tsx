@@ -493,7 +493,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                               item.category === 'MATERIAL'
                                 ? 'var(--ez-color-primary-hover)'
                                 : item.category === 'LABOR'
-                                ? '#92400E'
+                                ? 'var(--ez-hue-amber-text-dark)'
                                 : '#6B21A8',
                           }}
                         >
@@ -556,7 +556,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                           selectedResource.category === 'MATERIAL'
                             ? 'var(--ez-color-primary-hover)'
                             : selectedResource.category === 'LABOR'
-                            ? '#92400E'
+                            ? 'var(--ez-hue-amber-text-dark)'
                             : '#6B21A8',
                       }}
                     >
@@ -604,7 +604,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', textTransform: 'uppercase' }}>
-                  <ShieldCheck size={13} color="#059669" />
+                  <ShieldCheck size={13} color="var(--ez-hue-green-text)" />
                   <span>Harga Master Acuan:</span>
                 </div>
                 <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-body)', marginTop: '4px' }}>
@@ -671,13 +671,13 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {isCheaper ? (
-                  <TrendingDown size={16} color="#059669" />
+                  <TrendingDown size={16} color="var(--ez-hue-green-text)" />
                 ) : isIdentical ? (
                   <CheckCircle2 size={16} color="#64748B" />
                 ) : (
-                  <TrendingUp size={16} color="#DC2626" />
+                  <TrendingUp size={16} color="var(--ez-hue-rose-text)" />
                 )}
-                <span style={{ fontSize: '11.5px', fontWeight: 700, color: isCheaper ? '#065F46' : isIdentical ? '#475569' : '#991B1B' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 700, color: isCheaper ? 'var(--ez-hue-green-text-deep)' : isIdentical ? 'var(--ez-color-text-slate)' : 'var(--ez-hue-red-text)' }}>
                   {isCheaper
                     ? 'Penghematan Biaya Terhadap Acuan Master'
                     : isIdentical
@@ -691,7 +691,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                   style={{
                     fontSize: '12px',
                     fontWeight: 900,
-                    color: isCheaper ? '#059669' : isIdentical ? '#475569' : '#DC2626',
+                    color: isCheaper ? 'var(--ez-hue-green-text)' : isIdentical ? 'var(--ez-color-text-slate)' : 'var(--ez-hue-rose-text)',
                   }}
                 >
                   {difference > 0 ? '+' : ''}Rp {difference.toLocaleString('id-ID')} ({percentage > 0 ? '+' : ''}{percentage.toFixed(1)}%)

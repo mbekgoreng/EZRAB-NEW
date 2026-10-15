@@ -560,7 +560,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                   borderRadius: 8,
                   border: isTabActive ? '1px solid #2563EB' : '1px solid var(--ez-color-border-line)',
                   background: isTabActive ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                  color: isTabActive ? 'var(--ez-color-primary-hover)' : '#475569',
+                  color: isTabActive ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-slate)',
                   fontSize: 12.5,
                   fontWeight: isTabActive ? 700 : 500,
                   cursor: 'pointer',
@@ -826,7 +826,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                       >
                         {statusLabel}
                       </span>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: isReady ? '#15803D' : '#334155' }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: isReady ? 'var(--ez-hue-green-text)' : 'var(--ez-color-text-body)' }}>
                         {comp.completenessPercentage}%
                       </span>
                     </div>
@@ -858,7 +858,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
                     onClick={() => setActiveDocumentDef(def)}
                     style={{
                       background: isReady ? 'var(--ez-hue-green-bg)' : 'var(--ez-hue-blue-bg)',
-                      color: isReady ? '#16A34A' : 'var(--ez-color-primary)',
+                      color: isReady ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-color-primary)',
                       border: `1px solid ${isReady ? 'var(--ez-hue-green-border)' : 'var(--ez-hue-blue-border)'}`,
                       borderRadius: 7,
                       padding: '7px 16px',

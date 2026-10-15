@@ -435,7 +435,7 @@ export const PriceResolutionDrawer: React.FC<PriceResolutionDrawerProps> = ({
               gap: '6px',
             }}
           >
-            <Sparkles size={14} color="#7C3AED" /> AI Web Search
+            <Sparkles size={14} color="var(--ez-hue-violet-text)" /> AI Web Search
           </button>
           <button
             onClick={() => setActiveTab('MANUAL')}
@@ -611,7 +611,7 @@ export const PriceResolutionDrawer: React.FC<PriceResolutionDrawerProps> = ({
                                   padding: '1px 6px',
                                   borderRadius: '4px',
                                   background: isLabor ? 'var(--ez-hue-amber-bg-deep)' : isEquip ? 'var(--ez-hue-purple-bg-deep)' : cand.source === 'PROJECT' ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-color-surface-tertiary)',
-                                  color: isLabor ? '#B45309' : isEquip ? '#6D28D9' : cand.source === 'PROJECT' ? '#15803D' : '#475569',
+                                  color: isLabor ? 'var(--ez-hue-amber-text)' : isEquip ? 'var(--ez-hue-violet-text)' : cand.source === 'PROJECT' ? 'var(--ez-hue-green-text)' : 'var(--ez-color-text-slate)',
                                 }}
                               >
                                 {isLabor ? 'STANDAR UPAH' : isEquip ? 'SEWA ALAT' : cand.source === 'PROJECT' ? 'HARGA PROYEK' : 'MATERIAL NASIONAL'}

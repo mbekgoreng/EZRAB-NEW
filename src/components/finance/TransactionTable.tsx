@@ -266,7 +266,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                         textAlign: 'right',
                         fontWeight: 750,
                         whiteSpace: 'nowrap',
-                        color: isIncome ? '#16A34A' : (isExpense ? '#DC2626' : '#0F172A'),
+                        color: isIncome ? 'var(--ez-hue-green-text-bright)' : (isExpense ? 'var(--ez-hue-rose-text)' : 'var(--ez-color-text-primary)'),
                       }}
                     >
                       {isIncome ? '+' : isExpense ? '-' : ''}{formatRupiah(tx.amount)}
@@ -384,7 +384,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
               </div>
               <div>
                 <div style={{ color: 'var(--ez-color-text-muted)', fontSize: '11px' }}>Nominal</div>
-                <div style={{ fontWeight: 800, fontSize: '15px', color: selectedTx.type === 'INCOME' ? '#16A34A' : '#DC2626' }}>
+                <div style={{ fontWeight: 800, fontSize: '15px', color: selectedTx.type === 'INCOME' ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-hue-rose-text)' }}>
                   {formatRupiah(selectedTx.amount)}
                 </div>
               </div>

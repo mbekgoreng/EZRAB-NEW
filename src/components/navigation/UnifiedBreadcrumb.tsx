@@ -119,7 +119,7 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
         onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ez-color-text-muted)')}
         title="Kembali ke Dashboard Utama"
       >
-        <LayoutDashboard size={13} color="#2563EB" />
+        <LayoutDashboard size={13} color="var(--ez-hue-blue-text)" />
         <span>Dashboard</span>
       </button>
 

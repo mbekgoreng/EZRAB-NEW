@@ -107,7 +107,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div>
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <ShieldAlert size={20} color="#D97706" />
+            <ShieldAlert size={20} color="var(--ez-hue-amber-text-deep)" />
             Job Safety Analysis (JSA) & Identifikasi Bahaya K3
           </h3>
           <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--ez-color-text-muted)' }}>
@@ -147,7 +147,7 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
             border: '1px dashed var(--ez-hue-amber-border)',
           }}
         >
-          <AlertTriangle size={36} color="#D97706" style={{ marginBottom: 10 }} />
+          <AlertTriangle size={36} color="var(--ez-hue-amber-text-deep)" style={{ marginBottom: 10 }} />
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ez-hue-amber-text-dark)' }}>Belum ada data JSA / K3 proyek</div>
           <p style={{ fontSize: 12.5, color: 'var(--ez-hue-amber-text)', maxWidth: 460, margin: '6px auto 14px' }}>
             Dokumen HSE seperti JSA dan RKK memerlukan identifikasi bahaya, tingkat risiko, dan tindakan pengendalian mitigasi konkret.
@@ -205,10 +205,10 @@ export const ProjectJsaView: React.FC<ProjectJsaViewProps> = ({
                             : 'var(--ez-hue-amber-bg)',
                         color:
                           item.risk.toLowerCase().includes('tinggi') || item.risk.toLowerCase().includes('high')
-                            ? '#DC2626'
+                            ? 'var(--ez-hue-rose-text)'
                             : item.risk.toLowerCase().includes('rendah') || item.risk.toLowerCase().includes('low')
-                            ? '#15803D'
-                            : '#B45309',
+                            ? 'var(--ez-hue-green-text)'
+                            : 'var(--ez-hue-amber-text)',
                       }}
                     >
                       {item.risk}

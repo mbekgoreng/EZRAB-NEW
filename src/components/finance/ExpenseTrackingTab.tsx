@@ -289,7 +289,7 @@ export const ExpenseTrackingTab: React.FC<ExpenseTrackingTabProps> = ({
           }}
         >
           <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: 'var(--ez-hue-rose-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ArrowUpRight size={24} color="#DC2626" />
+            <ArrowUpRight size={24} color="var(--ez-hue-rose-text)" />
           </div>
           <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
             Tidak ada pengeluaran yang cocok

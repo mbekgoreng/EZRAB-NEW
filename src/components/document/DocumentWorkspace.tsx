@@ -665,7 +665,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               alignItems: 'center',
             }}
           >
-            <ArrowLeft size={18} color="#475569" />
+            <ArrowLeft size={18} color="var(--ez-color-text-slate)" />
           </button>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -675,7 +675,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               <span
                 style={{
                   background: isViewingReadOnly ? 'var(--ez-hue-amber-bg-deep)' : 'var(--ez-hue-blue-bg)',
-                  color: isViewingReadOnly ? '#B45309' : 'var(--ez-color-primary)',
+                  color: isViewingReadOnly ? 'var(--ez-hue-amber-text)' : 'var(--ez-color-primary)',
                   padding: '2px 8px',
                   borderRadius: 6,
                   fontSize: 11,
@@ -713,7 +713,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               gap: 6,
             }}
           >
-            <GitBranch size={15} color="#2563EB" />
+            <GitBranch size={15} color="var(--ez-hue-blue-text)" />
             <span>Create New Revision</span>
           </button>
 
@@ -739,7 +739,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             style={{
               border: '1px solid var(--ez-hue-slate-border)',
               background: isViewingReadOnly ? 'var(--ez-color-surface-tertiary)' : 'var(--ez-color-surface)',
-              color: isViewingReadOnly ? '#94A3B8' : '#334155',
+              color: isViewingReadOnly ? '#94A3B8' : 'var(--ez-color-text-body)',
               padding: '8px 14px',
               borderRadius: 8,
               fontSize: 13,
@@ -772,7 +772,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             }}
             title="Kelola Data Sumber Proyek (Personil, Alat, JSA, RKK, AHSP)"
           >
-            <Settings size={15} color="#475569" />
+            <Settings size={15} color="var(--ez-color-text-slate)" />
             <span>Data Sumber</span>
           </button>
 
@@ -854,7 +854,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             padding: '10px 16px',
             borderRadius: 8,
             background: exportNotice.startsWith('Gagal') ? 'var(--ez-hue-rose-bg)' : 'var(--ez-hue-green-bg)',
-            color: exportNotice.startsWith('Gagal') ? '#DC2626' : '#15803D',
+            color: exportNotice.startsWith('Gagal') ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)',
             border: `1px solid ${exportNotice.startsWith('Gagal') ? 'var(--ez-hue-rose-border)' : 'var(--ez-hue-green-border)'}`,
             fontSize: 13,
             fontWeight: 600,
@@ -885,7 +885,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <AlertTriangle size={18} color="#D97706" />
+            <AlertTriangle size={18} color="var(--ez-hue-amber-text-deep)" />
             <div>
               <strong style={{ fontSize: 13 }}>Data Sumber Proyek Berubah:</strong>{' '}
               <span style={{ fontSize: 12.5 }}>
@@ -944,7 +944,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 border: 0,
                 borderRadius: 8,
                 background: isActive ? 'var(--ez-color-primary)' : 'transparent',
-                color: isActive ? '#fff' : '#475569',
+                color: isActive ? '#fff' : 'var(--ez-color-text-slate)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -1395,7 +1395,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             {/* Auto Populated Source Summary */}
             <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 10, padding: 14 }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--ez-hue-green-text)', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <CheckCircle2 size={15} color="#16A34A" />
+                <CheckCircle2 size={15} color="var(--ez-hue-green-text-bright)" />
                 <span>Data Terisi Otomatis (Auto)</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
@@ -1724,7 +1724,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                             style={{
                               fontSize: 10.5,
                               fontWeight: 650,
-                              color: isSuccess ? '#16A34A' : '#DC2626',
+                              color: isSuccess ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-hue-rose-text)',
                             }}
                           >
                             {isSuccess ? 'BERHASIL' : 'GAGAL'}
@@ -1856,7 +1856,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                   <div style={{ background: 'var(--ez-hue-amber-bg-deep)', padding: 8, borderRadius: 50 }}>
-                    <AlertTriangle size={24} color="#D97706" />
+                    <AlertTriangle size={24} color="var(--ez-hue-amber-text-deep)" />
                   </div>
                   <div>
                     <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--ez-hue-amber-text-dark)' }}>
@@ -1922,7 +1922,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                   <div style={{ background: 'var(--ez-hue-amber-bg-deep)', padding: 8, borderRadius: 50 }}>
-                    <AlertTriangle size={24} color="#D97706" />
+                    <AlertTriangle size={24} color="var(--ez-hue-amber-text-deep)" />
                   </div>
                   <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--ez-hue-amber-text-dark)' }}>
                     Dokumen siap diekspor dengan catatan

@@ -258,7 +258,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                 padding: '6px 14px',
                 borderRadius: '8px',
                 background: activeTab === 'VERSIONS' ? 'var(--ez-color-primary)' : 'transparent',
-                color: activeTab === 'VERSIONS' ? '#FFFFFF' : '#475569',
+                color: activeTab === 'VERSIONS' ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                 border: 'none',
                 fontSize: '12.5px',
                 fontWeight: 700,
@@ -284,7 +284,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                 padding: '6px 14px',
                 borderRadius: '8px',
                 background: activeTab === 'COMPARE' ? 'var(--ez-color-primary)' : 'transparent',
-                color: activeTab === 'COMPARE' ? '#FFFFFF' : '#475569',
+                color: activeTab === 'COMPARE' ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                 border: 'none',
                 fontSize: '12.5px',
                 fontWeight: 700,
@@ -304,7 +304,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                 padding: '6px 14px',
                 borderRadius: '8px',
                 background: activeTab === 'SCENARIOS' ? 'var(--ez-color-primary)' : 'transparent',
-                color: activeTab === 'SCENARIOS' ? '#FFFFFF' : '#475569',
+                color: activeTab === 'SCENARIOS' ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                 border: 'none',
                 fontSize: '12.5px',
                 fontWeight: 700,
@@ -590,7 +590,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                                 style={{
                                   fontSize: '11px',
                                   fontWeight: 700,
-                                  color: ver.difference > 0 ? '#DC2626' : '#059669',
+                                  color: ver.difference > 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)',
                                 }}
                               >
                                 {ver.difference > 0 ? '+' : ''}
@@ -739,10 +739,10 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       border: `1px solid ${comparisonResult.totalDelta >= 0 ? 'var(--ez-hue-rose-border)' : 'var(--ez-hue-green-border-deep)'}`,
                     }}
                   >
-                    <div style={{ fontSize: '10.5px', color: comparisonResult.totalDelta >= 0 ? '#DC2626' : '#059669', fontWeight: 700 }}>
+                    <div style={{ fontSize: '10.5px', color: comparisonResult.totalDelta >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)', fontWeight: 700 }}>
                       SELISIH PERUBAHAN
                     </div>
-                    <div style={{ fontSize: '15px', fontWeight: 850, color: comparisonResult.totalDelta >= 0 ? '#DC2626' : '#059669', marginTop: '2px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: 850, color: comparisonResult.totalDelta >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)', marginTop: '2px' }}>
                       {comparisonResult.totalDelta >= 0 ? '+' : ''}
                       {formatCurrencyIDR(comparisonResult.totalDelta)} ({comparisonResult.percentageDelta >= 0 ? '+' : ''}
                       {comparisonResult.percentageDelta.toFixed(2)}%)
@@ -770,7 +770,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       padding: '4px 10px',
                       borderRadius: '6px',
                       background: diffFilter === 'ALL' ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
-                      color: diffFilter === 'ALL' ? '#FFFFFF' : '#475569',
+                      color: diffFilter === 'ALL' ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                       border: diffFilter === 'ALL' ? 'none' : '1px solid var(--ez-hue-slate-border)',
                       fontSize: '11.5px',
                       fontWeight: 700,
@@ -785,7 +785,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       padding: '4px 10px',
                       borderRadius: '6px',
                       background: diffFilter === 'ADDED' ? '#059669' : 'var(--ez-color-surface)',
-                      color: diffFilter === 'ADDED' ? '#FFFFFF' : '#059669',
+                      color: diffFilter === 'ADDED' ? '#FFFFFF' : 'var(--ez-hue-green-text)',
                       border: diffFilter === 'ADDED' ? 'none' : '1px solid var(--ez-hue-green-border-deep)',
                       fontSize: '11.5px',
                       fontWeight: 700,
@@ -800,7 +800,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       padding: '4px 10px',
                       borderRadius: '6px',
                       background: diffFilter === 'REMOVED' ? '#DC2626' : 'var(--ez-color-surface)',
-                      color: diffFilter === 'REMOVED' ? '#FFFFFF' : '#DC2626',
+                      color: diffFilter === 'REMOVED' ? '#FFFFFF' : 'var(--ez-hue-rose-text)',
                       border: diffFilter === 'REMOVED' ? 'none' : '1px solid var(--ez-hue-rose-border)',
                       fontSize: '11.5px',
                       fontWeight: 700,
@@ -815,7 +815,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       padding: '4px 10px',
                       borderRadius: '6px',
                       background: diffFilter === 'CHANGED' ? '#D97706' : 'var(--ez-color-surface)',
-                      color: diffFilter === 'CHANGED' ? '#FFFFFF' : '#D97706',
+                      color: diffFilter === 'CHANGED' ? '#FFFFFF' : 'var(--ez-hue-amber-text-deep)',
                       border: diffFilter === 'CHANGED' ? 'none' : '1px solid var(--ez-hue-amber-border)',
                       fontSize: '11.5px',
                       fontWeight: 700,
@@ -887,12 +887,12 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                                     : 'var(--ez-hue-amber-bg)',
                                 color:
                                   dItem.status === 'ADDED'
-                                    ? '#059669'
+                                    ? 'var(--ez-hue-green-text)'
                                     : dItem.status === 'REMOVED'
-                                    ? '#DC2626'
+                                    ? 'var(--ez-hue-rose-text)'
                                     : dItem.status === 'UNCHANGED'
                                     ? 'var(--ez-color-text-muted)'
-                                    : '#D97706',
+                                    : 'var(--ez-hue-amber-text-deep)',
                               }}
                             >
                               {dItem.status}
@@ -915,7 +915,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                               padding: '6px 10px',
                               textAlign: 'right',
                               fontWeight: 750,
-                              color: dItem.deltaAmount >= 0 ? '#DC2626' : '#059669',
+                              color: dItem.deltaAmount >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)',
                             }}
                           >
                             {dItem.deltaAmount >= 0 ? '+' : ''}
@@ -971,7 +971,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                             padding: '1px 6px',
                             borderRadius: '4px',
                             background: scen.isBaseline ? '#0F172A' : isSelected ? 'var(--ez-color-primary)' : 'var(--ez-color-border-line)',
-                            color: isSelected || scen.isBaseline ? '#FFFFFF' : '#475569',
+                            color: isSelected || scen.isBaseline ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                           }}
                         >
                           {scen.code}
@@ -992,7 +992,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                             style={{
                               fontSize: '11px',
                               fontWeight: 750,
-                              color: scen.differenceFromBaseline <= 0 ? '#059669' : '#DC2626',
+                              color: scen.differenceFromBaseline <= 0 ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-rose-text)',
                             }}
                           >
                             {scen.percentageFromBaseline <= 0 ? '' : '+'}
@@ -1093,7 +1093,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                               padding: '6px 10px',
                               textAlign: 'right',
                               fontWeight: 750,
-                              color: cVar.deltaAmount <= 0 ? '#059669' : '#DC2626',
+                              color: cVar.deltaAmount <= 0 ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-rose-text)',
                             }}
                           >
                             {cVar.deltaAmount <= 0 ? '' : '+'}

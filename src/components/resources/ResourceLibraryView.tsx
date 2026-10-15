@@ -528,7 +528,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
             </span>
           </div>
           <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '3px 0 0 0', display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '-0.3px', fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
-            <Database size={22} color="#2563EB" />
+            <Database size={22} color="var(--ez-hue-blue-text)" />
             {activeTab === 'MATERIAL' ? 'Material & Harga' : activeTab === 'LABOR' ? 'Database Standar Upah' : activeTab === 'EQUIPMENT' ? 'Database Sewa Peralatan' : 'Daftar Supplier & Vendor'}
           </h1>
           <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'var(--ez-color-text-warm)' }}>
@@ -551,7 +551,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
               border: '1px solid #EEF1F6',
             }}
           >
-            <Building size={14} color="#2563EB" />
+            <Building size={14} color="var(--ez-hue-blue-text)" />
             <div style={{ fontSize: '11.5px' }}>
               <span style={{ color: 'var(--ez-color-text-warm)' }}>Proyek Aktif: </span>
               <strong style={{ color: 'var(--ez-color-text-primary)' }}>{currentProject ? currentProject.name : 'Semua Proyek'}</strong>
@@ -605,7 +605,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
               padding: '12px 6px',
               fontSize: '13px',
               fontWeight: activeTab === 'MATERIAL' ? 750 : 600,
-              color: activeTab === 'MATERIAL' ? 'var(--ez-color-primary)' : '#8A8A84',
+              color: activeTab === 'MATERIAL' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-warm)',
               borderBottom: activeTab === 'MATERIAL' ? '2px solid #2563EB' : '2px solid transparent',
               background: 'transparent',
               borderTop: 'none',
@@ -630,7 +630,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
               padding: '12px 6px',
               fontSize: '13px',
               fontWeight: activeTab === 'LABOR' ? 750 : 600,
-              color: activeTab === 'LABOR' ? 'var(--ez-color-primary)' : '#8A8A84',
+              color: activeTab === 'LABOR' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-warm)',
               borderBottom: activeTab === 'LABOR' ? '2px solid #2563EB' : '2px solid transparent',
               background: 'transparent',
               borderTop: 'none',
@@ -655,7 +655,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
               padding: '12px 6px',
               fontSize: '13px',
               fontWeight: activeTab === 'EQUIPMENT' ? 750 : 600,
-              color: activeTab === 'EQUIPMENT' ? 'var(--ez-color-primary)' : '#8A8A84',
+              color: activeTab === 'EQUIPMENT' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-warm)',
               borderBottom: activeTab === 'EQUIPMENT' ? '2px solid #2563EB' : '2px solid transparent',
               background: 'transparent',
               borderTop: 'none',
@@ -680,7 +680,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
               padding: '12px 6px',
               fontSize: '13px',
               fontWeight: activeTab === 'SUPPLIERS' ? 750 : 600,
-              color: activeTab === 'SUPPLIERS' ? 'var(--ez-color-primary)' : '#8A8A84',
+              color: activeTab === 'SUPPLIERS' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-warm)',
               borderBottom: activeTab === 'SUPPLIERS' ? '2px solid #2563EB' : '2px solid transparent',
               background: 'transparent',
               borderTop: 'none',
@@ -699,7 +699,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
 
         {/* Price Intelligence Disclaimer Badge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--ez-color-text-warm)' }}>
-          <ShieldCheck size={14} color="#2C6E2C" />
+          <ShieldCheck size={14} color="var(--ez-hue-green-text)" />
           <span>Multi-source verified (PUPR 2026, Distributor & Jurnal Pasar)</span>
         </div>
       </div>
@@ -725,7 +725,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
             {/* Search Input */}
             <div style={{ position: 'relative', minWidth: '280px', flex: 1 }}>
-              <Search size={14} color="#8A8A84" style={{ position: 'absolute', left: '10px', top: '10px' }} />
+              <Search size={14} color="var(--ez-color-text-warm)" style={{ position: 'absolute', left: '10px', top: '10px' }} />
               <input
                 type="text"
                 placeholder={`Cari nama ${activeTab === 'MATERIAL' ? 'material, merk' : activeTab === 'LABOR' ? 'pekerja, profesi' : 'alat berat'}...`}
@@ -941,11 +941,11 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11.5px', color: 'var(--ez-color-text-warm)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <MapPin size={13} color="#8A8A84" />
+                      <MapPin size={13} color="var(--ez-color-text-warm)" />
                       <span>{supplier.location}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Calendar size={13} color="#8A8A84" />
+                      <Calendar size={13} color="var(--ez-color-text-warm)" />
                       <span>Update Terakhir: {supplier.lastUpdated}</span>
                     </div>
                   </div>
@@ -1079,7 +1079,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                               padding: '2px 6px',
                               borderRadius: 'var(--ez-radius-pill)',
                               background: isProjectOverride ? 'var(--ez-pastel-sky)' : 'var(--ez-pastel-mint)',
-                              color: isProjectOverride ? 'var(--ez-color-primary)' : '#2C6E2C',
+                              color: isProjectOverride ? 'var(--ez-color-primary)' : 'var(--ez-hue-green-text)',
                             }}
                           >
                             {isProjectOverride ? 'PROYEK' : 'ACTIVE'}
@@ -1386,7 +1386,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <AlertTriangle size={20} color="#2563EB" />
+                <AlertTriangle size={20} color="var(--ez-hue-blue-text)" />
                 <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                   Konfirmasi & Pratinjau Dampak Biaya
                 </h3>
@@ -1417,7 +1417,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                 </div>
                 <div>
                   <span style={{ color: 'var(--ez-color-text-warm)', display: 'block', fontSize: '11px' }}>Estimasi Dampak Total RAB</span>
-                  <strong style={{ color: impactSummary.estimatedCostDelta >= 0 ? '#DC2626' : '#2C6E2C', fontSize: '13.5px' }}>
+                  <strong style={{ color: impactSummary.estimatedCostDelta >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)', fontSize: '13.5px' }}>
                     {impactSummary.estimatedCostDelta >= 0 ? `+${formatCurrencyIDR(impactSummary.estimatedCostDelta)}` : formatCurrencyIDR(impactSummary.estimatedCostDelta)} ({impactSummary.percentageChange}%)
                   </strong>
                 </div>
@@ -1672,7 +1672,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
             gap: '8px',
           }}
         >
-          <CheckCircle2 size={16} color="#2C6E2C" />
+          <CheckCircle2 size={16} color="var(--ez-hue-green-text)" />
           <span>{toastMessage}</span>
         </div>
       )}

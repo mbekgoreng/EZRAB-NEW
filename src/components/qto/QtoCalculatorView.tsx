@@ -1694,7 +1694,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               borderRadius: 'var(--ez-radius-control)',
               background: 'var(--ez-color-surface)',
               border: '1px solid var(--ez-color-border-line)',
-              color: hasUnsavedChanges ? '#D97706' : 'var(--ez-color-text-muted)',
+              color: hasUnsavedChanges ? 'var(--ez-hue-amber-text-deep)' : 'var(--ez-color-text-muted)',
               fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
@@ -1795,7 +1795,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                       borderRadius: '5px',
                       background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                       border: isSelected ? '1px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
-                      color: isSelected ? 'var(--ez-color-primary-hover)' : '#334155',
+                      color: isSelected ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
                       fontSize: '11px',
                       fontWeight: isSelected ? 700 : 500,
                       cursor: 'pointer',
@@ -1824,7 +1824,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               borderRadius: '5px',
               background: filterFavoritesOnly ? 'var(--ez-hue-amber-bg-deep)' : 'var(--ez-color-surface)',
               border: filterFavoritesOnly ? '1px solid #F59E0B' : '1px solid var(--ez-hue-slate-border)',
-              color: filterFavoritesOnly ? '#B45309' : '#475569',
+              color: filterFavoritesOnly ? 'var(--ez-hue-amber-text)' : 'var(--ez-color-text-slate)',
               fontSize: '11px',
               fontWeight: 700,
               cursor: 'pointer',
@@ -1861,7 +1861,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             borderRadius: 'var(--ez-radius-control)',
             background: activeDomain === 'ALL' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
             border: activeDomain === 'ALL' ? '1.5px solid #2563EB' : '1px solid var(--ez-color-border-line)',
-            color: activeDomain === 'ALL' ? 'var(--ez-color-primary-hover)' : '#334155',
+            color: activeDomain === 'ALL' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
             fontSize: '12px',
             fontWeight: activeDomain === 'ALL' ? 700 : 600,
             cursor: 'pointer',
@@ -1918,7 +1918,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 borderRadius: 'var(--ez-radius-control)',
                 background: isActive ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                 border: isActive ? '1.5px solid #2563EB' : '1px solid var(--ez-color-border-line)',
-                color: isActive ? 'var(--ez-color-primary-hover)' : '#334155',
+                color: isActive ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
                 fontSize: '12px',
                 fontWeight: isActive ? 700 : 600,
                 cursor: 'pointer',
@@ -2331,7 +2331,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
 
                                 <div style={{ minWidth: 0, flex: 1 }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                    <span style={{ fontSize: '12px', fontWeight: isSelected ? 800 : 700, color: isSelected ? 'var(--ez-color-primary-hover)' : '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <span style={{ fontSize: '12px', fontWeight: isSelected ? 800 : 700, color: isSelected ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                       {item.name}
                                     </span>
                                   </div>
@@ -2461,7 +2461,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   borderRadius: '6px',
                   background: favoriteIds.includes(selectedCalcId) ? 'var(--ez-hue-amber-bg-deep)' : 'var(--ez-color-surface)',
                   border: favoriteIds.includes(selectedCalcId) ? '1px solid #F59E0B' : '1px solid var(--ez-hue-slate-border)',
-                  color: favoriteIds.includes(selectedCalcId) ? '#B45309' : '#475569',
+                  color: favoriteIds.includes(selectedCalcId) ? 'var(--ez-hue-amber-text)' : 'var(--ez-color-text-slate)',
                   fontSize: '11.5px',
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -2482,7 +2482,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   borderRadius: '6px',
                   background: showCadDiagram ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                   border: showCadDiagram ? '1px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
-                  color: showCadDiagram ? 'var(--ez-color-primary-hover)' : '#475569',
+                  color: showCadDiagram ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-slate)',
                   fontSize: '11.5px',
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -2599,7 +2599,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                           >
                             {param.id}
                           </span>
-                          <span style={{ fontSize: '12px', fontWeight: isFocused ? 700 : 600, color: isFocused ? 'var(--ez-color-primary-hover)' : '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <span style={{ fontSize: '12px', fontWeight: isFocused ? 700 : 600, color: isFocused ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-strong)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {param.label}
                           </span>
                         </div>
@@ -2661,7 +2661,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   color: 'var(--ez-color-text-muted)',
                 }}
               >
-                <ClipboardCheck size={14} color="#2563EB" style={{ flexShrink: 0 }} />
+                <ClipboardCheck size={14} color="var(--ez-hue-blue-text)" style={{ flexShrink: 0 }} />
                 <span>Tekan <strong>Tab</strong> untuk navigasi antar sel. Mendukung copy-paste angka dari tabel Excel.</span>
               </div>
             </div>
@@ -2802,9 +2802,9 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                           fontSize: '11px',
                           fontWeight: 800,
                           color:
-                            scopeCost.status === 'RESOLVED' ? '#166534'
-                              : scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL' ? '#92400E'
-                                : '#991B1B',
+                            scopeCost.status === 'RESOLVED' ? 'var(--ez-hue-green-text-deep)'
+                              : scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL' ? 'var(--ez-hue-amber-text-dark)'
+                                : 'var(--ez-hue-red-text)',
                           textTransform: 'uppercase',
                           letterSpacing: '0.04em',
                         }}
@@ -2823,9 +2823,9 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                             : scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL' ? 'var(--ez-hue-amber-bg-deep)'
                               : 'var(--ez-hue-red-bg)',
                         color:
-                          scopeCost.status === 'RESOLVED' ? '#15803D'
-                            : scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL' ? '#B45309'
-                              : '#B91C1C',
+                          scopeCost.status === 'RESOLVED' ? 'var(--ez-hue-green-text)'
+                            : scopeCost.status === 'PRICE_MISSING' || scopeCost.status === 'PARTIAL' ? 'var(--ez-hue-amber-text)'
+                              : 'var(--ez-hue-red-text)',
                         padding: '1px 6px',
                         borderRadius: 'var(--ez-radius-pill)',
                       }}
@@ -2916,7 +2916,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   style={{
                     fontSize: '10px',
                     background: scopeCost.hasMapping ? 'var(--ez-hue-blue-bg)' : 'var(--ez-hue-green-bg-deep)',
-                    color: scopeCost.hasMapping ? 'var(--ez-color-primary-hover)' : '#15803D',
+                    color: scopeCost.hasMapping ? 'var(--ez-color-primary-hover)' : 'var(--ez-hue-green-text)',
                     padding: '2px 6px',
                     borderRadius: 'var(--ez-radius-pill)',
                     fontWeight: 700,
@@ -2996,7 +2996,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Calculator size={13} color="#2563EB" />
+                    <Calculator size={13} color="var(--ez-hue-blue-text)" />
                     <span>Langkah Formula (Audit Engine)</span>
                   </div>
                   {showFormulaDrawer ? <ChevronUp size={13} /> : <ChevronDown size={13} />}

@@ -60,7 +60,7 @@ export const EstimatorColumnManagerModal: React.FC<EstimatorColumnManagerModalPr
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Columns3 size={18} color="#2563EB" />
+            <Columns3 size={18} color="var(--ez-hue-blue-text)" />
             <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Pengaturan Tampilan Kolom
             </h3>
@@ -90,7 +90,7 @@ export const EstimatorColumnManagerModal: React.FC<EstimatorColumnManagerModalPr
                   cursor: col.required ? 'not-allowed' : 'pointer',
                   fontSize: '12px',
                   fontWeight: 550,
-                  color: col.required ? 'var(--ez-color-text-muted)' : '#1E293B',
+                  color: col.required ? 'var(--ez-color-text-muted)' : 'var(--ez-color-text-strong)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

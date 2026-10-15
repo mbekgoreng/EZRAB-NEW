@@ -370,7 +370,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
           <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--ez-color-text-primary)', letterSpacing: '-1px' }}>
             {avgProgress}%{avgPlanned != null && <span style={{ color: 'var(--ez-color-text-muted)', fontWeight: 600 }}> / {avgPlanned}%</span>}
           </div>
-          <div style={{ fontSize: 12, color: avgPlanned != null && avgProgress < avgPlanned ? '#B54747' : 'var(--ez-color-text-muted)', marginTop: 6 }}>
+          <div style={{ fontSize: 12, color: avgPlanned != null && avgProgress < avgPlanned ? 'var(--ez-hue-rose-text)' : 'var(--ez-color-text-muted)', marginTop: 6 }}>
             {avgPlanned != null
               ? `${t('proj.all.progress_behind_a')} ${avgProgress - avgPlanned >= 0 ? '+' : ''}${avgProgress - avgPlanned}% ${t('proj.all.progress_behind_b')}`
               : t('proj.all.progress_avg')}
@@ -632,7 +632,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                               </span>
                             )}
                           </td>
-                          <td style={{ padding: '12px 10px', color: overdue ? '#B54747' : 'var(--ez-color-text-muted)', fontWeight: overdue ? 700 : 500, whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '12px 10px', color: overdue ? 'var(--ez-hue-rose-text)' : 'var(--ez-color-text-muted)', fontWeight: overdue ? 700 : 500, whiteSpace: 'nowrap' }}>
                             {formatDate(p.targetDate)}
                           </td>
                           <td style={{ padding: '12px 24px 12px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>
@@ -684,7 +684,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                                           onClick={() => { setOpenMenuId(null); a.fn(); }}
                                           style={{
                                             width: '100%', textAlign: 'left', padding: '8px 12px', fontSize: 13,
-                                            fontWeight: 600, color: a.danger ? '#B54747' : 'var(--ez-color-text)',
+                                            fontWeight: 600, color: a.danger ? 'var(--ez-hue-rose-text)' : 'var(--ez-color-text)',
                                             background: 'transparent', border: 'none', borderRadius: 7, cursor: 'pointer',
                                           }}
                                           onMouseEnter={(e) => (e.currentTarget.style.background = a.danger ? '#FCE9E9' : 'var(--ez-color-surface-faint)')}
@@ -783,7 +783,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
                       {a.type === 'create'
                         ? <Plus size={14} color="var(--ez-pill-run-text)" />
                         : a.type === 'delete'
-                          ? <Trash2 size={13} color="#B54747" />
+                          ? <Trash2 size={13} color="var(--ez-hue-rose-text)" />
                           : <CheckCircle2 size={14} color="var(--ez-pill-ok-text)" />}
                     </div>
                     <div style={{ minWidth: 0 }}>
@@ -801,16 +801,16 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
             <h4 style={{ fontSize: 15, fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 12px' }}>{t('proj.all.qa_title')}</h4>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <button onClick={onCreateProject} style={qaBtn}>
-                <Plus size={14} color="#2563EB" /> {t('proj.all.qa_create')}
+                <Plus size={14} color="var(--ez-hue-blue-text)" /> {t('proj.all.qa_create')}
               </button>
               <button onClick={onOpenMagicAi} style={qaBtn}>
-                <Sparkles size={14} color="#2563EB" /> {t('proj.all.qa_ai')}
+                <Sparkles size={14} color="var(--ez-hue-blue-text)" /> {t('proj.all.qa_ai')}
               </button>
               <button onClick={() => onNavigateToTab?.('ded-ai')} style={qaBtn}>
-                <Download size={14} color="#2563EB" /> {t('proj.all.qa_import')}
+                <Download size={14} color="var(--ez-hue-blue-text)" /> {t('proj.all.qa_import')}
               </button>
               <button onClick={() => onNavigateToTab?.('template-rab')} style={qaBtn}>
-                <FileText size={14} color="#2563EB" /> {t('proj.all.qa_template')}
+                <FileText size={14} color="var(--ez-hue-blue-text)" /> {t('proj.all.qa_template')}
               </button>
             </div>
           </div>

@@ -482,7 +482,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
                 padding: '10px 14px',
                 borderRadius: msg.sender === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
                 background: msg.sender === 'user' ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
-                color: msg.sender === 'user' ? '#FFFFFF' : '#0F172A',
+                color: msg.sender === 'user' ? '#FFFFFF' : 'var(--ez-color-text-primary)',
                 fontSize: '12px',
                 lineHeight: 1.5,
                 boxShadow: msg.sender === 'user' ? '0 2px 6px rgba(37, 99, 235, 0.2)' : 'none',
@@ -508,7 +508,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-hue-blue-text-deep)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <Sparkles size={13} color="#2563EB" />
+                    <Sparkles size={13} color="var(--ez-hue-blue-text)" />
                     USULAN PERUBAHAN
                   </span>
                   <span
@@ -516,7 +516,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
                       fontSize: '10px',
                       fontWeight: 700,
                       background: msg.proposal.status === 'APPLIED' ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-blue-bg)',
-                      color: msg.proposal.status === 'APPLIED' ? '#16A34A' : 'var(--ez-color-primary)',
+                      color: msg.proposal.status === 'APPLIED' ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-color-primary)',
                       padding: '1px 6px',
                       borderRadius: '4px',
                     }}
@@ -556,7 +556,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
                 </div>
 
                 {/* Impact Delta */}
-                <div style={{ fontSize: '11px', fontWeight: 650, color: msg.proposal.afterTotalRab > msg.proposal.beforeTotalRab ? '#DC2626' : '#059669' }}>
+                <div style={{ fontSize: '11px', fontWeight: 650, color: msg.proposal.afterTotalRab > msg.proposal.beforeTotalRab ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)' }}>
                   Dampak: {msg.proposal.afterTotalRab > msg.proposal.beforeTotalRab ? '+' : '-'}
                   {formatCurrencyIDR(msg.proposal.absoluteDiff)} ({msg.proposal.percentageDiff > 0 ? '+' : ''}
                   {msg.proposal.percentageDiff}%)
@@ -654,7 +654,7 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
 
         {isThinking && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ez-color-text-muted)', fontSize: '11.5px' }}>
-            <Sparkles size={13} color="#2563EB" />
+            <Sparkles size={13} color="var(--ez-hue-blue-text)" />
             <span>Magic AI sedang menganalisis data proyek...</span>
           </div>
         )}

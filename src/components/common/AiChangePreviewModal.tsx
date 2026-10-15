@@ -235,7 +235,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                 gap: '12px',
               }}
             >
-              <AlertTriangle size={20} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <AlertTriangle size={20} color="var(--ez-hue-amber-text-deep)" style={{ flexShrink: 0, marginTop: '2px' }} />
               <div>
                 <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-hue-amber-text-dark)' }}>
                   Perubahan Berdampak Signifikan (High-Impact Mutation)
@@ -264,7 +264,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                 {proposal.title}
               </span>
               <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Database size={12} color="#2563EB" />
+                <Database size={12} color="var(--ez-hue-blue-text)" />
                 Sumber: <strong>{proposal.sourceContext || 'Standar AHSP PUPR 2026'}</strong>
               </span>
             </div>
@@ -384,23 +384,23 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                   style={{
                     fontSize: '11px',
                     fontWeight: 800,
-                    color: proposal.deltaAmount >= 0 ? '#DC2626' : '#059669',
+                    color: proposal.deltaAmount >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)',
                     textTransform: 'uppercase',
                   }}
                 >
                   Selisih Bersih (Difference)
                 </span>
                 {proposal.deltaAmount >= 0 ? (
-                  <TrendingUp size={15} color="#DC2626" />
+                  <TrendingUp size={15} color="var(--ez-hue-rose-text)" />
                 ) : (
-                  <TrendingDown size={15} color="#059669" />
+                  <TrendingDown size={15} color="var(--ez-hue-green-text)" />
                 )}
               </div>
               <span
                 style={{
                   fontSize: '16px',
                   fontWeight: 850,
-                  color: proposal.deltaAmount >= 0 ? '#DC2626' : '#059669',
+                  color: proposal.deltaAmount >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)',
                   fontVariantNumeric: 'tabular-nums',
                 }}
               >
@@ -411,7 +411,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                 style={{
                   fontSize: '11px',
                   fontWeight: 750,
-                  color: proposal.deltaAmount >= 0 ? '#B91C1C' : '#047857',
+                  color: proposal.deltaAmount >= 0 ? 'var(--ez-hue-red-text)' : 'var(--ez-hue-green-text)',
                 }}
               >
                 {proposal.deltaPercent >= 0 ? '+' : ''}
@@ -562,7 +562,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                                 textAlign: 'right',
                                 fontWeight: 750,
                                 fontVariantNumeric: 'tabular-nums',
-                                color: deltaAmt >= 0 ? '#DC2626' : '#059669',
+                                color: deltaAmt >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)',
                               }}
                             >
                               {deltaAmt >= 0 ? '+' : ''}
@@ -613,7 +613,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                 gap: '12px',
               }}
             >
-              <Sliders size={16} color="#2563EB" />
+              <Sliders size={16} color="var(--ez-hue-blue-text)" />
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                 <span style={{ fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-strong)' }}>
                   Sesuaikan Nilai Persentase:
@@ -736,7 +736,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                 gap: '6px',
               }}
             >
-              <Sliders size={14} color="#2563EB" />
+              <Sliders size={14} color="var(--ez-hue-blue-text)" />
               Sesuaikan Parameter
             </button>
 

@@ -1400,7 +1400,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                 style={{
                   maxWidth: isUser ? '84%' : '88%',
                   backgroundColor: isUser ? 'var(--ez-color-primary-hover)' : message.isError ? 'var(--ez-hue-rose-bg)' : 'var(--ez-color-surface)',
-                  color: isUser ? '#FFFFFF' : message.isError ? '#991B1B' : '#0F172A',
+                  color: isUser ? '#FFFFFF' : message.isError ? 'var(--ez-hue-red-text)' : 'var(--ez-color-text-primary)',
                   border: isUser
                     ? 'none'
                     : message.isError
@@ -1757,7 +1757,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                         border: 'none',
                         fontSize: '11.5px',
                         fontWeight: proj.id === currentProject?.id ? 700 : 500,
-                        color: proj.id === currentProject?.id ? 'var(--ez-color-primary-hover)' : '#1E293B',
+                        color: proj.id === currentProject?.id ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-strong)',
                         cursor: 'pointer',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -1869,7 +1869,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: isListening ? '#FFFFFF' : '#475569',
+              color: isListening ? '#FFFFFF' : 'var(--ez-color-text-slate)',
               cursor: 'pointer',
               flexShrink: 0,
               boxShadow: isListening ? '0 2px 8px rgba(239, 68, 68, 0.35)' : 'none',

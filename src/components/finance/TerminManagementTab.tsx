@@ -215,9 +215,9 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
                 fontWeight: 700,
                 color:
                   totalAllocatedPercentage === 100
-                    ? '#16A34A'
+                    ? 'var(--ez-hue-green-text-bright)'
                     : totalAllocatedPercentage > 100
-                    ? '#DC2626'
+                    ? 'var(--ez-hue-rose-text)'
                     : 'var(--ez-color-primary)',
               }}
             >
@@ -271,7 +271,7 @@ export const TerminManagementTab: React.FC<TerminManagementTabProps> = ({
           }}
         >
           <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Layers size={24} color="#2563EB" />
+            <Layers size={24} color="var(--ez-hue-blue-text)" />
           </div>
           <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
             Belum ada termin penagihan

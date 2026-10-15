@@ -416,7 +416,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
             <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Building size={15} color="#2563EB" />
+                  <Building size={15} color="var(--ez-hue-blue-text)" />
                   <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                     01. Target Proyek Konstruksi
                   </span>
@@ -437,7 +437,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       fontSize: '11.5px',
                       fontWeight: targetMode === 'CURRENT' ? 700 : 500,
                       background: targetMode === 'CURRENT' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-secondary)',
-                      color: targetMode === 'CURRENT' ? 'var(--ez-color-primary-hover)' : '#475569',
+                      color: targetMode === 'CURRENT' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-slate)',
                       border: targetMode === 'CURRENT' ? '1.5px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                       cursor: 'pointer',
                     }}
@@ -455,7 +455,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       fontSize: '11.5px',
                       fontWeight: targetMode === 'EXISTING' ? 700 : 500,
                       background: targetMode === 'EXISTING' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-secondary)',
-                      color: targetMode === 'EXISTING' ? 'var(--ez-color-primary-hover)' : '#475569',
+                      color: targetMode === 'EXISTING' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-slate)',
                       border: targetMode === 'EXISTING' ? '1.5px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                       cursor: 'pointer',
                     }}
@@ -472,7 +472,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                     fontSize: '11.5px',
                     fontWeight: targetMode === 'NEW' ? 700 : 500,
                     background: targetMode === 'NEW' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-secondary)',
-                    color: targetMode === 'NEW' ? 'var(--ez-color-primary-hover)' : '#475569',
+                    color: targetMode === 'NEW' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-slate)',
                     border: targetMode === 'NEW' ? '1.5px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                     cursor: 'pointer',
                     display: 'flex',
@@ -554,7 +554,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
             <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Layers size={15} color="#2563EB" />
+                  <Layers size={15} color="var(--ez-hue-blue-text)" />
                   <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                     02. Tingkat Kedalaman Estimasi (Detail Level)
                   </span>
@@ -605,7 +605,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: isSelected ? 'var(--ez-color-primary-hover)' : '#0F172A' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 800, color: isSelected ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-primary)' }}>
                           {lvl.title}
                         </span>
                         <span
@@ -615,7 +615,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                             padding: '1px 6px',
                             borderRadius: '4px',
                             background: isSelected ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
-                            color: isSelected ? '#ffffff' : '#475569',
+                            color: isSelected ? '#ffffff' : 'var(--ez-color-text-slate)',
                           }}
                         >
                           {info.count} Item
@@ -624,7 +624,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       <p style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', margin: 0, lineHeight: 1.3 }}>
                         {lvl.scope}
                       </p>
-                      <div style={{ fontSize: '11.5px', fontWeight: 700, fontFamily: 'monospace', color: isSelected ? 'var(--ez-color-primary-hover)' : '#334155', marginTop: '4px' }}>
+                      <div style={{ fontSize: '11.5px', fontWeight: 700, fontFamily: 'monospace', color: isSelected ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)', marginTop: '4px' }}>
                         {formatRupiah(info.total)}
                       </div>
                     </div>
@@ -637,7 +637,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
             <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', borderBottom: '1px solid var(--ez-color-surface-tertiary)', paddingBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Sliders size={15} color="#2563EB" />
+                  <Sliders size={15} color="var(--ez-hue-blue-text)" />
                   <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                     03. Parameter Konstruksi ({template.parameters.length} Parameter)
                   </span>
@@ -771,7 +771,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
             <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Package size={15} color="#2563EB" />
+                  <Package size={15} color="var(--ez-hue-blue-text)" />
                   <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                     04. Paket Pekerjaan (Work Packages)
                   </span>
@@ -797,7 +797,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                         fontSize: '11px',
                       }}
                     >
-                      <CheckCircle2 size={13} color="#16A34A" />
+                      <CheckCircle2 size={13} color="var(--ez-hue-green-text-bright)" />
                       <span style={{ fontWeight: 600, color: 'var(--ez-color-text-strong)' }}>{catName}</span>
                       <span style={{ fontFamily: 'monospace', color: 'var(--ez-color-primary)', fontWeight: 700 }}>
                         {formatRupiah(amount)}
@@ -812,7 +812,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
               <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Plus size={15} color="#2563EB" />
+                    <Plus size={15} color="var(--ez-hue-blue-text)" />
                     <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                       05. Pekerjaan Tambahan Opsional ({optionalComponents.length} Pilihan)
                     </span>
@@ -847,7 +847,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                           style={{ width: '16px', height: '16px', marginTop: '2px', accentColor: 'var(--ez-color-primary)', cursor: 'pointer' }}
                         />
                         <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ fontSize: '12px', fontWeight: 700, color: isChecked ? 'var(--ez-color-primary-hover)' : '#0F172A' }}>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: isChecked ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-primary)' }}>
                             {comp.name}
                           </div>
                           <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '1px' }}>
@@ -871,7 +871,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
               <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '14px 16px', background: 'var(--ez-color-surface)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Wrench size={15} color="#2563EB" />
+                    <Wrench size={15} color="var(--ez-hue-blue-text)" />
                     <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                       06. Spesifikasi Material (Material Library Ecosystem)
                     </span>
@@ -981,7 +981,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Info size={14} color="#2563EB" />
+                  <Info size={14} color="var(--ez-hue-blue-text)" />
                   <span>Transparansi Estimasi & Asumsi Formula</span>
                 </div>
                 {showTransparencyAccordion ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -1116,7 +1116,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                 </div>
               ) : (
                 <div style={{ background: 'var(--ez-hue-green-bg)', border: '1px solid var(--ez-hue-green-border)', borderRadius: '8px', padding: '8px 10px', fontSize: '11px', color: 'var(--ez-hue-green-text-deep)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <CheckCircle2 size={14} color="#16A34A" />
+                  <CheckCircle2 size={14} color="var(--ez-hue-green-text-bright)" />
                   <span>Seluruh parameter valid & siap diterapkan ke proyek.</span>
                 </div>
               )}

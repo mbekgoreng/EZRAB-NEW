@@ -310,7 +310,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
               padding: '12px 18px',
               fontSize: '13.5px',
               fontWeight: activeTab === 'EXPORT' ? 700 : 500,
-              color: activeTab === 'EXPORT' ? '#059669' : 'var(--ez-color-text-muted)',
+              color: activeTab === 'EXPORT' ? 'var(--ez-hue-green-text)' : 'var(--ez-color-text-muted)',
               borderBottom: activeTab === 'EXPORT' ? '2px solid #059669' : '2px solid transparent',
               background: 'none',
               borderTop: 'none',
@@ -331,7 +331,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
               padding: '12px 18px',
               fontSize: '13.5px',
               fontWeight: activeTab === 'IMPORT' ? 700 : 500,
-              color: activeTab === 'IMPORT' ? '#059669' : 'var(--ez-color-text-muted)',
+              color: activeTab === 'IMPORT' ? 'var(--ez-hue-green-text)' : 'var(--ez-color-text-muted)',
               borderBottom: activeTab === 'IMPORT' ? '2px solid #059669' : '2px solid transparent',
               background: 'none',
               borderTop: 'none',
@@ -352,7 +352,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
               padding: '12px 18px',
               fontSize: '13.5px',
               fontWeight: activeTab === 'GOOGLE_SHEETS' ? 700 : 500,
-              color: activeTab === 'GOOGLE_SHEETS' ? '#059669' : 'var(--ez-color-text-muted)',
+              color: activeTab === 'GOOGLE_SHEETS' ? 'var(--ez-hue-green-text)' : 'var(--ez-color-text-muted)',
               borderBottom: activeTab === 'GOOGLE_SHEETS' ? '2px solid #059669' : '2px solid transparent',
               background: 'none',
               borderTop: 'none',
@@ -486,7 +486,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                     gap: '8px',
                   }}
                 >
-                  {copiedClipboard ? <Check size={16} color="#059669" /> : <Copy size={16} />}
+                  {copiedClipboard ? <Check size={16} color="var(--ez-hue-green-text)" /> : <Copy size={16} />}
                   {copiedClipboard ? 'Disalin ke Clipboard!' : 'Salin ke Clipboard'}
                 </button>
               </div>

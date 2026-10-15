@@ -649,7 +649,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                   cursor: 'pointer',
                 }}
               >
-                <Sparkles size={13} color="#16A34A" />
+                <Sparkles size={13} color="var(--ez-hue-green-text-bright)" />
                 <span>Ask AI</span>
               </button>
             )}
@@ -726,7 +726,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                   padding: '2px 5px',
                   borderRadius: '4px',
                   background: initialData.source === 'CALCULATOR' ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-color-surface-tertiary)',
-                  color: initialData.source === 'CALCULATOR' ? '#166534' : '#334155',
+                  color: initialData.source === 'CALCULATOR' ? 'var(--ez-hue-green-text-deep)' : 'var(--ez-color-text-body)',
                   textTransform: 'uppercase',
                 }}
               >
@@ -799,7 +799,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                   padding: '1px 5px',
                   borderRadius: '10px',
                   background: unitPriceDifference > 0 ? 'var(--ez-hue-red-bg)' : 'var(--ez-hue-green-bg-deep)',
-                  color: unitPriceDifference > 0 ? '#991B1B' : '#166534',
+                  color: unitPriceDifference > 0 ? 'var(--ez-hue-red-text)' : 'var(--ez-hue-green-text-deep)',
                 }}
               >
                 {unitPriceDifference > 0 ? `+${unitPriceDifferencePercent}%` : `${unitPriceDifferencePercent}%`}
@@ -1317,7 +1317,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                 }}
               >
                 <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Building2 size={15} color="#2563EB" />
+                  <Building2 size={15} color="var(--ez-hue-blue-text)" />
                   REKAPITULASI BIAYA & MARKUP PEKERJAAN
                 </div>
 
@@ -1434,7 +1434,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                   gap: '10px',
                 }}
               >
-                <Info size={18} color="#16A34A" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <Info size={18} color="var(--ez-hue-green-text-bright)" style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div style={{ fontSize: '12px', color: 'var(--ez-hue-green-text-deep)', lineHeight: 1.5 }}>
                   <strong>Live Cost Impact Engine:</strong> Setiap perubahan koefisien atau harga satuan dihitung secara langsung untuk menunjukkan perbandingan biaya sebelum dan sesudah modifikasi.
                 </div>
@@ -1456,7 +1456,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                       <td style={{ padding: '10px 14px', fontWeight: 650, color: 'var(--ez-color-text-body)' }}>Harga Satuan (Unit Price)</td>
                       <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--ez-color-text-muted)' }}>{formatCurrencyIDR(baselineUnitPrice)}</td>
                       <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 750, color: 'var(--ez-color-primary)' }}>{formatCurrencyIDR(calculatedUnitPrice)}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: unitPriceDifference >= 0 ? '#DC2626' : '#16A34A' }}>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: unitPriceDifference >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text-bright)' }}>
                         {unitPriceDifference >= 0 ? `+${formatCurrencyIDR(unitPriceDifference)}` : formatCurrencyIDR(unitPriceDifference)}
                         <span style={{ fontSize: '11px', marginLeft: '6px' }}>({unitPriceDifference >= 0 ? `+${unitPriceDifferencePercent}%` : `${unitPriceDifferencePercent}%`})</span>
                       </td>
@@ -1466,7 +1466,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                       <td style={{ padding: '10px 14px', fontWeight: 650, color: 'var(--ez-color-text-body)' }}>Subtotal Item ({initialData.volume} {initialData.unit})</td>
                       <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--ez-color-text-muted)' }}>{formatCurrencyIDR(baselineTotalItemPrice)}</td>
                       <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 750, color: 'var(--ez-color-primary)' }}>{formatCurrencyIDR(calculatedTotalItemPrice)}</td>
-                      <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: itemTotalDifference >= 0 ? '#DC2626' : '#16A34A' }}>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: itemTotalDifference >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text-bright)' }}>
                         {itemTotalDifference >= 0 ? `+${formatCurrencyIDR(itemTotalDifference)}` : formatCurrencyIDR(itemTotalDifference)}
                       </td>
                     </tr>
@@ -1475,7 +1475,7 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                       <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>Total RAB Proyek ({currentProject ? currentProject.name : 'Aktif'})</td>
                       <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>{formatCurrencyIDR(currentTotalRab)}</td>
                       <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 850, color: 'var(--ez-color-primary)' }}>{formatCurrencyIDR(newTotalRab)}</td>
-                      <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 850, color: itemTotalDifference >= 0 ? '#DC2626' : '#16A34A' }}>
+                      <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 850, color: itemTotalDifference >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text-bright)' }}>
                         {itemTotalDifference >= 0 ? `+${formatCurrencyIDR(itemTotalDifference)}` : formatCurrencyIDR(itemTotalDifference)}
                       </td>
                     </tr>
@@ -1497,15 +1497,15 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11.5px', color: 'var(--ez-color-text-body)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ShieldCheck size={14} color="#2563EB" />
+                    <ShieldCheck size={14} color="var(--ez-hue-blue-text)" />
                     <span><strong>Regulasi:</strong> Peraturan Menteri PUPR No. 1 Tahun 2022 & Surat Edaran DJBK 2026</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ShieldCheck size={14} color="#2563EB" />
+                    <ShieldCheck size={14} color="var(--ez-hue-blue-text)" />
                     <span><strong>Domain:</strong> Cipta Karya / Bina Marga / Sumber Daya Air</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ShieldCheck size={14} color="#2563EB" />
+                    <ShieldCheck size={14} color="var(--ez-hue-blue-text)" />
                     <span><strong>Wilayah Acuan Harga:</strong> {currentProject?.location || 'DKI Jakarta / Nasional'} (Indeks Harga 1.00)</span>
                   </div>
                 </div>

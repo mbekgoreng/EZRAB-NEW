@@ -362,7 +362,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
               color: 'var(--ez-hue-red-text)',
             }}
           >
-            <AlertTriangle size={16} color="#DC2626" style={{ marginTop: '2px', flexShrink: 0 }} />
+            <AlertTriangle size={16} color="var(--ez-hue-rose-text)" style={{ marginTop: '2px', flexShrink: 0 }} />
             <div>
               <div style={{ fontWeight: 700 }}>Peringatan Proyeksi Arus Kas (Cash Gap)</div>
               <div style={{ marginTop: '2px', color: 'var(--ez-hue-red-text)' }}>

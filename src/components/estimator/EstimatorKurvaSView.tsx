@@ -149,7 +149,7 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
 
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12.5px", color: "var(--ez-color-text-slate)", fontWeight: 600 }}>
-              <Clock size={15} color="#2563EB" />
+              <Clock size={15} color="var(--ez-hue-blue-text)" />
               <span>Durasi Proyek:</span>
               <select
                 value={totalWeeks}
@@ -363,7 +363,7 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
                       textAlign: "center",
                       fontSize: "11px",
                       background: wVal > 0 ? "var(--ez-hue-blue-bg)" : "transparent",
-                      color: wVal > 0 ? "#1D4ED8" : "var(--ez-hue-slate-border)",
+                      color: wVal > 0 ? "var(--ez-hue-blue-text-deep)" : "var(--ez-hue-slate-border)",
                       fontWeight: wVal > 0 ? 600 : 400,
                       fontVariantNumeric: "tabular-nums",
                     }}

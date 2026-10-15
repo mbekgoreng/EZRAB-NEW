@@ -282,7 +282,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
             onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
           >
-            <GitBranch size={14} color="#2563EB" />
+            <GitBranch size={14} color="var(--ez-hue-blue-text)" />
             <span>Versi & Skenario</span>
             <span
               style={{

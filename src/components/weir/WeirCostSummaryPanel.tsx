@@ -82,7 +82,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
               style={{
                 fontSize: '9px',
                 background: result.noDoubleMarkup.status === 'PASS' ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-red-bg)',
-                color: result.noDoubleMarkup.status === 'PASS' ? '#166534' : '#991B1B',
+                color: result.noDoubleMarkup.status === 'PASS' ? 'var(--ez-hue-green-text-deep)' : 'var(--ez-hue-red-text)',
                 padding: '2px 6px',
                 borderRadius: '3px',
                 fontWeight: 700,
@@ -94,7 +94,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
               style={{
                 fontSize: '9px',
                 background: result.smkkStatus === 'APPLIED' ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-hue-amber-bg-deep)',
-                color: result.smkkStatus === 'APPLIED' ? '#1E40AF' : '#92400E',
+                color: result.smkkStatus === 'APPLIED' ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-hue-amber-text-dark)',
                 padding: '2px 6px',
                 borderRadius: '3px',
                 fontWeight: 700,
@@ -121,14 +121,14 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
           </span>
         </div>
         <div style={{ padding: '8px 14px' }}>
-          <CostRow label="Labor Cost" value={s.laborCost} color="#7C3AED" />
-          <CostRow label="Material Cost" value={s.materialCost} color="#2563EB" />
+          <CostRow label="Labor Cost" value={s.laborCost} color="var(--ez-hue-violet-text)" />
+          <CostRow label="Material Cost" value={s.materialCost} color="var(--ez-hue-blue-text)" />
           <CostRow label="Equipment Cost" value={s.equipmentCost} color="#0891B2" />
           <CostRow label="Direct Cost (L+M+E)" value={s.directCost} bold borderTop />
-          {s.smkk > 0 && <CostRow label={`SMKK`} value={s.smkk} color="#D97706" />}
-          <CostRow label={`Overhead (5%)`} value={s.overhead} color="#6B7280" />
-          <CostRow label={`Profit (5%)`} value={s.profit} color="#6B7280" />
-          <CostRow label={`Tax / PPN (11%)`} value={s.tax} color="#6B7280" />
+          {s.smkk > 0 && <CostRow label={`SMKK`} value={s.smkk} color="var(--ez-hue-amber-text-deep)" />}
+          <CostRow label={`Overhead (5%)`} value={s.overhead} color="var(--ez-color-text-warm)" />
+          <CostRow label={`Profit (5%)`} value={s.profit} color="var(--ez-color-text-warm)" />
+          <CostRow label={`Tax / PPN (11%)`} value={s.tax} color="var(--ez-color-text-warm)" />
           <CostRow label="FINAL COST" value={s.finalCost} bold large borderTop />
         </div>
       </div>
@@ -330,7 +330,7 @@ const CostRow: React.FC<{
       style={{
         fontSize: large ? '13px' : '11px',
         fontWeight: bold ? 800 : 500,
-        color: color || '#475569',
+        color: color || 'var(--ez-color-text-slate)',
       }}
     >
       {label}
@@ -340,7 +340,7 @@ const CostRow: React.FC<{
         fontSize: large ? '15px' : '11px',
         fontWeight: bold ? 800 : 600,
         fontFamily: 'monospace',
-        color: bold ? '#0F172A' : color || '#475569',
+        color: bold ? 'var(--ez-color-text-primary)' : color || 'var(--ez-color-text-slate)',
       }}
     >
       {formatRupiah(value)}

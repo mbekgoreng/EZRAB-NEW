@@ -75,7 +75,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Filter size={18} color="#2563EB" />
+            <Filter size={18} color="var(--ez-hue-blue-text)" />
             <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Filter Lanjutan Item RAB
             </h3>

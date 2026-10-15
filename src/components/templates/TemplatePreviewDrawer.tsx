@@ -133,7 +133,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                   padding: '2px 8px',
                   borderRadius: '6px',
                   background: template.metadata.source === 'EZRAB_OFFICIAL' ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-hue-amber-bg-deep)',
-                  color: template.metadata.source === 'EZRAB_OFFICIAL' ? '#1E40AF' : '#92400E'
+                  color: template.metadata.source === 'EZRAB_OFFICIAL' ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-hue-amber-text-dark)'
                 }}
               >
                 {template.metadata.source === 'EZRAB_OFFICIAL' ? 'EZRAB Official' : 'Template Saya'}
@@ -266,7 +266,7 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                       borderRadius: '8px',
                       border: isSelected ? '2px solid #2563EB' : '1px solid var(--ez-color-border-line)',
                       background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                      color: isSelected ? '#1E40AF' : '#475569',
+                      color: isSelected ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-color-text-slate)',
                       fontWeight: isSelected ? 700 : 500,
                       fontSize: '12px',
                       cursor: 'pointer',

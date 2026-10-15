@@ -107,7 +107,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
         <div>
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Truck size={20} color="#2563EB" />
+            <Truck size={20} color="var(--ez-hue-blue-text)" />
             Daftar Peralatan Utama & Pendukung Proyek
           </h3>
           <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--ez-color-text-muted)' }}>
@@ -200,7 +200,7 @@ export const ProjectEquipmentView: React.FC<ProjectEquipmentViewProps> = ({
                         fontSize: 11,
                         fontWeight: 650,
                         background: (item.condition || '').toLowerCase() === 'baik' ? 'var(--ez-hue-green-bg)' : 'var(--ez-hue-amber-bg)',
-                        color: (item.condition || '').toLowerCase() === 'baik' ? '#15803D' : '#B45309',
+                        color: (item.condition || '').toLowerCase() === 'baik' ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-amber-text)',
                       }}
                     >
                       {item.condition || 'Baik'}

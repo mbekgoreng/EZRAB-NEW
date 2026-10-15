@@ -291,7 +291,7 @@ export const EquipmentTableView: React.FC<EquipmentTableViewProps> = ({
                       fontSize: '10.5px',
                       fontWeight: 700,
                       backgroundColor: eq.operatorIncluded ? 'var(--ez-hue-green-bg)' : 'var(--ez-hue-amber-bg)',
-                      color: eq.operatorIncluded ? 'var(--ez-hue-green-text)' : '#D97706',
+                      color: eq.operatorIncluded ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-amber-text-deep)',
                     }}
                   >
                     <UserCheck size={11} />

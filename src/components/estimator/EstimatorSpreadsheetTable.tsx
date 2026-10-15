@@ -309,7 +309,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                             gap: '6px',
                           }}
                         >
-                          <PenTool size={14} color="#16A34A" />
+                          <PenTool size={14} color="var(--ez-hue-green-text-bright)" />
                           <span>Manual</span>
                         </button>
                       )}
@@ -330,7 +330,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                             gap: '6px',
                           }}
                         >
-                          <Sparkles size={14} color="#2563EB" />
+                          <Sparkles size={14} color="var(--ez-hue-blue-text)" />
                           <span>Dengan AI</span>
                         </button>
                       )}
@@ -351,7 +351,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                             gap: '6px',
                           }}
                         >
-                          <LayoutTemplate size={14} color="#D97706" />
+                          <LayoutTemplate size={14} color="var(--ez-hue-amber-text-deep)" />
                           <span>Template</span>
                         </button>
                       )}
@@ -797,9 +797,9 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                         : 'var(--ez-hue-blue-bg)',
                                     color:
                                       item.volumeSource === 'CALCULATOR'
-                                        ? '#4338CA'
+                                        ? 'var(--ez-hue-indigo-text)'
                                         : item.volumeSource === 'MANUAL'
-                                        ? '#047857'
+                                        ? 'var(--ez-hue-green-text)'
                                         : 'var(--ez-color-primary-hover)',
                                     border:
                                       item.volumeSource === 'CALCULATOR'
@@ -894,7 +894,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                     onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                   >
-                                    <Eye size={12} color="#2563EB" />
+                                    <Eye size={12} color="var(--ez-hue-blue-text)" />
                                     <span>Buka Rincian AHSP</span>
                                   </button>
 
@@ -920,7 +920,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                     onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                   >
-                                    <Copy size={12} color="#059669" />
+                                    <Copy size={12} color="var(--ez-hue-green-text)" />
                                     <span>Duplikasi Item</span>
                                   </button>
 

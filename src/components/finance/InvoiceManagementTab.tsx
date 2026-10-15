@@ -288,7 +288,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
           }}
         >
           <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <FileText size={24} color="#2563EB" />
+            <FileText size={24} color="var(--ez-hue-blue-text)" />
           </div>
           <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
             Belum ada invoice yang diterbitkan
@@ -370,7 +370,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
 
                       <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
                         <div style={{ color: 'var(--ez-color-text-primary)' }}>{inv.invoiceDate}</div>
-                        <div style={{ fontSize: '11px', color: inv.status === 'OVERDUE' ? '#DC2626' : 'var(--ez-color-text-muted)' }}>
+                        <div style={{ fontSize: '11px', color: inv.status === 'OVERDUE' ? 'var(--ez-hue-rose-text)' : 'var(--ez-color-text-muted)' }}>
                           Due: {inv.dueDate}
                         </div>
                       </td>
@@ -385,7 +385,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                       </td>
 
                       <td style={{ padding: '14px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
-                        <div style={{ fontWeight: 750, color: inv.outstandingAmount > 0 ? '#D97706' : '#16A34A' }}>
+                        <div style={{ fontWeight: 750, color: inv.outstandingAmount > 0 ? 'var(--ez-hue-amber-text-deep)' : 'var(--ez-hue-green-text-bright)' }}>
                           {formatRupiah(inv.outstandingAmount)}
                         </div>
                       </td>

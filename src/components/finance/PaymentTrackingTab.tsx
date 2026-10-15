@@ -177,7 +177,7 @@ export const PaymentTrackingTab: React.FC<PaymentTrackingTabProps> = ({
           }}
         >
           <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: 'var(--ez-hue-green-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ArrowDownLeft size={24} color="#16A34A" />
+            <ArrowDownLeft size={24} color="var(--ez-hue-green-text-bright)" />
           </div>
           <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
             Belum ada pembayaran yang dicatat

@@ -259,10 +259,10 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
                   border: `1px solid ${resolved.projectPrice ? 'var(--ez-hue-green-border-deep)' : 'var(--ez-color-border)'}`,
                 }}
               >
-                <div style={{ fontSize: '11px', color: resolved.projectPrice ? '#047857' : 'var(--ez-color-text-muted)', fontWeight: 600 }}>
+                <div style={{ fontSize: '11px', color: resolved.projectPrice ? 'var(--ez-hue-green-text)' : 'var(--ez-color-text-muted)', fontWeight: 600 }}>
                   2. Penawaran Proyek
                 </div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: resolved.projectPrice ? '#065F46' : '#94A3B8', marginTop: '4px' }}>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: resolved.projectPrice ? 'var(--ez-hue-green-text-deep)' : '#94A3B8', marginTop: '4px' }}>
                   {resolved.projectPrice ? formatCurrencyIDR(resolved.projectPrice) : 'Belum Diatur'}
                 </div>
                 <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
@@ -282,7 +282,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
                 <div style={{ fontSize: '11px', color: resolved.overridePrice ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)', fontWeight: 600 }}>
                   3. Override Khusus
                 </div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: resolved.overridePrice ? '#1E40AF' : '#94A3B8', marginTop: '4px' }}>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: resolved.overridePrice ? 'var(--ez-hue-blue-text-deep)' : '#94A3B8', marginTop: '4px' }}>
                   {resolved.overridePrice ? formatCurrencyIDR(resolved.overridePrice) : 'Tidak Aktif'}
                 </div>
                 <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
@@ -367,7 +367,7 @@ export const PriceProvenanceModal: React.FC<PriceProvenanceModalProps> = ({
               {resolved.validUntil && (
                 <div>
                   <span style={{ color: 'var(--ez-color-text-muted)' }}>Masa Berlaku: </span>
-                  <strong style={{ color: resolved.status === 'EXPIRED' ? '#DC2626' : '#1E293B' }}>
+                  <strong style={{ color: resolved.status === 'EXPIRED' ? 'var(--ez-hue-rose-text)' : 'var(--ez-color-text-strong)' }}>
                     s.d. {resolved.validUntil}
                   </strong>
                 </div>

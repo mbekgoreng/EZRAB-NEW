@@ -68,7 +68,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
           textAlign: 'center',
         }}
       >
-        <Upload size={28} color="#2563EB" style={{ margin: '0 auto 8px' }} />
+        <Upload size={28} color="var(--ez-hue-blue-text)" style={{ margin: '0 auto 8px' }} />
         <h4 style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
           Upload Template Kustom (DOCX)
         </h4>
@@ -155,7 +155,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
                     borderRadius: 8,
                     border: isSelected ? '1px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                     background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                    color: isSelected ? 'var(--ez-color-primary)' : '#334155',
+                    color: isSelected ? 'var(--ez-color-primary)' : 'var(--ez-color-text-body)',
                     fontSize: 12.5,
                     fontWeight: 700,
                     cursor: 'pointer',
@@ -229,7 +229,7 @@ export const TemplateSelectorPanel: React.FC<TemplateSelectorPanelProps> = ({
                       borderRadius: 8,
                       border: isSelected ? '1px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                       background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                      color: isSelected ? 'var(--ez-color-primary)' : '#334155',
+                      color: isSelected ? 'var(--ez-color-primary)' : 'var(--ez-color-text-body)',
                       fontSize: 12.5,
                       fontWeight: 700,
                       cursor: 'pointer',

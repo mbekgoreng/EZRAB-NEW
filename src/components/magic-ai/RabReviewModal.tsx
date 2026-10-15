@@ -203,7 +203,7 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                   style={{
                     fontSize: '11px',
                     fontWeight: 700,
-                    color: summary.healthScore >= 80 ? '#166534' : summary.healthScore >= 60 ? '#854D0E' : '#991B1B',
+                    color: summary.healthScore >= 80 ? 'var(--ez-hue-green-text-deep)' : summary.healthScore >= 60 ? '#854D0E' : 'var(--ez-hue-red-text)',
                     textTransform: 'uppercase',
                   }}
                 >
@@ -213,7 +213,7 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                   style={{
                     fontSize: '18px',
                     fontWeight: 800,
-                    color: summary.healthScore >= 80 ? '#15803D' : summary.healthScore >= 60 ? '#A16207' : '#DC2626',
+                    color: summary.healthScore >= 80 ? 'var(--ez-hue-green-text)' : summary.healthScore >= 60 ? '#A16207' : 'var(--ez-hue-rose-text)',
                     marginTop: '4px',
                   }}
                 >
@@ -273,7 +273,7 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                     fontWeight: 700,
                     cursor: 'pointer',
                     backgroundColor: selectedSeverity === sev ? '#0F172A' : 'var(--ez-color-surface)',
-                    color: selectedSeverity === sev ? '#FFFFFF' : '#475569',
+                    color: selectedSeverity === sev ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                   }}
                 >
                   {sev === 'ALL' ? 'Semua Severity' : sev}
@@ -292,7 +292,7 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                     fontWeight: 600,
                     cursor: 'pointer',
                     backgroundColor: selectedCategory === cat ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
-                    color: selectedCategory === cat ? '#FFFFFF' : '#475569',
+                    color: selectedCategory === cat ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                   }}
                 >
                   {cat === 'ALL' ? 'Semua Kategori' : cat}
@@ -334,7 +334,7 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                   border: '1px dashed var(--ez-hue-slate-border)',
                 }}
               >
-                <CheckCircle2 size={36} color="#16A34A" style={{ margin: '0 auto 10px auto' }} />
+                <CheckCircle2 size={36} color="var(--ez-hue-green-text-bright)" style={{ margin: '0 auto 10px auto' }} />
                 <div style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
                   Tidak Ditemukan Isu Kritis
                 </div>
@@ -370,7 +370,7 @@ export const RabReviewModal: React.FC<RabReviewModalProps> = ({
                             padding: '2px 8px',
                             borderRadius: '4px',
                             backgroundColor: isWarning ? 'var(--ez-hue-rose-bg)' : isReview ? 'var(--ez-hue-orange-bg-soft)' : 'var(--ez-hue-blue-bg)',
-                            color: isWarning ? '#B91C1C' : isReview ? '#C2410C' : 'var(--ez-color-primary-hover)',
+                            color: isWarning ? 'var(--ez-hue-red-text)' : isReview ? '#C2410C' : 'var(--ez-color-primary-hover)',
                           }}
                         >
                           {finding.severity}

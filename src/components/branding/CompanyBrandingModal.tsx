@@ -291,7 +291,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              {isPaid ? <Crown size={22} color="#16A34A" /> : <ShieldAlert size={22} color="#D97706" />}
+              {isPaid ? <Crown size={22} color="var(--ez-hue-green-text-bright)" /> : <ShieldAlert size={22} color="var(--ez-hue-amber-text-deep)" />}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
@@ -304,7 +304,7 @@ export const CompanyBrandingModal: React.FC<CompanyBrandingModalProps> = ({
                       padding: '2px 8px',
                       borderRadius: '6px',
                       background: isPaid ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-amber-bg-deep)',
-                      color: isPaid ? '#15803D' : '#B45309',
+                      color: isPaid ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-amber-text)',
                     }}
                   >
                     {isPaid ? 'BEBAS WATERMARK' : 'WATERMARK WAJIB'}

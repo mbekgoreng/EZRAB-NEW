@@ -192,7 +192,7 @@ export const ProjectFinanceView: React.FC<ProjectFinanceViewProps> = ({
                 borderRadius: 'var(--ez-radius-control)',
                 border: 'none',
                 backgroundColor: isActive ? 'var(--ez-color-primary)' : 'transparent',
-                color: isActive ? '#FFFFFF' : '#475569',
+                color: isActive ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                 fontSize: '12px',
                 fontWeight: isActive ? 700 : 600,
                 cursor: 'pointer',

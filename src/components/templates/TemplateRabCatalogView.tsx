@@ -384,7 +384,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                 fontWeight: 650
               }}
             >
-              <Building size={14} color="#16A34A" />
+              <Building size={14} color="var(--ez-hue-green-text-bright)" />
               <span>Proyek: {currentProject.name}</span>
             </div>
           )}
@@ -509,7 +509,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                     borderRadius: '6px',
                     border: 'none',
                     background: isSelected ? 'var(--ez-color-primary)' : 'transparent',
-                    color: isSelected ? '#FFFFFF' : '#475569',
+                    color: isSelected ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                     fontSize: '11.5px',
                     fontWeight: isSelected ? 700 : 500,
                     cursor: 'pointer',
@@ -613,7 +613,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                   borderRadius: '8px',
                   border: 'none',
                   background: isSelected ? 'var(--ez-hue-blue-bg)' : 'transparent',
-                  color: isSelected ? '#1E40AF' : '#334155',
+                  color: isSelected ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-color-text-body)',
                   fontWeight: isSelected ? 700 : 500,
                   fontSize: '12.5px',
                   cursor: 'pointer',
@@ -714,7 +714,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                   fontSize: '11.5px',
                   fontWeight: selectedSubcategory === 'ALL' ? 700 : 500,
                   background: selectedSubcategory === 'ALL' ? '#1E293B' : 'var(--ez-color-surface)',
-                  color: selectedSubcategory === 'ALL' ? '#FFFFFF' : '#475569',
+                  color: selectedSubcategory === 'ALL' ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                   border: selectedSubcategory === 'ALL' ? 'none' : '1px solid var(--ez-hue-slate-border)',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
@@ -748,7 +748,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                       fontSize: '11.5px',
                       fontWeight: isSelected ? 700 : 500,
                       background: isSelected ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
-                      color: isSelected ? '#FFFFFF' : '#475569',
+                      color: isSelected ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                       border: isSelected ? 'none' : '1px solid var(--ez-hue-slate-border)',
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
@@ -906,7 +906,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                             padding: '2px 6px',
                             borderRadius: '4px',
                             background: isUser ? 'var(--ez-hue-amber-bg-deep)' : 'var(--ez-color-surface-tertiary)',
-                            color: isUser ? '#B45309' : 'var(--ez-color-text-muted)'
+                            color: isUser ? 'var(--ez-hue-amber-text)' : 'var(--ez-color-text-muted)'
                           }}
                         >
                           {isUser ? 'Template Saya' : tpl.badge || 'Official'}

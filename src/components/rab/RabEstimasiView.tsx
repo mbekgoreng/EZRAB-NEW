@@ -1258,7 +1258,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Keyboard size={18} color="#2563EB" />
+                <Keyboard size={18} color="var(--ez-hue-blue-text)" />
                 <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                   Pintasan Keyboard (Shortcuts)
                 </h3>

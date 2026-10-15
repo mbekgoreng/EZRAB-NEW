@@ -261,7 +261,7 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
               boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
             }}
           >
-            <Download size={14} color="#2563EB" />
+            <Download size={14} color="var(--ez-hue-blue-text)" />
             <span>Export Excel</span>
           </button>
         </div>

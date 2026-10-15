@@ -68,7 +68,7 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
               style={{
                 fontSize: '12px',
                 fontWeight: 750,
-                color: budgetVsActual.status === 'OVER_BUDGET' ? '#DC2626' : '#166534',
+                color: budgetVsActual.status === 'OVER_BUDGET' ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text-deep)',
                 backgroundColor: budgetVsActual.status === 'OVER_BUDGET' ? 'var(--ez-hue-red-bg)' : 'var(--ez-hue-green-bg-deep)',
                 padding: '4px 10px',
                 borderRadius: '6px',
@@ -113,7 +113,7 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
             style={{
               fontSize: '16px',
               fontWeight: 800,
-              color: budgetVsActual.status === 'OVER_BUDGET' ? '#DC2626' : '#16A34A',
+              color: budgetVsActual.status === 'OVER_BUDGET' ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text-bright)',
               marginTop: '4px',
             }}
           >
@@ -199,7 +199,7 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
                         padding: '10px 14px',
                         textAlign: 'right',
                         fontWeight: 700,
-                        color: isOver ? '#DC2626' : (varAmt < 0 ? '#16A34A' : 'var(--ez-color-text-muted)'),
+                        color: isOver ? 'var(--ez-hue-rose-text)' : (varAmt < 0 ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-color-text-muted)'),
                       }}
                     >
                       {c.budgetAmount > 0 ? `${varAmt >= 0 ? '+' : ''}${formatRupiah(varAmt)}` : '-'}

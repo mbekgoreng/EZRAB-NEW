@@ -143,7 +143,7 @@ export const CashFlowProfitTab: React.FC<CashFlowProfitTabProps> = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Scale size={18} color="#2563EB" />
+          <Scale size={18} color="var(--ez-hue-blue-text)" />
           <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
             Analisis Margin Profitabilitas Proyek
           </h3>
@@ -247,7 +247,7 @@ export const CashFlowProfitTab: React.FC<CashFlowProfitTabProps> = ({
                           padding: '2px 6px',
                           borderRadius: '4px',
                           backgroundColor: p.isForecast ? 'var(--ez-hue-violet-bg)' : 'var(--ez-hue-blue-bg)',
-                          color: p.isForecast ? '#7C3AED' : '#1E40AF',
+                          color: p.isForecast ? 'var(--ez-hue-violet-text)' : 'var(--ez-hue-blue-text-deep)',
                           border: `1px solid ${p.isForecast ? 'var(--ez-hue-violet-border)' : 'var(--ez-hue-blue-border)'}`,
                         }}
                       >
@@ -260,10 +260,10 @@ export const CashFlowProfitTab: React.FC<CashFlowProfitTabProps> = ({
                     <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-hue-rose-text)' }}>
                       {p.cashOut > 0 ? `- ${formatRupiah(p.cashOut)}` : '-'}
                     </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 750, color: isNetPositive ? '#15803D' : '#DC2626' }}>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 750, color: isNetPositive ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-rose-text)' }}>
                       {isNetPositive ? '+' : ''}{formatRupiah(p.netCashFlow)}
                     </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: isCumPositive ? '#0F172A' : '#EF4444' }}>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: isCumPositive ? 'var(--ez-color-text-primary)' : '#EF4444' }}>
                       {formatRupiah(p.cumulativeCashFlow)}
                     </td>
                   </tr>

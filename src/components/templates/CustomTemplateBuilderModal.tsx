@@ -985,7 +985,7 @@ export const CustomTemplateBuilderModal: React.FC<CustomTemplateBuilderModalProp
               borderRadius: '8px',
               border: '1px solid var(--ez-hue-slate-border)',
               background: 'var(--ez-color-surface)',
-              color: activeStep === 1 ? '#94A3B8' : '#334155',
+              color: activeStep === 1 ? '#94A3B8' : 'var(--ez-color-text-body)',
               fontSize: '13px',
               fontWeight: 600,
               cursor: activeStep === 1 ? 'not-allowed' : 'pointer',

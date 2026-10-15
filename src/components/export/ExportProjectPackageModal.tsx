@@ -441,12 +441,12 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                           padding: '1px 6px',
                           borderRadius: '4px',
                           background: isMc0 ? 'var(--ez-hue-amber-bg-deep)' : isComplete ? 'var(--ez-hue-green-bg-deep)' : isSelected ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
-                          color: isMc0 ? '#B45309' : isComplete ? '#15803D' : isSelected ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
+                          color: isMc0 ? 'var(--ez-hue-amber-text)' : isComplete ? 'var(--ez-hue-green-text)' : isSelected ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                         }}
                       >
                         {p.badge}
                       </span>
-                      {isSelected && <Check size={14} color="#2563EB" strokeWidth={3} />}
+                      {isSelected && <Check size={14} color="var(--ez-hue-blue-text)" strokeWidth={3} />}
                     </div>
 
                     <div style={{ fontSize: '13px', fontWeight: 750, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
@@ -492,7 +492,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                       borderRadius: '8px',
                       border: exportFormat === id ? '2px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                       background: exportFormat === id ? '#FFFFFF' : 'var(--ez-color-surface-secondary)',
-                      color: exportFormat === id ? 'var(--ez-color-primary)' : '#475569',
+                      color: exportFormat === id ? 'var(--ez-color-primary)' : 'var(--ez-color-text-slate)',
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
@@ -576,7 +576,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                       padding: '1px 6px',
                       borderRadius: '4px',
                       background: workspaceBranding?.canUploadLogo ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-amber-bg-deep)',
-                      color: workspaceBranding?.canUploadLogo ? '#15803D' : '#B45309',
+                      color: workspaceBranding?.canUploadLogo ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-amber-text)',
                     }}
                   >
                     {workspaceBranding?.canUploadLogo ? 'PAID • BEBAS WATERMARK' : 'FREE • WATERMARK EZRAB WAJIB'}
@@ -609,7 +609,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 gap: '5px',
               }}
             >
-              <Sparkles size={13} color="#2563EB" />
+              <Sparkles size={13} color="var(--ez-hue-blue-text)" />
               <span>Atur Profil & Logo Perusahaan</span>
             </button>
           </div>
@@ -625,7 +625,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Layers size={16} color="#2563EB" />
+                <Layers size={16} color="var(--ez-hue-blue-text)" />
                 <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                   Daftar Lembar Kerja yang Disertakan
                 </span>
@@ -728,7 +728,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                         style={{
                           fontSize: '11.5px',
                           fontWeight: 700,
-                          color: isChecked ? '#0F172A' : 'var(--ez-color-text-muted)',
+                          color: isChecked ? 'var(--ez-color-text-primary)' : 'var(--ez-color-text-muted)',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -1013,7 +1013,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 if (!isExporting) e.currentTarget.style.backgroundColor = 'var(--ez-hue-green-bg)';
               }}
             >
-              <FileText size={14} color="#15803D" />
+              <FileText size={14} color="var(--ez-hue-green-text)" />
               <span>Unduh PDF Langsung</span>
             </button>
 

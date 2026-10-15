@@ -198,7 +198,7 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-              <ShieldAlert size={18} color="#2563EB" style={{ marginTop: '2px', flexShrink: 0 }} />
+              <ShieldAlert size={18} color="var(--ez-hue-blue-text)" style={{ marginTop: '2px', flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: '12.5px', fontWeight: 750, color: 'var(--ez-hue-blue-text-deep)' }}>
                   {t('proj.del.backup_t')}
@@ -221,7 +221,7 @@ export const DeleteProjectModal: React.FC<DeleteProjectModalProps> = ({
                 borderRadius: '8px',
                 backgroundColor: downloaded ? 'var(--ez-color-success-soft)' : 'var(--ez-color-on-primary)',
                 border: downloaded ? '1px solid #86EFAC' : '1px solid #93C5FD',
-                color: downloaded ? '#15803D' : 'var(--ez-color-primary-hover)',
+                color: downloaded ? 'var(--ez-hue-green-text)' : 'var(--ez-color-primary-hover)',
                 fontSize: '12px',
                 fontWeight: 700,
                 cursor: 'pointer',

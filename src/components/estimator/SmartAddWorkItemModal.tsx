@@ -1444,7 +1444,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                         fontSize: '11px',
                         fontWeight: manualUnit === u ? 700 : 500,
                         background: manualUnit === u ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-tertiary)',
-                        color: manualUnit === u ? 'var(--ez-color-primary)' : '#475569',
+                        color: manualUnit === u ? 'var(--ez-color-primary)' : 'var(--ez-color-text-slate)',
                         border: manualUnit === u ? '1px solid var(--ez-hue-blue-border)' : '1px solid var(--ez-color-border-line)',
                         cursor: 'pointer',
                       }}

@@ -198,7 +198,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-hue-blue-bg)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
           >
-            <Sparkles size={15} color="#2563EB" />
+            <Sparkles size={15} color="var(--ez-hue-blue-text)" />
             <span>{t('proj.generate_ai')}</span>
           </button>
         </div>
@@ -253,7 +253,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                   padding: '5px 12px',
                   borderRadius: 'var(--ez-radius-pill)',
                   background: isActive ? 'var(--ez-pastel-sky)' : 'var(--ez-color-surface-tertiary)',
-                  color: isActive ? '#2456A8' : 'var(--ez-color-text-muted)',
+                  color: isActive ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-color-text-muted)',
                   whiteSpace: 'nowrap',
                 }}
               >

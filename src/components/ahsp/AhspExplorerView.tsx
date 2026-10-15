@@ -481,7 +481,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               gap: '4px',
             }}
           >
-            <ShieldCheck size={14} color="#16A34A" />
+            <ShieldCheck size={14} color="var(--ez-hue-green-text-bright)" />
             <span>Audit 2026</span>
           </button>
         </div>
@@ -709,7 +709,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             fontSize: '12px',
             fontWeight: selectedCategory === 'ALL' ? 700 : 500,
             background: selectedCategory === 'ALL' ? 'var(--ez-pastel-sky)' : 'var(--ez-color-surface)',
-            color: selectedCategory === 'ALL' ? 'var(--ez-color-primary-hover)' : '#475569',
+            color: selectedCategory === 'ALL' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-slate)',
             border: selectedCategory === 'ALL' ? '1px solid var(--ez-hue-blue-border)' : '1px solid var(--ez-color-border-line)',
             cursor: 'pointer',
             display: 'flex',
@@ -745,7 +745,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               fontSize: '12px',
               fontWeight: selectedCategory === cat.name ? 700 : 500,
               background: selectedCategory === cat.name ? 'var(--ez-pastel-sky)' : 'var(--ez-color-surface)',
-              color: selectedCategory === cat.name ? 'var(--ez-color-primary-hover)' : '#475569',
+              color: selectedCategory === cat.name ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-slate)',
               border: selectedCategory === cat.name ? '1px solid var(--ez-hue-blue-border)' : '1px solid var(--ez-color-border-line)',
               cursor: 'pointer',
               display: 'flex',
@@ -1075,7 +1075,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                       }}
                     >
                       <span>{item.code}</span>
-                      {copiedCode === item.code ? <Check size={12} color="#16A34A" /> : <Copy size={12} color="#94A3B8" />}
+                      {copiedCode === item.code ? <Check size={12} color="var(--ez-hue-green-text-bright)" /> : <Copy size={12} color="#94A3B8" />}
                     </button>
 
                     <span
@@ -1172,7 +1172,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   >
                     <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Harga Satuan (HSP):</span>
                     {hspPrice !== null && hspPrice > 0 ? (
-                      <div style={{ fontSize: '17px', fontWeight: 800, color: pricingStatus === 'FULL' ? '#15803D' : '#D97706' }}>
+                      <div style={{ fontSize: '17px', fontWeight: 800, color: pricingStatus === 'FULL' ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-amber-text-deep)' }}>
                         {formatCurrencyIDR(hspPrice)}{pricingStatus === 'PARTIAL' ? '*' : ''} <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>/ {item.unit}</span>
                       </div>
                     ) : (
@@ -1605,7 +1605,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                     <td colSpan={5} style={{ padding: '12px 10px', textAlign: 'right', fontSize: '13.5px', color: 'var(--ez-hue-blue-text-deep)' }}>
                       Harga Satuan Pekerjaan (F = D + E):
                     </td>
-                    <td style={{ padding: '12px 10px', textAlign: 'right', color: (selectedAhspComposition?.pricingStatus === 'FULL' || selectedAhsp?.domain === 'SMKK') ? '#15803D' : selectedAhspComposition?.pricingStatus === 'PARTIAL' ? '#D97706' : 'var(--ez-color-text-muted)', fontSize: '16px', fontWeight: 900 }}>
+                    <td style={{ padding: '12px 10px', textAlign: 'right', color: (selectedAhspComposition?.pricingStatus === 'FULL' || selectedAhsp?.domain === 'SMKK') ? 'var(--ez-hue-green-text)' : selectedAhspComposition?.pricingStatus === 'PARTIAL' ? 'var(--ez-hue-amber-text-deep)' : 'var(--ez-color-text-muted)', fontSize: '16px', fontWeight: 900 }}>
                       {(() => {
                         const finalP = selectedAhspComposition?.hspPrice ?? selectedAhspComposition?.unitPrice ?? selectedAhsp?.unitPrice;
                         return finalP !== null && finalP !== undefined && finalP > 0
@@ -1641,7 +1641,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                 }}
               >
                 <div style={{ fontWeight: 800, color: 'var(--ez-color-text-primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <FileText size={15} color="#2563EB" />
+                  <FileText size={15} color="var(--ez-hue-blue-text)" />
                   <span>Informasi Sumber Resmi (Data Lineage & Provenansi)</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px' }}>
@@ -1720,7 +1720,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                     }}
                     title="Simpan analisa ini ke data AHSP Proyek"
                   >
-                    <Database size={15} color="#2563EB" />
+                    <Database size={15} color="var(--ez-hue-blue-text)" />
                     <span>Simpan ke AHSP Proyek</span>
                   </button>
                 )}

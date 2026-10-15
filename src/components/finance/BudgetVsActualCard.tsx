@@ -62,17 +62,17 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {status === 'OVER_BUDGET' ? (
-            <AlertCircle size={16} color="#DC2626" />
+            <AlertCircle size={16} color="var(--ez-hue-rose-text)" />
           ) : status === 'UNDER_BUDGET' ? (
-            <CheckCircle size={16} color="#16A34A" />
+            <CheckCircle size={16} color="var(--ez-hue-green-text-bright)" />
           ) : (
-            <Scale size={16} color="#475569" />
+            <Scale size={16} color="var(--ez-color-text-slate)" />
           )}
           <span
             style={{
               fontSize: '12.5px',
               fontWeight: 700,
-              color: status === 'OVER_BUDGET' ? '#991B1B' : (status === 'UNDER_BUDGET' ? '#166534' : '#334155'),
+              color: status === 'OVER_BUDGET' ? 'var(--ez-hue-red-text)' : (status === 'UNDER_BUDGET' ? 'var(--ez-hue-green-text-deep)' : 'var(--ez-color-text-body)'),
             }}
           >
             {status === 'OVER_BUDGET' ? 'Over Budget (Melebihi Anggaran)' : (status === 'UNDER_BUDGET' ? 'Under Budget (Sesuai Anggaran)' : 'On Track')}
@@ -84,7 +84,7 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
             style={{
               fontSize: '12px',
               fontWeight: 750,
-              color: status === 'OVER_BUDGET' ? '#DC2626' : (status === 'UNDER_BUDGET' ? '#16A34A' : '#475569'),
+              color: status === 'OVER_BUDGET' ? 'var(--ez-hue-rose-text)' : (status === 'UNDER_BUDGET' ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-color-text-slate)'),
             }}
           >
             {totalVariance >= 0 ? '+' : ''}{formatRupiah(totalVariance)} ({variancePercent >= 0 ? '+' : ''}{variancePercent}%)
@@ -121,7 +121,7 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
                   style={{
                     fontSize: '11px',
                     fontWeight: 700,
-                    color: isOver ? '#DC2626' : '#16A34A',
+                    color: isOver ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text-bright)',
                     backgroundColor: isOver ? 'var(--ez-hue-rose-bg)' : 'var(--ez-hue-green-bg)',
                     padding: '2px 6px',
                     borderRadius: '4px',
@@ -164,7 +164,7 @@ export const BudgetVsActualCard: React.FC<BudgetVsActualCardProps> = ({
                       }}
                     />
                   </div>
-                  <span style={{ width: '75px', textAlign: 'right', fontSize: '10px', color: isOver ? '#DC2626' : '#16A34A', fontWeight: 600 }}>
+                  <span style={{ width: '75px', textAlign: 'right', fontSize: '10px', color: isOver ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text-bright)', fontWeight: 600 }}>
                     {formatRupiah(item.actualAmount)}
                   </span>
                 </div>

@@ -260,7 +260,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                 gap: '6px',
               }}
             >
-              <RefreshCw size={14} color="#2563EB" />
+              <RefreshCw size={14} color="var(--ez-hue-blue-text)" />
               <span>Sinkronkan dari RAB ({projectRabItems.length} item)</span>
             </button>
           )}
@@ -296,7 +296,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
             <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
               Target Rencana
             </span>
-            <Clock size={15} color="#2563EB" />
+            <Clock size={15} color="var(--ez-hue-blue-text)" />
           </div>
           <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '6px' }}>
             {projectScheduleTasks.length === 0 ? '0%' : '100%'}
@@ -311,7 +311,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
             <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
               Realisasi Lapangan
             </span>
-            <CheckCircle2 size={15} color="#16A34A" />
+            <CheckCircle2 size={15} color="var(--ez-hue-green-text-bright)" />
           </div>
           <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', marginTop: '6px' }}>
             {currentActualProgress}%
@@ -326,7 +326,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
             <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
               Total Nilai Proyek
             </span>
-            <TrendingUp size={15} color="#2563EB" />
+            <TrendingUp size={15} color="var(--ez-hue-blue-text)" />
           </div>
           <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '6px' }}>
             {formatCurrencyIDR(currentProject.totalRab || 0)}
@@ -341,7 +341,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
             <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
               Status Pelaksanaan
             </span>
-            <ShieldCheck size={15} color="#2563EB" />
+            <ShieldCheck size={15} color="var(--ez-hue-blue-text)" />
           </div>
           <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '6px' }}>
             {currentActualProgress >= 100 ? 'Selesai' : (currentActualProgress > 0 ? 'Berjalan' : 'Persiapan')}
@@ -368,7 +368,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <LineChart size={18} color="#2563EB" />
+              <LineChart size={18} color="var(--ez-hue-blue-text)" />
               <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                 Kurva S (S-Curve): Rencana vs Realisasi
               </h2>
@@ -598,7 +598,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                     gap: '6px',
                   }}
                 >
-                  <RefreshCw size={14} color="#2563EB" />
+                  <RefreshCw size={14} color="var(--ez-hue-blue-text)" />
                   <span>Sinkronkan dari RAB</span>
                 </button>
               )}
@@ -658,7 +658,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                         <div style={{ width: '70px', height: '6px', background: 'var(--ez-color-border-line)', borderRadius: '3px', overflow: 'hidden' }}>
                           <div style={{ width: `${task.actualProgressPercent}%`, height: '100%', background: task.actualProgressPercent === 100 ? '#16A34A' : 'var(--ez-color-primary)' }} />
                         </div>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: task.actualProgressPercent === 100 ? '#16A34A' : '#0F172A' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: task.actualProgressPercent === 100 ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-color-text-primary)' }}>
                           {task.actualProgressPercent}%
                         </span>
                       </div>
@@ -673,7 +673,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                           background:
                             task.status === 'COMPLETED' ? 'var(--ez-pastel-mint)' : task.status === 'ON_TRACK' ? 'var(--ez-pastel-sky)' : 'var(--ez-pastel-cream)',
                           color:
-                            task.status === 'COMPLETED' ? '#2c6e2c' : task.status === 'ON_TRACK' ? '#2456a8' : '#a8780a',
+                            task.status === 'COMPLETED' ? 'var(--ez-hue-green-text)' : task.status === 'ON_TRACK' ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-hue-amber-text)',
                         }}
                       >
                         {task.status}

@@ -96,7 +96,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               justifyContent: 'center',
             }}
           >
-            <ShieldCheck size={15} color="#2563EB" />
+            <ShieldCheck size={15} color="var(--ez-hue-blue-text)" />
           </div>
         </div>
 
@@ -110,7 +110,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
             <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
               {deltaPct !== null ? (
                 <>
-                  <span style={{ color: deltaPct >= 0 ? '#059669' : '#DC2626', fontWeight: 700 }}>
+                  <span style={{ color: deltaPct >= 0 ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-rose-text)', fontWeight: 700 }}>
                     {deltaPct >= 0 ? '▲' : '▼'}{' '}
                     {Math.abs(deltaPct).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
                   </span>
@@ -161,7 +161,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               justifyContent: 'center',
             }}
           >
-            <Layers size={15} color="#2563EB" />
+            <Layers size={15} color="var(--ez-hue-blue-text)" />
           </div>
         </div>
 
@@ -202,7 +202,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               justifyContent: 'center',
             }}
           >
-            <BarChart3 size={15} color="#2563EB" />
+            <BarChart3 size={15} color="var(--ez-hue-blue-text)" />
           </div>
         </div>
 
@@ -243,7 +243,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               justifyContent: 'center',
             }}
           >
-            <CloudCheck size={15} color="#2563EB" />
+            <CloudCheck size={15} color="var(--ez-hue-blue-text)" />
           </div>
         </div>
 

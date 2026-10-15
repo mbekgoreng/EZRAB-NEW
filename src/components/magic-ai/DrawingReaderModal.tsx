@@ -304,7 +304,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                     height: '54px',
                     borderRadius: '50%',
                     backgroundColor: selectedFile ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-blue-bg)',
-                    color: selectedFile ? '#166534' : 'var(--ez-color-primary)',
+                    color: selectedFile ? 'var(--ez-hue-green-text-deep)' : 'var(--ez-color-primary)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -486,7 +486,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-hue-blue-bg)', paddingBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <ShieldCheck size={18} color="#2563EB" />
+                    <ShieldCheck size={18} color="var(--ez-hue-blue-text)" />
                     <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-hue-blue-text-deep)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                       AI Evidence & Provenance
                     </span>
@@ -499,7 +499,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                         padding: '3px 10px',
                         borderRadius: '6px',
                         backgroundColor: (analysisResult.evidenceSummary?.status || analysisResult.overallStatus) === 'VERIFIED' ? 'var(--ez-hue-green-bg-deep)' : (analysisResult.evidenceSummary?.status || analysisResult.overallStatus) === 'UNREADABLE' ? 'var(--ez-hue-red-bg)' : 'var(--ez-hue-amber-bg-deep)',
-                        color: (analysisResult.evidenceSummary?.status || analysisResult.overallStatus) === 'VERIFIED' ? '#166534' : (analysisResult.evidenceSummary?.status || analysisResult.overallStatus) === 'UNREADABLE' ? '#991B1B' : '#92400E',
+                        color: (analysisResult.evidenceSummary?.status || analysisResult.overallStatus) === 'VERIFIED' ? 'var(--ez-hue-green-text-deep)' : (analysisResult.evidenceSummary?.status || analysisResult.overallStatus) === 'UNREADABLE' ? 'var(--ez-hue-red-text)' : 'var(--ez-hue-amber-text-dark)',
                       }}
                     >
                       Status: {analysisResult.evidenceSummary?.status || analysisResult.overallStatus || 'VERIFIED'}
@@ -511,7 +511,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                         padding: '3px 10px',
                         borderRadius: '6px',
                         backgroundColor: (analysisResult.scaleStatus || (analysisResult.detectedScale && !analysisResult.scaleWarning ? 'VERIFIED' : 'UNVERIFIED')) === 'VERIFIED' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-hue-amber-bg-deep)',
-                        color: (analysisResult.scaleStatus || (analysisResult.detectedScale && !analysisResult.scaleWarning ? 'VERIFIED' : 'UNVERIFIED')) === 'VERIFIED' ? 'var(--ez-color-primary-hover)' : '#92400E',
+                        color: (analysisResult.scaleStatus || (analysisResult.detectedScale && !analysisResult.scaleWarning ? 'VERIFIED' : 'UNVERIFIED')) === 'VERIFIED' ? 'var(--ez-color-primary-hover)' : 'var(--ez-hue-amber-text-dark)',
                       }}
                     >
                       Scale: {analysisResult.scaleStatus || (analysisResult.detectedScale && !analysisResult.scaleWarning ? 'VERIFIED' : 'UNVERIFIED')}
@@ -558,7 +558,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                           padding: '2px 8px',
                           borderRadius: '6px',
                           backgroundColor: analysisResult.overallConfidence === 'HIGH' ? 'var(--ez-hue-green-bg-deep)' : analysisResult.overallConfidence === 'LOW' ? 'var(--ez-hue-red-bg)' : 'var(--ez-hue-amber-bg-deep)',
-                          color: analysisResult.overallConfidence === 'HIGH' ? '#166534' : analysisResult.overallConfidence === 'LOW' ? '#991B1B' : '#92400E',
+                          color: analysisResult.overallConfidence === 'HIGH' ? 'var(--ez-hue-green-text-deep)' : analysisResult.overallConfidence === 'LOW' ? 'var(--ez-hue-red-text)' : 'var(--ez-hue-amber-text-dark)',
                         }}
                       >
                         {analysisResult.overallConfidence}
@@ -763,7 +763,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                                 padding: '2px 8px',
                                 borderRadius: '6px',
                                 backgroundColor: space.confidence === 'HIGH' ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-amber-bg-deep)',
-                                color: space.confidence === 'HIGH' ? '#166534' : '#92400E',
+                                color: space.confidence === 'HIGH' ? 'var(--ez-hue-green-text-deep)' : 'var(--ez-hue-amber-text-dark)',
                               }}
                             >
                               {space.confidence}
@@ -873,7 +873,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                                 padding: '2px 8px',
                                 borderRadius: '6px',
                                 backgroundColor: el.status === 'Detected' ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-amber-bg-deep)',
-                                color: el.status === 'Detected' ? '#166534' : '#92400E',
+                                color: el.status === 'Detected' ? 'var(--ez-hue-green-text-deep)' : 'var(--ez-hue-amber-text-dark)',
                               }}
                             >
                               {el.status}
