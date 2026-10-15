@@ -1,4 +1,37 @@
-isOpen: boolean;
+import React, { useState, useRef } from 'react';
+import {
+  Upload,
+  FileSpreadsheet,
+  CheckCircle2,
+  AlertTriangle,
+  Info,
+  ChevronRight,
+  ArrowRight,
+  Download,
+  Trash2,
+  RefreshCw,
+  Sparkles,
+  Layers,
+  X,
+  Database,
+  Search,
+  Check,
+  FileText,
+  HelpCircle,
+  FolderOpen,
+  SlidersHorizontal,
+} from 'lucide-react';
+import {
+  ExcelImportEngine,
+  ExcelAnalysisResult,
+  ColumnMappingConfig,
+  ParsedRabRow,
+} from '../../engine/excelImportEngine';
+import { formatCurrencyIDR } from '../../calculations/decimalEngine';
+import * as XLSX from 'xlsx';
+
+interface IntelligentExcelImportModalProps {
+  isOpen: boolean;
   onClose: () => void;
   onImportCompleted: (importedItems: any[], summary: { groupsCount: number; itemsCount: number; totalAmount: number }) => void;
 }
@@ -482,7 +515,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                             key={idx}
                             onClick={() => handleHeaderRowChange(idx)}
                             style={{
-                              background: isSelectedHeader ? 'var(--ez-hue-blue-bg)' : idx % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-faint)',
+                              background: isSelectedHeader ? 'var(--ez-hue-blue-bg)' : idx % 2 === 0 ? '#FFFFFF' : 'var(--ez-color-surface-faint)',
                               borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                               cursor: 'pointer',
                               borderLeft: isSelectedHeader ? '4px solid #2563EB' : '4px solid transparent',

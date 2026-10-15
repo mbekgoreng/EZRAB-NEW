@@ -1,4 +1,38 @@
-isOpen: boolean;
+import React, { useState, useMemo, useEffect } from 'react';
+import {
+  Sparkles,
+  BookOpen,
+  PenTool,
+  LayoutTemplate,
+  Copy,
+  Search,
+  Plus,
+  X,
+  ArrowLeft,
+  Check,
+  Layers,
+  AlertCircle,
+  Building,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Edit3,
+  Loader2,
+  FileText,
+} from 'lucide-react';
+import { RabItem, VolumeSourceType } from '../../types';
+import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
+import { NationalAHSPItem } from '../../data/nationalCostDatabase/types';
+import { WORK_CATEGORIES } from '../../data/mockData';
+import { masterBuildingTemplateRegistry } from '../../data/buildingTemplates/masterTemplateRegistry';
+import { MasterBuildingTemplate, TemplateWorkItem } from '../../data/buildingTemplates/schema/types';
+import { formatCurrencyIDR } from '../../calculations/decimalEngine';
+import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
+
+export type AddItemMode = 'selector' | 'ahsp' | 'manual' | 'ai' | 'template' | 'duplicate';
+
+export interface SmartAddWorkItemModalProps {
+  isOpen: boolean;
   onClose: () => void;
   onAddItem: (itemData: Omit<RabItem, 'id'>) => Promise<void> | void;
   onAddMultipleItems?: (itemsData: Omit<RabItem, 'id'>[]) => Promise<void> | void;
@@ -640,7 +674,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   padding: '5px 12px',
                   borderRadius: '6px',
                   border: 'none',
-                  background: isActive ? 'var(--ez-color-surface)' : 'transparent',
+                  background: isActive ? '#FFFFFF' : 'transparent',
                   color: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                   fontSize: '11.5px',
                   fontWeight: isActive ? 750 : 550,

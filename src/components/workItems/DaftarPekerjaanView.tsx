@@ -1,4 +1,59 @@
-id: '01', number: 1, name: '01. PEKERJAAN PERSIAPAN', shortName: 'Persiapan', icon: '📐', calcIds: ['BOWPLANK'] },
+import React, { useState, useMemo, useEffect } from 'react';
+import {
+  ListPlus,
+  Plus,
+  Search,
+  Filter,
+  Download,
+  Upload,
+  Sparkles,
+  Calculator,
+  Layers,
+  ChevronDown,
+  ChevronRight,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  MoreVertical,
+  Edit2,
+  Trash2,
+  Copy,
+  FolderPlus,
+  Eye,
+  ArrowRight,
+  Database,
+  Building2,
+  MapPin,
+  Coins,
+  Check,
+  X,
+  FileSpreadsheet,
+  FileText,
+  HelpCircle,
+  Archive,
+  RefreshCw,
+  Share2,
+  Maximize2,
+  DollarSign,
+  TrendingUp,
+  Activity,
+  Sliders,
+  Paperclip,
+  CheckCheck,
+} from 'lucide-react';
+import { useProject } from '../../context/ProjectContext';
+import { WorkItem, WorkItemStatus, QTOItem, RabItem } from '../../types';
+import { formatCurrencyIDR } from '../../calculations/decimalEngine';
+import { ALL_CONSTRUCTION_CALCULATORS, CONSTRUCTION_CALCULATORS, getCalculatorById } from '../../engine/constructionCalculators/registry';
+import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
+import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
+import { WorkItemInspectorDrawer } from '../inspector/WorkItemInspectorDrawer';
+import { IntelligentExcelImportModal } from '../import/IntelligentExcelImportModal';
+import blueprintEmptyImg from '../../assets/proyek-empty-blueprint.png';
+
+// 15 Standard Construction Categories
+export const STANDARD_WORK_CATEGORIES = [
+  { id: '01', number: 1, name: '01. PEKERJAAN PERSIAPAN', shortName: 'Persiapan', icon: '📐', calcIds: ['BOWPLANK'] },
   { id: '02', number: 2, name: '02. PEKERJAAN TANAH', shortName: 'Tanah', icon: '🚜', calcIds: ['GALIAN_TANAH', 'URUGAN_TANAH', 'PEMADATAN_TANAH'] },
   { id: '03', number: 3, name: '03. PEKERJAAN PONDASI', shortName: 'Pondasi', icon: '🪨', calcIds: ['PONDASI', 'FOOT_PLATE', 'BETON_PONDASI', 'BEKISTING_PONDASI', 'PEMBESIAN_PONDASI'] },
   { id: '04', number: 4, name: '04. PEKERJAAN STRUKTUR', shortName: 'Struktur', icon: '🏗️', calcIds: ['SLOOF', 'KOLOM', 'BALOK', 'PLAT_LANTAI'] },
@@ -1010,7 +1065,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                 border: 'none',
                 fontSize: '11.5px',
                 fontWeight: viewMode === 'grouped' ? 700 : 500,
-                background: viewMode === 'grouped' ? 'var(--ez-color-surface)' : 'transparent',
+                background: viewMode === 'grouped' ? '#FFFFFF' : 'transparent',
                 color: viewMode === 'grouped' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-warm)',
                 cursor: 'pointer',
                 boxShadow: viewMode === 'grouped' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
@@ -1028,7 +1083,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                 border: 'none',
                 fontSize: '11.5px',
                 fontWeight: viewMode === 'table' ? 700 : 500,
-                background: viewMode === 'table' ? 'var(--ez-color-surface)' : 'transparent',
+                background: viewMode === 'table' ? '#FFFFFF' : 'transparent',
                 color: viewMode === 'table' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-warm)',
                 cursor: 'pointer',
                 boxShadow: viewMode === 'table' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',

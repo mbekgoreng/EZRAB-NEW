@@ -523,7 +523,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                               if (!isSelected && !isRowActive) e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
                             }}
                             onMouseLeave={(e) => {
-                              if (!isSelected && !isRowActive) e.currentTarget.style.background = 'var(--ez-color-surface)';
+                              if (!isSelected && !isRowActive) e.currentTarget.style.background = '#FFFFFF';
                             }}
                           >
                             {/* 1. Checkbox */}

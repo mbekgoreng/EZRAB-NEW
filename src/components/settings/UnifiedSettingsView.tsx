@@ -1,4 +1,125 @@
-tab: string) => void;
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Settings,
+  User,
+  Building2,
+  Users,
+  Bell,
+  Calculator,
+  Coins,
+  FileSpreadsheet,
+  Shield,
+  ShieldCheck,
+  CreditCard,
+  HelpCircle,
+  Save,
+  Check,
+  Plus,
+  Mail,
+  Phone,
+  Briefcase,
+  Layers,
+  Lock,
+  Download,
+  Upload,
+  AlertCircle,
+  ExternalLink,
+  Eye,
+  FileText,
+  Trash2,
+  RefreshCw,
+  Sparkles,
+  Bot,
+  Zap,
+  Activity,
+  FolderKanban,
+  Database,
+  Truck,
+  HardHat,
+  Package,
+  Ruler,
+  Calendar,
+  Percent,
+  SlidersHorizontal,
+  Search,
+  CheckCircle2,
+  Clock,
+  History,
+  FileCheck,
+  Tag,
+  ArrowRight,
+  ShieldAlert,
+  X,
+  FileUp,
+  MapPin,
+  TrendingUp,
+  Globe,
+  Info,
+  Play,
+  LogOut,
+} from 'lucide-react';
+import { ClientUserManagementService, WorkspaceMember } from '../../services/userManagementService';
+import { AddUserModal } from './AddUserModal';
+import { UserRole, Project } from '../../types';
+import { useProject } from '../../context/ProjectContext';
+import { useI18n, LANG_OPTIONS, type Lang } from '../../i18n';
+import { useRole } from '../../auth/RoleContext';
+import { ONBOARDING_OPEN_EVENT } from '../onboarding/OnboardingTour';
+
+/** Versi aplikasi — tampil di section "Informasi Sistem". Sinkron dengan package.json. */
+const APP_VERSION = '2.0.0';
+const APP_BUILD = 'Production';
+import { settingsAuditService, SettingsAuditEntry, SettingsCategory, SettingsScope } from '../../services/settingsAuditService';
+import { formatCurrencyIDR } from '../../calculations/decimalEngine';
+
+export type SettingsTabId =
+  // Level 1: Account
+  | 'account'
+  | 'profile'
+  | 'preferences'
+  | 'notifications'
+  | 'security'
+  // Level 2: Workspace
+  | 'workspace'
+  | 'company'
+  | 'users'
+  | 'roles'
+  | 'branding'
+  | 'subscription'
+  // Master Data
+  | 'master-data'
+  // Estimator
+  | 'estimator'
+  | 'rab'
+  | 'pricing'
+  // DED & Volume
+  | 'ded-volume'
+  | 'calculation'
+  // Documents
+  | 'documents'
+  | 'export'
+  // Schedule & Progress
+  | 'schedule'
+  // Cost
+  | 'cost'
+  // Integrations
+  | 'integrations'
+  // System
+  | 'system'
+  | 'audit-log'
+  | 'help'
+  // Project-Scoped Tabs
+  | 'project-info'
+  | 'project-estimator'
+  | 'project-ded'
+  | 'project-documents'
+  | 'project-schedule'
+  | 'project-cost';
+
+interface UnifiedSettingsViewProps {
+  initialTab?: SettingsTabId | string;
+  initialScope?: 'GLOBAL' | 'PROJECT';
+  onNavigateTab?: (tab: string) => void;
 }
 
 interface SearchableSettingItem {
@@ -597,7 +718,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 fontWeight: 700,
                 cursor: 'pointer',
                 border: 'none',
-                background: scope === 'PROJECT' ? 'var(--ez-color-surface)' : 'transparent',
+                background: scope === 'PROJECT' ? '#FFFFFF' : 'transparent',
                 color: scope === 'PROJECT' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                 boxShadow: scope === 'PROJECT' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
                 display: 'flex',

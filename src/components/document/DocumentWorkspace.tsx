@@ -1,4 +1,83 @@
-definition: DocumentDefinition;
+import React, { useState, useMemo, useEffect } from 'react';
+import {
+  ArrowLeft,
+  Download,
+  Save,
+  ShieldCheck,
+  AlertTriangle,
+  XCircle,
+  Clock,
+  History,
+  GitBranch,
+  Eye,
+  FileSpreadsheet,
+  FileText,
+  CheckCircle2,
+  Lock,
+  Settings,
+  Layers,
+  Edit3,
+  Plus,
+  Upload,
+  Trash2,
+  ChevronDown,
+  Check,
+  Sparkles,
+} from 'lucide-react';
+import type {
+  DocumentDefinition,
+  ProjectMasterData,
+  DocumentRecord,
+  DocumentFormat,
+  ValidationResult,
+  ExportHistoryRecord,
+  TemplateDefinition,
+} from '../../document-engine/types';
+import { buildDocumentData, DocumentSourceContext } from '../../document-engine/documentData';
+import { validateDocument, validateDocumentAgainstTemplate } from '../../document-engine/validationEngine';
+import { renderDocument } from '../../document-engine/renderer';
+import { exportDocument } from '../../document-engine/exportService';
+import { LocalDocumentRepository } from '../../document-engine/repository';
+import type { RABItem, RabItem, ScheduleTask, KurvaSDataPoint } from '../../types';
+import { ProjectSourceDrawerModal, type ProjectSourceTab } from '../project-source/ProjectSourceDrawerModal';
+import { ProjectDataRepository } from '../../project-data/repository';
+import { listProjectAhspItems } from '../../project-data/ahspBridge';
+import type { ProjectPersonnel, ProjectEquipment, ProjectJsaItem, ProjectRkkData, ProjectAhspItem } from '../../project-data/types';
+import {
+  buildTemplateContext,
+  resolveTemplateVariables,
+  classifyDocumentFields,
+  formatRupiah,
+} from '../../document-engine/templateEngine';
+import {
+  CompanyHeaderRepository,
+  type CompanyHeaderAsset,
+} from '../../document-engine/companyHeaderRepository';
+import {
+  computeSourceHash,
+  detectSourceChanges,
+} from '../../document-engine/sourceChangeDetector';
+import { TemplateRepository } from '../../document-engine/templateRepository';
+import { importDocxTemplate, type DocxImportResult } from '../../document-engine/templateImporter';
+import {
+  suggestVariableMapping,
+  AVAILABLE_CANONICAL_VARIABLES,
+  applyVariableMapping,
+} from '../../document-engine/templateMapper';
+import {
+  createCanonicalDocument,
+  generateBlockId,
+  computeCanonicalContentHash,
+  resolveCanonicalDocumentText,
+  type CanonicalDocument,
+  type DocumentBlock,
+} from '../../document-engine/canonicalDocument';
+import { TemplateSelectorPanel } from './TemplateSelectorPanel';
+import { CanonicalEditorPanel } from './CanonicalEditorPanel';
+import { DocxImportModal } from './DocxImportModal';
+
+interface DocumentWorkspaceProps {
+  definition: DocumentDefinition;
   master: ProjectMasterData;
   onBack: () => void;
   rabItems?: Array<RABItem | RabItem>;
@@ -1229,7 +1308,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     </thead>
                     <tbody>
                       {definition.fields.map((f, i) => (
-                        <tr key={f.id} style={{ background: i % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)' }}>
+                        <tr key={f.id} style={{ background: i % 2 === 0 ? '#FFFFFF' : 'var(--ez-color-surface-secondary)' }}>
                           <td style={{ padding: '5px 10px', border: '1px solid var(--ez-color-border-line)', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>
                             {f.label}
                           </td>
@@ -1262,7 +1341,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                       </thead>
                       <tbody>
                         {renderedDoc.tables.slice(0, 15).map((row, rIdx) => (
-                          <tr key={rIdx} style={{ background: rIdx % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)' }}>
+                          <tr key={rIdx} style={{ background: rIdx % 2 === 0 ? '#FFFFFF' : 'var(--ez-color-surface-secondary)' }}>
                             {renderedDoc.tableColumns!.map((col) => {
                               const val = row[col.key];
                               return (

@@ -1,4 +1,92 @@
-A: Weir forensic cost pipeline
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import {
+  Ruler,
+  Calculator,
+  Plus,
+  Layers,
+  Check,
+  ChevronRight,
+  RefreshCw,
+  Box,
+  Compass,
+  FileSpreadsheet,
+  ArrowRight,
+  History,
+  Info,
+  ShieldCheck,
+  HardHat,
+  Package,
+  Wrench,
+  AlertCircle,
+  ExternalLink,
+  Edit3,
+  Trash2,
+  FolderPlus,
+  Copy,
+  Search,
+  Download,
+  Code,
+  FileText,
+  Printer,
+  Zap,
+  Sliders,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Maximize2,
+  Minimize2,
+  ZoomIn,
+  ZoomOut,
+  X,
+  ArrowLeft,
+  DollarSign,
+  ClipboardCheck,
+  Star,
+  Filter,
+  RotateCcw,
+  LayoutGrid,
+  List,
+  Eye,
+  EyeOff,
+  Building2,
+  DraftingCompass,
+  Route,
+  Droplets,
+  Droplet,
+  Waves,
+  Sprout,
+  Landmark,
+  Tractor,
+  Wheat,
+  CloudRain,
+  GlassWater,
+  Home,
+  BrickWall,
+  Mountain,
+  type LucideIcon,
+} from 'lucide-react';
+import { useProject } from '../../context/ProjectContext';
+import { CONSTRUCTION_CALCULATORS, getCalculatorById } from '../../engine/constructionCalculators/registry';
+import {
+  BowplankDiagram,
+  PondasiDiagram,
+  FootPlateDiagram,
+  SloofDiagram,
+  KolomDiagram,
+  DindingDiagram,
+  AtapBajaRinganDiagram,
+  FinishingDiagram,
+  GenericCalculatorDiagram,
+  BajaWfDiagram,
+} from '../../engine/constructionCalculators/diagrams';
+import { MASTER_VOLUME_CALCULATOR_SPEC } from '../../engine/constructionCalculators/masterJsonSpec';
+import { formatRupiah, formatNumberId } from '../../engine/formulaEngine';
+import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
+import { TechnicalReferenceViewer } from './TechnicalReferenceViewer';
+import { MASTER_PRICE_ITEMS } from '../../data/indonesianPrices';
+import { useScopeBasedCost } from '../../hooks/useScopeBasedCost';
+import { PriceContext } from '../../engine/pricing/contracts/types';
+// PHASE 6A: Weir forensic cost pipeline
 import { WeirCostService } from '../../engine/weir/weirCostService';
 import { WeirCostInput } from '../../engine/weir/weirTypes';
 import { WeirCostSummaryPanel } from '../weir/WeirCostSummaryPanel';
@@ -2533,7 +2621,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                           style={{
                             width: '100%',
                             height: '32px',
-                            background: isFocused ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)',
+                            background: isFocused ? '#ffffff' : 'var(--ez-color-surface-secondary)',
                             border: '1px solid var(--ez-hue-slate-border)',
                             borderRadius: '5px',
                             padding: '0 8px',
@@ -2665,7 +2753,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                               key={key}
                               style={{
                                 borderBottom: '1px solid var(--ez-color-surface-tertiary)',
-                                background: idx % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-faint)',
+                                background: idx % 2 === 0 ? '#ffffff' : 'var(--ez-color-surface-faint)',
                               }}
                             >
                               <td style={{ padding: '5px 8px', color: 'var(--ez-color-text-strong)', fontWeight: 500 }}>
@@ -3017,7 +3105,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                     key={item.id}
                     style={{
                       borderBottom: '1px solid var(--ez-color-surface-tertiary)',
-                      background: item.calculatorId === selectedCalcId ? 'var(--ez-hue-blue-bg)' : idx % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-faint)',
+                      background: item.calculatorId === selectedCalcId ? 'var(--ez-hue-blue-bg)' : idx % 2 === 0 ? '#ffffff' : 'var(--ez-color-surface-faint)',
                     }}
                   >
                     <td style={{ padding: '7px 10px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>{idx + 1}</td>

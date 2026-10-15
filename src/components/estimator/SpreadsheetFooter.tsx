@@ -65,7 +65,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
               transition: 'all 0.15s ease',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-hue-blue-bg)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
           >
             <Plus size={14} color="var(--ez-hue-blue-text)" />
             <span>Tambah Kelompok</span>

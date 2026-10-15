@@ -1,4 +1,13 @@
-provider: useNotifications() falls back to no-op defaults,
+/**
+ * NotificationBell — bell icon + unread badge + notification panel.
+ *
+ * - Bell button shows an unread count badge (99+ capped).
+ * - Clicking toggles the dropdown panel; clicking outside closes it.
+ * - "Tandai semua dibaca" marks everything read.
+ * - Clicking an item marks it read and forwards it to onItemClick (e.g. navigate).
+ * - Times render as Indonesian relative time ("5 menit yang lalu").
+ *
+ * Works without a provider: useNotifications() falls back to no-op defaults,
  * so the bell renders an empty state until the coordinator mounts
  * <NotificationProvider> in App.tsx.
  */
@@ -234,7 +243,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                     borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                     display: 'flex',
                     gap: '12px',
-                    background: item.read ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)',
+                    background: item.read ? '#FFFFFF' : 'var(--ez-color-surface-secondary)',
                     transition: 'background 0.15s ease',
                     cursor: 'pointer',
                   }}

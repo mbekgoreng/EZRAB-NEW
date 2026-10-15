@@ -1,4 +1,43 @@
-template: RabTemplate;
+import React, { useState, useMemo, useEffect } from 'react';
+import {
+  X,
+  FileSpreadsheet,
+  Building,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  Package,
+  Layers,
+  Info,
+  ChevronDown,
+  ChevronUp,
+  AlertCircle,
+  Eye,
+  Sliders,
+  ShieldCheck,
+  Plus,
+  RefreshCw,
+  FolderPlus,
+  Wrench,
+  Sparkles,
+  HelpCircle,
+  ExternalLink
+} from 'lucide-react';
+import {
+  RabTemplate,
+  DetailLevel,
+  TemplateParameter,
+  ConstructionComponentTemplate,
+  MaterialItem
+} from '../../types/rabTemplate';
+import { Project, RabItem } from '../../types';
+import { RabTemplateService } from '../../services/rabTemplateService';
+import { MaterialLibraryService } from '../../services/materialLibraryService';
+import { formatRupiah, formatNumberId } from '../../engine/formulaEngine';
+import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
+
+export interface UniversalTemplateConfiguratorProps {
+  template: RabTemplate;
   currentProject: Project | null;
   projects?: Project[];
   isOpen: boolean;
@@ -1215,7 +1254,7 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       key={item.id}
                       style={{
                         borderBottom: '1px solid var(--ez-color-surface-tertiary)',
-                        background: idx % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-faint)',
+                        background: idx % 2 === 0 ? '#ffffff' : 'var(--ez-color-surface-faint)',
                       }}
                     >
                       <td style={{ padding: '7px 10px', color: 'var(--ez-color-text-muted)' }}>{idx + 1}</td>

@@ -1317,7 +1317,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.borderColor = 'var(--ez-hue-indigo-bg)';
-                        e.currentTarget.style.backgroundColor = 'var(--ez-color-surface)';
+                        e.currentTarget.style.backgroundColor = '#FFFFFF';
                         e.currentTarget.style.boxShadow = '0 1px 4px rgba(15, 23, 42, 0.02)';
                       }}
                     >

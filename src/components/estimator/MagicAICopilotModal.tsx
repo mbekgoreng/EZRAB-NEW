@@ -639,9 +639,9 @@ export const MagicAICopilotModal: React.FC<MagicAICopilotModalProps> = ({
                       e.currentTarget.style.color = 'var(--ez-color-primary)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'var(--ez-color-surface)';
-                      e.currentTarget.style.borderColor = 'var(--ez-hue-slate-border)';
-                      e.currentTarget.style.color = 'var(--ez-color-text-body)';
+                      e.currentTarget.style.background = '#FFFFFF';
+                      e.currentTarget.style.borderColor = 'var(--ez-color-border)';
+                      e.currentTarget.style.color = '#334155';
                     }}
                   >
                     {action.label}

@@ -1,4 +1,47 @@
-projectId: string;
+import React, { useState, useMemo } from 'react';
+import {
+  CheckCircle2,
+  AlertTriangle,
+  HelpCircle,
+  AlertCircle,
+  Eye,
+  ShieldCheck,
+  FileText,
+  Layers,
+  Calculator,
+  RotateCcw,
+  Sparkles,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Check,
+  Clock,
+  Cpu,
+  Hash,
+  Database,
+  Search,
+  Filter,
+  Edit2,
+  FileSpreadsheet,
+} from 'lucide-react';
+import {
+  DedWorkItem,
+  ReviewSummary,
+  EvidenceRecord,
+  SourceDocument,
+  PipelineProgressEvent,
+  WorkItemStatus,
+  ElementCategory,
+} from '../types';
+import { dedRabReviewService } from './dedRabReviewService';
+import { RabItem } from '../../types';
+import { PriceResolutionDrawer } from '../../components/pricing/PriceResolutionDrawer';
+import { maskAiModelName, maskAiProviderName } from '../../services/aiModelMasking';
+import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
+
+export interface DedRabV2ReviewViewProps {
+  projectId: string;
   projectName: string;
   sourceDocuments: SourceDocument[];
   workItems: DedWorkItem[];
@@ -1122,7 +1165,7 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
                     key={item.id}
                     style={{
                       borderBottom: '1px solid var(--ez-color-surface-tertiary)',
-                      backgroundColor: idx % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface)',
+                      backgroundColor: idx % 2 === 0 ? '#FFFFFF' : '#FBFCFE',
                       opacity: isApproved ? 1 : 0.6,
                       transition: 'background-color 100ms ease',
                     }}
