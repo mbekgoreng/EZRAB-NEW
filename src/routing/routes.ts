@@ -203,6 +203,9 @@ export const parseWorkspaceRoute = (pathname: string, search: string = ''): Work
   if (path === `${APP_PREFIX}/ded-ai`) return { scope: 'global', menu: 'ded-ai', status: 'ok' };
   if (path === `${APP_PREFIX}/dokumen-ai`) return { scope: 'global', menu: 'dokumen-ai', status: 'ok' };
   if (path === `${APP_PREFIX}/volume-calculation` || path === `${APP_PREFIX}/qto-vc`) return { scope: 'global', menu: 'qto-vc', status: 'ok' };
+  // /app/pekerjaan: alias publik untuk Daftar Pekerjaan (temuan audit 2026-10-13:
+  // route ini 404). Di-render oleh DaftarPekerjaanView via menu 'daftar-pekerjaan'.
+  if (path === `${APP_PREFIX}/pekerjaan`) return { scope: 'global', menu: 'daftar-pekerjaan', status: 'ok' };
   if (path === `${APP_PREFIX}/template-rab` || path === `${APP_PREFIX}/templates`) return { scope: 'global', menu: 'template-rab', status: 'ok' };
   if (path === `${APP_PREFIX}/ahsp`) return { scope: 'global', menu: 'ahsp-2026', status: 'ok' };
   if (path === `${APP_PREFIX}/qto`) return { scope: 'global', menu: 'qto', status: 'ok' };
@@ -210,7 +213,11 @@ export const parseWorkspaceRoute = (pathname: string, search: string = ''): Work
   if (path === `${APP_PREFIX}/reports`) return { scope: 'global', menu: 'laporan', status: 'ok' };
   if (path === `${APP_PREFIX}/tender-documents`) return { scope: 'global', menu: 'dokumen-tender', status: 'ok' };
   if (path === `${APP_PREFIX}/finance` || path === `${APP_PREFIX}/keuangan` || path === `${APP_PREFIX}/keuangan-proyek`) return { scope: 'global', menu: 'keuangan-proyek', status: 'ok' };
-  if (path === `${APP_PREFIX}/enterprise`) return { scope: 'global', menu: 'enterprise', status: 'ok' };
+  // /app/enterprise: TIDAK diaktifkan (2026-10-17). Komponen
+  // `EnterpriseEntryPage` ada di src/components/enterprise/ tetapi tidak
+  // pernah di-mount di WorkspaceView (area tim UI). Sebelum wiring itu ada,
+  // route ini harus jujur 404 daripada diam-diam menampilkan dashboard.
+  if (path === `${APP_PREFIX}/enterprise`) return { scope: 'global', menu: 'enterprise', status: 'not-found' };
   if (path === `${APP_PREFIX}/subscription`) return { scope: 'global', menu: 'subscription', status: 'ok' };
   if (path === `${APP_PREFIX}/resources` || path === `${APP_PREFIX}/material-harga`) {
     const type = query.get('type');
