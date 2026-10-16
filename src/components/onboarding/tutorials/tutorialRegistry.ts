@@ -323,13 +323,13 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
       },
       {
         target: '[data-tutorial="qto-calc"]',
-        route: paths.qto(),
+        route: paths.volumeCalculation(),
         title: 'Pilih Jenis Perhitungan',
         body: 'Tersedia banyak kalkulator per jenis pekerjaan (mis. bowplank, pondasi, kolom). Pilih yang sesuai dengan pekerjaanmu.',
       },
       {
         target: '[data-tutorial="qto-calc"]',
-        route: paths.qto(),
+        route: paths.volumeCalculation(),
         title: 'Isi Dimensi dengan Benar',
         body: 'Masukkan panjang, lebar, tinggi, dan parameter lain sesuai gambar kerja. Perhatikan satuan setiap kolom isian.',
       },

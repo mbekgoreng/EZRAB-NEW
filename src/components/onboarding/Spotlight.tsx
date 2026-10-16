@@ -139,14 +139,41 @@ export function Spotlight({ steps, startAt = 0, index: controlledIndex, onDone, 
     const tw = Math.min(320, vw - 32);
     const th = tooltipRef.current?.offsetHeight ?? 180;
     let top = rect.top + rect.height + 12;
-    if (top + th > vh - 16) top = Math.max(16, rect.top - th - 12);
+    if (top + th > vh - 16) top = rect.top - th - 12;
+    // Pengaman: tooltip tidak boleh keluar viewport atas/bawah
+    // (mis. target sedang di luar area scroll) — selalu ada jalur UI.
+    const maxTop = Math.max(16, vh - th - 16);
+    top = Math.max(16, Math.min(top, maxTop));
     let left = Math.min(Math.max(16, rect.left), vw - tw - 16);
+    left = Math.max(16, Math.min(left, Math.max(16, vw - tw - 16)));
     setTooltipPos({ top, left });
   }, [rect, index]);
 
-  // Fokus ke tooltip untuk aksesibilitas keyboard
+  // Scroll target ke dalam viewport saat langkah berubah.
+  // block:'nearest' = tidak menggeser berlebihan; hormati reduced-motion.
   useEffect(() => {
-    tooltipRef.current?.focus();
+    if (!step) return;
+    try {
+      const el = document.querySelector(step.target) as HTMLElement | null;
+      el?.scrollIntoView({
+        block: 'nearest',
+        inline: 'nearest',
+        behavior: reducedMotion.current ? 'auto' : 'smooth',
+      });
+    } catch {
+      /* abaikan */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index]);
+
+  // Fokus ke tooltip untuk aksesibilitas keyboard.
+  // preventScroll: cegah adu scroll dengan scrollIntoView di atas (bug 2026-10-16).
+  useEffect(() => {
+    try {
+      tooltipRef.current?.focus({ preventScroll: true });
+    } catch {
+      tooltipRef.current?.focus();
+    }
   }, [index, rect]);
 
   // Beri tahu parent saat langkah berubah
