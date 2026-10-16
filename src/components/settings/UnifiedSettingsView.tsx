@@ -204,6 +204,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
   const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
   const [systemCurrency, setSystemCurrency] = useState('IDR');
+  const [systemTheme, setSystemTheme] = useState<'light' | 'dark' | 'system'>('light');
 
   const [notifProject, setNotifProject] = useState(true);
   const [notifRab, setNotifRab] = useState(true);

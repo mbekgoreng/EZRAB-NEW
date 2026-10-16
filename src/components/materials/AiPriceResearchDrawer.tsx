@@ -112,7 +112,7 @@ export const AiPriceResearchDrawer: React.FC<AiPriceResearchDrawerProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end">
-      <div className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200">
+      <div className="w-full max-w-lg ez-bg-surface h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200">
         {/* Header */}
         <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-blue-50/70 to-indigo-50/50">
           <div className="flex items-center gap-2.5">
@@ -137,7 +137,7 @@ export const AiPriceResearchDrawer: React.FC<AiPriceResearchDrawerProps> = ({
         </div>
 
         {/* Search Prompt Bar */}
-        <div className="p-4 border-b border-slate-200 bg-white space-y-2">
+        <div className="p-4 border-b border-slate-200 ez-bg-surface space-y-2">
           <div className="relative">
             <input
               type="text"
@@ -178,7 +178,7 @@ export const AiPriceResearchDrawer: React.FC<AiPriceResearchDrawerProps> = ({
           {isSearching ? (
             <div className="p-12 text-center text-slate-400 space-y-2">
               <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
-              <p className="text-xs font-semibold text-slate-700">Mencari database nasional & rekanan vendor...</p>
+              <p className="text-xs font-semibold ez-text-body">Mencari database nasional & rekanan vendor...</p>
               <p className="text-[11px] text-slate-400">Memeriksa resolusi harga regional & provenance resmi</p>
             </div>
           ) : candidates.length > 0 ? (
@@ -191,18 +191,18 @@ export const AiPriceResearchDrawer: React.FC<AiPriceResearchDrawerProps> = ({
               {candidates.map((c, idx) => (
                 <div
                   key={c.id}
-                  className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs hover:border-blue-400 transition space-y-2.5"
+                  className="ez-bg-surface border border-slate-200 rounded-xl p-3.5 shadow-xs hover:border-blue-400 transition space-y-2.5"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 mr-1.5">
                         KANDIDAT #{idx + 1}
                       </span>
-                      <h4 className="font-extrabold text-slate-900 text-xs mt-1">
+                      <h4 className="font-extrabold ez-text-primary text-xs mt-1">
                         {c.materialName}
                       </h4>
                       <div className="text-[11px] text-slate-500 mt-0.5">
-                        Merek: <strong className="text-slate-800">{c.brand}</strong> • Wilayah: <strong className="text-slate-800">{c.region}</strong>
+                        Merek: <strong className="ez-text-primary">{c.brand}</strong> • Wilayah: <strong className="ez-text-primary">{c.region}</strong>
                       </div>
                     </div>
 
@@ -252,7 +252,7 @@ export const AiPriceResearchDrawer: React.FC<AiPriceResearchDrawerProps> = ({
           ) : (
             <div className="p-8 text-center text-slate-400 space-y-2">
               <Info className="w-6 h-6 mx-auto text-slate-400" />
-              <p className="text-xs font-semibold text-slate-600">
+              <p className="text-xs font-semibold ez-text-slate">
                 Ketik nama material atau kebutuhan harga untuk mulai meriset.
               </p>
               <p className="text-[11px] text-slate-400">
@@ -270,7 +270,7 @@ export const AiPriceResearchDrawer: React.FC<AiPriceResearchDrawerProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="px-3.5 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition text-xs"
+            className="px-3.5 py-1.5 rounded-lg ez-bg-surface border border-slate-300 ez-text-body font-semibold transition text-xs"
           >
             Tutup Panel
           </button>

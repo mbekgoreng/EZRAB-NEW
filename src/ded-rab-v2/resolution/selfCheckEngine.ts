@@ -60,6 +60,7 @@ export class SelfCheckEngine {
     quantity: number | null;
     unitPrice?: number | null;
     totalPrice?: number | null;
+    priceStatus?: string;
     confidence?: number;
     assumptions?: string[];
     [key: string]: any;

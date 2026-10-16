@@ -214,7 +214,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/75 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-7xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="ez-bg-surface rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-7xl max-h-[92vh] flex flex-col overflow-hidden">
         
         {/* TOP HEADER */}
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
@@ -224,7 +224,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                <h2 className="text-lg font-bold ez-text-primary dark:text-white">
                   AI Construction Review & Document Intelligence
                 </h2>
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
@@ -247,15 +247,40 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
           </div>
         </div>
 
+        {documents.length === 0 ? (
+          /* Empty state jujur: belum ada dokumen DED.
+             JANGAN memfabrikasi dokumen/entitas/QTO/draf RAB — tidak ada
+             data turunan yang boleh lahir dari dokumen fiktif. */
+          <div className="flex-1 flex flex-col items-center justify-center px-8 py-16 text-center">
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
+              style={{ background: 'var(--ez-hue-blue-bg)' }}
+            >
+              <FileText className="w-8 h-8" color="var(--ez-color-primary)" />
+            </div>
+            <h3 className="text-base font-bold ez-text-primary mb-2">Belum ada dokumen DED</h3>
+            <p className="text-sm ez-text-slate max-w-md mb-6" style={{ lineHeight: 1.6 }}>
+              Unggah dokumen DED (gambar kerja atau foto dokumen) untuk memulai analisis AI:
+              ekstraksi entitas konstruksi, perhitungan QTO, draf RAB, dan audit temuan.
+            </p>
+            <button
+              onClick={onClose}
+              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/20 transition-all"
+            >
+              Tutup
+            </button>
+          </div>
+        ) : (
+          <>
         {/* WORKSPACE NAVIGATION TABS */}
-        <div className="px-6 py-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between overflow-x-auto">
+        <div className="px-6 py-2 border-b border-slate-200 dark:border-slate-800 ez-bg-surface flex items-center justify-between overflow-x-auto">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab('drawing_graph')}
               className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
                 activeTab === 'drawing_graph'
                   ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'ez-text-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <GitBranch className="w-4 h-4 text-indigo-500" />
@@ -267,7 +292,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
               className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
                 activeTab === 'doc_set'
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'ez-text-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <FolderOpen className="w-4 h-4" />
@@ -279,7 +304,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
               className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
                 activeTab === 'entities'
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'ez-text-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <Layers className="w-4 h-4" />
@@ -291,7 +316,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
               className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
                 activeTab === 'template_mapping'
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'ez-text-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <LayoutTemplate className="w-4 h-4 text-indigo-500" />
@@ -303,7 +328,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
               className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
                 activeTab === 'qto'
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'ez-text-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <Hash className="w-4 h-4" />
@@ -315,7 +340,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
               className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
                 activeTab === 'rab_draft'
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'ez-text-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <FileSpreadsheet className="w-4 h-4" />
@@ -327,7 +352,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
               className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
                 activeTab === 'findings'
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'ez-text-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <AlertTriangle className={`w-4 h-4 ${highFindingsCount > 0 ? 'text-amber-500' : ''}`} />
@@ -344,7 +369,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
               className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
                 activeTab === 'doc_preview'
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  : 'ez-text-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               <Eye className="w-4 h-4" />
@@ -354,7 +379,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
 
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-slate-500">
-              Total Draft: <strong className="text-slate-800 dark:text-slate-200">{formatCurrencyIDR(rabDraftSummary.grandTotal)}</strong>
+              Total Draft: <strong className="ez-text-primary dark:text-slate-200">{formatCurrencyIDR(rabDraftSummary.grandTotal)}</strong>
             </span>
           </div>
         </div>
@@ -386,7 +411,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
               {/* Entity List */}
               <div className="lg:col-span-5 space-y-3">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-sm font-bold ez-text-primary dark:text-white">
                     Daftar Entitas Terdeteksi ({entities.length})
                   </h3>
                   <span className="text-xs text-slate-500">Pilih untuk melihat detail</span>
@@ -400,7 +425,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                       className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                         selectedEntity?.entityId === ent.entityId
                           ? 'bg-blue-50/80 border-blue-300 dark:bg-blue-950/40 dark:border-blue-700 shadow-sm'
-                          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                          : 'ez-bg-surface border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                       }`}
                     >
                       <div className="flex items-start justify-between">
@@ -409,12 +434,12 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                               {ent.discipline}
                             </span>
-                            <span className="font-semibold text-xs text-slate-900 dark:text-white">
+                            <span className="font-semibold text-xs ez-text-primary dark:text-white">
                               {ent.name}
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-500 mt-1">
-                            Kuantitas: <strong className="text-slate-700 dark:text-slate-300">{ent.quantity} {ent.unit}</strong>
+                            Kuantitas: <strong className="ez-text-body dark:text-slate-300">{ent.quantity} {ent.unit}</strong>
                           </p>
                         </div>
                         <span
@@ -437,10 +462,10 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
               {/* Entity Detail / Inspector */}
               <div className="lg:col-span-7">
                 {selectedEntity ? (
-                  <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
+                  <div className="ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
                     <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                       <div>
-                        <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                        <h4 className="text-base font-bold ez-text-primary dark:text-white">
                           {selectedEntity.name}
                         </h4>
                         <p className="text-xs text-slate-500">
@@ -454,7 +479,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
 
                     {/* Parameters Table */}
                     <div>
-                      <h5 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                      <h5 className="text-xs font-bold ez-text-body dark:text-slate-300 uppercase tracking-wider mb-2">
                         Parameter & Dimensi Geometris
                       </h5>
                       <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
@@ -470,7 +495,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                             {Object.entries(selectedEntity.parameters).map(([key, param]) => (
                               <tr key={key} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
-                                <td className="px-3 py-2 font-medium text-slate-800 dark:text-slate-200">{param.name}</td>
+                                <td className="px-3 py-2 font-medium ez-text-primary dark:text-slate-200">{param.name}</td>
                                 <td className="px-3 py-2 font-bold text-blue-600 dark:text-blue-400">{String(param.value)}</td>
                                 <td className="px-3 py-2 text-slate-500">{param.unit || '-'}</td>
                                 <td className="px-3 py-2 text-slate-500">{param.provenance}</td>
@@ -487,7 +512,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                         <Compass className="w-4 h-4 text-blue-500" />
                         <span>Keterangan Dokumen Sumber</span>
                       </div>
-                      <p className="text-slate-600 dark:text-slate-400">
+                      <p className="ez-text-slate dark:text-slate-400">
                         {selectedEntity.sourceSnippet || 'Terekstraksi dari DED denah arsitektur dan struktur.'}
                       </p>
                       <p className="text-[11px] text-slate-400 mt-2">
@@ -496,7 +521,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                     </div>
                   </div>
                 ) : (
-                  <div className="h-full flex items-center justify-center p-8 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-400 text-xs">
+                  <div className="h-full flex items-center justify-center p-8 ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800 text-slate-400 text-xs">
                     Pilih salah satu entitas di sebelah kiri untuk melihat rincian parameter.
                   </div>
                 )}
@@ -507,10 +532,10 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
 
           {/* TAB 2: TRACEABLE QTO DRAFT */}
           {activeTab === 'qto' && (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
+            <div className="ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-sm font-bold ez-text-primary dark:text-white">
                     Traceable Quantity Take-Off (QTO) Calculation
                   </h3>
                   <p className="text-xs text-slate-500">
@@ -540,9 +565,9 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                     {qtoItems.map(item => (
                       <tr key={item.itemCode} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
                         <td className="px-4 py-3 font-mono font-bold text-blue-600 dark:text-blue-400">{item.itemCode}</td>
-                        <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{item.category}</td>
-                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{item.description}</td>
-                        <td className="px-4 py-3 font-bold text-right text-slate-900 dark:text-white">{item.volume.toLocaleString('id-ID')}</td>
+                        <td className="px-4 py-3 ez-text-slate dark:text-slate-400">{item.category}</td>
+                        <td className="px-4 py-3 font-medium ez-text-primary dark:text-white">{item.description}</td>
+                        <td className="px-4 py-3 font-bold text-right ez-text-primary dark:text-white">{item.volume.toLocaleString('id-ID')}</td>
                         <td className="px-4 py-3 text-slate-500">{item.unit}</td>
                         <td className="px-4 py-3 font-mono text-[11px] text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-950/60 rounded px-2 py-1">
                           {item.formula}
@@ -575,10 +600,10 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                 onClose={onClose}
               />
             ) : (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
+            <div className="ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-sm font-bold ez-text-primary dark:text-white">
                     Draft Estimasi RAB Terstruktur (AHSP PUPR 2026)
                   </h3>
                   <p className="text-xs text-slate-500">
@@ -588,7 +613,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                 <div className="flex items-center gap-3">
                   <div className="text-right">
                     <p className="text-[10px] text-slate-400">Subtotal Estimasi</p>
-                    <p className="text-sm font-bold text-slate-900 dark:text-white">{formatCurrencyIDR(rabDraftSummary.subtotal)}</p>
+                    <p className="text-sm font-bold ez-text-primary dark:text-white">{formatCurrencyIDR(rabDraftSummary.subtotal)}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] text-slate-400">Grand Total (+PPN 11%)</p>
@@ -615,11 +640,11 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                     {rabDraftSummary.items.map((item, idx) => (
                       <tr key={item.itemId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
                         <td className="px-4 py-3 text-slate-400">{item.itemNumber || `${idx + 1}.0`}</td>
-                        <td className="px-4 py-3 font-mono font-medium text-slate-700 dark:text-slate-300">{item.ahspCode || '-'}</td>
-                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{item.description}</td>
-                        <td className="px-4 py-3 font-bold text-right text-slate-900 dark:text-white">{item.volume.toLocaleString('id-ID')}</td>
+                        <td className="px-4 py-3 font-mono font-medium ez-text-body dark:text-slate-300">{item.ahspCode || '-'}</td>
+                        <td className="px-4 py-3 font-medium ez-text-primary dark:text-white">{item.description}</td>
+                        <td className="px-4 py-3 font-bold text-right ez-text-primary dark:text-white">{item.volume.toLocaleString('id-ID')}</td>
                         <td className="px-4 py-3 text-slate-500">{item.unit}</td>
-                        <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300">{formatCurrencyIDR(item.unitPrice)}</td>
+                        <td className="px-4 py-3 text-right ez-text-body dark:text-slate-300">{formatCurrencyIDR(item.unitPrice)}</td>
                         <td className="px-4 py-3 font-bold text-right text-blue-600 dark:text-blue-400">{formatCurrencyIDR(item.totalPrice)}</td>
                         <td className="px-4 py-3">
                           <span
@@ -646,7 +671,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-sm font-bold ez-text-primary dark:text-white">
                     Hasil Cross-Audit Konstruksi AI
                   </h3>
                   <p className="text-xs text-slate-500">
@@ -657,16 +682,16 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
 
               <div className="space-y-3">
                 {findings.length === 0 ? (
-                  <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <div className="p-8 text-center ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800">
                     <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">Semua Pekerjaan Sesuai DED</h4>
+                    <h4 className="text-sm font-bold ez-text-primary dark:text-white">Semua Pekerjaan Sesuai DED</h4>
                     <p className="text-xs text-slate-500 mt-1">Tidak ditemukan anomali atau deviasi material pada RAB ini.</p>
                   </div>
                 ) : (
                   findings.map(fnd => (
                     <div
                       key={fnd.findingId}
-                      className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2"
+                      className="p-4 rounded-xl ez-bg-surface border border-slate-200 dark:border-slate-800 shadow-sm space-y-2"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">
@@ -679,12 +704,12 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                           >
                             {fnd.severity} • {fnd.category}
                           </span>
-                          <h4 className="text-xs font-bold text-slate-900 dark:text-white">{fnd.title}</h4>
+                          <h4 className="text-xs font-bold ez-text-primary dark:text-white">{fnd.title}</h4>
                         </div>
                         <span className="text-[10px] text-slate-400 font-mono">{fnd.findingId}</span>
                       </div>
 
-                      <p className="text-xs text-slate-600 dark:text-slate-300">{fnd.description}</p>
+                      <p className="text-xs ez-text-slate dark:text-slate-300">{fnd.description}</p>
                       
                       <div className="p-2.5 rounded-lg bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 text-xs text-blue-900 dark:text-blue-300">
                         <strong>Rekomendasi AI:</strong> {fnd.suggestedAction}
@@ -701,7 +726,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Document List */}
               <div className="lg:col-span-4 space-y-2">
-                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                <h4 className="text-xs font-bold ez-text-body dark:text-slate-300 uppercase tracking-wider mb-2">
                   Daftar Dokumen Proyek
                 </h4>
                 {documents.map(doc => (
@@ -711,12 +736,12 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                     className={`p-3 rounded-xl border cursor-pointer transition-all ${
                       selectedDocument?.documentId === doc.documentId
                         ? 'bg-blue-50 border-blue-300 dark:bg-blue-950/40 dark:border-blue-700'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                        : 'ez-bg-surface border-slate-200 dark:border-slate-800 hover:border-slate-300'
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-blue-600" />
-                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{doc.fileName}</span>
+                      <span className="text-xs font-semibold ez-text-primary dark:text-slate-200 truncate">{doc.fileName}</span>
                     </div>
                     <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2">
                       <span>{doc.discipline}</span>
@@ -727,10 +752,10 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
               </div>
 
               {/* Document Content View */}
-              <div className="lg:col-span-8 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
+              <div className="lg:col-span-8 ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">{selectedDocument?.fileName}</h4>
+                    <h4 className="text-sm font-bold ez-text-primary dark:text-white">{selectedDocument?.fileName}</h4>
                     <p className="text-xs text-slate-500">Versi: {selectedDocument?.currentVersion} • Total Chunks: {selectedDocument?.parsedChunks.length}</p>
                   </div>
                   <span className="px-2.5 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400 flex items-center gap-1">
@@ -754,7 +779,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
         </div>
 
         {/* WORKSPACE FOOTER ACTIONS */}
-        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 ez-bg-surface flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
             <span>Semua formula & harga diverifikasi oleh EZRAB SafeDecimal Engine.</span>
@@ -763,7 +788,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="px-4 py-2 rounded-xl text-xs font-medium ez-text-slate dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               Tutup
             </button>
@@ -797,6 +822,8 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
             </button>
           </div>
         </div>
+          </>
+        )}
 
       </div>
     </div>

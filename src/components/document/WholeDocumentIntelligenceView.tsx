@@ -55,7 +55,7 @@ export const WholeDocumentIntelligenceView: React.FC<WholeDocumentIntelligenceVi
   const selectedPage = documentSet.pages.find(p => p.pageId === selectedPageId) || documentSet.pages[0];
 
   return (
-    <div className="space-y-4 text-slate-800 dark:text-slate-200">
+    <div className="space-y-4 ez-text-primary dark:text-slate-200">
       {/* 1. DOCUMENT SET OVERVIEW CARD */}
       <div className="bg-gradient-to-r from-blue-900 to-indigo-950 text-white rounded-2xl p-5 shadow-lg border border-blue-800/40">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -101,7 +101,7 @@ export const WholeDocumentIntelligenceView: React.FC<WholeDocumentIntelligenceVi
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
               activeSubTab === 'inventory'
                 ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                : 'ez-text-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -113,7 +113,7 @@ export const WholeDocumentIntelligenceView: React.FC<WholeDocumentIntelligenceVi
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
               activeSubTab === 'map'
                 ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                : 'ez-text-slate dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             <Network className="w-3.5 h-3.5" />
@@ -130,7 +130,7 @@ export const WholeDocumentIntelligenceView: React.FC<WholeDocumentIntelligenceVi
                 placeholder="Cari gambar, nomor, role..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:border-blue-500 w-48"
+                className="pl-8 pr-3 py-1 text-xs rounded-lg border border-slate-200 dark:border-slate-700 ez-bg-surface focus:outline-none focus:border-blue-500 w-48"
               />
             </div>
           </div>
@@ -140,7 +140,7 @@ export const WholeDocumentIntelligenceView: React.FC<WholeDocumentIntelligenceVi
       {/* 3A. PAGE INVENTORY TABLE */}
       {activeSubTab === 'inventory' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div className="lg:col-span-8 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+          <div className="lg:col-span-8 ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
             <div className="overflow-x-auto max-h-[480px]">
               <table className="w-full text-xs text-left">
                 <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 sticky top-0 border-b border-slate-200 dark:border-slate-700">
@@ -173,11 +173,11 @@ export const WholeDocumentIntelligenceView: React.FC<WholeDocumentIntelligenceVi
                       <td className="px-3 py-2 font-mono font-bold text-blue-600 dark:text-blue-400">
                         {page.metadata.drawingNumber || `P-${page.pageNumber}`}
                       </td>
-                      <td className="px-3 py-2 text-slate-900 dark:text-white max-w-[160px] truncate">
+                      <td className="px-3 py-2 ez-text-primary dark:text-white max-w-[160px] truncate">
                         {page.metadata.title || page.fileName}
                       </td>
-                      <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{page.metadata.discipline || '-'}</td>
-                      <td className="px-3 py-2 text-slate-600 dark:text-slate-400">{page.metadata.floor || '-'}</td>
+                      <td className="px-3 py-2 ez-text-slate dark:text-slate-400">{page.metadata.discipline || '-'}</td>
+                      <td className="px-3 py-2 ez-text-slate dark:text-slate-400">{page.metadata.floor || '-'}</td>
                       <td className="px-3 py-2">
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                           {page.classification.pageRole}
@@ -212,7 +212,7 @@ export const WholeDocumentIntelligenceView: React.FC<WholeDocumentIntelligenceVi
           </div>
 
           {/* Page Inspector Drawer */}
-          <div className="lg:col-span-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
+          <div className="lg:col-span-4 ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
             {selectedPage ? (
               <>
                 <div className="border-b border-slate-100 dark:border-slate-800 pb-2">
@@ -224,7 +224,7 @@ export const WholeDocumentIntelligenceView: React.FC<WholeDocumentIntelligenceVi
                       Hal #{selectedPage.pageNumber}
                     </span>
                   </div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-1">
+                  <h4 className="text-sm font-bold ez-text-primary dark:text-white mt-1">
                     {selectedPage.metadata.title || selectedPage.fileName}
                   </h4>
                   <p className="text-xs text-blue-600 dark:text-blue-400 font-mono">
@@ -235,14 +235,14 @@ export const WholeDocumentIntelligenceView: React.FC<WholeDocumentIntelligenceVi
                 <div className="space-y-2 text-xs">
                   <div>
                     <span className="text-slate-400 text-[10px] uppercase font-bold">Klasifikasi & Keyakinan</span>
-                    <p className="text-slate-700 dark:text-slate-300 font-semibold mt-0.5">
+                    <p className="ez-text-body dark:text-slate-300 font-semibold mt-0.5">
                       {selectedPage.classification.reason} ({(selectedPage.classification.confidence * 100).toFixed(0)}%)
                     </p>
                   </div>
 
                   <div>
                     <span className="text-slate-400 text-[10px] uppercase font-bold">Bukti Klasifikasi</span>
-                    <ul className="list-disc list-inside text-slate-600 dark:text-slate-400 text-[11px] space-y-0.5 mt-0.5">
+                    <ul className="list-disc list-inside ez-text-slate dark:text-slate-400 text-[11px] space-y-0.5 mt-0.5">
                       {selectedPage.classification.evidence.map((ev, i) => (
                         <li key={i}>{ev}</li>
                       ))}
@@ -266,9 +266,9 @@ export const WholeDocumentIntelligenceView: React.FC<WholeDocumentIntelligenceVi
 
       {/* 3B. DOCUMENT MAP TREE */}
       {activeSubTab === 'map' && documentSet.documentMap && (
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 space-y-4 shadow-sm">
+        <div className="ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800 p-5 space-y-4 shadow-sm">
           <div>
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+            <h4 className="text-sm font-bold ez-text-primary dark:text-white">
               Hierarki Bangunan & Hubungan Antar Lembar Gambar
             </h4>
             <p className="text-xs text-slate-500">
@@ -294,10 +294,10 @@ export const WholeDocumentIntelligenceView: React.FC<WholeDocumentIntelligenceVi
                   </div>
 
                   {isExpanded && (
-                    <div className="p-4 space-y-3 bg-white dark:bg-slate-900">
+                    <div className="p-4 space-y-3 ez-bg-surface">
                       {bld.floors.map(fl => (
                         <div key={fl.floorId} className="pl-4 border-l-2 border-blue-500/40 space-y-2">
-                          <h5 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          <h5 className="text-xs font-bold ez-text-primary dark:text-slate-200">
                             {fl.floorName}
                           </h5>
 
@@ -311,7 +311,7 @@ export const WholeDocumentIntelligenceView: React.FC<WholeDocumentIntelligenceVi
                                   </div>
                                   <div className="space-y-1">
                                     {discGroup.pages.map(p => (
-                                      <div key={p.pageId} className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300">
+                                      <div key={p.pageId} className="flex items-center justify-between text-[11px] ez-text-slate dark:text-slate-300">
                                         <span className="font-mono">{p.metadata.drawingNumber || `Hal ${p.pageNumber}`}</span>
                                         <span className="text-slate-400 truncate max-w-[120px]">{p.metadata.title || p.fileName}</span>
                                       </div>
@@ -339,7 +339,7 @@ export const WholeDocumentIntelligenceView: React.FC<WholeDocumentIntelligenceVi
               </h5>
               <div className="space-y-1.5">
                 {documentSet.documentMap.relationships.map((rel, i) => (
-                  <div key={i} className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                  <div key={i} className="text-xs ez-text-slate dark:text-slate-400 flex items-center gap-2">
                     <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
                       {rel.relationshipType}
                     </span>

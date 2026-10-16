@@ -752,4 +752,21 @@ img, svg {
   background: var(--ez-hue-blue-bg-deep);
 }
 
+/* ------------------------------------------------------------------
+ * Dark-mode-safe helpers — pengganti bg-white / text-slate-* hardcoded
+ * yang bocor di dark mode. Spesifisitas [data-theme]+class (0,2,0)
+ * mengalahkan utilitas Tailwind precompiled (.bg-white dkk, 0,1,0)
+ * tanpa mengubah tampilan light mode (nilai light = nilai asli).
+ * ------------------------------------------------------------------ */
+[data-theme] .ez-bg-surface { background-color: var(--ez-color-surface); }
+[data-theme] .ez-text-primary { color: var(--ez-color-text-primary); }
+[data-theme] .ez-text-body { color: var(--ez-color-text-body); }
+[data-theme] .ez-text-slate { color: var(--ez-color-text-slate); }
+
+/* Checklist FAB: di mobile, naik di atas bottom-nav 58px + safe-area */
+.ez-checklist-fab { position: fixed; bottom: 20px; right: 20px; z-index: 9000; }
+@media (max-width: 767px) {
+  .ez-checklist-fab { bottom: calc(70px + var(--ezrab-safe-bottom, 0px)); right: 12px; }
+}
+
 

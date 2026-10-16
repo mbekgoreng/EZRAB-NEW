@@ -209,7 +209,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`bg-white border border-[var(--ez-color-border-line)] rounded-[12px] flex flex-col overflow-hidden transition-all duration-200 ${
+      className={`ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] flex flex-col overflow-hidden transition-all duration-200 ${
         isFullscreen ? 'fixed inset-0 z-50 rounded-none' : 'h-[620px]'
       }`}
       style={{ boxShadow: '0 1px 3px rgba(15,23,42,0.04)' }}
@@ -225,7 +225,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             onClick={() => setActiveTab('PREVIEW')}
             className={`px-3 py-1 rounded-[6px] text-[12px] font-semibold transition-colors flex items-center gap-1.5 ${
               activeTab === 'PREVIEW'
-                ? 'bg-white text-[var(--ez-color-text-primary)] shadow-xs'
+                ? 'ez-bg-surface text-[var(--ez-color-text-primary)] shadow-xs'
                 : 'text-[#64748B] hover:text-[var(--ez-color-text-primary)]'
             }`}
           >
@@ -237,7 +237,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             onClick={() => setActiveTab('LOGS')}
             className={`px-3 py-1 rounded-[6px] text-[12px] font-semibold transition-colors flex items-center gap-1.5 ${
               activeTab === 'LOGS'
-                ? 'bg-white text-[var(--ez-color-text-primary)] shadow-xs'
+                ? 'ez-bg-surface text-[var(--ez-color-text-primary)] shadow-xs'
                 : 'text-[#64748B] hover:text-[var(--ez-color-text-primary)]'
             }`}
           >
@@ -332,7 +332,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         {activeTab === 'PREVIEW' ? (
           <>
             {/* Left Thumbnail Strip */}
-            <div className="w-[140px] shrink-0 border-r border-[var(--ez-color-border-line)] bg-[#FFFFFF] overflow-y-auto p-2 flex flex-col gap-2">
+            <div className="w-[140px] shrink-0 border-r border-[var(--ez-color-border-line)] ez-bg-surface overflow-y-auto p-2 flex flex-col gap-2">
               <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-wider px-1 mb-1">
                 Daftar Halaman ({numPages})
               </div>
@@ -354,7 +354,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                     <div
                       className={`h-[68px] w-full rounded-[4px] border flex flex-col items-center justify-between p-1.5 mb-1 relative overflow-hidden transition-colors ${
                         isSelected
-                          ? 'border-[var(--ez-hue-blue-border)] bg-white'
+                          ? 'border-[var(--ez-hue-blue-border)] ez-bg-surface'
                           : 'border-[var(--ez-color-border-line)] bg-white/80 group-hover:bg-white'
                       }`}
                     >
@@ -409,7 +409,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               {/* Real PDF Canvas (if PDF is loaded) */}
               {pdfDoc && !pdfRenderError ? (
                 <div
-                  className="bg-white rounded-[6px] shadow-md border border-[var(--ez-hue-slate-border)] p-2 flex items-center justify-center transition-transform duration-150"
+                  className="ez-bg-surface rounded-[6px] shadow-md border border-[var(--ez-hue-slate-border)] p-2 flex items-center justify-center transition-transform duration-150"
                   style={{
                     transform: `scale(${zoomScale})`,
                     transformOrigin: 'top center',
@@ -420,7 +420,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               ) : (
                 /* Crisp Architectural Blueprint Wireframe (Fallback / Sample View) */
                 <div
-                  className="bg-white rounded-[8px] shadow-md border border-[var(--ez-hue-slate-border)] p-6 w-full max-w-[780px] min-h-[460px] flex flex-col justify-between relative transition-transform duration-150"
+                  className="ez-bg-surface rounded-[8px] shadow-md border border-[var(--ez-hue-slate-border)] p-6 w-full max-w-[780px] min-h-[460px] flex flex-col justify-between relative transition-transform duration-150"
                   style={{
                     transform: `scale(${zoomScale})`,
                     transformOrigin: 'top center',
@@ -472,17 +472,17 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
 
                       {/* Schematic Box Representation based on current sheet */}
                       <div className="grid grid-cols-3 gap-2 h-[160px]">
-                        <div className="border border-[#0F172A] bg-white p-2 rounded-[4px] flex flex-col justify-between text-[10px]">
+                        <div className="border border-[#0F172A] ez-bg-surface p-2 rounded-[4px] flex flex-col justify-between text-[10px]">
                           <span className="font-bold text-[var(--ez-color-text-primary)]">R. Tamu</span>
                           <span className="text-[#64748B]">3.00 × 3.50</span>
                           <span className="text-[9px] text-[var(--ez-hue-blue-text)] font-mono">+0.00 Keramik</span>
                         </div>
-                        <div className="border border-[#0F172A] bg-white p-2 rounded-[4px] flex flex-col justify-between text-[10px]">
+                        <div className="border border-[#0F172A] ez-bg-surface p-2 rounded-[4px] flex flex-col justify-between text-[10px]">
                           <span className="font-bold text-[var(--ez-color-text-primary)]">R. Keluarga</span>
                           <span className="text-[#64748B]">3.50 × 4.00</span>
                           <span className="text-[9px] text-[var(--ez-hue-blue-text)] font-mono">+0.00 Keramik</span>
                         </div>
-                        <div className="border border-[#0F172A] bg-white p-2 rounded-[4px] flex flex-col justify-between text-[10px]">
+                        <div className="border border-[#0F172A] ez-bg-surface p-2 rounded-[4px] flex flex-col justify-between text-[10px]">
                           <span className="font-bold text-[var(--ez-color-text-primary)]">K. Tidur 1</span>
                           <span className="text-[#64748B]">3.00 × 3.50</span>
                           <span className="text-[9px] text-[var(--ez-hue-blue-text)] font-mono">+0.00 Keramik</span>

@@ -66,7 +66,7 @@ export const DeterministicRabDraftWorkspaceView: React.FC<DeterministicRabDraftW
   });
 
   return (
-    <div className="space-y-6 text-slate-800">
+    <div className="space-y-6 ez-text-primary">
       {/* 1. Header Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 text-white rounded-xl p-5 shadow-lg">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -141,7 +141,7 @@ export const DeterministicRabDraftWorkspaceView: React.FC<DeterministicRabDraftW
       </div>
 
       {/* 2. Filter Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-lg border border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 ez-bg-surface p-3 rounded-lg border border-slate-200">
         <div className="flex items-center gap-1.5 overflow-x-auto">
           <Filter className="w-4 h-4 text-slate-500 shrink-0" />
           {(['ALL', 'VALID', 'MISSING_AHSP', 'MISSING_PRICE', 'CONFLICT', 'NEEDS_REVIEW'] as const).map(f => (
@@ -179,7 +179,7 @@ export const DeterministicRabDraftWorkspaceView: React.FC<DeterministicRabDraftW
           if (groupItems.length === 0 && searchQuery) return null;
 
           return (
-            <div key={group.wbsCode} className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
+            <div key={group.wbsCode} className="border border-slate-200 rounded-lg overflow-hidden ez-bg-surface shadow-sm">
               {/* Group Header */}
               <div
                 onClick={() => toggleWbs(group.wbsCode)}
@@ -188,13 +188,13 @@ export const DeterministicRabDraftWorkspaceView: React.FC<DeterministicRabDraftW
                 <div className="flex items-center gap-2.5">
                   {isExp ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />}
                   <span className="font-mono font-bold text-indigo-700 text-xs">{group.wbsCode}</span>
-                  <span className="font-bold text-slate-900 text-xs uppercase">{group.wbsTitle}</span>
+                  <span className="font-bold ez-text-primary text-xs uppercase">{group.wbsTitle}</span>
                   <span className="text-[11px] text-slate-500">({group.itemsCount} item)</span>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-slate-500">Subtotal:</span>
-                  <span className="font-bold text-xs text-slate-900 font-mono">
+                  <span className="font-bold text-xs ez-text-primary font-mono">
                     {formatCurrencyIDR(group.subtotal)}
                   </span>
                 </div>
@@ -219,7 +219,7 @@ export const DeterministicRabDraftWorkspaceView: React.FC<DeterministicRabDraftW
                       {groupItems.map(item => (
                         <tr key={item.rabDraftItemId} className="hover:bg-slate-50/80 transition-colors">
                           <td className="py-2.5 px-3">
-                            <div className="font-semibold text-slate-900">{item.description}</div>
+                            <div className="font-semibold ez-text-primary">{item.description}</div>
                             <div className="flex items-center gap-2 mt-0.5">
                               {item.validationStatus === 'VALID' ? (
                                 <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded font-medium border border-emerald-200">
@@ -250,14 +250,14 @@ export const DeterministicRabDraftWorkspaceView: React.FC<DeterministicRabDraftW
                               <span className="text-amber-700 italic text-[11px]">Belum Ada AHSP</span>
                             )}
                           </td>
-                          <td className="py-2.5 px-3 font-mono font-bold text-right text-slate-900">
+                          <td className="py-2.5 px-3 font-mono font-bold text-right ez-text-primary">
                             {item.volume.toLocaleString('id-ID')}
                           </td>
-                          <td className="py-2.5 px-3 text-slate-600">{item.unit}</td>
-                          <td className="py-2.5 px-3 font-mono text-right text-slate-700">
+                          <td className="py-2.5 px-3 ez-text-slate">{item.unit}</td>
+                          <td className="py-2.5 px-3 font-mono text-right ez-text-body">
                             {formatCurrencyIDR(item.unitPrice)}
                           </td>
-                          <td className="py-2.5 px-3 font-mono font-bold text-right text-slate-900">
+                          <td className="py-2.5 px-3 font-mono font-bold text-right ez-text-primary">
                             {formatCurrencyIDR(item.totalPrice)}
                           </td>
                           <td className="py-2.5 px-3 text-center">
@@ -283,13 +283,13 @@ export const DeterministicRabDraftWorkspaceView: React.FC<DeterministicRabDraftW
       {/* 4. Traceability Modal / Drawer */}
       {selectedItemForTrace && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-2xl w-full p-6 space-y-4">
+          <div className="ez-bg-surface rounded-xl shadow-2xl border border-slate-200 max-w-2xl w-full p-6 space-y-4">
             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
               <div>
                 <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-100 text-indigo-800 font-mono">
                   {selectedItemForTrace.wbsCode} • {selectedItemForTrace.sourceTrace.entityIdentifier}
                 </span>
-                <h3 className="text-base font-bold text-slate-900 mt-1">
+                <h3 className="text-base font-bold ez-text-primary mt-1">
                   {selectedItemForTrace.description}
                 </h3>
               </div>
@@ -306,13 +306,13 @@ export const DeterministicRabDraftWorkspaceView: React.FC<DeterministicRabDraftW
               <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 block">
                 Formula Perhitungan Volume Deterministik
               </span>
-              <div className="font-mono text-xs text-indigo-950 font-bold bg-white p-2.5 rounded border border-indigo-100">
+              <div className="font-mono text-xs ez-text-primary font-bold ez-bg-surface p-2.5 rounded border border-indigo-100">
                 {selectedItemForTrace.quantityProvenance.formula}
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                 <div>
                   <span className="text-slate-500">Metode Kalkulasi:</span>{' '}
-                  <strong className="text-slate-800">{selectedItemForTrace.quantityProvenance.calculationMethod}</strong>
+                  <strong className="ez-text-primary">{selectedItemForTrace.quantityProvenance.calculationMethod}</strong>
                 </div>
                 <div>
                   <span className="text-slate-500">Status Volume:</span>{' '}
@@ -328,13 +328,13 @@ export const DeterministicRabDraftWorkspaceView: React.FC<DeterministicRabDraftW
               </span>
               <div className="divide-y divide-slate-100 border border-slate-200 rounded-lg overflow-hidden">
                 {selectedItemForTrace.quantityProvenance.sourceEvidence.map((ev, idx) => (
-                  <div key={idx} className="p-3 bg-white flex items-start gap-2.5 text-xs">
+                  <div key={idx} className="p-3 ez-bg-surface flex items-start gap-2.5 text-xs">
                     <FileCode className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
                     <div>
-                      <div className="font-semibold text-slate-900">
+                      <div className="font-semibold ez-text-primary">
                         {ev.drawingId} • Halaman {ev.pageNumber} ({ev.fileName})
                       </div>
-                      <p className="text-slate-600 text-[11px] mt-0.5">{ev.snippet}</p>
+                      <p className="ez-text-slate text-[11px] mt-0.5">{ev.snippet}</p>
                     </div>
                   </div>
                 ))}
@@ -368,33 +368,33 @@ export const DeterministicRabDraftWorkspaceView: React.FC<DeterministicRabDraftW
       {/* 5. Confirmation Gate Modal */}
       {showConfirmModal && onCommitToSpreadsheet && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4">
+          <div className="ez-bg-surface rounded-xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4">
             <div className="flex items-center gap-3 text-emerald-600">
               <ShieldCheck className="w-8 h-8" />
               <div>
-                <h3 className="text-base font-bold text-slate-900">Konfirmasi Finalisasi RAB</h3>
+                <h3 className="text-base font-bold ez-text-primary">Konfirmasi Finalisasi RAB</h3>
                 <p className="text-xs text-slate-500">Preview Gate: Tidak ada perubahan langsung tanpa audit Anda.</p>
               </div>
             </div>
 
             <div className="bg-slate-50 p-3.5 rounded-lg border border-slate-200 text-xs space-y-2">
               <div className="flex justify-between">
-                <span className="text-slate-600">Total Item Terpetakan:</span>
-                <strong className="text-slate-900">{summary.mappedItemsCount} item</strong>
+                <span className="ez-text-slate">Total Item Terpetakan:</span>
+                <strong className="ez-text-primary">{summary.mappedItemsCount} item</strong>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Item Memerlukan Review:</span>
+                <span className="ez-text-slate">Item Memerlukan Review:</span>
                 <strong className="text-amber-700">{summary.needsReviewCount} item</strong>
               </div>
               <div className="flex justify-between border-t border-slate-200 pt-2">
-                <span className="text-slate-700 font-bold">Total Nilai RAB:</span>
+                <span className="ez-text-body font-bold">Total Nilai RAB:</span>
                 <strong className="text-emerald-700 font-bold font-mono text-sm">
                   {formatCurrencyIDR(summary.grandTotal)}
                 </strong>
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs ez-text-slate leading-relaxed">
               Dengan mengklik tombol di bawah, item-item RAB draft ini akan dimasukkan ke spreadsheet utama proyek dan dapat diedit secara leluasa.
             </p>
 

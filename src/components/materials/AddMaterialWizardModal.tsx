@@ -139,14 +139,14 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200 rounded-2xl max-w-xl w-full text-xs shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+      <div className="ez-bg-surface border border-slate-200 rounded-2xl max-w-xl w-full text-xs shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
         {/* Header */}
         <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div>
             <span className="text-[10px] font-bold text-emerald-700 tracking-wider uppercase">
               Wizard Tambah Material
             </span>
-            <h3 className="text-base font-black text-slate-900 mt-0.5">
+            <h3 className="text-base font-black ez-text-primary mt-0.5">
               Registrasi Material Baru ke Database 2026
             </h3>
           </div>
@@ -181,7 +181,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
               </span>
               <span
                 className={`text-[10.5px] font-semibold truncate hidden sm:inline ${
-                  step === st.num ? 'text-slate-900' : 'text-slate-400'
+                  step === st.num ? 'ez-text-primary' : 'text-slate-400'
                 }`}
               >
                 {st.label}
@@ -196,7 +196,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
           {step === 1 && (
             <div className="space-y-3.5">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
+                <label className="block font-bold ez-text-body mb-1">
                   Nama Resmi Material <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -211,7 +211,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Sektor Konstruksi</label>
+                  <label className="block font-bold ez-text-body mb-1">Sektor Konstruksi</label>
                   <select
                     value={formData.sector}
                     onChange={(e) => setFormData({ ...formData, sector: e.target.value as any })}
@@ -231,7 +231,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Satuan Standar</label>
+                  <label className="block font-bold ez-text-body mb-1">Satuan Standar</label>
                   <input
                     type="text"
                     required
@@ -244,7 +244,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Kategori Material</label>
+                <label className="block font-bold ez-text-body mb-1">Kategori Material</label>
                 <input
                   type="text"
                   placeholder="Bahan Semen, Baja & Pembesian, Perpipaan, Pasangan..."
@@ -260,7 +260,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
           {step === 2 && (
             <div className="space-y-3.5">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Spesifikasi Teknis Rinci</label>
+                <label className="block font-bold ez-text-body mb-1">Spesifikasi Teknis Rinci</label>
                 <textarea
                   rows={4}
                   placeholder="Karakteristik teknis, kuat tekan, dimensi, ketebalan, toleransi mutu..."
@@ -272,7 +272,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Standar Acuan (SNI / ASTM)</label>
+                  <label className="block font-bold ez-text-body mb-1">Standar Acuan (SNI / ASTM)</label>
                   <input
                     type="text"
                     placeholder="SNI 7064:2014 / ASTM C150..."
@@ -282,7 +282,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Tipe Mutu / Grade</label>
+                  <label className="block font-bold ez-text-body mb-1">Tipe Mutu / Grade</label>
                   <input
                     type="text"
                     placeholder="Tipe I, K-300, D-13, AW..."
@@ -299,7 +299,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
           {step === 3 && (
             <div className="space-y-3.5">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Merek / Produsen</label>
+                <label className="block font-bold ez-text-body mb-1">Merek / Produsen</label>
                 <div className="flex gap-2">
                   <select
                     value={formData.brand}
@@ -318,7 +318,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
 
               {formData.brand === 'Lainnya' && (
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Ketik Nama Merek</label>
+                  <label className="block font-bold ez-text-body mb-1">Ketik Nama Merek</label>
                   <input
                     type="text"
                     placeholder="Masukkan nama pabrikan / merk..."
@@ -330,7 +330,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Lini Produk / Seri</label>
+                  <label className="block font-bold ez-text-body mb-1">Lini Produk / Seri</label>
                   <input
                     type="text"
                     placeholder="PCC, Maxima, Super, JIS..."
@@ -341,7 +341,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Kelas Harga (Tiering)</label>
+                  <label className="block font-bold ez-text-body mb-1">Kelas Harga (Tiering)</label>
                   <select
                     value={formData.priceTier}
                     onChange={(e) => setFormData({ ...formData, priceTier: e.target.value as any })}
@@ -362,7 +362,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
           {step === 4 && (
             <div className="space-y-3.5">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">
+                <label className="block font-bold ez-text-body mb-1">
                   Harga Satuan Acuan Awal (IDR)
                 </label>
                 <input
@@ -380,7 +380,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Provinsi</label>
+                  <label className="block font-bold ez-text-body mb-1">Provinsi</label>
                   <select
                     value={formData.province}
                     onChange={(e) => setFormData({ ...formData, province: e.target.value })}
@@ -395,7 +395,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Kota / Kabupaten</label>
+                  <label className="block font-bold ez-text-body mb-1">Kota / Kabupaten</label>
                   <input
                     type="text"
                     placeholder="Surabaya, Bandung, Jakarta..."
@@ -407,7 +407,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-slate-700 mb-1">Sumber / Nama Supplier</label>
+                <label className="block font-bold ez-text-body mb-1">Sumber / Nama Supplier</label>
                 <input
                   type="text"
                   placeholder="PT Semen Indonesia Tbk / Distributor Resmi..."
@@ -418,7 +418,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
               </div>
 
               <div className="flex items-center gap-5 pt-1">
-                <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
+                <label className="flex items-center gap-2 cursor-pointer font-medium ez-text-body">
                   <input
                     type="checkbox"
                     checked={formData.taxIncluded}
@@ -427,7 +427,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
                   />
                   Termasuk PPN 11%
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
+                <label className="flex items-center gap-2 cursor-pointer font-medium ez-text-body">
                   <input
                     type="checkbox"
                     checked={formData.deliveryIncluded}
@@ -444,29 +444,29 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
           {step === 5 && (
             <div className="space-y-4">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5">
-                <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider text-slate-500">
+                <h4 className="font-bold text-slate-500 text-xs uppercase tracking-wider">
                   Ringkasan Material yang Akan Didaftarkan
                 </h4>
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
                     <span className="text-slate-400 block text-[11px]">Nama Material:</span>
-                    <strong className="text-slate-900">{formData.name}</strong>
+                    <strong className="ez-text-primary">{formData.name}</strong>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Sektor & Satuan:</span>
-                    <strong className="text-slate-900">
+                    <strong className="ez-text-primary">
                       {formData.sector} • {formData.unit}
                     </strong>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Merek & Lini:</span>
-                    <strong className="text-slate-900">
+                    <strong className="ez-text-primary">
                       {formData.brand} {formData.productLine ? `(${formData.productLine})` : ''}
                     </strong>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Kelas Harga:</span>
-                    <strong className="text-slate-900">{formData.priceTier}</strong>
+                    <strong className="ez-text-primary">{formData.priceTier}</strong>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Harga Acuan:</span>
@@ -476,7 +476,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Wilayah & Supplier:</span>
-                    <strong className="text-slate-900">
+                    <strong className="ez-text-primary">
                       {formData.city}, {formData.province}
                     </strong>
                   </div>
@@ -498,7 +498,7 @@ export const AddMaterialWizardModal: React.FC<AddMaterialWizardModalProps> = ({
           <button
             type="button"
             onClick={step === 1 ? onClose : handlePrev}
-            className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 font-semibold hover:bg-slate-100 transition"
+            className="px-4 py-2 rounded-lg ez-bg-surface border border-slate-300 ez-text-body font-semibold transition"
           >
             {step === 1 ? 'Batal' : 'Kembali'}
           </button>

@@ -42,6 +42,7 @@ import {
 import { SpreadsheetApprovalEngine } from '../../../server/services/spreadsheetApprovalEngine';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
+import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
 // The canonical AHSP is price-free: an AHSP price may ONLY come from the price resolver.
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
 import { RABSection } from '../../types';

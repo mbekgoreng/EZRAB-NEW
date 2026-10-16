@@ -28,7 +28,7 @@ export const MaterialDataQualityModal: React.FC<MaterialDataQualityModalProps> =
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200 rounded-2xl max-w-3xl w-full text-xs shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+      <div className="ez-bg-surface border border-slate-200 rounded-2xl max-w-3xl w-full text-xs shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-3">
@@ -95,7 +95,7 @@ export const MaterialDataQualityModal: React.FC<MaterialDataQualityModalProps> =
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
                 Duplicate Risk
               </span>
-              <div className="text-2xl font-black text-slate-800 mt-1">
+              <div className="text-2xl font-black ez-text-primary mt-1">
                 0.0%
               </div>
               <span className="text-[10.5px] text-emerald-700 font-semibold">Kode kanonikal unik</span>
@@ -110,32 +110,32 @@ export const MaterialDataQualityModal: React.FC<MaterialDataQualityModalProps> =
             <table className="w-full text-left text-xs border-collapse">
               <tbody className="divide-y divide-slate-100">
                 <tr className="hover:bg-slate-50">
-                  <td className="py-2.5 px-4 font-semibold text-slate-700">Total Material Terindeks</td>
-                  <td className="py-2.5 px-4 font-mono font-bold text-slate-900 text-right">
+                  <td className="py-2.5 px-4 font-semibold ez-text-body">Total Material Terindeks</td>
+                  <td className="py-2.5 px-4 font-mono font-bold ez-text-primary text-right">
                     {(report.totalMaterials || 0).toLocaleString('id-ID')} item
                   </td>
                 </tr>
                 <tr className="hover:bg-slate-50">
-                  <td className="py-2.5 px-4 font-semibold text-slate-700">Total Rekaman Harga Aktif</td>
-                  <td className="py-2.5 px-4 font-mono font-bold text-slate-900 text-right">
+                  <td className="py-2.5 px-4 font-semibold ez-text-body">Total Rekaman Harga Aktif</td>
+                  <td className="py-2.5 px-4 font-mono font-bold ez-text-primary text-right">
                     {(report.totalPriceRecords || 0).toLocaleString('id-ID')} rekaman
                   </td>
                 </tr>
                 <tr className="hover:bg-slate-50">
-                  <td className="py-2.5 px-4 font-semibold text-slate-700">Harga Terverifikasi Resmi</td>
+                  <td className="py-2.5 px-4 font-semibold ez-text-body">Harga Terverifikasi Resmi</td>
                   <td className="py-2.5 px-4 font-mono font-bold text-emerald-700 text-right">
                     {(report.verifiedPricesCount || 0).toLocaleString('id-ID')}
                   </td>
                 </tr>
                 <tr className="hover:bg-slate-50">
-                  <td className="py-2.5 px-4 font-semibold text-slate-700">Harga Segar (Current &lt; 30 Hari)</td>
+                  <td className="py-2.5 px-4 font-semibold ez-text-body">Harga Segar (Current &lt; 30 Hari)</td>
                   <td className="py-2.5 px-4 font-mono font-bold text-blue-700 text-right">
                     {(report.currentPricesCount || 0).toLocaleString('id-ID')}
                   </td>
                 </tr>
                 <tr className="hover:bg-slate-50">
-                  <td className="py-2.5 px-4 font-semibold text-slate-700">Cakupan Wilayah Provinsi</td>
-                  <td className="py-2.5 px-4 font-mono font-bold text-slate-900 text-right">
+                  <td className="py-2.5 px-4 font-semibold ez-text-body">Cakupan Wilayah Provinsi</td>
+                  <td className="py-2.5 px-4 font-mono font-bold ez-text-primary text-right">
                     38 Provinsi (100% Nasional)
                   </td>
                 </tr>
@@ -146,7 +146,7 @@ export const MaterialDataQualityModal: React.FC<MaterialDataQualityModalProps> =
           {/* Sector Coverage Breakdown */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="font-black text-slate-900 text-xs uppercase tracking-wider">
+              <h4 className="font-black ez-text-primary text-xs uppercase tracking-wider">
                 Cakupan Berdasarkan 10 Sektor Konstruksi
               </h4>
               <span className="text-[11px] text-slate-500 font-medium">Audit Resmi 2026</span>
@@ -156,7 +156,7 @@ export const MaterialDataQualityModal: React.FC<MaterialDataQualityModalProps> =
               {report.sectorCoverage.map((sc) => (
                 <div key={sc.sector} className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                   <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="font-bold text-slate-800">{sc.sector}</span>
+                    <span className="font-bold ez-text-primary">{sc.sector}</span>
                     <span className="font-mono font-bold text-emerald-800">
                       {sc.totalMaterials} Material ({sc.coveragePercent}%)
                     </span>

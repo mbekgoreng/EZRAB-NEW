@@ -231,70 +231,37 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
   };
 
   // Phase 6 Document Intelligence Context & Derived Data
+  // ATURAN INTEGRITAS (P0): JANGAN PERNAH memfabrikasi dokumen DED.
+  // Bila proyek belum punya dokumen, kembalikan state kosong yang jujur —
+  // tidak ada entitas/QTO/draf RAB/findings yang diturunkan dari dokumen fiktif.
   const reviewWorkspaceData = useMemo(() => {
     const projId = currentProjectId || 'PRJ-DEFAULT';
     const workspaceId = 'ws-default';
 
-    // 1. Fetch or synthesize sample DED document
-    let docs = ProjectDocumentContext.getInstance().listDocuments({ workspaceId, projectId: projId });
+    // 1. Fetch REAL DED documents only
+    const docs = ProjectDocumentContext.getInstance().listDocuments({ workspaceId, projectId: projId });
     if (docs.length === 0) {
-      const sampleDoc = {
-        documentId: `doc_ded_${projId}`,
-        projectId: projId,
-        workspaceId,
-        fileName: 'DED_Rencana_Arsitektur_Struktur_Rev01.pdf',
-        fileType: 'PDF' as const,
-        mimeType: 'application/pdf',
-        fileSizeBytes: 4500000,
-        checksumSha256: 'a1b2c3d4e5f67890abcdef1234567890abcdef1234567890abcdef1234567890',
-        discipline: 'STRUCTURE' as const,
-        docType: 'STRUCTURAL_DETAIL' as const,
-        lifecycleStatus: 'PARSED' as const,
-        currentVersion: 'REV 01',
-        versionHistory: [],
-        pageCount: 4,
-        parsedChunks: [
-          {
-            chunkId: `chk_1_${projId}`,
-            documentId: `doc_ded_${projId}`,
-            pageNumber: 1,
-            discipline: 'ARCHITECTURE' as const,
-            content: `Denah Utama: Panjang Bangunan 12.0m, Lebar Bangunan 10.0m, Luas Bangunan 120.0 m2, Elevasi Plafon 3.5m. Finishing Lantai Granit Tile 60x60.`,
-            tablesDetected: 0,
-            entitiesExtracted: 2,
-            confidence: 0.95
-          },
-          {
-            chunkId: `chk_2_${projId}`,
-            documentId: `doc_ded_${projId}`,
-            pageNumber: 2,
-            discipline: 'STRUCTURE' as const,
-            content: `Detail Struktur: Kolom Utama K1 (25x25 cm) sebanyak 16 titik, Sloof S1 (15x20 cm) keliling, Mutu Beton K-250. Pasangan Dinding Bata Merah 1:4.`,
-            tablesDetected: 1,
-            entitiesExtracted: 3,
-            confidence: 0.94
-          }
-        ],
-        metadata: {
-          title: 'Gambar Kerja DED Arsitektur & Struktur',
-          scale: '1:100',
-          projectName: currentProject?.name || 'EZRAB Project',
-          sheetNumber: 'STR-01'
+      return {
+        documents: [] as typeof docs,
+        entities: [] as never[],
+        qtoItems: [] as never[],
+        rabDraftSummary: {
+          projectId: projId,
+          totalItems: 0,
+          subtotal: 0,
+          ppnAmount: 0,
+          grandTotal: 0,
+          unmappedAhspCount: 0,
+          itemsRequiringPriceVerification: 0,
+          items: [],
+          generatedAt: new Date().toISOString(),
         },
-        securityStatus: {
-          scanned: true,
-          isClean: true,
-          sanitized: false,
-          scanTimestamp: new Date().toISOString()
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        findings: [] as never[],
+        hasDocuments: false,
       };
-      ProjectDocumentContext.getInstance().registerDocument({ workspaceId, projectId: projId, document: sampleDoc });
-      docs = [sampleDoc];
     }
 
-    // 2. Extract Entities
+    // 2. Extract Entities (hanya dari dokumen ASLI)
     const entities = ConstructionEntityEngine.getInstance().extractEntitiesFromDocument(docs[0]);
 
     // 3. Compute QTO
@@ -322,7 +289,8 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       entities,
       qtoItems: qtoReport.items,
       rabDraftSummary: rabDraft,
-      findings
+      findings,
+      hasDocuments: true,
     };
   }, [currentProjectId, currentProject]);
 

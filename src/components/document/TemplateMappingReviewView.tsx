@@ -59,7 +59,7 @@ export const TemplateMappingReviewView: React.FC<TemplateMappingReviewViewProps>
   });
 
   return (
-    <div className="space-y-6 text-slate-800">
+    <div className="space-y-6 ez-text-primary">
       {/* 1. Header Banner & Authoritative Template First Context */}
       <div className="bg-gradient-to-r from-indigo-900 via-blue-900 to-slate-900 text-white rounded-xl p-5 shadow-lg">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -217,7 +217,7 @@ export const TemplateMappingReviewView: React.FC<TemplateMappingReviewViewProps>
             </div>
           )}
 
-          <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+          <div className="border border-slate-200 rounded-lg overflow-hidden ez-bg-surface">
             <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 text-xs font-semibold text-slate-600 grid grid-cols-12 gap-2">
               <span className="col-span-6">KODE & CABANG WBS</span>
               <span className="col-span-3 text-center">TIPE / STATUS</span>
@@ -244,7 +244,7 @@ export const TemplateMappingReviewView: React.FC<TemplateMappingReviewViewProps>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-slate-500" />
-              <span className="text-xs font-semibold text-slate-600">Filter Status:</span>
+              <span className="text-xs font-semibold ez-text-slate">Filter Status:</span>
               {(['ALL', 'MAPPED', 'UNMAPPED', 'NEEDS_REVIEW', 'CONFLICT'] as const).map((st) => (
                 <button
                   key={st}
@@ -264,7 +264,7 @@ export const TemplateMappingReviewView: React.FC<TemplateMappingReviewViewProps>
             </span>
           </div>
 
-          <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+          <div className="border border-slate-200 rounded-lg overflow-hidden ez-bg-surface">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-semibold">
@@ -281,7 +281,7 @@ export const TemplateMappingReviewView: React.FC<TemplateMappingReviewViewProps>
                   {filteredMappings.map((m) => (
                     <tr key={m.mappingId} className="hover:bg-slate-50/80">
                       <td className="py-2.5 px-3">
-                        <div className="font-semibold text-slate-900">{m.entityIdentifier}</div>
+                        <div className="font-semibold ez-text-primary">{m.entityIdentifier}</div>
                         <div className="text-slate-500 text-[11px]">{m.entityName}</div>
                       </td>
                       <td className="py-2.5 px-3">
@@ -293,19 +293,19 @@ export const TemplateMappingReviewView: React.FC<TemplateMappingReviewViewProps>
                         {m.wbsCode ? (
                           <div>
                             <span className="font-mono font-medium text-indigo-700">{m.wbsCode}</span>
-                            <div className="text-slate-600 text-[11px] line-clamp-1">{m.wbsTitle}</div>
+                            <div className="ez-text-slate text-[11px] line-clamp-1">{m.wbsTitle}</div>
                           </div>
                         ) : (
                           <span className="text-amber-700 italic">Belum terpetakan</span>
                         )}
                       </td>
                       <td className="py-2.5 px-3">
-                        <span className="text-slate-600">{m.constructionMethod || '-'}</span>
+                        <span className="ez-text-slate">{m.constructionMethod || '-'}</span>
                       </td>
                       <td className="py-2.5 px-3">
                         <StatusBadge status={m.status} />
                       </td>
-                      <td className="py-2.5 px-3 font-mono text-slate-700">
+                      <td className="py-2.5 px-3 font-mono ez-text-body">
                         {Math.round(m.confidence * 100)}%
                       </td>
                     </tr>
@@ -321,19 +321,19 @@ export const TemplateMappingReviewView: React.FC<TemplateMappingReviewViewProps>
       {activeTab === 'parameters' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Object.values(parameterSet).map((p) => (
-            <div key={p.parameterId} className="p-3.5 rounded-lg border border-slate-200 bg-white hover:border-indigo-200 transition-colors">
+            <div key={p.parameterId} className="p-3.5 rounded-lg border border-slate-200 ez-bg-surface hover:border-indigo-200 transition-colors">
               <div className="flex items-start justify-between">
                 <div>
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
                     {p.group}
                   </span>
-                  <h4 className="font-semibold text-slate-900 text-sm mt-0.5">{p.name}</h4>
+                  <h4 className="font-semibold ez-text-primary text-sm mt-0.5">{p.name}</h4>
                 </div>
                 <SourceBadge source={p.source} />
               </div>
 
               <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-xl font-bold text-slate-900">
+                <span className="text-xl font-bold ez-text-primary">
                   {typeof p.value === 'boolean' ? (p.value ? 'Ya / Ada' : 'Tidak / Nihil') : String(p.value ?? '-')}
                 </span>
                 {p.unit && <span className="text-xs text-slate-500 font-medium">{p.unit}</span>}
@@ -431,7 +431,7 @@ const WbsTreeRow: React.FC<{
             <span className="w-4" />
           )}
           <span className="font-mono text-indigo-700 font-bold">{node.code}</span>
-          <span className="text-slate-800">{node.title}</span>
+          <span className="ez-text-primary">{node.title}</span>
         </div>
 
         <div className="col-span-3 text-center">

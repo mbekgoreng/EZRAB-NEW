@@ -407,7 +407,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
       {/* =========================================================================
           PAGE HEADER (Section 7)
          ========================================================================= */}
-      <div className="bg-white border-b border-[var(--ez-color-border-line)] px-6 py-4 sticky top-0 z-20 shadow-2xs">
+      <div className="ez-bg-surface border-b border-[var(--ez-color-border-line)] px-6 py-4 sticky top-0 z-20 shadow-2xs">
         <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           {/* Left: Back & Title */}
           <div className="flex items-center gap-3">
@@ -457,7 +457,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                 disabled={isAnalyzing}
                 className={`px-3 py-1.5 rounded-[7px] text-[12px] font-semibold transition-all flex items-center gap-1.5 ${
                   selectedMode === 'FAST'
-                    ? 'bg-white text-[var(--ez-color-text-primary)] border border-[var(--ez-hue-blue-border)] shadow-xs'
+                    ? 'ez-bg-surface text-[var(--ez-color-text-primary)] border border-[var(--ez-hue-blue-border)] shadow-xs'
                     : 'text-[#64748B] hover:text-[var(--ez-color-text-primary)]'
                 }`}
               >
@@ -473,7 +473,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                 disabled={isAnalyzing}
                 className={`px-3 py-1.5 rounded-[7px] text-[12px] font-semibold transition-all flex items-center gap-1.5 ${
                   selectedMode === 'DETAIL'
-                    ? 'bg-white text-[var(--ez-color-text-primary)] border border-[var(--ez-hue-blue-border)] shadow-xs'
+                    ? 'ez-bg-surface text-[var(--ez-color-text-primary)] border border-[var(--ez-hue-blue-border)] shadow-xs'
                     : 'text-[#64748B] hover:text-[var(--ez-color-text-primary)]'
                 }`}
               >
@@ -495,7 +495,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
         {/* =========================================================================
             SECTION 8: DOCUMENT SUMMARY (Compact Horizontal Card)
            ========================================================================= */}
-        <div className="bg-white border border-[var(--ez-color-border-line)] rounded-[12px] p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
+        <div className="ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
           <input
             ref={fileInputRef}
             type="file"
@@ -529,7 +529,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isAnalyzing}
-              className="px-3 py-1.5 bg-white border border-[var(--ez-hue-slate-border)] hover:bg-[var(--ez-hue-slate-bg)] text-[var(--ez-color-text-primary)] text-[12px] font-semibold rounded-[8px] transition disabled:opacity-50"
+              className="px-3 py-1.5 ez-bg-surface border border-[var(--ez-hue-slate-border)] hover:bg-[var(--ez-hue-slate-bg)] text-[var(--ez-color-text-primary)] text-[12px] font-semibold rounded-[8px] transition disabled:opacity-50"
             >
               Ganti File
             </button>
@@ -556,7 +556,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
         {/* =========================================================================
             SECTION 9: ANALYSIS PROGRESS (Horizontal Stepper with Thin Progress Line)
            ========================================================================= */}
-        <div className="bg-white border border-[var(--ez-color-border-line)] rounded-[12px] p-5 shadow-2xs space-y-4">
+        <div className="ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] p-5 shadow-2xs space-y-4">
           {/* Stepper Columns */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {steps.map((st) => (
@@ -631,7 +631,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
           </div>
 
           {/* RIGHT COLUMN: ANALYSIS PROCESS PANEL (~40% => col-span-5) */}
-          <div className="lg:col-span-5 bg-white border border-[var(--ez-color-border-line)] rounded-[12px] p-5 shadow-2xs space-y-4 flex flex-col justify-between min-h-[620px]">
+          <div className="lg:col-span-5 ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] p-5 shadow-2xs space-y-4 flex flex-col justify-between min-h-[620px]">
             <div className="space-y-4">
               {/* Header */}
               <div className="border-b border-[var(--ez-color-border-line)] pb-3 flex items-center justify-between">
@@ -659,7 +659,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                         isProcessing
                           ? 'border-[var(--ez-hue-blue-border)] bg-[var(--ez-hue-blue-bg)]'
                           : isSuccess
-                          ? 'border-[var(--ez-color-border-line)] bg-[#FFFFFF]'
+                          ? 'border-[var(--ez-color-border-line)] ez-bg-surface'
                           : 'border-[var(--ez-color-surface-tertiary)] bg-[var(--ez-hue-slate-bg)] opacity-70'
                       }`}
                     >
@@ -744,7 +744,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
         {outputResult && (
           <div className="space-y-6 pt-4 border-t border-[var(--ez-color-border-line)]">
             {/* 1. Header Summary */}
-            <div className="bg-white border border-[var(--ez-color-border-line)] rounded-[12px] p-6 shadow-2xs">
+            <div className="ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] p-6 shadow-2xs">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--ez-color-border-line)] pb-5">
                 <div>
                   <div className="flex items-center gap-2">
@@ -763,7 +763,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                   <button
                     type="button"
                     onClick={handleExportCsv}
-                    className="px-3.5 py-2 bg-white border border-[var(--ez-hue-slate-border)] hover:bg-[var(--ez-hue-slate-bg)] text-[var(--ez-color-text-primary)] text-[12px] font-semibold rounded-[8px] transition flex items-center gap-1.5"
+                    className="px-3.5 py-2 ez-bg-surface border border-[var(--ez-hue-slate-border)] hover:bg-[var(--ez-hue-slate-bg)] text-[var(--ez-color-text-primary)] text-[12px] font-semibold rounded-[8px] transition flex items-center gap-1.5"
                   >
                     <Download size={14} />
                     <span>Ekspor CSV</span>
@@ -839,7 +839,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
             </div>
 
             {/* 3. RAB / Estimate Table */}
-            <div className="bg-white border border-[var(--ez-color-border-line)] rounded-[12px] p-6 shadow-2xs space-y-4">
+            <div className="ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] p-6 shadow-2xs space-y-4">
               {/* Filter & Search Bar */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="relative w-full sm:w-[320px]">
@@ -858,7 +858,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
                     aria-label="Filter Kategori Pekerjaan"
-                    className="text-[12px] px-3 py-1.5 rounded-[8px] border border-[var(--ez-hue-slate-border)] bg-white text-[var(--ez-color-text-primary)] focus:outline-hidden"
+                    className="text-[12px] px-3 py-1.5 rounded-[8px] border border-[var(--ez-hue-slate-border)] ez-bg-surface text-[var(--ez-color-text-primary)] focus:outline-hidden"
                   >
                     <option value="ALL">Semua Kategori ({categories.length})</option>
                     {categories.map((c) => (
@@ -872,7 +872,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value as any)}
                     aria-label="Filter Status Pekerjaan"
-                    className="text-[12px] px-3 py-1.5 rounded-[8px] border border-[var(--ez-hue-slate-border)] bg-white text-[var(--ez-color-text-primary)] focus:outline-hidden"
+                    className="text-[12px] px-3 py-1.5 rounded-[8px] border border-[var(--ez-hue-slate-border)] ez-bg-surface text-[var(--ez-color-text-primary)] focus:outline-hidden"
                   >
                     <option value="ALL">Semua Status</option>
                     <option value="VALID">Terverifikasi</option>

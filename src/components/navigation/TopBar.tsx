@@ -16,6 +16,7 @@ import {
   Keyboard,
   LifeBuoy,
   MessageSquare,
+  Plus,
 Sun,
   Moon,
   ChevronDown,
@@ -24,12 +25,39 @@ Sun,
 import { NotificationBell } from '../../notifications/NotificationBell';
 import type { NotificationItem } from '../../notifications/NotificationContext';
 import { ClientUserManagementService } from '../../services/userManagementService';
-import { UserRole } from '../../types';
+import { UserRole, type Project } from '../../types';
 import { useI18n, LANG_OPTIONS } from '../../i18n';
 import type { Lang } from '../../i18n';
 
 /** Label ringkas bahasa untuk tombol selector bahasa. */
 const LANG_SHORT: Record<Lang, string> = { id: 'ID', en: 'EN', zh: '中文', ms: 'MY' };
+
+/** Satu baris hasil pada palet pencarian global. */
+interface SearchResultItem {
+  key: string;
+  group: string;
+  label: string;
+  sub?: string;
+  icon: React.ReactNode;
+  run: () => void;
+}
+
+/** Indeks menu untuk pencarian global (label + kata kunci). */
+const MENU_SEARCH_INDEX: Array<{ id: string; label: string; keywords: string }> = [
+  { id: 'dashboard', label: 'Dashboard', keywords: 'beranda home utama ringkasan' },
+  { id: 'proyek', label: 'Proyek', keywords: 'projects daftar proyek portofolio' },
+  { id: 'qto-vc', label: 'Kalkulator Volume', keywords: 'volume kalkulator hitung qto' },
+  { id: 'rab-estimasi', label: 'RAB & Estimasi', keywords: 'rab estimasi anggaran biaya spreadsheet' },
+  { id: 'ezrab-ai', label: 'Ezrab Chat AI', keywords: 'chat ai asisten' },
+  { id: 'ded-ai', label: 'DED Estimate AI', keywords: 'ded estimate gambar ai' },
+  { id: 'dokumen-ai', label: 'AI Document', keywords: 'dokumen document ai' },
+  { id: 'template-rab', label: 'Template RAB', keywords: 'template' },
+  { id: 'keuangan-proyek', label: 'Keuangan Proyek', keywords: 'keuangan finance kas' },
+  { id: 'ahsp-2026', label: 'AHSP 2026', keywords: 'ahsp analisa harga satuan pupr' },
+  { id: 'database-material', label: 'Database Material', keywords: 'material bahan harga' },
+  { id: 'laporan', label: 'Laporan', keywords: 'laporan report boq rekap' },
+  { id: 'pengaturan', label: 'Pengaturan', keywords: 'pengaturan settings setelan' },
+];
 import { useRole } from '../../auth/RoleContext';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -69,6 +97,81 @@ const { t, lang, setLang } = useI18n();
   const [helpOpen, setHelpOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+
+  // ---------- Global search palette ----------
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [activeResultIdx, setActiveResultIdx] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchWrapRef = useRef<HTMLDivElement>(null);
+
+  const searchResults: SearchResultItem[] = React.useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [];
+    const out: SearchResultItem[] = [];
+    // 1. Proyek (maks 4)
+    for (const p of projects) {
+      if (out.length >= 9) break;
+      const hay = `${p.name} ${p.clientName ?? ''} ${p.location ?? ''}`.toLowerCase();
+      if (!hay.includes(q)) continue;
+      out.push({
+        key: `project:${p.id}`,
+        group: 'Proyek',
+        label: p.name,
+        sub: [p.clientName, p.location].filter(Boolean).join(' • ') || undefined,
+        icon: <Building2 size={15} color="#2563EB" />,
+        run: () => onOpenProject?.(p.id),
+      });
+      if (out.filter((r) => r.group === 'Proyek').length >= 4) break;
+    }
+    // 2. Menu navigasi
+    for (const m of MENU_SEARCH_INDEX) {
+      if (out.length >= 9) break;
+      if (!`${m.label} ${m.keywords}`.toLowerCase().includes(q)) continue;
+      out.push({
+        key: `menu:${m.id}`,
+        group: 'Menu',
+        label: m.label,
+        icon: <ChevronRight size={15} color="#64748B" />,
+        run: () => onNavigate(m.id),
+      });
+    }
+    // 3. Aksi cepat
+    if ('buat proyek baru'.includes(q) || q.includes('proyek')) {
+      out.push({
+        key: 'action:create-project',
+        group: 'Aksi',
+        label: 'Buat proyek baru',
+        icon: <Plus size={15} color="#059669" />,
+        run: () => onCreateProject?.(),
+      });
+    }
+    return out.slice(0, 9);
+  }, [searchQuery, projects, onOpenProject, onNavigate, onCreateProject]);
+
+  const closeSearch = () => {
+    setSearchFocused(false);
+    setActiveResultIdx(0);
+  };
+
+  const pickResult = (r: SearchResultItem) => {
+    r.run();
+    onSearchChange('');
+    closeSearch();
+    searchInputRef.current?.blur();
+  };
+
+  // ⌘K / Ctrl+K fokus ke pencarian
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
   const { effectiveTheme, setTheme } = useTheme();
   const isDark = effectiveTheme === 'dark';
 
@@ -259,7 +362,7 @@ const handleNotificationItemClick = (item: NotificationItem) => {
             type="text"
             placeholder={t('nav.search_placeholder')}
           value={searchQuery}
-onChange={(e) => onSearchChange(e.target.value)}
+          onChange={(e) => { onSearchChange(e.target.value); setActiveResultIdx(0); setSearchFocused(true); }}
           aria-label={t('nav.search_aria_label')}
           style={{
             width: '100%',
@@ -278,11 +381,28 @@ onFocus={(e) => {
             e.currentTarget.style.background = 'var(--ez-color-surface)';
             e.currentTarget.style.borderColor = 'var(--ez-color-primary)';
             e.currentTarget.style.boxShadow = 'var(--ez-focus-ring)';
+            setSearchFocused(true);
           }}
           onBlur={(e) => {
             e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
             e.currentTarget.style.borderColor = 'var(--ez-color-border-line)';
             e.currentTarget.style.boxShadow = 'none';
+            setTimeout(closeSearch, 120);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown' && searchResults.length > 0) {
+              e.preventDefault();
+              setActiveResultIdx((i) => (i + 1) % searchResults.length);
+            } else if (e.key === 'ArrowUp' && searchResults.length > 0) {
+              e.preventDefault();
+              setActiveResultIdx((i) => (i - 1 + searchResults.length) % searchResults.length);
+            } else if (e.key === 'Enter' && searchResults.length > 0) {
+              e.preventDefault();
+              pickResult(searchResults[activeResultIdx] ?? searchResults[0]);
+            } else if (e.key === 'Escape') {
+              onSearchChange('');
+              searchInputRef.current?.blur();
+            }
           }}
         />
         {!isNarrowMobile && (

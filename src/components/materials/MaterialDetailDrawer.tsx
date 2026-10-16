@@ -73,7 +73,7 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl md:max-w-2xl bg-white h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200"
+        className="w-full max-w-xl md:max-w-2xl ez-bg-surface h-full shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-200"
         style={{ backgroundColor: 'var(--ez-color-surface)' }}
         role="dialog"
         aria-modal="true"
@@ -96,7 +96,7 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
                 </span>
               )}
             </div>
-            <h2 className="text-lg font-black text-slate-900 leading-snug truncate" title={material.name}>
+            <h2 className="text-lg font-black ez-text-primary leading-snug truncate" title={material.name}>
               {material.name}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5 truncate">
@@ -137,7 +137,7 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
             {onOpenAddPrice && (
               <button
                 onClick={() => onOpenAddPrice(material)}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-300 shadow-xs transition flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-lg text-xs font-bold ez-bg-surface ez-text-body border border-slate-300 shadow-xs transition flex items-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5 text-emerald-600" />
                 Tambah Harga
@@ -163,6 +163,7 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
           <div className="px-5 py-2.5 bg-sky-50/70 border-b border-sky-100 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
               <Building className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+              {/* teks gelap disengaja: banner bg-sky-50/70 tetap terang di dark mode */}
               <span className="text-slate-700">
                 Proyek: <strong>{currentProject.name}</strong> ({currentProject.location || 'Indonesia'})
               </span>
@@ -180,7 +181,7 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
         {/* ------------------------------------------------------------- */}
         {/* TAB NAVIGATION                                                */}
         {/* ------------------------------------------------------------- */}
-        <div className="px-5 border-b border-slate-200 bg-white flex items-center gap-1 overflow-x-auto shrink-0">
+        <div className="px-5 border-b border-slate-200 ez-bg-surface flex items-center gap-1 overflow-x-auto shrink-0">
           {(
             [
               { id: 'OVERVIEW', label: 'Ringkasan' },
@@ -197,7 +198,7 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
               className={`py-3 px-3 text-xs font-bold border-b-2 whitespace-nowrap transition ${
                 activeTab === tab.id
                   ? 'border-emerald-600 text-emerald-800 bg-emerald-50/40'
-                  : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  : 'border-transparent ez-text-slate hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
               {tab.label}
@@ -208,18 +209,18 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
         {/* ------------------------------------------------------------- */}
         {/* TAB CONTENTS (SCROLLABLE)                                     */}
         {/* ------------------------------------------------------------- */}
-        <div className="flex-1 overflow-y-auto p-5 text-xs text-slate-700 space-y-4">
+        <div className="flex-1 overflow-y-auto p-5 text-xs ez-text-body space-y-4">
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'OVERVIEW' && (
             <div className="space-y-4">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5">
-                <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider text-slate-500">
+                <h4 className="font-bold text-slate-500 text-xs uppercase tracking-wider">
                   Parameter Material
                 </h4>
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
                     <span className="text-slate-400 block text-[11px]">Nama Standar</span>
-                    <span className="font-semibold text-slate-800">{material.name}</span>
+                    <span className="font-semibold ez-text-primary">{material.name}</span>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Kode Sistem</span>
@@ -227,27 +228,27 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Sektor Konstruksi</span>
-                    <span className="font-semibold text-slate-800">{material.sector}</span>
+                    <span className="font-semibold ez-text-primary">{material.sector}</span>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Satuan Pengukuran</span>
-                    <span className="font-mono font-bold text-slate-800 uppercase">{material.unit}</span>
+                    <span className="font-mono font-bold ez-text-primary uppercase">{material.unit}</span>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Merek / Pabrikan</span>
-                    <span className="font-semibold text-slate-800">{material.brand || 'Multi-Brand'}</span>
+                    <span className="font-semibold ez-text-primary">{material.brand || 'Multi-Brand'}</span>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Standar SNI / ASTM</span>
-                    <span className="font-semibold text-slate-800">{material.standard || 'SNI Berlaku'}</span>
+                    <span className="font-semibold ez-text-primary">{material.standard || 'SNI Berlaku'}</span>
                   </div>
                 </div>
               </div>
 
               {/* Technical Description */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-2">
-                <h4 className="font-bold text-slate-900 text-xs">Deskripsi & Ruang Lingkup Spesifikasi</h4>
-                <p className="text-slate-600 leading-relaxed">
+              <div className="ez-bg-surface p-4 rounded-xl border border-slate-200 space-y-2">
+                <h4 className="font-bold ez-text-primary text-xs">Deskripsi & Ruang Lingkup Spesifikasi</h4>
+                <p className="ez-text-slate leading-relaxed">
                   {material.specification || 'Spesifikasi standar konstruksi sesuai dokumen acuan teknis PU.'}
                 </p>
               </div>
@@ -266,10 +267,10 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
                         className="bg-white/80 p-2.5 rounded-lg border border-amber-200/80 flex items-start justify-between gap-2"
                       >
                         <div>
-                          <div className="font-bold text-slate-900">
+                          <div className="font-bold ez-text-primary">
                             {sub.substituteMaterialName || sub.targetMaterialName}
                           </div>
-                          <div className="text-[11px] text-slate-600 mt-0.5">{sub.reason || sub.notes}</div>
+                          <div className="text-[11px] ez-text-slate mt-0.5">{sub.reason || sub.notes}</div>
                         </div>
                         <span className="px-2 py-0.5 rounded text-[10.5px] font-bold bg-amber-100 text-amber-800 shrink-0">
                           {sub.compatibilityScore}% Kompatibel
@@ -301,7 +302,7 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
 
               {prices.length === 0 ? (
                 <div className="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-300 space-y-2">
-                  <p className="font-semibold text-slate-700">Harga belum terdaftar di database.</p>
+                  <p className="font-semibold ez-text-body">Harga belum terdaftar di database.</p>
                   <p className="text-slate-500 text-[11px]">
                     Tambahkan penawaran supplier lokal atau gunakan harga referensi nasional.
                   </p>
@@ -330,11 +331,11 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
                     <tbody className="divide-y divide-slate-100">
                       {prices.map((pr) => (
                         <tr key={pr.id} className="hover:bg-slate-50 transition">
-                          <td className="py-2.5 px-3 font-medium text-slate-800">
+                          <td className="py-2.5 px-3 font-medium ez-text-primary">
                             {pr.region.city ? `${pr.region.city}, ${pr.region.province}` : pr.region.province}
                           </td>
-                          <td className="py-2.5 px-3 text-slate-600">
-                            <span className="font-medium text-slate-800 block">
+                          <td className="py-2.5 px-3 ez-text-slate">
+                            <span className="font-medium ez-text-primary block">
                               {pr.supplierName || pr.sourceName}
                             </span>
                             <span className="text-[10px] text-slate-400">
@@ -371,8 +372,8 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
           {activeTab === 'SPECS' && (
             <div className="space-y-3.5">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
-                <h4 className="font-bold text-slate-900 text-xs">Standar Teknis & Regulasi</h4>
-                <div className="space-y-1.5 text-xs text-slate-600">
+                <h4 className="font-bold ez-text-primary text-xs">Standar Teknis & Regulasi</h4>
+                <div className="space-y-1.5 text-xs ez-text-slate">
                   <div>
                     • <strong>Standar Acuan:</strong> {material.standard || 'SNI / Pedoman Konstruksi PUPR 2026'}
                   </div>
@@ -385,14 +386,14 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
                 </div>
               </div>
 
-              <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-2">
-                <h4 className="font-bold text-slate-900 text-xs">Detail Fisik & Kemasan</h4>
-                <p className="text-slate-600 text-xs leading-relaxed">
+              <div className="ez-bg-surface p-4 rounded-xl border border-slate-200 space-y-2">
+                <h4 className="font-bold ez-text-primary text-xs">Detail Fisik & Kemasan</h4>
+                <p className="ez-text-slate text-xs leading-relaxed">
                   {material.specification || 'Kemasan standar produsen sesuai ketentuan pengiriman dan penyimpanan proyek.'}
                 </p>
                 <div className="pt-2 border-t border-slate-100 flex items-center gap-4 text-xs text-slate-500">
-                  <span>Satuan Transaksi: <strong className="text-slate-700">{material.unit}</strong></span>
-                  <span>Kelas Material: <strong className="text-slate-700">{material.priceTier || 'STANDARD'}</strong></span>
+                  <span>Satuan Transaksi: <strong className="ez-text-body">{material.unit}</strong></span>
+                  <span>Kelas Material: <strong className="ez-text-body">{material.priceTier || 'STANDARD'}</strong></span>
                 </div>
               </div>
             </div>
@@ -403,21 +404,21 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
             <div className="space-y-3.5">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900 text-sm">
+                  <span className="font-bold ez-text-primary text-sm">
                     {material.brand || 'Multi-Brand / Kanonikal'}
                   </span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                     CANONICAL VERIFIED
                   </span>
                 </div>
-                <p className="text-slate-600 text-xs">
+                <p className="ez-text-slate text-xs">
                   Produsen dan jaringan distributor material bersertifikasi resmi untuk pasar konstruksi Indonesia.
                 </p>
               </div>
 
               <div className="border border-slate-200 rounded-xl p-4 space-y-2 text-xs">
-                <span className="font-bold text-slate-800 block">Jaminan Ketersediaan & Distribusi:</span>
-                <p className="text-slate-600 leading-relaxed">
+                <span className="font-bold ez-text-primary block">Jaminan Ketersediaan & Distribusi:</span>
+                <p className="ez-text-slate leading-relaxed">
                   Tersedia di jaringan depo bahan bangunan, distributor resmi provinsi, dan supply chain B2B nasional dengan jaminan sertifikat uji pabrik (Mill Certificate / SNI Certificate).
                 </p>
               </div>
@@ -428,7 +429,7 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
           {activeTab === 'HISTORY' && (
             <div className="space-y-4">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <h4 className="font-bold text-slate-900 text-xs mb-3 flex items-center gap-1.5">
+                <h4 className="font-bold ez-text-primary text-xs mb-3 flex items-center gap-1.5">
                   <TrendingUp className="w-4 h-4 text-emerald-600" />
                   Tren Perubahan Harga (2025 – 2026)
                 </h4>
@@ -436,7 +437,7 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
                 {historyRecords.length >= 2 ? (
                   <div className="space-y-2">
                     {/* Visual SVG Trend Line */}
-                    <div className="w-full h-32 bg-white rounded-lg border border-slate-200 p-2 flex items-center justify-center">
+                    <div className="w-full h-32 ez-bg-surface rounded-lg border border-slate-200 p-2 flex items-center justify-center">
                       <svg viewBox="0 0 400 100" className="w-full h-full">
                         <line x1="20" y1="20" x2="380" y2="20" stroke="var(--ez-color-border-line)" strokeDasharray="3 3" />
                         <line x1="20" y1="50" x2="380" y2="50" stroke="var(--ez-color-border-line)" strokeDasharray="3 3" />
@@ -484,7 +485,7 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="p-4 bg-white rounded-lg border border-slate-200 text-center text-slate-500 text-xs">
+                  <div className="p-4 ez-bg-surface rounded-lg border border-slate-200 text-center text-slate-500 text-xs">
                     Belum cukup data riwayat historis untuk menampilkan grafik tren. Data fluktuasi akan terbentuk otomatis seiring pembaruan berkala.
                   </div>
                 )}
@@ -505,11 +506,11 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
                     {historyRecords.length > 0 ? (
                       historyRecords.map((hr) => (
                         <tr key={hr.id} className="hover:bg-slate-50">
-                          <td className="py-2 px-3 font-mono text-slate-600">{hr.priceDate}</td>
-                          <td className="py-2 px-3 text-right font-mono font-bold text-slate-900">
+                          <td className="py-2 px-3 font-mono ez-text-slate">{hr.priceDate}</td>
+                          <td className="py-2 px-3 text-right font-mono font-bold ez-text-primary">
                             {formatCurrencyIDR(hr.price)}
                           </td>
-                          <td className="py-2 px-3 text-slate-600">{hr.region}</td>
+                          <td className="py-2 px-3 ez-text-slate">{hr.region}</td>
                           <td className="py-2 px-3 text-slate-500 text-[11px]">{hr.sourceName}</td>
                         </tr>
                       ))
@@ -530,36 +531,36 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
           {activeTab === 'PROVENANCE' && (
             <div className="space-y-4">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2.5">
-                <h4 className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                <h4 className="font-bold ez-text-primary text-xs flex items-center gap-1.5">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
                   Jaminan Provenance & Anti-Halusinasi
                 </h4>
-                <p className="text-slate-600 leading-relaxed text-xs">
+                <p className="ez-text-slate leading-relaxed text-xs">
                   Setiap angka harga di database EZRAB memiliki jejak audit resmi. Sistem dilarang mengarang atau menebak harga tanpa sumber rujukan yang terverifikasi.
                 </p>
 
                 <div className="grid grid-cols-2 gap-3 pt-2 text-xs border-t border-slate-200">
                   <div>
                     <span className="text-slate-400 block text-[11px]">Sumber Data:</span>
-                    <strong className="text-slate-800">
+                    <strong className="ez-text-primary">
                       {primaryPriceRecord?.sourceName || 'Katalog Resmi Produsen & Rekanan'}
                     </strong>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Tanggal Verifikasi:</span>
-                    <strong className="text-slate-800">
+                    <strong className="ez-text-primary">
                       {primaryPriceRecord?.lastVerifiedAt || '25 September 2026'}
                     </strong>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Status PPN:</span>
-                    <strong className="text-slate-800">
+                    <strong className="ez-text-primary">
                       {primaryPriceRecord?.taxIncluded ? 'Termasuk PPN 11%' : 'Belum PPN (Biaya Dasar)'}
                     </strong>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Status Mobilisasi / Ongkir:</span>
-                    <strong className="text-slate-800">
+                    <strong className="ez-text-primary">
                       {primaryPriceRecord?.deliveryIncluded ? 'Termasuk Pengiriman Lokasi' : 'Franco Toko / Pabrik'}
                     </strong>
                   </div>
@@ -587,7 +588,7 @@ export const MaterialDetailDrawer: React.FC<MaterialDetailDrawerProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-white hover:bg-slate-100 text-slate-700 font-semibold border border-slate-300 transition text-xs"
+              className="px-4 py-2 rounded-lg ez-bg-surface ez-text-body font-semibold border border-slate-300 transition text-xs"
             >
               Tutup
             </button>

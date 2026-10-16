@@ -120,15 +120,7 @@ export function FirstProjectChecklist() {
   // Minimized: pill kompak agar tidak menutupi konten (bug 2026-10-16)
   if (minimized) {
     return (
-      <div
-        data-tour="checklist"
-        style={{
-          position: 'fixed',
-          bottom: 20,
-          right: 20,
-          zIndex: 9000,
-        }}
-      >
+      <div data-tour="checklist" className="ez-checklist-fab">
         <button
           onClick={handleToggleMinimize}
           aria-label={`Buka checklist (${doneCount} dari ${items.length} selesai)`}
@@ -175,11 +167,8 @@ export function FirstProjectChecklist() {
   return (
     <div
       data-tour="checklist"
+      className="ez-checklist-fab"
       style={{
-        position: 'fixed',
-        bottom: 20,
-        right: 20,
-        zIndex: 9000,
         width: 'min(300px, calc(100vw - 40px))',
         background: 'var(--ez-color-surface)',
         border: '1px solid var(--ez-color-border-line)',
