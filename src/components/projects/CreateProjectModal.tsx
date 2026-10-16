@@ -229,7 +229,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             STEP 1: METHOD SELECTION (THE 4 PATHWAYS)
            ========================================================================= */}
         {activeStep === 'select' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+          <div data-tutorial="proyek-method" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
             {/* 1. MAGIC AI */}
             <div
               onClick={() => setActiveStep('magic_ai')}

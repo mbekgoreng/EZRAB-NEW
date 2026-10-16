@@ -24,6 +24,7 @@ import {
 import { useProject } from '../../context/ProjectContext';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { ScheduleTask } from '../../types';
+import { TutorialHelpButton } from '../onboarding/tutorials/TutorialHelpButton';
 
 interface ManajemenProyekViewProps {
   projects?: any[];
@@ -217,9 +218,10 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
+              <h1 data-tutorial="manajemen-main" style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                 {currentProject.name}
               </h1>
+              <TutorialHelpButton tutorialId="manajemen-proyek" label="Buka tutorial manajemen proyek" />
               <span
                 style={{
                   fontSize: '11px',

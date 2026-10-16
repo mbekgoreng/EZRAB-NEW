@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ProjectProvider } from './context/ProjectContext';
 import { ExactLandingPage } from './components/landing/ExactLandingPage';
 import { AboutPage } from './components/about/AboutPage';
@@ -10,9 +10,15 @@ import { NotificationProvider } from './notifications/NotificationContext';
 import { BootLoadingScreen } from './components/boot/BootLoadingScreen';
 import {
   OnboardingTour,
+  migrateLegacyOnboardingFlag,
   shouldShowOnboarding,
   useOnboardingTour,
 } from './components/onboarding/OnboardingTour';
+import { OnboardingProvider } from './components/onboarding/OnboardingContext';
+import { ToastProvider } from './components/onboarding/Toast';
+import { OnboardingOrchestrator, openDashboardTour } from './components/onboarding/OnboardingOrchestrator';
+import { FeatureTutorialPlayer } from './components/onboarding/tutorials/FeatureTutorialPlayer';
+import { WelcomeSlotGuard } from './components/onboarding/tutorials/WelcomeSlotGuard';
 import { isAppPath, navigateTo, parseWorkspaceRoute, paths, routeForMenu, routeLabel } from './routing/routes';
 import { useBrowserLocation } from './routing/useBrowserLocation';
 
@@ -38,6 +44,8 @@ export const App: React.FC = () => {
   const [bootReady, setBootReady] = useState(false);
   const { open: tourOpen, closeTour } = useOnboardingTour();
   const [tourPending, setTourPending] = useState(false);
+  /** welcome otomatis hanya ditampilkan sekali per sesi, saat masuk workspace */
+  const autoTourShownRef = useRef(false);
 
   useEffect(() => {
     if (location.pathname === paths.app()) navigateTo(paths.dashboard(), { replace: true });
@@ -57,12 +65,34 @@ export const App: React.FC = () => {
 
   const handleBootDone = useCallback(() => {
     setBooted(true);
-    setTourPending(shouldShowOnboarding());
+    migrateLegacyOnboardingFlag(); // idempoten: pengguna lama tidak ditanya ulang
   }, []);
 
-  const handleTourClose = useCallback(() => {
+  // Welcome otomatis HANYA di dalam workspace (/app/*), bukan di landing page.
+  // Mencakup alur landing -> klik Masuk -> dashboard (tanpa reboot).
+  useEffect(() => {
+    if (!booted || !isWorkspace || autoTourShownRef.current) return;
+    if (!shouldShowOnboarding()) return;
+    autoTourShownRef.current = true;
+    const t = window.setTimeout(() => setTourPending(true), 900);
+    return () => window.clearTimeout(t);
+  }, [booted, isWorkspace]);
+
+  const handleTourClose = useCallback((completed: boolean) => {
     setTourPending(false);
     closeTour();
+    // Welcome selesai (bukan dilewati) → tawarkan dashboard tour jika belum pernah dilihat.
+    // Berlaku juga saat welcome dibuka ulang via "Tutorial EZRAB" (bug 2026-10-16).
+    if (completed) {
+      try {
+        const seen = window.localStorage.getItem('ezrab_tour_seen_dashboard-tour');
+        if (seen !== '1') {
+          setTimeout(() => openDashboardTour(), 600);
+        }
+      } catch {
+        /* abaikan */
+      }
+    }
   }, [closeTour]);
 
   const handleSetWorkspace = (val: boolean) => {
@@ -169,15 +199,22 @@ export const App: React.FC = () => {
 
   return (
     <NotificationProvider>
-      {!booted && (
-        <BootLoadingScreen ready={bootReady} minDurationMs={1200} onDone={handleBootDone} />
-      )}
-      {booted && (
-        <>
-          {content}
-          <OnboardingTour open={tourOpen || tourPending} onClose={handleTourClose} />
-        </>
-      )}
+      <ToastProvider>
+        <OnboardingProvider>
+          {!booted && (
+            <BootLoadingScreen ready={bootReady} minDurationMs={1200} onDone={handleBootDone} />
+          )}
+          {booted && (
+            <>
+              {content}
+              <OnboardingTour open={tourOpen || tourPending} onClose={handleTourClose} />
+              <OnboardingOrchestrator />
+              <FeatureTutorialPlayer />
+              <WelcomeSlotGuard active={tourOpen || tourPending} />
+            </>
+          )}
+        </OnboardingProvider>
+      </ToastProvider>
     </NotificationProvider>
   );
 };

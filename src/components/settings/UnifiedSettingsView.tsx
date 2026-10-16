@@ -65,6 +65,7 @@ import { useProject } from '../../context/ProjectContext';
 import { useI18n, LANG_OPTIONS, type Lang } from '../../i18n';
 import { useRole } from '../../auth/RoleContext';
 import { ONBOARDING_OPEN_EVENT } from '../onboarding/OnboardingTour';
+import { TutorialCenter } from '../onboarding/tutorials/TutorialCenter';
 
 /** Versi aplikasi — tampil di section "Informasi Sistem". Sinkron dengan package.json. */
 const APP_VERSION = '2.0.0';
@@ -2195,6 +2196,8 @@ value={systemTheme}
                   </div>
                 ))}
               </div>
+
+              <TutorialCenter />
             </div>
           )}
 

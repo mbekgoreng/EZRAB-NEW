@@ -42,6 +42,7 @@ import { DedAiEstimateView } from '../../ai-tools/ded-ai-estimate/view';
 import { DokumenAiView } from '../../ai-tools/document-ai/view';
 import { MagicAiSuperView } from '../magic-ai/MagicAiSuperView';
 import { ProjectsView } from '../projects/ProjectsView';
+import { FirstProjectChecklist } from '../onboarding/FirstProjectChecklist';
 import { RabEstimasiView } from '../rab/RabEstimasiView';
 import { ManajemenProyekView } from '../management/ManajemenProyekView';
 import { AhspExplorerView } from '../ahsp/AhspExplorerView';
@@ -92,8 +93,6 @@ import { RabTemplateService } from '../../services/rabTemplateService';
 import { RabTemplate } from '../../types/rabTemplate';
 import { CreateProjectModal } from '../projects/CreateProjectModal';
 import { TenderDocumentsView } from '../document/TenderDocumentsView';
-import { OnboardingTourModal } from './OnboardingTourModal';
-import { DashboardGuideModal, shouldShowDashboardGuide } from './DashboardGuideModal';
 import { Sidebar } from '../layout/Sidebar';
 import { EnterpriseEntryPage } from '../enterprise/EnterpriseEntryPage';
 import { ProjectFinanceView } from '../finance/ProjectFinanceView';
@@ -131,10 +130,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
   const [activeCalcQtoId, setActiveCalcQtoId] = useState<string | null>(null);
 
   const [coAssistantMode, setCoAssistantMode] = useState<ChatboxDisplayMode>('closed');
-
-  // AI Dokumen: workspace analisis aktif? (floating assistant disembunyikan
-  // HANYA saat analisis aktif; tampil di halaman utama AI Dokumen)
-  const [docAiAnalysisActive, setDocAiAnalysisActive] = useState(false);
 
 
 
@@ -178,8 +173,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
   // presentation state only; every user navigation is mirrored into browser history.
   const setActiveMenu = useCallback((menu: string, projectId: string | null = currentProjectId) => {
     setActiveMenuState(menu);
-    // Reset status workspace analisis AI Dokumen saat pindah menu
-    if (menu !== 'dokumen-ai') setDocAiAnalysisActive(false);
     setMobileDrawerOpen(false);
     onNavigateMenu(menu, projectId);
   }, [currentProjectId, onNavigateMenu]);
@@ -210,11 +203,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
   // Legacy in-workspace onboarding modal — superseded by the App-level
   // OnboardingTour (src/components/onboarding/OnboardingTour.tsx), which is the
   // single first-run/replayable tutorial. Kept mounted but never auto-opens.
-  const [onboardingTourOpen, setOnboardingTourOpen] = useState(false);
-
-  // Panduan langkah pertama di dashboard — muncul otomatis saat pengguna
-  // masuk dashboard dan belum punya proyek sama sekali.
-  const [dashboardGuideOpen, setDashboardGuideOpen] = useState(false);
 
   // Sync activities to localStorage
   useEffect(() => {
@@ -225,16 +213,19 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
     }
   }, [activities]);
 
-  // Panduan langkah pertama: otomatis tampil saat masuk dashboard dan belum
-  // punya proyek. Delay 1,2 detik agar tidak bertumpuk dengan tur selamat
-  // datang di level App (jika sedang tampil di atasnya).
+  // Event global: buka tab pengaturan tertentu (mis. dari tutorial fitur).
   useEffect(() => {
-    if (activeMenu !== 'dashboard') return;
-    if (projects.length > 0) return;
-    if (!shouldShowDashboardGuide()) return;
-    const t = setTimeout(() => setDashboardGuideOpen(true), 1200);
-    return () => clearTimeout(t);
-  }, [activeMenu, projects.length]);
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { tab?: string } | undefined;
+      const tab = detail?.tab;
+      if (typeof tab === 'string' && tab) {
+        setPengaturanActiveTab(tab);
+        setActiveMenu('pengaturan');
+      }
+    };
+    window.addEventListener('ezrab:open-settings-tab', handler);
+    return () => window.removeEventListener('ezrab:open-settings-tab', handler);
+  }, [setActiveMenu]);
 
   // Dynamic calculations (100% genuine - 0 dummy data)
   const totalProjects = projects.length;
@@ -264,16 +255,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
       { text: `Proyek baru "${newProj.name}" (${newProj.creationMethod || 'manual'}) telah dibuat`, time: 'Baru saja', type: 'create' },
       ...prev,
     ]);
-  };
-
-  // Onboarding Complete Handler
-  const handleCompleteOnboarding = () => {
-    setOnboardingTourOpen(false);
-    try {
-      localStorage.setItem('ezrab_onboarding_completed', 'true');
-    } catch (e) {
-      console.error(e);
-    }
   };
 
   // "Ulangi Tutorial" dari Pengaturan me-dispatch `ezrab:open-onboarding`;
@@ -400,12 +381,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           isNarrowMobile={isNarrowMobile}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          projects={projects}
-          onOpenProject={(projectId) => {
-            setCurrentProjectId(projectId);
-            setActiveMenu('manajemen-proyek', projectId);
-          }}
-          onCreateProject={() => setCreateModalOpen(true)}
           onOpenMobileDrawer={() => setMobileDrawerOpen(true)}
           onNavigate={(menu, tab) => {
             if (tab) {
@@ -446,7 +421,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           <main style={{ padding: '20px 24px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>
             <ProjectsView
               projects={projects}
-              activities={activities}
               initialFilter={projectFilter}
               onFilterChange={(f) => setProjectFilter(f)}
               onCreateProject={() => setCreateModalOpen(true)}
@@ -495,13 +469,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           </main>
         ) : activeMenu === 'ezrab-ai' ? (
           <main style={{ minHeight: 'calc(100vh - 64px)', background: 'var(--ez-color-background)' }}>
-            <EzrabAiView
-              onNavigate={(menu) => setActiveMenu(menu)}
-              currentMenu={activeMenu}
-              activeProject={currentProject ? { id: currentProject.id, name: currentProject.name } : null}
-              projects={projects.map((p) => ({ id: p.id, name: p.name }))}
-              projectTotal={currentProject ? (currentProject.totalRab ?? null) : null}
-            />
+            <EzrabAiView />
           </main>
         ) : activeMenu === 'ded-ai' ? (
           <main style={{ minHeight: 'calc(100vh - 64px)', background: 'var(--ez-color-background)' }}>
@@ -509,7 +477,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           </main>
         ) : activeMenu === 'dokumen-ai' ? (
           <main style={{ minHeight: 'calc(100vh - 64px)', background: 'var(--ez-color-background)' }}>
-            <DokumenAiView onAnalysisActiveChange={setDocAiAnalysisActive} />
+            <DokumenAiView />
           </main>
         ) : (activeMenu === 'rab-estimasi' ||
              activeMenu === 'rab-spreadsheet' ||
@@ -554,11 +522,8 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
                     description: ahsp.name,
                     unit: ahsp.unit,
                     volume: volume,
-                    // Harga null = PRICE_MISSING: teruskan sebagai undefined agar
-                    // factory membuat PRICE_UNRESOLVED (badge "Harga belum diisi"),
-                    // bukan diam-diam menjadi Rp 0.
-                    unitPrice: ahsp.unitPrice ?? undefined,
-                    totalPrice: ahsp.unitPrice == null ? 0 : ahsp.unitPrice * volume,
+                    unitPrice: ahsp.unitPrice,
+                    totalPrice: ahsp.unitPrice * volume,
                     category: ahsp.category || 'Pekerjaan',
                     sectionName: ahsp.category || 'Pekerjaan',
                     laborPrice: ahsp.totalLabor || 0,
@@ -734,7 +699,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             <PricingSection onSelectPlan={() => setActiveMenu('magic-ai')} />
           </main>
         ) : (
-          <main style={{ padding: isNarrowMobile ? '16px 14px' : '24px 28px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <main data-tour="dashboard" style={{ padding: isNarrowMobile ? '16px 14px' : '24px 28px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <DashboardViewSwitcher
               projects={projects}
               onCreateProject={() => setCreateModalOpen(true)}
@@ -752,7 +717,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
               }}
               onOpenSubscription={() => setActiveMenu('subscription')}
               onResetData={handleResetData}
-              onOpenOnboarding={() => setOnboardingTourOpen(true)}
             />
           </main>
         )}
@@ -777,29 +741,8 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
       />
 
       {/* =========================================================================
-          PANDUAN LANGKAH PERTAMA DI DASHBOARD (auto saat belum ada proyek)
-         ========================================================================= */}
-      <DashboardGuideModal
-        open={dashboardGuideOpen}
-        onClose={() => setDashboardGuideOpen(false)}
-        onStartFirstProject={() => {
-          setDashboardGuideOpen(false);
-          setCreateModalOpen(true);
-        }}
-      />
-
-      {/* =========================================================================
           LIGHTWEIGHT ONBOARDING TOUR MODAL (DISMISSIBLE / RE-TRIGGERABLE)
          ========================================================================= */}
-      <OnboardingTourModal
-        isOpen={onboardingTourOpen}
-        onClose={handleCompleteOnboarding}
-        onStartFirstProject={() => {
-          handleCompleteOnboarding();
-          setCreateModalOpen(true);
-        }}
-      />
-
       {/* =========================================================================
           MOBILE BOTTOM NAVIGATION BAR (< 768px)
          ========================================================================= */}
@@ -859,13 +802,8 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
 
 
 
-{/* EZRAB Floating Launcher — hidden in AI menus (Single-Mascot Rule):
-          each AI menu (Chat AI, DED Estimate AI, Magic AI) has its own
-          mascot/interface, so the floating assistant stays out.
-          AI Dokumen: visible on the main page, hidden ONLY while the
-          contextual analysis workspace is active. */}
-      {!['magic-ai', 'ai-assistant', 'ezrab-ai', 'ded-ai'].includes(activeMenu) &&
-        !(activeMenu === 'dokumen-ai' && docAiAnalysisActive) && (
+      {/* EZRAB Floating Launcher (Bottom-Right, safe from mobile bottom nav; hidden in AI views per Single-Mascot Rule) */}
+      {activeMenu !== 'magic-ai' && activeMenu !== 'ezrab-ai' && activeMenu !== 'ded-ai' && activeMenu !== 'dokumen-ai' && (
         <>
           <EzrabCoAssistantLauncher
             isOpen={coAssistantMode !== 'closed' && coAssistantMode !== 'minimized'}
@@ -898,6 +836,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
       )}
         </div>
       </div>
+      <FirstProjectChecklist />
     </div>
   );
 };

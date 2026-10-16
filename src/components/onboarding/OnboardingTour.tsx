@@ -22,6 +22,10 @@ import { GreetingMascot } from '../boot/GreetingMascot';
 
 export const ONBOARDING_FLAG = 'ezrab_onboarding_done_v1';
 export const ONBOARDING_OPEN_EVENT = 'ezrab:open-onboarding';
+/** Key legacy (OnboardingTourModal lama). Dimigrasikan idempoten ke ONBOARDING_FLAG. */
+export const LEGACY_ONBOARDING_FLAG = 'ezrab_onboarding_completed';
+/** Versi skema progres onboarding. Naikkan jika struktur berubah. */
+export const ONBOARDING_SCHEMA_VERSION = 1;
 
 const TOUR_STYLES = `
 @keyframes ezrab-tour-enter {
@@ -59,6 +63,26 @@ export function shouldShowOnboarding(): boolean {
   return !readFlag();
 }
 
+/**
+ * Migrasikan flag legacy ke flag baru secara idempoten.
+ * - Jika pengguna sudah menyelesaikan via sistem lama (`ezrab_onboarding_completed === 'true'`),
+ *   tandai selesai di sistem baru agar tur TIDAK muncul ulang.
+ * - Aman dipanggil berulang; tidak menimpa status yang sudah ada.
+ * - Mengembalikan true jika migrasi dilakukan.
+ */
+export function migrateLegacyOnboardingFlag(): boolean {
+  try {
+    if (window.localStorage.getItem(ONBOARDING_FLAG) === '1') return false; // sudah migrasi/selesai
+    if (window.localStorage.getItem(LEGACY_ONBOARDING_FLAG) === 'true') {
+      window.localStorage.setItem(ONBOARDING_FLAG, '1');
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 /** Tandai tur sebagai selesai. */
 export function markOnboardingDone(): void {
   writeFlag();
@@ -68,6 +92,7 @@ export function markOnboardingDone(): void {
 export function resetOnboarding(): void {
   try {
     window.localStorage.removeItem(ONBOARDING_FLAG);
+    window.localStorage.removeItem(LEGACY_ONBOARDING_FLAG);
   } catch {
     /* abaikan */
   }
@@ -167,7 +192,12 @@ const START_STEPS = [
 
 interface OnboardingTourProps {
   open: boolean;
-  onClose: () => void;
+  /**
+   * Dipanggil saat modal ditutup.
+   * `completed=true` jika pengguna menyelesaikan seluruh langkah
+   * ("Mulai Sekarang"), `false` jika dilewati/ditutup (Lewati/✕/Escape).
+   */
+  onClose: (completed: boolean) => void;
 }
 
 export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
@@ -180,23 +210,26 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
     if (open) setStep(0);
   }, [open ]);
 
-  const handleClose = useCallback(() => {
-    markOnboardingDone();
-    onClose();
-  }, [onClose]);
+  const handleClose = useCallback(
+    (completed: boolean) => {
+      markOnboardingDone();
+      onClose(completed);
+    },
+    [onClose]
+  );
 
   const next = useCallback(() => {
-    if (isLast) handleClose();
+    if (isLast) handleClose(true);
     else setStep((s) => s + 1);
   }, [isLast, handleClose]);
 
   const back = useCallback(() => setStep((s) => Math.max(0, s - 1)), []);
 
-  // Tutup dengan tombol Escape
+  // Tutup dengan tombol Escape (dianggap dilewati, bukan selesai)
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleClose();
+      if (e.key === 'Escape') handleClose(false);
       else if (e.key === 'ArrowRight') next();
       else if (e.key === 'ArrowLeft') back();
     };
@@ -257,7 +290,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
             ))}
           </div>
           <button
-            onClick={handleClose}
+            onClick={() => handleClose(false)}
             style={{
               fontSize: 13,
               fontWeight: 600,

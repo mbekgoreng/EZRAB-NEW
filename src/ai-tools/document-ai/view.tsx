@@ -1,5 +1,5 @@
 /**
-* AI DOKUMEN — Orchestrator (4 menu utama), dashboard design language.
+ * AI DOKUMEN — Orchestrator (4 menu utama), dashboard design language.
  *
  * 1. Dokumen Saya     — library dokumen (upload, cari, filter, hapus)
  * 2. Analisis Dokumen — workspace kontekstual (dibuka dari Dokumen Saya)
@@ -23,6 +23,7 @@ import { DocCreator } from './components/DocCreator';
 import { DocHistory } from './components/DocHistory';
 import { useI18n } from '../../i18n/I18nContext';
 import './document-ai.css';
+import { TutorialHelpButton } from '../../components/onboarding/tutorials/TutorialHelpButton';
 
 /* ------------------------------------------------------------------ */
 /* Tipe & helper bersama (dipakai komponen di ./components)            */
@@ -181,14 +182,18 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
       const next = i >= 0 ? prev.map((x) => (x.id === d.id ? d : x)) : [...prev, d];
       return next.sort((a, b) => b.updatedAt - a.updatedAt).slice(0, MAX_DRAFTS);
     });
+
   const openAnalyze = (doc: DocRecord) => {
     setActiveDoc(doc);
     setTab('analyze');
   };
 
   return (
-    <div className="docai-shell">
-<nav className="docai-tabs" aria-label={t('ai.doc.tab_menu_label')}>
+    <div className="docai-shell" data-tutorial="dokumenai-main">
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 12px 0' }}>
+        <TutorialHelpButton tutorialId="dokumen-ai" label="Buka tutorial AI Dokumen" />
+      </div>
+      <nav className="docai-tabs" aria-label={t('ai.doc.tab_menu_label')}>
         {[
           { id: 'library', label: t('ai.doc.tab_library'), icon: FolderOpen },
           { id: 'analyze', label: t('ai.doc.tab_analyze'), icon: ScanSearch },
@@ -213,7 +218,7 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
 
       <div className="docai-content">
         {tab === 'library' && (
-<DocLibrary docs={docs} onUpsertDoc={upsertDoc} onRemoveDoc={removeDoc} onAnalyze={openAnalyze} />
+          <DocLibrary docs={docs} onUpsertDoc={upsertDoc} onRemoveDoc={removeDoc} onAnalyze={openAnalyze} />
         )}
         {tab === 'analyze' && activeDoc && (
           <DocAnalyzer doc={activeDoc} docs={docs} onBack={() => setTab('library')} onAddHistory={addHistory} />
