@@ -27,7 +27,7 @@ const STEPS: SpotlightStep[] = [
     body: 'Gunakan navigasi ini untuk berpindah antara proyek, estimasi, AI, QTO, AHSP, laporan, dan fitur lain yang tersedia.',
   },
   {
-    target: '[data-tour="menu-dashboard"]',
+    target: '[data-tour="menu-proyek"]',
     title: 'Kelola Proyek',
     body: 'Mulai dengan membuat proyek baru atau membuka proyek yang sudah ada dari daftar proyek. Informasi proyek menjadi dasar pengelolaan estimasi dan pekerjaan selanjutnya.',
   },

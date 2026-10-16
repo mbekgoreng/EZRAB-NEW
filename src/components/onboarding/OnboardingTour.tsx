@@ -192,7 +192,12 @@ const START_STEPS = [
 
 interface OnboardingTourProps {
   open: boolean;
-  onClose: () => void;
+  /**
+   * Dipanggil saat modal ditutup.
+   * `completed=true` jika pengguna menyelesaikan seluruh langkah
+   * ("Mulai Sekarang"), `false` jika dilewati/ditutup (Lewati/✕/Escape).
+   */
+  onClose: (completed: boolean) => void;
 }
 
 export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
@@ -205,23 +210,26 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
     if (open) setStep(0);
   }, [open ]);
 
-  const handleClose = useCallback(() => {
-    markOnboardingDone();
-    onClose();
-  }, [onClose]);
+  const handleClose = useCallback(
+    (completed: boolean) => {
+      markOnboardingDone();
+      onClose(completed);
+    },
+    [onClose]
+  );
 
   const next = useCallback(() => {
-    if (isLast) handleClose();
+    if (isLast) handleClose(true);
     else setStep((s) => s + 1);
   }, [isLast, handleClose]);
 
   const back = useCallback(() => setStep((s) => Math.max(0, s - 1)), []);
 
-  // Tutup dengan tombol Escape
+  // Tutup dengan tombol Escape (dianggap dilewati, bukan selesai)
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleClose();
+      if (e.key === 'Escape') handleClose(false);
       else if (e.key === 'ArrowRight') next();
       else if (e.key === 'ArrowLeft') back();
     };
@@ -282,7 +290,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
             ))}
           </div>
           <button
-            onClick={handleClose}
+            onClick={() => handleClose(false)}
             style={{
               fontSize: 13,
               fontWeight: 600,

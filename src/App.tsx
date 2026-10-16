@@ -67,12 +67,12 @@ export const App: React.FC = () => {
     setTourPending(shouldShowOnboarding());
   }, []);
 
-  const handleTourClose = useCallback(() => {
-    const wasFirstTime = tourPending;
+  const handleTourClose = useCallback((completed: boolean) => {
     setTourPending(false);
     closeTour();
-    // Pengguna baru yang baru menyelesaikan welcome → tawarkan dashboard tour
-    if (wasFirstTime) {
+    // Welcome selesai (bukan dilewati) → tawarkan dashboard tour jika belum pernah dilihat.
+    // Berlaku juga saat welcome dibuka ulang via "Tutorial EZRAB" (bug 2026-10-16).
+    if (completed) {
       try {
         const seen = window.localStorage.getItem('ezrab_tour_seen_dashboard-tour');
         if (seen !== '1') {
@@ -82,7 +82,7 @@ export const App: React.FC = () => {
         /* abaikan */
       }
     }
-  }, [closeTour, tourPending]);
+  }, [closeTour]);
 
   const handleSetWorkspace = (val: boolean) => {
     navigateTo(val ? paths.dashboard() : paths.home());

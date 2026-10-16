@@ -19,6 +19,18 @@ export interface TutorialStep {
   target: string | null;
   title: string;
   body: string;
+  /**
+   * Route halaman tempat target berada (mis. paths.projects()).
+   * Jika diisi dan route aktif berbeda, player otomatis navigasi ke route
+   * ini lalu menunggu target muncul — langkah tidak lagi dilewati diam-diam.
+   * Kosongkan untuk target yang ada di semua halaman (mis. sidebar).
+   */
+  route?: string;
+  /**
+   * Tab pengaturan yang harus aktif (khusus route /app/settings,
+   * mis. 'help' untuk langkah yang menarget [data-tutorial-center]).
+   */
+  settingsTab?: string;
 }
 
 /** Kategori tutorial untuk Pusat Bantuan. */
@@ -69,31 +81,35 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
     category: 'proyek',
     route: paths.projects(),
     menuId: 'proyek',
-    version: 1,
+    version: 2,
     available: true,
     steps: [
       {
-        target: '[data-tour="menu-dashboard"]',
+        target: '[data-tour="menu-proyek"]',
         title: 'Mulai dari Proyek',
         body: 'Semua pekerjaan di EZRAB berpusat pada proyek. Buka halaman Proyek untuk melihat daftar atau membuat yang baru.',
       },
       {
         target: '[data-tutorial="proyek-create"]',
+        route: paths.projects(),
         title: 'Buat Proyek Baru',
         body: 'Klik tombol "Buat Proyek" untuk memulai. Kamu akan diminta memilih metode pembuatan terlebih dahulu.',
       },
       {
         target: '[data-tutorial="proyek-method"]',
+        route: paths.projects(),
         title: 'Pilih Metode Pembuatan',
         body: 'Tersedia beberapa metode: Magic AI (dibantu AI), Manual (isi sendiri), Volume Calculation (dari hitungan volume), atau Template (dari template RAB). Pilih yang paling sesuai dengan kebutuhanmu.',
       },
       {
         target: '[data-tutorial="proyek-method"]',
+        route: paths.projects(),
         title: 'Isi Identitas Proyek',
         body: 'Lengkapi nama proyek, klien, lokasi, dan informasi dasar lainnya. Identitas ini akan tampil di laporan dan dokumen.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Buka Workspace',
         body: 'Setelah proyek dibuat, buka workspace-nya. Dari sini kamu dapat mengakses RAB, estimasi, QTO, dan semua fitur proyek.',
       },
@@ -112,36 +128,41 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
     category: 'ai',
     route: paths.magicAi(),
     menuId: 'magic-ai',
-    version: 1,
+    version: 2,
     available: true,
     steps: [
       {
-        target: '[data-tour="menu-dashboard"]',
+        target: '[data-tour="menu-ded-ai"]',
         title: 'Buka Magic AI',
         body: 'Magic AI adalah asisten estimasi EZRAB. Kamu dapat membukanya dari halaman Proyek melalui tombol "Generate dengan AI", atau langsung via menu AI.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Tulis Instruksi yang Jelas',
         body: 'Jelaskan kebutuhan konstruksimumu dengan spesifik: jenis bangunan, ukuran, jumlah lantai, dan material yang diinginkan. Semakin jelas instruksi, semakin akurat hasilnya.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Pilih Jenis Konstruksi',
         body: 'Pastikan jenis konstruksi yang dipilih sesuai dengan UI yang tersedia. Pilihan ini memengaruhi analisis dan rekomendasi AI.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Periksa Parameter',
         body: 'Sebelum melanjutkan, periksa parameter yang digunakan AI: dimensi, satuan, dan asumsi. Sesuaikan jika ada yang tidak tepat.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Tinjau Hasil dengan Teliti',
         body: 'Hasil AI adalah titik awal, bukan angka final. Periksa setiap item: apakah volume masuk akal? Apakah harga satuannya wajar?',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Perbaiki Sebelum Menyimpan',
         body: 'Koreksi hasil yang kurang tepat sebelum menyimpan ke proyek. Kamu tetap memegang kendali penuh atas angka final.',
       },
@@ -155,7 +176,7 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
     category: 'ai',
     route: paths.dedAiEstimate(),
     menuId: 'ded-ai',
-    version: 1,
+    version: 2,
     available: true,
     steps: [
       {
@@ -165,31 +186,37 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Unggah Dokumen DED',
         body: 'Unggah file DED (gambar kerja/denah). Pastikan dokumen jelas dan terbaca agar hasil ekstraksi akurat.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Periksa Hasil Pembacaan',
         body: 'AI akan membaca dan mengekstrak informasi dari dokumen. Periksa apakah semua elemen penting terbaca dengan benar.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Validasi Dimensi & Volume',
         body: 'Periksa dimensi, satuan, dan volume hasil ekstraksi. Kesalahan di tahap ini akan berdampak pada seluruh RAB.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Tinjau Pencocokan AHSP',
         body: 'AI mencocokkan item pekerjaan dengan AHSP 2026. Periksa kecocokan setiap item — pastikan kode dan uraian sesuai.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Tangani Item Belum Cocok',
         body: 'Item yang belum cocok atau harganya belum tersedia akan ditandai. Kamu dapat mencari manual atau mengisi harga sendiri dengan transparan.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Setujui Secara Eksplisit',
         body: 'AI membantu ekstraksi dan pencocokan, tetapi perhitungan final mengikuti database dan engine EZRAB. Setujui hasil hanya setelah kamu yakin semuanya benar.',
       },
@@ -203,7 +230,7 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
     category: 'estimasi',
     route: paths.estimate(),
     menuId: 'rab-spreadsheet',
-    version: 1,
+    version: 2,
     available: true,
     steps: [
       {
@@ -213,6 +240,7 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Struktur Item Pekerjaan',
         body: 'Setiap item memiliki kode, uraian pekerjaan, satuan, volume, harga satuan, dan jumlah harga. Struktur ini mengikuti standar RAB konstruksi.',
       },
@@ -223,11 +251,13 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Harga Satuan & Total',
         body: 'Harga satuan berasal dari AHSP atau harga pasar. Total = Volume × Harga Satuan. Periksa setiap angka sebelum lanjut.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Koreksi & Validasi',
         body: 'Koreksi data yang kurang tepat langsung di spreadsheet. Validasi hasil sebelum ekspor — pastikan tidak ada item yang terlewat atau angkanya janggal.',
       },
@@ -241,7 +271,7 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
     category: 'data',
     route: paths.ahsp(),
     menuId: 'ahsp-2026',
-    version: 1,
+    version: 2,
     available: true,
     steps: [
       {
@@ -251,21 +281,25 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Cari Kode atau Nama',
         body: 'Cari berdasarkan kode pekerjaan atau kata kunci nama pekerjaan. Gunakan kata kunci spesifik untuk hasil yang tepat.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Pilih Domain yang Tepat',
         body: 'AHSP terbagi per domain (mis. Cipta Karya, SDA, Bina Marga). Pastikan domain sesuai dengan jenis pekerjaanmu.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Baca Koefisien',
         body: 'Setiap item AHSP memiliki koefisien material, upah, dan alat. Koefisien menunjukkan kebutuhan per satuan pekerjaan.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Periksa Harga & Sumber',
         body: 'Periksa harga setiap komponen dan sumber datanya. Tidak semua item memiliki harga lengkap — item tanpa harga akan ditandai dengan jelas.',
       },
@@ -279,7 +313,7 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
     category: 'estimasi',
     route: paths.qto(),
     menuId: 'qto',
-    version: 1,
+    version: 2,
     available: true,
     steps: [
       {
@@ -289,21 +323,25 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
       },
       {
         target: '[data-tutorial="qto-calc"]',
+        route: paths.qto(),
         title: 'Pilih Jenis Perhitungan',
         body: 'Tersedia banyak kalkulator per jenis pekerjaan (mis. bowplank, pondasi, kolom). Pilih yang sesuai dengan pekerjaanmu.',
       },
       {
         target: '[data-tutorial="qto-calc"]',
+        route: paths.qto(),
         title: 'Isi Dimensi dengan Benar',
         body: 'Masukkan panjang, lebar, tinggi, dan parameter lain sesuai gambar kerja. Perhatikan satuan setiap kolom isian.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Pahami Satuan Hasil',
         body: 'Hasil volume mengikuti satuan standar (m, m², m³, kg, dll). Pastikan satuan hasil cocok dengan satuan di RAB.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Periksa Duplikasi & Peringatan',
         body: 'Periksa apakah ada perhitungan ganda atau peringatan validasi. Hasil yang janggal perlu dikoreksi sebelum dipakai.',
       },
@@ -322,7 +360,7 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
     category: 'ai',
     route: paths.dokumenAi(),
     menuId: 'dokumen-ai',
-    version: 1,
+    version: 2,
     available: true,
     steps: [
       {
@@ -332,26 +370,31 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
       },
       {
         target: '[data-tutorial="dokumenai-main"]',
+        route: paths.dokumenAi(),
         title: 'Pustaka Dokumen',
         body: 'Tab Pustaka menyimpan semua dokumenmu (maksimal 50 dokumen). Dokumen tersimpan lokal di browser ini.',
       },
       {
         target: '[data-tutorial="dokumenai-main"]',
+        route: paths.dokumenAi(),
         title: 'Analisis Dokumen',
         body: 'Pilih dokumen lalu buka tab Analisis untuk meminta AI membaca dan menyimpulkan isinya. Tab ini aktif setelah ada dokumen dipilih.',
       },
       {
         target: '[data-tutorial="dokumenai-main"]',
+        route: paths.dokumenAi(),
         title: 'Buat Dokumen Baru',
         body: 'Tab Buat memungkinkanmu menyusun dokumen baru dengan bantuan AI, misalnya draft surat atau laporan.',
       },
       {
         target: '[data-tutorial="dokumenai-main"]',
+        route: paths.dokumenAi(),
         title: 'Riwayat',
         body: 'Tab Riwayat mencatat aktivitas dokumenmu. Tinjau kembali pekerjaan sebelumnya kapan saja.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Tinjau Sebelum Pakai',
         body: 'Hasil AI adalah draf yang perlu ditinjau. Periksa kebenaran isi sebelum memakai dokumen untuk keperluan resmi.',
       },
@@ -365,7 +408,7 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
     category: 'proyek',
     route: paths.management(),
     menuId: 'manajemen-proyek',
-    version: 1,
+    version: 2,
     available: true,
     steps: [
       {
@@ -375,21 +418,25 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
       },
       {
         target: '[data-tutorial="manajemen-main"]',
+        route: paths.management(),
         title: 'Pantau Progres',
         body: 'Lihat ringkasan progres proyek di bagian atas: status keseluruhan dan indikator keterlambatan atau ketepatan jadwal.',
       },
       {
         target: '[data-tutorial="manajemen-main"]',
+        route: paths.management(),
         title: 'Kelola Tugas Jadwal',
         body: 'Tambah, ubah, atau hapus tugas jadwal (schedule). Setiap tugas memiliki tanggal, durasi, dan status: tepat waktu, waspada, atau terlambat.',
       },
       {
         target: '[data-tutorial="manajemen-main"]',
+        route: paths.management(),
         title: 'Baca Kurva-S',
         body: 'Kurva-S membandingkan rencana vs realisasi dari waktu ke waktu. Deviasi negatif berarti progres di bawah rencana — perlu perhatian.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Data Tersimpan per Proyek',
         body: 'Jadwal dan progres tersimpan per proyek. Pastikan proyek yang benar sedang aktif sebelum mengubah data.',
       },
@@ -403,7 +450,7 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
     category: 'laporan',
     route: paths.reports(),
     menuId: 'laporan',
-    version: 1,
+    version: 2,
     available: true,
     steps: [
       {
@@ -413,21 +460,25 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
       },
       {
         target: '[data-tutorial="laporan-main"]',
+        route: paths.reports(),
         title: 'Tinjau Isi Laporan',
         body: 'Periksa kelengkapan data: item pekerjaan, volume, harga, dan total. Laporan mengikuti data proyek yang aktif.',
       },
       {
         target: '[data-tutorial="laporan-main"]',
+        route: paths.reports(),
         title: 'Atur Format Laporan',
         body: 'Sesuaikan pengaturan laporan: format tampilan, kop, dan opsi lain sebelum mengekspor.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Ekspor ke Excel / PDF',
         body: 'Ekspor laporan ke Excel untuk olah data lanjut, atau ke PDF untuk dokumen resmi. Tunggu hingga proses ekspor selesai.',
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Pastikan Data Final',
         body: 'Laporan mencerminkan kondisi data saat diekspor. Pastikan RAB dan volume sudah final sebelum mengekspor versi resmi.',
       },
@@ -441,7 +492,7 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
     category: 'proyek',
     route: paths.settings(),
     menuId: 'pengaturan',
-    version: 1,
+    version: 2,
     available: true,
     steps: [
       {
@@ -451,11 +502,15 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
       },
       {
         target: '[data-tutorial-center]',
+        route: paths.settings(),
+        settingsTab: 'help',
         title: 'Pusat Bantuan & Tutorial',
         body: 'Tab Bantuan berisi FAQ dan seluruh Tutorial Fitur. Cari tutorial berdasarkan kata kunci atau telusuri per kategori.',
       },
       {
         target: '[data-tutorial-center]',
+        route: paths.settings(),
+        settingsTab: 'help',
         title: 'Ulangi Tutorial Kapan Saja',
         body: 'Setiap tutorial dapat diulang tanpa batas. Status (belum dimulai / berjalan / selesai / dilewati) tercatat per tutorial.',
       },
@@ -466,6 +521,7 @@ const TUTORIALS: Record<string, FeatureTutorial> = {
       },
       {
         target: '[data-tour="dashboard"]',
+        route: paths.dashboard(),
         title: 'Data Tersimpan Lokal',
         body: 'Progres tutorial tersimpan di browser ini (localStorage). Menghapus data browser akan mengatur ulang progres.',
       },
@@ -592,6 +648,17 @@ export function resetTutorialProgress(id: string): void {
 
 /** Event untuk membuka tutorial dari mana saja. */
 export const OPEN_TUTORIAL_EVENT = 'ezrab:open-tutorial';
+
+/** Event untuk membuka tab pengaturan tertentu. Detail: { tab: string }. */
+export const OPEN_SETTINGS_TAB_EVENT = 'ezrab:open-settings-tab';
+
+export function openSettingsTab(tab: string): void {
+  try {
+    window.dispatchEvent(new CustomEvent(OPEN_SETTINGS_TAB_EVENT, { detail: { tab } }));
+  } catch {
+    /* abaikan */
+  }
+}
 
 export function openTutorial(id: string): void {
   try {

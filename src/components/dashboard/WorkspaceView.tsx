@@ -213,6 +213,20 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
     }
   }, [activities]);
 
+  // Event global: buka tab pengaturan tertentu (mis. dari tutorial fitur).
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { tab?: string } | undefined;
+      const tab = detail?.tab;
+      if (typeof tab === 'string' && tab) {
+        setPengaturanActiveTab(tab);
+        setActiveMenu('pengaturan');
+      }
+    };
+    window.addEventListener('ezrab:open-settings-tab', handler);
+    return () => window.removeEventListener('ezrab:open-settings-tab', handler);
+  }, [setActiveMenu]);
+
   // Dynamic calculations (100% genuine - 0 dummy data)
   const totalProjects = projects.length;
   const totalRab = projects.reduce((acc, p) => acc + (p.totalRab || 0), 0);

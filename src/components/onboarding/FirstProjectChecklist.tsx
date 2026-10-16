@@ -117,6 +117,61 @@ export function FirstProjectChecklist() {
   // Jika pengguna sudah punya proyek, tampilkan versi ringkas
   const showCompact = hasProjects && doneCount >= 3;
 
+  // Minimized: pill kompak agar tidak menutupi konten (bug 2026-10-16)
+  if (minimized) {
+    return (
+      <div
+        data-tour="checklist"
+        style={{
+          position: 'fixed',
+          bottom: 20,
+          right: 20,
+          zIndex: 9000,
+        }}
+      >
+        <button
+          onClick={handleToggleMinimize}
+          aria-label={`Buka checklist (${doneCount} dari ${items.length} selesai)`}
+          title="Buka checklist"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            height: 44,
+            padding: '0 16px',
+            borderRadius: 9999,
+            border: '1px solid var(--ez-color-border-line)',
+            background: 'var(--ez-color-surface)',
+            boxShadow: '0 8px 24px rgba(2, 6, 23, 0.14)',
+            cursor: 'pointer',
+            fontSize: 13,
+            fontWeight: 700,
+            color: 'var(--ezrab-text, #111827)',
+          }}
+        >
+          <span
+            aria-hidden="true"
+            style={{
+              width: 20,
+              height: 20,
+              borderRadius: 9999,
+              background: 'var(--ez-color-primary)',
+              color: '#fff',
+              fontSize: 11,
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            {doneCount}/{items.length}
+          </span>
+          {showCompact ? 'Progres Kamu' : 'Mulai dengan EZRAB'}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       data-tour="checklist"

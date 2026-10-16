@@ -669,6 +669,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={sub.filter}
                   type="button"
+                  data-tour={sub.filter === 'Semua Proyek' ? 'menu-proyek' : undefined}
                   onClick={() => {
                     onSelectProjectFilter(sub.filter);
                     onSelectMenu('proyek', null);

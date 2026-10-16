@@ -203,6 +203,58 @@ test('konstanta event terdefinisi', () => {
   assert.equal(OPEN_TUTORIAL_EVENT, 'ezrab:open-tutorial');
 });
 
+console.log('\n[7] Cakupan route langkah (anti skip-diam-diam)');
+test('langkah dengan target halaman-spesifik wajib punya route', () => {
+  // Selector yang ada di semua halaman app (sidebar dkk) tidak butuh route.
+  const GLOBAL_SELECTORS = [
+    '[data-tour="sidebar"]',
+    '[data-tour="help"]',
+    '[data-tour="checklist"]',
+  ];
+  const isGlobalMenu = (t: string | null) =>
+    t !== null && (/^\[data-tour="menu-[^"]+"\]$/.test(t) || GLOBAL_SELECTORS.includes(t));
+  for (const t of listTutorials()) {
+    t.steps.forEach((s, idx) => {
+      if (!isGlobalMenu(s.target)) {
+        assert.ok(
+          s.route,
+          `tutorial ${t.id} langkah ${idx + 1} ("${s.title}") target ${s.target} wajib punya route`
+        );
+      }
+    });
+  }
+});
+test('semua route langkah adalah path /app yang valid', () => {
+  for (const t of listTutorials()) {
+    t.steps.forEach((s, idx) => {
+      if (s.route) {
+        assert.ok(
+          s.route.startsWith('/app/') || s.route === '/app',
+          `tutorial ${t.id} langkah ${idx + 1}: route "${s.route}" harus path /app`
+        );
+      }
+    });
+  }
+});
+test('langkah settingsTab hanya untuk route settings', () => {
+  for (const t of listTutorials()) {
+    t.steps.forEach((s, idx) => {
+      if (s.settingsTab) {
+        assert.ok(
+          s.route === '/app/settings',
+          `tutorial ${t.id} langkah ${idx + 1}: settingsTab butuh route /app/settings`
+        );
+      }
+    });
+  }
+});
+test('setiap tutorial punya minimal 1 langkah tanpa navigasi (jangkar awal)', () => {
+  for (const t of listTutorials()) {
+    const first = t.steps[0];
+    assert.ok(first, `tutorial ${t.id} punya langkah`);
+  }
+});
+
 console.log('');
 if (failures > 0) {
   console.error(`Failed tests: ${failures}`);

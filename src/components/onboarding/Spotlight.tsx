@@ -19,12 +19,19 @@ export interface SpotlightStep {
 
 interface SpotlightProps {
   steps: SpotlightStep[];
-  /** index awal (default 0) */
+  /** index awal (default 0) — diabaikan jika `index` terkontrol diisi */
   startAt?: number;
+  /**
+   * Jika diisi, index langkah dikontrol parent (controlled mode).
+   * Parent wajib menangani `onRequestIndex` untuk Lanjut/Kembali.
+   */
+  index?: number;
   onDone: () => void;
   onSkip: () => void;
   /** dipanggil setiap kali langkah berubah */
   onStepChange?: (index: number) => void;
+  /** diminta saat user klik Lanjut/Kembali dalam controlled mode */
+  onRequestIndex?: (index: number) => void;
 }
 
 interface Rect {
@@ -59,8 +66,10 @@ function prefersReducedMotion(): boolean {
   }
 }
 
-export function Spotlight({ steps, startAt = 0, onDone, onSkip, onStepChange }: SpotlightProps) {
-  const [index, setIndex] = useState(startAt);
+export function Spotlight({ steps, startAt = 0, index: controlledIndex, onDone, onSkip, onStepChange, onRequestIndex }: SpotlightProps) {
+  const [internalIndex, setInternalIndex] = useState(startAt);
+  const controlled = typeof controlledIndex === 'number';
+  const index = controlled ? (controlledIndex as number) : internalIndex;
   const [rect, setRect] = useState<Rect | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -69,6 +78,18 @@ export function Spotlight({ steps, startAt = 0, onDone, onSkip, onStepChange }: 
 
   const step = steps[index];
 
+  /** Minta pindah langkah: via parent dalam controlled mode, internal jika tidak. */
+  const requestIndex = useCallback(
+    (updater: (i: number) => number) => {
+      if (controlled) {
+        onRequestIndex?.(updater(index));
+      } else {
+        setInternalIndex(updater);
+      }
+    },
+    [controlled, index, onRequestIndex]
+  );
+
   // Cari target; jika tidak ada, lewati langkah ini
   const resolveTarget = useCallback(() => {
     if (!step) return;
@@ -76,11 +97,11 @@ export function Spotlight({ steps, startAt = 0, onDone, onSkip, onStepChange }: 
     if (!r) {
       // Target hilang → lanjut ke langkah berikut, atau selesai jika terakhir
       if (index >= steps.length - 1) onDone();
-      else setIndex((i) => i + 1);
+      else requestIndex((i) => i + 1);
       return;
     }
     setRect(r);
-  }, [step, index, steps.length, onDone]);
+  }, [step, index, steps.length, onDone, requestIndex]);
 
   useLayoutEffect(() => {
     resolveTarget();
@@ -96,7 +117,7 @@ export function Spotlight({ steps, startAt = 0, onDone, onSkip, onStepChange }: 
           const r = getTargetRect(step.target);
           if (r) setRect(r);
           // jika target hilang saat tour berjalan, lewati
-          else if (index < steps.length - 1) setIndex((i) => i + 1);
+          else if (index < steps.length - 1) requestIndex((i) => i + 1);
           else onDone();
         }
       });
@@ -108,7 +129,7 @@ export function Spotlight({ steps, startAt = 0, onDone, onSkip, onStepChange }: 
       window.removeEventListener('resize', update);
       cancelAnimationFrame(raf);
     };
-  }, [step, index, steps.length, onDone]);
+  }, [step, index, steps.length, onDone, requestIndex]);
 
   // Posisikan tooltip di bawah/atas target, jaga dalam viewport
   useLayoutEffect(() => {
@@ -144,10 +165,10 @@ export function Spotlight({ steps, startAt = 0, onDone, onSkip, onStepChange }: 
 
   const next = useCallback(() => {
     if (isLast) onDone();
-    else setIndex((i) => i + 1);
-  }, [isLast, onDone]);
+    else requestIndex((i) => i + 1);
+  }, [isLast, onDone, requestIndex]);
 
-  const back = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
+  const back = useCallback(() => requestIndex((i) => Math.max(0, i - 1)), [requestIndex]);
 
   if (!step) return null;
 
