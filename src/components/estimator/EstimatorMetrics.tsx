@@ -33,15 +33,11 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
   totalVolume,
   lastSavedText = '—',
   isSaving = false,
-progressPercent = 68,
+  progressPercent = 68,
   completedItemsCount = 7,
   inProgressItemsCount = 0,
   pendingItemsCount = 0,
   unpricedCount = 0,
-progressPercent,
-  completedItemsCount,
-  inProgressItemsCount,
-  pendingItemsCount,
   versionDeltaPercent = null,
 }) => {
   // Data integrity: 0 is a valid value. Never use `||` fallbacks that replace
