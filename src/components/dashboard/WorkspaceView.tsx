@@ -42,6 +42,7 @@ import { DedAiEstimateView } from '../../ai-tools/ded-ai-estimate/view';
 import { DokumenAiView } from '../../ai-tools/document-ai/view';
 import { MagicAiSuperView } from '../magic-ai/MagicAiSuperView';
 import { ProjectsView } from '../projects/ProjectsView';
+import { FirstProjectChecklist } from '../onboarding/FirstProjectChecklist';
 import { RabEstimasiView } from '../rab/RabEstimasiView';
 import { ManajemenProyekView } from '../management/ManajemenProyekView';
 import { AhspExplorerView } from '../ahsp/AhspExplorerView';
@@ -92,7 +93,6 @@ import { RabTemplateService } from '../../services/rabTemplateService';
 import { RabTemplate } from '../../types/rabTemplate';
 import { CreateProjectModal } from '../projects/CreateProjectModal';
 import { TenderDocumentsView } from '../document/TenderDocumentsView';
-import { OnboardingTourModal } from './OnboardingTourModal';
 import { Sidebar } from '../layout/Sidebar';
 import { EnterpriseEntryPage } from '../enterprise/EnterpriseEntryPage';
 import { ProjectFinanceView } from '../finance/ProjectFinanceView';
@@ -203,7 +203,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
   // Legacy in-workspace onboarding modal — superseded by the App-level
   // OnboardingTour (src/components/onboarding/OnboardingTour.tsx), which is the
   // single first-run/replayable tutorial. Kept mounted but never auto-opens.
-  const [onboardingTourOpen, setOnboardingTourOpen] = useState(false);
 
   // Sync activities to localStorage
   useEffect(() => {
@@ -242,16 +241,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
       { text: `Proyek baru "${newProj.name}" (${newProj.creationMethod || 'manual'}) telah dibuat`, time: 'Baru saja', type: 'create' },
       ...prev,
     ]);
-  };
-
-  // Onboarding Complete Handler
-  const handleCompleteOnboarding = () => {
-    setOnboardingTourOpen(false);
-    try {
-      localStorage.setItem('ezrab_onboarding_completed', 'true');
-    } catch (e) {
-      console.error(e);
-    }
   };
 
   // "Ulangi Tutorial" dari Pengaturan me-dispatch `ezrab:open-onboarding`;
@@ -696,7 +685,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             <PricingSection onSelectPlan={() => setActiveMenu('magic-ai')} />
           </main>
         ) : (
-          <main style={{ padding: isNarrowMobile ? '16px 14px' : '24px 28px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <main data-tour="dashboard" style={{ padding: isNarrowMobile ? '16px 14px' : '24px 28px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <DashboardViewSwitcher
               projects={projects}
               onCreateProject={() => setCreateModalOpen(true)}
@@ -714,7 +703,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
               }}
               onOpenSubscription={() => setActiveMenu('subscription')}
               onResetData={handleResetData}
-              onOpenOnboarding={() => setOnboardingTourOpen(true)}
             />
           </main>
         )}
@@ -741,15 +729,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
       {/* =========================================================================
           LIGHTWEIGHT ONBOARDING TOUR MODAL (DISMISSIBLE / RE-TRIGGERABLE)
          ========================================================================= */}
-      <OnboardingTourModal
-        isOpen={onboardingTourOpen}
-        onClose={handleCompleteOnboarding}
-        onStartFirstProject={() => {
-          handleCompleteOnboarding();
-          setCreateModalOpen(true);
-        }}
-      />
-
       {/* =========================================================================
           MOBILE BOTTOM NAVIGATION BAR (< 768px)
          ========================================================================= */}
@@ -843,6 +822,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
       )}
         </div>
       </div>
+      <FirstProjectChecklist />
     </div>
   );
 };

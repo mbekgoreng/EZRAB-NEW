@@ -23,6 +23,7 @@ import { DocCreator } from './components/DocCreator';
 import { DocHistory } from './components/DocHistory';
 import { useI18n } from '../../i18n/I18nContext';
 import './document-ai.css';
+import { TutorialHelpButton } from '../../components/onboarding/tutorials/TutorialHelpButton';
 
 /* ------------------------------------------------------------------ */
 /* Tipe & helper bersama (dipakai komponen di ./components)            */
@@ -188,7 +189,10 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
   };
 
   return (
-    <div className="docai-shell">
+    <div className="docai-shell" data-tutorial="dokumenai-main">
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 12px 0' }}>
+        <TutorialHelpButton tutorialId="dokumen-ai" label="Buka tutorial AI Dokumen" />
+      </div>
       <nav className="docai-tabs" aria-label={t('ai.doc.tab_menu_label')}>
         {[
           { id: 'library', label: t('ai.doc.tab_library'), icon: FolderOpen },

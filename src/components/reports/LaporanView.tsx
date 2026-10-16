@@ -54,6 +54,7 @@ import { UnifiedProjectEngine } from '../../engine/unifiedProjectEngine';
 import { MASTER_AHSP_DATABASE } from '../../data/indonesianAHSP';
 
 import { useProject } from '../../context/ProjectContext';
+import { TutorialHelpButton } from '../onboarding/tutorials/TutorialHelpButton';
 
 interface LaporanViewProps {
   projects?: Project[];
@@ -658,6 +659,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
           </div>
 
           <h1
+            data-tutorial="laporan-main"
             style={{
               fontSize: '24px',
               fontWeight: 800,
@@ -668,6 +670,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
           >
             Laporan Proyek
           </h1>
+          <TutorialHelpButton tutorialId="laporan" label="Buka tutorial laporan" />
           <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
             Lihat dan kelola seluruh laporan proyek Anda dengan lengkap dan terstruktur.
           </p>

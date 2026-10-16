@@ -91,6 +91,7 @@ import { WeirCostService } from '../../engine/weir/weirCostService';
 import { WeirCostInput } from '../../engine/weir/weirTypes';
 import { WeirCostSummaryPanel } from '../weir/WeirCostSummaryPanel';
 import { WeirAuditTrailPanel } from '../weir/WeirAuditTrailPanel';
+import { TutorialHelpButton } from '../onboarding/tutorials/TutorialHelpButton';
 // PHASE 1 (audit §16): record every fabricated price. Recording only — no value is changed.
 import {
   recordFabricatedTotal,
@@ -1634,9 +1635,10 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, letterSpacing: '-0.01em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              <h1 data-tutorial="qto-calc" style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, letterSpacing: '-0.01em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 Volume Calculator
               </h1>
+              <TutorialHelpButton tutorialId="qto" label="Buka tutorial QTO" />
               <span
                 style={{
                   fontSize: '10px',

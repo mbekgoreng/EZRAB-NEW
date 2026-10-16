@@ -22,6 +22,10 @@ import { GreetingMascot } from '../boot/GreetingMascot';
 
 export const ONBOARDING_FLAG = 'ezrab_onboarding_done_v1';
 export const ONBOARDING_OPEN_EVENT = 'ezrab:open-onboarding';
+/** Key legacy (OnboardingTourModal lama). Dimigrasikan idempoten ke ONBOARDING_FLAG. */
+export const LEGACY_ONBOARDING_FLAG = 'ezrab_onboarding_completed';
+/** Versi skema progres onboarding. Naikkan jika struktur berubah. */
+export const ONBOARDING_SCHEMA_VERSION = 1;
 
 const TOUR_STYLES = `
 @keyframes ezrab-tour-enter {
@@ -59,6 +63,26 @@ export function shouldShowOnboarding(): boolean {
   return !readFlag();
 }
 
+/**
+ * Migrasikan flag legacy ke flag baru secara idempoten.
+ * - Jika pengguna sudah menyelesaikan via sistem lama (`ezrab_onboarding_completed === 'true'`),
+ *   tandai selesai di sistem baru agar tur TIDAK muncul ulang.
+ * - Aman dipanggil berulang; tidak menimpa status yang sudah ada.
+ * - Mengembalikan true jika migrasi dilakukan.
+ */
+export function migrateLegacyOnboardingFlag(): boolean {
+  try {
+    if (window.localStorage.getItem(ONBOARDING_FLAG) === '1') return false; // sudah migrasi/selesai
+    if (window.localStorage.getItem(LEGACY_ONBOARDING_FLAG) === 'true') {
+      window.localStorage.setItem(ONBOARDING_FLAG, '1');
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 /** Tandai tur sebagai selesai. */
 export function markOnboardingDone(): void {
   writeFlag();
@@ -68,6 +92,7 @@ export function markOnboardingDone(): void {
 export function resetOnboarding(): void {
   try {
     window.localStorage.removeItem(ONBOARDING_FLAG);
+    window.localStorage.removeItem(LEGACY_ONBOARDING_FLAG);
   } catch {
     /* abaikan */
   }

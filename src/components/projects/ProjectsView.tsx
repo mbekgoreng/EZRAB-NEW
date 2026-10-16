@@ -15,6 +15,7 @@ import { DraftProjectsView } from './DraftProjectsView';
 import { InProgressProjectsView } from './InProgressProjectsView';
 import { CompletedProjectsView } from './CompletedProjectsView';
 import { ArchivedProjectsView } from './ArchivedProjectsView';
+import { TutorialHelpButton } from '../onboarding/tutorials/TutorialHelpButton';
 
 interface ProjectsViewProps {
   projects: Project[];
@@ -154,6 +155,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <button
             onClick={onCreateProject}
+            data-tutorial="proyek-create"
             style={{
               height: '38px',
               padding: '0 16px',
@@ -176,6 +178,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             <Plus size={15} />
             <span>+ {t('proj.create_project')}</span>
           </button>
+          <TutorialHelpButton tutorialId="proyek" label="Buka tutorial membuat proyek" />
 
           <button
             onClick={onOpenMagicAi}

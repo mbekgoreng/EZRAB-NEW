@@ -281,6 +281,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       <aside
+        data-tour="sidebar"
         className="ezrab-workspace-sidebar"
         style={
           isMobile
@@ -619,6 +620,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={item.id}
                   type="button"
+                  data-tour={`menu-${item.id}`}
                   onClick={() => onSelectMenu(item.id)}
                   onMouseEnter={(e) => handleMouseEnterItem(e, item.label, item.id)}
                   onMouseLeave={handleMouseLeaveItem}
@@ -718,6 +720,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={sub.id}
                   type="button"
+                  data-tour={`menu-${sub.id}`}
                   onClick={() => onSelectMenu(sub.id)}
                   onMouseEnter={(e) => handleMouseEnterItem(e, sub.label, sub.id)}
                   onMouseLeave={handleMouseLeaveItem}
@@ -860,6 +863,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <button
                         key={sub.id}
                         type="button"
+                        data-tour={`menu-${sub.id}`}
                         onClick={() => onSelectMenu(sub.id)}
                         style={{
                           height: '28px',
@@ -908,6 +912,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   )}
                   <button
                     type="button"
+                    data-tour={`menu-${item.id}`}
                   onClick={() => onSelectMenu(item.id)}
                   onMouseEnter={(e) => handleMouseEnterItem(e, item.label, item.id)}
                   onMouseLeave={handleMouseLeaveItem}
@@ -1038,6 +1043,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <button
                               key={sub.id}
                               type="button"
+                              data-tour={`menu-${sub.id}`}
                               onClick={() => onSelectMenu(sub.id)}
                               style={{
                                 height: '32px',
@@ -1118,6 +1124,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Tutorial EZRAB */}
             <button
               type="button"
+              data-tour="help"
               onClick={() => {
                 if (typeof window !== 'undefined') {
                   window.dispatchEvent(new CustomEvent('ezrab:open-onboarding'));

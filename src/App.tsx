@@ -10,9 +10,15 @@ import { NotificationProvider } from './notifications/NotificationContext';
 import { BootLoadingScreen } from './components/boot/BootLoadingScreen';
 import {
   OnboardingTour,
+  migrateLegacyOnboardingFlag,
   shouldShowOnboarding,
   useOnboardingTour,
 } from './components/onboarding/OnboardingTour';
+import { OnboardingProvider } from './components/onboarding/OnboardingContext';
+import { ToastProvider } from './components/onboarding/Toast';
+import { OnboardingOrchestrator, openDashboardTour } from './components/onboarding/OnboardingOrchestrator';
+import { FeatureTutorialPlayer } from './components/onboarding/tutorials/FeatureTutorialPlayer';
+import { WelcomeSlotGuard } from './components/onboarding/tutorials/WelcomeSlotGuard';
 import { isAppPath, navigateTo, parseWorkspaceRoute, paths, routeForMenu, routeLabel } from './routing/routes';
 import { useBrowserLocation } from './routing/useBrowserLocation';
 
@@ -57,13 +63,26 @@ export const App: React.FC = () => {
 
   const handleBootDone = useCallback(() => {
     setBooted(true);
+    migrateLegacyOnboardingFlag(); // idempoten: pengguna lama tidak ditanya ulang
     setTourPending(shouldShowOnboarding());
   }, []);
 
   const handleTourClose = useCallback(() => {
+    const wasFirstTime = tourPending;
     setTourPending(false);
     closeTour();
-  }, [closeTour]);
+    // Pengguna baru yang baru menyelesaikan welcome → tawarkan dashboard tour
+    if (wasFirstTime) {
+      try {
+        const seen = window.localStorage.getItem('ezrab_tour_seen_dashboard-tour');
+        if (seen !== '1') {
+          setTimeout(() => openDashboardTour(), 600);
+        }
+      } catch {
+        /* abaikan */
+      }
+    }
+  }, [closeTour, tourPending]);
 
   const handleSetWorkspace = (val: boolean) => {
     navigateTo(val ? paths.dashboard() : paths.home());
@@ -169,15 +188,22 @@ export const App: React.FC = () => {
 
   return (
     <NotificationProvider>
-      {!booted && (
-        <BootLoadingScreen ready={bootReady} minDurationMs={1200} onDone={handleBootDone} />
-      )}
-      {booted && (
-        <>
-          {content}
-          <OnboardingTour open={tourOpen || tourPending} onClose={handleTourClose} />
-        </>
-      )}
+      <ToastProvider>
+        <OnboardingProvider>
+          {!booted && (
+            <BootLoadingScreen ready={bootReady} minDurationMs={1200} onDone={handleBootDone} />
+          )}
+          {booted && (
+            <>
+              {content}
+              <OnboardingTour open={tourOpen || tourPending} onClose={handleTourClose} />
+              <OnboardingOrchestrator />
+              <FeatureTutorialPlayer />
+              <WelcomeSlotGuard active={tourOpen || tourPending} />
+            </>
+          )}
+        </OnboardingProvider>
+      </ToastProvider>
     </NotificationProvider>
   );
 };
