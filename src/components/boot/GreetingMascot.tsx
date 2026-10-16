@@ -27,7 +27,7 @@ function MascotSvgFallback({ size }: { size: number }) {
       aria-label="Maskot EZRAB"
       style={{ display: 'block' }}
     >
-      <circle cx="60" cy="60" r="52" fill="var(--ezrab-blue-soft, #eff6ff)" />
+      <circle cx="60" cy="60" r="52" fill="var(--ezrab-blue-soft, var(--ez-hue-blue-bg))" />
       {/* kepala robot */}
       <rect x="38" y="42" width="44" height="40" rx="14" fill="var(--ezrab-blue, #2563eb)" />
       {/* helm proyek */}

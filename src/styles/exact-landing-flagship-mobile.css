@@ -103,7 +103,7 @@
     gap: 13px;
     min-height: 48px;
     padding: 0 12px;
-    color: #e2e8f0;
+    color: #E2E8F0;
     font-size: 15px;
     font-weight: 650;
     text-decoration: none;
@@ -244,7 +244,7 @@
   .ez-stacked-showcase-section {
     height: auto !important;
     padding: 68px 12px;
-    background: radial-gradient(circle at 50% 0%, rgba(219, 234, 254, .72), transparent 24rem), #f8fafc;
+    background: radial-gradient(circle at 50% 0%, rgba(219, 234, 254, .72), transparent 24rem), var(--ez-hue-slate-bg);
   }
   .ez-stacked-sticky-viewport {
     position: relative !important;

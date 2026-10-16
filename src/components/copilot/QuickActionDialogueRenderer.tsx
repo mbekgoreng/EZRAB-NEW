@@ -113,9 +113,9 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: '7px',
-            backgroundColor: '#EFF6FF',
-            color: '#2563EB',
-            border: '1px solid #DBEAFE'
+            backgroundColor: 'var(--ez-hue-blue-bg)',
+            color: 'var(--ez-color-primary)',
+            border: '1px solid var(--ez-hue-blue-bg-deep)'
           }}>
             <Sparkles className="h-3.5 w-3.5" />
           </div>
@@ -130,12 +130,12 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
         {data.requiresConfirmation && (
           <span style={{
             borderRadius: '9999px',
-            backgroundColor: '#FFFBEB',
+            backgroundColor: 'var(--ez-hue-amber-bg)',
             padding: '2px 8px',
             fontSize: '10px',
             fontWeight: 700,
-            color: '#D97706',
-            border: '1px solid #FDE68A'
+            color: 'var(--ez-hue-amber-text-deep)',
+            border: '1px solid var(--ez-hue-amber-border)'
           }}>
             Perlu Konfirmasi
           </span>
@@ -147,7 +147,7 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
         <div style={{
           marginBottom: '12px',
           fontSize: '12.5px',
-          color: '#334155',
+          color: 'var(--ez-color-text-body)',
           lineHeight: '1.55',
           whiteSpace: 'pre-line'
         }}>
@@ -170,7 +170,7 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
               >
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A' }}>
+                    <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                       {choice.label}
                     </span>
                     {choice.badge && (
@@ -187,8 +187,8 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
                 </div>
 
                 <div className="ezrab-card-footer">
-                  <span style={{ fontSize: '10.5px', color: '#2563EB', fontWeight: 600 }}>Pilih Opsi</span>
-                  <ArrowRight className="h-3 w-3" style={{ color: '#2563EB' }} />
+                  <span style={{ fontSize: '10.5px', color: 'var(--ez-color-primary)', fontWeight: 600 }}>Pilih Opsi</span>
+                  <ArrowRight className="h-3 w-3" style={{ color: 'var(--ez-color-primary)' }} />
                 </div>
               </button>
             ))}
@@ -243,7 +243,7 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
       {/* 5. STEP C: Preview & Diff Card */}
       {data.previewData && !isConfirmed && (
         <div className="ezrab-dialogue-preview-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#D97706', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-amber-text-deep)', marginBottom: '8px' }}>
             <ShieldAlert className="h-4 w-4" />
             <span>Pratinjau Perubahan (Diff Preview)</span>
           </div>
@@ -251,12 +251,12 @@ export const QuickActionDialogueRenderer: React.FC<QuickActionDialogueRendererPr
           {data.previewData.diffs && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {data.previewData.diffs.map((diff, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', padding: '4px 0', fontSize: '11px' }}>
-                  <span style={{ color: '#64748B' }}>{diff.label}</span>
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ez-color-border-line)', padding: '4px 0', fontSize: '11px' }}>
+                  <span style={{ color: 'var(--ez-color-text-muted)' }}>{diff.label}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'monospace' }}>
                     <span style={{ color: '#94A3B8', textDecoration: 'line-through' }}>{String(diff.before)}</span>
                     <ArrowRight className="h-3 w-3" style={{ color: '#94A3B8' }} />
-                    <span style={{ fontWeight: 700, color: '#059669' }}>{String(diff.after)}</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-hue-green-text)' }}>{String(diff.after)}</span>
                   </div>
                 </div>
               ))}

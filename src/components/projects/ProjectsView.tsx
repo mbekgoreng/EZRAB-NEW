@@ -3,14 +3,13 @@ import {
   Folder,
   Plus,
   Sparkles,
-  ChevronDown,
-  Layers,
   FileText,
   Play,
   CheckCircle2,
   Archive,
 } from 'lucide-react';
 import { Project } from '../../types';
+import { useI18n } from '../../i18n/I18nContext';
 import { AllProjectsView, type ActivityItem } from './AllProjectsView';
 import { DraftProjectsView } from './DraftProjectsView';
 import { InProgressProjectsView } from './InProgressProjectsView';
@@ -38,6 +37,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   initialFilter = 'Semua Proyek',
   onFilterChange,
 }) => {
+  const { t } = useI18n();
   const [filterType, setFilterTypeState] = useState(initialFilter);
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
 
@@ -60,11 +60,11 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
   const archiveCount = projects.filter((p) => p.status === 'archived' || p.isArchived).length;
 
   const tabs = [
-    { id: 'Semua Proyek', label: 'Semua Proyek', count: totalProjects, icon: Folder },
-    { id: 'Draft', label: 'Draft', count: draftCount, icon: FileText },
-    { id: 'Sedang Dikerjakan', label: 'Sedang Dikerjakan', count: inProgressCount, icon: Play },
-    { id: 'Selesai', label: 'Selesai', count: completedCount, icon: CheckCircle2 },
-    { id: 'Arsip', label: 'Arsip', count: archiveCount, icon: Archive },
+    { id: 'Semua Proyek', label: t('proj.tab_all'), count: totalProjects, icon: Folder },
+    { id: 'Draft', label: t('proj.tab_draft'), count: draftCount, icon: FileText },
+    { id: 'Sedang Dikerjakan', label: t('proj.tab_active'), count: inProgressCount, icon: Play },
+    { id: 'Selesai', label: t('proj.tab_done'), count: completedCount, icon: CheckCircle2 },
+    { id: 'Arsip', label: t('proj.tab_archived'), count: archiveCount, icon: Archive },
   ];
 
   // Header Title and Subtitle based on active menu
@@ -72,30 +72,30 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     switch (filterType) {
       case 'Draft':
         return {
-          title: 'Rancangan Proyek & Pra-Estimasi (Draft)',
-          subtitle: 'Ruang kerja persiapan proyek, survei data volume awal, dan simulasi anggaran sebelum disetujui.',
+          title: t('proj.head_draft_t'),
+          subtitle: t('proj.head_draft_s'),
         };
       case 'Sedang Dikerjakan':
       case 'Proyek Berjalan':
         return {
-          title: 'Proyek Aktif & Monitoring Pelaksanaan Lapangan',
-          subtitle: 'Pantau progres fisik real-time, Kurva S, jadwal pelaksanaan, deviasi mingguan, dan arus kas lapangan.',
+          title: t('proj.head_active_t'),
+          subtitle: t('proj.head_active_s'),
         };
       case 'Selesai':
         return {
-          title: 'Proyek Selesai & Serah Terima (Closeout)',
-          subtitle: 'Rekapitulasi proyek tuntas 100%, evaluasi laba rugi realisasi anggaran, dan Berita Acara Serah Terima (BAST).',
+          title: t('proj.head_done_t'),
+          subtitle: t('proj.head_done_s'),
         };
       case 'Arsip':
         return {
-          title: 'Gudang Arsip & Data Historis Proyek',
-          subtitle: 'Penyimpanan arsip aman proyek masa lalu, benchmark harga historis, dan fungsi pemulihan data (Restore).',
+          title: t('proj.head_archived_t'),
+          subtitle: t('proj.head_archived_s'),
         };
       case 'Semua Proyek':
       default:
         return {
-          title: 'Direktori & Portofolio Semua Proyek',
-          subtitle: 'Pusat kendali seluruh siklus proyek konstruksi dari pra-desain, pelaksanaan, hingga serah terima.',
+          title: t('proj.head_all_t'),
+          subtitle: t('proj.head_all_s'),
         };
     }
   };
@@ -106,75 +106,46 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
     <div
       style={{
         width: '100%',
-        maxWidth: '1680px',
+        maxWidth: '1440px',
         margin: '0 auto',
         display: 'flex',
         flexDirection: 'column',
-        gap: '20px',
-        color: '#0F172A',
-        fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+        gap: '22px',
+        color: 'var(--ez-color-text-primary)',
+        fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
       }}
     >
+      <style>{`
+        @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
+      `}</style>
       {/* =========================================================================
           1. HEADER & INTERACTIVE NAVIGATION TABS
          ========================================================================= */}
       <div
+        className="ezdb-anim"
         style={{
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '16px',
+          animation: 'ezdb-rise 0.6s 0s both',
         }}
       >
         <div>
-          {/* Breadcrumb */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '12px',
-              fontWeight: 500,
-              color: '#64748B',
-              marginBottom: '4px',
-            }}
-          >
-            <span
-              onClick={() => onNavigateToTab && onNavigateToTab('dashboard')}
-              style={{ cursor: 'pointer', transition: 'color 0.15s' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#2563EB')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#64748B')}
-            >
-              Dashboard
-            </span>
-            <span style={{ color: '#94A3B8' }}>&gt;</span>
-            <span
-              onClick={() => setFilterType('Semua Proyek')}
-              style={{ cursor: 'pointer', color: filterType === 'Semua Proyek' ? '#2563EB' : '#64748B' }}
-            >
-              Proyek
-            </span>
-            {filterType !== 'Semua Proyek' && (
-              <>
-                <span style={{ color: '#94A3B8' }}>&gt;</span>
-                <span style={{ color: '#2563EB', fontWeight: 600 }}>{filterType}</span>
-              </>
-            )}
-          </div>
-
           <h1
             style={{
               fontSize: '24px',
               fontWeight: 800,
-              letterSpacing: '-0.025em',
-              color: '#0F172A',
+              letterSpacing: '-0.3px',
+              color: 'var(--ez-color-text-primary)',
               margin: '0 0 4px 0',
             }}
           >
             {headerInfo.title}
           </h1>
-          <p style={{ fontSize: '13px', color: '#64748B', margin: 0 }}>
+          <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
             {headerInfo.subtitle}
           </p>
         </div>
@@ -186,24 +157,24 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             style={{
               height: '38px',
               padding: '0 16px',
-              borderRadius: '10px',
-              background: '#2563EB',
-              color: '#ffffff',
-              fontSize: '12.5px',
-              fontWeight: 600,
+              borderRadius: 'var(--ez-radius-control)',
+              background: 'var(--ez-color-primary)',
+              color: '#FFFFFF',
+              fontSize: '14px',
+              fontWeight: 700,
               border: 'none',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: '0 4px 12px rgba(37,99,235,0.22)',
+              boxShadow: '0 4px 14px rgba(37,99,235,0.28)',
               transition: 'background 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#1D4ED8')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#2563EB')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-primary-hover)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-primary)')}
           >
             <Plus size={15} />
-            <span>+ Buat Proyek</span>
+            <span>+ {t('proj.create_project')}</span>
           </button>
 
           <button
@@ -211,24 +182,24 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
             style={{
               height: '38px',
               padding: '0 14px',
-              borderRadius: '10px',
-              background: '#ffffff',
-              border: '1px solid #BFDBFE',
-              color: '#2563EB',
-              fontSize: '12.5px',
-              fontWeight: 600,
+              borderRadius: 'var(--ez-radius-control)',
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-color-border-line)',
+              color: 'var(--ez-color-primary)',
+              fontSize: '14px',
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#EFF6FF')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-hue-blue-bg)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
           >
-            <Sparkles size={15} color="#2563EB" />
-            <span>Generate dengan AI</span>
+            <Sparkles size={15} color="var(--ez-hue-blue-text)" />
+            <span>{t('proj.generate_ai')}</span>
           </button>
         </div>
       </div>
@@ -237,13 +208,15 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
           2. MENU TAB SWITCHER PILLS
          ========================================================================= */}
       <div
+        className="ezdb-anim"
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
           overflowX: 'auto',
           paddingBottom: '2px',
-          borderBottom: '1px solid #E2E8F0',
+          borderBottom: '1px solid var(--ez-color-border-soft)',
+          animation: 'ezdb-rise 0.6s 0.08s both',
         }}
       >
         {tabs.map((tab) => {
@@ -260,7 +233,7 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 border: 'none',
                 background: 'transparent',
                 borderBottom: isActive ? '3px solid #2563EB' : '3px solid transparent',
-                color: isActive ? '#2563EB' : '#64748B',
+                color: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                 fontSize: '13px',
                 fontWeight: isActive ? 750 : 600,
                 cursor: 'pointer',
@@ -271,16 +244,17 @@ export const ProjectsView: React.FC<ProjectsViewProps> = ({
                 transition: 'all 0.15s ease',
               }}
             >
-              <TabIcon size={16} color={isActive ? '#2563EB' : '#94A3B8'} />
+              <TabIcon size={16} color={isActive ? '#2563EB' : '#C9C9C2'} />
               <span>{tab.label}</span>
               <span
                 style={{
                   fontSize: '11px',
                   fontWeight: 700,
-                  padding: '1px 7px',
-                  borderRadius: '999px',
-                  background: isActive ? '#DBEAFE' : '#F1F5F9',
-                  color: isActive ? '#1D4ED8' : '#64748B',
+                  padding: '5px 12px',
+                  borderRadius: 'var(--ez-radius-pill)',
+                  background: isActive ? 'var(--ez-pastel-sky)' : 'var(--ez-color-surface-tertiary)',
+                  color: isActive ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-color-text-muted)',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {tab.count}

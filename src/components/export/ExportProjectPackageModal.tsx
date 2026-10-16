@@ -298,13 +298,13 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
           width: '100%',
           maxWidth: '920px',
           maxHeight: '92vh',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -314,11 +314,11 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
         <div
           style={{
             padding: '18px 24px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
+            background: 'linear-gradient(180deg, #FFFFFF 0%, var(--ez-hue-slate-bg) 100%)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -327,19 +327,19 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 width: '42px',
                 height: '42px',
                 borderRadius: '10px',
-                backgroundColor: '#EFF6FF',
-                border: '1px solid #DBEAFE',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-bg-deep)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
               }}
             >
               <FileSpreadsheet size={22} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#0F172A' }}>
+                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                   Export Paket Dokumen Proyek
                 </h3>
                 <span
@@ -347,16 +347,16 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                     fontSize: '11px',
                     fontWeight: 700,
                     padding: '2px 8px',
-                    borderRadius: '999px',
-                    backgroundColor: '#EFF6FF',
-                    color: '#2563EB',
-                    border: '1px solid #BFDBFE',
+                    borderRadius: 'var(--ez-radius-pill)',
+                    backgroundColor: 'var(--ez-hue-blue-bg)',
+                    color: 'var(--ez-color-primary)',
+                    border: '1px solid var(--ez-hue-blue-border)',
                   }}
                 >
                   {currentProject.currentVersion || 'Rev 00'}
                 </span>
               </div>
-              <p style={{ margin: '2px 0 0 0', fontSize: '12.5px', color: '#64748B' }}>
+              <p style={{ margin: '2px 0 0 0', fontSize: '12.5px', color: 'var(--ez-color-text-muted)' }}>
                 {currentProject.name} • {currentProject.location || 'Indonesia'}
               </p>
             </div>
@@ -387,16 +387,16 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               height: '32px',
               borderRadius: '8px',
               border: 'none',
-              backgroundColor: '#F1F5F9',
-              color: '#64748B',
+              backgroundColor: 'var(--ez-color-surface-tertiary)',
+              color: 'var(--ez-color-text-muted)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#E2E8F0')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#F1F5F9')}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-border-line)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-tertiary)')}
           >
             <X size={18} />
           </button>
@@ -410,10 +410,10 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
           {/* SECTION A: QUICK PRESETS */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 800, color: '#475569', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              <label style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-slate)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                 PILIH PRESET PAKET RESMI (QUICK PRESETS)
               </label>
-              <span style={{ fontSize: '11.5px', color: '#64748B' }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
                 {activeSheetCount} dari 15 lembar kerja aktif
               </span>
             </div>
@@ -435,13 +435,13 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                       padding: '12px',
                       borderRadius: '10px',
                       background: isSelected
-                        ? '#EFF6FF'
-                        : '#FFFFFF',
+                        ? 'var(--ez-hue-blue-bg)'
+                        : 'var(--ez-color-surface)',
                       border: isSelected
                         ? '2px solid #2563EB'
                         : isMc0
                         ? '1px solid #FCD34D'
-                        : '1px solid #E2E8F0',
+                        : '1px solid var(--ez-color-border-line)',
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
                       position: 'relative',
@@ -450,10 +450,10 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                       gap: '4px',
                     }}
                     onMouseEnter={(e) => {
-                      if (!isSelected) e.currentTarget.style.borderColor = '#CBD5E1';
+                      if (!isSelected) e.currentTarget.style.borderColor = 'var(--ez-color-border)';
                     }}
                     onMouseLeave={(e) => {
-                      if (!isSelected) e.currentTarget.style.borderColor = isMc0 ? '#FCD34D' : '#E2E8F0';
+                      if (!isSelected) e.currentTarget.style.borderColor = isMc0 ? '#FCD34D' : 'var(--ez-color-border)';
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -463,20 +463,20 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                           fontWeight: 800,
                           padding: '1px 6px',
                           borderRadius: '4px',
-                          background: isMc0 ? '#FEF3C7' : isComplete ? '#DCFCE7' : isSelected ? '#DBEAFE' : '#F1F5F9',
-                          color: isMc0 ? '#B45309' : isComplete ? '#15803D' : isSelected ? '#1D4ED8' : '#64748B',
+                          background: isMc0 ? 'var(--ez-hue-amber-bg-deep)' : isComplete ? 'var(--ez-hue-green-bg-deep)' : isSelected ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
+                          color: isMc0 ? 'var(--ez-hue-amber-text)' : isComplete ? 'var(--ez-hue-green-text)' : isSelected ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                         }}
                       >
                         {p.badge}
                       </span>
-                      {isSelected && <Check size={14} color="#2563EB" strokeWidth={3} />}
+                      {isSelected && <Check size={14} color="var(--ez-hue-blue-text)" strokeWidth={3} />}
                     </div>
 
-                    <div style={{ fontSize: '13px', fontWeight: 750, color: '#0F172A', marginTop: '2px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 750, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
                       {p.name}
                     </div>
 
-                    <div style={{ fontSize: '11px', color: '#64748B', lineHeight: 1.3, minHeight: '28px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', lineHeight: 1.3, minHeight: '28px' }}>
                       {p.sheets.length} dokumen • {p.recommendedAudience}
                     </div>
                   </button>
@@ -492,11 +492,11 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               style={{
                 padding: '14px',
                 borderRadius: '10px',
-                background: '#F8FAFC',
-                border: '1px solid #E2E8F0',
+                background: 'var(--ez-color-surface-secondary)',
+                border: '1px solid var(--ez-color-border-line)',
               }}
             >
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 750, color: '#334155', marginBottom: '8px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 750, color: 'var(--ez-color-text-body)', marginBottom: '8px' }}>
                 FORMAT DOKUMEN EXPORT
               </label>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -513,9 +513,9 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                       flex: 1,
                       padding: '8px 10px',
                       borderRadius: '8px',
-                      border: exportFormat === id ? '2px solid #2563EB' : '1px solid #CBD5E1',
-                      background: exportFormat === id ? '#FFFFFF' : '#F8FAFC',
-                      color: exportFormat === id ? '#2563EB' : '#475569',
+                      border: exportFormat === id ? '2px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
+                      background: exportFormat === id ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)',
+                      color: exportFormat === id ? 'var(--ez-color-primary)' : 'var(--ez-color-text-slate)',
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
@@ -526,7 +526,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                   >
                     <Icon size={18} />
                     <span style={{ fontSize: '12px', fontWeight: 700 }}>{label}</span>
-                    <span style={{ fontSize: '9.5px', color: '#64748B' }}>{desc}</span>
+                    <span style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)' }}>{desc}</span>
                   </button>
                 ))}
               </div>
@@ -537,11 +537,11 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               style={{
                 padding: '14px',
                 borderRadius: '10px',
-                background: '#F8FAFC',
-                border: '1px solid #E2E8F0',
+                background: 'var(--ez-color-surface-secondary)',
+                border: '1px solid var(--ez-color-border-line)',
               }}
             >
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 750, color: '#334155', marginBottom: '8px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 750, color: 'var(--ez-color-text-body)', marginBottom: '8px' }}>
                 PERUNTUKAN DOKUMEN (RECIPIENT)
               </label>
               <select
@@ -551,12 +551,12 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                   width: '100%',
                   height: '36px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
-                  background: '#FFFFFF',
+                  border: '1px solid var(--ez-hue-slate-border)',
+                  background: 'var(--ez-color-surface)',
                   padding: '0 10px',
                   fontSize: '12.5px',
                   fontWeight: 600,
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   outline: 'none',
                 }}
               >
@@ -566,7 +566,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 <option value="contractor">Kontraktor Pelaksana / Tender (Commercial)</option>
                 <option value="internal">Tim Internal Estimator (Audit & Database)</option>
               </select>
-              <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: '#64748B' }}>
+              <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
                 Layout & detail disusun proporsional sesuai kebutuhan pihak penerima.
               </p>
             </div>
@@ -577,8 +577,8 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
             style={{
               padding: '12px 16px',
               borderRadius: '10px',
-              background: workspaceBranding?.canUploadLogo ? '#F0FDF4' : '#FFFBEB',
-              border: `1px solid ${workspaceBranding?.canUploadLogo ? '#BBF7D0' : '#FDE68A'}`,
+              background: workspaceBranding?.canUploadLogo ? 'var(--ez-hue-green-bg)' : 'var(--ez-hue-amber-bg)',
+              border: `1px solid ${workspaceBranding?.canUploadLogo ? 'var(--ez-hue-green-border)' : 'var(--ez-hue-amber-border)'}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -589,7 +589,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               <Building size={18} color={workspaceBranding?.canUploadLogo ? '#16A34A' : '#D97706'} />
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                     Kop Dokumen: {effectiveCompany.name}
                   </span>
                   <span
@@ -598,14 +598,14 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                       fontWeight: 800,
                       padding: '1px 6px',
                       borderRadius: '4px',
-                      background: workspaceBranding?.canUploadLogo ? '#DCFCE7' : '#FEF3C7',
-                      color: workspaceBranding?.canUploadLogo ? '#15803D' : '#B45309',
+                      background: workspaceBranding?.canUploadLogo ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-amber-bg-deep)',
+                      color: workspaceBranding?.canUploadLogo ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-amber-text)',
                     }}
                   >
                     {workspaceBranding?.canUploadLogo ? 'PAID • BEBAS WATERMARK' : 'FREE • WATERMARK EZRAB WAJIB'}
                   </span>
                 </div>
-                <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#64748B' }}>
+                <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
                   {workspaceBranding?.canUploadLogo
                     ? (effectiveCompany.logo ? 'Logo perusahaan kustom aktif pada seluruh halaman.' : 'Belum ada logo kustom, fallback logo resmi EZRAB aktif.')
                     : 'Watermark resmi EZRAB tertanam pada setiap halaman PDF (Lisensi Free/Trial).'}
@@ -620,11 +620,11 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 height: '32px',
                 padding: '0 12px',
                 borderRadius: '6px',
-                border: '1px solid #CBD5E1',
-                background: '#FFFFFF',
+                border: '1px solid var(--ez-hue-slate-border)',
+                background: 'var(--ez-color-surface)',
                 fontSize: '11.5px',
                 fontWeight: 600,
-                color: '#334155',
+                color: 'var(--ez-color-text-body)',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 display: 'flex',
@@ -632,7 +632,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 gap: '5px',
               }}
             >
-              <Sparkles size={13} color="#2563EB" />
+              <Sparkles size={13} color="var(--ez-hue-blue-text)" />
               <span>Atur Profil & Logo Perusahaan</span>
             </button>
           </div>
@@ -641,18 +641,18 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
           <div
             style={{
               padding: '16px',
-              borderRadius: '12px',
-              background: '#FFFFFF',
-              border: '1px solid #E2E8F0',
+              borderRadius: 'var(--ez-radius-control)',
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-color-border-line)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Layers size={16} color="#2563EB" />
-                <span style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>
+                <Layers size={16} color="var(--ez-hue-blue-text)" />
+                <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                   Daftar Lembar Kerja yang Disertakan
                 </span>
-                <span style={{ fontSize: '11.5px', color: '#64748B' }}>
+                <span style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
                   ({activeSheetCount} dari {ALL_EXPORT_SHEETS.length} terpilih)
                 </span>
               </div>
@@ -666,7 +666,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                     border: 'none',
                     fontSize: '11.5px',
                     fontWeight: 700,
-                    color: '#2563EB',
+                    color: 'var(--ez-color-primary)',
                     cursor: 'pointer',
                   }}
                 >
@@ -681,7 +681,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                     border: 'none',
                     fontSize: '11.5px',
                     fontWeight: 700,
-                    color: '#64748B',
+                    color: 'var(--ez-color-text-muted)',
                     cursor: 'pointer',
                   }}
                 >
@@ -712,8 +712,8 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                     style={{
                       padding: '8px 10px',
                       borderRadius: '8px',
-                      border: isChecked ? '1px solid #BFDBFE' : '1px solid #E2E8F0',
-                      background: isChecked ? '#EFF6FF' : '#F8FAFC',
+                      border: isChecked ? '1px solid var(--ez-hue-blue-border)' : '1px solid var(--ez-color-border-line)',
+                      background: isChecked ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-secondary)',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'flex-start',
@@ -729,7 +729,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                     />
                     <div style={{ flexGrow: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '10px', fontWeight: 800, color: '#2563EB' }}>
+                        <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-primary)' }}>
                           {sheet.code}
                         </span>
                         {isBoqMc0 && (
@@ -737,8 +737,8 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                             style={{
                               fontSize: '9px',
                               fontWeight: 800,
-                              background: '#FEF3C7',
-                              color: '#B45309',
+                              background: 'var(--ez-hue-amber-bg-deep)',
+                              color: 'var(--ez-hue-amber-text)',
                               padding: '0 4px',
                               borderRadius: '3px',
                             }}
@@ -751,7 +751,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                         style={{
                           fontSize: '11.5px',
                           fontWeight: 700,
-                          color: isChecked ? '#0F172A' : '#64748B',
+                          color: isChecked ? 'var(--ez-color-text-primary)' : 'var(--ez-color-text-muted)',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -771,13 +771,13 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                   marginTop: '10px',
                   padding: '8px 12px',
                   borderRadius: '6px',
-                  background: '#FEF3C7',
+                  background: 'var(--ez-hue-amber-bg-deep)',
                   border: '1px solid #FCD34D',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
                   fontSize: '11px',
-                  color: '#92400E',
+                  color: 'var(--ez-hue-amber-text-dark)',
                 }}
               >
                 <ShieldCheck size={16} />
@@ -789,14 +789,14 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
           </div>
 
           {/* SECTION D: ADVANCED SETTINGS & SIGNATURE ACCORDION */}
-          <div style={{ border: '1px solid #E2E8F0', borderRadius: '10px', overflow: 'hidden' }}>
+          <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', overflow: 'hidden' }}>
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
               style={{
                 width: '100%',
                 padding: '10px 14px',
-                background: '#F8FAFC',
+                background: 'var(--ez-color-surface-secondary)',
                 border: 'none',
                 cursor: 'pointer',
                 display: 'flex',
@@ -806,7 +806,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Sliders size={15} color="#64748B" />
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)' }}>
                   Pengaturan Lanjutan (Formula Live & Pejabat Penandatangan)
                 </span>
               </div>
@@ -818,9 +818,9 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
             </button>
 
             {showAdvanced && (
-              <div style={{ padding: '14px', background: '#FFFFFF', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ padding: '14px', background: 'var(--ez-color-surface)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {/* Live formula toggle */}
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: '#0F172A' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: 'var(--ez-color-text-primary)' }}>
                   <input
                     type="checkbox"
                     checked={useLiveFormulas}
@@ -834,7 +834,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 {/* Signatures input */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '4px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                       Disusun Oleh (Estimator)
                     </label>
                     <input
@@ -845,14 +845,14 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                         width: '100%',
                         height: '32px',
                         borderRadius: '6px',
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid var(--ez-hue-slate-border)',
                         padding: '0 8px',
                         fontSize: '11.5px',
                       }}
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                       Diperiksa Oleh (Teknik)
                     </label>
                     <input
@@ -863,14 +863,14 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                         width: '100%',
                         height: '32px',
                         borderRadius: '6px',
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid var(--ez-hue-slate-border)',
                         padding: '0 8px',
                         fontSize: '11.5px',
                       }}
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                       Disetujui Oleh (Owner)
                     </label>
                     <input
@@ -881,7 +881,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                         width: '100%',
                         height: '32px',
                         borderRadius: '6px',
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid var(--ez-hue-slate-border)',
                         padding: '0 8px',
                         fontSize: '11.5px',
                       }}
@@ -897,18 +897,18 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
             style={{
               padding: '12px 16px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%)',
-              border: '1px solid #BFDBFE',
+              background: 'linear-gradient(135deg, var(--ez-hue-slate-bg) 0%, var(--ez-hue-blue-bg) 100%)',
+              border: '1px solid var(--ez-hue-blue-border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
             }}
           >
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 750, color: '#1D4ED8', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '11px', fontWeight: 750, color: 'var(--ez-color-primary-hover)', textTransform: 'uppercase' }}>
                 PRATINJAU NAMA BERKAS EXPORT
               </div>
-              <div style={{ fontSize: '12.5px', fontWeight: 750, color: '#0F172A', marginTop: '2px', fontFamily: 'monospace' }}>
+              <div style={{ fontSize: '12.5px', fontWeight: 750, color: 'var(--ez-color-text-primary)', marginTop: '2px', fontFamily: 'monospace' }}>
                 {previewFileName}
               </div>
             </div>
@@ -917,13 +917,13 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               type="button"
               onClick={() => setShowStructurePreview(!showStructurePreview)}
               style={{
-                background: '#FFFFFF',
-                border: '1px solid #BFDBFE',
+                background: 'var(--ez-color-surface)',
+                border: '1px solid var(--ez-hue-blue-border)',
                 borderRadius: '6px',
                 padding: '6px 12px',
                 fontSize: '11.5px',
                 fontWeight: 700,
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -941,12 +941,12 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               style={{
                 padding: '12px',
                 borderRadius: '8px',
-                background: '#FFFFFF',
-                border: '1px solid #E2E8F0',
+                background: 'var(--ez-color-surface)',
+                border: '1px solid var(--ez-color-border-line)',
                 fontSize: '11.5px',
               }}
             >
-              <div style={{ fontWeight: 800, color: '#334155', marginBottom: '6px' }}>
+              <div style={{ fontWeight: 800, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                 Struktur Sheet Workbook:
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -957,11 +957,11 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '4px',
-                      background: '#F1F5F9',
-                      border: '1px solid #CBD5E1',
+                      background: 'var(--ez-color-surface-tertiary)',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       padding: '2px 8px',
                       borderRadius: '4px',
-                      color: '#0F172A',
+                      color: 'var(--ez-color-text-primary)',
                       fontWeight: 650,
                     }}
                   >
@@ -979,14 +979,14 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
         <div
           style={{
             padding: '16px 24px',
-            borderTop: '1px solid #E2E8F0',
+            borderTop: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: '#FFFFFF',
+            background: 'var(--ez-color-surface)',
           }}
         >
-          <div style={{ fontSize: '12px', color: '#64748B' }}>
+          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
             Dokumen terformat otomatis untuk standar konsultansi & tender PUPR.
           </div>
 
@@ -999,11 +999,11 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 height: '38px',
                 padding: '0 16px',
                 borderRadius: '8px',
-                background: '#FFFFFF',
-                border: '1px solid #CBD5E1',
+                background: 'var(--ez-color-surface)',
+                border: '1px solid var(--ez-hue-slate-border)',
                 fontSize: '12.5px',
                 fontWeight: 650,
-                color: '#475569',
+                color: 'var(--ez-color-text-slate)',
                 cursor: 'pointer',
               }}
             >
@@ -1018,11 +1018,11 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 height: '38px',
                 padding: '0 16px',
                 borderRadius: '8px',
-                background: '#F0FDF4',
+                background: 'var(--ez-hue-green-bg)',
                 border: '1px solid #86EFAC',
                 fontSize: '12.5px',
                 fontWeight: 700,
-                color: '#15803D',
+                color: 'var(--ez-hue-green-text)',
                 cursor: isExporting ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -1030,13 +1030,13 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
-                if (!isExporting) e.currentTarget.style.backgroundColor = '#DCFCE7';
+                if (!isExporting) e.currentTarget.style.backgroundColor = 'var(--ez-hue-green-bg-deep)';
               }}
               onMouseLeave={(e) => {
-                if (!isExporting) e.currentTarget.style.backgroundColor = '#F0FDF4';
+                if (!isExporting) e.currentTarget.style.backgroundColor = 'var(--ez-hue-green-bg)';
               }}
             >
-              <FileText size={14} color="#15803D" />
+              <FileText size={14} color="var(--ez-hue-green-text)" />
               <span>Unduh PDF Langsung</span>
             </button>
 
@@ -1048,7 +1048,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 height: '38px',
                 padding: '0 20px',
                 borderRadius: '8px',
-                background: isExporting ? '#94A3B8' : '#2563EB',
+                background: isExporting ? '#94A3B8' : 'var(--ez-color-primary)',
                 border: '1px solid #1D4ED8',
                 fontSize: '13px',
                 fontWeight: 750,
@@ -1061,10 +1061,10 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                 transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
-                if (!isExporting) e.currentTarget.style.backgroundColor = '#1D4ED8';
+                if (!isExporting) e.currentTarget.style.backgroundColor = 'var(--ez-color-primary-hover)';
               }}
               onMouseLeave={(e) => {
-                if (!isExporting) e.currentTarget.style.backgroundColor = '#2563EB';
+                if (!isExporting) e.currentTarget.style.backgroundColor = 'var(--ez-color-primary)';
               }}
             >
               <Download size={15} color="#FFFFFF" />

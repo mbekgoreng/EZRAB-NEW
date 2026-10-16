@@ -197,12 +197,12 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
 
   const statusBadge = (st: InvoiceStatus) => {
     const config: Record<InvoiceStatus, { bg: string; color: string; label: string }> = {
-      DRAFT: { bg: '#F1F5F9', color: '#475569', label: 'Draft' },
-      ISSUED: { bg: '#EFF6FF', color: '#1D4ED8', label: 'Ditagihkan' },
-      PARTIALLY_PAID: { bg: '#FEF3C7', color: '#B45309', label: 'Dibayar Sebagian' },
-      PAID: { bg: '#DCFCE7', color: '#15803D', label: 'Lunas' },
-      OVERDUE: { bg: '#FEE2E2', color: '#B91C1C', label: 'Jatuh Tempo' },
-      CANCELLED: { bg: '#F1F5F9', color: '#94A3B8', label: 'Dibatalkan' },
+      DRAFT: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', label: 'Draft' },
+      ISSUED: { bg: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)', label: 'Ditagihkan' },
+      PARTIALLY_PAID: { bg: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text)', label: 'Dibayar Sebagian' },
+      PAID: { bg: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text)', label: 'Lunas' },
+      OVERDUE: { bg: 'var(--ez-hue-red-bg)', color: 'var(--ez-hue-red-text)', label: 'Jatuh Tempo' },
+      CANCELLED: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-faint)', label: 'Dibatalkan' },
     };
     const c = config[st] || config.DRAFT;
     return (
@@ -229,9 +229,9 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
       {/* 1. Header Bar */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -242,10 +242,10 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
         }}
       >
         <div>
-          <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
             Faktur & Invoice Tagihan Proyek
           </h2>
-          <div style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
             Kelola faktur tagihan resmi, cetak invoice PDF berstandar Indonesia, dan pantau pelunasan.
           </div>
         </div>
@@ -256,7 +256,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
           style={{
             padding: '10px 18px',
             borderRadius: '10px',
-            backgroundColor: '#2563EB',
+            backgroundColor: 'var(--ez-color-primary)',
             color: '#FFFFFF',
             border: 'none',
             fontSize: '13px',
@@ -277,9 +277,9 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
       {invoices.length === 0 ? (
         <div
           style={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             padding: '48px 20px',
             textAlign: 'center',
             display: 'flex',
@@ -288,13 +288,13 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
             gap: '12px',
           }}
         >
-          <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <FileText size={24} color="#2563EB" />
+          <div style={{ width: '48px', height: '48px', borderRadius: 'var(--ez-radius-control)', backgroundColor: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FileText size={24} color="var(--ez-hue-blue-text)" />
           </div>
-          <h3 style={{ fontSize: '16px', fontWeight: 750, color: '#0F172A', margin: 0 }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
             Belum ada invoice yang diterbitkan
           </h3>
-          <p style={{ fontSize: '13px', color: '#64748B', maxWidth: '420px', margin: 0 }}>
+          <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', maxWidth: '420px', margin: 0 }}>
             Buat invoice dari termin penagihan yang telah Anda rencanakan atau buat invoice mandiri untuk menagih pekerjaan.
           </p>
           <button
@@ -304,7 +304,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
               marginTop: '8px',
               padding: '8px 16px',
               borderRadius: '8px',
-              backgroundColor: '#2563EB',
+              backgroundColor: 'var(--ez-color-primary)',
               color: '#FFFFFF',
               border: 'none',
               fontSize: '13px',
@@ -322,9 +322,9 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
       ) : (
         <div
           style={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             overflow: 'hidden',
             boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           }}
@@ -332,7 +332,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
-                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#64748B', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-muted)', fontSize: '11.5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   <th style={{ padding: '12px 16px', fontWeight: 700 }}>No. Invoice</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700 }}>Klien / Proyek</th>
                   <th style={{ padding: '12px 16px', fontWeight: 700 }}>Tanggal / Jatuh Tempo</th>
@@ -349,44 +349,44 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                     <tr
                       key={inv.id}
                       style={{
-                        borderBottom: '1px solid #F1F5F9',
+                        borderBottom: '1px solid var(--ez-color-border-soft)',
                         transition: 'background-color 120ms ease',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FFFFFF')}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-surface)')}
                     >
                       <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
-                        <div style={{ fontWeight: 750, color: '#0F172A' }}>{inv.invoiceNumber}</div>
+                        <div style={{ fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>{inv.invoiceNumber}</div>
                         {linkedTerm && (
-                          <div style={{ fontSize: '11px', color: '#2563EB', marginTop: '2px' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--ez-color-primary)', marginTop: '2px' }}>
                             {linkedTerm.name} ({linkedTerm.percentage}%)
                           </div>
                         )}
                       </td>
 
                       <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
-                        <div style={{ fontWeight: 650, color: '#0F172A' }}>{inv.clientName}</div>
-                        <div style={{ fontSize: '11px', color: '#64748B' }}>{inv.projectName}</div>
+                        <div style={{ fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>{inv.clientName}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>{inv.projectName}</div>
                       </td>
 
                       <td style={{ padding: '14px 16px', verticalAlign: 'middle' }}>
-                        <div style={{ color: '#0F172A' }}>{inv.invoiceDate}</div>
-                        <div style={{ fontSize: '11px', color: inv.status === 'OVERDUE' ? '#DC2626' : '#64748B' }}>
+                        <div style={{ color: 'var(--ez-color-text-primary)' }}>{inv.invoiceDate}</div>
+                        <div style={{ fontSize: '11px', color: inv.status === 'OVERDUE' ? 'var(--ez-hue-rose-text)' : 'var(--ez-color-text-muted)' }}>
                           Due: {inv.dueDate}
                         </div>
                       </td>
 
                       <td style={{ padding: '14px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
-                        <div style={{ fontWeight: 750, color: '#0F172A' }}>{formatRupiah(inv.total)}</div>
+                        <div style={{ fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(inv.total)}</div>
                         {inv.paidAmount > 0 && (
-                          <div style={{ fontSize: '11px', color: '#16A34A' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--ez-hue-green-text-bright)' }}>
                             Dibayar: {formatRupiah(inv.paidAmount)}
                           </div>
                         )}
                       </td>
 
                       <td style={{ padding: '14px 16px', textAlign: 'right', verticalAlign: 'middle' }}>
-                        <div style={{ fontWeight: 750, color: inv.outstandingAmount > 0 ? '#D97706' : '#16A34A' }}>
+                        <div style={{ fontWeight: 750, color: inv.outstandingAmount > 0 ? 'var(--ez-hue-amber-text-deep)' : 'var(--ez-hue-green-text-bright)' }}>
                           {formatRupiah(inv.outstandingAmount)}
                         </div>
                       </td>
@@ -405,9 +405,9 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                               style={{
                                 padding: '4px 8px',
                                 borderRadius: '6px',
-                                backgroundColor: '#EFF6FF',
-                                border: '1px solid #BFDBFE',
-                                color: '#1D4ED8',
+                                backgroundColor: 'var(--ez-hue-blue-bg)',
+                                border: '1px solid var(--ez-hue-blue-border)',
+                                color: 'var(--ez-color-primary-hover)',
                                 fontSize: '11.5px',
                                 fontWeight: 650,
                                 cursor: 'pointer',
@@ -429,9 +429,9 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                               style={{
                                 padding: '4px 8px',
                                 borderRadius: '6px',
-                                backgroundColor: '#F0FDF4',
-                                border: '1px solid #BBF7D0',
-                                color: '#15803D',
+                                backgroundColor: 'var(--ez-hue-green-bg)',
+                                border: '1px solid var(--ez-hue-green-border)',
+                                color: 'var(--ez-hue-green-text)',
                                 fontSize: '11.5px',
                                 fontWeight: 650,
                                 cursor: 'pointer',
@@ -453,9 +453,9 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                             style={{
                               padding: '4px 8px',
                               borderRadius: '6px',
-                              backgroundColor: '#F8FAFC',
-                              border: '1px solid #E2E8F0',
-                              color: '#475569',
+                              backgroundColor: 'var(--ez-color-surface-secondary)',
+                              border: '1px solid var(--ez-color-border-line)',
+                              color: 'var(--ez-color-text-slate)',
                               fontSize: '11.5px',
                               fontWeight: 600,
                               cursor: 'pointer',
@@ -476,9 +476,9 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                               width: '28px',
                               height: '28px',
                               borderRadius: '6px',
-                              backgroundColor: '#F8FAFC',
-                              border: '1px solid #E2E8F0',
-                              color: '#475569',
+                              backgroundColor: 'var(--ez-color-surface-secondary)',
+                              border: '1px solid var(--ez-color-border-line)',
+                              color: 'var(--ez-color-text-slate)',
                               display: 'inline-flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -500,9 +500,9 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                               width: '28px',
                               height: '28px',
                               borderRadius: '6px',
-                              backgroundColor: '#F8FAFC',
-                              border: '1px solid #E2E8F0',
-                              color: '#DC2626',
+                              backgroundColor: 'var(--ez-color-surface-secondary)',
+                              border: '1px solid var(--ez-color-border-line)',
+                              color: 'var(--ez-hue-rose-text)',
                               display: 'inline-flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -539,7 +539,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
         >
           <div
             style={{
-              backgroundColor: '#FFFFFF',
+              backgroundColor: 'var(--ez-color-surface)',
               borderRadius: '16px',
               maxWidth: '560px',
               width: '100%',
@@ -553,20 +553,20 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                 {editingInvoice ? 'Edit Faktur Tagihan' : 'Buat Faktur Tagihan Baru'}
               </h3>
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', fontSize: '18px' }}
+                style={{ background: 'none', border: 'none', color: 'var(--ez-color-text-muted)', cursor: 'pointer', fontSize: '18px' }}
               >
                 &times;
               </button>
             </div>
 
             {errorMessage && (
-              <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: '#991B1B' }}>
+              <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', border: '1px solid var(--ez-hue-rose-border)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px', color: 'var(--ez-hue-red-text)' }}>
                 {errorMessage}
               </div>
             )}
@@ -574,7 +574,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     Nomor Invoice
                   </label>
                   <input
@@ -587,7 +587,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-color-border-strong)',
                       fontSize: '13px',
                       outline: 'none',
                       boxSizing: 'border-box',
@@ -595,7 +595,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     Status Tagihan
                   </label>
                   <select
@@ -605,10 +605,10 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-color-border-strong)',
                       fontSize: '13px',
                       outline: 'none',
-                      backgroundColor: '#FFFFFF',
+                      backgroundColor: 'var(--ez-color-surface)',
                       boxSizing: 'border-box',
                     }}
                   >
@@ -624,7 +624,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
 
               {terms.length > 0 && (
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     Hubungkan ke Termin (Opsional)
                   </label>
                   <select
@@ -634,10 +634,10 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-color-border-strong)',
                       fontSize: '13px',
                       outline: 'none',
-                      backgroundColor: '#FFFFFF',
+                      backgroundColor: 'var(--ez-color-surface)',
                       boxSizing: 'border-box',
                     }}
                   >
@@ -653,7 +653,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     Tanggal Terbit
                   </label>
                   <input
@@ -665,7 +665,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-color-border-strong)',
                       fontSize: '13px',
                       outline: 'none',
                       boxSizing: 'border-box',
@@ -673,7 +673,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     Jatuh Tempo
                   </label>
                   <input
@@ -685,7 +685,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-color-border-strong)',
                       fontSize: '13px',
                       outline: 'none',
                       boxSizing: 'border-box',
@@ -695,7 +695,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                   Ditujukan Kepada (Nama Klien / Instansi)
                 </label>
                 <input
@@ -708,7 +708,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-color-border-strong)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -717,10 +717,10 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
               </div>
 
               {/* Amount & Tax Breakdown */}
-              <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: '10px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '10px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                       Nominal Pokok (Subtotal Rp)
                     </label>
                     <input
@@ -733,7 +733,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                         width: '100%',
                         padding: '8px 12px',
                         borderRadius: '8px',
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid var(--ez-color-border-strong)',
                         fontSize: '13px',
                         outline: 'none',
                         boxSizing: 'border-box',
@@ -741,7 +741,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                       PPN (%)
                     </label>
                     <input
@@ -754,7 +754,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                         width: '100%',
                         padding: '8px 12px',
                         borderRadius: '8px',
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid var(--ez-color-border-strong)',
                         fontSize: '13px',
                         outline: 'none',
                         boxSizing: 'border-box',
@@ -763,21 +763,21 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #E2E8F0', paddingTop: '8px', fontSize: '12px' }}>
-                  <span style={{ color: '#64748B' }}>PPN ({taxPercent}%):</span>
-                  <span style={{ fontWeight: 650, color: '#0F172A' }}>{formatRupiah(taxAmount)}</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--ez-color-border-line)', paddingTop: '8px', fontSize: '12px' }}>
+                  <span style={{ color: 'var(--ez-color-text-muted)' }}>PPN ({taxPercent}%):</span>
+                  <span style={{ fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(taxAmount)}</span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13.5px' }}>
-                  <span style={{ fontWeight: 750, color: '#0F172A' }}>TOTAL TAGIHAN:</span>
-                  <span style={{ fontWeight: 800, color: '#2563EB', fontSize: '16px' }}>{formatRupiah(totalAmount)}</span>
+                  <span style={{ fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>TOTAL TAGIHAN:</span>
+                  <span style={{ fontWeight: 800, color: 'var(--ez-color-primary)', fontSize: '16px' }}>{formatRupiah(totalAmount)}</span>
                 </div>
               </div>
 
               {/* Bank Account Details */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     Nama Bank
                   </label>
                   <input
@@ -788,7 +788,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-color-border-strong)',
                       fontSize: '13px',
                       outline: 'none',
                       boxSizing: 'border-box',
@@ -796,7 +796,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: '#334155', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '4px' }}>
                     No. Rekening & Atas Nama
                   </label>
                   <input
@@ -808,7 +808,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                       width: '100%',
                       padding: '8px 12px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-color-border-strong)',
                       fontSize: '13px',
                       outline: 'none',
                       boxSizing: 'border-box',
@@ -824,9 +824,9 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                   style={{
                     padding: '8px 16px',
                     borderRadius: '8px',
-                    backgroundColor: '#F1F5F9',
-                    color: '#475569',
-                    border: '1px solid #CBD5E1',
+                    backgroundColor: 'var(--ez-color-surface-tertiary)',
+                    color: 'var(--ez-color-text-slate)',
+                    border: '1px solid var(--ez-color-border-strong)',
                     fontSize: '12.5px',
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -839,7 +839,7 @@ export const InvoiceManagementTab: React.FC<InvoiceManagementTabProps> = ({
                   style={{
                     padding: '8px 20px',
                     borderRadius: '8px',
-                    backgroundColor: '#2563EB',
+                    backgroundColor: 'var(--ez-color-primary)',
                     color: '#FFFFFF',
                     border: 'none',
                     fontSize: '12.5px',

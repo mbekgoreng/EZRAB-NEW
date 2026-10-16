@@ -110,8 +110,8 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
       <div
         style={{
           padding: '16px 20px',
-          backgroundColor: '#F8FAFC',
-          borderBottom: '1px solid #E2E8F0',
+          backgroundColor: 'var(--ez-color-surface-secondary)',
+          borderBottom: '1px solid var(--ez-color-border-line)',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
           gap: '12px',
@@ -120,9 +120,9 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
         {/* Card 1: Total Overrides */}
         <div
           style={{
-            backgroundColor: '#ffffff',
+            backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '10px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             padding: '12px 14px',
             display: 'flex',
             alignItems: 'center',
@@ -130,10 +130,10 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
           }}
         >
           <div>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
               Total Override Proyek
             </div>
-            <div style={{ fontSize: '20px', fontWeight: 900, color: '#0F172A', marginTop: '2px' }}>
+            <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
               {metrics.total.toLocaleString('id-ID')}
             </div>
           </div>
@@ -142,8 +142,8 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
               width: '36px',
               height: '36px',
               borderRadius: '8px',
-              backgroundColor: '#EFF6FF',
-              color: '#2563EB',
+              backgroundColor: 'var(--ez-hue-blue-bg)',
+              color: 'var(--ez-color-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -156,9 +156,9 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
         {/* Card 2: Material Overrides */}
         <div
           style={{
-            backgroundColor: '#ffffff',
+            backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '10px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             padding: '12px 14px',
             display: 'flex',
             alignItems: 'center',
@@ -166,10 +166,10 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
           }}
         >
           <div>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
               Material & Bahan
             </div>
-            <div style={{ fontSize: '20px', fontWeight: 900, color: '#1D4ED8', marginTop: '2px' }}>
+            <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--ez-color-primary-hover)', marginTop: '2px' }}>
               {metrics.material.toLocaleString('id-ID')}
             </div>
           </div>
@@ -178,8 +178,8 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
               width: '36px',
               height: '36px',
               borderRadius: '8px',
-              backgroundColor: '#EFF6FF',
-              color: '#1D4ED8',
+              backgroundColor: 'var(--ez-hue-blue-bg)',
+              color: 'var(--ez-color-primary-hover)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -192,9 +192,9 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
         {/* Card 3: Labor Overrides */}
         <div
           style={{
-            backgroundColor: '#ffffff',
+            backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '10px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             padding: '12px 14px',
             display: 'flex',
             alignItems: 'center',
@@ -202,10 +202,10 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
           }}
         >
           <div>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
               Upah Tenaga Kerja
             </div>
-            <div style={{ fontSize: '20px', fontWeight: 900, color: '#B45309', marginTop: '2px' }}>
+            <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--ez-hue-amber-text)', marginTop: '2px' }}>
               {metrics.labor.toLocaleString('id-ID')}
             </div>
           </div>
@@ -214,8 +214,8 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
               width: '36px',
               height: '36px',
               borderRadius: '8px',
-              backgroundColor: '#FEF3C7',
-              color: '#B45309',
+              backgroundColor: 'var(--ez-hue-amber-bg)',
+              color: 'var(--ez-hue-amber-text)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -228,9 +228,9 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
         {/* Card 4: Equipment Overrides */}
         <div
           style={{
-            backgroundColor: '#ffffff',
+            backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '10px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             padding: '12px 14px',
             display: 'flex',
             alignItems: 'center',
@@ -238,10 +238,10 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
           }}
         >
           <div>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
               Peralatan & Alat Berat
             </div>
-            <div style={{ fontSize: '20px', fontWeight: 900, color: '#6B21A8', marginTop: '2px' }}>
+            <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--ez-hue-purple-text)', marginTop: '2px' }}>
               {metrics.equipment.toLocaleString('id-ID')}
             </div>
           </div>
@@ -250,8 +250,8 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
               width: '36px',
               height: '36px',
               borderRadius: '8px',
-              backgroundColor: '#F3E8FF',
-              color: '#6B21A8',
+              backgroundColor: 'var(--ez-hue-violet-bg)',
+              color: 'var(--ez-hue-purple-text)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -266,8 +266,8 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
       <div
         style={{
           padding: '12px 20px',
-          borderBottom: '1px solid #E2E8F0',
-          backgroundColor: '#ffffff',
+          borderBottom: '1px solid var(--ez-color-border-line)',
+          backgroundColor: 'var(--ez-color-surface)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -294,9 +294,9 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                   fontSize: '11.5px',
                   fontWeight: 700,
                   cursor: 'pointer',
-                  border: active ? '1px solid #2563EB' : '1px solid #E2E8F0',
-                  backgroundColor: active ? '#EFF6FF' : '#ffffff',
-                  color: active ? '#1D4ED8' : '#64748B',
+                  border: active ? '1px solid var(--ez-color-primary)' : '1px solid var(--ez-color-border-line)',
+                  backgroundColor: active ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                  color: active ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                   transition: 'all 0.15s',
                 }}
               >
@@ -307,7 +307,7 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
 
           {/* Quick Search */}
           <div style={{ position: 'relative', width: '220px' }}>
-            <Search size={14} color="#94A3B8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+            <Search size={14} color="var(--ez-color-text-faint)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
             <input
               type="text"
               value={searchQuery}
@@ -317,7 +317,7 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                 width: '100%',
                 padding: '6px 10px 6px 30px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-color-border-strong)',
                 fontSize: '11.5px',
                 outline: 'none',
                 boxSizing: 'border-box',
@@ -337,8 +337,8 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
               padding: '7px 14px',
               borderRadius: '8px',
               border: 'none',
-              backgroundColor: '#2563EB',
-              color: '#ffffff',
+              backgroundColor: 'var(--ez-color-primary)',
+              color: '#FFFFFF',
               fontSize: '12px',
               fontWeight: 700,
               cursor: 'pointer',
@@ -353,9 +353,9 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
 
       {/* 3. TABLE OR EMPTY STATE */}
       {filteredList.length === 0 ? (
-        <div style={{ padding: '56px 24px', textAlign: 'center', color: '#64748B' }}>
-          <FolderKanban size={44} color="#94A3B8" style={{ margin: '0 auto 14px' }} />
-          <div style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
+        <div style={{ padding: '56px 24px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>
+          <FolderKanban size={44} color="var(--ez-color-text-faint)" style={{ margin: '0 auto 14px' }} />
+          <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
             {projectPrices.length === 0
               ? 'Belum ada override harga khusus untuk proyek ini'
               : 'Tidak ada item yang sesuai dengan filter pencarian'}
@@ -377,8 +377,8 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                 padding: '9px 18px',
                 borderRadius: '8px',
                 border: 'none',
-                backgroundColor: '#2563EB',
-                color: '#ffffff',
+                backgroundColor: 'var(--ez-color-primary)',
+                color: '#FFFFFF',
                 fontSize: '12.5px',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -415,35 +415,35 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
               <col style={{ width: '110px' }} />
             </colgroup>
             <thead>
-              <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+              <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)' }}>
                 <th style={{ padding: '10px 8px', textAlign: 'center' }}>
                   <input type="checkbox" style={{ cursor: 'pointer' }} />
                 </th>
-                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Item Proyek
                 </th>
-                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Kategori
                 </th>
-                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Satuan
                 </th>
-                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Harga Master Acuan
                 </th>
-                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Harga Proyek (Override)
                 </th>
-                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Deviasi
                 </th>
-                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Alasan / Sumber
                 </th>
-                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Status
                 </th>
-                <th style={{ padding: '10px 6px', textAlign: 'center', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ padding: '10px 6px', textAlign: 'center', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Aksi
                 </th>
               </tr>
@@ -468,8 +468,8 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                   <tr
                     key={override.id}
                     style={{
-                      backgroundColor: '#ffffff',
-                      borderBottom: '1px solid #F1F5F9',
+                      backgroundColor: 'var(--ez-color-surface)',
+                      borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                       transition: 'background-color 0.15s',
                     }}
                   >
@@ -486,8 +486,8 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                             width: '32px',
                             height: '32px',
                             borderRadius: '8px',
-                            backgroundColor: isLabor ? '#FEF3C7' : isEquip ? '#F3E8FF' : '#EFF6FF',
-                            color: isLabor ? '#B45309' : isEquip ? '#6B21A8' : '#2563EB',
+                            backgroundColor: isLabor ? 'var(--ez-hue-amber-bg)' : isEquip ? 'var(--ez-hue-violet-bg)' : 'var(--ez-hue-blue-bg)',
+                            color: isLabor ? 'var(--ez-hue-amber-text)' : isEquip ? 'var(--ez-hue-purple-text)' : 'var(--ez-color-primary)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -497,10 +497,10 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                           {isLabor ? <HardHat size={16} /> : isEquip ? <Truck size={16} /> : <Package size={16} />}
                         </div>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '12.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <div style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', fontSize: '12.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {itemName}
                           </div>
-                          <div style={{ fontSize: '10.5px', fontFamily: 'monospace', color: '#2563EB' }}>
+                          <div style={{ fontSize: '10.5px', fontFamily: 'monospace', color: 'var(--ez-color-primary)' }}>
                             {itemCode}
                           </div>
                         </div>
@@ -515,8 +515,8 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                           borderRadius: '6px',
                           fontSize: '10.5px',
                           fontWeight: 700,
-                          backgroundColor: isLabor ? '#FEF3C7' : isEquip ? '#F3E8FF' : '#EFF6FF',
-                          color: isLabor ? '#92400E' : isEquip ? '#6B21A8' : '#1D4ED8',
+                          backgroundColor: isLabor ? 'var(--ez-hue-amber-bg)' : isEquip ? 'var(--ez-hue-violet-bg)' : 'var(--ez-hue-blue-bg)',
+                          color: isLabor ? 'var(--ez-hue-amber-text)' : isEquip ? 'var(--ez-hue-purple-text)' : 'var(--ez-color-primary-hover)',
                         }}
                       >
                         {isLabor ? 'Tenaga Kerja' : isEquip ? 'Peralatan' : 'Material'}
@@ -529,11 +529,11 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                         style={{
                           fontSize: '11px',
                           fontWeight: 800,
-                          color: '#475569',
-                          backgroundColor: '#F8FAFC',
+                          color: 'var(--ez-color-text-slate)',
+                          backgroundColor: 'var(--ez-color-surface-secondary)',
                           padding: '2px 6px',
                           borderRadius: '5px',
-                          border: '1px solid #E2E8F0',
+                          border: '1px solid var(--ez-color-border-line)',
                         }}
                       >
                         {override.unit || 'unit'}
@@ -542,14 +542,14 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
 
                     {/* Harga Master Acuan */}
                     <td style={{ padding: `${padY} 10px` }}>
-                      <div style={{ color: '#64748B', fontSize: '12px', textDecoration: basePriceVal > 0 ? 'line-through' : 'none' }}>
+                      <div style={{ color: 'var(--ez-color-text-muted)', fontSize: '12px', textDecoration: basePriceVal > 0 ? 'line-through' : 'none' }}>
                         {basePriceVal > 0 ? `Rp ${basePriceVal.toLocaleString('id-ID')}` : '-'}
                       </div>
                     </td>
 
                     {/* Harga Proyek (Override) */}
                     <td style={{ padding: `${padY} 10px` }}>
-                      <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '13px' }}>
+                      <div style={{ fontWeight: 800, color: 'var(--ez-color-text-primary)', fontSize: '13px' }}>
                         Rp {priceVal.toLocaleString('id-ID')}
                       </div>
                     </td>
@@ -565,8 +565,8 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                           borderRadius: '4px',
                           fontSize: '11px',
                           fontWeight: 700,
-                          backgroundColor: isIdentical ? '#F1F5F9' : isHigher ? '#FEF2F2' : '#ECFDF5',
-                          color: isIdentical ? '#475569' : isHigher ? '#DC2626' : '#059669',
+                          backgroundColor: isIdentical ? 'var(--ez-color-surface-tertiary)' : isHigher ? 'var(--ez-color-danger-soft)' : 'var(--ez-hue-green-bg)',
+                          color: isIdentical ? 'var(--ez-color-text-slate)' : isHigher ? 'var(--ez-color-danger-strong)' : 'var(--ez-hue-green-text)',
                         }}
                       >
                         {isIdentical ? '0%' : `${isHigher ? '+' : ''}${diffPercent.toFixed(1)}%`}
@@ -575,7 +575,7 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
 
                     {/* Alasan / Sumber */}
                     <td style={{ padding: `${padY} 10px` }}>
-                      <div style={{ fontSize: '11.5px', color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={reasonStr}>
+                      <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-slate)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={reasonStr}>
                         {reasonStr}
                       </div>
                     </td>
@@ -589,7 +589,7 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                           gap: '4px',
                           fontSize: '11px',
                           fontWeight: 700,
-                          color: '#059669',
+                          color: 'var(--ez-hue-green-text)',
                         }}
                       >
                         <CheckCircle2 size={12} />
@@ -605,9 +605,9 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                           style={{
                             padding: '4px 8px',
                             borderRadius: '6px',
-                            border: '1px solid #CBD5E1',
-                            backgroundColor: '#ffffff',
-                            color: '#2563EB',
+                            border: '1px solid var(--ez-color-border-strong)',
+                            backgroundColor: 'var(--ez-color-surface)',
+                            color: 'var(--ez-color-primary)',
                             fontSize: '11px',
                             fontWeight: 700,
                             cursor: 'pointer',
@@ -623,8 +623,8 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                             padding: '4px 6px',
                             borderRadius: '6px',
                             border: '1px solid #FCA5A5',
-                            backgroundColor: '#FEF2F2',
-                            color: '#DC2626',
+                            backgroundColor: 'var(--ez-color-danger-soft)',
+                            color: 'var(--ez-color-danger-strong)',
                             fontSize: '11px',
                             fontWeight: 700,
                             cursor: 'pointer',
@@ -666,23 +666,23 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
             style={{
               width: '420px',
               maxWidth: '100%',
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
+              backgroundColor: 'var(--ez-color-surface)',
+              borderRadius: 'var(--ez-radius-control)',
               padding: '20px',
               boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#DC2626' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--ez-color-danger-strong)' }}>
               <AlertTriangle size={20} />
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
+              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                 Kembalikan ke Harga Master?
               </h3>
             </div>
-            <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '10px', lineHeight: 1.5 }}>
+            <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-slate)', marginTop: '10px', lineHeight: 1.5 }}>
               Override untuk <strong>{resetConfirmItem.name || resetConfirmItem.itemCode || resetConfirmItem.code}</strong> akan dihapus dari proyek ini.
               Perhitungan RAB dan AHSP akan otomatis kembali menggunakan harga acuan master.
-              <div style={{ marginTop: '8px', fontSize: '11.5px', color: '#059669', fontWeight: 600 }}>
+              <div style={{ marginTop: '8px', fontSize: '11.5px', color: 'var(--ez-hue-green-text)', fontWeight: 600 }}>
                 ✓ Database master nasional tetap aman dan tidak akan terhapus.
               </div>
             </div>
@@ -692,11 +692,11 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                 style={{
                   padding: '7px 14px',
                   borderRadius: '6px',
-                  border: '1px solid #CBD5E1',
-                  backgroundColor: '#ffffff',
+                  border: '1px solid var(--ez-color-border-strong)',
+                  backgroundColor: 'var(--ez-color-surface)',
                   fontSize: '12px',
                   fontWeight: 700,
-                  color: '#475569',
+                  color: 'var(--ez-color-text-slate)',
                   cursor: 'pointer',
                 }}
               >
@@ -711,10 +711,10 @@ export const ProjectPriceTableView: React.FC<ProjectPriceTableViewProps> = ({
                   padding: '7px 16px',
                   borderRadius: '6px',
                   border: 'none',
-                  backgroundColor: '#DC2626',
+                  backgroundColor: 'var(--ez-color-danger-strong)',
                   fontSize: '12px',
                   fontWeight: 700,
-                  color: '#ffffff',
+                  color: '#FFFFFF',
                   cursor: 'pointer',
                 }}
               >

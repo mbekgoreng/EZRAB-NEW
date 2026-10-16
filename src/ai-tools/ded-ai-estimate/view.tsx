@@ -10,13 +10,14 @@ import {
   DedAiItem, DedAiMode, DedAiOutput, DedAiProjectType,
 } from './types';
 import { DedAiInputView, DedAiSession } from './DedAiInputView';
-import { DedAiProgressView, DedAiStage, STAGE_DEFS, ProgressSummary } from './DedAiProgressView';
+import { DedAiProgressView, DedAiStage, getStageDefs, ProgressSummary } from './DedAiProgressView';
 import { DedAiResultView } from './DedAiResultView';
 import { fullAiDedService } from '../ded-full-ai/service';
 import { FullAiOutput, FullAiItem } from '../ded-full-ai/types';
 import { FullAiResultView } from '../ded-full-ai/FullAiResultView';
 import { notificationBus } from '../../notifications/notificationBus';
 import { useProject } from '../../context/ProjectContext';
+import { useI18n } from '../../i18n/I18nContext';
 
 interface Props {
   onNavigateToTab?: (tab: string) => void;
@@ -42,26 +43,27 @@ const loadDrafts = (): DraftRecord[] => {
   } catch { return []; }
 };
 
-const initialStages = (): DedAiStage[] =>
-  STAGE_DEFS.map((d) => ({ ...d, status: 'waiting' as const }));
+const initialStages = (t: (key: string) => string): DedAiStage[] =>
+  getStageDefs(t).map((d) => ({ ...d, status: 'waiting' as const }));
 
 export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
+  const { t } = useI18n();
   const { projects, createProject, bulkAddRabItems, setCurrentProjectId } = useProject();
   const [screen, setScreen] = useState<Screen>('input');
   const [session, setSession] = useState<DedAiSession>({
     files: [], description: '', projectName: '',
     projectType: 'BANGUNAN', mode: 'FAST', targetProjectId: null,
   });
-  const [stages, setStages] = useState<DedAiStage[]>(initialStages);
+  const [stages, setStages] = useState<DedAiStage[]>(() => initialStages(t));
   const [percent, setPercent] = useState(0);
-  const [statusLine, setStatusLine] = useState('Mempersiapkan…');
+  const [statusLine, setStatusLine] = useState(t('ai.ded.preparing'));
+  const [fullAiOutput, setFullAiOutput] = useState<FullAiOutput | null>(null);
   const [summary, setSummary] = useState<ProgressSummary>({
     projectName: '', fileCount: 0, totalSize: 0, mode: 'FAST', startedAt: Date.now(),
   });
   const [error, setError] = useState<{ message: string; errorCode?: string; stage?: string; retryable?: boolean } | null>(null);
   const [result, setResult] = useState<DedAiOutput | null>(null);
   const [resultReady, setResultReady] = useState(false);
-  const [fullAiOutput, setFullAiOutput] = useState<FullAiOutput | null>(null);
   const [drafts, setDrafts] = useState<DraftRecord[]>(loadDrafts);
   const [draftSaved, setDraftSaved] = useState(false);
   const [finalized, setFinalized] = useState(false);
@@ -75,7 +77,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const setStage = (key: string, status: DedAiStage['status']) =>
     setStages((prev) => prev.map((s) => (s.key === key ? { ...s, status } : s)));
   const markUpTo = (key: string, status: DedAiStage['status']) => {
-    const order = STAGE_DEFS.map((d) => d.key);
+    const order = getStageDefs(t).map((d) => d.key);
     const idx = order.indexOf(key);
     setStages((prev) => prev.map((s) => {
       const si = order.indexOf(s.key);
@@ -85,10 +87,6 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     }));
   };
 
-  /**
-   * FULL AI: jalur terisolasi. AI sebagai mesin estimasi utama.
-   * Tidak me-recalculate kuantitas AI. Validasi struktur + verifikasi aritmetika saja.
-   */
   const runFullAiAnalysis = async (sess: DedAiSession) => {
     try {
       markUpTo('received', 'done');
@@ -214,13 +212,16 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
 
   const runAnalysis = useCallback(async (sess: DedAiSession) => {
     cancelRef.current = false;
+    if (sess.fullAi) {
+      await runFullAiAnalysis(sess);
+      return;
+    }
     setError(null);
     setResult(null);
-    setFullAiOutput(null);
     setResultReady(false);
     setDraftSaved(false);
     setFinalized(false);
-    setStages(initialStages());
+    setStages(initialStages(t));
     setPercent(2);
     const startedAt = Date.now();
     const totalSize = sess.files.reduce((a, f) => a + f.file.size, 0);
@@ -230,16 +231,10 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     });
     setScreen('progress');
 
-    // FULL AI: jalur terisolasi — AI sebagai mesin estimasi utama
-    if (sess.fullAi) {
-      await runFullAiAnalysis(sess);
-      return;
-    }
-
     // Tahap 1: dokumen diterima (validasi sudah di input)
     markUpTo('received', 'done');
     setPercent(5);
-    setStatusLine('Dokumen diterima — memulai pembacaan…');
+    setStatusLine(t('ai.ded.reading_start'));
 
     const mergedItems: DedAiItem[] = [];
     let totalPages = 0;
@@ -254,7 +249,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
 
         // Tahap 2-3: baca dokumen
         markUpTo('reading', 'active');
-        setStatusLine(`Membaca dokumen ${fi + 1}/${sess.files.length}: ${f.file.name}`);
+        setStatusLine(`${t('ai.ded.reading_doc_a')} ${fi + 1}/${sess.files.length}: ${f.file.name}`);
         const buffer = await f.file.arrayBuffer();
 
         const res: DedAiOutputEnvelope = await dedAiEstimateService.execute({
@@ -280,7 +275,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
               setStatusLine(e.message);
               setPercent(base + span * 0.3);
             } else if (e.stage === 'ANALYZE') {
-              setStatusLine(`AI menganalisis ${f.file.name}… (ini tahap terlama, mohon tunggu)`);
+              setStatusLine(`${t('ai.ded.analyzing_a')} ${f.file.name}${t('ai.ded.analyzing_b')}`);
               setPercent(base + span * 0.55);
             }
           },
@@ -290,10 +285,10 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           const fail = res as unknown as { errorCode?: string; stage?: string; message?: string; retryable?: boolean };
           markUpTo('identify', 'failed');
           setError({
-            message: fail?.message || `Gagal menganalisis ${f.file.name}.`,
+            message: fail?.message || `${t('ai.ded.fail_analyze_a')} ${f.file.name}.`,
             errorCode: fail?.errorCode, stage: fail?.stage, retryable: fail?.retryable,
           });
-          setStatusLine('Analisis gagal');
+          setStatusLine(t('ai.ded.status_failed'));
           return;
         }
 
@@ -301,7 +296,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         // Tahap 5: validasi (convertAiItem + calculator sudah jalan di service; tandai)
         markUpTo('identify', 'done');
         markUpTo('validate', 'active');
-        setStatusLine(`Memvalidasi ${out.items.length} item dari ${f.file.name}…`);
+        setStatusLine(`${t('ai.ded.validating_a')} ${out.items.length} ${t('ai.ded.validating_b')} ${f.file.name}…`);
         setPercent((fi / sess.files.length) * 100 + (100 / sess.files.length) * 0.85);
 
         const pageOffset = totalPages;
@@ -318,7 +313,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
 
       // Tahap 6: siapkan estimasi gabungan
       markUpTo('prepare', 'active');
-      setStatusLine('Menyiapkan estimasi akhir…');
+      setStatusLine(t('ai.ded.preparing_final'));
       const merged = DedAiCalculator.buildOutput({
         jobId: `dedai-${Date.now()}`,
         projectType: sess.projectType,
@@ -330,23 +325,23 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       });
       markUpTo('prepare', 'done');
       setPercent(100);
-      setStatusLine('Analisis selesai');
+      setStatusLine(t('ai.ded.status_done'));
       setResult(merged);
       setResultReady(true);
       notificationBus.publish({
         type: 'success',
-        title: 'Analisis DED selesai',
-        message: `${merged.items.length} pekerjaan terdeteksi dari ${fileNames.length} dokumen (${sess.mode === 'FAST' ? 'Cepat' : 'Mendalam'}).`,
+        title: t('ai.ded.title_done'),
+        message: `${merged.items.length} ${t('ai.ded.notif_msg_a')} ${fileNames.length} ${t('ai.ded.notif_msg_b')} (${sess.mode === 'FAST' ? t('ai.ded.input.mode_fast') : t('ai.ded.input.mode_deep')}).`,
         link: 'ded-ai',
       });
       // Otomatis ke hasil setelah jeda singkat
       setTimeout(() => { if (!cancelRef.current) setScreen('result'); }, 900);
     } catch (e: any) {
       markUpTo('reading', 'failed');
-      setError({ message: e?.message || 'Kesalahan tidak terduga saat analisis.', retryable: true });
-      setStatusLine('Analisis gagal');
+      setError({ message: e?.message || t('ai.ded.err_unexpected'), retryable: true });
+      setStatusLine(t('ai.ded.status_failed'));
     }
-  }, []);
+  }, [t]);
 
   const handleStart = (sess: DedAiSession) => {
     setSession(sess);
@@ -394,18 +389,18 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     const blocked = items.length - savable.length;
     const needsReview = savable.filter((it) => it.quantitySource === 'AI_INFERENCE' || it.quantitySource === 'ASSUMPTION').length;
     if (savable.length === 0) {
-      return { ok: false, message: 'Tidak ada item yang bisa disimpan (semua diblokir / tanpa harga).' };
+      return { ok: false, message: t('ai.ded.finalize_none') };
     }
     try {
       let projectId = session.targetProjectId;
-      let projectName = result?.projectName || 'Proyek DED AI';
+      let projectName = result?.projectName || t('ai.ded.default_project_name');
       if (!projectId) {
         const created = createProject({
           name: projectName,
           buildingType: 'Rumah Tinggal',
           status: 'draft',
           creationMethod: 'ai-ded',
-          description: session.description || `Hasil analisis DED-AI (${savable.length} item)`,
+          description: session.description || `${t('ai.ded.finalize_desc_a')} (${savable.length} item)`,
         } as any);
         projectId = created.id;
         projectName = created.name;
@@ -428,13 +423,13 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       setFinalized(true);
       notificationBus.publish({
         type: 'success',
-        title: 'Estimasi tersimpan ke proyek',
-        message: `${added.length} item RAB tersimpan ke "${projectName}".`,
+        title: t('ai.ded.notif_saved_title'),
+        message: `${added.length} ${t('ai.ded.notif_saved_a')} "${projectName}".`,
         link: 'rab-estimasi',
       });
-      return { ok: true, message: `${added.length} item berhasil disimpan ke proyek "${projectName}".${blocked > 0 ? ` ${blocked} item ditahan (perlu tinjau/ditolak) dan tidak masuk RAB.` : ''}${needsReview > 0 ? ` ${needsReview} item dari inferensi AI — periksa badge "Perlu Ditinjau" di spreadsheet.` : ''} Buka Spreadsheet RAB untuk melihatnya.` };
+      return { ok: true, message: `${added.length} ${t('ai.ded.finalize_ok_a')} "${projectName}".${blocked > 0 ? ` ${blocked} ${t('ai.ded.finalize_blocked_a')}` : ''}${needsReview > 0 ? ` ${needsReview} ${t('ai.ded.finalize_review_a')} "${t('ai.ded.result.badge_review')}" ${t('ai.ded.finalize_review_b')}` : ''} ${t('ai.ded.finalize_open')}` };
     } catch (e: any) {
-      return { ok: false, message: e?.message || 'Gagal menyimpan ke proyek.' };
+      return { ok: false, message: e?.message || t('ai.ded.err_save') };
     }
   };
 
@@ -442,10 +437,9 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     if (onNavigateToTab) onNavigateToTab('rab-estimasi');
   };
 
-  /**
-   * FULL AI finalize: hanya item READY dengan subtotal valid yang masuk RAB.
-   * Item UNRESOLVED/NEEDS_CONFIRMATION tidak disamarkan menjadi angka.
-   */
+  // Bersihkan flag cancel saat unmount
+  useEffect(() => () => { cancelRef.current = true; }, []);
+
   const handleFullAiFinalize = async (items: FullAiItem[]): Promise<{ ok: boolean; message: string }> => {
     const savable = items.filter(
       (it) => it.status === 'READY' && it.subtotal != null && it.subtotal > 0 && it.price.unitPrice != null
@@ -501,9 +495,6 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     }
   };
 
-  // Bersihkan flag cancel saat unmount
-  useEffect(() => () => { cancelRef.current = true; }, []);
-
   if (screen === 'progress') {
     return (
       <DedAiProgressView
@@ -529,7 +520,6 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       />
     );
   }
-
   if (screen === 'result' && result) {
     return (
       <DedAiResultView

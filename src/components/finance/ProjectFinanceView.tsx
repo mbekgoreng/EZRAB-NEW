@@ -165,15 +165,15 @@ export const ProjectFinanceView: React.FC<ProjectFinanceViewProps> = ({
       {/* Navigation Sub-Tabs Bar */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '14px',
-          border: '1px solid #E2E8F0',
+          backgroundColor: 'var(--ez-color-surface)',
+          borderRadius: 'var(--ez-radius-card)',
+          border: '1px solid #EEF1F6',
           padding: '6px 8px',
           display: 'flex',
           alignItems: 'center',
           gap: '4px',
           overflowX: 'auto',
-          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
         }}
       >
         {subNavTabs.map((tab) => {
@@ -189,10 +189,10 @@ export const ProjectFinanceView: React.FC<ProjectFinanceViewProps> = ({
                 alignItems: 'center',
                 gap: '6px',
                 padding: '8px 12px',
-                borderRadius: '8px',
+                borderRadius: 'var(--ez-radius-control)',
                 border: 'none',
-                backgroundColor: isActive ? '#2563EB' : 'transparent',
-                color: isActive ? '#FFFFFF' : '#475569',
+                backgroundColor: isActive ? 'var(--ez-color-primary)' : 'transparent',
+                color: isActive ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                 fontSize: '12px',
                 fontWeight: isActive ? 700 : 600,
                 cursor: 'pointer',
@@ -208,9 +208,9 @@ export const ProjectFinanceView: React.FC<ProjectFinanceViewProps> = ({
                     fontSize: '10px',
                     fontWeight: 750,
                     padding: '1px 5px',
-                    borderRadius: '999px',
-                    backgroundColor: isActive ? 'rgba(255, 255, 255, 0.25)' : '#F1F5F9',
-                    color: isActive ? '#FFFFFF' : '#64748B',
+                    borderRadius: 'var(--ez-radius-pill)',
+                    backgroundColor: isActive ? 'rgba(255, 255, 255, 0.25)' : 'var(--ez-color-surface-tertiary)',
+                    color: isActive ? '#FFFFFF' : 'var(--ez-color-text-muted)',
                   }}
                 >
                   {tab.count}

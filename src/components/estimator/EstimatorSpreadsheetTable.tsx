@@ -145,9 +145,9 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
   return (
     <div
       style={{
-        background: '#FFFFFF',
-        borderRadius: '12px',
-        border: '1px solid #E2E8F0',
+        background: 'var(--ez-color-surface)',
+        borderRadius: 'var(--ez-radius-control)',
+        border: '1px solid var(--ez-color-border-line)',
         overflow: 'hidden',
         boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
         position: 'relative',
@@ -166,9 +166,9 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
           <thead>
             <tr
               style={{
-                background: '#F8FAFC',
-                borderBottom: '1px solid #E2E8F0',
-                color: '#475569',
+                background: 'var(--ez-color-surface-secondary)',
+                borderBottom: '1px solid var(--ez-color-border-line)',
+                color: 'var(--ez-color-text-slate)',
                 fontSize: '11px',
                 fontWeight: 700,
                 textTransform: 'none',
@@ -186,7 +186,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                   style={{
                     width: '15px',
                     height: '15px',
-                    accentColor: '#2563EB',
+                    accentColor: 'var(--ez-color-primary)',
                     cursor: 'pointer',
                   }}
                 />
@@ -245,20 +245,20 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                         width: '56px',
                         height: '56px',
                         borderRadius: '16px',
-                        background: '#EFF6FF',
-                        border: '1px solid #DBEAFE',
+                        background: 'var(--ez-hue-blue-bg)',
+                        border: '1px solid var(--ez-hue-blue-bg-deep)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#2563EB',
+                        color: 'var(--ez-color-primary)',
                       }}
                     >
                       <Layers size={28} />
                     </div>
-                    <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                       Belum Ada Pekerjaan
                     </h3>
-                    <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5, margin: 0 }}>
+                    <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', lineHeight: 1.5, margin: 0 }}>
                       Mulai membangun RAB proyek Anda. Pilih salah satu cara berikut untuk menambahkan rincian pekerjaan:
                     </p>
                     <div
@@ -276,7 +276,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                           style={{
                             padding: '9px 16px',
                             borderRadius: '8px',
-                            background: '#2563EB',
+                            background: 'var(--ez-color-primary)',
                             color: '#FFFFFF',
                             fontSize: '12.5px',
                             fontWeight: 750,
@@ -298,18 +298,18 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                           style={{
                             padding: '9px 16px',
                             borderRadius: '8px',
-                            background: '#F0FDF4',
-                            color: '#16A34A',
+                            background: 'var(--ez-hue-green-bg)',
+                            color: 'var(--ez-hue-green-text-bright)',
                             fontSize: '12.5px',
                             fontWeight: 600,
-                            border: '1px solid #DCFCE7',
+                            border: '1px solid var(--ez-hue-green-bg-deep)',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px',
                           }}
                         >
-                          <PenTool size={14} color="#16A34A" />
+                          <PenTool size={14} color="var(--ez-hue-green-text-bright)" />
                           <span>Manual</span>
                         </button>
                       )}
@@ -319,18 +319,18 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                           style={{
                             padding: '9px 16px',
                             borderRadius: '8px',
-                            background: '#EFF6FF',
-                            color: '#2563EB',
+                            background: 'var(--ez-hue-blue-bg)',
+                            color: 'var(--ez-color-primary)',
                             fontSize: '12.5px',
                             fontWeight: 600,
-                            border: '1px solid #DBEAFE',
+                            border: '1px solid var(--ez-hue-blue-bg-deep)',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px',
                           }}
                         >
-                          <Sparkles size={14} color="#2563EB" />
+                          <Sparkles size={14} color="var(--ez-hue-blue-text)" />
                           <span>Dengan AI</span>
                         </button>
                       )}
@@ -340,18 +340,18 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                           style={{
                             padding: '9px 16px',
                             borderRadius: '8px',
-                            background: '#FFFBEB',
-                            color: '#D97706',
+                            background: 'var(--ez-hue-amber-bg)',
+                            color: 'var(--ez-hue-amber-text-deep)',
                             fontSize: '12.5px',
                             fontWeight: 600,
-                            border: '1px solid #FEF3C7',
+                            border: '1px solid var(--ez-hue-amber-bg-deep)',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px',
                           }}
                         >
-                          <LayoutTemplate size={14} color="#D97706" />
+                          <LayoutTemplate size={14} color="var(--ez-hue-amber-text-deep)" />
                           <span>Template</span>
                         </button>
                       )}
@@ -368,9 +368,9 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                     {/* WBS GROUP HEADER ROW */}
                     <tr
                       style={{
-                        background: '#F8FAFC',
-                        borderTop: '1px solid #E2E8F0',
-                        borderBottom: '1px solid #E2E8F0',
+                        background: 'var(--ez-color-surface-secondary)',
+                        borderTop: '1px solid var(--ez-color-border-line)',
+                        borderBottom: '1px solid var(--ez-color-border-line)',
                         userSelect: 'none',
                       }}
                     >
@@ -384,7 +384,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#64748B',
+                            color: 'var(--ez-color-text-muted)',
                           }}
                         >
                           {isCollapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />}
@@ -434,7 +434,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                         style={{ padding: '10px 12px', cursor: 'pointer' }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 750, color: '#0F172A' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
                             {group.categoryName}
                           </span>
                           <span
@@ -442,10 +442,10 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                               fontSize: '11px',
                               fontWeight: 600,
                               padding: '1px 7px',
-                              borderRadius: '999px',
-                              background: '#EFF6FF',
-                              color: '#2563EB',
-                              border: '1px solid #DBEAFE',
+                              borderRadius: 'var(--ez-radius-pill)',
+                              background: 'var(--ez-hue-blue-bg)',
+                              color: 'var(--ez-color-primary)',
+                              border: '1px solid var(--ez-hue-blue-bg-deep)',
                             }}
                           >
                             {group.items.length} item
@@ -460,7 +460,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                           textAlign: 'right',
                           fontWeight: 800,
                           fontSize: '13px',
-                          color: '#0F172A',
+                          color: 'var(--ez-color-text-primary)',
                           fontVariantNumeric: 'tabular-nums',
                         }}
                       >
@@ -485,9 +485,9 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                               height: '24px',
                               padding: '0 8px',
                               borderRadius: '4px',
-                              background: '#EFF6FF',
-                              border: '1px solid #BFDBFE',
-                              color: '#2563EB',
+                              background: 'var(--ez-hue-blue-bg)',
+                              border: '1px solid var(--ez-hue-blue-border)',
+                              color: 'var(--ez-color-primary)',
                               fontSize: '11px',
                               fontWeight: 700,
                               cursor: 'pointer',
@@ -515,15 +515,15 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                             key={item.id}
                             onContextMenu={(e) => onContextMenu(e, item)}
                             style={{
-                              background: isSelected ? '#EFF6FF' : isRowActive ? '#F8FAFC' : '#FFFFFF',
-                              borderBottom: '1px solid #F1F5F9',
+                              background: isSelected ? 'var(--ez-hue-blue-bg)' : isRowActive ? 'var(--ez-color-surface-secondary)' : 'var(--ez-color-surface)',
+                              borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                               transition: 'background 0.12s ease',
                             }}
                             onMouseEnter={(e) => {
-                              if (!isSelected && !isRowActive) e.currentTarget.style.background = '#F8FAFC';
+                              if (!isSelected && !isRowActive) e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
                             }}
                             onMouseLeave={(e) => {
-                              if (!isSelected && !isRowActive) e.currentTarget.style.background = '#FFFFFF';
+                              if (!isSelected && !isRowActive) e.currentTarget.style.background = 'var(--ez-color-surface)';
                             }}
                           >
                             {/* 1. Checkbox */}
@@ -535,7 +535,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                 style={{
                                   width: '14px',
                                   height: '14px',
-                                  accentColor: '#2563EB',
+                                  accentColor: 'var(--ez-color-primary)',
                                   cursor: 'pointer',
                                 }}
                               />
@@ -543,7 +543,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
 
                             {/* 2. Item Number */}
                             {visibleColumns.no !== false && (
-                              <td className="tablet-up" style={{ textAlign: 'center', color: '#64748B', fontSize: '11.5px', padding: '9px 8px' }}>
+                              <td className="tablet-up" style={{ textAlign: 'center', color: 'var(--ez-color-text-muted)', fontSize: '11.5px', padding: '9px 8px' }}>
                                 {index + 1}
                               </td>
                             )}
@@ -556,7 +556,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                 onDoubleClick={() => onStartEditing(item.id, 'code', item.code || item.ahspCode)}
                                 style={{
                                   padding: '9px 12px',
-                                  color: '#64748B',
+                                  color: 'var(--ez-color-text-muted)',
                                   fontFamily: 'monospace',
                                   fontSize: '11.5px',
                                   cursor: 'text',
@@ -592,7 +592,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                               onDoubleClick={() => onStartEditing(item.id, 'description', item.description)}
                               style={{
                                 padding: '9px 12px',
-                                color: '#0F172A',
+                                color: 'var(--ez-color-text-primary)',
                                 fontWeight: 600,
                                 fontSize: '12.5px',
                                 cursor: 'text',
@@ -631,7 +631,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                     className="mobile-only"
                                     style={{
                                       fontSize: '11px',
-                                      color: '#64748B',
+                                      color: 'var(--ez-color-text-muted)',
                                       marginTop: '3px',
                                       display: 'flex',
                                       alignItems: 'center',
@@ -641,7 +641,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                     }}
                                   >
                                     {(item.code || item.ahspCode) && (
-                                      <span style={{ fontFamily: 'monospace', background: '#F1F5F9', padding: '1px 4px', borderRadius: '3px' }}>
+                                      <span style={{ fontFamily: 'monospace', background: 'var(--ez-color-surface-tertiary)', padding: '1px 4px', borderRadius: '3px' }}>
                                         {item.code || item.ahspCode}
                                       </span>
                                     )}
@@ -651,7 +651,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                       <span style={{ color: '#DC2626', fontWeight: 600 }}>Belum ada harga</span>
                                     )}
                                     {item.volumeSource && (
-                                      <span style={{ background: '#EFF6FF', color: '#2563EB', padding: '1px 4px', borderRadius: '3px', fontSize: '10px' }}>
+                                      <span style={{ background: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary)', padding: '1px 4px', borderRadius: '3px', fontSize: '10px' }}>
                                         {item.volumeSource}
                                       </span>
                                     )}
@@ -669,7 +669,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                   padding: '9px 12px',
                                   textAlign: 'right',
                                   fontWeight: 700,
-                                  color: '#2563EB',
+                                  color: 'var(--ez-color-primary)',
                                   fontVariantNumeric: 'tabular-nums',
                                   cursor: 'text',
                                 }}
@@ -711,7 +711,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                 style={{
                                   padding: '9px 8px',
                                   textAlign: 'center',
-                                  color: '#64748B',
+                                  color: 'var(--ez-color-text-muted)',
                                   fontSize: '11.5px',
                                   cursor: 'text',
                                 }}
@@ -750,7 +750,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                   padding: '9px 12px',
                                   textAlign: 'right',
                                   fontWeight: 600,
-                                  color: '#334155',
+                                  color: 'var(--ez-color-text-body)',
                                   fontVariantNumeric: 'tabular-nums',
                                   cursor: 'text',
                                 }}
@@ -786,7 +786,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                 padding: '9px 12px',
                                 textAlign: 'right',
                                 fontWeight: 800,
-                                color: '#0F172A',
+                                color: 'var(--ez-color-text-primary)',
                                 fontVariantNumeric: 'tabular-nums',
                               }}
                             >
@@ -804,22 +804,22 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                     borderRadius: '4px',
                                     background:
                                       item.volumeSource === 'CALCULATOR'
-                                        ? '#EEF2FF'
+                                        ? 'var(--ez-hue-indigo-bg-soft)'
                                         : item.volumeSource === 'MANUAL'
-                                        ? '#ECFDF5'
-                                        : '#EFF6FF',
+                                        ? 'var(--ez-hue-emerald-bg)'
+                                        : 'var(--ez-hue-blue-bg)',
                                     color:
                                       item.volumeSource === 'CALCULATOR'
-                                        ? '#4338CA'
+                                        ? 'var(--ez-hue-indigo-text)'
                                         : item.volumeSource === 'MANUAL'
-                                        ? '#047857'
-                                        : '#1D4ED8',
+                                        ? 'var(--ez-hue-green-text)'
+                                        : 'var(--ez-color-primary-hover)',
                                     border:
                                       item.volumeSource === 'CALCULATOR'
                                         ? '1px solid #C7D2FE'
                                         : item.volumeSource === 'MANUAL'
-                                        ? '1px solid #A7F3D0'
-                                        : '1px solid #BFDBFE',
+                                        ? '1px solid var(--ez-hue-green-border-deep)'
+                                        : '1px solid var(--ez-hue-blue-border)',
                                   }}
                                 >
                                   {item.volumeSource || 'MANUAL'}
@@ -836,13 +836,13 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                   style={{
                                     background: 'transparent',
                                     border: 'none',
-                                    color: '#64748B',
+                                    color: 'var(--ez-color-text-muted)',
                                     cursor: 'pointer',
                                     padding: '3px',
                                     borderRadius: '4px',
                                   }}
-                                  onMouseEnter={(e) => (e.currentTarget.style.color = '#2563EB')}
-                                  onMouseLeave={(e) => (e.currentTarget.style.color = '#64748B')}
+                                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ez-color-primary)')}
+                                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ez-color-text-muted)')}
                                 >
                                   <Eye size={14} />
                                 </button>
@@ -856,13 +856,13 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                   style={{
                                     background: 'transparent',
                                     border: 'none',
-                                    color: '#64748B',
+                                    color: 'var(--ez-color-text-muted)',
                                     cursor: 'pointer',
                                     padding: '3px',
                                     borderRadius: '4px',
                                   }}
-                                  onMouseEnter={(e) => (e.currentTarget.style.color = '#2563EB')}
-                                  onMouseLeave={(e) => (e.currentTarget.style.color = '#64748B')}
+                                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ez-color-primary)')}
+                                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ez-color-text-muted)')}
                                 >
                                   <MoreVertical size={14} />
                                 </button>
@@ -875,9 +875,9 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                     position: 'absolute',
                                     right: '8px',
                                     top: '32px',
-                                    background: '#FFFFFF',
+                                    background: 'var(--ez-color-surface)',
                                     borderRadius: '8px',
-                                    border: '1px solid #E2E8F0',
+                                    border: '1px solid var(--ez-color-border-line)',
                                     boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                                     zIndex: 50,
                                     width: '180px',
@@ -899,15 +899,15 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                       borderRadius: '4px',
                                       border: 'none',
                                       background: 'transparent',
-                                      color: '#334155',
+                                      color: 'var(--ez-color-text-body)',
                                       fontSize: '11.5px',
                                       fontWeight: 500,
                                       cursor: 'pointer',
                                     }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                   >
-                                    <Eye size={12} color="#2563EB" />
+                                    <Eye size={12} color="var(--ez-hue-blue-text)" />
                                     <span>Buka Rincian AHSP</span>
                                   </button>
 
@@ -925,15 +925,15 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                       borderRadius: '4px',
                                       border: 'none',
                                       background: 'transparent',
-                                      color: '#334155',
+                                      color: 'var(--ez-color-text-body)',
                                       fontSize: '11.5px',
                                       fontWeight: 500,
                                       cursor: 'pointer',
                                     }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                   >
-                                    <Copy size={12} color="#059669" />
+                                    <Copy size={12} color="var(--ez-hue-green-text)" />
                                     <span>Duplikasi Item</span>
                                   </button>
 
@@ -951,12 +951,12 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                       borderRadius: '4px',
                                       border: 'none',
                                       background: 'transparent',
-                                      color: '#334155',
+                                      color: 'var(--ez-color-text-body)',
                                       fontSize: '11.5px',
                                       fontWeight: 500,
                                       cursor: 'pointer',
                                     }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                   >
                                     <ArrowUp size={12} color="#64748B" />
@@ -977,19 +977,19 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                       borderRadius: '4px',
                                       border: 'none',
                                       background: 'transparent',
-                                      color: '#334155',
+                                      color: 'var(--ez-color-text-body)',
                                       fontSize: '11.5px',
                                       fontWeight: 500,
                                       cursor: 'pointer',
                                     }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                   >
                                     <ArrowDown size={12} color="#64748B" />
                                     <span>Sisipkan di Bawah</span>
                                   </button>
 
-                                  <div style={{ height: '1px', background: '#F1F5F9', margin: '3px 0' }} />
+                                  <div style={{ height: '1px', background: 'var(--ez-color-surface-tertiary)', margin: '3px 0' }} />
 
                                   <button
                                     onClick={() => {
@@ -1010,7 +1010,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                       fontWeight: 600,
                                       cursor: 'pointer',
                                     }}
-                                    onMouseEnter={(e) => (e.currentTarget.style.background = '#FEF2F2')}
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-hue-rose-bg)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                                   >
                                     <Trash2 size={12} color="#EF4444" />

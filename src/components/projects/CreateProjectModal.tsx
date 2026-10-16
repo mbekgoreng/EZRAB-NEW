@@ -9,6 +9,7 @@ import {
   ChevronLeft,
 } from 'lucide-react';
 import { BuildingType, Project } from '../../types';
+import { useI18n } from '../../i18n/I18nContext';
 
 export type KickoffMethod = 'select' | 'magic_ai' | 'manual' | 'volume_calculation' | 'template';
 
@@ -27,6 +28,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
   onNavigateToTab,
   onOpenMagicAiWithPrompt,
 }) => {
+  const { t } = useI18n();
   const [activeStep, setActiveStep] = useState<KickoffMethod>('select');
 
   // Manual RAB Form State
@@ -153,8 +155,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
     >
       <div
         style={{
-          background: '#ffffff',
-          borderRadius: '16px',
+          background: 'var(--ez-color-surface)',
+          borderRadius: 'var(--ez-radius-card)',
           width: '100%',
           maxWidth: activeStep === 'select' ? '680px' : '540px',
           padding: '28px',
@@ -178,7 +180,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               <button
                 onClick={() => setActiveStep('select')}
                 style={{
-                  background: '#F1F5F9',
+                  background: 'var(--ez-color-surface-tertiary)',
                   border: 'none',
                   width: '32px',
                   height: '32px',
@@ -187,23 +189,23 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  color: '#475569',
+                  color: 'var(--ez-color-text-slate)',
                 }}
-                title="Kembali ke Pilihan Metode"
+                title={t('proj.create.back_title')}
               >
                 <ChevronLeft size={18} />
               </button>
             )}
             <div>
-              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                {activeStep === 'select' && 'Buat Proyek Baru'}
-                {activeStep === 'manual' && 'Mulai dengan Manual RAB'}
-                {activeStep === 'magic_ai' && 'Mulai dengan EZRAB Magic AI'}
+              <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
+                {activeStep === 'select' && t('proj.create.title_select')}
+                {activeStep === 'manual' && t('proj.create.title_manual')}
+                {activeStep === 'magic_ai' && t('proj.create.title_ai')}
               </h2>
-              <p style={{ fontSize: '12.5px', color: '#64748B', margin: '2px 0 0 0' }}>
-                {activeStep === 'select' && 'Bagaimana Anda ingin memulai penyusunan RAB proyek ini?'}
-                {activeStep === 'manual' && 'Lengkapi identitas dasar proyek dan masuki Spreadsheet RAB.'}
-                {activeStep === 'magic_ai' && 'Deskripsikan proyek Anda untuk kalkulasi otomatis berbasis AHSP.'}
+              <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0 0' }}>
+                {activeStep === 'select' && t('proj.create.sub_select')}
+                {activeStep === 'manual' && t('proj.create.sub_manual')}
+                {activeStep === 'magic_ai' && t('proj.create.sub_ai')}
               </p>
             </div>
           </div>
@@ -216,7 +218,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               color: '#94A3B8',
               cursor: 'pointer',
               padding: '4px',
-              borderRadius: '6px',
+              borderRadius: 'var(--ez-radius-chip)',
             }}
           >
             <X size={20} />
@@ -232,9 +234,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             <div
               onClick={() => setActiveStep('magic_ai')}
               style={{
-                background: 'linear-gradient(135deg, #F0F5FF 0%, #EEF2FF 100%)',
-                border: '1.5px solid #C7D2FE',
-                borderRadius: '12px',
+                background: 'var(--ez-pastel-sky)',
+                border: '1.5px solid var(--ez-hue-blue-border)',
+                borderRadius: 'var(--ez-radius-control)',
                 padding: '16px',
                 cursor: 'pointer',
                 display: 'flex',
@@ -248,7 +250,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.borderColor = '#C7D2FE';
+                e.currentTarget.style.borderColor = 'var(--ez-hue-blue-border)';
               }}
             >
               <div>
@@ -257,9 +259,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     style={{
                       width: '38px',
                       height: '38px',
-                      borderRadius: '10px',
-                      background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
-                      color: '#ffffff',
+                      borderRadius: 'var(--ez-radius-control)',
+                      background: 'var(--ez-color-primary)',
+                      color: '#FFFFFF',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -267,19 +269,19 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   >
                     <Sparkles size={19} />
                   </div>
-                  <span style={{ fontSize: '10px', fontWeight: 800, background: '#EEF2FF', color: '#4F46E5', padding: '2px 8px', borderRadius: '999px', border: '1px solid #C7D2FE' }}>
-                    PALING CEPAT
+                  <span style={{ fontSize: '10px', fontWeight: 800, background: 'var(--ez-pastel-sky)', color: 'var(--ez-hue-blue-text-deep)', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', border: '1px solid var(--ez-hue-blue-border)' }}>
+                    {t('proj.create.card1_tag')}
                   </span>
                 </div>
                 <h3 style={{ fontSize: '15px', fontWeight: 750, color: '#1E1B4B', margin: '0 0 4px 0' }}>
-                  EZRAB Magic AI
+                  {t('proj.create.card1_t')}
                 </h3>
-                <p style={{ fontSize: '12px', color: '#4338CA', lineHeight: 1.45, margin: 0 }}>
-                  Generate draft RAB lengkap langsung dari prompt deskripsi, luas tanah/bangunan, atau dokumen gambar kerja.
+                <p style={{ fontSize: '12px', color: 'var(--ez-hue-indigo-text)', lineHeight: 1.45, margin: 0 }}>
+                  {t('proj.create.card1_b')}
                 </p>
               </div>
-              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#4F46E5' }}>
-                <span>Mulai dengan AI</span>
+              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-blue-text-deep)' }}>
+                <span>{t('proj.create.card1_cta')}</span>
                 <ArrowRight size={14} />
               </div>
             </div>
@@ -288,9 +290,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             <div
               onClick={() => setActiveStep('manual')}
               style={{
-                background: '#ffffff',
-                border: '1.5px solid #E2E8F0',
-                borderRadius: '12px',
+                background: 'var(--ez-color-surface)',
+                border: '1.5px solid var(--ez-color-border-line)',
+                borderRadius: 'var(--ez-radius-control)',
                 padding: '16px',
                 cursor: 'pointer',
                 display: 'flex',
@@ -300,11 +302,11 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.borderColor = '#2563EB';
+                e.currentTarget.style.borderColor = 'var(--ez-color-primary)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.borderColor = '#E2E8F0';
+                e.currentTarget.style.borderColor = 'var(--ez-color-border)';
               }}
             >
               <div>
@@ -313,10 +315,10 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     style={{
                       width: '38px',
                       height: '38px',
-                      borderRadius: '10px',
-                      background: '#EFF6FF',
-                      color: '#2563EB',
-                      border: '1px solid #DBEAFE',
+                      borderRadius: 'var(--ez-radius-control)',
+                      background: 'var(--ez-hue-blue-bg)',
+                      color: 'var(--ez-color-primary)',
+                      border: '1px solid var(--ez-hue-blue-bg-deep)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -324,19 +326,19 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   >
                     <FileEdit size={19} />
                   </div>
-                  <span style={{ fontSize: '10px', fontWeight: 700, background: '#F8FAFC', color: '#64748B', padding: '2px 8px', borderRadius: '999px', border: '1px solid #E2E8F0' }}>
-                    KONTROL PENUH
+                  <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--ez-color-surface-secondary)', color: 'var(--ez-color-text-muted)', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', border: '1px solid var(--ez-color-border-line)' }}>
+                    {t('proj.create.card2_tag')}
                   </span>
                 </div>
-                <h3 style={{ fontSize: '15px', fontWeight: 750, color: '#0F172A', margin: '0 0 4px 0' }}>
-                  Manual RAB Builder
+                <h3 style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: '0 0 4px 0' }}>
+                  {t('proj.create.card2_t')}
                 </h3>
-                <p style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.45, margin: 0 }}>
-                  Masukkan identitas proyek, pilih struktur pekerjaan standar, dan susun rincian item pekerjaan di Spreadsheet.
+                <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', lineHeight: 1.45, margin: 0 }}>
+                  {t('proj.create.card2_b')}
                 </p>
               </div>
-              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#2563EB' }}>
-                <span>Isi Form Manual</span>
+              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-primary)' }}>
+                <span>{t('proj.create.card2_cta')}</span>
                 <ArrowRight size={14} />
               </div>
             </div>
@@ -345,9 +347,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             <div
               onClick={handleVolumeCalcPathway}
               style={{
-                background: '#ffffff',
-                border: '1.5px solid #E2E8F0',
-                borderRadius: '12px',
+                background: 'var(--ez-color-surface)',
+                border: '1.5px solid var(--ez-color-border-line)',
+                borderRadius: 'var(--ez-radius-control)',
                 padding: '16px',
                 cursor: 'pointer',
                 display: 'flex',
@@ -361,7 +363,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.borderColor = '#E2E8F0';
+                e.currentTarget.style.borderColor = 'var(--ez-color-border)';
               }}
             >
               <div>
@@ -370,10 +372,10 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     style={{
                       width: '38px',
                       height: '38px',
-                      borderRadius: '10px',
-                      background: '#ECFDF5',
-                      color: '#059669',
-                      border: '1px solid #A7F3D0',
+                      borderRadius: 'var(--ez-radius-control)',
+                      background: 'var(--ez-hue-emerald-bg)',
+                      color: 'var(--ez-hue-green-text)',
+                      border: '1px solid var(--ez-hue-green-border-deep)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -381,19 +383,19 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   >
                     <Calculator size={19} />
                   </div>
-                  <span style={{ fontSize: '10px', fontWeight: 700, background: '#F8FAFC', color: '#64748B', padding: '2px 8px', borderRadius: '999px', border: '1px solid #E2E8F0' }}>
-                    QTO PRESISI
+                  <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--ez-color-surface-secondary)', color: 'var(--ez-color-text-muted)', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', border: '1px solid var(--ez-color-border-line)' }}>
+                    {t('proj.create.card3_tag')}
                   </span>
                 </div>
-                <h3 style={{ fontSize: '15px', fontWeight: 750, color: '#0F172A', margin: '0 0 4px 0' }}>
-                  Volume Calculation
+                <h3 style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: '0 0 4px 0' }}>
+                  {t('proj.create.card3_t')}
                 </h3>
-                <p style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.45, margin: 0 }}>
-                  Hitung volume pekerjaan konstruksi (beton, galian, dinding, atap) secara parametrik dan sinkronkan ke RAB.
+                <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', lineHeight: 1.45, margin: 0 }}>
+                  {t('proj.create.card3_b')}
                 </p>
               </div>
-              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#059669' }}>
-                <span>Buka Kalkulator</span>
+              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-green-text)' }}>
+                <span>{t('proj.create.card3_cta')}</span>
                 <ArrowRight size={14} />
               </div>
             </div>
@@ -402,9 +404,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             <div
               onClick={handleTemplatePathway}
               style={{
-                background: '#ffffff',
-                border: '1.5px solid #E2E8F0',
-                borderRadius: '12px',
+                background: 'var(--ez-color-surface)',
+                border: '1.5px solid var(--ez-color-border-line)',
+                borderRadius: 'var(--ez-radius-control)',
                 padding: '16px',
                 cursor: 'pointer',
                 display: 'flex',
@@ -418,7 +420,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.borderColor = '#E2E8F0';
+                e.currentTarget.style.borderColor = 'var(--ez-color-border)';
               }}
             >
               <div>
@@ -427,10 +429,10 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     style={{
                       width: '38px',
                       height: '38px',
-                      borderRadius: '10px',
-                      background: '#FFFBEB',
-                      color: '#D97706',
-                      border: '1px solid #FDE68A',
+                      borderRadius: 'var(--ez-radius-control)',
+                      background: 'var(--ez-hue-amber-bg)',
+                      color: 'var(--ez-hue-amber-text-deep)',
+                      border: '1px solid var(--ez-hue-amber-border)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -438,19 +440,19 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   >
                     <Layers size={19} />
                   </div>
-                  <span style={{ fontSize: '10px', fontWeight: 700, background: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: '999px' }}>
-                    TYPE 36-300
+                  <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--ez-color-success-soft)', color: 'var(--ez-hue-green-text)', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)' }}>
+                    {t('proj.create.card4_tag')}
                   </span>
                 </div>
-                <h3 style={{ fontSize: '15px', fontWeight: 750, color: '#0F172A', margin: '0 0 4px 0' }}>
-                  Template RAB Bangunan
+                <h3 style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: '0 0 4px 0' }}>
+                  {t('proj.create.card4_t')}
                 </h3>
-                <p style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.45, margin: 0 }}>
-                  Pilih dari puluhan template rumah tinggal dan gedung yang sudah terisi analisa harga satuan PUPR 2026.
+                <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', lineHeight: 1.45, margin: 0 }}>
+                  {t('proj.create.card4_b')}
                 </p>
               </div>
-              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#D97706' }}>
-                <span>Pilih dari Katalog</span>
+              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-amber-text-deep)' }}>
+                <span>{t('proj.create.card4_cta')}</span>
                 <ArrowRight size={14} />
               </div>
             </div>
@@ -463,20 +465,20 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
         {activeStep === 'manual' && (
           <form onSubmit={handleManualSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
-                Nama Proyek *
+              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
+                {t('proj.create.f_name')}
               </label>
               <input
                 type="text"
                 required
-                placeholder="cth. Rumah Tinggal 2 Lantai Modern"
+                placeholder={t('proj.create.f_name_ph')}
                 value={manualName}
                 onChange={(e) => setManualName(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '9px 12px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   fontSize: '13px',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -486,8 +488,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
-                  Jenis Bangunan
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
+                  {t('proj.create.f_type')}
                 </label>
                 <select
                   value={manualBuildingType}
@@ -496,9 +498,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
-                    background: '#ffffff',
+                    background: 'var(--ez-color-surface)',
                     outline: 'none',
                     boxSizing: 'border-box',
                   }}
@@ -514,19 +516,19 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
-                  Lokasi Proyek
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
+                  {t('proj.create.f_loc')}
                 </label>
                 <input
                   type="text"
-                  placeholder="cth. Jakarta Selatan"
+                  placeholder={t('proj.create.f_loc_ph')}
                   value={manualLocation}
                   onChange={(e) => setManualLocation(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -537,8 +539,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
-                  Luas Bangunan (m²)
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
+                  {t('proj.create.f_area')}
                 </label>
                 <input
                   type="number"
@@ -549,7 +551,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -558,8 +560,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
-                  Jumlah Lantai
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
+                  {t('proj.create.f_floors')}
                 </label>
                 <input
                   type="number"
@@ -571,7 +573,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -582,19 +584,19 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
-                  Nama Klien / Pemilik
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
+                  {t('proj.create.f_client')}
                 </label>
                 <input
                   type="text"
-                  placeholder="cth. Bpk. Hendra"
+                  placeholder={t('proj.create.f_client_ph')}
                   value={manualClient}
                   onChange={(e) => setManualClient(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -603,19 +605,19 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
-                  Target Anggaran (Opsional)
+                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
+                  {t('proj.create.f_budget')}
                 </label>
                 <input
                   type="text"
-                  placeholder="cth. Rp 850.000.000"
+                  placeholder={t('proj.create.f_budget_ph')}
                   value={manualEstimatedBudget}
                   onChange={(e) => setManualEstimatedBudget(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '9px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
                     outline: 'none',
                     boxSizing: 'border-box',
@@ -631,15 +633,15 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 style={{
                   padding: '9px 16px',
                   borderRadius: '8px',
-                  border: '1px solid #E2E8F0',
-                  background: '#ffffff',
-                  color: '#64748B',
+                  border: '1px solid var(--ez-color-border-line)',
+                  background: 'var(--ez-color-surface)',
+                  color: 'var(--ez-color-text-muted)',
                   fontSize: '13px',
                   fontWeight: 600,
                   cursor: 'pointer',
                 }}
               >
-                Kembali
+                {t('proj.create.back_btn')}
               </button>
               <button
                 type="submit"
@@ -647,8 +649,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 style={{
                   padding: '9px 20px',
                   borderRadius: '8px',
-                  background: '#2563EB',
-                  color: '#ffffff',
+                  background: 'var(--ez-color-primary)',
+                  color: '#FFFFFF',
                   border: 'none',
                   fontSize: '13px',
                   fontWeight: 650,
@@ -656,7 +658,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   opacity: !manualName.trim() ? 0.6 : 1,
                 }}
               >
-                {isSubmitting ? 'Menyimpan...' : 'Simpan & Buka Lembar RAB →'}
+                {isSubmitting ? t('proj.create.saving') : t('proj.create.save_open')}
               </button>
             </div>
           </form>
@@ -667,33 +669,33 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
            ========================================================================= */}
         {activeStep === 'magic_ai' && (
           <form onSubmit={handleMagicAiSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#4F46E5', marginBottom: '4px' }}>
+            <div style={{ background: 'var(--ez-color-surface-secondary)', padding: '12px', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-blue-text-deep)', marginBottom: '4px' }}>
                 <Sparkles size={14} />
-                <span>Format Rekomendasi Prompt AI</span>
+                <span>{t('proj.create.ai_fmt')}</span>
               </div>
-              <p style={{ fontSize: '11.5px', color: '#64748B', margin: 0, lineHeight: 1.4 }}>
-                Sebutkan tipe bangunan, luas, jumlah lantai, lokasi, dan spesifikasi khusus (contoh: pondasi tiang pancang, rangka atap baja ringan, lantai granit 60x60).
+              <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', margin: 0, lineHeight: 1.4 }}>
+                {t('proj.create.ai_fmt_b')}
               </p>
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: '#334155', marginBottom: '5px' }}>
-                Deskripsi Proyek Konstruksi *
+              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: '5px' }}>
+                {t('proj.create.f_desc')}
               </label>
               <textarea
                 rows={4}
                 required
-                placeholder="cth. Hitung RAB rumah type 70 di Surabaya, 2 lantai, 3 kamar tidur, struktur beton bertulang K-250, atap baja ringan genteng keramik."
+                placeholder={t('proj.create.f_desc_ph')}
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '12px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   fontSize: '13px',
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   outline: 'none',
                   resize: 'none',
                   boxSizing: 'border-box',
@@ -708,15 +710,15 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 style={{
                   padding: '9px 16px',
                   borderRadius: '8px',
-                  border: '1px solid #E2E8F0',
-                  background: '#ffffff',
-                  color: '#64748B',
+                  border: '1px solid var(--ez-color-border-line)',
+                  background: 'var(--ez-color-surface)',
+                  color: 'var(--ez-color-text-muted)',
                   fontSize: '13px',
                   fontWeight: 600,
                   cursor: 'pointer',
                 }}
               >
-                Kembali
+                {t('proj.create.back_btn')}
               </button>
               <button
                 type="submit"
@@ -727,8 +729,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                   gap: '6px',
                   padding: '9px 20px',
                   borderRadius: '8px',
-                  background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
-                  color: '#ffffff',
+                  background: 'var(--ez-color-primary)',
+                  color: '#FFFFFF',
                   border: 'none',
                   fontSize: '13px',
                   fontWeight: 650,
@@ -738,7 +740,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 }}
               >
                 <Sparkles size={14} />
-                <span>{isSubmitting ? 'Mempersiapkan...' : 'Proses dengan Magic AI →'}</span>
+                <span>{isSubmitting ? t('proj.create.preparing') : t('proj.create.process_ai')}</span>
               </button>
             </div>
           </form>

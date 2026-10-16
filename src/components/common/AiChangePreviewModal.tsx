@@ -79,18 +79,18 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
   const getActionBadgeColor = (action: AiChangeActionType) => {
     switch (action) {
       case 'ADD':
-        return { bg: '#ECFDF5', text: '#059669', border: '#A7F3D0', label: 'ADD WORK ITEM' };
+        return { bg: 'var(--ez-hue-emerald-bg)', text: '#059669', border: 'var(--ez-hue-green-border-deep)', label: 'ADD WORK ITEM' };
       case 'DELETE':
-        return { bg: '#FEF2F2', text: '#DC2626', border: '#FECACA', label: 'DELETE RECORD' };
+        return { bg: 'var(--ez-hue-rose-bg)', text: '#DC2626', border: 'var(--ez-hue-rose-border)', label: 'DELETE RECORD' };
       case 'PRICE_UPDATE':
       case 'BULK_UPDATE':
-        return { bg: '#EFF6FF', text: '#2563EB', border: '#BFDBFE', label: 'PRICE ADJUSTMENT' };
+        return { bg: 'var(--ez-hue-blue-bg)', text: 'var(--ez-color-primary)', border: 'var(--ez-hue-blue-border)', label: 'PRICE ADJUSTMENT' };
       case 'REPLACE':
         return { bg: '#FDF4FF', text: '#9333EA', border: '#F5D0FE', label: 'RESOURCE SUBSTITUTION' };
       case 'AHSP_UPDATE':
-        return { bg: '#FFFBEB', text: '#D97706', border: '#FDE68A', label: 'AHSP RECIPE UPDATE' };
+        return { bg: 'var(--ez-hue-amber-bg)', text: '#D97706', border: 'var(--ez-hue-amber-border)', label: 'AHSP RECIPE UPDATE' };
       default:
-        return { bg: '#F1F5F9', text: '#475569', border: '#CBD5E1', label: 'DATA UPDATE' };
+        return { bg: 'var(--ez-color-surface-tertiary)', text: '#475569', border: 'var(--ez-color-border)', label: 'DATA UPDATE' };
     }
   };
 
@@ -118,13 +118,13 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
           width: '100%',
           maxWidth: '880px',
           maxHeight: '92vh',
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           borderRadius: '16px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          border: isHighImpact ? '2px solid #F59E0B' : '1px solid #E2E8F0',
+          border: isHighImpact ? '2px solid #F59E0B' : '1px solid var(--ez-color-border-line)',
         }}
       >
         {/* ---------------------------------------------------------------------
@@ -228,19 +228,19 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
               style={{
                 padding: '12px 16px',
                 borderRadius: '10px',
-                background: '#FFFBEB',
+                background: 'var(--ez-hue-amber-bg)',
                 border: '1px solid #FCD34D',
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: '12px',
               }}
             >
-              <AlertTriangle size={20} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <AlertTriangle size={20} color="var(--ez-hue-amber-text-deep)" style={{ flexShrink: 0, marginTop: '2px' }} />
               <div>
-                <div style={{ fontSize: '13px', fontWeight: 800, color: '#92400E' }}>
+                <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-hue-amber-text-dark)' }}>
                   Perubahan Berdampak Signifikan (High-Impact Mutation)
                 </div>
-                <div style={{ fontSize: '12px', color: '#B45309', marginTop: '2px', lineHeight: 1.4 }}>
+                <div style={{ fontSize: '12px', color: 'var(--ez-hue-amber-text)', marginTop: '2px', lineHeight: 1.4 }}>
                   Perubahan ini mengubah nilai total anggaran lebih dari 5% atau memodifikasi banyak entitas sekaligus. Mohon periksa kembali matriks Before/After di bawah ini secara teliti.
                 </div>
               </div>
@@ -250,9 +250,9 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
           {/* PROPOSAL RATIONALE & CONTEXT BOX */}
           <div
             style={{
-              background: '#F8FAFC',
-              borderRadius: '12px',
-              border: '1px solid #E2E8F0',
+              background: 'var(--ez-color-surface-secondary)',
+              borderRadius: 'var(--ez-radius-control)',
+              border: '1px solid var(--ez-color-border-line)',
               padding: '16px',
               display: 'flex',
               flexDirection: 'column',
@@ -260,30 +260,30 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
+              <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                 {proposal.title}
               </span>
-              <span style={{ fontSize: '11px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Database size={12} color="#2563EB" />
+              <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Database size={12} color="var(--ez-hue-blue-text)" />
                 Sumber: <strong>{proposal.sourceContext || 'Standar AHSP PUPR 2026'}</strong>
               </span>
             </div>
 
-            <p style={{ margin: 0, fontSize: '12.5px', color: '#475569', lineHeight: 1.5 }}>
+            <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--ez-color-text-slate)', lineHeight: 1.5 }}>
               {proposal.reason}
             </p>
 
             {/* AFFECTED SUMMARY PILLS */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '4px' }}>
-              <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Entitas Terdampak:</span>
+              <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Entitas Terdampak:</span>
               <span
                 style={{
                   fontSize: '11px',
                   fontWeight: 750,
                   padding: '2px 8px',
                   borderRadius: '6px',
-                  background: '#EFF6FF',
-                  color: '#2563EB',
+                  background: 'var(--ez-hue-blue-bg)',
+                  color: 'var(--ez-color-primary)',
                 }}
               >
                 {proposal.affectedWorkItemsCount} Item Pekerjaan
@@ -306,8 +306,8 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                   fontWeight: 750,
                   padding: '2px 8px',
                   borderRadius: '6px',
-                  background: '#ECFDF5',
-                  color: '#059669',
+                  background: 'var(--ez-hue-emerald-bg)',
+                  color: 'var(--ez-hue-green-text)',
                 }}
               >
                 {proposal.affectedResourcesCount} Komponen Resource
@@ -330,17 +330,17 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
               style={{
                 padding: '14px',
                 borderRadius: '10px',
-                background: '#F8FAFC',
-                border: '1px solid #E2E8F0',
+                background: 'var(--ez-color-surface-secondary)',
+                border: '1px solid var(--ez-color-border-line)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '4px',
               }}
             >
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
                 Total RAB Saat Ini
               </span>
-              <span style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
                 {formatCurrencyIDR(proposal.currentTotalRab)}
               </span>
               <span style={{ fontSize: '10.5px', color: '#94A3B8' }}>Baseline Anggaran Proyek</span>
@@ -351,17 +351,17 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
               style={{
                 padding: '14px',
                 borderRadius: '10px',
-                background: '#EFF6FF',
-                border: '1px solid #BFDBFE',
+                background: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-border)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '4px',
               }}
             >
-              <span style={{ fontSize: '11px', fontWeight: 700, color: '#1E40AF', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-hue-blue-text-deep)', textTransform: 'uppercase' }}>
                 Total RAB Usulan (Proposed)
               </span>
-              <span style={{ fontSize: '16px', fontWeight: 800, color: '#2563EB', fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-primary)', fontVariantNumeric: 'tabular-nums' }}>
                 {formatCurrencyIDR(proposal.proposedTotalRab)}
               </span>
               <span style={{ fontSize: '10.5px', color: '#60A5FA' }}>Setelah Perubahan Diterapkan</span>
@@ -372,8 +372,8 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
               style={{
                 padding: '14px',
                 borderRadius: '10px',
-                background: proposal.deltaAmount >= 0 ? '#FEF2F2' : '#ECFDF5',
-                border: `1px solid ${proposal.deltaAmount >= 0 ? '#FECACA' : '#A7F3D0'}`,
+                background: proposal.deltaAmount >= 0 ? 'var(--ez-hue-rose-bg)' : 'var(--ez-hue-emerald-bg)',
+                border: `1px solid ${proposal.deltaAmount >= 0 ? 'var(--ez-hue-rose-border)' : 'var(--ez-hue-green-border-deep)'}`,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '4px',
@@ -384,23 +384,23 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                   style={{
                     fontSize: '11px',
                     fontWeight: 800,
-                    color: proposal.deltaAmount >= 0 ? '#DC2626' : '#059669',
+                    color: proposal.deltaAmount >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)',
                     textTransform: 'uppercase',
                   }}
                 >
                   Selisih Bersih (Difference)
                 </span>
                 {proposal.deltaAmount >= 0 ? (
-                  <TrendingUp size={15} color="#DC2626" />
+                  <TrendingUp size={15} color="var(--ez-hue-rose-text)" />
                 ) : (
-                  <TrendingDown size={15} color="#059669" />
+                  <TrendingDown size={15} color="var(--ez-hue-green-text)" />
                 )}
               </div>
               <span
                 style={{
                   fontSize: '16px',
                   fontWeight: 850,
-                  color: proposal.deltaAmount >= 0 ? '#DC2626' : '#059669',
+                  color: proposal.deltaAmount >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)',
                   fontVariantNumeric: 'tabular-nums',
                 }}
               >
@@ -411,7 +411,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                 style={{
                   fontSize: '11px',
                   fontWeight: 750,
-                  color: proposal.deltaAmount >= 0 ? '#B91C1C' : '#047857',
+                  color: proposal.deltaAmount >= 0 ? 'var(--ez-hue-red-text)' : 'var(--ez-hue-green-text)',
                 }}
               >
                 {proposal.deltaPercent >= 0 ? '+' : ''}
@@ -425,8 +425,8 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
              ------------------------------------------------------------------- */}
           <div
             style={{
-              borderRadius: '12px',
-              border: '1px solid #E2E8F0',
+              borderRadius: 'var(--ez-radius-control)',
+              border: '1px solid var(--ez-color-border-line)',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -436,8 +436,8 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
             <div
               style={{
                 padding: '10px 16px',
-                background: '#F8FAFC',
-                borderBottom: '1px solid #E2E8F0',
+                background: 'var(--ez-color-surface-secondary)',
+                borderBottom: '1px solid var(--ez-color-border-line)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -445,7 +445,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: '#334155' }}>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-body)' }}>
                   Inspeksi Rincian ({filteredRecords.length}):
                 </span>
                 {(['ALL', 'WORK_ITEM', 'AHSP', 'RESOURCE'] as const).map((filterKey) => (
@@ -455,9 +455,9 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                     style={{
                       padding: '3px 8px',
                       borderRadius: '5px',
-                      background: activeFilter === filterKey ? '#2563EB' : '#FFFFFF',
-                      color: activeFilter === filterKey ? '#FFFFFF' : '#64748B',
-                      border: activeFilter === filterKey ? 'none' : '1px solid #CBD5E1',
+                      background: activeFilter === filterKey ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
+                      color: activeFilter === filterKey ? '#FFFFFF' : 'var(--ez-color-text-muted)',
+                      border: activeFilter === filterKey ? 'none' : '1px solid var(--ez-hue-slate-border)',
                       fontSize: '11px',
                       fontWeight: 650,
                       cursor: 'pointer',
@@ -480,10 +480,10 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  background: '#FFFFFF',
+                  background: 'var(--ez-color-surface)',
                   borderRadius: '6px',
                   padding: '3px 8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                 }}
               >
                 <Search size={13} color="#94A3B8" />
@@ -505,7 +505,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
             {/* Table List */}
             <div style={{ maxHeight: '240px', overflowY: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
-                <thead style={{ background: '#F1F5F9', color: '#475569', fontSize: '11px', fontWeight: 750, position: 'sticky', top: 0 }}>
+                <thead style={{ background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', fontSize: '11px', fontWeight: 750, position: 'sticky', top: 0 }}>
                   <tr>
                     <th style={{ padding: '8px 12px' }}>Kode & Uraian</th>
                     <th style={{ padding: '8px 12px', textAlign: 'right' }}>Before</th>
@@ -531,29 +531,29 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                           <tr
                             onClick={() => setExpandedRecordId(isExpanded ? null : rec.id)}
                             style={{
-                              borderBottom: '1px solid #F1F5F9',
-                              background: isExpanded ? '#EFF6FF' : rIdx % 2 === 0 ? '#FFFFFF' : '#FAFAFA',
+                              borderBottom: '1px solid var(--ez-color-surface-tertiary)',
+                              background: isExpanded ? 'var(--ez-hue-blue-bg)' : rIdx % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-faint)',
                               cursor: 'pointer',
                               transition: 'background 0.1s',
                             }}
                           >
                             <td style={{ padding: '8px 12px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, color: '#2563EB' }}>
+                                <span style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-primary)' }}>
                                   {rec.code}
                                 </span>
-                                <span style={{ fontWeight: 600, color: '#1E293B', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '280px' }}>
+                                <span style={{ fontWeight: 600, color: 'var(--ez-color-text-strong)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '280px' }}>
                                   {rec.description}
                                 </span>
                               </div>
                             </td>
-                            <td style={{ padding: '8px 12px', textAlign: 'right', color: '#64748B', fontVariantNumeric: 'tabular-nums' }}>
+                            <td style={{ padding: '8px 12px', textAlign: 'right', color: 'var(--ez-color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>
                               {rec.before.unitPrice !== undefined ? formatCurrencyIDR(rec.before.unitPrice) : `${rec.before.volume} ${rec.before.unit}`}
                             </td>
                             <td style={{ padding: '8px 4px', textAlign: 'center' }}>
                               <ArrowRight size={12} color="#94A3B8" />
                             </td>
-                            <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
+                            <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
                               {rec.after.unitPrice !== undefined ? formatCurrencyIDR(rec.after.unitPrice) : `${rec.after.volume} ${rec.after.unit}`}
                             </td>
                             <td
@@ -562,7 +562,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                                 textAlign: 'right',
                                 fontWeight: 750,
                                 fontVariantNumeric: 'tabular-nums',
-                                color: deltaAmt >= 0 ? '#DC2626' : '#059669',
+                                color: deltaAmt >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)',
                               }}
                             >
                               {deltaAmt >= 0 ? '+' : ''}
@@ -572,17 +572,17 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
 
                           {/* EXPANDED INSPECTION DETAIL */}
                           {isExpanded && (
-                            <tr style={{ background: '#EFF6FF' }}>
-                              <td colSpan={5} style={{ padding: '10px 16px', borderBottom: '1px solid #BFDBFE' }}>
+                            <tr style={{ background: 'var(--ez-hue-blue-bg)' }}>
+                              <td colSpan={5} style={{ padding: '10px 16px', borderBottom: '1px solid var(--ez-hue-blue-border)' }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '11.5px' }}>
                                   <div>
-                                    <strong style={{ color: '#475569' }}>Rincian Sebelum:</strong>
+                                    <strong style={{ color: 'var(--ez-color-text-slate)' }}>Rincian Sebelum:</strong>
                                     <div>Volume: {rec.before.volume || '-'} {rec.before.unit || ''}</div>
                                     <div>Harga Satuan: {formatCurrencyIDR(rec.before.unitPrice || 0)}</div>
                                     <div>Subtotal: {formatCurrencyIDR(rec.before.amount || 0)}</div>
                                   </div>
                                   <div>
-                                    <strong style={{ color: '#2563EB' }}>Rincian Setelah Usulan:</strong>
+                                    <strong style={{ color: 'var(--ez-color-primary)' }}>Rincian Setelah Usulan:</strong>
                                     <div>Volume: {rec.after.volume || '-'} {rec.after.unit || ''}</div>
                                     <div>Harga Satuan: {formatCurrencyIDR(rec.after.unitPrice || 0)}</div>
                                     <div>Subtotal: {formatCurrencyIDR(rec.after.amount || 0)}</div>
@@ -606,16 +606,16 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
               style={{
                 padding: '12px 16px',
                 borderRadius: '10px',
-                background: '#F1F5F9',
-                border: '1px solid #CBD5E1',
+                background: 'var(--ez-color-surface-tertiary)',
+                border: '1px solid var(--ez-hue-slate-border)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
               }}
             >
-              <Sliders size={16} color="#2563EB" />
+              <Sliders size={16} color="var(--ez-hue-blue-text)" />
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                <span style={{ fontSize: '12px', fontWeight: 650, color: '#1E293B' }}>
+                <span style={{ fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-strong)' }}>
                   Sesuaikan Nilai Persentase:
                 </span>
                 <input
@@ -626,12 +626,12 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                     width: '80px',
                     padding: '4px 8px',
                     borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12px',
                     fontWeight: 700,
                   }}
                 />
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748B' }}>%</span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>%</span>
               </div>
               <button
                 onClick={() => {
@@ -641,7 +641,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                 style={{
                   padding: '6px 12px',
                   borderRadius: '6px',
-                  background: '#2563EB',
+                  background: 'var(--ez-color-primary)',
                   color: '#FFFFFF',
                   border: 'none',
                   fontSize: '11.5px',
@@ -663,11 +663,11 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                 gap: '8px',
                 padding: '10px 14px',
                 borderRadius: '8px',
-                background: '#FEF3C7',
+                background: 'var(--ez-hue-amber-bg-deep)',
                 border: '1px solid #FCD34D',
                 cursor: 'pointer',
                 fontSize: '12px',
-                color: '#92400E',
+                color: 'var(--ez-hue-amber-text-dark)',
                 fontWeight: 650,
               }}
             >
@@ -690,15 +690,15 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
         <div
           style={{
             padding: '14px 24px',
-            background: '#F8FAFC',
-            borderTop: '1px solid #E2E8F0',
+            background: 'var(--ez-color-surface-secondary)',
+            borderTop: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '11px', color: '#64748B' }}>
+            <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
               ⚡ Otomatis mencatat riwayat versi & audit trail
             </span>
           </div>
@@ -709,9 +709,9 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
               style={{
                 padding: '8px 16px',
                 borderRadius: '8px',
-                background: '#FFFFFF',
-                border: '1px solid #CBD5E1',
-                color: '#475569',
+                background: 'var(--ez-color-surface)',
+                border: '1px solid var(--ez-hue-slate-border)',
+                color: 'var(--ez-color-text-slate)',
                 fontSize: '12.5px',
                 fontWeight: 650,
                 cursor: 'pointer',
@@ -725,9 +725,9 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
               style={{
                 padding: '8px 14px',
                 borderRadius: '8px',
-                background: '#F1F5F9',
-                border: '1px solid #CBD5E1',
-                color: '#1E293B',
+                background: 'var(--ez-color-surface-tertiary)',
+                border: '1px solid var(--ez-hue-slate-border)',
+                color: 'var(--ez-color-text-strong)',
                 fontSize: '12.5px',
                 fontWeight: 650,
                 cursor: 'pointer',
@@ -736,7 +736,7 @@ export const AiChangePreviewModal: React.FC<AiChangePreviewModalProps> = ({
                 gap: '6px',
               }}
             >
-              <Sliders size={14} color="#2563EB" />
+              <Sliders size={14} color="var(--ez-hue-blue-text)" />
               Sesuaikan Parameter
             </button>
 

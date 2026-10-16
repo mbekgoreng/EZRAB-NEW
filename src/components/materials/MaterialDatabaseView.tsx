@@ -453,8 +453,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
       style={{
         width: '100%',
         minHeight: 'calc(100vh - 64px)',
-        backgroundColor: '#F8FAFC',
-        color: '#0F172A',
+        backgroundColor: 'var(--ez-color-surface-secondary)',
+        color: 'var(--ez-color-text-primary)',
         fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
         boxSizing: 'border-box',
         paddingBottom: '80px',
@@ -466,8 +466,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
       <header
         className="mat-header"
         style={{
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #E2E8F0',
+          backgroundColor: 'var(--ez-color-surface)',
+          borderBottom: '1px solid var(--ez-color-border-line)',
           padding: '16px 24px',
         }}
       >
@@ -483,14 +483,14 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           }}
         >
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: '#64748B', marginBottom: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginBottom: '4px' }}>
               <span>Database</span>
-              <ChevronRight size={12} color="#94A3B8" />
-              <span style={{ fontWeight: 600, color: '#0F172A' }}>Material & Harga</span>
+              <ChevronRight size={12} color="var(--ez-color-text-faint)" />
+              <span style={{ fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>Material & Harga</span>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <h1 style={{ fontSize: '20px', fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
+              <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, letterSpacing: '-0.3px', fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
                 Material & Harga
               </h1>
               <span
@@ -499,9 +499,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   borderRadius: '6px',
                   fontSize: '10.5px',
                   fontWeight: 800,
-                  backgroundColor: '#EFF6FF',
-                  color: '#2563EB',
-                  border: '1px solid #DBEAFE',
+                  backgroundColor: 'var(--ez-hue-blue-bg)',
+                  color: 'var(--ez-color-primary)',
+                  border: '1px solid var(--ez-hue-blue-border)',
                 }}
               >
                 2026
@@ -515,9 +515,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   borderRadius: '6px',
                   fontSize: '10.5px',
                   fontWeight: 700,
-                  backgroundColor: '#ECFDF5',
-                  color: '#059669',
-                  border: '1px solid #A7F3D0',
+                  backgroundColor: 'var(--ez-hue-green-bg)',
+                  color: 'var(--ez-hue-green-text)',
+                  border: '1px solid var(--ez-hue-green-border)',
                 }}
               >
                 <CheckCircle2 size={12} />
@@ -525,7 +525,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
               </span>
             </div>
 
-            <p style={{ fontSize: '12px', color: '#64748B', margin: '4px 0 0 0' }}>
+            <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '4px 0 0 0' }}>
               Database material konstruksi, brand, spesifikasi, harga regional, dan sumber harga Indonesia.
             </p>
           </div>
@@ -534,20 +534,20 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             {/* Harga Wilayah Dropdown */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
-              <span style={{ color: '#64748B', fontWeight: 500 }}>Harga wilayah:</span>
+              <span style={{ color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>Harga wilayah:</span>
               <div style={{ position: 'relative' }}>
                 <select
                   value={selectedProvince}
                   onChange={(e) => setSelectedProvince(e.target.value)}
                   style={{
                     appearance: 'none',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #CBD5E1',
+                    backgroundColor: 'var(--ez-color-surface)',
+                    border: '1px solid var(--ez-color-border-strong)',
                     borderRadius: '10px',
                     padding: '6px 28px 6px 30px',
                     fontSize: '12px',
                     fontWeight: 700,
-                    color: '#0F172A',
+                    color: 'var(--ez-color-text-primary)',
                     outline: 'none',
                     cursor: 'pointer',
                   }}
@@ -565,35 +565,35 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     </option>
                   ))}
                 </select>
-                <MapPin size={13} color="#2563EB" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-                <ChevronDown size={13} color="#94A3B8" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                <MapPin size={13} color="var(--ez-color-primary)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                <ChevronDown size={13} color="var(--ez-color-text-faint)" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
               </div>
             </div>
 
             {/* Project Context Selector */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
-              <span style={{ color: '#64748B', fontWeight: 500 }}>Project Context:</span>
+              <span style={{ color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>Project Context:</span>
               <div style={{ position: 'relative' }}>
                 <div
                   style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #CBD5E1',
+                    backgroundColor: 'var(--ez-color-surface)',
+                    border: '1px solid var(--ez-color-border-strong)',
                     borderRadius: '10px',
                     padding: '6px 28px 6px 30px',
                     fontSize: '12px',
                     fontWeight: 700,
-                    color: '#0F172A',
+                    color: 'var(--ez-color-text-primary)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
                     cursor: 'pointer',
                   }}
                 >
-                  <FolderKanban size={13} color="#2563EB" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <FolderKanban size={13} color="var(--ez-color-primary)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
                   <span style={{ maxWidth: '170px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {currentProject ? currentProject.name : 'Rumah Tinggal Modern Tropis'}
                   </span>
-                  <ChevronDown size={13} color="#94A3B8" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <ChevronDown size={13} color="var(--ez-color-text-faint)" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)' }} />
                 </div>
               </div>
             </div>
@@ -625,10 +625,10 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: '12px',
-            backgroundColor: '#ffffff',
+            backgroundColor: 'var(--ez-color-surface)',
             padding: '10px 14px',
             borderRadius: '14px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
           }}
         >
@@ -648,9 +648,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 fontSize: '12.5px',
                 fontWeight: 700,
                 cursor: 'pointer',
-                border: activeCategoryTab === 'MATERIALS' ? '1px solid #2563EB' : '1px solid transparent',
-                backgroundColor: activeCategoryTab === 'MATERIALS' ? '#EFF6FF' : 'transparent',
-                color: activeCategoryTab === 'MATERIALS' ? '#1D4ED8' : '#64748B',
+                border: activeCategoryTab === 'MATERIALS' ? '1px solid var(--ez-color-primary)' : '1px solid transparent',
+                backgroundColor: activeCategoryTab === 'MATERIALS' ? 'var(--ez-hue-blue-bg)' : 'transparent',
+                color: activeCategoryTab === 'MATERIALS' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                 transition: 'all 0.15s',
               }}
             >
@@ -661,9 +661,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   fontSize: '10.5px',
                   fontWeight: 800,
                   padding: '2px 7px',
-                  borderRadius: '999px',
-                  backgroundColor: activeCategoryTab === 'MATERIALS' ? '#2563EB' : '#F1F5F9',
-                  color: activeCategoryTab === 'MATERIALS' ? '#ffffff' : '#64748B',
+                  borderRadius: 'var(--ez-radius-pill)',
+                  backgroundColor: activeCategoryTab === 'MATERIALS' ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
+                  color: activeCategoryTab === 'MATERIALS' ? '#ffffff' : 'var(--ez-color-text-muted)',
                 }}
               >
                 {allMaterials.length.toLocaleString('id-ID')}
@@ -684,9 +684,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 fontSize: '12.5px',
                 fontWeight: 700,
                 cursor: 'pointer',
-                border: activeCategoryTab === 'LABOR' ? '1px solid #2563EB' : '1px solid transparent',
-                backgroundColor: activeCategoryTab === 'LABOR' ? '#EFF6FF' : 'transparent',
-                color: activeCategoryTab === 'LABOR' ? '#1D4ED8' : '#64748B',
+                border: activeCategoryTab === 'LABOR' ? '1px solid var(--ez-color-primary)' : '1px solid transparent',
+                backgroundColor: activeCategoryTab === 'LABOR' ? 'var(--ez-hue-blue-bg)' : 'transparent',
+                color: activeCategoryTab === 'LABOR' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                 transition: 'all 0.15s',
               }}
             >
@@ -697,9 +697,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   fontSize: '10.5px',
                   fontWeight: 800,
                   padding: '2px 7px',
-                  borderRadius: '999px',
-                  backgroundColor: activeCategoryTab === 'LABOR' ? '#2563EB' : '#F1F5F9',
-                  color: activeCategoryTab === 'LABOR' ? '#ffffff' : '#64748B',
+                  borderRadius: 'var(--ez-radius-pill)',
+                  backgroundColor: activeCategoryTab === 'LABOR' ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
+                  color: activeCategoryTab === 'LABOR' ? '#ffffff' : 'var(--ez-color-text-muted)',
                 }}
               >
                 {allLabor.length.toLocaleString('id-ID')}
@@ -720,9 +720,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 fontSize: '12.5px',
                 fontWeight: 700,
                 cursor: 'pointer',
-                border: activeCategoryTab === 'EQUIPMENT' ? '1px solid #2563EB' : '1px solid transparent',
-                backgroundColor: activeCategoryTab === 'EQUIPMENT' ? '#EFF6FF' : 'transparent',
-                color: activeCategoryTab === 'EQUIPMENT' ? '#1D4ED8' : '#64748B',
+                border: activeCategoryTab === 'EQUIPMENT' ? '1px solid var(--ez-color-primary)' : '1px solid transparent',
+                backgroundColor: activeCategoryTab === 'EQUIPMENT' ? 'var(--ez-hue-blue-bg)' : 'transparent',
+                color: activeCategoryTab === 'EQUIPMENT' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                 transition: 'all 0.15s',
               }}
             >
@@ -733,9 +733,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   fontSize: '10.5px',
                   fontWeight: 800,
                   padding: '2px 7px',
-                  borderRadius: '999px',
-                  backgroundColor: activeCategoryTab === 'EQUIPMENT' ? '#2563EB' : '#F1F5F9',
-                  color: activeCategoryTab === 'EQUIPMENT' ? '#ffffff' : '#64748B',
+                  borderRadius: 'var(--ez-radius-pill)',
+                  backgroundColor: activeCategoryTab === 'EQUIPMENT' ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
+                  color: activeCategoryTab === 'EQUIPMENT' ? '#ffffff' : 'var(--ez-color-text-muted)',
                 }}
               >
                 {allEquipment.length.toLocaleString('id-ID')}
@@ -756,9 +756,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 fontSize: '12.5px',
                 fontWeight: 700,
                 cursor: 'pointer',
-                border: activeCategoryTab === 'PROJECT_PRICE' ? '1px solid #2563EB' : '1px solid transparent',
-                backgroundColor: activeCategoryTab === 'PROJECT_PRICE' ? '#EFF6FF' : 'transparent',
-                color: activeCategoryTab === 'PROJECT_PRICE' ? '#1D4ED8' : '#64748B',
+                border: activeCategoryTab === 'PROJECT_PRICE' ? '1px solid var(--ez-color-primary)' : '1px solid transparent',
+                backgroundColor: activeCategoryTab === 'PROJECT_PRICE' ? 'var(--ez-hue-blue-bg)' : 'transparent',
+                color: activeCategoryTab === 'PROJECT_PRICE' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                 transition: 'all 0.15s',
               }}
             >
@@ -769,9 +769,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   fontSize: '10.5px',
                   fontWeight: 800,
                   padding: '2px 7px',
-                  borderRadius: '999px',
-                  backgroundColor: activeCategoryTab === 'PROJECT_PRICE' ? '#2563EB' : '#F1F5F9',
-                  color: activeCategoryTab === 'PROJECT_PRICE' ? '#ffffff' : '#64748B',
+                  borderRadius: 'var(--ez-radius-pill)',
+                  backgroundColor: activeCategoryTab === 'PROJECT_PRICE' ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
+                  color: activeCategoryTab === 'PROJECT_PRICE' ? '#ffffff' : 'var(--ez-color-text-muted)',
                 }}
               >
                 {projectPrices.length.toLocaleString('id-ID')}
@@ -792,14 +792,14 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 fontSize: '12px',
                 fontWeight: 700,
                 cursor: 'pointer',
-                border: '1px solid #3B82F6',
-                backgroundColor: '#EFF6FF',
-                color: '#1D4ED8',
+                border: '1px solid var(--ez-hue-blue-border)',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                color: 'var(--ez-color-primary-hover)',
                 boxShadow: '0 1px 2px rgba(59, 130, 246, 0.1)',
                 transition: 'all 0.15s',
               }}
             >
-              <Sparkles size={15} color="#2563EB" />
+              <Sparkles size={15} color="var(--ez-color-primary)" />
               <span>Identifikasi Resource AI</span>
             </button>
 
@@ -814,14 +814,14 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 fontSize: '12px',
                 fontWeight: 700,
                 cursor: 'pointer',
-                border: '1px solid #10B981',
-                backgroundColor: '#ECFDF5',
-                color: '#065F46',
+                border: '1px solid var(--ez-hue-green-border)',
+                backgroundColor: 'var(--ez-hue-green-bg)',
+                color: 'var(--ez-hue-green-text)',
                 boxShadow: '0 1px 2px rgba(16, 185, 129, 0.1)',
                 transition: 'all 0.15s',
               }}
             >
-              <FileSpreadsheet size={15} color="#059669" />
+              <FileSpreadsheet size={15} color="var(--ez-hue-green-text)" />
               <span>Spreadsheet Sync</span>
               <span
                 style={{
@@ -832,8 +832,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   fontWeight: 800,
                   padding: '2px 6px',
                   borderRadius: '6px',
-                  backgroundColor: '#D1FAE5',
-                  color: '#047857',
+                  backgroundColor: 'var(--ez-hue-green-bg)',
+                  color: 'var(--ez-hue-green-text)',
                 }}
               >
                 <RefreshCw size={10} />
@@ -857,12 +857,11 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             >
           {/* Card 1: Material Terindeks */}
           <div
-            className="mat-kpi-card"
+            className="ez-stat mat-kpi-card"
             style={{
-              backgroundColor: '#ffffff',
-              padding: '14px 16px',
-              borderRadius: '14px',
-              border: '1px solid #E2E8F0',
+              backgroundColor: 'var(--ez-pastel-cream)',
+              padding: '18px',
+              borderRadius: 'var(--ez-radius-card)',
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
@@ -874,32 +873,31 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                backgroundColor: '#EFF6FF',
-                border: '1px solid #DBEAFE',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 flexShrink: 0,
               }}
             >
               <Package size={20} />
             </div>
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B' }}>Material Terindeks</div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', lineHeight: 1.2 }}>6.164</div>
-              <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 500 }}>10 Sektor Lengkap</div>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>Material Terindeks</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: 'var(--ez-color-text-primary)', lineHeight: 1.2 }}>6.164</div>
+              <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>10 Sektor Lengkap</div>
             </div>
           </div>
 
           {/* Card 2: Price Records */}
           <div
-            className="mat-kpi-card"
+            className="ez-stat mat-kpi-card"
             style={{
-              backgroundColor: '#ffffff',
-              padding: '14px 16px',
-              borderRadius: '14px',
-              border: '1px solid #E2E8F0',
+              backgroundColor: 'var(--ez-pastel-mint)',
+              padding: '18px',
+              borderRadius: 'var(--ez-radius-card)',
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
@@ -911,32 +909,31 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                backgroundColor: '#EFF6FF',
-                border: '1px solid #DBEAFE',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 flexShrink: 0,
               }}
             >
               <Tag size={20} />
             </div>
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B' }}>Price Records</div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', lineHeight: 1.2 }}>24.583</div>
-              <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 500 }}>Update 2026</div>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>Price Records</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: 'var(--ez-color-text-primary)', lineHeight: 1.2 }}>24.583</div>
+              <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>Update 2026</div>
             </div>
           </div>
 
           {/* Card 3: Merek & Produsen */}
           <div
-            className="mat-kpi-card"
+            className="ez-stat mat-kpi-card"
             style={{
-              backgroundColor: '#ffffff',
-              padding: '14px 16px',
-              borderRadius: '14px',
-              border: '1px solid #E2E8F0',
+              backgroundColor: 'var(--ez-pastel-peach)',
+              padding: '18px',
+              borderRadius: 'var(--ez-radius-card)',
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
@@ -948,32 +945,31 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                backgroundColor: '#EFF6FF',
-                border: '1px solid #DBEAFE',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 flexShrink: 0,
               }}
             >
               <Building size={20} />
             </div>
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B' }}>Merek & Produsen</div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', lineHeight: 1.2 }}>42</div>
-              <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 500 }}>Canonical & Alias</div>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>Merek & Produsen</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: 'var(--ez-color-text-primary)', lineHeight: 1.2 }}>42</div>
+              <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>Canonical & Alias</div>
             </div>
           </div>
 
           {/* Card 4: Cakupan Wilayah */}
           <div
-            className="mat-kpi-card"
+            className="ez-stat mat-kpi-card"
             style={{
-              backgroundColor: '#ffffff',
-              padding: '14px 16px',
-              borderRadius: '14px',
-              border: '1px solid #E2E8F0',
+              backgroundColor: 'var(--ez-pastel-sky)',
+              padding: '18px',
+              borderRadius: 'var(--ez-radius-card)',
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
@@ -985,32 +981,31 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                backgroundColor: '#EFF6FF',
-                border: '1px solid #DBEAFE',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 flexShrink: 0,
               }}
             >
               <MapPin size={20} />
             </div>
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B' }}>Cakupan Wilayah</div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', lineHeight: 1.2 }}>38 Provinsi</div>
-              <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 500 }}>514 Kota & Kabupaten</div>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>Cakupan Wilayah</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: 'var(--ez-color-text-primary)', lineHeight: 1.2 }}>38 Provinsi</div>
+              <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>514 Kota & Kabupaten</div>
             </div>
           </div>
 
           {/* Card 5: Kualitas Data with Circular Ring */}
           <div
-            className="mat-kpi-card"
+            className="ez-stat mat-kpi-card"
             style={{
-              backgroundColor: '#ffffff',
-              padding: '14px 16px',
-              borderRadius: '14px',
-              border: '1px solid #E2E8F0',
+              backgroundColor: 'var(--ez-pastel-cream)',
+              padding: '18px',
+              borderRadius: 'var(--ez-radius-card)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -1023,7 +1018,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   <path
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     fill="none"
-                    stroke="#E2E8F0"
+                    stroke="var(--ez-color-border-line)"
                     strokeWidth="3.5"
                   />
                   <path
@@ -1044,24 +1039,24 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     justifyContent: 'center',
                     fontSize: '10.5px',
                     fontWeight: 900,
-                    color: '#0F172A',
+                    color: 'var(--ez-color-text-primary)',
                   }}
                 >
                   94%
                 </span>
               </div>
               <div>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <ShieldCheck size={12} color="#059669" />
+                <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <ShieldCheck size={12} color="var(--ez-hue-green-text)" />
                   Kualitas Data
                 </div>
-                <div style={{ fontSize: '10.5px', color: '#94A3B8' }}>Source Coverage</div>
+                <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-faint)' }}>Source Coverage</div>
                 <button
                   onClick={() => setIsDataQualityModalOpen(true)}
                   style={{
                     fontSize: '11px',
                     fontWeight: 700,
-                    color: '#2563EB',
+                    color: 'var(--ez-color-primary)',
                     cursor: 'pointer',
                     background: 'transparent',
                     border: 'none',
@@ -1083,9 +1078,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
         <div
           className="mat-filter-box"
           style={{
-            backgroundColor: '#ffffff',
+            backgroundColor: 'var(--ez-color-surface)',
             borderRadius: '14px',
-            border: '1px solid #E2E8F0',
+            border: '1px solid var(--ez-color-border-line)',
             padding: '16px',
             display: 'flex',
             flexDirection: 'column',
@@ -1100,14 +1095,14 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  backgroundColor: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
+                  border: '1px solid var(--ez-color-border-line)',
                   borderRadius: '10px',
                   padding: '0 12px',
                   height: '38px',
                 }}
               >
-                <Search size={15} color="#94A3B8" style={{ marginRight: '8px', flexShrink: 0 }} />
+                <Search size={15} color="var(--ez-color-text-faint)" style={{ marginRight: '8px', flexShrink: 0 }} />
                 <input
                   type="text"
                   placeholder="Cari material, kode (MAT-BLD-...), brand, produk, atau spesifikasi..."
@@ -1119,13 +1114,13 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     border: 'none',
                     outline: 'none',
                     fontSize: '12px',
-                    color: '#0F172A',
+                    color: 'var(--ez-color-text-primary)',
                   }}
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: '2px' }}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--ez-color-text-faint)', padding: '2px' }}
                   >
                     <X size={14} />
                   </button>
@@ -1140,10 +1135,10 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  backgroundColor: '#F1F5F9',
+                  backgroundColor: 'var(--ez-color-surface-tertiary)',
                   borderRadius: '10px',
                   padding: '2px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                 }}
               >
                 <button
@@ -1155,8 +1150,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     fontWeight: 700,
                     cursor: 'pointer',
                     border: 'none',
-                    backgroundColor: viewDensity === 'TABLE' ? '#2563EB' : 'transparent',
-                    color: viewDensity === 'TABLE' ? '#ffffff' : '#64748B',
+                    backgroundColor: viewDensity === 'TABLE' ? 'var(--ez-color-primary)' : 'transparent',
+                    color: viewDensity === 'TABLE' ? '#ffffff' : 'var(--ez-color-text-muted)',
                     transition: 'all 0.15s ease',
                   }}
                 >
@@ -1171,8 +1166,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     fontWeight: 700,
                     cursor: 'pointer',
                     border: 'none',
-                    backgroundColor: viewDensity === 'COMPACT' ? '#2563EB' : 'transparent',
-                    color: viewDensity === 'COMPACT' ? '#ffffff' : '#64748B',
+                    backgroundColor: viewDensity === 'COMPACT' ? 'var(--ez-color-primary)' : 'transparent',
+                    color: viewDensity === 'COMPACT' ? '#ffffff' : 'var(--ez-color-text-muted)',
                     transition: 'all 0.15s ease',
                   }}
                 >
@@ -1187,9 +1182,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   style={{
                     padding: '6px 12px',
                     borderRadius: '10px',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #CBD5E1',
-                    color: '#334155',
+                    backgroundColor: 'var(--ez-color-surface)',
+                    border: '1px solid var(--ez-color-border-strong)',
+                    color: 'var(--ez-color-text-body)',
                     fontWeight: 700,
                     fontSize: '11.5px',
                     cursor: 'pointer',
@@ -1198,9 +1193,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     gap: '6px',
                   }}
                 >
-                  <SlidersHorizontal size={13} color="#64748B" />
+                  <SlidersHorizontal size={13} color="var(--ez-color-text-muted)" />
                   Columns
-                  <ChevronDown size={12} color="#94A3B8" />
+                  <ChevronDown size={12} color="var(--ez-color-text-faint)" />
                 </button>
 
                 {isColumnDropdownOpen && (
@@ -1210,16 +1205,16 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                       right: 0,
                       marginTop: '6px',
                       width: '180px',
-                      backgroundColor: '#ffffff',
-                      border: '1px solid #E2E8F0',
-                      borderRadius: '12px',
+                      backgroundColor: 'var(--ez-color-surface)',
+                      border: '1px solid var(--ez-color-border-line)',
+                      borderRadius: 'var(--ez-radius-control)',
                       boxShadow: '0 8px 24px rgba(15,23,42,0.12)',
                       padding: '8px',
                       zIndex: 50,
                       fontSize: '11.5px',
                     }}
                   >
-                    <span style={{ fontWeight: 800, color: '#0F172A', display: 'block', padding: '4px 6px', fontSize: '11px' }}>
+                    <span style={{ fontWeight: 800, color: 'var(--ez-color-text-primary)', display: 'block', padding: '4px 6px', fontSize: '11px' }}>
                       Pilih Kolom:
                     </span>
                     {Object.entries(visibleColumns).map(([colKey, isVis]) => (
@@ -1230,7 +1225,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                           alignItems: 'center',
                           gap: '8px',
                           padding: '4px 6px',
-                          color: '#334155',
+                          color: 'var(--ez-color-text-body)',
                           cursor: 'pointer',
                           borderRadius: '6px',
                         }}
@@ -1258,9 +1253,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 style={{
                   padding: '6px 12px',
                   borderRadius: '10px',
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #CBD5E1',
-                  color: '#334155',
+                  backgroundColor: 'var(--ez-color-surface)',
+                  border: '1px solid var(--ez-color-border-strong)',
+                  color: 'var(--ez-color-text-body)',
                   fontWeight: 700,
                   fontSize: '11.5px',
                   cursor: 'pointer',
@@ -1270,7 +1265,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 }}
                 title="Ekspor CSV"
               >
-                <Download size={13} color="#64748B" />
+                <Download size={13} color="var(--ez-color-text-muted)" />
                 Export
               </button>
             </div>
@@ -1288,7 +1283,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           >
             {/* Sektor Dropdown */}
             <div style={{ position: 'relative' }}>
-              <label style={{ fontSize: '10px', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '4px' }}>
                 Sektor
               </label>
               <select
@@ -1297,13 +1292,13 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 style={{
                   width: '100%',
                   appearance: 'none',
-                  backgroundColor: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
+                  border: '1px solid var(--ez-color-border-line)',
                   borderRadius: '10px',
                   padding: '6px 26px 6px 10px',
                   fontSize: '11.5px',
                   fontWeight: 600,
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   outline: 'none',
                   cursor: 'pointer',
                 }}
@@ -1315,12 +1310,12 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   </option>
                 ))}
               </select>
-              <ChevronDown size={12} color="#94A3B8" style={{ position: 'absolute', right: '10px', bottom: '10px', pointerEvents: 'none' }} />
+              <ChevronDown size={12} color="var(--ez-color-text-faint)" style={{ position: 'absolute', right: '10px', bottom: '10px', pointerEvents: 'none' }} />
             </div>
 
             {/* Wilayah Dropdown */}
             <div style={{ position: 'relative' }}>
-              <label style={{ fontSize: '10px', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '4px' }}>
                 Wilayah
               </label>
               <select
@@ -1329,13 +1324,13 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 style={{
                   width: '100%',
                   appearance: 'none',
-                  backgroundColor: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
+                  border: '1px solid var(--ez-color-border-line)',
                   borderRadius: '10px',
                   padding: '6px 26px 6px 10px',
                   fontSize: '11.5px',
                   fontWeight: 600,
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   outline: 'none',
                   cursor: 'pointer',
                 }}
@@ -1352,12 +1347,12 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   </option>
                 ))}
               </select>
-              <ChevronDown size={12} color="#94A3B8" style={{ position: 'absolute', right: '10px', bottom: '10px', pointerEvents: 'none' }} />
+              <ChevronDown size={12} color="var(--ez-color-text-faint)" style={{ position: 'absolute', right: '10px', bottom: '10px', pointerEvents: 'none' }} />
             </div>
 
             {/* Brand Dropdown */}
             <div style={{ position: 'relative' }}>
-              <label style={{ fontSize: '10px', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '4px' }}>
                 Brand
               </label>
               <select
@@ -1366,13 +1361,13 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 style={{
                   width: '100%',
                   appearance: 'none',
-                  backgroundColor: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
+                  border: '1px solid var(--ez-color-border-line)',
                   borderRadius: '10px',
                   padding: '6px 26px 6px 10px',
                   fontSize: '11.5px',
                   fontWeight: 600,
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   outline: 'none',
                   cursor: 'pointer',
                 }}
@@ -1384,12 +1379,12 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   </option>
                 ))}
               </select>
-              <ChevronDown size={12} color="#94A3B8" style={{ position: 'absolute', right: '10px', bottom: '10px', pointerEvents: 'none' }} />
+              <ChevronDown size={12} color="var(--ez-color-text-faint)" style={{ position: 'absolute', right: '10px', bottom: '10px', pointerEvents: 'none' }} />
             </div>
 
             {/* Kelas Harga Dropdown */}
             <div style={{ position: 'relative' }}>
-              <label style={{ fontSize: '10px', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '4px' }}>
                 Kelas Harga
               </label>
               <select
@@ -1398,13 +1393,13 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 style={{
                   width: '100%',
                   appearance: 'none',
-                  backgroundColor: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
+                  border: '1px solid var(--ez-color-border-line)',
                   borderRadius: '10px',
                   padding: '6px 26px 6px 10px',
                   fontSize: '11.5px',
                   fontWeight: 600,
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   outline: 'none',
                   cursor: 'pointer',
                 }}
@@ -1416,12 +1411,12 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 <option value="PREMIUM">Premium</option>
                 <option value="LUXURY">Luxury</option>
               </select>
-              <ChevronDown size={12} color="#94A3B8" style={{ position: 'absolute', right: '10px', bottom: '10px', pointerEvents: 'none' }} />
+              <ChevronDown size={12} color="var(--ez-color-text-faint)" style={{ position: 'absolute', right: '10px', bottom: '10px', pointerEvents: 'none' }} />
             </div>
 
             {/* Status Dropdown */}
             <div style={{ position: 'relative' }}>
-              <label style={{ fontSize: '10px', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '4px' }}>
                 Status
               </label>
               <select
@@ -1430,13 +1425,13 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 style={{
                   width: '100%',
                   appearance: 'none',
-                  backgroundColor: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
+                  border: '1px solid var(--ez-color-border-line)',
                   borderRadius: '10px',
                   padding: '6px 26px 6px 10px',
                   fontSize: '11.5px',
                   fontWeight: 600,
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   outline: 'none',
                   cursor: 'pointer',
                 }}
@@ -1446,7 +1441,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 <option value="Aging">Aging (30-90 Hari)</option>
                 <option value="Expired">Expired (&gt; 90 Hari)</option>
               </select>
-              <ChevronDown size={12} color="#94A3B8" style={{ position: 'absolute', right: '10px', bottom: '10px', pointerEvents: 'none' }} />
+              <ChevronDown size={12} color="var(--ez-color-text-faint)" style={{ position: 'absolute', right: '10px', bottom: '10px', pointerEvents: 'none' }} />
             </div>
 
             {/* More Filters Button */}
@@ -1457,9 +1452,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   width: '100%',
                   padding: '6px 8px',
                   borderRadius: '10px',
-                  backgroundColor: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
-                  color: '#334155',
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
+                  border: '1px solid var(--ez-color-border-line)',
+                  color: 'var(--ez-color-text-body)',
                   fontWeight: 600,
                   fontSize: '11.5px',
                   cursor: 'pointer',
@@ -1469,9 +1464,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   gap: '4px',
                 }}
               >
-                <SlidersHorizontal size={12} color="#64748B" />
+                <SlidersHorizontal size={12} color="var(--ez-color-text-muted)" />
                 More Filters
-                <X size={11} color="#94A3B8" />
+                <X size={11} color="var(--ez-color-text-faint)" />
               </button>
             </div>
           </div>
@@ -1490,9 +1485,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                border: selectedSector === 'ALL' ? '2px solid #2563EB' : '1px solid #E2E8F0',
-                backgroundColor: selectedSector === 'ALL' ? '#EFF6FF' : '#ffffff',
-                color: selectedSector === 'ALL' ? '#1D4ED8' : '#334155',
+                border: selectedSector === 'ALL' ? '2px solid var(--ez-color-primary)' : '1px solid var(--ez-color-border-line)',
+                backgroundColor: selectedSector === 'ALL' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                color: selectedSector === 'ALL' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
               }}
             >
               Semua Sektor
@@ -1513,9 +1508,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  border: selectedSector === sec.id ? '2px solid #2563EB' : '1px solid #E2E8F0',
-                  backgroundColor: selectedSector === sec.id ? '#EFF6FF' : '#ffffff',
-                  color: selectedSector === sec.id ? '#1D4ED8' : '#334155',
+                  border: selectedSector === sec.id ? '2px solid var(--ez-color-primary)' : '1px solid var(--ez-color-border-line)',
+                  backgroundColor: selectedSector === sec.id ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                  color: selectedSector === sec.id ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
                 }}
               >
                 <span>{sec.icon}</span>
@@ -1537,9 +1532,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px',
-                  border: '1px solid #E2E8F0',
-                  backgroundColor: '#ffffff',
-                  color: '#334155',
+                  border: '1px solid var(--ez-color-border-line)',
+                  backgroundColor: 'var(--ez-color-surface)',
+                  color: 'var(--ez-color-text-body)',
                 }}
               >
                 <span>+ 4 sektor</span>
@@ -1553,9 +1548,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     left: 0,
                     marginTop: '6px',
                     width: '180px',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #E2E8F0',
-                    borderRadius: '12px',
+                    backgroundColor: 'var(--ez-color-surface)',
+                    border: '1px solid var(--ez-color-border-line)',
+                    borderRadius: 'var(--ez-radius-control)',
                     boxShadow: '0 8px 24px rgba(15,23,42,0.12)',
                     padding: '6px',
                     zIndex: 50,
@@ -1580,7 +1575,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                         background: 'transparent',
                         fontSize: '11.5px',
                         fontWeight: 600,
-                        color: '#334155',
+                        color: 'var(--ez-color-text-body)',
                         cursor: 'pointer',
                       }}
                     >
@@ -1594,8 +1589,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           </div>
 
           {/* Row 4: Active Filter Chips */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', paddingTop: '8px', borderTop: '1px solid #F1F5F9', fontSize: '11px' }}>
-            <span style={{ color: '#94A3B8', fontWeight: 600 }}>Filter Aktif:</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', paddingTop: '8px', borderTop: '1px solid var(--ez-color-surface-tertiary)', fontSize: '11px' }}>
+            <span style={{ color: 'var(--ez-color-text-faint)', fontWeight: 600 }}>Filter Aktif:</span>
 
             <span
               style={{
@@ -1604,10 +1599,10 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 gap: '4px',
                 padding: '3px 8px',
                 borderRadius: '8px',
-                backgroundColor: '#EFF6FF',
-                color: '#1D4ED8',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                color: 'var(--ez-color-primary-hover)',
                 fontWeight: 700,
-                border: '1px solid #DBEAFE',
+                border: '1px solid var(--ez-hue-blue-border)',
               }}
             >
               Bangunan
@@ -1621,10 +1616,10 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 gap: '4px',
                 padding: '3px 8px',
                 borderRadius: '8px',
-                backgroundColor: '#EFF6FF',
-                color: '#1D4ED8',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                color: 'var(--ez-color-primary-hover)',
                 fontWeight: 700,
-                border: '1px solid #DBEAFE',
+                border: '1px solid var(--ez-hue-blue-border)',
               }}
             >
               Jawa Barat
@@ -1638,10 +1633,10 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 gap: '4px',
                 padding: '3px 8px',
                 borderRadius: '8px',
-                backgroundColor: '#EFF6FF',
-                color: '#1D4ED8',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                color: 'var(--ez-color-primary-hover)',
                 fontWeight: 700,
-                border: '1px solid #DBEAFE',
+                border: '1px solid var(--ez-hue-blue-border)',
               }}
             >
               Standard
@@ -1655,10 +1650,10 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 gap: '4px',
                 padding: '3px 8px',
                 borderRadius: '8px',
-                backgroundColor: '#EFF6FF',
-                color: '#1D4ED8',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                color: 'var(--ez-color-primary-hover)',
                 fontWeight: 700,
-                border: '1px solid #DBEAFE',
+                border: '1px solid var(--ez-hue-blue-border)',
               }}
             >
               Current
@@ -1670,7 +1665,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
               style={{
                 fontSize: '11.5px',
                 fontWeight: 700,
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 cursor: 'pointer',
                 background: 'transparent',
                 border: 'none',
@@ -1691,9 +1686,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           <div
             className="mat-project-price-workspace"
             style={{
-              backgroundColor: '#ffffff',
+              backgroundColor: 'var(--ez-color-surface)',
               borderRadius: '16px',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border-line)',
               overflow: 'hidden',
               boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
               width: '100%',
@@ -1703,8 +1698,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             <div
               style={{
                 padding: '18px 24px',
-                borderBottom: '1px solid #E2E8F0',
-                backgroundColor: '#ffffff',
+                borderBottom: '1px solid var(--ez-color-border-line)',
+                backgroundColor: 'var(--ez-color-surface)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -1719,8 +1714,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                       width: '34px',
                       height: '34px',
                       borderRadius: '8px',
-                      backgroundColor: '#EFF6FF',
-                      color: '#2563EB',
+                      backgroundColor: 'var(--ez-hue-blue-bg)',
+                      color: 'var(--ez-color-primary)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1728,24 +1723,24 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   >
                     <Tag size={18} />
                   </div>
-                  <h2 style={{ fontSize: '18px', fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
+                  <h2 style={{ fontSize: '18px', fontWeight: 900, color: 'var(--ez-color-text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
                     Harga Proyek (Override)
                   </h2>
                   <span
                     style={{
                       fontSize: '11px',
                       fontWeight: 800,
-                      color: '#1D4ED8',
-                      backgroundColor: '#EFF6FF',
+                      color: 'var(--ez-color-primary-hover)',
+                      backgroundColor: 'var(--ez-hue-blue-bg)',
                       padding: '3px 8px',
                       borderRadius: '6px',
-                      border: '1px solid #DBEAFE',
+                      border: '1px solid var(--ez-hue-blue-border)',
                     }}
                   >
                     {currentProject ? currentProject.name : 'Semua Proyek'}
                   </span>
                 </div>
-                <p style={{ margin: '6px 0 0', fontSize: '12.5px', color: '#64748B', lineHeight: 1.5 }}>
+                <p style={{ margin: '6px 0 0', fontSize: '12.5px', color: 'var(--ez-color-text-muted)', lineHeight: 1.5 }}>
                   Daftar harga khusus material, upah tenaga kerja, dan peralatan untuk proyek ini. Harga override diprioritaskan saat perhitungan RAB & BOQ.
                 </p>
               </div>
@@ -1760,8 +1755,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  backgroundColor: '#2563EB',
-                  color: '#ffffff',
+                  backgroundColor: 'var(--ez-color-primary)',
+                  color: '#FFFFFF',
                   padding: '9px 18px',
                   borderRadius: '10px',
                   fontSize: '13px',
@@ -1824,9 +1819,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
               style={{
                 flex: '1 1 0%',
                 minWidth: 0,
-                backgroundColor: '#ffffff',
+                backgroundColor: 'var(--ez-color-surface)',
                 borderRadius: '16px',
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1837,35 +1832,35 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
               <div
                 style={{
                   padding: '12px 16px',
-                  borderBottom: '1px solid #E2E8F0',
-                  backgroundColor: '#ffffff',
+                  borderBottom: '1px solid var(--ez-color-border-line)',
+                  backgroundColor: 'var(--ez-color-surface)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   fontSize: '12px',
                 }}
               >
-                <span style={{ fontWeight: 800, color: '#0F172A', fontSize: '13.5px' }}>
+                <span style={{ fontWeight: 800, color: 'var(--ez-color-text-primary)', fontSize: '13.5px' }}>
                   {activeCategoryTab === 'MATERIALS' && `${filteredMaterials.length.toLocaleString('id-ID')} Material & Bahan`}
                   {activeCategoryTab === 'LABOR' && `${filteredLabor.length.toLocaleString('id-ID')} Tenaga Kerja & Mandor (HSD L)`}
                   {activeCategoryTab === 'EQUIPMENT' && `${filteredEquipment.length.toLocaleString('id-ID')} Peralatan & Mesin (HSD E)`}
                 </span>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ color: '#64748B', fontWeight: 500, fontSize: '11.5px' }}>Urutkan:</span>
+                <span style={{ color: 'var(--ez-color-text-muted)', fontWeight: 500, fontSize: '11.5px' }}>Urutkan:</span>
                 <div style={{ position: 'relative' }}>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as any)}
                     style={{
                       appearance: 'none',
-                      backgroundColor: '#F8FAFC',
-                      border: '1px solid #CBD5E1',
+                      backgroundColor: 'var(--ez-color-surface-secondary)',
+                      border: '1px solid var(--ez-color-border-strong)',
                       borderRadius: '8px',
                       padding: '4px 22px 4px 8px',
                       fontSize: '11.5px',
                       fontWeight: 700,
-                      color: '#0F172A',
+                      color: 'var(--ez-color-text-primary)',
                       outline: 'none',
                       cursor: 'pointer',
                     }}
@@ -1875,7 +1870,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     <option value="PRICE_ASC">Harga Terendah</option>
                     <option value="PRICE_DESC">Harga Tertinggi</option>
                   </select>
-                  <ChevronDown size={11} color="#94A3B8" style={{ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                  <ChevronDown size={11} color="var(--ez-color-text-faint)" style={{ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                 </div>
               </div>
             </div>
@@ -1908,7 +1903,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   <col style={{ width: '105px' }} />
                 </colgroup>
                 <thead>
-                  <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                  <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)' }}>
                     <th style={{ padding: '10px 8px', textAlign: 'center' }}>
                       <input
                         type="checkbox"
@@ -1920,16 +1915,16 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                         style={{ cursor: 'pointer' }}
                       />
                     </th>
-                    <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Material</th>
-                    {visibleColumns.brand && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Brand / Product</th>}
-                    {visibleColumns.spec && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Spesifikasi</th>}
-                    {visibleColumns.unit && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Unit</th>}
-                    {visibleColumns.price && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Harga Acuan</th>}
-                    {visibleColumns.tier && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Tier</th>}
-                    {visibleColumns.region && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Wilayah</th>}
-                    {visibleColumns.source && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Sumber</th>}
-                    {visibleColumns.updated && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Updated</th>}
-                    <th style={{ padding: '10px 6px', textAlign: 'center', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Aksi</th>
+                    <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Material</th>
+                    {visibleColumns.brand && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Brand / Product</th>}
+                    {visibleColumns.spec && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Spesifikasi</th>}
+                    {visibleColumns.unit && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Unit</th>}
+                    {visibleColumns.price && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Harga Acuan</th>}
+                    {visibleColumns.tier && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Tier</th>}
+                    {visibleColumns.region && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Wilayah</th>}
+                    {visibleColumns.source && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Sumber</th>}
+                    {visibleColumns.updated && <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Updated</th>}
+                    <th style={{ padding: '10px 6px', textAlign: 'center', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1951,9 +1946,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                         key={mat.id}
                         className={isInspected ? 'mat-row-selected' : ''}
                         style={{
-                          backgroundColor: isInspected ? '#EFF6FF' : isSelected ? '#F0F9FF' : '#ffffff',
-                          borderLeft: isInspected ? '3px solid #2563EB' : '3px solid transparent',
-                          borderBottom: '1px solid #F1F5F9',
+                          backgroundColor: isInspected ? 'var(--ez-hue-blue-bg)' : isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                          borderLeft: isInspected ? '3px solid var(--ez-color-primary)' : '3px solid transparent',
+                          borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                           cursor: 'pointer',
                           transition: 'background-color 0.15s',
                         }}
@@ -1989,19 +1984,19 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                                 width: '36px',
                                 height: '36px',
                                 borderRadius: '8px',
-                                border: '1px dashed #CBD5E1',
-                                backgroundColor: '#F8FAFC',
+                                border: '1px dashed var(--ez-color-border-strong)',
+                                backgroundColor: 'var(--ez-color-surface-secondary)',
                                 flexShrink: 0,
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                color: '#94A3B8',
+                                color: 'var(--ez-color-text-faint)',
                               }}
                               title="No Foto"
                             >
-                              <Package size={14} color="#94A3B8" />
-                              <span style={{ fontSize: '7.5px', fontWeight: 600, color: '#94A3B8', marginTop: '1px', lineHeight: 1 }}>
+                              <Package size={14} color="var(--ez-color-text-faint)" />
+                              <span style={{ fontSize: '7.5px', fontWeight: 600, color: 'var(--ez-color-text-faint)', marginTop: '1px', lineHeight: 1 }}>
                                 No Foto
                               </span>
                             </div>
@@ -2009,7 +2004,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                               <div
                                 style={{
                                   fontWeight: 800,
-                                  color: '#0F172A',
+                                  color: 'var(--ez-color-text-primary)',
                                   fontSize: '12px',
                                   whiteSpace: 'nowrap',
                                   overflow: 'hidden',
@@ -2019,7 +2014,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                               >
                                 {mat.name}
                               </div>
-                              <div style={{ fontFamily: 'monospace', fontSize: '10px', color: '#94A3B8', marginTop: '1px' }}>
+                              <div style={{ fontFamily: 'monospace', fontSize: '10px', color: 'var(--ez-color-text-faint)', marginTop: '1px' }}>
                                 {mat.materialCode}
                               </div>
                             </div>
@@ -2029,10 +2024,10 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                         {/* Brand / Product */}
                         {visibleColumns.brand && (
                           <td style={{ padding: `${padY} 10px` }}>
-                            <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {mat.brand || 'Multi-Brand'}
                             </div>
-                            <div style={{ fontSize: '10.5px', color: '#94A3B8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-faint)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {mat.product || 'Lokal'}
                             </div>
                           </td>
@@ -2041,10 +2036,10 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                         {/* Spesifikasi */}
                         {visibleColumns.spec && (
                           <td style={{ padding: `${padY} 10px` }}>
-                            <div style={{ fontWeight: 600, color: '#334155', fontSize: '11.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={mat.specification}>
+                            <div style={{ fontWeight: 600, color: 'var(--ez-color-text-body)', fontSize: '11.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={mat.specification}>
                               {(mat as any).standard || 'SNI 7064:2014'}
                             </div>
-                            <div style={{ fontSize: '10.5px', color: '#94A3B8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-faint)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {mat.specification || 'Kemasan 50 kg'}
                             </div>
                           </td>
@@ -2052,7 +2047,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
 
                         {/* Unit */}
                         {visibleColumns.unit && (
-                          <td style={{ padding: `${padY} 10px`, color: '#334155', fontFamily: 'monospace', fontSize: '11.5px' }}>
+                          <td style={{ padding: `${padY} 10px`, color: 'var(--ez-color-text-body)', fontFamily: 'monospace', fontSize: '11.5px' }}>
                             {mat.unit}
                           </td>
                         )}
@@ -2060,23 +2055,23 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                         {/* Harga Acuan */}
                         {visibleColumns.price && (
                           <td style={{ padding: `${padY} 10px`, whiteSpace: 'nowrap' }}>
-                            <div style={{ fontWeight: 900, color: isOverridden ? '#1D4ED8' : '#0F172A', fontFamily: 'monospace', fontSize: '12px' }}>
+                            <div style={{ fontWeight: 900, color: isOverridden ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text)', fontFamily: 'monospace', fontSize: '12px' }}>
                               {isOverridden && activeOverride
                                 ? formatCurrencyIDR(activeOverride.price)
                                 : (basePrice > 0 ? formatCurrencyIDR(basePrice) : 'Rp 74.000')}
                             </div>
                             {isOverridden ? (
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                                <span style={{ fontSize: '9px', fontWeight: 800, color: '#92400E', backgroundColor: '#FEF3C7', padding: '1px 5px', borderRadius: '4px', display: 'inline-block' }}>
+                                <span style={{ fontSize: '9px', fontWeight: 800, color: 'var(--ez-hue-amber-text)', backgroundColor: 'var(--ez-hue-amber-bg)', padding: '1px 5px', borderRadius: '4px', display: 'inline-block' }}>
                                   OVERRIDE PROYEK
                                 </span>
-                                <span style={{ fontSize: '9.5px', color: '#94A3B8', textDecoration: 'line-through' }}>
+                                <span style={{ fontSize: '9.5px', color: 'var(--ez-color-text-faint)', textDecoration: 'line-through' }}>
                                   {basePrice > 0 ? formatCurrencyIDR(basePrice) : 'Rp 74.000'}
                                 </span>
                               </div>
                             ) : (
-                              <div style={{ fontSize: '10px', color: '#059669', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px', marginTop: '1px' }}>
-                                <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#059669', display: 'inline-block' }} />
+                              <div style={{ fontSize: '10px', color: 'var(--ez-hue-green-text)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px', marginTop: '1px' }}>
+                                <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--ez-hue-green-text)', display: 'inline-block' }} />
                                 Verified
                               </div>
                             )}
@@ -2095,22 +2090,22 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                                 fontWeight: 800,
                                 backgroundColor:
                                   mat.priceTier === 'ECONOMY'
-                                    ? '#ECFDF5'
+                                    ? 'var(--ez-hue-green-bg)'
                                     : mat.priceTier === 'PREMIUM'
-                                    ? '#FFFBEB'
-                                    : '#EFF6FF',
+                                    ? 'var(--ez-hue-amber-bg)'
+                                    : 'var(--ez-hue-blue-bg)',
                                 color:
                                   mat.priceTier === 'ECONOMY'
-                                    ? '#047857'
+                                    ? 'var(--ez-hue-green-text)'
                                     : mat.priceTier === 'PREMIUM'
-                                    ? '#B45309'
-                                    : '#1D4ED8',
+                                    ? 'var(--ez-hue-amber-text)'
+                                    : 'var(--ez-color-primary-hover)',
                                 border:
                                   mat.priceTier === 'ECONOMY'
-                                    ? '1px solid #A7F3D0'
+                                    ? '1px solid var(--ez-hue-green-border)'
                                     : mat.priceTier === 'PREMIUM'
-                                    ? '1px solid #FDE68A'
-                                    : '1px solid #DBEAFE',
+                                    ? '1px solid var(--ez-hue-amber-border)'
+                                    : '1px solid var(--ez-hue-blue-border)',
                               }}
                             >
                               {mat.priceTier || 'STANDARD'}
@@ -2121,10 +2116,10 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                         {/* Wilayah */}
                         {visibleColumns.region && (
                           <td style={{ padding: `${padY} 10px` }}>
-                            <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {primaryPriceRec?.region.province || 'Jawa Barat'}
                             </div>
-                            <div style={{ fontSize: '10px', color: '#94A3B8' }}>
+                            <div style={{ fontSize: '10px', color: 'var(--ez-color-text-faint)' }}>
                               (Exact region)
                             </div>
                           </td>
@@ -2132,14 +2127,14 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
 
                         {/* Sumber */}
                         {visibleColumns.source && (
-                          <td style={{ padding: `${padY} 10px`, color: '#475569', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <td style={{ padding: `${padY} 10px`, color: 'var(--ez-color-text-slate)', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {primaryPriceRec?.sourceName || 'Distributor Resmi'}
                           </td>
                         )}
 
                         {/* Updated */}
                         {visibleColumns.updated && (
-                          <td style={{ padding: `${padY} 10px`, color: '#64748B', fontSize: '11px', whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: `${padY} 10px`, color: 'var(--ez-color-text-muted)', fontSize: '11px', whiteSpace: 'nowrap' }}>
                             {primaryPriceRec?.priceDate || '25 Sep 2026'}
                           </td>
                         )}
@@ -2171,9 +2166,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                                 borderRadius: '6px',
                                 fontSize: '10.5px',
                                 fontWeight: 700,
-                                border: isOverridden ? '1px solid #FCD34D' : '1px solid #DBEAFE',
-                                backgroundColor: isOverridden ? '#FEF3C7' : '#EFF6FF',
-                                color: isOverridden ? '#92400E' : '#1D4ED8',
+                                border: isOverridden ? '1px solid var(--ez-hue-amber-border)' : '1px solid var(--ez-hue-blue-border)',
+                                backgroundColor: isOverridden ? 'var(--ez-hue-amber-bg)' : 'var(--ez-hue-blue-bg)',
+                                color: isOverridden ? 'var(--ez-hue-amber-text)' : 'var(--ez-color-primary-hover)',
                                 cursor: 'pointer',
                                 whiteSpace: 'nowrap',
                               }}
@@ -2189,7 +2184,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                               style={{
                                 padding: '3px',
                                 borderRadius: '6px',
-                                color: '#94A3B8',
+                                color: 'var(--ez-color-text-faint)',
                                 cursor: 'pointer',
                                 border: 'none',
                                 background: 'transparent',
@@ -2206,8 +2201,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                                 right: 0,
                                 marginTop: '4px',
                                 width: '140px',
-                                backgroundColor: '#ffffff',
-                                border: '1px solid #E2E8F0',
+                                backgroundColor: 'var(--ez-color-surface)',
+                                border: '1px solid var(--ez-color-border-line)',
                                 borderRadius: '10px',
                                 boxShadow: '0 8px 24px rgba(15,23,42,0.12)',
                                 padding: '4px',
@@ -2240,7 +2235,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                                   borderRadius: '6px',
                                   border: 'none',
                                   background: 'transparent',
-                                  color: '#2563EB',
+                                  color: 'var(--ez-color-primary)',
                                   fontWeight: 700,
                                   cursor: 'pointer',
                                 }}
@@ -2260,7 +2255,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                                   borderRadius: '6px',
                                   border: 'none',
                                   background: 'transparent',
-                                  color: '#334155',
+                                  color: 'var(--ez-color-text-body)',
                                   cursor: 'pointer',
                                 }}
                               >
@@ -2279,7 +2274,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                                   borderRadius: '6px',
                                   border: 'none',
                                   background: 'transparent',
-                                  color: '#334155',
+                                  color: 'var(--ez-color-text-body)',
                                   cursor: 'pointer',
                                 }}
                               >
@@ -2351,8 +2346,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             <div
               style={{
                 padding: '12px 16px',
-                borderTop: '1px solid #E2E8F0',
-                backgroundColor: '#ffffff',
+                borderTop: '1px solid var(--ez-color-border-line)',
+                backgroundColor: 'var(--ez-color-surface)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -2361,7 +2356,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 fontSize: '11.5px',
               }}
             >
-              <div style={{ color: '#64748B' }}>
+              <div style={{ color: 'var(--ez-color-text-muted)' }}>
                 Menampilkan {(currentPage - 1) * pageSize + 1} -{' '}
                 {Math.min(currentPage * pageSize, currentTotalItems)} dari{' '}
                 {currentTotalItems.toLocaleString('id-ID')} item
@@ -2375,11 +2370,11 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   style={{
                     padding: '4px 6px',
                     borderRadius: '7px',
-                    border: '1px solid #CBD5E1',
-                    color: '#64748B',
+                    border: '1px solid var(--ez-color-border-strong)',
+                    color: 'var(--ez-color-text-muted)',
                     cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
                     opacity: currentPage === 1 ? 0.3 : 1,
-                    backgroundColor: '#ffffff',
+                    backgroundColor: 'var(--ez-color-surface)',
                     display: 'flex',
                     alignItems: 'center',
                   }}
@@ -2398,16 +2393,16 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                       fontWeight: 700,
                       fontSize: '11.5px',
                       cursor: 'pointer',
-                      border: currentPage === page ? 'none' : '1px solid #E2E8F0',
-                      backgroundColor: currentPage === page ? '#2563EB' : '#ffffff',
-                      color: currentPage === page ? '#ffffff' : '#334155',
+                      border: currentPage === page ? 'none' : '1px solid var(--ez-color-border-line)',
+                      backgroundColor: currentPage === page ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
+                      color: currentPage === page ? '#ffffff' : 'var(--ez-color-text-body)',
                     }}
                   >
                     {page}
                   </button>
                 ))}
 
-                <span style={{ padding: '0 4px', color: '#94A3B8' }}>...</span>
+                <span style={{ padding: '0 4px', color: 'var(--ez-color-text-faint)' }}>...</span>
 
                 <button
                   onClick={() => setCurrentPage(totalPages)}
@@ -2418,9 +2413,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     fontWeight: 700,
                     fontSize: '11.5px',
                     cursor: 'pointer',
-                    border: currentPage === totalPages ? 'none' : '1px solid #E2E8F0',
-                    backgroundColor: currentPage === totalPages ? '#2563EB' : '#ffffff',
-                    color: currentPage === totalPages ? '#ffffff' : '#334155',
+                    border: currentPage === totalPages ? 'none' : '1px solid var(--ez-color-border-line)',
+                    backgroundColor: currentPage === totalPages ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
+                    color: currentPage === totalPages ? '#ffffff' : 'var(--ez-color-text-body)',
                   }}
                 >
                   {totalPages}
@@ -2432,11 +2427,11 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   style={{
                     padding: '4px 6px',
                     borderRadius: '7px',
-                    border: '1px solid #CBD5E1',
-                    color: '#64748B',
+                    border: '1px solid var(--ez-color-border-strong)',
+                    color: 'var(--ez-color-text-muted)',
                     cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
                     opacity: currentPage === totalPages ? 0.3 : 1,
-                    backgroundColor: '#ffffff',
+                    backgroundColor: 'var(--ez-color-surface)',
                     display: 'flex',
                     alignItems: 'center',
                   }}
@@ -2447,7 +2442,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
 
               {/* Items Per Page Select */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ color: '#64748B' }}>Tampilkan</span>
+                <span style={{ color: 'var(--ez-color-text-muted)' }}>Tampilkan</span>
                 <select
                   value={pageSize}
                   onChange={(e) => {
@@ -2455,13 +2450,13 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     setCurrentPage(1);
                   }}
                   style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #CBD5E1',
+                    backgroundColor: 'var(--ez-color-surface)',
+                    border: '1px solid var(--ez-color-border-strong)',
                     borderRadius: '7px',
                     padding: '3px 6px',
                     fontSize: '11.5px',
                     fontWeight: 700,
-                    color: '#0F172A',
+                    color: 'var(--ez-color-text-primary)',
                     outline: 'none',
                     cursor: 'pointer',
                   }}
@@ -2471,7 +2466,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   <option value={50}>50</option>
                   <option value={100}>100</option>
                 </select>
-                <span style={{ color: '#64748B' }}>per halaman</span>
+                <span style={{ color: 'var(--ez-color-text-muted)' }}>per halaman</span>
               </div>
             </div>
           </div>
@@ -2517,7 +2512,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             transform: 'translateX(-50%)',
             zIndex: 40,
             backgroundColor: '#0F172A',
-            color: '#ffffff',
+            color: '#FFFFFF',
             padding: '10px 18px',
             borderRadius: '16px',
             boxShadow: '0 12px 36px rgba(0,0,0,0.25)',
@@ -2533,7 +2528,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 width: '22px',
                 height: '22px',
                 borderRadius: '50%',
-                backgroundColor: '#2563EB',
+                backgroundColor: 'var(--ez-color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -2552,8 +2547,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
               style={{
                 padding: '6px 14px',
                 borderRadius: '9px',
-                backgroundColor: '#2563EB',
-                color: '#ffffff',
+                backgroundColor: 'var(--ez-color-primary)',
+                color: '#FFFFFF',
                 fontWeight: 700,
                 cursor: 'pointer',
                 border: 'none',
@@ -2571,7 +2566,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 padding: '6px 10px',
                 borderRadius: '9px',
                 backgroundColor: 'transparent',
-                color: '#94A3B8',
+                color: 'var(--ez-color-text-faint)',
                 cursor: 'pointer',
                 border: 'none',
               }}

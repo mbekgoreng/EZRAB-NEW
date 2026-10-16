@@ -43,9 +43,9 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
       {/* Header Banner */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -55,10 +55,10 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
           <div>
-            <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Analisis Anggaran vs Realisasi (Budget vs Actual)
             </h2>
-            <div style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
+            <div style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
               Komparasi mendalam antara budget RAB terencana dengan akumulasi pengeluaran lapangan per kelompok pekerjaan.
             </div>
           </div>
@@ -68,11 +68,11 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
               style={{
                 fontSize: '12px',
                 fontWeight: 750,
-                color: budgetVsActual.status === 'OVER_BUDGET' ? '#DC2626' : '#166534',
-                backgroundColor: budgetVsActual.status === 'OVER_BUDGET' ? '#FEE2E2' : '#DCFCE7',
+                color: budgetVsActual.status === 'OVER_BUDGET' ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text-deep)',
+                backgroundColor: budgetVsActual.status === 'OVER_BUDGET' ? 'var(--ez-hue-red-bg)' : 'var(--ez-hue-green-bg-deep)',
                 padding: '4px 10px',
                 borderRadius: '6px',
-                border: `1px solid ${budgetVsActual.status === 'OVER_BUDGET' ? '#FECACA' : '#BBF7D0'}`,
+                border: `1px solid ${budgetVsActual.status === 'OVER_BUDGET' ? 'var(--ez-hue-rose-border)' : 'var(--ez-hue-green-border)'}`,
               }}
             >
               Varians: {budgetVsActual.totalVariance >= 0 ? '+' : ''}{formatRupiah(budgetVsActual.totalVariance)} ({budgetVsActual.variancePercent >= 0 ? '+' : ''}{budgetVsActual.variancePercent}%)
@@ -83,52 +83,52 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
 
       {/* Summary Metrics Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '16px' }}>
-          <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: 600 }}>Total Anggaran RAB</div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', marginTop: '4px' }}>
+        <div style={{ backgroundColor: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-color-border-line)', padding: '16px' }}>
+          <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Total Anggaran RAB</div>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '4px' }}>
             {formatRupiah(budgetVsActual.totalBudget)}
           </div>
-          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Disetujui dari Master RAB</div>
+          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>Disetujui dari Master RAB</div>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '16px' }}>
-          <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: 600 }}>Total Realisasi Aktual</div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: '#DC2626', marginTop: '4px' }}>
+        <div style={{ backgroundColor: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-color-border-line)', padding: '16px' }}>
+          <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Total Realisasi Aktual</div>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-rose-text)', marginTop: '4px' }}>
             {formatRupiah(budgetVsActual.totalActual)}
           </div>
-          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Pengeluaran tercatat</div>
+          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>Pengeluaran tercatat</div>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '16px' }}>
-          <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: 600 }}>Sisa Anggaran Tersedia</div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: '#16A34A', marginTop: '4px' }}>
+        <div style={{ backgroundColor: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-color-border-line)', padding: '16px' }}>
+          <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Sisa Anggaran Tersedia</div>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', marginTop: '4px' }}>
             {formatRupiah(Math.max(0, budgetVsActual.totalBudget - budgetVsActual.totalActual))}
           </div>
-          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Tersedia untuk sisa pekerjaan</div>
+          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>Tersedia untuk sisa pekerjaan</div>
         </div>
 
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '16px' }}>
-          <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: 600 }}>Status Pengendalian</div>
+        <div style={{ backgroundColor: 'var(--ez-color-surface)', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-color-border-line)', padding: '16px' }}>
+          <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Status Pengendalian</div>
           <div
             style={{
               fontSize: '16px',
               fontWeight: 800,
-              color: budgetVsActual.status === 'OVER_BUDGET' ? '#DC2626' : '#16A34A',
+              color: budgetVsActual.status === 'OVER_BUDGET' ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text-bright)',
               marginTop: '4px',
             }}
           >
             {budgetVsActual.status === 'OVER_BUDGET' ? 'Over Budget' : (budgetVsActual.status === 'UNDER_BUDGET' ? 'Under Budget' : 'On Track')}
           </div>
-          <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Deviasi: {budgetVsActual.variancePercent}%</div>
+          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>Deviasi: {budgetVsActual.variancePercent}%</div>
         </div>
       </div>
 
       {/* Main Budget vs Actual Visual Bars */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -136,7 +136,7 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
           gap: '16px',
         }}
       >
-        <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
           Rincian Komparasi per Kelompok Pekerjaan
         </h3>
 
@@ -153,9 +153,9 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
       {/* Cost Element Breakdown Table */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -163,14 +163,14 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
           gap: '14px',
         }}
       >
-        <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
           Komposisi Unsur Biaya (Material, Upah, Subkon, Alat, Operasional)
         </h3>
 
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
             <thead>
-              <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
+              <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)' }}>
                 <th style={{ padding: '10px 14px', fontWeight: 700 }}>Kategori Unsur Biaya</th>
                 <th style={{ padding: '10px 14px', fontWeight: 700, textAlign: 'right' }}>Anggaran RAB</th>
                 <th style={{ padding: '10px 14px', fontWeight: 700, textAlign: 'right' }}>Realisasi Aktual</th>
@@ -184,14 +184,14 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
                 const isOver = varAmt > 0 && c.budgetAmount > 0;
 
                 return (
-                  <tr key={c.category} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <td style={{ padding: '10px 14px', fontWeight: 650, color: '#1E293B' }}>
+                  <tr key={c.category} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
+                    <td style={{ padding: '10px 14px', fontWeight: 650, color: 'var(--ez-color-text-strong)' }}>
                       {c.category}
                     </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'right', color: '#475569' }}>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--ez-color-text-slate)' }}>
                       {c.budgetAmount > 0 ? formatRupiah(c.budgetAmount) : '-'}
                     </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#0F172A' }}>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                       {formatRupiah(c.actualAmount)}
                     </td>
                     <td
@@ -199,12 +199,12 @@ export const BudgetVsActualTab: React.FC<BudgetVsActualTabProps> = ({
                         padding: '10px 14px',
                         textAlign: 'right',
                         fontWeight: 700,
-                        color: isOver ? '#DC2626' : (varAmt < 0 ? '#16A34A' : '#64748B'),
+                        color: isOver ? 'var(--ez-hue-rose-text)' : (varAmt < 0 ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-color-text-muted)'),
                       }}
                     >
                       {c.budgetAmount > 0 ? `${varAmt >= 0 ? '+' : ''}${formatRupiah(varAmt)}` : '-'}
                     </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 650, color: '#2563EB' }}>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 650, color: 'var(--ez-color-primary)' }}>
                       {c.percentageOfTotal}%
                     </td>
                   </tr>

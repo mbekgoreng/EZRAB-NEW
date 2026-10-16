@@ -2,13 +2,14 @@ import React from 'react';
 import {
   Plus,
   ChevronRight,
+  Sparkles,
+  FileText,
   Upload,
   Calculator,
   Shield,
   Folder,
   Clock,
   CheckCircle2,
-  FileText,
   TrendingUp,
 } from 'lucide-react';
 import { Project } from '../../types';
@@ -27,21 +28,65 @@ interface EzrabAiDashboardViewProps {
   onOpenOnboarding?: () => void;
 }
 
-const formatProjectDate = (dateStr?: string): string => {
+/* ------------------------------------------------------------------ */
+/* Helpers — all values derived from real project data, never invented */
+/* ------------------------------------------------------------------ */
+
+/** BCP47 locale untuk bahasa antarmuka yang sedang aktif. */
+const localeForLang = (lang: string): string =>
+  ({ id: 'id-ID', en: 'en-US', zh: 'zh-CN', ms: 'ms-MY' } as Record<string, string>)[lang] ?? 'id-ID';
+
+/** Tanggal panjang mengikuti bahasa antarmuka, mis. "Rabu, 14 Oktober 2026". */
+const formatDateLong = (d: Date, lang: string): string =>
+  new Intl.DateTimeFormat(localeForLang(lang), {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(d);
+
+const formatRpFull = (v: number): string =>
+  new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(v);
+
+/** Short Indonesian Rp label for stat cards: Rp 684 jt / Rp 4,2 M */
+const formatRpShort = (v: number): string => {
+  if (v >= 1_000_000_000) {
+    const n = v / 1_000_000_000;
+    return `Rp ${n.toLocaleString('id-ID', { maximumFractionDigits: n >= 100 ? 0 : 1 })} M`;
+  }
+  if (v >= 1_000_000) {
+    return `Rp ${Math.round(v / 1_000_000).toLocaleString('id-ID')} jt`;
+  }
+  return formatRpFull(v);
+};
+
+const formatProjectDate = (dateStr: string | undefined, lang: string): string => {
   if (!dateStr) return '-';
   try {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    const day = d.getDate();
-    const month = months[d.getMonth()];
-    const year = d.getFullYear();
+    const datePart = new Intl.DateTimeFormat(localeForLang(lang), {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).format(d);
     const hours = String(d.getHours()).padStart(2, '0');
     const minutes = String(d.getMinutes()).padStart(2, '0');
-    return `${day} ${month} ${year}, ${hours}:${minutes}`;
+    return `${datePart}, ${hours}:${minutes}`;
   } catch {
     return dateStr;
   }
+};
+
+const initialsOf = (name: string): string => {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '?';
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
 };
 
 export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
@@ -52,7 +97,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
   onOpenMagicAi,
 }) => {
   const { currentProject, setCurrentProjectId } = useProject();
-  const { t } = useI18n();
+const { t, lang } = useI18n();
 
   // Dynamic time-based greeting (localized)
   const getLocalizedGreeting = (): string => {
@@ -68,7 +113,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
     }
   };
 
-  // Dynamic genuine project metrics
+  // Genuine project metrics — every number below comes from the projects prop
   const totalProjects = projects.length;
   const inProgressProjects = projects.filter((p) => p.status === 'in_progress').length;
   const completedProjects = projects.filter(
@@ -80,137 +125,179 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
 
   const latestProject = currentProject || (projects.length > 0 ? projects[0] : null);
 
+  // Pastel status pills (tints only, no heavy borders)
   const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'in_progress':
-        return {
-          label: t('dashboard.status_aktif'),
-          bg: '#EFF6FF',
-          color: '#2563EB',
-          border: '#DBEAFE',
-        };
+return { label: t('dashboard.status_aktif'), bg: 'var(--ez-color-primary-soft)', color: 'var(--ez-color-info)' };
       case 'completed':
       case 'approved':
       case 'COMPLETED':
-        return {
-          label: t('dashboard.status_selesai'),
-          bg: '#F0FDF4',
-          color: '#16A34A',
-          border: '#DCFCE7',
-        };
+        return { label: t('dashboard.status_selesai'), bg: 'var(--ez-pastel-mint)', color: 'var(--ez-color-success)' };
       case 'archived':
-        return {
-          label: t('dashboard.status_arsip'),
-          bg: '#F1F5F9',
-          color: '#64748B',
-          border: '#E2E8F0',
-        };
+        return { label: t('dashboard.status_arsip'), bg: 'var(--ez-color-surface-secondary)', color: 'var(--ez-color-text-muted)' };
       default:
-        return {
-          label: t('dashboard.status_draft'),
-          bg: '#FFFBEB',
-          color: '#D97706',
-          border: '#FEF3C7',
-        };
+        return { label: t('dashboard.status_draft'), bg: 'var(--ez-pastel-cream)', color: 'var(--ez-color-warning)' };
     }
   };
 
+  const FONT = "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif";
+  const CARD_SHADOW = 'var(--ez-shadow-card)';
+
+  /* ---------------- Empty state: no fake zeros ---------------- */
+  if (totalProjects === 0) {
+    return (
+      <div
+        className="ezrab-dashboard-view"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '24px',
+          maxWidth: '1440px',
+          margin: '0 auto',
+          width: '100%',
+          color: 'var(--ez-color-text-primary)',
+          fontFamily: FONT,
+        }}
+      >
+        <style>{`
+          @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+          @media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
+        `}</style>
+        <header style={{ marginBottom: '2px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.3px', margin: 0 }}>
+            {t('dash.dashboard')}
+          </h1>
+          <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', margin: '4px 0 0 0' }}>
+            {getLocalizedGreeting()} — {formatDateLong(new Date(), lang)}
+          </p>
+        </header>
+        <div
+          className="ezdb-anim"
+          style={{
+            background: 'var(--ez-color-surface)',
+            borderRadius: '22px',
+            border: '1px solid var(--ez-color-border-soft)',
+            boxShadow: CARD_SHADOW,
+            padding: '64px 32px',
+            textAlign: 'center',
+            animation: 'ezdb-rise 0.6s 0.1s both',
+          }}
+        >
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '22px',
+              background: 'var(--ez-color-primary-soft)',
+              color: 'var(--ez-color-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 18px auto',
+            }}
+          >
+            <FileText size={26} />
+          </div>
+          <h2 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--ez-color-text-primary)' }}>
+            {t('dash.empty_title')}
+          </h2>
+          <p style={{ fontSize: '13.5px', color: 'var(--ez-color-text-muted)', margin: '0 0 24px 0', lineHeight: 1.6 }}>
+            {t('dash.empty_desc')}
+          </p>
+          <button
+            type="button"
+            onClick={onCreateProject}
+            style={{
+              height: '44px',
+              padding: '0 24px',
+              borderRadius: '12px',
+              background: 'var(--ez-color-primary)',
+              color: '#FFFFFF',
+              fontSize: '14px',
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 14px rgba(37,99,235,0.28)',
+            }}
+          >
+            <Plus size={16} strokeWidth={2.5} />
+            <span>{t('dash.buat_proyek_pertama')}</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* ---------------- Main dashboard ---------------- */
   return (
     <div
       className="ezrab-dashboard-view"
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '24px',
+        gap: '22px',
         maxWidth: '1440px',
         margin: '0 auto',
         width: '100%',
-        color: '#0F172A',
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        color: 'var(--ez-color-text-primary)',
+        fontFamily: FONT,
       }}
     >
-      {/* =========================================================================
-          1. HERO AREA — COMMAND CENTER WITH 3D MASCOT & HANDWRITTEN ANNOTATION
-         ========================================================================= */}
+      <style>{`
+        @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
+        @media (max-width: 1120px) { .ezdb-hero-annot { display: none !important; } }
+        @media (max-width: 1000px) {
+          .ezdb-stats { grid-template-columns: 1fr 1fr !important; }
+          .ezdb-split { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 640px) {
+          .ezdb-stats { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+
+      {/* ============ 1. HERO — greeting + mascot ============ */}
       <section
-        className="ezrab-dashboard-hero"
+className="ezdb-anim"
         style={{
-          background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 55%, #EFF6FF 100%)',
-          borderRadius: '20px',
-          border: '1px solid #E5E7EB',
+          background: 'var(--ez-color-primary-soft)',
+          borderRadius: '22px',
+          boxShadow: CARD_SHADOW,
           padding: '36px 44px',
-          boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           position: 'relative',
-          overflow: 'visible',
+          overflow: 'hidden',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '32px',
           minHeight: '280px',
+          animation: 'ezdb-rise 0.6s 0s both',
         }}
       >
-        {/* Ambient atmospheric glow behind mascot */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            borderRadius: '20px',
-            overflow: 'hidden',
-            pointerEvents: 'none',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              top: '-30%',
-              right: '8%',
-              width: '460px',
-              height: '460px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(37,99,235,0.09) 0%, rgba(255,255,255,0) 70%)',
-            }}
-          />
-        </div>
-
-        {/* LEFT: Text & CTA Buttons */}
-        <div className="ezrab-dashboard-hero-text" style={{ flex: 1, maxWidth: '580px', position: 'relative', zIndex: 2 }}>
-          <div
-            style={{
-              fontSize: '13.5px',
-              fontWeight: 700,
-              letterSpacing: '0.01em',
-              marginBottom: '10px',
-            }}
-          >
-            <span style={{ color: '#0F172A' }}>{getLocalizedGreeting()}, </span>
-            <span style={{ color: '#2563EB' }}>Ahmad</span>
+<div style={{ flex: 1, maxWidth: '580px', position: 'relative', zIndex: 2 }}>
+          <div style={{ fontSize: '13.5px', fontWeight: 700, letterSpacing: '0.01em', marginBottom: '10px' }}>
+            <span style={{ color: 'var(--ez-color-text-primary)' }}>{getLocalizedGreeting()}, </span>
+            <span style={{ color: 'var(--ez-color-primary)' }}>Ahmad</span>
           </div>
-
           <h1
             style={{
               fontSize: 'clamp(28px, 3.2vw, 36px)',
               fontWeight: 800,
               letterSpacing: '-0.03em',
-              color: '#0F172A',
+              color: 'var(--ez-color-text-primary)',
               lineHeight: 1.2,
               margin: '0 0 14px 0',
             }}
           >
             {t('dashboard.hero_title')}
           </h1>
-
-          <p
-            style={{
-              fontSize: '14px',
-              color: '#475569',
-              lineHeight: 1.6,
-              margin: '0 0 24px 0',
-              maxWidth: '520px',
-            }}
-          >
+<p style={{ fontSize: '14px', color: 'var(--ez-color-text-secondary)', lineHeight: 1.6, margin: '0 0 24px 0', maxWidth: '520px' }}>
             {t('dashboard.hero_sub')}
           </p>
-
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <button
               type="button"
@@ -218,8 +305,8 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
               style={{
                 height: '42px',
                 padding: '0 20px',
-                borderRadius: '10px',
-                background: '#2563EB',
+                borderRadius: '12px',
+                background: 'var(--ez-color-primary)',
                 color: '#FFFFFF',
                 fontSize: '13.5px',
                 fontWeight: 650,
@@ -232,18 +319,17 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
                 transition: 'all 0.18s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#1D4ED8';
+                e.currentTarget.style.background = 'var(--ez-color-primary-hover)';
                 e.currentTarget.style.transform = 'translateY(-1px)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#2563EB';
+                e.currentTarget.style.background = 'var(--ez-color-primary)';
                 e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
               <Plus size={16} strokeWidth={2.5} />
               <span>{t('dashboard.buat_proyek_baru')}</span>
             </button>
-
             <button
               type="button"
               onClick={() => {
@@ -257,26 +343,24 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
               style={{
                 height: '42px',
                 padding: '0 18px',
-                borderRadius: '10px',
-                background: '#FFFFFF',
-                color: '#334155',
+                borderRadius: '12px',
+                background: 'var(--ez-color-surface)',
+                color: 'var(--ez-color-text-primary)',
                 fontSize: '13.5px',
                 fontWeight: 600,
-                border: '1px solid #E2E8F0',
+                border: 'none',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                boxShadow: '0 1px 3px rgba(15,23,42,0.03)',
+                boxShadow: CARD_SHADOW,
                 transition: 'all 0.18s ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#F8FAFC';
-                e.currentTarget.style.borderColor = '#CBD5E1';
+                e.currentTarget.style.transform = 'translateY(-1px)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#FFFFFF';
-                e.currentTarget.style.borderColor = '#E2E8F0';
+                e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
               <span>{t('dashboard.buka_proyek')}</span>
@@ -285,9 +369,8 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
           </div>
         </div>
 
-        {/* RIGHT: Mascot Stage + Playful Cursive Annotation with Curved Arrow */}
+        {/* Mascot + handwritten annotation */}
         <div
-          className="mascot-stage"
           style={{
             position: 'relative',
             display: 'flex',
@@ -301,9 +384,8 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
             overflow: 'visible',
           }}
         >
-          {/* Cursive handwritten annotation placed beside the mascot */}
           <div
-            className="mascot-annotation-badge"
+            className="ezdb-hero-annot"
             style={{
               position: 'absolute',
               top: '36%',
@@ -316,69 +398,19 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
             }}
           >
             <svg width="220" height="138" viewBox="0 0 220 138" fill="none">
-              <text
-                x="81"
-                y="35"
-                textAnchor="middle"
-                fill="#2563EB"
+<text x="81" y="35" textAnchor="middle" fill="var(--ez-color-primary)"
                 fontFamily="'Caveat', 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive"
-                fontSize="20"
-                fontWeight="700"
-                transform="rotate(-3 81 35)"
-              >
-                Membangun
-              </text>
-              <text
-                x="85"
-                y="60"
-                textAnchor="middle"
-                fill="#2563EB"
+                fontSize="20" fontWeight="700" transform="rotate(-3 81 35)">{t('dash.hero_note_1')}</text>
+              <text x="85" y="60" textAnchor="middle" fill="var(--ez-color-primary)"
                 fontFamily="'Caveat', 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive"
-                fontSize="19"
-                fontWeight="600"
-                transform="rotate(-3 85 60)"
-              >
-                lebih baik bersama
-              </text>
-              <text
-                x="90"
-                y="87"
-                textAnchor="middle"
-                fill="#2563EB"
+                fontSize="19" fontWeight="600" transform="rotate(-3 85 60)">{t('dash.hero_note_2')}</text>
+              <text x="90" y="87" textAnchor="middle" fill="var(--ez-color-primary)"
                 fontFamily="'Caveat', 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive"
-                fontSize="21"
-                fontWeight="800"
-                transform="rotate(-3 90 87)"
-              >
-                EZRAB
-              </text>
-              {/* Playful curved arrow pointing right toward the mascot */}
-              <path
-                d="M 135 85 C 155 87, 172 95, 187 105"
-                stroke="#2563EB"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                fill="none"
-              />
-              <path
-                d="M 175 106 L 189 105 L 185 92"
-                stroke="#2563EB"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
+                fontSize="21" fontWeight="800" transform="rotate(-3 90 87)">EZRAB</text>
+              <path d="M 135 85 C 155 87, 172 95, 187 105" stroke="var(--ez-color-primary)" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+              <path d="M 175 106 L 189 105 L 185 92" stroke="var(--ez-color-primary)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
             </svg>
-            <style>{`
-              @media (max-width: 1120px) {
-                .mascot-annotation-badge {
-                  display: none !important;
-                }
-              }
-            `}</style>
           </div>
-
-          {/* Master 3D GLB Mascot in Dynamic 3/4 Pose with Wide Eyes */}
           <EZRABMascot3D
             variant="dashboard"
             width="100%"
@@ -391,256 +423,85 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
         </div>
       </section>
 
-      {/* =========================================================================
-          2. QUICK ACTIONS (4 CARDS)
-         ========================================================================= */}
+      {/* ============ 2. QUICK ACTIONS ============ */}
       <section>
-        <h2
-          style={{
-            fontSize: '16px',
-            fontWeight: 750,
-            color: '#0F172A',
-            margin: '0 0 14px 0',
-          }}
-        >
-          Quick Actions
+        <h2 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: '0 0 14px 0' }}>
+          {t('dash.quick_actions')}
         </h2>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '16px',
-          }}
-        >
-          {/* Action 1: Buat RAB */}
-          <div
-            onClick={onCreateProject}
-            role="button"
-            tabIndex={0}
-            style={{
-              height: '96px',
-              background: '#FFFFFF',
-              borderRadius: '14px',
-              border: '1px solid #E5E7EB',
-              padding: '16px 18px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              cursor: 'pointer',
-              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
-              transition: 'all 0.18s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.borderColor = '#BFDBFE';
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(37, 99, 235, 0.08)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = '#E5E7EB';
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(15, 23, 42, 0.02)';
-            }}
-          >
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+          {[
+            { icon: FileText, title: t('dash.qa_rab'), desc: t('dash.qa_rab_desc'), iconBg: 'var(--ez-color-primary-soft)', iconColor: 'var(--ez-color-primary)', onClick: onCreateProject, delay: '0.05s' },
+            { icon: Upload, title: t('dash.qa_ded'), desc: t('dash.qa_ded_desc'), iconBg: 'var(--ez-pastel-cream)', iconColor: 'var(--ez-color-warning)', onClick: () => onOpenMagicAi('ded-rab'), delay: '0.1s' },
+            { icon: Calculator, title: t('dash.qa_qto'), desc: t('dash.qa_qto_desc'), iconBg: 'var(--ez-pastel-mint)', iconColor: 'var(--ez-color-success)', onClick: () => onNavigateToTab('qto-vc'), delay: '0.15s' },
+            { icon: Shield, title: t('dash.qa_ahsp'), desc: t('dash.qa_ahsp_desc'), iconBg: 'var(--ez-pastel-peach)', iconColor: 'var(--ez-color-warning)', onClick: () => onNavigateToTab('ahsp-2026'), delay: '0.2s' },
+          ].map((a) => (
             <div
+              key={a.title}
+              onClick={a.onClick}
+              role="button"
+              tabIndex={0}
+              aria-label={a.title}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') a.onClick(); }}
+              className="ezdb-anim"
               style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '10px',
-                background: '#EFF6FF',
-                color: '#2563EB',
+                height: '96px',
+                background: 'var(--ez-color-surface)',
+                borderRadius: '22px',
+                border: '1px solid var(--ez-color-border-soft)',
+                padding: '16px 18px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
+                gap: '14px',
+                cursor: 'pointer',
+                boxShadow: CARD_SHADOW,
+                transition: 'all 0.18s ease',
+                animation: `ezdb-rise 0.6s ${a.delay} both`,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = CARD_SHADOW;
               }}
             >
-              <FileText size={20} />
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '14.5px', fontWeight: 700, color: '#0F172A', marginBottom: '2px' }}>
-                Buat RAB
+              <div
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
+                  background: a.iconBg,
+                  color: a.iconColor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <a.icon size={20} />
               </div>
-              <div style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.35 }}>
-                Penyusunan RAB otomatis & terstruktur
-              </div>
-            </div>
-          </div>
-
-          {/* Action 2: Upload DED */}
-          <div
-            onClick={() => onOpenMagicAi('ded-rab')}
-            role="button"
-            tabIndex={0}
-            style={{
-              height: '96px',
-              background: '#FFFFFF',
-              borderRadius: '14px',
-              border: '1px solid #E5E7EB',
-              padding: '16px 18px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              cursor: 'pointer',
-              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
-              transition: 'all 0.18s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.borderColor = '#DDD6FE';
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(124, 58, 237, 0.08)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = '#E5E7EB';
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(15, 23, 42, 0.02)';
-            }}
-          >
-            <div
-              style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '10px',
-                background: '#F5F3FF',
-                color: '#7C3AED',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Upload size={20} />
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '14.5px', fontWeight: 700, color: '#0F172A', marginBottom: '2px' }}>
-                Upload DED
-              </div>
-              <div style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.35 }}>
-                Ekstraksi BoQ dari dokumen gambar teknis
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '2px' }}>
+                  {a.title}
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', lineHeight: 1.35 }}>
+                  {a.desc}
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Action 3: Volume Calculation */}
-          <div
-            onClick={() => onNavigateToTab('qto-vc')}
-            role="button"
-            tabIndex={0}
-            style={{
-              height: '96px',
-              background: '#FFFFFF',
-              borderRadius: '14px',
-              border: '1px solid #E5E7EB',
-              padding: '16px 18px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              cursor: 'pointer',
-              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
-              transition: 'all 0.18s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.borderColor = '#A7F3D0';
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.08)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = '#E5E7EB';
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(15, 23, 42, 0.02)';
-            }}
-          >
-            <div
-              style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '10px',
-                background: '#ECFDF5',
-                color: '#10B981',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Calculator size={20} />
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '14.5px', fontWeight: 700, color: '#0F172A', marginBottom: '2px' }}>
-                Volume Calculation
-              </div>
-              <div style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.35 }}>
-                Kalkulator QTO terintegrasi standar teknis
-              </div>
-            </div>
-          </div>
-
-          {/* Action 4: Cari AHSP */}
-          <div
-            onClick={() => onNavigateToTab('ahsp-2026')}
-            role="button"
-            tabIndex={0}
-            style={{
-              height: '96px',
-              background: '#FFFFFF',
-              borderRadius: '14px',
-              border: '1px solid #E5E7EB',
-              padding: '16px 18px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '14px',
-              cursor: 'pointer',
-              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
-              transition: 'all 0.18s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.borderColor = '#FDE68A';
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.08)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.borderColor = '#E5E7EB';
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(15, 23, 42, 0.02)';
-            }}
-          >
-            <div
-              style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '10px',
-                background: '#FFFBEB',
-                color: '#D97706',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Shield size={20} />
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '14.5px', fontWeight: 700, color: '#0F172A', marginBottom: '2px' }}>
-                Cari AHSP
-              </div>
-              <div style={{ fontSize: '12px', color: '#64748B', lineHeight: 1.35 }}>
-                Database analisa PUPR 2026 terverifikasi
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* =========================================================================
-          3. PROYEK ANDA (4 STAT METRIC CARDS WITH BALANCED ICONS)
-         ========================================================================= */}
+      {/* ============ 3. PROYEK ANDA — 4 pastel stat cards ============ */}
       <section>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
           <div>
-            <h2 style={{ fontSize: '17px', fontWeight: 750, color: '#0F172A', margin: '0 0 2px 0' }}>
-              Proyek Anda
+            <h2 style={{ fontSize: '17px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: '0 0 2px 0' }}>
+              {t('dash.proyek_anda')}
             </h2>
-            <span style={{ fontSize: '12px', color: '#64748B' }}>
+<span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
               {t('dashboard.ringkasan_aktif')}
             </span>
           </div>
@@ -650,7 +511,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
             style={{
               fontSize: '12.5px',
               fontWeight: 650,
-              color: '#2563EB',
+              color: 'var(--ez-color-primary)',
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
@@ -659,221 +520,104 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
               gap: '4px',
             }}
           >
-            <span>Semua Proyek</span>
+            <span>{t('dash.semua_proyek')}</span>
             <ChevronRight size={14} />
           </button>
         </div>
-
         <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '14px',
-          }}
+          className="ezdb-stats"
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '18px' }}
         >
-          {/* Card 1: Total Proyek */}
-          <div
-            style={{
-              background: '#FFFFFF',
-              borderRadius: '12px',
-              border: '1px solid #E5E7EB',
-              padding: '18px 20px',
-              boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: '26px', fontWeight: 800, color: '#0F172A', lineHeight: 1.1 }}>
-                {totalProjects}
-              </div>
-              <div style={{ fontSize: '12px', fontWeight: 550, color: '#64748B', marginTop: '4px' }}>
-                Total Proyek
-              </div>
-            </div>
+          {[
+            { bg: 'var(--ez-color-primary-soft)', icon: Folder, iconColor: 'var(--ez-color-primary)', value: totalProjects, label: t('dash.stat_total'), sub: `${draftProjects} ${t('dash.stat_draft_word')}`, delay: '0.05s' },
+            { bg: 'var(--ez-pastel-cream)', icon: Clock, iconColor: 'var(--ez-color-warning)', value: inProgressProjects, label: t('dash.stat_aktif'), sub: t('dash.stat_aktif_sub'), delay: '0.12s' },
+            { bg: 'var(--ez-pastel-mint)', icon: CheckCircle2, iconColor: 'var(--ez-color-success)', value: completedProjects, label: t('dash.stat_selesai'), sub: t('dash.stat_selesai_sub'), delay: '0.19s' },
+            { bg: 'var(--ez-pastel-peach)', icon: FileText, iconColor: 'var(--ez-color-warning)', value: draftProjects, label: t('dash.stat_draft'), sub: t('dash.stat_draft_sub'), delay: '0.26s' },
+          ].map((c) => (
             <div
+              key={c.label}
+              className="ezdb-anim"
               style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '8px',
-                background: '#EFF6FF',
-                color: '#2563EB',
+                background: c.bg,
+                borderRadius: '22px',
+                padding: '22px',
+                boxShadow: CARD_SHADOW,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
+                justifyContent: 'space-between',
+                animation: `ezdb-rise 0.6s ${c.delay} both`,
               }}
             >
-              <Folder size={18} />
-            </div>
-          </div>
-
-          {/* Card 2: Sedang Dikerjakan */}
-          <div
-            style={{
-              background: '#FFFFFF',
-              borderRadius: '12px',
-              border: '1px solid #E5E7EB',
-              padding: '18px 20px',
-              boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: '26px', fontWeight: 800, color: '#2563EB', lineHeight: 1.1 }}>
-                {inProgressProjects}
+              <div>
+                <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)', lineHeight: 1.1 }}>
+                  {c.value}
+                </div>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-secondary)', marginTop: '6px' }}>
+                  {c.label}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                  {c.sub}
+                </div>
               </div>
-              <div style={{ fontSize: '12px', fontWeight: 550, color: '#64748B', marginTop: '4px' }}>
-                Sedang Dikerjakan
-              </div>
-            </div>
-            <div
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '8px',
-                background: '#EFF6FF',
-                color: '#2563EB',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Clock size={18} />
-            </div>
-          </div>
-
-          {/* Card 3: Selesai */}
-          <div
-            style={{
-              background: '#FFFFFF',
-              borderRadius: '12px',
-              border: '1px solid #E5E7EB',
-              padding: '18px 20px',
-              boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: '26px', fontWeight: 800, color: '#16A34A', lineHeight: 1.1 }}>
-                {completedProjects}
-              </div>
-              <div style={{ fontSize: '12px', fontWeight: 550, color: '#64748B', marginTop: '4px' }}>
-                Selesai
+              <div
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '12px',
+                  background: 'var(--ez-color-surface)',
+                  color: c.iconColor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <c.icon size={20} />
               </div>
             </div>
-            <div
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '8px',
-                background: '#ECFDF5',
-                color: '#16A34A',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <CheckCircle2 size={18} />
-            </div>
-          </div>
-
-          {/* Card 4: Draft */}
-          <div
-            style={{
-              background: '#FFFFFF',
-              borderRadius: '12px',
-              border: '1px solid #E5E7EB',
-              padding: '18px 20px',
-              boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: '26px', fontWeight: 800, color: '#D97706', lineHeight: 1.1 }}>
-                {draftProjects}
-              </div>
-              <div style={{ fontSize: '12px', fontWeight: 550, color: '#64748B', marginTop: '4px' }}>
-                Draft
-              </div>
-            </div>
-            <div
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '8px',
-                background: '#FFFBEB',
-                color: '#D97706',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <FileText size={18} />
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* =========================================================================
-          4. SPLIT GRID: DAFTAR PROYEK TERKINI (LEFT) + EZRAB INSIGHT (RIGHT)
-         ========================================================================= */}
+      {/* ============ 4. SPLIT: DAFTAR PROYEK TERKINI + EZRAB INSIGHT ============ */}
       <section
-        className="ezrab-dashboard-split"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) 350px',
-          gap: '16px',
-          alignItems: 'stretch',
-        }}
+className="ezdb-split"
+        style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 350px', gap: '18px', alignItems: 'stretch' }}
       >
-        {/* LEFT: Daftar Proyek Terkini Table */}
+        {/* LEFT: Daftar Proyek Terkini table */}
         <div
+          className="ezdb-anim"
           style={{
-            background: '#FFFFFF',
-            borderRadius: '14px',
-            border: '1px solid #E5E7EB',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
-            padding: '20px 22px',
+            background: 'var(--ez-color-surface)',
+            borderRadius: '22px',
+            border: '1px solid var(--ez-color-border-soft)',
+            boxShadow: CARD_SHADOW,
+            padding: '24px',
+            animation: 'ezdb-rise 0.6s 0.3s both',
             display: 'flex',
             flexDirection: 'column',
+            minWidth: 0,
           }}
         >
-          <h3
-            style={{
-              fontSize: '15px',
-              fontWeight: 750,
-              color: '#0F172A',
-              margin: '0 0 16px 0',
-            }}
-          >
-            Daftar Proyek Terkini
+          <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: '0 0 16px 0' }}>
+            {t('dash.daftar_proyek_terkini')}
           </h3>
-
           <div style={{ overflowX: 'auto', flex: 1 }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px', minWidth: '560px' }}>
               <thead>
-                <tr style={{ color: '#64748B', fontWeight: 650, fontSize: '11px', borderBottom: '1px solid #F1F5F9' }}>
-                  <th style={{ padding: '8px 12px 12px 6px', fontWeight: 650 }}>PROYEK</th>
-                  <th style={{ padding: '8px 12px 12px 12px', fontWeight: 650 }}>LOKASI</th>
-                  <th style={{ padding: '8px 12px 12px 12px', fontWeight: 650 }}>NILAI RAB</th>
-                  <th style={{ padding: '8px 12px 12px 12px', fontWeight: 650 }}>PROGRESS</th>
-                  <th style={{ padding: '8px 12px 12px 12px', fontWeight: 650 }}>STATUS</th>
-                  <th style={{ padding: '8px 6px 12px 12px', fontWeight: 650 }}>UPDATED</th>
+                <tr style={{ color: 'var(--ez-color-text-muted)', fontWeight: 700, fontSize: '11px', borderBottom: '1px solid var(--ez-color-border-soft)' }}>
+                  {[t('dash.col_proyek'), t('dash.col_lokasi'), t('dash.col_nilai_rab'), t('dash.col_progress'), t('dash.col_status'), t('dash.col_updated')].map((h) => (
+                    <th key={h} style={{ padding: '8px 12px 12px 6px', fontWeight: 700, letterSpacing: '0.04em' }}>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {projects.slice(0, 3).map((proj) => {
                   const badge = getStatusBadge(proj.status);
-                  const progressPct = proj.progress || 0;
-                  const barColor = progressPct >= 70 ? '#10B981' : progressPct > 0 ? '#2563EB' : '#CBD5E1';
-
+                  const progressPct = Math.max(0, Math.min(100, proj.progress || 0));
+                  const barColor = progressPct >= 70 ? 'var(--ez-color-success)' : progressPct > 0 ? 'var(--ez-color-primary)' : 'var(--ez-color-border)';
                   return (
                     <tr
                       key={proj.id}
@@ -881,91 +625,67 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
                         setCurrentProjectId(proj.id);
                         onSelectProject(proj.id, 'rab-estimasi');
                       }}
-                      style={{
-                        borderBottom: '1px solid #F8FAFC',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.12s ease',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
+                      style={{ borderBottom: '1px solid var(--ez-color-border-soft)', cursor: 'pointer', transition: 'background-color 0.12s ease' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)')}
                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
-                      {/* Proyek */}
                       <td style={{ padding: '14px 12px 14px 6px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div
+                          <span
                             style={{
-                              width: '30px',
-                              height: '30px',
-                              borderRadius: '7px',
-                              background: '#EFF6FF',
-                              color: '#2563EB',
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '12px',
+                              background: 'var(--ez-color-primary-soft)',
+                              color: 'var(--ez-color-primary)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
+                              fontWeight: 800,
+                              fontSize: '12px',
                               flexShrink: 0,
                             }}
                           >
-                            <FileText size={15} />
-                          </div>
-                          <span style={{ fontWeight: 650, color: '#0F172A', whiteSpace: 'nowrap' }}>
+                            {initialsOf(proj.name)}
+                          </span>
+                          <span style={{ fontWeight: 600, color: 'var(--ez-color-text-primary)', whiteSpace: 'nowrap' }}>
                             {proj.name}
                           </span>
                         </div>
                       </td>
-
-                      {/* Lokasi */}
-                      <td style={{ padding: '14px 12px', color: '#64748B', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '14px 12px', color: 'var(--ez-color-text-muted)', whiteSpace: 'nowrap' }}>
                         {proj.location || 'Indonesia'}
                       </td>
-
-                      {/* Nilai RAB */}
-                      <td style={{ padding: '14px 12px', color: '#0F172A', fontWeight: 550, whiteSpace: 'nowrap' }}>
-                        {proj.totalRab && proj.totalRab > 0
-                          ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(proj.totalRab)
-                          : '-'}
+                      <td style={{ padding: '14px 12px', color: 'var(--ez-color-text-primary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        {proj.totalRab && proj.totalRab > 0 ? formatRpFull(proj.totalRab) : '-'}
                       </td>
-
-                      {/* Progress */}
                       <td style={{ padding: '14px 12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '130px' }}>
-                          <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#64748B', width: '28px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '110px' }}>
+                          <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)', width: '30px' }}>
                             {progressPct}%
                           </span>
-                          <div style={{ flex: 1, height: '5px', borderRadius: '3px', background: '#F1F5F9', overflow: 'hidden' }}>
-                            <div
-                              style={{
-                                width: `${progressPct}%`,
-                                height: '100%',
-                                borderRadius: '3px',
-                                background: barColor,
-                              }}
-                            />
+                          <div style={{ flex: 1, height: '6px', borderRadius: '99px', background: 'var(--ez-color-border-soft)', overflow: 'hidden' }}>
+                            <div style={{ width: `${progressPct}%`, height: '100%', borderRadius: '99px', background: barColor }} />
                           </div>
-                          <span style={{ fontSize: '11px', color: '#94A3B8' }}>%</span>
                         </div>
                       </td>
-
-                      {/* Status */}
                       <td style={{ padding: '14px 12px' }}>
                         <span
                           style={{
                             fontSize: '11px',
                             fontWeight: 700,
-                            padding: '2px 10px',
-                            borderRadius: '999px',
+                            padding: '5px 12px',
+                            borderRadius: '99px',
                             background: badge.bg,
                             color: badge.color,
-                            border: `1px solid ${badge.border}`,
                             whiteSpace: 'nowrap',
                           }}
                         >
                           {badge.label}
                         </span>
                       </td>
-
-                      {/* Updated */}
-                      <td style={{ padding: '14px 6px 14px 12px', color: '#64748B', fontSize: '11.5px', whiteSpace: 'nowrap' }}>
-                        {formatProjectDate(proj.updatedAt)}
+                      <td style={{ padding: '14px 6px 14px 12px', color: 'var(--ez-color-text-muted)', fontSize: '11.5px', whiteSpace: 'nowrap' }}>
+                        {formatProjectDate(proj.updatedAt, lang)}
                       </td>
                     </tr>
                   );
@@ -975,32 +695,32 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
           </div>
         </div>
 
-        {/* RIGHT: EZRAB Insight Card with Mini Mascot Peeking */}
+        {/* RIGHT: EZRAB Insight */}
         <div
+          className="ezdb-anim"
           style={{
-            background: '#FFFFFF',
-            borderRadius: '14px',
-            border: '1px solid #E5E7EB',
-            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
-            padding: '22px 22px 18px 22px',
+            background: 'var(--ez-pastel-cream)',
+            borderRadius: '22px',
+            boxShadow: CARD_SHADOW,
+            padding: '24px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
             position: 'relative',
             overflow: 'hidden',
             minHeight: '210px',
+            animation: 'ezdb-rise 0.6s 0.36s both',
           }}
         >
-          {/* Header */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
               <div
                 style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '7px',
-                  background: '#EFF6FF',
-                  color: '#2563EB',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '12px',
+                  background: 'var(--ez-color-surface)',
+                  color: 'var(--ez-color-warning)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1008,84 +728,55 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
               >
                 <TrendingUp size={16} />
               </div>
-              <span style={{ fontSize: '14px', fontWeight: 750, color: '#2563EB' }}>
+              <span style={{ fontSize: '14px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
                 EZRAB Insight
               </span>
             </div>
-
-            <p style={{ fontSize: '13px', color: '#334155', lineHeight: 1.5, margin: 0, maxWidth: '200px' }}>
-              3 item material pada proyek Anda memiliki potensi optimasi.
+            <p style={{ fontSize: '13px', color: 'var(--ez-color-text-secondary)', lineHeight: 1.6, margin: 0, maxWidth: '220px' }}>
+              {t('dash.insight_text')}
             </p>
           </div>
-
-          {/* Bottom Action + Mini Mascot Peeking in Bottom Right Corner */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-start', marginTop: '20px' }}>
             <button
               type="button"
               onClick={() => onOpenMagicAi()}
               style={{
-                height: '34px',
-                padding: '0 14px',
-                borderRadius: '8px',
-                background: '#FFFFFF',
-                color: '#2563EB',
-                border: '1px solid #BFDBFE',
-                fontSize: '12px',
-                fontWeight: 650,
+                height: '38px',
+                padding: '0 16px',
+                borderRadius: '12px',
+                background: 'var(--ez-color-surface)',
+                color: 'var(--ez-color-warning)',
+                border: 'none',
+                fontSize: '12.5px',
+                fontWeight: 700,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
+                boxShadow: CARD_SHADOW,
                 transition: 'all 0.15s ease',
                 position: 'relative',
                 zIndex: 2,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#EFF6FF';
+                e.currentTarget.style.transform = 'translateY(-1px)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#FFFFFF';
+                e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
-              <span>Lihat Analisis</span>
+              <Sparkles size={14} />
+              <span>{t('dash.lihat_analisis')}</span>
               <ChevronRight size={13} />
             </button>
-
-            {/* Mini 3D mascot peeking in bottom-right corner */}
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '-12px',
-                right: '-8px',
-                width: '120px',
-                height: '110px',
-                pointerEvents: 'none',
-                overflow: 'hidden',
-                zIndex: 1,
-              }}
-            >
-              <div style={{ width: '130px', height: '130px', transform: 'translateY(10px)' }}>
-                <EZRABMascot3D
-                  variant="dashboard"
-                  width="100%"
-                  height="100%"
-                  enableEyeTracking={true}
-                  enableFloat={false}
-                  enableBlink={true}
-                  enableGlow={false}
-                />
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* =========================================================================
-          5. BOTTOM: AKTIVITAS TERBARU
-         ========================================================================= */}
+      {/* ============ 5. AKTIVITAS TERBARU ============ */}
       <section style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0 24px 0' }}>
-        <h2 style={{ fontSize: '15px', fontWeight: 750, color: '#0F172A', margin: 0 }}>
-          Aktivitas Terbaru
+        <h2 style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
+          {t('dash.aktivitas_terbaru')}
         </h2>
         <button
           type="button"
@@ -1093,7 +784,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
           style={{
             fontSize: '12.5px',
             fontWeight: 650,
-            color: '#2563EB',
+            color: 'var(--ez-color-primary)',
             background: 'transparent',
             border: 'none',
             cursor: 'pointer',
@@ -1102,7 +793,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
             gap: '4px',
           }}
         >
-          <span>Lihat Semua</span>
+          <span>{t('dashboard.lihat_semua')}</span>
           <ChevronRight size={14} />
         </button>
       </section>

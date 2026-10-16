@@ -67,8 +67,8 @@ export const EZRABMascotBubble: React.FC<EZRABMascotBubbleProps> = ({
         top: '-58px',
         right: '-16px',
         whiteSpace: 'nowrap',
-        backgroundColor: '#FFFFFF',
-        color: '#0F172A',
+        backgroundColor: 'var(--ez-color-surface)',
+        color: 'var(--ez-color-text-primary)',
         padding: '8px 14px',
         borderRadius: '16px',
         fontSize: '12px',
@@ -86,7 +86,7 @@ export const EZRABMascotBubble: React.FC<EZRABMascotBubbleProps> = ({
       }}
     >
       <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', lineHeight: '1.25' }}>
-        <span style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>
+        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
           {message}
         </span>
       </div>
@@ -101,7 +101,7 @@ export const EZRABMascotBubble: React.FC<EZRABMascotBubbleProps> = ({
           left: '26px',
           width: '12px',
           height: '12px',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           transform: 'rotate(45deg)',
           borderRight: '1px solid rgba(226, 232, 240, 0.9)',
           borderBottom: '1px solid rgba(226, 232, 240, 0.9)',

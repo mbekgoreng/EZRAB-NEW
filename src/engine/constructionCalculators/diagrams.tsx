@@ -595,7 +595,7 @@ export const FinishingDiagram: React.FC<DiagramProps & { title: string; category
         {/* Title Badge */}
         <rect x="20" y="20" width="220" height="26" rx="6" fill="#1E1B4B" stroke="#6366F1" strokeWidth="1" />
         <text x="30" y="37" fill="#A5B4FC" fontSize="11" fontWeight="700">
-          📐 {title.toUpperCase()}
+          {title.toUpperCase()}
         </text>
 
         {/* Active Param Indicator */}

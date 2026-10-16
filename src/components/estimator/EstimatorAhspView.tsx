@@ -62,17 +62,17 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", maxWidth: "1600px", margin: "0 auto" }}>
       {/* 1. HEADER & FILTER BAR */}
-      <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
+      <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "14px" }}>
           <div>
-            <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0F172A", margin: 0 }}>
+            <h3 style={{ fontSize: "16px", fontWeight: 800, color: "var(--ez-color-text-primary)", margin: 0 }}>
               Analisa Harga Satuan Pekerjaan (AHSP) Proyek
             </h3>
             <p style={{ fontSize: "12.5px", color: "#64748B", margin: "3px 0 0 0" }}>
               Dekomposisi koefisien upah, material, dan alat berstandar SNI / PUPR 2026 yang aktif pada proyek ini
             </p>
           </div>
-          <div style={{ fontSize: "12.5px", fontWeight: 700, color: "#2563EB", background: "#EFF6FF", padding: "6px 12px", borderRadius: "8px", border: "1px solid #BFDBFE" }}>
+          <div style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--ez-hue-blue-text)", background: "var(--ez-hue-blue-bg)", padding: "6px 12px", borderRadius: "8px", border: "1px solid var(--ez-hue-blue-border)" }}>
             {projectAhspList.length} Analisa AHSP Terhubung
           </div>
         </div>
@@ -91,9 +91,9 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                 paddingLeft: "36px",
                 paddingRight: "12px",
                 borderRadius: "8px",
-                border: "1px solid #CBD5E1",
+                border: "1px solid var(--ez-hue-slate-border)",
                 fontSize: "13px",
-                color: "#0F172A",
+                color: "var(--ez-color-text-primary)",
                 outline: "none",
               }}
             />
@@ -106,11 +106,11 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
               height: "38px",
               padding: "0 14px",
               borderRadius: "8px",
-              border: "1px solid #CBD5E1",
+              border: "1px solid var(--ez-hue-slate-border)",
               fontSize: "13px",
-              color: "#334155",
+              color: "var(--ez-color-text-body)",
               fontWeight: 500,
-              background: "#FFFFFF",
+              background: "var(--ez-color-surface)",
               outline: "none",
             }}
           >
@@ -127,9 +127,9 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
       {/* 2. AHSP CARDS LIST */}
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {filteredItems.length === 0 ? (
-          <div style={{ background: "#FFFFFF", border: "1px dashed #CBD5E1", borderRadius: "14px", padding: "40px", textAlign: "center", color: "#64748B" }}>
+          <div style={{ background: "var(--ez-color-surface)", border: "1px dashed var(--ez-hue-slate-border)", borderRadius: "14px", padding: "40px", textAlign: "center", color: "#64748B" }}>
             <Calculator size={36} color="#94A3B8" style={{ margin: "0 auto 12px" }} />
-            <h4 style={{ fontSize: "15px", fontWeight: 700, color: "#0F172A", margin: "0 0 4px" }}>
+            <h4 style={{ fontSize: "15px", fontWeight: 700, color: "var(--ez-color-text-primary)", margin: "0 0 4px" }}>
               Tidak Ada Analisa Harga Satuan yang Sesuai
             </h4>
             <p style={{ fontSize: "13px", color: "#94A3B8", margin: 0 }}>
@@ -160,8 +160,8 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
               <div
                 key={item.id}
                 style={{
-                  background: "#FFFFFF",
-                  border: "1px solid #E2E8F0",
+                  background: "var(--ez-color-surface)",
+                  border: "1px solid var(--ez-color-border-line)",
                   borderRadius: "14px",
                   overflow: "hidden",
                   boxShadow: "0 1px 3px rgba(15,23,42,0.03)",
@@ -177,8 +177,8 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                     alignItems: "center",
                     justifyContent: "space-between",
                     cursor: "pointer",
-                    background: isExpanded ? "#F8FAFC" : "#FFFFFF",
-                    borderBottom: isExpanded ? "1px solid #E2E8F0" : "none",
+                    background: isExpanded ? "var(--ez-hue-slate-bg)" : "var(--ez-color-surface)",
+                    borderBottom: isExpanded ? "1px solid var(--ez-color-border-line)" : "none",
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
@@ -200,18 +200,18 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                         fontFamily: "var(--ezrab-font-mono)",
                         fontWeight: 750,
                         fontSize: "12px",
-                        color: "#2563EB",
-                        background: "#EFF6FF",
+                        color: "var(--ez-hue-blue-text)",
+                        background: "var(--ez-hue-blue-bg)",
                         padding: "3px 8px",
                         borderRadius: "5px",
-                        border: "1px solid #BFDBFE",
+                        border: "1px solid var(--ez-hue-blue-border)",
                         flexShrink: 0,
                       }}
                     >
                       {code}
                     </span>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--ez-color-text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {item.description}
                       </div>
                       <div style={{ fontSize: "11.5px", color: "#64748B", marginTop: "2px" }}>
@@ -224,7 +224,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                   <div style={{ display: "flex", alignItems: "center", gap: "16px", flexShrink: 0, marginLeft: "12px" }}>
                     <div style={{ textAlign: "right" }}>
                       <span style={{ fontSize: "11px", color: "#64748B", display: "block" }}>Harga Satuan (HSP)</span>
-                      <span style={{ fontSize: "15px", fontWeight: 800, color: "#0F172A", fontVariantNumeric: "tabular-nums" }}>
+                      <span style={{ fontSize: "15px", fontWeight: 800, color: "var(--ez-color-text-primary)", fontVariantNumeric: "tabular-nums" }}>
                         {formatCurrencyIDR(unitPrice)} <span style={{ fontSize: "11.5px", color: "#64748B" }}>/ {item.unit}</span>
                       </span>
                     </div>
@@ -239,9 +239,9 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                         style={{
                           padding: "6px 12px",
                           borderRadius: "7px",
-                          border: "1px solid #CBD5E1",
-                          background: "#FFFFFF",
-                          color: "#2563EB",
+                          border: "1px solid var(--ez-hue-slate-border)",
+                          background: "var(--ez-color-surface)",
+                          color: "var(--ez-hue-blue-text)",
                           fontSize: "12px",
                           fontWeight: 600,
                           cursor: "pointer",
@@ -259,9 +259,9 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
 
                 {/* Expanded Decomposition Table */}
                 {isExpanded && (
-                  <div style={{ padding: "18px 20px", background: "#FFFFFF" }}>
+                  <div style={{ padding: "18px 20px", background: "var(--ez-color-surface)" }}>
                     {materials.length === 0 && labors.length === 0 && equipments.length === 0 ? (
-                      <div style={{ padding: "16px", background: "#F8FAFC", borderRadius: "8px", fontSize: "12.5px", color: "#64748B", textAlign: "center" }}>
+                      <div style={{ padding: "16px", background: "var(--ez-color-surface-secondary)", borderRadius: "8px", fontSize: "12.5px", color: "#64748B", textAlign: "center" }}>
                         Dekomposisi koefisien AHSP mengacu pada standar umum analisa satuan nasional. Klik tombol <strong>Rincian</strong> untuk melihat atau menyesuaikan koefisien bahan dan upah di Work Item Inspector.
                       </div>
                     ) : (
@@ -269,12 +269,12 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                         {/* Labor Component Table */}
                         {labors.length > 0 && (
                           <div>
-                            <div style={{ fontSize: "12px", fontWeight: 700, color: "#1E293B", marginBottom: "6px" }}>
+                            <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--ez-color-text-strong)", marginBottom: "6px" }}>
                               A. Tenaga Kerja (Upah)
                             </div>
                             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                               <thead>
-                                <tr style={{ background: "#F8FAFC", borderBottom: "1px solid #E2E8F0", color: "#64748B" }}>
+                                <tr style={{ background: "var(--ez-color-surface-secondary)", borderBottom: "1px solid var(--ez-color-border-line)", color: "#64748B" }}>
                                   <th style={{ padding: "6px 8px", textAlign: "left" }}>Uraian Tenaga Kerja</th>
                                   <th style={{ padding: "6px 8px", textAlign: "center", width: "80px" }}>Satuan</th>
                                   <th style={{ padding: "6px 8px", textAlign: "right", width: "100px" }}>Koefisien</th>
@@ -284,12 +284,12 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                               </thead>
                               <tbody>
                                 {labors.map((l, lIdx) => (
-                                  <tr key={lIdx} style={{ borderBottom: "1px solid #F1F5F9" }}>
-                                    <td style={{ padding: "6px 8px", color: "#0F172A", fontWeight: 500 }}>{l.name}</td>
+                                  <tr key={lIdx} style={{ borderBottom: "1px solid var(--ez-color-surface-tertiary)" }}>
+                                    <td style={{ padding: "6px 8px", color: "var(--ez-color-text-primary)", fontWeight: 500 }}>{l.name}</td>
                                     <td style={{ padding: "6px 8px", textAlign: "center", color: "#64748B" }}>{l.unit}</td>
                                     <td style={{ padding: "6px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{formatNumberID(l.coefficient, 4)}</td>
                                     <td style={{ padding: "6px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{l.unitPrice === null || l.unitPrice === undefined ? "—" : l.unitPrice.toLocaleString("id-ID")}</td>
-                                    <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: "#0F172A", fontVariantNumeric: "tabular-nums" }}>
+                                    <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: "var(--ez-color-text-primary)", fontVariantNumeric: "tabular-nums" }}>
                                       {formatCurrencyIDR(l.unitPrice === null || l.unitPrice === undefined ? null : (l.coefficient || 0) * l.unitPrice)}
                                     </td>
                                   </tr>
@@ -302,12 +302,12 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                         {/* Material Component Table */}
                         {materials.length > 0 && (
                           <div>
-                            <div style={{ fontSize: "12px", fontWeight: 700, color: "#1E293B", marginBottom: "6px" }}>
+                            <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--ez-color-text-strong)", marginBottom: "6px" }}>
                               B. Bahan / Material
                             </div>
                             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                               <thead>
-                                <tr style={{ background: "#F8FAFC", borderBottom: "1px solid #E2E8F0", color: "#64748B" }}>
+                                <tr style={{ background: "var(--ez-color-surface-secondary)", borderBottom: "1px solid var(--ez-color-border-line)", color: "#64748B" }}>
                                   <th style={{ padding: "6px 8px", textAlign: "left" }}>Uraian Bahan</th>
                                   <th style={{ padding: "6px 8px", textAlign: "center", width: "80px" }}>Satuan</th>
                                   <th style={{ padding: "6px 8px", textAlign: "right", width: "100px" }}>Koefisien</th>
@@ -317,12 +317,12 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                               </thead>
                               <tbody>
                                 {materials.map((m, mIdx) => (
-                                  <tr key={mIdx} style={{ borderBottom: "1px solid #F1F5F9" }}>
-                                    <td style={{ padding: "6px 8px", color: "#0F172A", fontWeight: 500 }}>{m.name}</td>
+                                  <tr key={mIdx} style={{ borderBottom: "1px solid var(--ez-color-surface-tertiary)" }}>
+                                    <td style={{ padding: "6px 8px", color: "var(--ez-color-text-primary)", fontWeight: 500 }}>{m.name}</td>
                                     <td style={{ padding: "6px 8px", textAlign: "center", color: "#64748B" }}>{m.unit}</td>
                                     <td style={{ padding: "6px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{formatNumberID(m.coefficient, 4)}</td>
                                     <td style={{ padding: "6px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{m.unitPrice === null || m.unitPrice === undefined ? "—" : m.unitPrice.toLocaleString("id-ID")}</td>
-                                    <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: "#0F172A", fontVariantNumeric: "tabular-nums" }}>
+                                    <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: "var(--ez-color-text-primary)", fontVariantNumeric: "tabular-nums" }}>
                                       {formatCurrencyIDR(m.unitPrice === null || m.unitPrice === undefined ? null : (m.coefficient || 0) * m.unitPrice)}
                                     </td>
                                   </tr>

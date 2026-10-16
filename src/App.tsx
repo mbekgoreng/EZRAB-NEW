@@ -7,7 +7,7 @@ import { WorkspaceView } from './components/dashboard/WorkspaceView';
 import { DemoModal } from './components/common/DemoModal';
 import { ThemeModal } from './components/common/ThemeModal';
 import { NotificationProvider } from './notifications/NotificationContext';
-import { AuthPage } from './AuthPage';
+import { BootLoadingScreen } from './components/boot/BootLoadingScreen';
 import {
   OnboardingTour,
   shouldShowOnboarding,
@@ -16,11 +16,10 @@ import {
 import { isAppPath, navigateTo, parseWorkspaceRoute, paths, routeForMenu, routeLabel } from './routing/routes';
 import { useBrowserLocation } from './routing/useBrowserLocation';
 
-/**
- * AUTH_ENABLED = false → login dimatikan sementara.
- * Semua CTA ("Masuk", "Coba Gratis", dsb.) langsung membuka workspace tanpa login.
- * Nyalakan lagi (true) saat autentikasi siap dipakai.
- */
+// Login dinonaktifkan sementara (perintah user 2026-10-12): seluruh pintu
+// masuk login disembunyikan — CTA "Masuk/Daftar" langsung ke dashboard
+// tanpa menampilkan modal atau halaman login. Ubah ke true untuk
+// mengaktifkan kembali.
 const AUTH_ENABLED = false;
 
 export const App: React.FC = () => {
@@ -28,16 +27,15 @@ export const App: React.FC = () => {
   const workspaceRoute = parseWorkspaceRoute(location.pathname, location.search);
   const isWorkspace = isAppPath(location.pathname);
   const isAbout = location.pathname === '/about' || location.hash === '#tentang';
-  const cleanPath = location.pathname.replace(/\/+$/, '') || '/';
-  const isLoginPage = cleanPath === paths.login();
-  const isSignupPage = cleanPath === paths.signup();
-  const isRoleLoginPage = cleanPath === paths.loginRole();
-  const isAuthPage = isLoginPage || isSignupPage || isRoleLoginPage;
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authInitialTab, setAuthInitialTab] = useState<'masuk' | 'daftar'>('daftar');
   const [demoModalOpen, setDemoModalOpen] = useState(false);
   const [themeModalOpen, setThemeModalOpen] = useState(false);
 
+  // Boot sequence: loading screen -> (onboarding on first run) -> content.
+  const [booted, setBooted] = useState(false);
+  const [bootReady, setBootReady] = useState(false);
   const { open: tourOpen, closeTour } = useOnboardingTour();
   const [tourPending, setTourPending] = useState(false);
 
@@ -45,35 +43,21 @@ export const App: React.FC = () => {
     if (location.pathname === paths.app()) navigateTo(paths.dashboard(), { replace: true });
   }, [location.pathname]);
 
-  // Saat auth dimatikan, halaman /masuk /daftar /masuk/role langsung ke dashboard.
-  useEffect(() => {
-    if (!AUTH_ENABLED && isAuthPage) navigateTo(paths.dashboard(), { replace: true });
-  }, [isAuthPage]);
-
   useEffect(() => {
     if (isWorkspace) document.title = workspaceRoute.status === 'not-found' ? 'Halaman Tidak Ditemukan — EZRAB' : `${routeLabel(workspaceRoute)} — EZRAB`;
     else if (isAbout) document.title = 'Tentang EZRAB';
-    else if (isLoginPage) document.title = 'Masuk — EZRAB';
-    else if (isSignupPage) document.title = 'Daftar — EZRAB';
-    else if (isRoleLoginPage) document.title = 'Masuk sebagai Peran — EZRAB';
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
-  }, [isAbout, isWorkspace, isLoginPage, isSignupPage, isRoleLoginPage, workspaceRoute]);
+  }, [isAbout, isWorkspace, workspaceRoute]);
 
-  // Setelah redirect balik dari Google OAuth: jika sudah di halaman auth
-  // (/masuk//daftar), halaman menangani status login sendiri — jangan buka
-  // modal di atasnya. Jika di landing, buka modal auth.
+  // App shell is ready as soon as React mounts; the boot screen enforces
+  // its own minimum display duration before calling onDone.
   useEffect(() => {
-    try {
-      if (sessionStorage.getItem('ezrab_after_oauth') === '1') {
-        sessionStorage.removeItem('ezrab_after_oauth');
-        const p = window.location.pathname.replace(/\/+$/, '') || '/';
-        if (p !== paths.login() && p !== paths.signup() && p !== paths.loginRole()) {
-          setAuthModalOpen(true);
-        }
-      }
-    } catch {
-      /* abaikan jika storage tidak tersedia */
-    }
+    setBootReady(true);
+  }, []);
+
+  const handleBootDone = useCallback(() => {
+    setBooted(true);
+    setTourPending(shouldShowOnboarding());
   }, []);
 
   const handleTourClose = useCallback(() => {
@@ -88,6 +72,15 @@ export const App: React.FC = () => {
   const handleOpenAbout = () => {
     navigateTo(paths.about());
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleOpenAuth = (tab: 'masuk' | 'daftar' = 'masuk') => {
+    if (!AUTH_ENABLED) {
+      handleSetWorkspace(true);
+      return;
+    }
+    setAuthInitialTab(tab);
+    setAuthModalOpen(true);
   };
 
   const handleReturnToLanding = () => {
@@ -126,18 +119,6 @@ export const App: React.FC = () => {
         onOpenFeatures={handleOpenFeatures}
       />
     );
-  } else if (isAuthPage) {
-    content = AUTH_ENABLED ? (
-      <AuthPage
-        mode={isRoleLoginPage ? 'role' : isSignupPage ? 'signup' : 'signin'}
-        onLoginSuccess={() => {
-          handleSetWorkspace(true);
-          // Tur selamat datang muncul setelah login/daftar — kecuali
-          // pengguna sudah memilih "Jangan tampilkan lagi".
-          if (shouldShowOnboarding()) setTourPending(true);
-        }}
-      />
-    ) : null;
   } else {
     content = (
       <div
@@ -145,18 +126,14 @@ export const App: React.FC = () => {
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          background: 'var(--ezrab-bg, #f8fafc)',
+          background: 'var(--ezrab-bg, var(--ez-hue-slate-bg))',
           color: 'var(--ezrab-text, #0f172a)',
         }}
       >
         {/* Exact Landing Page matching reference design */}
         <ExactLandingPage
           onOpenWorkspace={() => handleSetWorkspace(true)}
-          onOpenAuth={(tab) =>
-            AUTH_ENABLED
-              ? navigateTo(tab === 'daftar' ? paths.signup() : paths.login())
-              : handleSetWorkspace(true)
-          }
+          onOpenAuth={(tab) => handleOpenAuth(tab || 'masuk')}
           onOpenDemo={() => setDemoModalOpen(true)}
           onOpenTheme={() => setThemeModalOpen(true)}
           onBackToLanding={handleReturnToLanding}
@@ -164,18 +141,17 @@ export const App: React.FC = () => {
         />
 
         {/* Modals */}
-        <AuthModal
-          isOpen={authModalOpen}
-          initialTab="masuk"
-          onClose={() => setAuthModalOpen(false)}
-          onSuccessLogin={() => {
-            setAuthModalOpen(false);
-            handleSetWorkspace(true);
-            // Tur selamat datang muncul setelah login/daftar — kecuali
-            // pengguna sudah memilih "Jangan tampilkan lagi".
-            if (shouldShowOnboarding()) setTourPending(true);
-          }}
-        />
+        {AUTH_ENABLED && (
+          <AuthModal
+            isOpen={authModalOpen}
+            initialTab={authInitialTab}
+            onClose={() => setAuthModalOpen(false)}
+            onSuccessLogin={() => {
+              setAuthModalOpen(false);
+              handleSetWorkspace(true);
+            }}
+          />
+        )}
 
         <DemoModal
           isOpen={demoModalOpen}
@@ -193,8 +169,15 @@ export const App: React.FC = () => {
 
   return (
     <NotificationProvider>
-      {content}
-      <OnboardingTour open={tourOpen || tourPending} onClose={handleTourClose} />
+      {!booted && (
+        <BootLoadingScreen ready={bootReady} minDurationMs={1200} onDone={handleBootDone} />
+      )}
+      {booted && (
+        <>
+          {content}
+          <OnboardingTour open={tourOpen || tourPending} onClose={handleTourClose} />
+        </>
+      )}
     </NotificationProvider>
   );
 };

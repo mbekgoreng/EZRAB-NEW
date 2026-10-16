@@ -1,8 +1,8 @@
 /* Refined portfolio dashboard: clean light modern visual system */
 .ez-dashboard-refined {
-  --dash-ink: #111827;
-  --dash-muted: #64748b;
-  --dash-line: #e5e7eb;
+  --dash-ink: var(--ez-color-text-primary);
+  --dash-muted: var(--ez-color-text-muted);
+  --dash-line: var(--ez-color-border-neutral);
   --dash-blue: #2563eb;
   --dash-navy: #1e293b;
   gap: 20px !important;
@@ -42,7 +42,7 @@
   min-height: 120px;
   padding: 18px 20px !important;
   overflow: hidden;
-  background: #ffffff !important;
+  background: var(--ez-color-surface) !important;
   border: 1px solid var(--dash-line) !important;
   border-radius: 16px !important;
   box-shadow: 0 1px 3px rgba(15, 23, 42, .03) !important;
@@ -51,16 +51,16 @@
 
 .ez-dashboard-kpi-card:hover {
   transform: translateY(-2px);
-  border-color: #dbeafe !important;
+  border-color: #BFDBFE !important;
   box-shadow: 0 6px 18px rgba(37, 99, 235, .06) !important;
 }
 
 .ez-dashboard-kpi-1 {
   order: -1;
   grid-column: span 2;
-  color: #111827;
-  border-color: #e5e7eb !important;
-  background: #ffffff !important;
+  color: var(--ez-color-text-primary);
+  border-color: var(--ez-color-border-neutral) !important;
+  background: var(--ez-color-surface) !important;
   box-shadow: 0 1px 3px rgba(15, 23, 42, .03) !important;
 }
 
@@ -69,16 +69,16 @@
 }
 
 .ez-dashboard-kpi-1 .ez-dashboard-kpi-head span,
-.ez-dashboard-kpi-1 .ez-dashboard-kpi-sub { color: #64748b !important; }
-.ez-dashboard-kpi-1 .ez-dashboard-kpi-value { color: #111827 !important; font-size: 26px !important; }
+.ez-dashboard-kpi-1 .ez-dashboard-kpi-sub { color: var(--ez-color-text-muted) !important; }
+.ez-dashboard-kpi-1 .ez-dashboard-kpi-value { color: var(--ez-color-text-primary) !important; font-size: 26px !important; }
 .ez-dashboard-kpi-1 .ez-dashboard-kpi-icon {
-  color: #2563eb !important;
-  background: #eff6ff !important;
-  border: 1px solid #dbeafe;
+  color: var(--ez-hue-blue-text) !important;
+  background: var(--ez-hue-blue-bg) !important;
+  border: 1px solid var(--ez-hue-blue-border);
 }
 
 .ez-dashboard-kpi-head { margin-bottom: 12px !important; }
-.ez-dashboard-kpi-head > span { color: #64748b !important; font-size: 12px !important; font-weight: 600 !important; }
+.ez-dashboard-kpi-head > span { color: var(--ez-color-text-muted) !important; font-size: 12px !important; font-weight: 600 !important; }
 .ez-dashboard-kpi-icon { width: 35px !important; height: 35px !important; border-radius: 10px !important; }
 .ez-dashboard-kpi-value {
   color: var(--dash-ink) !important;
@@ -107,7 +107,7 @@
   position: relative;
   min-height: 230px;
   padding: 24px 25px !important;
-  background: #ffffff !important;
+  background: var(--ez-color-surface) !important;
   border: 1px solid var(--dash-line) !important;
 }
 
@@ -176,7 +176,7 @@
 
 .ez-dashboard-quick-button:hover {
   background: #f1f6ff !important;
-  border-color: #dbeafe !important;
+  border-color: #BFDBFE !important;
 }
 
 .ez-dashboard-quick-button svg {
@@ -186,7 +186,7 @@
 
 .ez-dashboard-activity-card {
   min-height: 144px;
-  background: #ffffff !important;
+  background: var(--ez-color-surface) !important;
 }
 
 @media (max-width: 1300px) {

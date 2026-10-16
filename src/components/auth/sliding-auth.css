@@ -1,0 +1,541 @@
+/**
+ * SlidingAuthCard — layar Masuk/Daftar gaya "double slider" (sesuai video referensi).
+ *
+ * - Kartu terpusat: 1/2 form (putih) + 1/2 panel overlay gradien biru EZRAB
+ *   yang bergeser halus saat beralih Masuk <-> Daftar.
+ * - Kiri (default): form MASUK | Kanan: overlay "Halo, Sobat!" + tombol DAFTAR.
+ * - Saat daftar aktif: form DAFTAR | overlay kiri "Selamat Datang Kembali!" + MASUK.
+ * - Di mobile (<=720px) overlay disembunyikan; hanya form aktif yang tampil
+ *   dengan tautan alih mode.
+ */
+
+.sac-page {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+  background:
+    radial-gradient(1000px 520px at 50% -8%, var(--ez-hue-blue-bg-deep) 0%, #eef2f7 55%, var(--ez-color-border-line) 100%);
+  font-family: var(--ezrab-font-sans, 'Plus Jakarta Sans', system-ui, sans-serif);
+  overflow-y: auto;
+}
+
+.sac-close {
+  position: absolute;
+  top: 22px;
+  right: 26px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--ez-color-border-line);
+  background: var(--ez-color-surface);
+  color: #64748b;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  z-index: 5;
+}
+
+.sac-close:hover {
+  color: var(--ez-color-text-primary);
+  border-color: #94a3b8;
+  transform: scale(1.05);
+}
+
+.sac-container {
+  background-color: var(--ez-color-surface);
+  border-radius: 18px;
+  box-shadow:
+    0 24px 70px -18px rgba(37, 99, 235, 0.35),
+    0 10px 24px rgba(15, 23, 42, 0.12);
+  position: relative;
+  overflow: hidden;
+  width: 680px;
+  max-width: 100%;
+  min-height: 470px;
+  flex-shrink: 0;
+}
+
+/* ---------------- Form ---------------- */
+.sac-form-container {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  transition: all 0.6s ease-in-out;
+}
+
+.sac-sign-in-container {
+  left: 0;
+  width: 50%;
+  z-index: 2;
+}
+
+.sac-container.sac-right-active .sac-sign-in-container {
+  transform: translateX(100%);
+}
+
+.sac-sign-up-container {
+  left: 0;
+  width: 50%;
+  opacity: 0;
+  z-index: 1;
+}
+
+.sac-container.sac-right-active .sac-sign-up-container {
+  transform: translateX(100%);
+  opacity: 1;
+  z-index: 5;
+  animation: sac-show 0.6s;
+}
+
+@keyframes sac-show {
+  0%, 49.99% { opacity: 0; z-index: 1; }
+  50%, 100% { opacity: 1; z-index: 5; }
+}
+
+.sac-form-container form {
+  background-color: var(--ez-color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 0 40px;
+  height: 100%;
+  text-align: center;
+}
+
+.sac-form-container h1 {
+  font-weight: 800;
+  margin: 0 0 6px;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  color: var(--ez-color-text-primary);
+}
+
+.sac-hint {
+  font-size: 12px;
+  color: #64748b;
+  margin: 2px 0 4px;
+}
+
+.sac-social {
+  margin: 14px 0 10px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.sac-social-btn {
+  border: 1px solid var(--ez-color-border-line);
+  background: var(--ez-color-surface);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  padding: 0;
+}
+
+.sac-social-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: #93c5fd;
+  box-shadow: 0 8px 18px -8px rgba(37, 99, 235, 0.5);
+}
+
+.sac-social-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.sac-form-container input {
+  background-color: #eef2f7;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 14px;
+  margin: 5px 0;
+  width: 100%;
+  font-size: 14px;
+  color: var(--ez-color-text-primary);
+  box-sizing: border-box;
+}
+
+.sac-form-container input::placeholder {
+  color: #94a3b8;
+}
+
+.sac-form-container input:focus {
+  outline: 2px solid #93c5fd;
+  background-color: var(--ez-color-surface);
+}
+
+.sac-error {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ez-hue-rose-text);
+  font-size: 12.5px;
+  margin: 6px 0 2px;
+  text-align: left;
+  width: 100%;
+}
+
+.sac-success {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #059669;
+  font-size: 12.5px;
+  margin: 6px 0 2px;
+  width: 100%;
+}
+
+.sac-btn {
+  border-radius: 22px;
+  border: 1px solid #2563eb;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 55%, #38bdf8 130%);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 800;
+  padding: 11px 36px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: transform 80ms ease-in, box-shadow 0.2s ease, filter 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sac-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+  box-shadow: 0 10px 24px -10px rgba(37, 99, 235, 0.7);
+}
+
+.sac-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.sac-btn:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.sac-btn:focus {
+  outline: none;
+}
+
+.sac-ghost {
+  background-color: transparent;
+  border: 1.5px solid #ffffff;
+  color: #ffffff;
+}
+
+.sac-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: none;
+  filter: none;
+}
+
+/* ---------------- Overlay ---------------- */
+.sac-overlay-container {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  transition: transform 0.6s ease-in-out;
+  z-index: 100;
+}
+
+.sac-container.sac-right-active .sac-overlay-container {
+  transform: translateX(-100%);
+}
+
+.sac-overlay {
+  background: linear-gradient(120deg, #1e40af 0%, #2563eb 48%, #38bdf8 100%);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 0 0;
+  color: #ffffff;
+  position: relative;
+  left: -100%;
+  height: 100%;
+  width: 200%;
+  transform: translateX(0);
+  transition: transform 0.6s ease-in-out;
+  overflow: hidden;
+}
+
+/* pola blueprint halus di atas gradien */
+.sac-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 34px 34px;
+  pointer-events: none;
+}
+
+.sac-container.sac-right-active .sac-overlay {
+  transform: translateX(50%);
+}
+
+.sac-overlay-panel {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 0 32px;
+  text-align: center;
+  top: 0;
+  height: 100%;
+  width: 50%;
+  transform: translateX(0);
+  transition: transform 0.6s ease-in-out;
+  z-index: 1;
+}
+
+.sac-overlay-left {
+  transform: translateX(-20%);
+}
+
+.sac-container.sac-right-active .sac-overlay-left {
+  transform: translateX(0);
+}
+
+.sac-overlay-right {
+  right: 0;
+  transform: translateX(0);
+}
+
+.sac-container.sac-right-active .sac-overlay-right {
+  transform: translateX(20%);
+}
+
+.sac-overlay-panel h1 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 10px 0 8px;
+  color: #ffffff;
+}
+
+.sac-overlay-panel p {
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.7;
+  letter-spacing: 0.2px;
+  margin: 0 0 6px;
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 260px;
+}
+
+.sac-brandmark {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 26px -8px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+
+.sac-brandmark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ---------------- Status sudah login ---------------- */
+.sac-loggedin {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  background: var(--ez-color-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px;
+  text-align: center;
+}
+
+.sac-loggedin h2 {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ez-color-text-primary);
+  margin: 0;
+}
+
+.sac-loggedin p {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0 0 8px;
+}
+
+.sac-loggedin-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.sac-btn-secondary {
+  border-radius: 22px;
+  border: 1px solid var(--ez-hue-slate-border);
+  background: var(--ez-color-surface-tertiary);
+  color: var(--ez-color-text-body);
+  font-size: 12.5px;
+  font-weight: 800;
+  padding: 13px 34px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------------- Tautan peran demo & toggle mobile ---------------- */
+.sac-role-link {
+  margin-top: 14px;
+  background: none;
+  border: none;
+  color: #7c3aed;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 10px;
+  flex-shrink: 0;
+}
+
+.sac-role-link:hover {
+  text-decoration: underline;
+}
+
+.sac-mobile-toggle {
+  display: none;
+  margin: 18px 0 0;
+  font-size: 13px;
+  color: #64748b;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sac-mobile-toggle button {
+  background: none;
+  border: none;
+  color: var(--ez-hue-blue-text);
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+/* ---------------- Brand khusus mobile (overlay disembunyikan) ---------------- */
+.sac-mobile-brand {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-shrink: 0;
+}
+
+.sac-mobile-brand img {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  box-shadow: 0 8px 20px -8px rgba(37, 99, 235, 0.5);
+}
+
+.sac-mobile-brand-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.sac-mobile-brand-text strong {
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--ez-color-text-primary);
+}
+
+.sac-mobile-brand-text span {
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+@media (max-width: 720px) {
+  .sac-mobile-brand {
+    display: flex;
+  }
+
+  .sac-overlay-container {
+    display: none;
+  }
+
+  .sac-container {
+    min-height: 0;
+  }
+
+  .sac-form-container {
+    position: relative;
+    width: 100%;
+    height: auto;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .sac-form-container form {
+    padding: 44px 30px;
+  }
+
+  .sac-sign-up-container {
+    display: none;
+  }
+
+  .sac-container.sac-right-active .sac-sign-up-container {
+    display: block;
+  }
+
+  .sac-container.sac-right-active .sac-sign-in-container {
+    display: none;
+  }
+
+  .sac-mobile-toggle {
+    display: block;
+  }
+
+  .sac-close {
+    top: 14px;
+    right: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sac-form-container,
+  .sac-overlay-container,
+  .sac-overlay,
+  .sac-overlay-panel,
+  .sac-btn,
+  .sac-social-btn {
+    transition: none !important;
+    animation: none !important;
+  }
+}

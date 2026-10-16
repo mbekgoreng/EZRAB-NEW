@@ -1,30 +1,35 @@
 /**
  * AI DOKUMEN — Riwayat.
- * Jejak analisis, ekstraksi, perbandingan, dan draf. Data nyata dari historyStore.
+ * Jejak analisis, ekstraksi, perbandingan, dan draf. State diangkat ke view.tsx.
  */
 import React, { useState } from 'react';
 import { History, Trash2, Eye, X, Search } from 'lucide-react';
-import { historyStore, formatDate, HistoryEntry } from '../store';
+import type { HistoryEntry, HistoryType } from '../view';
+import { formatDate } from '../view';
+import { useI18n } from '../../../i18n/I18nContext';
 
-const TYPE_LABEL: Record<HistoryEntry['type'], string> = {
-  summary: 'Ringkasan', qa: 'Tanya Jawab', extract: 'Ekstraksi',
-  compare: 'Perbandingan', checklist: 'Kelengkapan', draft: 'Draf',
-};
+const getTypeLabel = (
+  t: (key: string) => string,
+): Record<HistoryType, string> => ({
+  summary: t('ai.doc.hist.type_summary'), qa: t('ai.doc.hist.type_qa'), extract: t('ai.doc.hist.type_extract'),
+  compare: t('ai.doc.hist.type_compare'), checklist: t('ai.doc.hist.type_checklist'), draft: t('ai.doc.hist.type_draft'),
+});
 
-export const DocHistory: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
-  const [items, setItems] = useState<HistoryEntry[]>(() => historyStore.list());
+export const DocHistory: React.FC<{
+  history: HistoryEntry[];
+  onRemoveHistory: (id: string) => void;
+}> = ({ history, onRemoveHistory }) => {
+  const { t } = useI18n();
+  const TYPE_LABEL = getTypeLabel(t);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState<HistoryEntry | null>(null);
 
-  React.useEffect(() => { setItems(historyStore.list()); }, [refreshKey]);
-
-  const filtered = items.filter((h) =>
+  const filtered = history.filter((h) =>
     !query || h.title.toLowerCase().includes(query.toLowerCase())
   );
 
   const remove = (id: string) => {
-    historyStore.remove(id);
-    setItems(historyStore.list());
+    onRemoveHistory(id);
     if (open?.id === id) setOpen(null);
   };
 
@@ -32,21 +37,21 @@ export const DocHistory: React.FC<{ refreshKey: number }> = ({ refreshKey }) => 
     <div className="docai-tab">
       <div className="docai-pagehead">
         <div>
-          <div className="docai-crumb">EZRAB AI Dokumen</div>
-          <h2>Riwayat</h2>
-          <p>Jejak analisis, ekstraksi, perbandingan, dan draf yang pernah dibuat.</p>
+          <div className="docai-crumb">{t('ai.doc.create.crumb')}</div>
+          <h2>{t('ai.doc.hist.h2')}</h2>
+          <p>{t('ai.doc.hist.sub')}</p>
         </div>
         <div className="docai-search" style={{ maxWidth: 260 }}>
-          <Search size={15} color="#94A3B8" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari riwayat…" />
+          <Search size={15} color="var(--ez-color-text-muted)" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('ai.doc.hist.search_ph')} />
         </div>
       </div>
 
       {filtered.length === 0 ? (
         <div className="docai-empty">
-          <History size={40} color="#CBD5E1" />
-          <h3>Belum ada riwayat</h3>
-          <p>Hasil analisis dokumen akan tercatat di sini.</p>
+          <History size={40} color="var(--ez-color-border)" />
+          <h3>{t('ai.doc.hist.empty_h')}</h3>
+          <p>{t('ai.doc.hist.empty_p')}</p>
         </div>
       ) : (
         <div className="docai-histlist">
@@ -59,8 +64,8 @@ export const DocHistory: React.FC<{ refreshKey: number }> = ({ refreshKey }) => 
                 <span className="docai-histdate">{formatDate(h.at)}</span>
               </div>
               <div className="docai-actions">
-                <button title="Lihat" onClick={() => setOpen(h)}><Eye size={15} /></button>
-                <button title="Hapus" onClick={() => remove(h.id)}><Trash2 size={15} /></button>
+                <button title={t('ai.doc.hist.title_view')} onClick={() => setOpen(h)}><Eye size={15} /></button>
+                <button title={t('ai.doc.hist.title_delete')} onClick={() => remove(h.id)}><Trash2 size={15} /></button>
               </div>
             </div>
           ))}

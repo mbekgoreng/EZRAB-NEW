@@ -869,7 +869,7 @@ export interface RabItem {
   materialPrice?: number;
   laborPrice?: number;
   equipmentPrice?: number;
-  /** Phase 2J: null = price not yet available (not Rp0). */
+/** Phase 2J: null = price not yet available (not Rp0). */
   unitPrice: number | null;
   /** Phase 2J: null = amount not yet calculable (price null). */
   amount: number | null;

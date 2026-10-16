@@ -84,18 +84,18 @@ type SortField = 'no' | 'code' | 'description' | 'volume' | 'unit' | 'unitPrice'
 type SortDirection = 'asc' | 'desc' | null;
 
 const WBS_LETTER_MAP: Record<string, { letter: string; bg: string; text: string; border: string }> = {
-  'Pekerjaan Persiapan & Bowplank': { letter: 'A', bg: '#FCE7F3', text: '#BE185D', border: '#FBCFE8' },
-  'Pekerjaan Tanah & Pondasi': { letter: 'B', bg: '#DBEAFE', text: '#1D4ED8', border: '#BFDBFE' },
-  'Pekerjaan Struktur Beton Bertulang': { letter: 'C', bg: '#E0E7FF', text: '#4338CA', border: '#C7D2FE' },
+  'Pekerjaan Persiapan & Bowplank': { letter: 'A', bg: 'var(--ez-hue-pink-bg)', text: '#BE185D', border: '#FBCFE8' },
+  'Pekerjaan Tanah & Pondasi': { letter: 'B', bg: 'var(--ez-hue-blue-bg-deep)', text: 'var(--ez-color-primary-hover)', border: 'var(--ez-hue-blue-border)' },
+  'Pekerjaan Struktur Beton Bertulang': { letter: 'C', bg: 'var(--ez-hue-indigo-bg)', text: '#4338CA', border: '#C7D2FE' },
   'Pekerjaan Dinding & Plesteran': { letter: 'D', bg: '#E0F2FE', text: '#0369A1', border: '#BAE6FD' },
-  'Pekerjaan Lantai & Keramik': { letter: 'E', bg: '#D1FAE5', text: '#047857', border: '#A7F3D0' },
-  'Pekerjaan Plafon & Partisi': { letter: 'F', bg: '#FEF3C7', text: '#B45309', border: '#FDE68A' },
-  'Pekerjaan Atap & Rangka Baja Ringan': { letter: 'G', bg: '#FFEDD5', text: '#C2410C', border: '#FED7AA' },
-  'Pekerjaan Pintu, Jendela & Kaca': { letter: 'H', bg: '#F3E8FF', text: '#7E22CE', border: '#E9D5FF' },
+  'Pekerjaan Lantai & Keramik': { letter: 'E', bg: '#D1FAE5', text: '#047857', border: 'var(--ez-hue-green-border-deep)' },
+  'Pekerjaan Plafon & Partisi': { letter: 'F', bg: 'var(--ez-hue-amber-bg-deep)', text: '#B45309', border: 'var(--ez-hue-amber-border)' },
+  'Pekerjaan Atap & Rangka Baja Ringan': { letter: 'G', bg: 'var(--ez-hue-orange-bg)', text: '#C2410C', border: 'var(--ez-hue-orange-bg-deep)' },
+  'Pekerjaan Pintu, Jendela & Kaca': { letter: 'H', bg: 'var(--ez-hue-purple-bg-soft)', text: '#7E22CE', border: 'var(--ez-hue-purple-border)' },
   'Pekerjaan Instalasi Plumbing & Sanitasi': { letter: 'I', bg: '#CFFAFE', text: '#0E7490', border: '#A5F3FC' },
-  'Pekerjaan Instalasi Elektrikal': { letter: 'J', bg: '#FEF9C3', text: '#A16207', border: '#FEF08A' },
-  'Pekerjaan Pengecatan': { letter: 'K', bg: '#FEE2E2', text: '#B91C1C', border: '#FECACA' },
-  'Pekerjaan Finishing & Eksterior': { letter: 'L', bg: '#F1F5F9', text: '#334155', border: '#E2E8F0' },
+  'Pekerjaan Instalasi Elektrikal': { letter: 'J', bg: 'var(--ez-hue-yellow-bg)', text: '#A16207', border: '#FEF08A' },
+  'Pekerjaan Pengecatan': { letter: 'K', bg: 'var(--ez-hue-red-bg)', text: '#B91C1C', border: 'var(--ez-hue-rose-border)' },
+  'Pekerjaan Finishing & Eksterior': { letter: 'L', bg: 'var(--ez-color-surface-tertiary)', text: '#334155', border: 'var(--ez-color-border)' },
 };
 
 // P0-B: JANGAN isi identitas perusahaan palsu. Kosongkan field identitas;
@@ -529,7 +529,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         {
           categoryName: 'Daftar Pekerjaan Seluruhnya (Flat)',
           codeLetter: '★',
-          badgeColor: { bg: '#EFF6FF', text: '#1D4ED8', border: '#BFDBFE' },
+          badgeColor: { bg: 'var(--ez-hue-blue-bg)', text: 'var(--ez-color-primary-hover)', border: 'var(--ez-hue-blue-border)' },
           items: filteredItems,
           subtotal,
           subtotalVolume,
@@ -555,9 +555,9 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
 
       const letterInfo = WBS_LETTER_MAP[categoryName] || {
         letter: String.fromCharCode(65 + (letterIndex % 26)),
-        bg: '#F1F5F9',
+        bg: 'var(--ez-color-surface-tertiary)',
         text: '#334155',
-        border: '#E2E8F0',
+        border: 'var(--ez-color-border)',
       };
 
       const subtotal = items.reduce(
@@ -848,21 +848,39 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
     return 'v1.0';
   }, [projectEstimateVersions]);
 
+  // Real cost delta vs previous version for the summary card. Null when there
+  // is no version history or the stored diff is not a finite number — the card
+  // then shows a neutral label instead of a fabricated percentage.
+  const latestVersionDelta = useMemo(() => {
+    if (projectEstimateVersions.length === 0) return null;
+    const d = projectEstimateVersions[projectEstimateVersions.length - 1]?.percentageDiff;
+    return typeof d === 'number' && Number.isFinite(d) ? d : null;
+  }, [projectEstimateVersions]);
+
   return (
     <div
       style={{
         display: 'flex',
         width: '100%',
+        maxWidth: '1440px',
+        margin: '0 auto',
         minHeight: 'calc(100vh - 64px)',
-        background: '#F8FAFC',
         position: 'relative',
         overflow: 'hidden',
+        color: 'var(--ez-color-text-primary)',
+        fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
+      {/* Dashboard entrance animation language (prefers-reduced-motion respected) */}
+      <style>{`
+        @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
+      `}</style>
       {/* =====================================================================
           MAIN SPREADSHEET WORKSPACE (Left / Center)
          ===================================================================== */}
       <div
+        className="ezdb-anim"
         style={{
           flexGrow: 1,
           minWidth: 0,
@@ -870,6 +888,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
+          animation: 'ezdb-rise 0.6s 0s both',
         }}
       >
         {/* 1. PROJECT CONTEXT HEADER */}
@@ -894,7 +913,8 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         {/* 3. ACTIVE TAB VIEW */}
         {activeEstimatorTab === 'spreadsheet' && (
           <>
-            {/* 3A. 5 ESSENTIAL PROJECT METRICS */}
+            {/* 3A. 5 ESSENTIAL PROJECT METRICS — values always from real data.
+                No demo fallbacks: empty projects render 0 / Rp0 / "—". */}
             <EstimatorMetrics
               totalRab={totalRabNominal}
               totalItems={totalItemsCount}
@@ -902,7 +922,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
               totalVolume={totalVolumeSum}
               lastSavedText="Tersinkronisasi Otomatis"
               isSaving={saveStatus === 'saving'}
-              // FASE F: hitung dari data aktual, bukan angka hardcoded.
+// FASE F: hitung dari data aktual, bukan angka hardcoded.
               progressPercent={(() => {
                 const total = projectRabItems.length;
                 if (total === 0) return 0;
@@ -1269,18 +1289,19 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         >
           <div
             style={{
-              background: '#FFFFFF',
-              borderRadius: '14px',
+              background: 'var(--ez-color-surface)',
+              borderRadius: '20px',
               width: '460px',
               maxWidth: '92vw',
               padding: '20px',
+              border: '1px solid #EEF1F6',
               boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.25)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Keyboard size={18} color="#2563EB" />
-                <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                <Keyboard size={18} color="var(--ez-hue-blue-text)" />
+                <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                   Pintasan Keyboard (Shortcuts)
                 </h3>
               </div>
@@ -1293,21 +1314,21 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12.5px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: '#F8FAFC', borderRadius: '6px' }}>
-                <span style={{ color: '#334155' }}>Mulai Edit Sel</span>
-                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>Double Click / Enter</kbd>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
+                <span style={{ color: 'var(--ez-color-text-body)' }}>Mulai Edit Sel</span>
+                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-hue-slate-border)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Double Click / Enter</kbd>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: '#F8FAFC', borderRadius: '6px' }}>
-                <span style={{ color: '#334155' }}>Simpan Perubahan Sel</span>
-                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>Enter</kbd>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
+                <span style={{ color: 'var(--ez-color-text-body)' }}>Simpan Perubahan Sel</span>
+                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-hue-slate-border)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Enter</kbd>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: '#F8FAFC', borderRadius: '6px' }}>
-                <span style={{ color: '#334155' }}>Batal Edit Sel</span>
-                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>Escape</kbd>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
+                <span style={{ color: 'var(--ez-color-text-body)' }}>Batal Edit Sel</span>
+                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-hue-slate-border)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Escape</kbd>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: '#F8FAFC', borderRadius: '6px' }}>
-                <span style={{ color: '#334155' }}>Pilih Multi Item</span>
-                <kbd style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>Shift + Click</kbd>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px' }}>
+                <span style={{ color: 'var(--ez-color-text-body)' }}>Pilih Multi Item</span>
+                <kbd style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-hue-slate-border)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>Shift + Click</kbd>
               </div>
             </div>
 
@@ -1317,8 +1338,8 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
                 style={{
                   height: '32px',
                   padding: '0 16px',
-                  borderRadius: '6px',
-                  background: '#2563EB',
+                  borderRadius: '10px',
+                  background: 'var(--ez-color-primary)',
                   color: '#FFFFFF',
                   border: 'none',
                   fontSize: '12px',
@@ -1357,7 +1378,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
             background: '#0F172A',
             color: '#FFFFFF',
             padding: '10px 18px',
-            borderRadius: '8px',
+            borderRadius: 'var(--ez-radius-control)',
             fontSize: '12.5px',
             fontWeight: 650,
             boxShadow: '0 10px 20px -3px rgba(0,0,0,0.3)',

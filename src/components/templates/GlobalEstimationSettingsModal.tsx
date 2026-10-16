@@ -49,7 +49,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
     >
       <div
         style={{
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           borderRadius: '16px',
           width: '100%',
           maxWidth: '480px',
@@ -61,16 +61,16 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
         <div
           style={{
             padding: '16px 20px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: '#F8FAFC'
+            background: 'var(--ez-color-surface-secondary)'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Settings size={18} color="#2563EB" />
-            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <Settings size={18} color="var(--ez-hue-blue-text)" />
+            <h3 style={{ fontSize: '15.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Pengaturan Estimasi Universal
             </h3>
           </div>
@@ -81,7 +81,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
               borderRadius: '6px',
               border: 'none',
               background: '#EDF2F7',
-              color: '#475569',
+              color: 'var(--ez-color-text-slate)',
               cursor: 'pointer'
             }}
           >
@@ -92,7 +92,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
         {/* Form Body */}
         <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
               Tingkat Detail Default
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
@@ -104,9 +104,9 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
                   style={{
                     padding: '8px',
                     borderRadius: '8px',
-                    border: formData.detailLevel === lvl ? '2px solid #2563EB' : '1px solid #CBD5E1',
-                    background: formData.detailLevel === lvl ? '#EFF6FF' : '#FFFFFF',
-                    color: formData.detailLevel === lvl ? '#1E40AF' : '#475569',
+                    border: formData.detailLevel === lvl ? '2px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
+                    background: formData.detailLevel === lvl ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                    color: formData.detailLevel === lvl ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-color-text-slate)',
                     fontSize: '11.5px',
                     fontWeight: formData.detailLevel === lvl ? 700 : 500,
                     cursor: 'pointer'
@@ -119,7 +119,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
               Sumber Harga Acuan Utama
             </label>
             <select
@@ -129,9 +129,9 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
                 width: '100%',
                 padding: '8px 10px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 fontSize: '12.5px',
-                background: '#FFFFFF'
+                background: 'var(--ez-color-surface)'
               }}
             >
               <option value="OFFICIAL_AHSP">PUPR 2026 Standar Nasional (Resmi)</option>
@@ -142,50 +142,50 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: '#475569', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                 Overhead Proyek (%)
               </label>
               <input
                 type="number"
                 value={formData.overheadPercent}
                 onChange={e => setFormData({ ...formData, overheadPercent: Number(e.target.value) })}
-                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: '#475569', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                 Profit Kontraktor (%)
               </label>
               <input
                 type="number"
                 value={formData.profitPercent}
                 onChange={e => setFormData({ ...formData, profitPercent: Number(e.target.value) })}
-                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
               />
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: '#475569', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                 Pajak PPN (%)
               </label>
               <input
                 type="number"
                 value={formData.taxPercent}
                 onChange={e => setFormData({ ...formData, taxPercent: Number(e.target.value) })}
-                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: '#475569', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>
                 Material Waste (%)
               </label>
               <input
                 type="number"
                 value={formData.wastePercent}
                 onChange={e => setFormData({ ...formData, wastePercent: Number(e.target.value) })}
-                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
               />
             </div>
           </div>
@@ -195,8 +195,8 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
         <div
           style={{
             padding: '12px 20px',
-            borderTop: '1px solid #E2E8F0',
-            background: '#F8FAFC',
+            borderTop: '1px solid var(--ez-color-border-line)',
+            background: 'var(--ez-color-surface-secondary)',
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '8px'
@@ -207,9 +207,9 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
             style={{
               padding: '7px 14px',
               borderRadius: '6px',
-              border: '1px solid #CBD5E1',
-              background: '#FFFFFF',
-              color: '#475569',
+              border: '1px solid var(--ez-hue-slate-border)',
+              background: 'var(--ez-color-surface)',
+              color: 'var(--ez-color-text-slate)',
               fontSize: '12px',
               cursor: 'pointer'
             }}
@@ -222,7 +222,7 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
               padding: '7px 16px',
               borderRadius: '6px',
               border: 'none',
-              background: '#2563EB',
+              background: 'var(--ez-color-primary)',
               color: '#FFFFFF',
               fontSize: '12px',
               fontWeight: 700,

@@ -320,7 +320,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
         style={{
           width: '620px',
           maxWidth: '100%',
-          backgroundColor: '#ffffff',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
           overflow: 'hidden',
@@ -334,8 +334,8 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
         <div
           style={{
             padding: '16px 20px',
-            backgroundColor: '#F8FAFC',
-            borderBottom: '1px solid #E2E8F0',
+            backgroundColor: 'var(--ez-color-surface-secondary)',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -347,22 +347,22 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                 width: '38px',
                 height: '38px',
                 borderRadius: '10px',
-                backgroundColor: '#EFF6FF',
-                color: '#2563EB',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                color: 'var(--ez-color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '1px solid #DBEAFE',
+                border: '1px solid var(--ez-hue-blue-bg-deep)',
               }}
             >
               <Tag size={19} />
             </div>
             <div>
-              <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+              <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                 {isPickerMode ? 'Pilih Item untuk Override Harga' : 'Override Harga Proyek'}
               </h2>
-              <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '2px' }}>
-                Proyek: <strong style={{ color: '#2563EB' }}>{projectName}</strong>
+              <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                Proyek: <strong style={{ color: 'var(--ez-color-primary)' }}>{projectName}</strong>
               </div>
             </div>
           </div>
@@ -400,7 +400,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                   width: '100%',
                   padding: '9px 12px 9px 34px',
                   borderRadius: '10px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   fontSize: '12.5px',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -432,9 +432,9 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                       fontSize: '11px',
                       fontWeight: 700,
                       cursor: 'pointer',
-                      border: active ? '1px solid #2563EB' : '1px solid #E2E8F0',
-                      backgroundColor: active ? '#EFF6FF' : '#ffffff',
-                      color: active ? '#1D4ED8' : '#64748B',
+                      border: active ? '1px solid #2563EB' : '1px solid var(--ez-color-border-line)',
+                      backgroundColor: active ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                      color: active ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                     }}
                   >
                     <Icon size={12} />
@@ -447,11 +447,11 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
             {/* Search Results List */}
             <div
               style={{
-                border: '1px solid #E2E8F0',
+                border: '1px solid var(--ez-color-border-line)',
                 borderRadius: '10px',
                 maxHeight: '380px',
                 overflowY: 'auto',
-                backgroundColor: '#ffffff',
+                backgroundColor: 'var(--ez-color-surface)',
               }}
             >
               {filteredPickerItems.length === 0 ? (
@@ -465,14 +465,14 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                     onClick={() => handleSelectResourceFromPicker(item)}
                     style={{
                       padding: '10px 14px',
-                      borderBottom: '1px solid #F1F5F9',
+                      borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       cursor: 'pointer',
                       transition: 'background-color 0.15s',
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--ez-color-surface-secondary)')}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#ffffff')}
                   >
                     <div style={{ minWidth: 0, flex: 1, paddingRight: '12px' }}>
@@ -485,35 +485,35 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                             borderRadius: '4px',
                             backgroundColor:
                               item.category === 'MATERIAL'
-                                ? '#EFF6FF'
+                                ? 'var(--ez-hue-blue-bg)'
                                 : item.category === 'LABOR'
-                                ? '#FEF3C7'
-                                : '#F3E8FF',
+                                ? 'var(--ez-hue-amber-bg-deep)'
+                                : 'var(--ez-hue-purple-bg-soft)',
                             color:
                               item.category === 'MATERIAL'
-                                ? '#1D4ED8'
+                                ? 'var(--ez-color-primary-hover)'
                                 : item.category === 'LABOR'
-                                ? '#92400E'
+                                ? 'var(--ez-hue-amber-text-dark)'
                                 : '#6B21A8',
                           }}
                         >
                           {item.category}
                         </span>
-                        <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {item.name}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
-                        <span style={{ fontFamily: 'monospace', color: '#2563EB' }}>{item.code}</span>
+                      <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                        <span style={{ fontFamily: 'monospace', color: 'var(--ez-color-primary)' }}>{item.code}</span>
                         {item.specification && <span>• {item.specification}</span>}
                       </div>
                     </div>
 
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontSize: '12.5px', fontWeight: 800, color: '#0F172A' }}>
+                      <div style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                         Rp {item.masterPrice.toLocaleString('id-ID')}
                       </div>
-                      <div style={{ fontSize: '10.5px', color: '#64748B' }}>per {item.unit}</div>
+                      <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>per {item.unit}</div>
                     </div>
                   </div>
                 ))
@@ -530,8 +530,8 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
               <div
                 style={{
                   padding: '12px 14px',
-                  backgroundColor: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
+                  backgroundColor: 'var(--ez-color-surface-secondary)',
+                  border: '1px solid var(--ez-color-border-line)',
                   borderRadius: '10px',
                   display: 'flex',
                   alignItems: 'center',
@@ -548,24 +548,24 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                         borderRadius: '4px',
                         backgroundColor:
                           selectedResource.category === 'MATERIAL'
-                            ? '#EFF6FF'
+                            ? 'var(--ez-hue-blue-bg)'
                             : selectedResource.category === 'LABOR'
-                            ? '#FEF3C7'
-                            : '#F3E8FF',
+                            ? 'var(--ez-hue-amber-bg-deep)'
+                            : 'var(--ez-hue-purple-bg-soft)',
                         color:
                           selectedResource.category === 'MATERIAL'
-                            ? '#1D4ED8'
+                            ? 'var(--ez-color-primary-hover)'
                             : selectedResource.category === 'LABOR'
-                            ? '#92400E'
+                            ? 'var(--ez-hue-amber-text-dark)'
                             : '#6B21A8',
                       }}
                     >
                       {selectedResource.category}
                     </span>
-                    <strong style={{ fontSize: '13px', color: '#0F172A' }}>{selectedResource.name}</strong>
+                    <strong style={{ fontSize: '13px', color: 'var(--ez-color-text-primary)' }}>{selectedResource.name}</strong>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: '#64748B', marginTop: '3px' }}>
-                    <span style={{ fontFamily: 'monospace', color: '#2563EB', fontWeight: 700 }}>{selectedResource.code}</span>
+                  <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '3px' }}>
+                    <span style={{ fontFamily: 'monospace', color: 'var(--ez-color-primary)', fontWeight: 700 }}>{selectedResource.code}</span>
                     <span>•</span>
                     <span>Satuan: <strong>{selectedResource.unit}</strong></span>
                     <span>•</span>
@@ -579,9 +579,9 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                   style={{
                     padding: '4px 8px',
                     borderRadius: '6px',
-                    border: '1px solid #CBD5E1',
-                    backgroundColor: '#ffffff',
-                    color: '#2563EB',
+                    border: '1px solid var(--ez-hue-slate-border)',
+                    backgroundColor: 'var(--ez-color-surface)',
+                    color: 'var(--ez-color-primary)',
                     fontSize: '11px',
                     fontWeight: 700,
                     cursor: 'pointer',
@@ -598,19 +598,19 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
               <div
                 style={{
                   padding: '12px',
-                  backgroundColor: '#F1F5F9',
-                  border: '1px solid #CBD5E1',
+                  backgroundColor: 'var(--ez-color-surface-tertiary)',
+                  border: '1px solid var(--ez-color-border-strong)',
                   borderRadius: '10px',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10.5px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
-                  <ShieldCheck size={13} color="#059669" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', textTransform: 'uppercase' }}>
+                  <ShieldCheck size={13} color="var(--ez-hue-green-text)" />
                   <span>Harga Master Acuan:</span>
                 </div>
-                <div style={{ fontSize: '16px', fontWeight: 800, color: '#334155', marginTop: '4px' }}>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-body)', marginTop: '4px' }}>
                   Rp {masterPrice.toLocaleString('id-ID')}
                 </div>
-                <div style={{ fontSize: '10px', color: '#64748B', marginTop: '2px' }}>
+                <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
                   per {selectedResource?.unit || 'unit'} (Database Master)
                 </div>
               </div>
@@ -619,16 +619,16 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
               <div
                 style={{
                   padding: '12px',
-                  backgroundColor: '#EFF6FF',
+                  backgroundColor: 'var(--ez-hue-blue-bg)',
                   border: '1.5px solid #3B82F6',
                   borderRadius: '10px',
                 }}
               >
-                <label style={{ fontSize: '11px', fontWeight: 800, color: '#1D4ED8', display: 'block', textTransform: 'uppercase' }}>
+                <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-color-primary-hover)', display: 'block', textTransform: 'uppercase' }}>
                   Harga Override Proyek:
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 800, color: '#1E40AF' }}>Rp</span>
+                  <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-hue-blue-text-deep)' }}>Rp</span>
                   <input
                     type="number"
                     value={overridePrice}
@@ -641,13 +641,13 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                       border: '1px solid #93C5FD',
                       fontSize: '16px',
                       fontWeight: 900,
-                      color: '#0F172A',
+                      color: 'var(--ez-color-text-primary)',
                       outline: 'none',
                     }}
                     autoFocus
                   />
                 </div>
-                <div style={{ fontSize: '10px', color: '#2563EB', marginTop: '2px', fontWeight: 600 }}>
+                <div style={{ fontSize: '10px', color: 'var(--ez-color-primary)', marginTop: '2px', fontWeight: 600 }}>
                   Akan menggantikan harga master di RAB proyek ini
                 </div>
               </div>
@@ -659,11 +659,11 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                 padding: '10px 14px',
                 borderRadius: '8px',
                 border: isIdentical
-                  ? '1px solid #E2E8F0'
+                  ? '1px solid var(--ez-color-border-line)'
                   : isCheaper
-                  ? '1px solid #A7F3D0'
-                  : '1px solid #FECACA',
-                backgroundColor: isIdentical ? '#F8FAFC' : isCheaper ? '#ECFDF5' : '#FEF2F2',
+                  ? '1px solid var(--ez-hue-green-border-deep)'
+                  : '1px solid var(--ez-hue-rose-border)',
+                backgroundColor: isIdentical ? 'var(--ez-color-surface-secondary)' : isCheaper ? 'var(--ez-hue-emerald-bg)' : 'var(--ez-hue-rose-bg)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -671,13 +671,13 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {isCheaper ? (
-                  <TrendingDown size={16} color="#059669" />
+                  <TrendingDown size={16} color="var(--ez-hue-green-text)" />
                 ) : isIdentical ? (
                   <CheckCircle2 size={16} color="#64748B" />
                 ) : (
-                  <TrendingUp size={16} color="#DC2626" />
+                  <TrendingUp size={16} color="var(--ez-hue-rose-text)" />
                 )}
-                <span style={{ fontSize: '11.5px', fontWeight: 700, color: isCheaper ? '#065F46' : isIdentical ? '#475569' : '#991B1B' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 700, color: isCheaper ? 'var(--ez-hue-green-text-deep)' : isIdentical ? 'var(--ez-color-text-slate)' : 'var(--ez-hue-red-text)' }}>
                   {isCheaper
                     ? 'Penghematan Biaya Terhadap Acuan Master'
                     : isIdentical
@@ -691,7 +691,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                   style={{
                     fontSize: '12px',
                     fontWeight: 900,
-                    color: isCheaper ? '#059669' : isIdentical ? '#475569' : '#DC2626',
+                    color: isCheaper ? 'var(--ez-hue-green-text)' : isIdentical ? 'var(--ez-color-text-slate)' : 'var(--ez-hue-rose-text)',
                   }}
                 >
                   {difference > 0 ? '+' : ''}Rp {difference.toLocaleString('id-ID')} ({percentage > 0 ? '+' : ''}{percentage.toFixed(1)}%)
@@ -702,7 +702,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
             {/* Justification & Source Metadata */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                   Alasan / Justifikasi Override:
                 </label>
                 <input
@@ -714,7 +714,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12px',
                     boxSizing: 'border-box',
                   }}
@@ -722,7 +722,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
               </div>
 
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                   Sumber Penawaran:
                 </label>
                 <select
@@ -732,10 +732,10 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12px',
                     fontWeight: 600,
-                    backgroundColor: '#ffffff',
+                    backgroundColor: 'var(--ez-color-surface)',
                     boxSizing: 'border-box',
                   }}
                 >
@@ -751,7 +751,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
             {/* Optional Vendor & Validity */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                   Nama Supplier / Mandor (Opsional):
                 </label>
                 <input
@@ -763,7 +763,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                     width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12px',
                     boxSizing: 'border-box',
                   }}
@@ -771,7 +771,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
               </div>
 
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                   Berlaku Sampai (Opsional):
                 </label>
                 <input
@@ -782,7 +782,7 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                     width: '100%',
                     padding: '7px 10px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12px',
                     boxSizing: 'border-box',
                   }}
@@ -796,15 +796,15 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
         <div
           style={{
             padding: '12px 20px',
-            backgroundColor: '#F8FAFC',
-            borderTop: '1px solid #E2E8F0',
+            backgroundColor: 'var(--ez-color-surface-secondary)',
+            borderTop: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
           {isPickerMode ? (
-            <div style={{ fontSize: '11px', color: '#64748B' }}>
+            <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
               Pilih item yang ingin disesuaikan harga khususnya untuk proyek ini.
             </div>
           ) : (
@@ -820,8 +820,8 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                     padding: '6px 12px',
                     borderRadius: '8px',
                     border: '1px solid #FCA5A5',
-                    backgroundColor: '#FEF2F2',
-                    color: '#DC2626',
+                    backgroundColor: 'var(--ez-hue-rose-bg)',
+                    color: 'var(--ez-hue-rose-text)',
                     fontSize: '11.5px',
                     fontWeight: 700,
                     cursor: 'pointer',
@@ -842,9 +842,9 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
               style={{
                 padding: '8px 14px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
-                backgroundColor: '#ffffff',
-                color: '#475569',
+                border: '1px solid var(--ez-hue-slate-border)',
+                backgroundColor: 'var(--ez-color-surface)',
+                color: 'var(--ez-color-text-slate)',
                 fontSize: '12px',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -862,8 +862,8 @@ export const ProjectPriceModal: React.FC<ProjectPriceModalProps> = ({
                   padding: '8px 18px',
                   borderRadius: '8px',
                   border: 'none',
-                  backgroundColor: !selectedResource || overridePrice <= 0 ? '#94A3B8' : '#2563EB',
-                  color: '#ffffff',
+                  backgroundColor: !selectedResource || overridePrice <= 0 ? '#94A3B8' : 'var(--ez-color-primary)',
+                  color: '#FFFFFF',
                   fontSize: '12px',
                   fontWeight: 700,
                   cursor: !selectedResource || overridePrice <= 0 ? 'not-allowed' : 'pointer',

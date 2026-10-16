@@ -60,9 +60,9 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
   return (
     <div
       style={{
-        background: '#FFFFFF',
+        background: 'var(--ez-color-surface)',
         borderRadius: '10px',
-        border: '1px solid #E2E8F0',
+        border: '1px solid var(--ez-color-border-line)',
         overflow: 'hidden',
       }}
     >
@@ -71,7 +71,7 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
         style={{
           background: '#0F172A',
           padding: '10px 14px',
-          color: '#F8FAFC',
+          color: 'var(--ez-color-surface-secondary)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -95,7 +95,7 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
             <div
               key={step.stepIndex}
               style={{
-                borderBottom: step.stepIndex < 14 ? '1px solid #F1F5F9' : 'none',
+                borderBottom: step.stepIndex < 14 ? '1px solid var(--ez-color-surface-tertiary)' : 'none',
               }}
             >
               {/* Step Header */}
@@ -105,7 +105,7 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
                   width: '100%',
                   padding: '8px 12px',
                   border: 'none',
-                  background: isExpanded ? '#F8FAFC' : 'transparent',
+                  background: isExpanded ? 'var(--ez-color-surface-secondary)' : 'transparent',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -134,13 +134,13 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
 
                 {/* Step Name + Detail */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#1E293B' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-strong)' }}>
                     {step.stageName}
                   </div>
                   <div
                     style={{
                       fontSize: '9.5px',
-                      color: '#64748B',
+                      color: 'var(--ez-color-text-muted)',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -161,7 +161,7 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
                 <div
                   style={{
                     padding: '8px 12px 12px 46px',
-                    background: '#F8FAFC',
+                    background: 'var(--ez-color-surface-secondary)',
                   }}
                 >
                   <div style={{ fontSize: '9px', fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', marginBottom: '4px' }}>
@@ -171,8 +171,8 @@ export const WeirAuditTrailPanel: React.FC<WeirAuditTrailPanelProps> = ({ auditT
                     style={{
                       fontSize: '9.5px',
                       fontFamily: 'monospace',
-                      color: '#334155',
-                      background: '#F1F5F9',
+                      color: 'var(--ez-color-text-body)',
+                      background: 'var(--ez-color-surface-tertiary)',
                       padding: '8px',
                       borderRadius: '4px',
                       overflow: 'auto',

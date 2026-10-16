@@ -82,7 +82,7 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
     padding: 0,
     fontSize: '12px',
     fontWeight: 500,
-    color: '#64748B',
+    color: 'var(--ez-color-text-muted)',
     cursor: 'pointer',
     display: 'inline-flex',
     alignItems: 'center',
@@ -93,7 +93,7 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
   const activeLeafStyle: React.CSSProperties = {
     fontSize: '12px',
     fontWeight: 700,
-    color: '#0F172A',
+    color: 'var(--ez-color-text-primary)',
     maxWidth: '260px',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -115,11 +115,11 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
       <button
         onClick={() => onNavigate('dashboard')}
         style={crumbLinkStyle}
-        onMouseEnter={(e) => (e.currentTarget.style.color = '#2563EB')}
-        onMouseLeave={(e) => (e.currentTarget.style.color = '#64748B')}
+        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ez-color-primary)')}
+        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ez-color-text-muted)')}
         title="Kembali ke Dashboard Utama"
       >
-        <LayoutDashboard size={13} color="#2563EB" />
+        <LayoutDashboard size={13} color="var(--ez-hue-blue-text)" />
         <span>Dashboard</span>
       </button>
 
@@ -133,8 +133,8 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
           <button
             onClick={() => onNavigate('magic-ai')}
             style={crumbLinkStyle}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#2563EB')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#64748B')}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ez-color-primary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ez-color-text-muted)')}
           >
             DED → AI Estimate
           </button>
@@ -162,8 +162,8 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
           <button
             onClick={() => onNavigate('proyek', null)}
             style={crumbLinkStyle}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#2563EB')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#64748B')}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ez-color-primary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ez-color-text-muted)')}
             title="Daftar Proyek"
           >
             Proyek
@@ -179,8 +179,8 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#2563EB')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#64748B')}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ez-color-primary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ez-color-text-muted)')}
             title={`Buka Dashboard ${currentProject.name}`}
           >
             {currentProject.name}

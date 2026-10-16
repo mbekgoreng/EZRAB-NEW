@@ -31,9 +31,9 @@ export const MagicAILauncher: React.FC<MagicAILauncherProps> = ({ onClick, isOpe
         right: '68px',
         height: '44px',
         padding: '0 16px 0 6px',
-        borderRadius: '999px',
-        background: '#FFFFFF',
-        border: '1px solid #DBEAFE',
+        borderRadius: 'var(--ez-radius-pill)',
+        background: 'var(--ez-color-surface)',
+        border: '1px solid var(--ez-hue-blue-bg-deep)',
         boxShadow: '0 10px 25px -3px rgba(37, 99, 235, 0.25), 0 4px 6px -2px rgba(37, 99, 235, 0.1)',
         display: 'flex',
         alignItems: 'center',
@@ -68,7 +68,7 @@ export const MagicAILauncher: React.FC<MagicAILauncherProps> = ({ onClick, isOpe
       </div>
 
       {/* Label */}
-      <span style={{ fontSize: '13px', fontWeight: 700, color: '#1E293B' }}>
+      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-strong)' }}>
         Tanya Magic AI...
       </span>
 
@@ -77,11 +77,11 @@ export const MagicAILauncher: React.FC<MagicAILauncherProps> = ({ onClick, isOpe
         style={{
           fontSize: '11px',
           fontWeight: 700,
-          color: '#64748B',
-          background: '#F1F5F9',
+          color: 'var(--ez-color-text-muted)',
+          background: 'var(--ez-color-surface-tertiary)',
           padding: '2px 7px',
           borderRadius: '6px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
         }}
       >
         ⌘ J

@@ -569,7 +569,7 @@ export const AssistantWizardRenderer: React.FC<AssistantWizardRendererProps> = (
                         >
                           <div>
                             <div className="ezrab-wizard-option-label">
-                              {isSelected && <Check className="h-3.5 w-3.5 text-blue-600" style={{ color: '#2563EB', flexShrink: 0 }} />}
+                              {isSelected && <Check className="h-3.5 w-3.5 text-blue-600" style={{ color: 'var(--ez-color-primary)', flexShrink: 0 }} />}
                               <span>{opt.label}</span>
                             </div>
                             {opt.description && (
@@ -653,7 +653,7 @@ export const AssistantWizardRenderer: React.FC<AssistantWizardRendererProps> = (
             {data.summary.regionInfo && (
               <div className="ezrab-wizard-metric-box">
                 <div className="ezrab-wizard-metric-label">Indeks Wilayah</div>
-                <div className="ezrab-wizard-metric-value" style={{ fontSize: '12.5px', color: '#1E40AF' }}>
+                <div className="ezrab-wizard-metric-value" style={{ fontSize: '12.5px', color: 'var(--ez-hue-blue-text-deep)' }}>
                   {data.summary.regionInfo.name} ({data.summary.regionInfo.percentage}%)
                 </div>
               </div>
@@ -681,7 +681,7 @@ export const AssistantWizardRenderer: React.FC<AssistantWizardRendererProps> = (
           {/* Categories Table Breakdown */}
           <div className="ezrab-wizard-category-table">
             <div className="ezrab-wizard-category-title">
-              <Layers className="h-3.5 w-3.5" style={{ color: '#2563EB' }} />
+              <Layers className="h-3.5 w-3.5" style={{ color: 'var(--ez-color-primary)' }} />
               <span>Rincian Kelompok Pekerjaan (AHSP PUPR 2026):</span>
             </div>
             <div className="ezrab-wizard-category-list">

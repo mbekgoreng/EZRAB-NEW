@@ -233,7 +233,7 @@ img, svg {
 
 /* Cards */
 .ezrab-card {
-  background: #ffffff;
+  background: var(--ez-color-surface);
   border: 1px solid var(--ezrab-card-border);
   border-radius: 14px;
   box-shadow: var(--ezrab-shadow-sm);
@@ -249,7 +249,7 @@ img, svg {
 .ezrab-table-wrapper {
   width: 100%;
   overflow-x: auto;
-  background: #ffffff;
+  background: var(--ez-color-surface);
   border-radius: 12px;
   border: 1px solid var(--ezrab-border);
   box-shadow: var(--ezrab-shadow-sm);
@@ -263,8 +263,8 @@ img, svg {
 }
 
 .ezrab-table th {
-  background: #f8fafc;
-  color: #475569;
+  background: var(--ez-hue-slate-bg);
+  color: var(--ez-color-text-slate);
   font-weight: 700;
   font-size: 12px;
   text-transform: uppercase;
@@ -278,8 +278,8 @@ img, svg {
 
 .ezrab-table td {
   padding: 12px 14px;
-  border-bottom: 1px solid #f1f5f9;
-  color: #1e293b;
+  border-bottom: 1px solid var(--ez-color-surface-tertiary);
+  color: var(--ez-color-text-strong);
 }
 
 .ezrab-table tr:last-child td {
@@ -294,7 +294,7 @@ img, svg {
 .ezrab-input {
   height: 38px;
   padding: 0 12px;
-  background: #ffffff;
+  background: var(--ez-color-surface);
   border: 1px solid var(--ezrab-border);
   border-radius: 8px;
   font-size: 13px;
@@ -319,7 +319,7 @@ img, svg {
   padding: 48px 24px;
   border-radius: 16px;
   border: 1px dashed var(--ezrab-border-strong);
-  background: #ffffff;
+  background: var(--ez-color-surface);
 }
 
 .ezrab-empty-state-icon {
@@ -354,7 +354,7 @@ img, svg {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #f1f5f9;
+  background: var(--ez-color-surface-tertiary);
   padding: 4px;
   border-radius: 10px;
 }
@@ -372,7 +372,7 @@ img, svg {
 }
 
 .ezrab-tab-item.is-active {
-  background: #ffffff;
+  background: var(--ez-color-surface);
   color: var(--ezrab-blue);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
@@ -503,7 +503,7 @@ img, svg {
   left: 0;
   bottom: 0;
   width: min(84vw, 320px);
-  background: #ffffff;
+  background: var(--ez-color-surface);
   z-index: 9995;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
   display: flex;
@@ -524,7 +524,7 @@ img, svg {
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid #E2E8F0;
+  border-top: 1px solid var(--ez-color-border-line);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -552,7 +552,7 @@ img, svg {
 }
 
 .ezrab-bottom-nav-item.is-active {
-  color: #2563EB;
+  color: var(--ez-hue-blue-text);
   font-weight: 750;
 }
 
@@ -582,7 +582,7 @@ img, svg {
   left: 0;
   right: 0;
   bottom: 0;
-  background: #ffffff;
+  background: var(--ez-color-surface);
   border-radius: 20px 20px 0 0;
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
   z-index: 10000;
@@ -606,7 +606,7 @@ img, svg {
   width: 36px;
   height: 4px;
   border-radius: 999px;
-  background: #CBD5E1;
+  background: var(--ez-hue-slate-border);
   margin: 10px auto 4px;
   flex-shrink: 0;
 }
@@ -654,9 +654,9 @@ img, svg {
 
 /* Sidebar Container (Full-height sticky on desktop, reaching bottom of page) */
 .ezrab-workstation-sidebar {
-  background: #ffffff;
+  background: var(--ez-color-surface);
   border-radius: 12px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--ez-color-border-line);
   padding: 14px 14px 10px;
   display: flex;
   flex-direction: column;
@@ -691,9 +691,9 @@ img, svg {
 /* Category Group Card in Catalog Tree (Strictly flex-shrink: 0 to prevent squashing) */
 .ezrab-calc-group-card {
   flex-shrink: 0;
-  border: 1px solid #E2E8F0;
+  border: 1px solid var(--ez-color-border-line);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--ez-color-surface);
   overflow: hidden;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -707,11 +707,11 @@ img, svg {
   width: 5px;
 }
 .ezrab-workstation-scrollable::-webkit-scrollbar-track {
-  background: #F1F5F9;
+  background: var(--ez-color-surface-tertiary);
   border-radius: 4px;
 }
 .ezrab-workstation-scrollable::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: var(--ez-hue-slate-border);
   border-radius: 4px;
 }
 .ezrab-workstation-scrollable::-webkit-scrollbar-thumb:hover {
@@ -727,8 +727,8 @@ img, svg {
   justify-content: space-between;
   padding: 8px 12px;
   border-radius: 8px;
-  border: 1px solid #E2E8F0;
-  background: #ffffff;
+  border: 1px solid var(--ez-color-border-line);
+  background: var(--ez-color-surface);
   cursor: pointer;
   transition: all 0.12s ease;
   user-select: none;
@@ -736,20 +736,20 @@ img, svg {
 }
 
 .ezrab-calc-compact-row:hover {
-  background: #F8FAFC;
+  background: var(--ez-hue-slate-bg);
   border-color: #CBD5E1;
   transform: translateX(1px);
 }
 
 .ezrab-calc-compact-row.active {
-  background: #EFF6FF;
+  background: var(--ez-hue-blue-bg);
   border-color: #2563EB;
   border-left: 3.5px solid #2563EB;
   box-shadow: 0 1px 4px rgba(37, 99, 235, 0.12);
 }
 
 .ezrab-calc-compact-row.active:hover {
-  background: #DBEAFE;
+  background: var(--ez-hue-blue-bg-deep);
 }
 
 

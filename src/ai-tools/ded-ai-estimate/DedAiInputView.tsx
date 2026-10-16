@@ -8,6 +8,7 @@ import {
   ArrowRight, AlertTriangle, History, Trash2, RotateCcw,
 } from 'lucide-react';
 import { DedAiMode, DedAiProjectType } from './types';
+import { useI18n } from '../../i18n/I18nContext';
 import './dedAi.css';
 
 export interface DedAiFileItem {
@@ -37,14 +38,6 @@ interface Props {
   onDeleteDraft: (id: string) => void;
 }
 
-const PROJECT_TYPE_OPTIONS: Array<{ value: DedAiProjectType; label: string }> = [
-  { value: 'BANGUNAN', label: 'Bangunan / Rumah Tinggal' },
-  { value: 'GEDUNG', label: 'Gedung' },
-  { value: 'BANGUNAN AIR', label: 'Bangunan Air' },
-  { value: 'JALAN', label: 'Jalan' },
-  { value: 'PAVING', label: 'Paving' },
-];
-
 const MAX_FILE_MB = 25;
 const MAX_FILES = 5;
 
@@ -54,6 +47,14 @@ const fmtSize = (b: number) =>
 export const DedAiInputView: React.FC<Props> = ({
   initialSession, projects, drafts, onStart, onLoadDraft, onDeleteDraft,
 }) => {
+  const { t } = useI18n();
+  const PROJECT_TYPE_OPTIONS: Array<{ value: DedAiProjectType; label: string }> = [
+    { value: 'BANGUNAN', label: t('ai.ded.input.type_bangunan') },
+    { value: 'GEDUNG', label: t('ai.ded.input.type_gedung') },
+    { value: 'BANGUNAN AIR', label: t('ai.ded.input.type_bangunan_air') },
+    { value: 'JALAN', label: t('ai.ded.input.type_jalan') },
+    { value: 'PAVING', label: t('ai.ded.input.type_paving') },
+  ];
   const [files, setFiles] = useState<DedAiFileItem[]>(initialSession.files);
   const [description, setDescription] = useState(initialSession.description);
   const [projectName, setProjectName] = useState(initialSession.projectName);
@@ -74,9 +75,9 @@ export const DedAiInputView: React.FC<Props> = ({
         const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         let error: string | undefined;
         const isPdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
-        if (!isPdf) error = 'Hanya file PDF yang didukung parser saat ini.';
-        else if (f.size > MAX_FILE_MB * 1048576) error = `Ukuran melebihi ${MAX_FILE_MB} MB.`;
-        else if (f.size === 0) error = 'File kosong (0 byte).';
+        if (!isPdf) error = t('ai.ded.input.err_pdf_only');
+        else if (f.size > MAX_FILE_MB * 1048576) error = `${t('ai.ded.input.err_size_a')} ${MAX_FILE_MB} ${t('ai.ded.input.err_size_b')}`;
+        else if (f.size === 0) error = t('ai.ded.input.err_empty');
         next.push({ file: f, id, error });
       }
       return next;
@@ -107,22 +108,22 @@ export const DedAiInputView: React.FC<Props> = ({
   return (
     <div className="dedai">
       <div className="dedai-head">
-        <h1>DED <span className="accent">→</span> RAB dengan AI</h1>
-        <p>Buat estimasi pekerjaan konstruksi dari dokumen DED, gambar kerja, atau deskripsi proyek.</p>
+        <h1>DED <span className="accent">→</span> {t('ai.ded.input.head_title_post')}</h1>
+        <p>{t('ai.ded.input.head_sub')}</p>
       </div>
 
       <div className="dedai-steps">
-        <div className="dedai-step active"><span className="n">1</span> Input</div>
+        <div className="dedai-step active"><span className="n">1</span> {t('ai.ded.input.step_1')}</div>
         <div className="dedai-step-line" />
-        <div className="dedai-step"><span className="n">2</span> Progress</div>
+        <div className="dedai-step"><span className="n">2</span> {t('ai.ded.input.step_2')}</div>
         <div className="dedai-step-line" />
-        <div className="dedai-step"><span className="n">3</span> Hasil</div>
+        <div className="dedai-step"><span className="n">3</span> {t('ai.ded.input.step_3')}</div>
       </div>
 
       {/* ---- Upload ---- */}
       <div className="dedai-card">
-        <h2><span className="ico"><UploadCloud size={18} /></span> Dokumen DED</h2>
-        <p className="sub">Unggah gambar kerja / dokumen DED. Bisa lebih dari satu file — hasilnya digabung otomatis.</p>
+        <h2><span className="ico"><UploadCloud size={18} /></span> {t('ai.ded.input.card_doc_title')}</h2>
+        <p className="sub">{t('ai.ded.input.card_doc_sub')}</p>
         <div
           className={`dedai-drop ${dragOver ? 'over' : ''}`}
           onClick={() => inputRef.current?.click()}
@@ -131,8 +132,8 @@ export const DedAiInputView: React.FC<Props> = ({
           onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files.length) addFiles(e.dataTransfer.files); }}
         >
           <div className="big-ico"><UploadCloud size={26} /></div>
-          <p>Seret & letakkan file di sini, atau klik untuk memilih</p>
-          <span>Maksimal {MAX_FILES} file · {MAX_FILE_MB} MB per file</span>
+          <p>{t('ai.ded.input.drop_text')}</p>
+          <span>{t('ai.ded.input.drop_hint_a')} {MAX_FILES} {t('ai.ded.input.drop_hint_b')} {MAX_FILE_MB} {t('ai.ded.input.drop_hint_c')}</span>
           <br /><span className="fmt">PDF</span>
           <input
             ref={inputRef} type="file" accept=".pdf,application/pdf" multiple hidden
@@ -147,9 +148,9 @@ export const DedAiInputView: React.FC<Props> = ({
                 <div className="f-info">
                   <div className="f-name">{f.file.name}</div>
                   <div className="f-meta">{fmtSize(f.file.size)}</div>
-                  {f.error && <div className="f-err">⚠ {f.error}</div>}
+                  {f.error && <div className="f-err"><AlertTriangle size={13} /> {f.error}</div>}
                 </div>
-                <button className="f-del" onClick={() => setFiles((p) => p.filter((x) => x.id !== f.id))} title="Hapus file">
+                <button className="f-del" onClick={() => setFiles((p) => p.filter((x) => x.id !== f.id))} title={t('ai.ded.input.del_file')}>
                   <X size={15} />
                 </button>
               </div>
@@ -158,57 +159,57 @@ export const DedAiInputView: React.FC<Props> = ({
         )}
         <div className="dedai-notice blue">
           <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 2 }} />
-          <span>AI membaca <b>teks</b> di dalam PDF. PDF hasil scan (gambar saja tanpa teks) kemungkinan besar tidak terbaca — jika analisis gagal, itu penyebabnya.</span>
+          <span>{t('ai.ded.input.notice_a')} <b>{t('ai.ded.input.notice_b')}</b> {t('ai.ded.input.notice_c')}</span>
         </div>
       </div>
 
       {/* ---- Deskripsi ---- */}
       <div className="dedai-card">
-        <h2><span className="ico"><FileText size={18} /></span> Deskripsi Proyek <span style={{ fontWeight: 500, fontSize: 12, color: '#94A3B8' }}>(opsional)</span></h2>
-        <p className="sub">Ceritakan proyekmu — AI memakai ini sebagai konteks tambahan selain dokumen.</p>
+        <h2><span className="ico"><FileText size={18} /></span> {t('ai.ded.input.card_desc_title')} <span style={{ fontWeight: 500, fontSize: 12, color: 'var(--ez-color-text-muted)' }}>{t('ai.ded.input.card_desc_optional')}</span></h2>
+        <p className="sub">{t('ai.ded.input.card_desc_sub')}</p>
         <div className="dedai-field">
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Contoh: Bangun rumah tinggal 2 lantai, luas bangunan 120 m², struktur beton bertulang, pondasi batu kali, dinding bata ringan, atap baja ringan, dan finishing standar."
+            placeholder={t('ai.ded.input.desc_ph')}
           />
         </div>
       </div>
 
       {/* ---- Proyek & tipe ---- */}
       <div className="dedai-card">
-        <h2><span className="ico"><FolderOpen size={18} /></span> Proyek & Pengaturan</h2>
-        <p className="sub">Hasil estimasi bisa disimpan ke proyek existing atau proyek baru saat finalisasi.</p>
+        <h2><span className="ico"><FolderOpen size={18} /></span> {t('ai.ded.input.card_proj_title')}</h2>
+        <p className="sub">{t('ai.ded.input.card_proj_sub')}</p>
         <div className="dedai-seg" style={{ marginBottom: 16 }}>
           <button className={!useExisting ? 'active' : ''} onClick={() => setUseExisting(false)}>
-            <PlusCircle size={15} /> Proyek Baru
+            <PlusCircle size={15} /> {t('ai.ded.input.seg_new')}
           </button>
           <button className={useExisting ? 'active' : ''} onClick={() => setUseExisting(true)} disabled={projects.length === 0}>
-            <FolderOpen size={15} /> Proyek Existing
+            <FolderOpen size={15} /> {t('ai.ded.input.seg_existing')}
           </button>
         </div>
         {useExisting ? (
           <div className="dedai-field">
-            <label>Pilih proyek</label>
+            <label>{t('ai.ded.input.label_pick_project')}</label>
             <select value={targetProjectId || ''} onChange={(e) => setTargetProjectId(e.target.value || null)}>
-              <option value="">— Pilih proyek —</option>
+              <option value="">{t('ai.ded.input.opt_pick')}</option>
               {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
-            {projects.length === 0 && <div className="hint">Belum ada proyek — pakai "Proyek Baru".</div>}
+            {projects.length === 0 && <div className="hint">{t('ai.ded.input.hint_no_projects')}</div>}
           </div>
         ) : (
           <div className="dedai-field">
-            <label>Nama proyek baru</label>
+            <label>{t('ai.ded.input.label_new_name')}</label>
             <input
               type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)}
-              placeholder="cth: Rumah Tinggal 2 Lantai — Bintaro"
+              placeholder={t('ai.ded.input.name_ph')}
             />
-            <div className="hint">Kosongkan untuk memakai nama file otomatis.</div>
+            <div className="hint">{t('ai.ded.input.hint_name_auto')}</div>
           </div>
         )}
         <div className="dedai-grid2">
           <div className="dedai-field">
-            <label>Jenis proyek</label>
+            <label>{t('ai.ded.input.label_type')}</label>
             <div className="dedai-chips">
               {PROJECT_TYPE_OPTIONS.map((o) => (
                 <button key={o.value} className={`dedai-chip ${projectType === o.value ? 'active' : ''}`} onClick={() => setProjectType(o.value)}>
@@ -218,16 +219,16 @@ export const DedAiInputView: React.FC<Props> = ({
             </div>
           </div>
           <div className="dedai-field">
-            <label>Mode AI</label>
+            <label>{t('ai.ded.input.label_mode')}</label>
             <div className="dedai-seg">
               <button className={mode === 'FAST' ? 'active' : ''} onClick={() => setMode('FAST')}>
-                <Zap size={15} /> Cepat
+                <Zap size={15} /> {t('ai.ded.input.mode_fast')}
               </button>
               <button className={mode === 'DETAIL' ? 'active' : ''} onClick={() => setMode('DETAIL')}>
-                <Brain size={15} /> Mendalam
+                <Brain size={15} /> {t('ai.ded.input.mode_deep')}
               </button>
             </div>
-            <div className="hint">{mode === 'FAST' ? 'Hasil cepat untuk estimasi awal.' : 'Analisis lebih teliti, butuh waktu lebih lama.'}</div>
+            <div className="hint">{mode === 'FAST' ? t('ai.ded.input.hint_mode_fast') : t('ai.ded.input.hint_mode_detail')}</div>
           </div>
           <div className="dedai-field">
             <label>
@@ -250,20 +251,20 @@ export const DedAiInputView: React.FC<Props> = ({
 
       <div className="dedai-cta">
         <button className="dedai-btn primary" disabled={!canStart} onClick={handleStart}>
-          Mulai AI Estimate <ArrowRight size={18} />
+          {t('ai.ded.input.cta')} <ArrowRight size={18} />
         </button>
       </div>
       {!canStart && (
-        <p style={{ textAlign: 'center', color: '#94A3B8', fontSize: 12.5, marginTop: 10 }}>
-          Unggah minimal 1 file PDF yang valid untuk memulai.
+        <p style={{ textAlign: 'center', color: 'var(--ez-color-text-muted)', fontSize: 12.5, marginTop: 10 }}>
+          {t('ai.ded.input.cta_hint')}
         </p>
       )}
 
       {/* ---- Draft tersimpan ---- */}
       {drafts.length > 0 && (
         <div className="dedai-card" style={{ marginTop: 18 }}>
-          <h2><span className="ico"><History size={18} /></span> Draft Tersimpan</h2>
-          <p className="sub">Lanjutkan hasil analisis yang pernah disimpan.</p>
+          <h2><span className="ico"><History size={18} /></span> {t('ai.ded.input.drafts_title')}</h2>
+          <p className="sub">{t('ai.ded.input.drafts_sub')}</p>
           <div className="dedai-drafts">
             {drafts.map((d) => (
               <div key={d.id} className="dedai-draft">
@@ -273,10 +274,10 @@ export const DedAiInputView: React.FC<Props> = ({
                     {new Date(d.createdAt).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · {d.itemCount} item
                   </div>
                 </div>
-                <button className="dedai-icon-btn" onClick={() => onLoadDraft(d.id)} title="Buka draft">
+                <button className="dedai-icon-btn" onClick={() => onLoadDraft(d.id)} title={t('ai.ded.input.open_draft')}>
                   <RotateCcw size={14} />
                 </button>
-                <button className="dedai-icon-btn" onClick={() => onDeleteDraft(d.id)} title="Hapus draft">
+                <button className="dedai-icon-btn" onClick={() => onDeleteDraft(d.id)} title={t('ai.ded.input.del_draft')}>
                   <Trash2 size={14} />
                 </button>
               </div>

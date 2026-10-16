@@ -53,13 +53,22 @@ import {
   FileUp,
   MapPin,
   TrendingUp,
+  Globe,
+  Info,
+  Play,
+  LogOut,
 } from 'lucide-react';
 import { ClientUserManagementService, WorkspaceMember } from '../../services/userManagementService';
 import { AddUserModal } from './AddUserModal';
 import { UserRole, Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
-import { useTheme } from '../../context/ThemeContext';
-import { useI18n } from '../../i18n/I18nContext';
+import { useI18n, LANG_OPTIONS, type Lang } from '../../i18n';
+import { useRole } from '../../auth/RoleContext';
+import { ONBOARDING_OPEN_EVENT } from '../onboarding/OnboardingTour';
+
+/** Versi aplikasi — tampil di section "Informasi Sistem". Sinkron dengan package.json. */
+const APP_VERSION = '2.0.0';
+const APP_BUILD = 'Production';
 import { settingsAuditService, SettingsAuditEntry, SettingsCategory, SettingsScope } from '../../services/settingsAuditService';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 
@@ -128,6 +137,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   onNavigateTab,
 }) => {
   const { currentProject, projects, setCurrentProjectId, updateProject } = useProject();
+  const { t, lang, setLang } = useI18n();
+  const { activeRole, logoutRole, hasCapability } = useRole();
 
   // Scope: 'GLOBAL' (Account & Workspace) vs 'PROJECT' (Project Configuration)
   const [scope, setScope] = useState<'GLOBAL' | 'PROJECT'>(() => {
@@ -190,10 +201,6 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   const [profileTitle, setProfileTitle] = useState(currentUser.title || '');
   const [profileCompany, setProfileCompany] = useState(currentUser.company || '');
 
-  // FASE F: hubungkan ke sistem bahasa & tema yang sebenarnya (sebelumnya
-  // state lokal yang tidak pernah disimpan/diterapkan — pengaturan palsu).
-  const { lang, setLang } = useI18n();
-  const { theme, setTheme } = useTheme();
   const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
   const [systemCurrency, setSystemCurrency] = useState('IDR');
 
@@ -443,11 +450,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
   const renderRoleBadge = (role: UserRole) => {
     const styles: Record<UserRole, { bg: string; color: string; border: string; label: string }> = {
-      SUPER_ADMIN: { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE', label: 'Super Admin' },
-      ESTIMATOR: { bg: '#F0FDF4', color: '#15803D', border: '#BBF7D0', label: 'Estimator' },
-      DIREKSI: { bg: '#FAF5FF', color: '#7E22CE', border: '#E9D5FF', label: 'Direksi' },
-      CLIENT: { bg: '#FFFBEB', color: '#B45309', border: '#FDE68A', label: 'Client' },
-      EDITOR: { bg: '#F1F5F9', color: '#475569', border: '#CBD5E1', label: 'Editor' },
+      SUPER_ADMIN: { bg: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)', border: 'var(--ez-hue-blue-border)', label: 'Super Admin' },
+      ESTIMATOR: { bg: 'var(--ez-hue-green-bg)', color: 'var(--ez-hue-green-text)', border: 'var(--ez-hue-green-border)', label: 'Estimator' },
+      DIREKSI: { bg: 'var(--ez-hue-purple-bg)', color: 'var(--ez-hue-purple-text)', border: 'var(--ez-hue-purple-border)', label: 'Direksi' },
+      CLIENT: { bg: 'var(--ez-hue-amber-bg)', color: 'var(--ez-hue-amber-text)', border: 'var(--ez-hue-amber-border)', label: 'Client' },
+      EDITOR: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', border: 'var(--ez-color-border)', label: 'Editor' },
     };
     const s = styles[role] || styles.SUPER_ADMIN;
     return (
@@ -456,7 +463,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           fontSize: '11px',
           fontWeight: 700,
           padding: '2px 8px',
-          borderRadius: '999px',
+          borderRadius: 'var(--ez-radius-pill)',
           background: s.bg,
           color: s.color,
           border: `1px solid ${s.border}`,
@@ -473,43 +480,69 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   // Grouped Navigation for Level 1 & 2 (Global Workspace Scope)
   const globalNavGroups = [
     {
-      group: 'AKUN PENGGUNA',
+      group: t('settings.grup_akun'),
       items: [
-        { id: 'profile' as SettingsTabId, label: 'Profil Saya', icon: User },
-        { id: 'preferences' as SettingsTabId, label: 'Preferensi & Bahasa', icon: SlidersHorizontal },
-        { id: 'notifications' as SettingsTabId, label: 'Notifikasi', icon: Bell },
-        { id: 'security' as SettingsTabId, label: 'Keamanan Akun', icon: Shield },
+        { id: 'profile' as SettingsTabId, label: t('settings.tab_profil'), icon: User },
+        { id: 'preferences' as SettingsTabId, label: t('settings.tab_preferensi'), icon: SlidersHorizontal },
+        { id: 'notifications' as SettingsTabId, label: t('settings.tab_notifikasi'), icon: Bell },
+        { id: 'security' as SettingsTabId, label: t('settings.tab_keamanan'), icon: Shield },
       ],
     },
     {
-      group: 'WORKSPACE & PERUSAHAAN',
+      group: t('settings.grup_workspace'),
       items: [
-        { id: 'company' as SettingsTabId, label: 'Profil Perusahaan', icon: Building2 },
-        { id: 'users' as SettingsTabId, label: 'Tim & Anggota', icon: Users },
-        { id: 'roles' as SettingsTabId, label: 'Role & Hak Akses', icon: Lock },
-        { id: 'subscription' as SettingsTabId, label: 'Paket & Billing', icon: CreditCard },
+        { id: 'company' as SettingsTabId, label: t('settings.tab_perusahaan'), icon: Building2 },
+        { id: 'users' as SettingsTabId, label: t('settings.tab_tim'), icon: Users },
+        { id: 'roles' as SettingsTabId, label: t('settings.tab_role'), icon: Lock },
+        { id: 'subscription' as SettingsTabId, label: t('settings.tab_paket'), icon: CreditCard },
       ],
     },
     {
-      group: 'STANDAR TEKNIS & ESTIMASI',
+      group: t('settings.grup_teknis'),
       items: [
-        { id: 'master-data' as SettingsTabId, label: 'Master Data & AHSP', icon: Database },
-        { id: 'estimator' as SettingsTabId, label: 'Standar Estimator & Pajak', icon: Coins },
-        { id: 'ded-volume' as SettingsTabId, label: 'DED, Presisi & Waste', icon: Calculator },
-        { id: 'documents' as SettingsTabId, label: 'Dokumen & Ekspor', icon: FileSpreadsheet },
-        { id: 'schedule' as SettingsTabId, label: 'Kalender & Jadwal', icon: Calendar },
-        { id: 'cost' as SettingsTabId, label: 'Cost Code & Biaya', icon: TrendingUp },
+        { id: 'master-data' as SettingsTabId, label: t('settings.tab_master'), icon: Database },
+        { id: 'estimator' as SettingsTabId, label: t('settings.tab_estimator'), icon: Coins },
+        { id: 'ded-volume' as SettingsTabId, label: t('settings.tab_ded'), icon: Calculator },
+        { id: 'documents' as SettingsTabId, label: t('settings.tab_dokumen'), icon: FileSpreadsheet },
+        { id: 'schedule' as SettingsTabId, label: t('settings.tab_jadwal'), icon: Calendar },
+        { id: 'cost' as SettingsTabId, label: t('settings.tab_biaya'), icon: TrendingUp },
       ],
     },
     {
-      group: 'SISTEM & INTEGRASI',
+      group: t('settings.grup_sistem'),
       items: [
-        { id: 'integrations' as SettingsTabId, label: 'Integrasi Eksternal', icon: RefreshCw },
-        { id: 'audit-log' as SettingsTabId, label: 'Audit Trail Riwayat', icon: History },
-        { id: 'help' as SettingsTabId, label: 'Bantuan & FAQ', icon: HelpCircle },
+        { id: 'integrations' as SettingsTabId, label: t('settings.tab_integrasi'), icon: RefreshCw },
+        { id: 'audit-log' as SettingsTabId, label: t('settings.tab_audit'), icon: History },
+        { id: 'help' as SettingsTabId, label: t('settings.tab_bantuan'), icon: HelpCircle },
       ],
     },
   ];
+
+  /**
+   * Pembatasan menu yang jelas-jelas sensitif untuk sesi role demo:
+   * - 'users' & 'roles'  → butuh capability 'manage-users'
+   * - 'security'         → butuh capability 'manage-security'
+   * Tanpa sesi role aktif, tidak ada pembatasan (perilaku existing).
+   */
+  const isTabAllowed = (tabId: SettingsTabId): boolean => {
+    if (tabId === 'users' || tabId === 'roles') return hasCapability('manage-users');
+    if (tabId === 'security') return hasCapability('manage-security');
+    return true;
+  };
+
+  const visibleGlobalNavGroups = globalNavGroups
+    .map((g) => ({ ...g, items: g.items.filter((item) => isTabAllowed(item.id)) }))
+    .filter((g) => g.items.length > 0);
+
+  // Jika tab aktif tidak diizinkan untuk role saat ini (mis. via pencarian),
+  // alihkan ke tab profil yang selalu tersedia.
+  useEffect(() => {
+    if (!isTabAllowed(activeTab)) {
+      setActiveTab('profile');
+      if (scope === 'PROJECT') setScope('GLOBAL');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, hasCapability]);
 
   // Grouped Navigation for Level 3 (Project Scope)
   const projectNavItems = [
@@ -527,7 +560,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
         display: 'flex',
         flexDirection: 'column',
         gap: '18px',
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
         maxWidth: '1680px',
         margin: '0 auto',
         width: '100%',
@@ -543,7 +576,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             background: '#0F172A',
             color: '#FFFFFF',
             padding: '12px 20px',
-            borderRadius: '12px',
+            borderRadius: 'var(--ez-radius-control)',
             fontSize: '13px',
             fontWeight: 600,
             display: 'flex',
@@ -563,11 +596,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       {/* ------------------------------------------------------------- */}
       <div
         style={{
-          background: '#FFFFFF',
-          borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          background: 'var(--ez-color-surface)',
+          borderRadius: '20px',
+          border: '1px solid #EEF1F6',
           padding: '18px 24px',
-          boxShadow: '0 1px 3px rgba(15,23,42,0.03)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',
@@ -579,13 +612,13 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               style={{
                 width: '42px',
                 height: '42px',
-                borderRadius: '12px',
-                background: '#EFF6FF',
-                border: '1px solid #DBEAFE',
+                borderRadius: 'var(--ez-radius-control)',
+                background: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-bg-deep)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
                 flexShrink: 0,
               }}
             >
@@ -593,24 +626,24 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
-                  Pengaturan & Konfigurasi Sistem
+                <h1 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
+                  {t('settings.judul')}
                 </h1>
                 <span
                   style={{
                     fontSize: '11px',
                     fontWeight: 800,
                     padding: '2px 8px',
-                    borderRadius: '6px',
-                    background: scope === 'PROJECT' ? '#FEF3C7' : '#EFF6FF',
-                    color: scope === 'PROJECT' ? '#92400E' : '#1D4ED8',
-                    border: scope === 'PROJECT' ? '1px solid #FDE68A' : '1px solid #DBEAFE',
+                    borderRadius: 'var(--ez-radius-pill)',
+                    background: scope === 'PROJECT' ? 'var(--ez-hue-amber-bg-deep)' : 'var(--ez-hue-blue-bg)',
+                    color: scope === 'PROJECT' ? 'var(--ez-hue-amber-text-dark)' : 'var(--ez-color-primary-hover)',
+                    border: scope === 'PROJECT' ? '1px solid var(--ez-hue-amber-border)' : '1px solid var(--ez-hue-blue-bg-deep)',
                   }}
                 >
                   {scope === 'PROJECT' ? 'Scope: Khusus Proyek' : 'Scope: Global Workspace'}
                 </span>
               </div>
-              <p style={{ fontSize: '12.5px', color: '#64748B', margin: '3px 0 0' }}>
+              <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: '3px 0 0' }}>
                 {scope === 'PROJECT'
                   ? `Mengonfigurasi parameter proyek "${activeProject?.name || 'Proyek Aktif'}". Nilai ini meng-override pengaturan global.`
                   : 'Kelola preferensi akun, profil kantor perusahaan, standar estimasi, dan kebijakan sistem EZRAB.'}
@@ -626,7 +659,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 height: '38px',
                 padding: '0 20px',
                 borderRadius: '9px',
-                background: '#2563EB',
+                background: 'var(--ez-color-primary)',
                 color: '#FFFFFF',
                 border: 'none',
                 fontSize: '13px',
@@ -640,15 +673,15 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               }}
             >
               <Save size={15} />
-              <span>Simpan Perubahan</span>
+              <span>{t('common.simpan')}</span>
             </button>
           </div>
         </div>
 
         {/* Scope Switcher Bar & Live Search */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', borderTop: '1px solid #F1F5F9', paddingTop: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', borderTop: '1px solid var(--ez-color-surface-tertiary)', paddingTop: '12px' }}>
           {/* Level Switcher (Level 1/2 vs Level 3) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#F1F5F9', padding: '3px', borderRadius: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--ez-color-surface-tertiary)', padding: '3px', borderRadius: '10px' }}>
             <button
               onClick={() => {
                 setScope('GLOBAL');
@@ -661,8 +694,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 fontWeight: 700,
                 cursor: 'pointer',
                 border: 'none',
-                background: scope === 'GLOBAL' ? '#FFFFFF' : 'transparent',
-                color: scope === 'GLOBAL' ? '#2563EB' : '#64748B',
+                background: scope === 'GLOBAL' ? 'var(--ez-color-surface)' : 'transparent',
+                color: scope === 'GLOBAL' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                 boxShadow: scope === 'GLOBAL' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
                 display: 'flex',
                 alignItems: 'center',
@@ -686,8 +719,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 fontWeight: 700,
                 cursor: 'pointer',
                 border: 'none',
-                background: scope === 'PROJECT' ? '#FFFFFF' : 'transparent',
-                color: scope === 'PROJECT' ? '#2563EB' : '#64748B',
+                background: scope === 'PROJECT' ? 'var(--ez-color-surface)' : 'transparent',
+                color: scope === 'PROJECT' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                 boxShadow: scope === 'PROJECT' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
                 display: 'flex',
                 alignItems: 'center',
@@ -703,7 +736,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {/* Project Selector (Visible in Project Scope) */}
           {scope === 'PROJECT' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B' }}>Pilih Proyek:</span>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Pilih Proyek:</span>
               <select
                 value={selectedProjectId}
                 onChange={(e) => {
@@ -712,10 +745,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 }}
                 style={{
                   height: '34px',
-                  borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
-                  background: '#FFFFFF',
-                  color: '#0F172A',
+                  borderRadius: '10px',
+                  border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)',
                   fontSize: '12.5px',
                   fontWeight: 700,
                   padding: '0 10px',
@@ -735,10 +766,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 style={{
                   height: '34px',
                   padding: '0 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #DBEAFE',
-                  background: '#EFF6FF',
-                  color: '#1D4ED8',
+                  borderRadius: '10px',
+                  border: '1px solid var(--ez-hue-blue-bg-deep)',
+                  background: 'var(--ez-hue-blue-bg)',
+                  color: 'var(--ez-color-primary-hover)',
                   fontSize: '12px',
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -765,11 +796,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 width: '100%',
                 height: '34px',
                 padding: '0 10px 0 32px',
-                borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                borderRadius: '10px',
+                border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)',
                 fontSize: '12px',
                 outline: 'none',
-                background: '#FFFFFF',
                 boxSizing: 'border-box',
               }}
             />
@@ -792,15 +822,15 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   width: '340px',
                   maxHeight: '360px',
                   overflowY: 'auto',
-                  background: '#FFFFFF',
-                  borderRadius: '12px',
-                  border: '1px solid #E2E8F0',
+                  background: 'var(--ez-color-surface)',
+                  borderRadius: '16px',
+                  border: '1px solid #EEF1F6',
                   boxShadow: '0 10px 25px rgba(15,23,42,0.12)',
                   zIndex: 50,
                   padding: '6px',
                 }}
               >
-                <div style={{ padding: '6px 10px', fontSize: '11px', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
+                <div style={{ padding: '6px 10px', fontSize: '11px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
                   Hasil Pencarian ({searchResults.length})
                 </div>
                 {searchResults.map((item) => (
@@ -815,7 +845,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       width: '100%',
                       textAlign: 'left',
                       padding: '8px 10px',
-                      borderRadius: '8px',
+                      borderRadius: '10px',
                       border: 'none',
                       background: 'transparent',
                       cursor: 'pointer',
@@ -823,16 +853,16 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       flexDirection: 'column',
                       gap: '2px',
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>{item.title}</span>
-                      <span style={{ fontSize: '10px', fontWeight: 800, color: '#2563EB', background: '#EFF6FF', padding: '1px 5px', borderRadius: '4px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{item.title}</span>
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-primary)', background: 'var(--ez-hue-blue-bg)', padding: '1px 5px', borderRadius: '4px' }}>
                         {item.categoryLabel}
                       </span>
                     </div>
-                    <span style={{ fontSize: '11px', color: '#64748B' }}>{item.description}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>{item.description}</span>
                   </button>
                 ))}
               </div>
@@ -849,18 +879,18 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
         {/* Left Sidebar Navigation */}
         <div
           style={{
-            background: '#FFFFFF',
-            borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            background: 'var(--ez-color-surface)',
+            borderRadius: '20px',
+            border: '1px solid #EEF1F6',
             padding: '14px 10px',
             display: 'flex',
             flexDirection: 'column',
             gap: '14px',
-            boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           }}
         >
           {scope === 'GLOBAL' ? (
-            globalNavGroups.map((group) => (
+            visibleGlobalNavGroups.map((group) => (
               <div key={group.group} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', padding: '4px 10px', letterSpacing: '0.04em' }}>
                   {group.group}
@@ -880,8 +910,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                         padding: '0 12px',
                         borderRadius: '9px',
                         border: 'none',
-                        background: isActive ? '#EFF6FF' : 'transparent',
-                        color: isActive ? '#2563EB' : '#475569',
+                        background: isActive ? 'var(--ez-hue-blue-bg)' : 'transparent',
+                        color: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                         fontSize: '12.5px',
                         fontWeight: isActive ? 700 : 500,
                         cursor: 'pointer',
@@ -890,7 +920,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                         width: '100%',
                       }}
                       onMouseEnter={(e) => {
-                        if (!isActive) e.currentTarget.style.background = '#F8FAFC';
+                        if (!isActive) e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
                       }}
                       onMouseLeave={(e) => {
                         if (!isActive) e.currentTarget.style.background = 'transparent';
@@ -923,8 +953,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       padding: '0 12px',
                       borderRadius: '9px',
                       border: 'none',
-                      background: isActive ? '#FEF3C7' : 'transparent',
-                      color: isActive ? '#92400E' : '#475569',
+                      background: isActive ? 'var(--ez-hue-amber-bg-deep)' : 'transparent',
+                      color: isActive ? 'var(--ez-hue-amber-text-dark)' : 'var(--ez-color-text-slate)',
                       fontSize: '12.5px',
                       fontWeight: isActive ? 700 : 500,
                       cursor: 'pointer',
@@ -933,7 +963,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       width: '100%',
                     }}
                     onMouseEnter={(e) => {
-                      if (!isActive) e.currentTarget.style.background = '#F8FAFC';
+                      if (!isActive) e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
                     }}
                     onMouseLeave={(e) => {
                       if (!isActive) e.currentTarget.style.background = 'transparent';
@@ -951,11 +981,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
         {/* Right Content Panel */}
         <div
           style={{
-            background: '#FFFFFF',
-            borderRadius: '16px',
-            border: '1px solid #E2E8F0',
+            background: 'var(--ez-color-surface)',
+            borderRadius: '20px',
+            border: '1px solid #EEF1F6',
             padding: '24px 28px',
-            boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
             minHeight: '620px',
           }}
         >
@@ -965,22 +995,22 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'profile' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
-                  Profil Pengguna
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
+                  {t('settings.profil_judul')}
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
-                  Kelola informasi identitas pribadi, foto akun, dan detail kontak Anda.
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
+                  {t('settings.profil_desc')}
                 </p>
               </div>
 
               {/* Avatar Row */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: 'var(--ez-color-surface-secondary)', borderRadius: '16px', border: '1px solid #EEF1F6' }}>
                 <div
                   style={{
                     width: '60px',
                     height: '60px',
                     borderRadius: '50%',
-                    background: '#2563EB',
+                    background: 'var(--ez-color-primary)',
                     color: '#FFFFFF',
                     display: 'flex',
                     alignItems: 'center',
@@ -992,52 +1022,130 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   {profileName.charAt(0)}
                 </div>
                 <div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>{profileName}</div>
-                  <div style={{ fontSize: '12px', color: '#64748B' }}>{profileTitle}</div>
-                  <div style={{ marginTop: '6px' }}>{renderRoleBadge(currentUser.role)}</div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{profileName}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>{profileTitle}</div>
+                  <div style={{ marginTop: '6px', fontFamily: 'inherit' }}>{renderRoleBadge(currentUser.role)}</div>
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Nama Lengkap & Gelar</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.nama_lengkap')}</label>
                   <input
                     type="text"
                     value={profileName}
                     onChange={(e) => setProfileName(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Email Akun</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.email_akun')}</label>
                   <input
                     type="email"
                     value={profileEmail}
                     onChange={(e) => setProfileEmail(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Nomor Telepon / WhatsApp</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nomor Telepon / WhatsApp</label>
                   <input
                     type="text"
                     value={profilePhone}
                     onChange={(e) => setProfilePhone(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Jabatan / Spesialisasi</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Jabatan / Spesialisasi</label>
                   <input
                     type="text"
                     value={profileTitle}
                     onChange={(e) => setProfileTitle(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
+              </div>
+
+              {/* ============ ROLE AKTIF (sesi login per role) ============ */}
+              <div style={{ padding: '16px', background: 'var(--ez-color-surface-faint)', borderRadius: '16px', border: '1px solid var(--ez-color-border-soft)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <ShieldCheck size={16} color="var(--ez-hue-violet-text)" />
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>{t('settings.role_aktif')}</span>
+                </div>
+                {activeRole ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{activeRole.name}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>{activeRole.title} · {t('auth.mode_demo')}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={logoutRole}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        height: '34px', padding: '0 14px', borderRadius: '10px',
+                        border: '1px solid var(--ez-hue-rose-border)', background: 'var(--ez-color-surface)', color: 'var(--ez-hue-rose-text)',
+                        fontSize: '12.5px', fontWeight: 700, cursor: 'pointer',
+                      }}
+                    >
+                      <LogOut size={14} />
+                      {t('settings.keluar_role')}
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)' }}>{t('settings.tidak_ada_role')}</div>
+                )}
+              </div>
+
+              {/* ============ INFORMASI SISTEM ============ */}
+              <div style={{ padding: '16px', background: 'var(--ez-color-surface-secondary)', borderRadius: '16px', border: '1px solid #EEF1F6' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <Info size={16} color="var(--ez-hue-blue-text)" />
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>{t('settings.sistem_judul')}</span>
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '0 0 10px' }}>{t('settings.sistem_desc')}</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                  <div style={{ background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>{t('settings.versi_aplikasi')}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>v{APP_VERSION}</div>
+                  </div>
+                  <div style={{ background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>{t('settings.versi_build')}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>{APP_BUILD}</div>
+                  </div>
+                  <div style={{ background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: '10px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>{t('common.bahasa')}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
+                      {LANG_OPTIONS.find((o) => o.id === lang)?.nativeName ?? 'Indonesia'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ============ ULANGI TUTORIAL ============ */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '16px', background: 'var(--ez-hue-blue-bg)', borderRadius: '16px', border: '1px solid var(--ez-hue-blue-border)', flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>{t('settings.ulangi_tutorial')}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>{t('settings.ulangi_tutorial_desc')}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent(ONBOARDING_OPEN_EVENT))}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    height: '38px', padding: '0 18px', borderRadius: '9px',
+                    background: 'var(--ez-color-primary)', color: '#FFFFFF', border: 'none',
+                    fontSize: '13px', fontWeight: 700, cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(37,99,235,0.25)',
+                  }}
+                >
+                  <Play size={15} />
+                  {t('settings.ulangi_tutorial')}
+                </button>
               </div>
             </div>
           )}
@@ -1048,33 +1156,40 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'preferences' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
-                  Preferensi & Bahasa Tampilan
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
+                  {t('settings.preferensi_judul')}
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
-                  Sesuaikan bahasa antarmuka, format tanggal, dan preferensi tampilan EZRAB.
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
+                  {t('settings.preferensi_desc')}
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Bahasa Sistem (Language)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pilih_bahasa')}</label>
                   <select
                     value={lang}
-                    onChange={(e) => setLang(e.target.value as 'id' | 'en')}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    onChange={(e) => {
+                      setLang(e.target.value as Lang);
+                      setToastMessage(t('settings.tersimpan'));
+                      setSavedToast(true);
+                    }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
-                    <option value="id">Bahasa Indonesia (Standar Konstruksi Indonesia)</option>
-                    <option value="en">English (US)</option>
+                    {LANG_OPTIONS.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.nativeName}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Format Tanggal</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Format Tanggal</label>
                   <select
                     value={dateFormat}
                     onChange={(e) => setDateFormat(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
                     <option value="DD/MM/YYYY">DD/MM/YYYY (Contoh: 27/09/2026)</option>
                     <option value="YYYY-MM-DD">YYYY-MM-DD (Standar ISO)</option>
@@ -1082,11 +1197,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Mata Uang Default</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Mata Uang Default</label>
                   <select
                     value={systemCurrency}
                     onChange={(e) => setSystemCurrency(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
                     <option value="IDR">Rupiah Indonesia (IDR - Rp)</option>
                     <option value="USD">US Dollar (USD - $)</option>
@@ -1094,11 +1209,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Tema Tampilan (Theme)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tema Tampilan (Theme)</label>
                   <select
-                    value={theme}
-                    onChange={(e) => setTheme(e.target.value as 'light' | 'dark' | 'system')}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+value={systemTheme}
+                    onChange={(e) => setSystemTheme(e.target.value as any)}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
                     <option value="light">Light Clean Mode (Standar Kontras Tinggi)</option>
                     <option value="dark">Dark Mode</option>
@@ -1115,10 +1230,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'notifications' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Preferensi Notifikasi
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Pilih pemberitahuan aktivitas yang ingin Anda terima di aplikasi.
                 </p>
               </div>
@@ -1137,8 +1252,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     style={{
                       padding: '14px 16px',
                       borderRadius: '10px',
-                      background: '#F8FAFC',
-                      border: '1px solid #E2E8F0',
+                      background: 'var(--ez-color-surface-secondary)',
+                      border: '1px solid #EEF1F6',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -1146,8 +1261,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>{item.label}</div>
-                      <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '2px' }}>{item.desc}</div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{item.label}</div>
+                      <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>{item.desc}</div>
                     </div>
                     <input
                       type="checkbox"
@@ -1167,51 +1282,51 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'security' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Keamanan & Kata Sandi
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Perbarui kata sandi akun dan amankan sesi login Anda.
                 </p>
               </div>
 
               <div style={{ maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Kata Sandi Saat Ini</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Kata Sandi Saat Ini</label>
                   <input
                     type="password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="••••••••"
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Kata Sandi Baru</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Kata Sandi Baru</label>
                   <input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Minimal 8 karakter"
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Konfirmasi Kata Sandi Baru</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Konfirmasi Kata Sandi Baru</label>
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Ulangi kata sandi baru"
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
-                <div style={{ padding: '12px 14px', background: '#EFF6FF', borderRadius: '8px', border: '1px solid #DBEAFE', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <ShieldCheck size={18} color="#2563EB" />
-                  <span style={{ fontSize: '12px', color: '#1E40AF', fontWeight: 500 }}>
+                <div style={{ padding: '12px 14px', background: 'var(--ez-hue-blue-bg)', borderRadius: '16px', border: '1px solid var(--ez-hue-blue-bg-deep)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <ShieldCheck size={18} color="var(--ez-hue-blue-text)" />
+                  <span style={{ fontSize: '12px', color: 'var(--ez-hue-blue-text-deep)', fontWeight: 500 }}>
                     Autentikasi dua faktor (2FA) aktif untuk akun Super Admin ini.
                   </span>
                 </div>
@@ -1225,82 +1340,82 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'company' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Profil Perusahaan & Legalitas Kantor
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Informasi resmi perusahaan yang digunakan pada kop surat, dokumen lelang, dan tanda tangan resmi.
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Nama Resmi Perusahaan / Kantor</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nama Resmi Perusahaan / Kantor</label>
                   <input
                     type="text"
                     value={workspaceName}
                     onChange={(e) => setWorkspaceName(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Nomor NPWP Badan Usaha</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nomor NPWP Badan Usaha</label>
                   <input
                     type="text"
                     value={companyNpwp}
                     onChange={(e) => setCompanyNpwp(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Nama Direktur Utama / Penanggung Jawab</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nama Direktur Utama / Penanggung Jawab</label>
                   <input
                     type="text"
                     value={companyDirector}
                     onChange={(e) => setCompanyDirector(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Lead Estimator / Kepala Proyek</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Lead Estimator / Kepala Proyek</label>
                   <input
                     type="text"
                     value={companyLeadEstimator}
                     onChange={(e) => setCompanyLeadEstimator(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Nomor Telepon Kantor</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nomor Telepon Kantor</label>
                   <input
                     type="text"
                     value={companyPhone}
                     onChange={(e) => setCompanyPhone(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Email Korespondensi Resmi</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Email Korespondensi Resmi</label>
                   <input
                     type="email"
                     value={companyEmail}
                     onChange={(e) => setCompanyEmail(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Alamat Kantor Pusat</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Alamat Kantor Pusat</label>
                   <textarea
                     rows={2}
                     value={companyAddress}
                     onChange={(e) => setCompanyAddress(e.target.value)}
-                    style={{ width: '100%', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '8px 12px', marginTop: '6px', fontFamily: 'inherit' }}
+                    style={{ width: '100%', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '8px 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
               </div>
@@ -1314,10 +1429,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                     Tim & Anggota Workspace
                   </h3>
-                  <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                  <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                     Kelola anggota yang memiliki akses ke workspace dan proyek perusahaan Anda.
                   </p>
                 </div>
@@ -1327,8 +1442,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   style={{
                     height: '36px',
                     padding: '0 16px',
-                    borderRadius: '8px',
-                    background: '#2563EB',
+                    borderRadius: '10px',
+                    background: 'var(--ez-color-primary)',
                     color: '#FFFFFF',
                     border: 'none',
                     fontSize: '12.5px',
@@ -1346,10 +1461,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               </div>
 
               {/* User Table */}
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ border: '1px solid #EEF1F6', borderRadius: '16px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
                   <thead>
-                    <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)', fontWeight: 700 }}>
                       <th style={{ padding: '12px 16px' }}>Nama</th>
                       <th style={{ padding: '12px 16px' }}>Email</th>
                       <th style={{ padding: '12px 16px' }}>Role</th>
@@ -1363,19 +1478,19 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       <tr
                         key={user.id}
                         style={{
-                          borderBottom: idx < usersList.length - 1 ? '1px solid #F1F5F9' : 'none',
-                          background: '#FFFFFF',
+                          borderBottom: idx < usersList.length - 1 ? '1px solid var(--ez-color-surface-tertiary)' : 'none',
+                          background: 'var(--ez-color-surface)',
                         }}
                       >
-                        <td style={{ padding: '12px 16px', fontWeight: 650, color: '#0F172A' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <div
                               style={{
                                 width: '28px',
                                 height: '28px',
                                 borderRadius: '50%',
-                                background: '#EFF6FF',
-                                color: '#2563EB',
+                                background: 'var(--ez-hue-blue-bg)',
+                                color: 'var(--ez-color-primary)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -1387,11 +1502,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                             </div>
                             <div>
                               <div>{user.name}</div>
-                              <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 400 }}>{user.title || '-'}</div>
+                              <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 400 }}>{user.title || '-'}</div>
                             </div>
                           </div>
                         </td>
-                        <td style={{ padding: '12px 16px', color: '#475569' }}>{user.email}</td>
+                        <td style={{ padding: '12px 16px', color: 'var(--ez-color-text-slate)' }}>{user.email}</td>
                         <td style={{ padding: '12px 16px' }}>{renderRoleBadge(user.role)}</td>
                         <td style={{ padding: '12px 16px' }}>
                           <span
@@ -1399,24 +1514,22 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                               fontSize: '11px',
                               fontWeight: 700,
                               padding: '2px 7px',
-                              borderRadius: '999px',
-                              background: user.status === 'ACTIVE' ? '#F0FDF4' : '#FFFBEB',
-                              color: user.status === 'ACTIVE' ? '#166534' : '#B45309',
+                              borderRadius: 'var(--ez-radius-pill)',
+                              background: user.status === 'ACTIVE' ? 'var(--ez-hue-green-bg)' : 'var(--ez-hue-amber-bg)',
+                              color: user.status === 'ACTIVE' ? 'var(--ez-hue-green-text-deep)' : 'var(--ez-hue-amber-text)',
                             }}
                           >
                             {user.status === 'ACTIVE' ? 'Active' : 'Invited'}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 16px', color: '#64748B' }}>{user.company || 'Internal Workspace'}</td>
+                        <td style={{ padding: '12px 16px', color: 'var(--ez-color-text-muted)' }}>{user.company || 'Internal Workspace'}</td>
                         <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                           <button
                             onClick={() => alert(`Detail Pengguna: ${user.name} (${user.role})`)}
                             style={{
                               padding: '4px 10px',
-                              borderRadius: '6px',
-                              border: '1px solid #CBD5E1',
-                              background: '#FFFFFF',
-                              color: '#334155',
+                              borderRadius: '10px',
+                              border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-body)',
                               fontSize: '11.5px',
                               fontWeight: 600,
                               cursor: 'pointer',
@@ -1439,18 +1552,18 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'roles' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Matriks Hak Akses (Role-Based Access Control)
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Standar wewenang setiap peran dalam mengelola proyek, harga, dan persetujuan RAB.
                 </p>
               </div>
 
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ border: '1px solid #EEF1F6', borderRadius: '16px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                   <thead>
-                    <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)', fontWeight: 700 }}>
                       <th style={{ padding: '12px 16px' }}>Wewenang / Fitur</th>
                       <th style={{ padding: '12px 14px', textAlign: 'center' }}>Super Admin</th>
                       <th style={{ padding: '12px 14px', textAlign: 'center' }}>Estimator</th>
@@ -1467,12 +1580,12 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                       { feat: 'Kelola Master Data & Standar AHSP', sa: true, est: true, dir: false, cli: false },
                       { feat: 'Kelola Anggota & Billing Workspace', sa: true, est: false, dir: false, cli: false },
                     ].map((row, idx) => (
-                      <tr key={row.feat} style={{ borderBottom: idx < 5 ? '1px solid #F1F5F9' : 'none', background: '#FFFFFF' }}>
-                        <td style={{ padding: '12px 16px', fontWeight: 600, color: '#0F172A' }}>{row.feat}</td>
-                        <td style={{ padding: '12px 14px', textAlign: 'center' }}>{row.sa ? <Check size={16} color="#059669" style={{ margin: '0 auto' }} /> : <X size={16} color="#94A3B8" style={{ margin: '0 auto' }} />}</td>
-                        <td style={{ padding: '12px 14px', textAlign: 'center' }}>{row.est ? <Check size={16} color="#059669" style={{ margin: '0 auto' }} /> : <X size={16} color="#94A3B8" style={{ margin: '0 auto' }} />}</td>
-                        <td style={{ padding: '12px 14px', textAlign: 'center' }}>{row.dir ? <Check size={16} color="#059669" style={{ margin: '0 auto' }} /> : <X size={16} color="#94A3B8" style={{ margin: '0 auto' }} />}</td>
-                        <td style={{ padding: '12px 14px', textAlign: 'center' }}>{row.cli ? <Check size={16} color="#059669" style={{ margin: '0 auto' }} /> : <X size={16} color="#94A3B8" style={{ margin: '0 auto' }} />}</td>
+                      <tr key={row.feat} style={{ borderBottom: idx < 5 ? '1px solid var(--ez-color-surface-tertiary)' : 'none', background: 'var(--ez-color-surface)' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>{row.feat}</td>
+                        <td style={{ padding: '12px 14px', textAlign: 'center' }}>{row.sa ? <Check size={16} color="var(--ez-hue-green-text)" style={{ margin: '0 auto' }} /> : <X size={16} color="#94A3B8" style={{ margin: '0 auto' }} />}</td>
+                        <td style={{ padding: '12px 14px', textAlign: 'center' }}>{row.est ? <Check size={16} color="var(--ez-hue-green-text)" style={{ margin: '0 auto' }} /> : <X size={16} color="#94A3B8" style={{ margin: '0 auto' }} />}</td>
+                        <td style={{ padding: '12px 14px', textAlign: 'center' }}>{row.dir ? <Check size={16} color="var(--ez-hue-green-text)" style={{ margin: '0 auto' }} /> : <X size={16} color="#94A3B8" style={{ margin: '0 auto' }} />}</td>
+                        <td style={{ padding: '12px 14px', textAlign: 'center' }}>{row.cli ? <Check size={16} color="var(--ez-hue-green-text)" style={{ margin: '0 auto' }} /> : <X size={16} color="#94A3B8" style={{ margin: '0 auto' }} />}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1487,28 +1600,28 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'subscription' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Paket Langganan & Billing Workspace
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Informasi lisensi aktif, kuota penyimpanan, dan kuota proyek.
                 </p>
               </div>
 
-              <div style={{ padding: '20px', borderRadius: '14px', background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)', border: '1px solid #BFDBFE' }}>
+              <div style={{ padding: '20px', borderRadius: '14px', background: 'linear-gradient(135deg, var(--ez-hue-blue-bg) 0%, var(--ez-hue-blue-bg-deep) 100%)', border: '1px solid var(--ez-hue-blue-border)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-color-primary-hover)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                       Paket Aktif Saat Ini
                     </span>
-                    <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#0F172A', margin: '4px 0 0' }}>
+                    <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--ez-color-text-primary)', margin: '4px 0 0' }}>
                       Professional Estimator & Enterprise
                     </h2>
-                    <p style={{ fontSize: '12.5px', color: '#334155', margin: '4px 0 0' }}>
+                    <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-body)', margin: '4px 0 0' }}>
                       Masa aktif sampai 31 Desember 2026 • Unlimited Proyek & Export PDF/Excel
                     </p>
                   </div>
-                  <div style={{ padding: '8px 16px', background: '#2563EB', color: '#FFFFFF', borderRadius: '8px', fontSize: '12.5px', fontWeight: 700 }}>
+                  <div style={{ padding: '8px 16px', background: 'var(--ez-color-primary)', color: '#FFFFFF', borderRadius: '10px', fontSize: '12.5px', fontWeight: 700 }}>
                     Status: Aktif Terverifikasi
                   </div>
                 </div>
@@ -1522,21 +1635,21 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'master-data' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Standar Master Data & Regulasi AHSP
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Pengaturan standar acuan analisa harga satuan pekerjaan dan basis data harga nasional.
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Regulasi Standar AHSP Default</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Regulasi Standar AHSP Default</label>
                   <select
                     value={defaultAhspSource}
                     onChange={(e) => setDefaultAhspSource(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
                     <option value="pupr-2026">Permen PUPR No. 28/PRT/M/2026 (Terbaru)</option>
                     <option value="pupr-2022">Permen PUPR No. 1/PRT/M/2022</option>
@@ -1545,11 +1658,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Wilayah Indeks Harga Acuan</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Wilayah Indeks Harga Acuan</label>
                   <select
                     value={defaultRegion}
                     onChange={(e) => setDefaultRegion(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
                     <option value="DKI Jakarta (Indeks 1.00)">DKI Jakarta (Indeks 1.00)</option>
                     <option value="Jawa Barat / Bandung (Indeks 0.95)">Jawa Barat / Bandung (Indeks 0.95)</option>
@@ -1561,7 +1674,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
               {/* Direct links to master tables */}
               <div style={{ marginTop: '10px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '8px' }}>
                   Akses Cepat Tabel Database Master:
                 </span>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
@@ -1579,8 +1692,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                         style={{
                           padding: '12px',
                           borderRadius: '10px',
-                          border: '1px solid #E2E8F0',
-                          background: '#F8FAFC',
+                          border: '1px solid #EEF1F6',
+                          background: 'var(--ez-color-surface-secondary)',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '10px',
@@ -1588,11 +1701,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                           textAlign: 'left',
                           transition: 'all 0.15s ease',
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = '#EFF6FF')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = '#F8FAFC')}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-hue-blue-bg)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
                       >
-                        <Icon size={18} color="#2563EB" />
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A' }}>{card.label}</span>
+                        <Icon size={18} color="var(--ez-hue-blue-text)" />
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{card.label}</span>
                       </button>
                     );
                   })}
@@ -1607,17 +1720,17 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'estimator' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Standar Estimator & Parameter RAB (Default Workspace)
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Nilai acuan persentase margin overhead, tarif pajak PPN, dan pembulatan saat membuat proyek baru.
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Overhead Standar (%)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Overhead Standar (%)</label>
                   <input
                     type="number"
                     min={0}
@@ -1625,13 +1738,13 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     step={0.5}
                     value={defaultOverhead}
                     onChange={(e) => setDefaultOverhead(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                   <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Rekomendasi PU: 5% - 15%</span>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Profit Kontraktor Pelaksana (%)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Profit Kontraktor Pelaksana (%)</label>
                   <input
                     type="number"
                     min={0}
@@ -1639,30 +1752,30 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     step={0.5}
                     value={defaultProfit}
                     onChange={(e) => setDefaultProfit(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                   <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Margin keuntungan standar proyek</span>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Tarif Pajak PPN Standar (%)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tarif Pajak PPN Standar (%)</label>
                   <input
                     type="number"
                     min={0}
                     max={25}
                     value={defaultPpn}
                     onChange={(e) => setDefaultPpn(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                   <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Tarif PPN UU HPP saat ini (11% / 12%)</span>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Skema Pembulatan Nilai Total</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Skema Pembulatan Nilai Total</label>
                   <select
                     value={defaultRounding}
                     onChange={(e) => setDefaultRounding(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
                     <option value="RIBUAN">Pembulatan ke Ribuan Terdekat (Rp 1.000)</option>
                     <option value="RATUSAN">Pembulatan ke Ratusan Terdekat (Rp 100)</option>
@@ -1679,32 +1792,32 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'ded-volume' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Presisi Kalkulasi DED & Waste Factor Material
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Konfigurasi desimal volume, faktor susut/kehilangan material konstruksi.
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Faktor Susut Besi Tulangan (Waste %)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Faktor Susut Besi Tulangan (Waste %)</label>
                   <input
                     type="number"
                     value={defaultWaste}
                     onChange={(e) => setDefaultWaste(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                   <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Standar overlap & potongan: 5%</span>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Presisi Desimal Hasil Volume (m³ / m²)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Presisi Desimal Hasil Volume (m³ / m²)</label>
                   <select
                     value={2}
                     disabled
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#F8FAFC' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface-secondary)' }}
                   >
                     <option value={2}>2 Angka di Belakang Koma (0.00)</option>
                   </select>
@@ -1719,21 +1832,21 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'documents' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Standar Dokumen & Parameter Ekspor PDF / Excel
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Format kertas, orientasi cetak, kop branding, dan format penomoran berkas tender.
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Ukuran Kertas Ekspor Dokumen</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Ukuran Kertas Ekspor Dokumen</label>
                   <select
                     value={pdfPaperSize}
                     onChange={(e) => setPdfPaperSize(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
                     <option value="A4">A4 (210 x 297 mm) - Standar Umum</option>
                     <option value="F4">F4 / Folio (215 x 330 mm) - Standar PUPR</option>
@@ -1741,11 +1854,11 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Orientasi Cetak Halaman</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Orientasi Cetak Halaman</label>
                   <select
                     value={pdfOrientation}
                     onChange={(e) => setPdfOrientation(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
                     <option value="landscape">Landscape (Lebar - Rekomendasi RAB & BOQ)</option>
                     <option value="portrait">Portrait (Tegak - Surat Penawaran)</option>
@@ -1753,12 +1866,12 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Prefix Penomoran Dokumen</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Prefix Penomoran Dokumen</label>
                   <input
                     type="text"
                     value={docPrefix}
                     onChange={(e) => setDocPrefix(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                   <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Format nomor: {docPrefix}/PROYEK/2026</span>
                 </div>
@@ -1772,21 +1885,21 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'schedule' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Standar Kalender Kerja & Kurva-S
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Konfigurasi jumlah hari kerja dan toleransi deviasi jadwal pelaksanaan.
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Jumlah Hari Kerja Per Minggu</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Jumlah Hari Kerja Per Minggu</label>
                   <select
                     value={defaultWorkingDays}
                     onChange={(e) => setDefaultWorkingDays(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
                     <option value={6}>6 Hari Kerja (Senin - Sabtu) - Standar Lapangan</option>
                     <option value={5}>5 Hari Kerja (Senin - Jumat)</option>
@@ -1795,12 +1908,12 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Jam Kerja Efektif Per Hari (OH)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Jam Kerja Efektif Per Hari (OH)</label>
                   <input
                     type="number"
                     value={workingHoursPerDay}
                     onChange={(e) => setWorkingHoursPerDay(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                   <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Standar PUPR: 7 Jam/Hari Kerja</span>
                 </div>
@@ -1814,21 +1927,21 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'cost' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Standar Cost Code & Pengendalian Biaya
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Struktur kode akun pengeluaran proyek (Direct Material, Labor, Equipment, Subkontraktor).
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Skema Kode Akun Biaya (Cost Code)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Skema Kode Akun Biaya (Cost Code)</label>
                   <select
                     value={costCodeFormat}
                     onChange={(e) => setCostCodeFormat(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
                     <option value="WBS_STANDARD">WBS Hierarkis (1.1, 1.2, 1.3)</option>
                     <option value="CSI_MASTERFORMAT">CSI MasterFormat (Divisi 01 - 33)</option>
@@ -1845,45 +1958,45 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'integrations' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Integrasi Eksternal & Sinkronisasi
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Koneksi live spreadsheet, penyimpanan cloud, dan ekspor data otomatis.
                 </p>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {/* 1. Live Spreadsheet Sync */}
-                <div style={{ padding: '16px', borderRadius: '12px', background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--ez-color-surface-secondary)', border: '1px solid #EEF1F6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <FileSpreadsheet size={24} color="#059669" />
+                    <FileSpreadsheet size={24} color="var(--ez-hue-green-text)" />
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>Live Spreadsheet Sync (4 Sheets Engine)</div>
-                      <div style={{ fontSize: '11.5px', color: '#64748B' }}>Sinkronisasi real-time dua arah antara tabel aplikasi dengan format spreadsheet</div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Live Spreadsheet Sync (4 Sheets Engine)</div>
+                      <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>Sinkronisasi real-time dua arah antara tabel aplikasi dengan format spreadsheet</div>
                     </div>
                   </div>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', background: '#ECFDF5', padding: '3px 8px', borderRadius: '6px', border: '1px solid #A7F3D0' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-hue-green-text)', background: 'var(--ez-pastel-mint)', padding: '3px 10px', borderRadius: 'var(--ez-radius-pill)' }}>
                     Tersambung (Active)
                   </span>
                 </div>
 
                 {/* 2. EZRAB AI Engine Audit & Status */}
-                <div style={{ padding: '20px', borderRadius: '14px', background: '#FFFFFF', border: '1.5px solid #DBEAFE', boxShadow: '0 2px 8px rgba(37,99,235,0.04)' }}>
+                <div style={{ padding: '20px', borderRadius: '14px', background: 'var(--ez-color-surface)', border: '1.5px solid var(--ez-hue-blue-bg-deep)', boxShadow: '0 2px 8px rgba(37,99,235,0.04)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB', border: '1px solid #BFDBFE' }}>
+                      <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)', border: '1px solid var(--ez-hue-blue-border)' }}>
                         <Bot size={22} />
                       </div>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '14.5px', fontWeight: 800, color: '#0F172A' }}>Audit EZRAB AI Engine</span>
-                          <span style={{ fontSize: '11px', fontWeight: 750, color: '#15803D', background: '#DCFCE7', border: '1px solid #86EFAC', padding: '2px 8px', borderRadius: '999px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>Audit EZRAB AI Engine</span>
+                          <span style={{ fontSize: '11px', fontWeight: 750, color: 'var(--ez-hue-green-text)', background: 'var(--ez-hue-green-bg-deep)', border: '1px solid #86EFAC', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                             <CheckCircle2 size={12} />
                             {aiAuditResult?.connected ? 'Terhubung & Aktif' : 'Memeriksa...'}
                           </span>
                         </div>
-                        <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+                        <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
                           Status klaster kecerdasan buatan, latensi respons, dan audit kepatuhan isolasi sistem AI EZRAB.
                         </div>
                       </div>
@@ -1898,8 +2011,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                         alignItems: 'center',
                         gap: '6px',
                         padding: '8px 16px',
-                        borderRadius: '8px',
-                        background: '#2563EB',
+                        borderRadius: '10px',
+                        background: 'var(--ez-color-primary)',
                         color: '#FFFFFF',
                         border: 'none',
                         fontSize: '12px',
@@ -1916,46 +2029,46 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
                   {/* Audit Metrics Grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginTop: '14px', marginBottom: '16px' }}>
-                    <div style={{ padding: '12px', borderRadius: '10px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                      <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Status Engine Cluster</div>
-                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#059669', marginTop: '4px' }}>
+                    <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--ez-color-surface-secondary)', border: '1px solid #EEF1F6' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Status Engine Cluster</div>
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-hue-green-text)', marginTop: '4px' }}>
                         Aktif & Siap Operasi
                       </div>
                       <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>Server Isolation Guard</div>
                     </div>
 
-                    <div style={{ padding: '12px', borderRadius: '10px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                      <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Asistensi Cepat (Quick)</div>
-                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#2563EB', marginTop: '4px' }}>
+                    <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--ez-color-surface-secondary)', border: '1px solid #EEF1F6' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Asistensi Cepat (Quick)</div>
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-primary)', marginTop: '4px' }}>
                         EZRAB AI 1.3
                       </div>
                       <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>Tanya Jawab & Bantuan Kilat</div>
                     </div>
 
-                    <div style={{ padding: '12px', borderRadius: '10px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                      <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Penalaran Lanjutan (Pro)</div>
-                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#7C3AED', marginTop: '4px' }}>
+                    <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--ez-color-surface-secondary)', border: '1px solid #EEF1F6' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Penalaran Lanjutan (Pro)</div>
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-hue-violet-text)', marginTop: '4px' }}>
                         EZRAB AI Pro
                       </div>
                       <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>DED → RAB & Analisis QTO</div>
                     </div>
 
-                    <div style={{ padding: '12px', borderRadius: '10px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                      <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600 }}>Latensi Respons</div>
-                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', marginTop: '4px' }}>
+                    <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--ez-color-surface-secondary)', border: '1px solid #EEF1F6' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Latensi Respons</div>
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '4px' }}>
                         {aiAuditResult?.latencyMs ? `${aiAuditResult.latencyMs} ms` : '142 ms'}
                       </div>
-                      <div style={{ fontSize: '10.5px', color: '#059669', marginTop: '2px' }}>● Sangat Cepat & Stabil</div>
+                      <div style={{ fontSize: '10.5px', color: 'var(--ez-hue-green-text)', marginTop: '2px' }}>● Sangat Cepat & Stabil</div>
                     </div>
                   </div>
 
                   {/* Audit Rules & Compliance Checklist */}
-                  <div style={{ padding: '14px', borderRadius: '10px', background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 750, color: '#166534', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <ShieldCheck size={16} color="#16A34A" />
+                  <div style={{ padding: '14px', borderRadius: '10px', background: 'var(--ez-hue-green-bg)', border: '1px solid var(--ez-hue-green-border)' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 750, color: 'var(--ez-hue-green-text-deep)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <ShieldCheck size={16} color="var(--ez-hue-green-text-bright)" />
                       <span>Hasil Audit Kepatuhan & Keamanan Peraturan AI EZRAB:</span>
                     </div>
-                    <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '11.5px', color: '#15803D', lineHeight: 1.6 }}>
+                    <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '11.5px', color: 'var(--ez-hue-green-text)', lineHeight: 1.6 }}>
                       <li><strong>Isolasi Server-Side:</strong> Seluruh kredensial dan infrastruktur AI terisolasi di lingkungan server (<em>Server-Side Isolation Guard</em>) tanpa eksposur ke browser client.</li>
                       <li><strong>Abstraksi Penuh:</strong> Komunikasi client ke server menggunakan identitas resmi <em>EZRAB AI 1.3</em>, <em>EZRAB AI Pro</em>, dan <em>EZRAB Vision</em>.</li>
                       <li><strong>Multimodal Terpadu:</strong> Dukungan penuh pengenalan visual gambar teknis, format PDF vektor, dan dokumen pindaian beresolusi tinggi.</li>
@@ -1974,10 +2087,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                     Audit Trail & Riwayat Perubahan Konfigurasi
                   </h3>
-                  <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                  <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                     Jejak log aktivitas pengubahan parameter harga, perpajakan, dan pengaturan sistem.
                   </p>
                 </div>
@@ -1986,10 +2099,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   onClick={() => setAuditLogs(settingsAuditService.getLogs())}
                   style={{
                     padding: '6px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
-                    background: '#FFFFFF',
-                    color: '#334155',
+                    borderRadius: '10px',
+                    border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-body)',
                     fontSize: '12px',
                     fontWeight: 700,
                     cursor: 'pointer',
@@ -2004,10 +2115,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               </div>
 
               {/* Audit Log Table */}
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden' }}>
+              <div style={{ border: '1px solid #EEF1F6', borderRadius: '16px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                   <thead>
-                    <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 700 }}>
+                    <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)', fontWeight: 700 }}>
                       <th style={{ padding: '10px 14px' }}>Waktu</th>
                       <th style={{ padding: '10px 14px' }}>Aktor</th>
                       <th style={{ padding: '10px 14px' }}>Scope</th>
@@ -2018,13 +2129,13 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   </thead>
                   <tbody>
                     {auditLogs.map((log) => (
-                      <tr key={log.id} style={{ borderBottom: '1px solid #F1F5F9', background: '#FFFFFF' }}>
-                        <td style={{ padding: '10px 14px', color: '#64748B', whiteSpace: 'nowrap' }}>
+                      <tr key={log.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)', background: 'var(--ez-color-surface)' }}>
+                        <td style={{ padding: '10px 14px', color: 'var(--ez-color-text-muted)', whiteSpace: 'nowrap' }}>
                           {new Date(log.timestamp).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
                         </td>
-                        <td style={{ padding: '10px 14px', fontWeight: 650, color: '#0F172A' }}>
+                        <td style={{ padding: '10px 14px', fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>
                           <div>{log.actor.name}</div>
-                          <div style={{ fontSize: '10.5px', color: '#64748B' }}>{log.actor.role}</div>
+                          <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>{log.actor.role}</div>
                         </td>
                         <td style={{ padding: '10px 14px' }}>
                           <span
@@ -2033,21 +2144,21 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                               fontWeight: 800,
                               padding: '2px 6px',
                               borderRadius: '4px',
-                              background: log.scope === 'PROJECT' ? '#FEF3C7' : '#EFF6FF',
-                              color: log.scope === 'PROJECT' ? '#92400E' : '#1D4ED8',
+                              background: log.scope === 'PROJECT' ? 'var(--ez-hue-amber-bg-deep)' : 'var(--ez-hue-blue-bg)',
+                              color: log.scope === 'PROJECT' ? 'var(--ez-hue-amber-text-dark)' : 'var(--ez-color-primary-hover)',
                             }}
                           >
                             {log.scope}
                           </span>
                         </td>
                         <td style={{ padding: '10px 14px' }}>
-                          <div style={{ fontWeight: 650, color: '#0F172A' }}>{log.fieldLabel}</div>
+                          <div style={{ fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>{log.fieldLabel}</div>
                           <div style={{ fontSize: '10.5px', color: '#94A3B8' }}>{log.category}</div>
                         </td>
-                        <td style={{ padding: '10px 14px', fontFamily: 'monospace', fontWeight: 700, color: '#059669' }}>
+                        <td style={{ padding: '10px 14px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--ez-hue-green-text)' }}>
                           {typeof log.newValue === 'object' ? JSON.stringify(log.newValue) : String(log.newValue)}
                         </td>
-                        <td style={{ padding: '10px 14px', color: '#475569', fontSize: '11.5px' }}>
+                        <td style={{ padding: '10px 14px', color: 'var(--ez-color-text-slate)', fontSize: '11.5px' }}>
                           {log.reason || '-'}
                         </td>
                       </tr>
@@ -2064,10 +2175,10 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'help' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Pusat Bantuan & Panduan EZRAB
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Dokumentasi alur lifecycle proyek dari Gambar Kerja, DED, Volume QTO, hingga RAB Final.
                 </p>
               </div>
@@ -2078,9 +2189,9 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   { q: 'Bagaimana cara kerja Harga Proyek Override?', a: 'Harga Proyek meng-override harga master database khusus untuk proyek terpilih tanpa mengubah master data acuan nasional.' },
                   { q: 'Apakah model AI dapat diubah oleh pengguna?', a: 'Tidak. Sesuai prinsip arsitektur EZRAB, AI beroperasi secara internal sebagai task router infrastructure terpusat.' },
                 ].map((faq) => (
-                  <div key={faq.q} style={{ padding: '16px', borderRadius: '12px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A' }}>{faq.q}</div>
-                    <div style={{ fontSize: '12.5px', color: '#475569', marginTop: '6px', lineHeight: 1.5 }}>{faq.a}</div>
+                  <div key={faq.q} style={{ padding: '16px', borderRadius: '16px', background: 'var(--ez-color-surface-secondary)', border: '1px solid #EEF1F6' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{faq.q}</div>
+                    <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-slate)', marginTop: '6px', lineHeight: 1.5 }}>{faq.a}</div>
                   </div>
                 ))}
               </div>
@@ -2094,65 +2205,65 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                     Informasi & Metadata Proyek
                   </h3>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#92400E', background: '#FEF3C7', padding: '2px 8px', borderRadius: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-hue-amber-text-dark)', background: 'var(--ez-hue-amber-bg-deep)', padding: '2px 10px', borderRadius: 'var(--ez-radius-pill)' }}>
                     {activeProject?.name || 'Proyek'}
                   </span>
                 </div>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: '4px 0 0' }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: '4px 0 0' }}>
                   Konfigurasi identitas proyek yang ditampilkan pada laporan, kontrak, dan cover dokumen tender.
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Nama Proyek</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nama Proyek</label>
                   <input
                     type="text"
                     value={projName}
                     onChange={(e) => setProjName(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Nomor Kontrak / Registrasi Proyek</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nomor Kontrak / Registrasi Proyek</label>
                   <input
                     type="text"
                     value={projNumber}
                     onChange={(e) => setProjNumber(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Klien / Pemilik Proyek (Owner)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Klien / Pemilik Proyek (Owner)</label>
                   <input
                     type="text"
                     value={projClient}
                     onChange={(e) => setProjClient(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Lokasi / Wilayah Pelaksanaan</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Lokasi / Wilayah Pelaksanaan</label>
                   <input
                     type="text"
                     value={projLocation}
                     onChange={(e) => setProjLocation(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Kategori / Tipe Bangunan</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Kategori / Tipe Bangunan</label>
                   <select
                     value={projBuildingType}
                     onChange={(e) => setProjBuildingType(e.target.value as any)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
                     <option value="Rumah Tinggal">Rumah Tinggal</option>
                     <option value="Gedung Kantor">Gedung Kantor</option>
@@ -2162,12 +2273,12 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Luas Bangunan (m²)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Luas Bangunan (m²)</label>
                   <input
                     type="number"
                     value={projBuildingArea}
                     onChange={(e) => setProjBuildingArea(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
               </div>
@@ -2181,21 +2292,21 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                     Parameter Estimasi & Pajak Proyek
                   </h3>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#92400E', background: '#FEF3C7', padding: '2px 8px', borderRadius: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-hue-amber-text-dark)', background: 'var(--ez-hue-amber-bg-deep)', padding: '2px 10px', borderRadius: 'var(--ez-radius-pill)' }}>
                     {activeProject?.name || 'Proyek'}
                   </span>
                 </div>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: '4px 0 0' }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: '4px 0 0' }}>
                   Atur persentase margin overhead khusus, PPN kontrak, dan pembulatan untuk proyek ini.
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Overhead Proyek (%)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Overhead Proyek (%)</label>
                   <input
                     type="number"
                     min={0}
@@ -2203,12 +2314,12 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     step={0.5}
                     value={projOverhead}
                     onChange={(e) => setProjOverhead(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Profit Proyek (%)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Profit Proyek (%)</label>
                   <input
                     type="number"
                     min={0}
@@ -2216,28 +2327,28 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     step={0.5}
                     value={projProfit}
                     onChange={(e) => setProjProfit(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Tarif Pajak PPN Proyek (%)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tarif Pajak PPN Proyek (%)</label>
                   <input
                     type="number"
                     min={0}
                     max={25}
                     value={projPpn}
                     onChange={(e) => setProjPpn(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Aturan Pembulatan Nilai Akhir</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Aturan Pembulatan Nilai Akhir</label>
                   <select
                     value={projRounding}
                     onChange={(e) => setProjRounding(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
                     <option value="RIBUAN">Pembulatan ke Ribuan Terdekat (Rp 1.000)</option>
                     <option value="RATUSAN">Pembulatan ke Ratusan Terdekat (Rp 100)</option>
@@ -2247,20 +2358,20 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               </div>
 
               {/* Direct Banner to Project Price Overrides */}
-              <div style={{ padding: '16px', borderRadius: '12px', background: '#EFF6FF', border: '1px solid #DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px' }}>
+              <div style={{ padding: '16px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-bg-deep)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Tag size={20} color="#2563EB" />
+                  <Tag size={20} color="var(--ez-hue-blue-text)" />
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#1D4ED8' }}>Harga Khusus Proyek (Override)</div>
-                    <div style={{ fontSize: '11.5px', color: '#64748B' }}>Tetapkan harga khusus material, upah, atau alat untuk proyek ini tanpa mengubah master data.</div>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-primary-hover)' }}>Harga Khusus Proyek (Override)</div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>Tetapkan harga khusus material, upah, atau alat untuk proyek ini tanpa mengubah master data.</div>
                   </div>
                 </div>
                 <button
                   onClick={() => onNavigateTab?.('harga-proyek')}
                   style={{
                     padding: '8px 14px',
-                    borderRadius: '8px',
-                    background: '#2563EB',
+                    borderRadius: '10px',
+                    background: 'var(--ez-color-primary)',
                     color: '#FFFFFF',
                     border: 'none',
                     fontSize: '12px',
@@ -2280,31 +2391,31 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'project-ded' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Waste Factor & Presisi DED Proyek
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Konfigurasi faktor kehilangan material dan toleransi perhitungan untuk proyek ini.
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Faktor Waste Proyek (%)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Faktor Waste Proyek (%)</label>
                   <input
                     type="number"
                     value={projWaste}
                     onChange={(e) => setProjWaste(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Presisi Desimal Perhitungan</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Presisi Desimal Perhitungan</label>
                   <select
                     value={projVolumeDecimals}
                     onChange={(e) => setProjVolumeDecimals(Number(e.target.value))}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: '#FFFFFF' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                   >
                     <option value={2}>2 Desimal (Standar PU)</option>
                     <option value={3}>3 Desimal (Presisi Tinggi)</option>
@@ -2320,30 +2431,30 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'project-documents' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Dokumen & Penandatangan Proyek
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Atur penomoran surat lelang dan nama penanggung jawab tanda tangan pada laporan proyek.
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Format Nomor Surat Tender Proyek</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Format Nomor Surat Tender Proyek</label>
                   <input
                     type="text"
                     defaultValue={`SP/${projNumber}/2026`}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Nama Penandatangan Dokumen</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Nama Penandatangan Dokumen</label>
                   <input
                     type="text"
                     defaultValue={companyDirector}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
               </div>
@@ -2356,32 +2467,32 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'project-schedule' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Jadwal & Kalender Kerja Proyek
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Tanggal mulai pelaksanaan, target serah terima, dan kalender hari kerja proyek.
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Tanggal Mulai Pekerjaan</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tanggal Mulai Pekerjaan</label>
                   <input
                     type="date"
                     value={projStartDate}
                     onChange={(e) => setProjStartDate(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Target Tanggal Selesai (PHO)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Target Tanggal Selesai (PHO)</label>
                   <input
                     type="date"
                     value={projTargetDate}
                     onChange={(e) => setProjTargetDate(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px' }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
               </div>
@@ -2394,22 +2505,22 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
           {activeTab === 'project-cost' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: '0 0 4px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px' }}>
                   Cost Code & Baseline Anggaran Proyek
                 </h3>
-                <p style={{ fontSize: '12.5px', color: '#64748B', margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
                   Batas pagu anggaran yang disetujui untuk pemantauan deviasi biaya aktual.
                 </p>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: '#334155' }}>Pagu Anggaran Baseline (Rp)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Pagu Anggaran Baseline (Rp)</label>
                   <input
                     type="text"
                     defaultValue={formatCurrencyIDR(450000000)}
                     disabled
-                    style={{ width: '100%', height: '38px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '13px', padding: '0 12px', marginTop: '6px', background: '#F8FAFC', fontWeight: 700 }}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', background: 'var(--ez-color-surface-secondary)', fontWeight: 700 }}
                   />
                   <span style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px', display: 'block' }}>Diambil dari Grand Total RAB yang disetujui direksi</span>
                 </div>

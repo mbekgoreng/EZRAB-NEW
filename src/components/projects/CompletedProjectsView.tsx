@@ -3,21 +3,15 @@ import {
   CheckCircle2,
   Trophy,
   FileCheck,
-  Download,
   Archive,
   RotateCcw,
   Search,
-  Sparkles,
   MapPin,
-  Coins,
-  ShieldCheck,
-  Layers,
-  ChevronRight,
-  TrendingUp,
   FileText,
 } from 'lucide-react';
 import { Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
+import { useI18n } from '../../i18n/I18nContext';
 
 interface CompletedProjectsViewProps {
   projects: Project[];
@@ -35,6 +29,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
   onOpenProject,
 }) => {
   const { updateProject } = useProject();
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState('');
 
   const completedProjects = projects.filter(
@@ -72,7 +67,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
   const handleArchiveProject = (proj: Project) => {
     if (
       window.confirm(
-        `Apakah Anda ingin memindahkan proyek "${proj.name}" ke GUDANG ARSIP? Proyek akan disimpan sebagai arsip historis dan dapat dipulihkan kapan saja.`
+        t('proj.done.arch_confirm_a') + proj.name + t('proj.done.arch_confirm_b')
       )
     ) {
       updateProject(proj.id, {
@@ -80,268 +75,179 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
         isArchived: true,
         archivedAt: new Date().toISOString(),
       });
-      alert(`Proyek "${proj.name}" berhasil dipindahkan ke menu Arsip.`);
+      alert(t('proj.done.arch_ok_a') + proj.name + t('proj.done.arch_ok_b'));
     }
   };
 
   const handleReopenProject = (proj: Project) => {
     if (
       window.confirm(
-        `Buka kembali proyek "${proj.name}" ke status SEDANG DIKERJAKAN? (Gunakan jika terdapat addendum atau pekerjaan tambah-kurang).`
+        t('proj.done.reopen_confirm_a') + proj.name + t('proj.done.reopen_confirm_b')
       )
     ) {
       updateProject(proj.id, {
         status: 'in_progress',
         progress: 95,
       });
-      alert(`Proyek "${proj.name}" telah diaktifkan kembali ke status Sedang Dikerjakan.`);
+      alert(t('proj.done.reopen_ok_a') + proj.name + t('proj.done.reopen_ok_b'));
     }
   };
 
   const handlePrintBast = (proj: Project) => {
-    alert(`Membuat dokumen Berita Acara Serah Terima (BAST / PHO) untuk proyek "${proj.name}". Dokumen siap dicetak.`);
+    alert(t('proj.done.bast_ok_a') + proj.name + t('proj.done.bast_ok_b'));
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' , fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
+      <style>{`
+        @keyframes ezdb-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .ezdb-anim { animation: none !important; } }
+      `}</style>
       {/* 1. TOP 4 CLOSEOUT & HANDOVER KPIS */}
       <div
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '14px',
+          gap: '18px',
         }}
       >
         {/* KPI 1: Total Proyek Selesai */}
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #EEF2F7',
-            padding: '16px 20px',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: '#DCFCE7',
-                  color: '#15803D',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Trophy size={16} />
-              </div>
-              <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748B' }}>Proyek Tuntas (100%)</span>
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
-              {completedProjects.length} <span style={{ fontSize: '13px', color: '#94A3B8', fontWeight: 500 }}>Proyek</span>
-            </div>
-            <div style={{ fontSize: '11px', color: '#15803D', fontWeight: 600, marginTop: '2px' }}>
-              Serah Terima BAST & PHO
-            </div>
+        <div className="ezdb-anim ez-stat ez-stat-mint" style={{ animation: 'ezdb-rise 0.6s 0.05s both' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
+            {t('proj.done.kpi1_t')}
           </div>
-          <div style={{ width: '56px', height: '32px', opacity: 0.8 }}>
-            <svg viewBox="0 0 56 32" style={{ width: '100%', height: '100%' }}>
-              <path d="M 0 28 Q 20 8, 35 15 T 56 4" fill="none" stroke="#86EFAC" strokeWidth="2.5" strokeLinecap="round" />
-            </svg>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+            {completedProjects.length}{' '}
+            <span style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.done.kpi1_u')}</span>
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
+            {t('proj.done.kpi1_s')}
           </div>
         </div>
 
         {/* KPI 2: Total Omset Nilai Selesai */}
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #EEF2F7',
-            padding: '16px 20px',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: '#EFF6FF',
-                  color: '#2563EB',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 800,
-                  fontSize: '12px',
-                }}
-              >
-                Rp
-              </div>
-              <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748B' }}>Total Nilai Terealisasi</span>
-            </div>
-            <div style={{ fontSize: '22px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
-              {totalCompletedValue === 0 ? 'Rp 0' : formatRupiah(totalCompletedValue)}
-            </div>
-            <div style={{ fontSize: '11px', color: '#2563EB', fontWeight: 600, marginTop: '2px' }}>
-              Pekerjaan rampung 100%
-            </div>
+        <div className="ezdb-anim ez-stat ez-stat-cream" style={{ animation: 'ezdb-rise 0.6s 0.12s both' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
+            {t('proj.done.kpi2_t')}
+          </div>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+            {totalCompletedValue === 0 ? 'Rp 0' : formatRupiah(totalCompletedValue)}
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
+            {t('proj.done.kpi2_s')}
           </div>
         </div>
 
         {/* KPI 3: Rata-rata Margin Profit */}
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #EEF2F7',
-            padding: '16px 20px',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: '#ECFDF5',
-                  color: '#059669',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <TrendingUp size={16} />
-              </div>
-              <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748B' }}>Rata-rata Margin Profit</span>
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#059669', letterSpacing: '-0.02em' }}>
-              +12.4%
-            </div>
-            <div style={{ fontSize: '11px', color: '#059669', fontWeight: 600, marginTop: '2px' }}>
-              Efisiensi biaya realisasi vs RAB
-            </div>
+        <div className="ezdb-anim ez-stat ez-stat-sky" style={{ animation: 'ezdb-rise 0.6s 0.19s both' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
+            {t('proj.done.kpi3_t')}
+          </div>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-pill-ok-text)' }}>
+            +12.4%
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
+            {t('proj.done.kpi3_s')}
           </div>
         </div>
 
         {/* KPI 4: Masa Retensi Aktif */}
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #EEF2F7',
-            padding: '16px 20px',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <div
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: '#EFF6FF',
-                  color: '#2563EB',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <ShieldCheck size={16} />
-              </div>
-              <span style={{ fontSize: '12.5px', fontWeight: 600, color: '#64748B' }}>Masa Pemeliharaan</span>
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
-              {completedProjects.length} <span style={{ fontSize: '13px', color: '#94A3B8', fontWeight: 500 }}>Proyek</span>
-            </div>
-            <div style={{ fontSize: '11px', color: '#2563EB', fontWeight: 600, marginTop: '2px' }}>
-              Masa Retensi (FHO Garansi)
-            </div>
+        <div className="ezdb-anim ez-stat ez-stat-peach" style={{ animation: 'ezdb-rise 0.6s 0.26s both' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
+            {t('proj.done.kpi4_t')}
+          </div>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+            {completedProjects.length}{' '}
+            <span style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.done.kpi4_u')}</span>
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
+            {t('proj.done.kpi4_s')}
           </div>
         </div>
       </div>
 
       {/* 2. SEARCH & CLOSEOUT ACTION BAR */}
       <div
+        className="ezdb-anim"
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: '#ffffff',
-          padding: '12px 16px',
-          borderRadius: '14px',
-          border: '1px solid #EEF2F7',
+          background: 'var(--ez-color-surface)',
+          padding: '16px 20px',
+          borderRadius: 'var(--ez-radius-card)',
+          border: '1px solid var(--ez-color-border-soft)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           flexWrap: 'wrap',
           gap: '12px',
+          animation: 'ezdb-rise 0.6s 0.3s both',
         }}
       >
         <div style={{ position: 'relative', width: '100%', maxWidth: '340px' }}>
-          <Search size={14} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '11px' }} />
+          <Search size={14} color="var(--ez-color-text-faint)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
           <input
             type="text"
-            placeholder="Cari proyek selesai..."
+            placeholder={t('proj.done.search_ph')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               width: '100%',
-              height: '36px',
+              height: '38px',
               paddingLeft: '34px',
               paddingRight: '12px',
-              borderRadius: '8px',
-              border: '1px solid #E2E8F0',
-              background: '#F8FAFC',
-              fontSize: '12.5px',
-              color: '#0F172A',
+              borderRadius: 'var(--ez-radius-control)',
+              border: '1px solid var(--ez-color-border-soft)',
+              background: 'var(--ez-color-surface-faint)',
+              fontSize: '13px',
+              color: 'var(--ez-color-text-primary)',
               outline: 'none',
             }}
           />
         </div>
 
-        <div style={{ fontSize: '12.5px', color: '#64748B', fontWeight: 600 }}>
-          Menampilkan <span style={{ color: '#0F172A', fontWeight: 800 }}>{filteredProjects.length}</span> proyek terselesaikan
+        <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
+          {t('proj.done.showing_a')}{' '}<span style={{ color: 'var(--ez-color-text-primary)', fontWeight: 800 }}>{filteredProjects.length}</span>{' '}{t('proj.done.showing_b')}
         </div>
       </div>
 
       {/* 3. COMPLETED PROJECT CARDS */}
       {filteredProjects.length === 0 ? (
         <div
+          className="ezdb-anim"
           style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #EEF2F7',
+            background: 'var(--ez-color-surface)',
+            borderRadius: 'var(--ez-radius-card)',
+            border: '1px solid var(--ez-color-border-soft)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
             padding: '48px 24px',
             textAlign: 'center',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            animation: 'ezdb-rise 0.6s 0.36s both',
           }}
         >
-          <Trophy size={36} color="#94A3B8" style={{ marginBottom: '12px' }} />
-          <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0' }}>
-            Belum ada proyek yang berstatus selesai
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: 'var(--ez-radius-control)',
+              background: 'var(--ez-pastel-mint)',
+              color: 'var(--ez-pill-ok-text)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '14px',
+            }}
+          >
+            <Trophy size={26} />
+          </div>
+          <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
+            {t('proj.done.empty_t')}
           </h3>
-          <p style={{ fontSize: '12.5px', color: '#64748B', maxWidth: '380px', margin: '0 0 16px 0' }}>
-            Proyek dari status 'Sedang Dikerjakan' yang telah mencapai progres 100% dan melalui serah terima akan muncul di sini.
+          <p style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', maxWidth: '380px', margin: '0 0 16px 0', lineHeight: 1.5 }}>
+            {t('proj.done.empty_b')}
           </p>
         </div>
       ) : (
@@ -349,7 +255,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
-            gap: '16px',
+            gap: '18px',
           }}
         >
           {filteredProjects.map((proj) => {
@@ -358,16 +264,18 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
             return (
               <div
                 key={proj.id}
+                className="ezdb-anim"
                 style={{
-                  background: '#ffffff',
-                  borderRadius: '16px',
-                  border: '1px solid #EEF2F7',
-                  padding: '18px',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.02)',
+                  background: 'var(--ez-color-surface)',
+                  borderRadius: 'var(--ez-radius-card)',
+                  border: '1px solid var(--ez-color-border-soft)',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
+                  padding: '22px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   gap: '14px',
+                  animation: 'ezdb-rise 0.6s 0.36s both',
                 }}
               >
                 <div>
@@ -376,11 +284,12 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                     <span
                       style={{
                         fontSize: '11px',
-                        background: '#EFF6FF',
-                        color: '#1D4ED8',
-                        padding: '2px 8px',
-                        borderRadius: '6px',
                         fontWeight: 700,
+                        padding: '5px 12px',
+                        borderRadius: 'var(--ez-radius-pill)',
+                        background: 'var(--ez-pastel-sky)',
+                        color: 'var(--ez-hue-blue-text-deep)',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       {proj.projectNumber || proj.id}
@@ -389,18 +298,19 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                     <span
                       style={{
                         fontSize: '11px',
-                        padding: '2px 8px',
-                        borderRadius: '999px',
                         fontWeight: 700,
-                        background: '#DCFCE7',
-                        color: '#15803D',
-                        display: 'flex',
+                        padding: '5px 12px',
+                        borderRadius: 'var(--ez-radius-pill)',
+                        background: 'var(--ez-pastel-mint)',
+                        color: 'var(--ez-pill-ok-text)',
+                        whiteSpace: 'nowrap',
+                        display: 'inline-flex',
                         alignItems: 'center',
                         gap: '4px',
                       }}
                     >
                       <CheckCircle2 size={12} />
-                      <span>SELESAI 100% (PHO)</span>
+                      <span>{t('proj.done.badge')}</span>
                     </span>
                   </div>
 
@@ -410,7 +320,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                     style={{
                       fontSize: '15px',
                       fontWeight: 800,
-                      color: '#0F172A',
+                      color: 'var(--ez-color-text-primary)',
                       margin: '0 0 4px 0',
                       cursor: 'pointer',
                       lineHeight: 1.3,
@@ -419,66 +329,66 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                     {proj.name}
                   </h4>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748B', marginBottom: '12px' }}>
-                    <MapPin size={12} color="#94A3B8" />
-                    <span>{proj.location || 'Indonesia'}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--ez-color-text-muted)', marginBottom: '12px' }}>
+                    <MapPin size={12} color="var(--ez-color-text-faint)" />
+                    <span>{proj.location || t('proj.done.loc_default')}</span>
                     <span>•</span>
-                    <span>{proj.clientName || proj.client || 'Klien Umum'}</span>
+                    <span>{proj.clientName || proj.client || t('proj.done.client_default')}</span>
                   </div>
 
                   {/* Financial Evaluation Box (Closeout Reconciliation) */}
                   <div
                     style={{
-                      background: '#F8FAFC',
-                      borderRadius: '12px',
+                      background: 'var(--ez-color-surface-faint)',
+                      borderRadius: 'var(--ez-radius-control)',
                       padding: '12px',
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid var(--ez-color-border-soft)',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '8px',
                       fontSize: '12px',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748B' }}>
-                      <span>Nilai Kontrak / RAB Awal:</span>
-                      <span style={{ fontWeight: 700, color: '#0F172A' }}>{formatRupiah(totalRab)}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
+                      <span>{t('proj.done.contract_t')}</span>
+                      <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(totalRab)}</span>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748B' }}>
-                      <span>Realisasi Biaya Lapangan:</span>
-                      <span style={{ fontWeight: 700, color: '#334155' }}>{formatRupiah(realCost)}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
+                      <span>{t('proj.done.actual_t')}</span>
+                      <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(realCost)}</span>
                     </div>
 
                     <div
                       style={{
-                        borderTop: '1px dashed #CBD5E1',
+                        borderTop: '1px dashed var(--ez-color-border-line)',
                         paddingTop: '6px',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         fontWeight: 700,
-                        color: '#059669',
+                        color: 'var(--ez-pill-ok-text)',
                       }}
                     >
-                      <span>Estimasi Margin / Profit:</span>
+                      <span>{t('proj.done.margin_t')}</span>
                       <span>+{formatRupiah(profitMargin)} ({profitPercent}%)</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Bottom Closeout Action Strip */}
-                <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ borderTop: '1px solid var(--ez-color-border-soft)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button
                       onClick={() => handlePrintBast(proj)}
                       style={{
                         flex: 1,
-                        height: '32px',
-                        borderRadius: '6px',
-                        background: '#EFF6FF',
-                        border: '1px solid #BFDBFE',
-                        color: '#2563EB',
-                        fontSize: '11.5px',
+                        height: '36px',
+                        borderRadius: 'var(--ez-radius-control)',
+                        background: 'var(--ez-pastel-sky)',
+                        border: 'none',
+                        color: 'var(--ez-hue-blue-text-deep)',
+                        fontSize: '12px',
                         fontWeight: 700,
                         cursor: 'pointer',
                         display: 'flex',
@@ -488,18 +398,18 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                       }}
                     >
                       <FileCheck size={13} />
-                      <span>Cetak BAST (PHO)</span>
+                      <span>{t('proj.done.bast_btn')}</span>
                     </button>
 
                     <button
                       onClick={() => onOpenProject?.(proj.id, 'laporan')}
                       style={{
                         flex: 1,
-                        height: '32px',
-                        borderRadius: '6px',
-                        background: '#2563EB',
-                        color: '#FFFFFF',
-                        fontSize: '11.5px',
+                        height: '36px',
+                        borderRadius: 'var(--ez-radius-control)',
+                        background: 'var(--ez-color-primary)',
+                        color: 'var(--ez-color-on-primary)',
+                        fontSize: '12px',
                         fontWeight: 700,
                         border: 'none',
                         cursor: 'pointer',
@@ -507,10 +417,11 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '4px',
+                        boxShadow: '0 4px 14px rgba(37,99,235,0.28)',
                       }}
                     >
                       <FileText size={13} />
-                      <span>Laporan Akhir</span>
+                      <span>{t('proj.done.report_btn')}</span>
                     </button>
                   </div>
 
@@ -520,7 +431,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                       style={{
                         background: 'transparent',
                         border: 'none',
-                        color: '#64748B',
+                        color: 'var(--ez-color-text-muted)',
                         fontSize: '11px',
                         fontWeight: 600,
                         cursor: 'pointer',
@@ -531,19 +442,20 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                       }}
                     >
                       <RotateCcw size={11} />
-                      <span>Buka Kembali Proyek</span>
+                      <span>{t('proj.done.reopen_btn')}</span>
                     </button>
 
                     <button
                       onClick={() => handleArchiveProject(proj)}
                       style={{
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        background: '#F1F5F9',
-                        border: '1px solid #CBD5E1',
-                        color: '#475569',
-                        fontSize: '11px',
-                        fontWeight: 600,
+                        height: '32px',
+                        padding: '0 12px',
+                        borderRadius: 'var(--ez-radius-control)',
+                        background: 'var(--ez-color-surface)',
+                        border: '1px solid var(--ez-color-border-line)',
+                        color: 'var(--ez-color-text-primary)',
+                        fontSize: '12px',
+                        fontWeight: 700,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -551,7 +463,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                       }}
                     >
                       <Archive size={11} />
-                      <span>Pindahkan ke Arsip</span>
+                      <span>{t('proj.done.arch_btn')}</span>
                     </button>
                   </div>
                 </div>

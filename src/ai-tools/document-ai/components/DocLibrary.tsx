@@ -1,6 +1,6 @@
 /**
  * AI DOKUMEN — Dokumen Saya (library).
- * Upload, daftar, cari, filter, hapus. Data dari docStore (localStorage).
+ * Upload, daftar, cari, filter, hapus. State diangkat ke view.tsx.
  */
 import React, { useMemo, useRef, useState } from 'react';
 import {
@@ -8,51 +8,48 @@ import {
   Eye, Download, Loader2, AlertTriangle, FolderOpen, X,
 } from 'lucide-react';
 import { parseDocument } from '../parser';
-import { docStore, newId, formatBytes, formatDate, DocRecord, DocStatus } from '../store';
+import type { DocRecord, DocStatus } from '../view';
+import { newId, formatBytes, formatDate } from '../view';
+import { useI18n } from '../../../i18n/I18nContext';
 
 const MAX_FILE_MB = 25;
 
 function kindIcon(kind: string) {
-  if (kind === 'pdf') return <FileText size={18} color="#DC2626" />;
-  if (kind === 'xlsx') return <FileSpreadsheet size={18} color="#16A34A" />;
-  if (kind === 'docx' || kind === 'text') return <FileType size={18} color="#2563EB" />;
-  return <FileText size={18} color="#94A3B8" />;
+  if (kind === 'pdf') return <FileText size={18} color="var(--ez-color-danger)" />;
+  if (kind === 'xlsx') return <FileSpreadsheet size={18} color="var(--ez-color-success)" />;
+  if (kind === 'docx' || kind === 'text') return <FileType size={18} color="var(--ez-color-primary)" />;
+  return <FileText size={18} color="var(--ez-color-text-muted)" />;
 }
 
-function statusBadge(s: DocStatus) {
-  const map: Record<DocStatus, { label: string; bg: string; fg: string }> = {
-    ready: { label: 'Siap dianalisis', bg: '#DCFCE7', fg: '#166534' },
-    processing: { label: 'Memproses', bg: '#FEF3C7', fg: '#92400E' },
-    failed: { label: 'Gagal diproses', bg: '#FEE2E2', fg: '#991B1B' },
-    needs_review: { label: 'Perlu perhatian', bg: '#FFEDD5', fg: '#9A3412' },
+function statusBadge(s: DocStatus, t: (key: string) => string) {
+  const cls: Record<DocStatus, string> = {
+    ready: 'b-ready',
+    processing: 'b-processing',
+    failed: 'b-failed',
+    needs_review: 'b-attention',
   };
-  const m = map[s];
-  return (
-    <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 9px', borderRadius: '999px', background: m.bg, color: m.fg }}>
-      {m.label}
-    </span>
-  );
+  const label: Record<DocStatus, string> = {
+    ready: t('ai.doc.lib.status_ready'),
+    processing: t('ai.doc.lib.status_processing'),
+    failed: t('ai.doc.lib.status_failed'),
+    needs_review: t('ai.doc.lib.status_needs_review'),
+  };
+  return <span className={`docai-badge ${cls[s]}`}>{label[s]}</span>;
 }
 
 export const DocLibrary: React.FC<{
+  docs: DocRecord[];
+  onUpsertDoc: (d: DocRecord) => void;
+  onRemoveDoc: (id: string) => void;
   onAnalyze: (doc: DocRecord) => void;
-  refreshKey: number;
-  onChanged: () => void;
-}> = ({ onAnalyze, refreshKey, onChanged }) => {
-  const [docs, setDocs] = useState<DocRecord[]>(() => docStore.list());
+}> = ({ docs, onUpsertDoc, onRemoveDoc, onAnalyze }) => {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [kindFilter, setKindFilter] = useState('all');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const reload = () => {
-    setDocs(docStore.list());
-    onChanged();
-  };
-
-  React.useEffect(() => { setDocs(docStore.list()); }, [refreshKey]);
 
   const stats = useMemo(() => ({
     total: docs.length,
@@ -75,7 +72,7 @@ export const DocLibrary: React.FC<{
     setError(null);
     for (const f of Array.from(files)) {
       if (f.size > MAX_FILE_MB * 1024 * 1024) {
-        setError(`"${f.name}" melebihi batas ${MAX_FILE_MB} MB.`);
+        setError(`"${f.name}" ${t('ai.doc.lib.err_size_a')} ${MAX_FILE_MB} ${t('ai.doc.lib.err_size_b')}`);
         continue;
       }
       const id = newId('doc');
@@ -84,8 +81,7 @@ export const DocLibrary: React.FC<{
         text: '', charCount: 0, status: 'processing',
         createdAt: Date.now(), updatedAt: Date.now(),
       };
-      docStore.upsert(rec);
-      setDocs(docStore.list());
+      onUpsertDoc(rec);
       setBusy(true);
       try {
         const buf = await f.arrayBuffer();
@@ -95,15 +91,14 @@ export const DocLibrary: React.FC<{
           kind: parsed.kind, text: parsed.text, pages: parsed.pages,
           charCount: parsed.text.length,
           status: parsed.text.trim() ? 'ready' : 'needs_review',
-          error: parsed.text.trim() ? undefined : 'Tidak ada teks yang bisa diekstrak (mungkin hasil scan tanpa lapisan teks).',
+          error: parsed.text.trim() ? undefined : t('ai.doc.lib.err_no_text'),
           updatedAt: Date.now(),
         };
-        docStore.upsert(updated);
+        onUpsertDoc(updated);
       } catch (e: any) {
-        docStore.upsert({ ...rec, status: 'failed', error: e?.message || 'Gagal memproses.', updatedAt: Date.now() });
+        onUpsertDoc({ ...rec, status: 'failed', error: e?.message || t('ai.doc.lib.err_process'), updatedAt: Date.now() });
       } finally {
         setBusy(false);
-        reload();
       }
     }
   };
@@ -121,12 +116,12 @@ export const DocLibrary: React.FC<{
     <div className="docai-tab">
       <div className="docai-pagehead">
         <div>
-          <div className="docai-crumb">EZRAB AI Dokumen</div>
-          <h2>Dokumen Saya</h2>
-          <p>Kelola, pahami, dan olah dokumen konstruksi dalam satu workspace.</p>
+          <div className="docai-crumb">{t('ai.doc.lib.crumb')}</div>
+          <h2>{t('ai.doc.lib.h2')}</h2>
+          <p>{t('ai.doc.lib.sub')}</p>
         </div>
         <button className="docai-btn-primary" onClick={() => inputRef.current?.click()} disabled={busy}>
-          {busy ? <Loader2 size={16} className="spin" /> : <UploadCloud size={16} />} Upload Dokumen
+          {busy ? <Loader2 size={16} className="spin" /> : <UploadCloud size={16} />} {t('ai.doc.lib.upload')}
         </button>
         <input
           ref={inputRef} type="file" multiple style={{ display: 'none' }}
@@ -137,10 +132,10 @@ export const DocLibrary: React.FC<{
 
       <div className="docai-stats">
         {[
-          { label: 'Total dokumen', value: stats.total },
-          { label: 'Siap dianalisis', value: stats.ready },
-          { label: 'Sedang diproses', value: stats.processing },
-          { label: 'Perlu perhatian', value: stats.attention },
+          { label: t('ai.doc.lib.stat_total'), value: stats.total },
+          { label: t('ai.doc.lib.stat_ready'), value: stats.ready },
+          { label: t('ai.doc.lib.stat_processing'), value: stats.processing },
+          { label: t('ai.doc.lib.stat_attention'), value: stats.attention },
         ].map((s) => (
           <div key={s.label} className="docai-stat">
             <div className="docai-stat-v">{s.value}</div>
@@ -153,28 +148,28 @@ export const DocLibrary: React.FC<{
 
       <div className="docai-toolbar">
         <div className="docai-search">
-          <Search size={15} color="#94A3B8" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari nama dokumen…" />
+          <Search size={15} color="var(--ez-color-text-muted)" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('ai.doc.lib.search_ph')} />
         </div>
         <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value)} className="docai-select">
-          <option value="all">Semua jenis</option>
+          <option value="all">{t('ai.doc.lib.opt_all')}</option>
           <option value="pdf">PDF</option>
           <option value="docx">DOCX</option>
           <option value="xlsx">XLSX</option>
-          <option value="text">Teks</option>
+          <option value="text">{t('ai.doc.lib.opt_text')}</option>
         </select>
       </div>
 
       {filtered.length === 0 ? (
         <div className="docai-empty">
-          <FolderOpen size={40} color="#CBD5E1" />
-          <h3>{docs.length === 0 ? 'Belum ada dokumen' : 'Tidak ditemukan'}</h3>
+          <FolderOpen size={40} color="var(--ez-color-border)" />
+          <h3>{docs.length === 0 ? t('ai.doc.lib.empty_h_none') : t('ai.doc.lib.empty_h_notfound')}</h3>
           <p>{docs.length === 0
-            ? 'Unggah PDF, DOCX, atau XLSX pertama Anda untuk mulai menganalisis.'
-            : 'Coba kata kunci atau filter lain.'}</p>
+            ? t('ai.doc.lib.empty_p_none')
+            : t('ai.doc.lib.empty_p_notfound')}</p>
           {docs.length === 0 && (
             <button className="docai-btn-primary" onClick={() => inputRef.current?.click()}>
-              <UploadCloud size={16} /> Upload Dokumen Pertama
+              <UploadCloud size={16} /> {t('ai.doc.lib.upload_first')}
             </button>
           )}
         </div>
@@ -182,7 +177,7 @@ export const DocLibrary: React.FC<{
         <div className="docai-tablewrap">
           <table className="docai-table">
             <thead>
-              <tr><th>Nama dokumen</th><th>Jenis</th><th>Ukuran</th><th>Status</th><th>Diperbarui</th><th>Aksi</th></tr>
+              <tr><th>{t('ai.doc.lib.th_name')}</th><th>{t('ai.doc.lib.th_kind')}</th><th>{t('ai.doc.lib.th_size')}</th><th>{t('ai.doc.lib.th_status')}</th><th>{t('ai.doc.lib.th_updated')}</th><th>{t('ai.doc.lib.th_action')}</th></tr>
             </thead>
             <tbody>
               {filtered.map((d) => (
@@ -191,21 +186,21 @@ export const DocLibrary: React.FC<{
                     <div className="docai-frow">{kindIcon(d.kind)}<span className="docai-fname2">{d.fileName}</span></div>
                     {d.error && <div className="docai-ferr">{d.error}</div>}
                   </td>
-                  <td style={{ textTransform: 'uppercase', fontSize: '11px', fontWeight: 700, color: '#64748B' }}>{d.kind}</td>
+                  <td style={{ textTransform: 'uppercase', fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>{d.kind}</td>
                   <td>{formatBytes(d.sizeBytes)}</td>
-                  <td>{statusBadge(d.status)}</td>
+                  <td>{statusBadge(d.status, t)}</td>
                   <td>{formatDate(d.updatedAt)}</td>
                   <td>
                     <div className="docai-actions">
-                      <button title="Analisis" disabled={d.status !== 'ready'} onClick={() => onAnalyze(d)}><Eye size={15} /></button>
-                      <button title="Unduh teks" onClick={() => handleDownload(d)}><Download size={15} /></button>
+                      <button title={t('ai.doc.lib.title_analyze')} disabled={d.status !== 'ready'} onClick={() => onAnalyze(d)}><Eye size={15} /></button>
+                      <button title={t('ai.doc.lib.title_download')} onClick={() => handleDownload(d)}><Download size={15} /></button>
                       {confirmDelete === d.id ? (
                         <>
-                          <button title="Batal" onClick={() => setConfirmDelete(null)}><X size={15} /></button>
-                          <button title="Ya, hapus" className="danger" onClick={() => { docStore.remove(d.id); setConfirmDelete(null); reload(); }}>Hapus?</button>
+                          <button title={t('ai.doc.lib.title_cancel')} onClick={() => setConfirmDelete(null)}><X size={15} /></button>
+                          <button title={t('ai.doc.lib.title_confirm_del')} className="danger" onClick={() => { onRemoveDoc(d.id); setConfirmDelete(null); }}>{t('ai.doc.lib.title_delete_q')}</button>
                         </>
                       ) : (
-                        <button title="Hapus" onClick={() => setConfirmDelete(d.id)}><Trash2 size={15} /></button>
+                        <button title={t('ai.doc.lib.title_delete')} onClick={() => setConfirmDelete(d.id)}><Trash2 size={15} /></button>
                       )}
                     </div>
                   </td>
@@ -215,7 +210,7 @@ export const DocLibrary: React.FC<{
           </table>
         </div>
       )}
-      <p className="docai-note">Dokumen tersimpan di browser ini (localStorage). Bukan penyimpanan server — jangan dianggap arsip resmi multi-pengguna.</p>
+      <p className="docai-note">{t('ai.doc.lib.note')}</p>
     </div>
   );
 };

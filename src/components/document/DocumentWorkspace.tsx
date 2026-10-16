@@ -636,7 +636,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
   const currentRevStr = `REV ${String(selectedRevision).padStart(2, '0')}`;
 
   return (
-    <div style={{ background: '#F8FAFC', minHeight: 'calc(100vh - 64px)', padding: 24, fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ background: 'var(--ez-color-surface-secondary)', minHeight: 'calc(100vh - 64px)', padding: 24, fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
       {/* TOP BAR */}
       <div
         style={{
@@ -645,10 +645,10 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           justifyContent: 'space-between',
           gap: 16,
           marginBottom: 18,
-          background: '#fff',
+          background: 'var(--ez-color-surface)',
           padding: '14px 20px',
-          borderRadius: 12,
-          border: '1px solid #E2E8F0',
+          borderRadius: 'var(--ez-radius-control)',
+          border: '1px solid var(--ez-color-border-line)',
           boxShadow: '0 1px 3px rgba(15,23,42,0.04)',
         }}
       >
@@ -656,8 +656,8 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           <button
             onClick={onBack}
             style={{
-              border: '1px solid #E2E8F0',
-              background: '#F8FAFC',
+              border: '1px solid var(--ez-color-border-line)',
+              background: 'var(--ez-color-surface-secondary)',
               borderRadius: 8,
               padding: 8,
               cursor: 'pointer',
@@ -665,17 +665,17 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               alignItems: 'center',
             }}
           >
-            <ArrowLeft size={18} color="#475569" />
+            <ArrowLeft size={18} color="var(--ez-color-text-slate)" />
           </button>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 750, color: '#0F172A' }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
                 {definition.name}
               </h2>
               <span
                 style={{
-                  background: isViewingReadOnly ? '#FEF3C7' : '#EFF6FF',
-                  color: isViewingReadOnly ? '#B45309' : '#2563EB',
+                  background: isViewingReadOnly ? 'var(--ez-hue-amber-bg-deep)' : 'var(--ez-hue-blue-bg)',
+                  color: isViewingReadOnly ? 'var(--ez-hue-amber-text)' : 'var(--ez-color-primary)',
                   padding: '2px 8px',
                   borderRadius: 6,
                   fontSize: 11,
@@ -689,7 +689,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 {currentRevStr} {isViewingReadOnly ? '(Read-only)' : '(Current)'}
               </span>
             </div>
-            <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', marginTop: 2 }}>
               {definition.code} · Kategori: {definition.category} · Template: {definition.templateId}
             </div>
           </div>
@@ -700,9 +700,9 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           <button
             onClick={() => setShowRevisionModal(true)}
             style={{
-              border: '1px solid #CBD5E1',
-              background: '#FFFFFF',
-              color: '#334155',
+              border: '1px solid var(--ez-hue-slate-border)',
+              background: 'var(--ez-color-surface)',
+              color: 'var(--ez-color-text-body)',
               padding: '8px 14px',
               borderRadius: 8,
               fontSize: 13,
@@ -713,7 +713,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               gap: 6,
             }}
           >
-            <GitBranch size={15} color="#2563EB" />
+            <GitBranch size={15} color="var(--ez-hue-blue-text)" />
             <span>Create New Revision</span>
           </button>
 
@@ -737,9 +737,9 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             }}
             disabled={isViewingReadOnly}
             style={{
-              border: '1px solid #CBD5E1',
-              background: isViewingReadOnly ? '#F1F5F9' : '#FFFFFF',
-              color: isViewingReadOnly ? '#94A3B8' : '#334155',
+              border: '1px solid var(--ez-hue-slate-border)',
+              background: isViewingReadOnly ? 'var(--ez-color-surface-tertiary)' : 'var(--ez-color-surface)',
+              color: isViewingReadOnly ? '#94A3B8' : 'var(--ez-color-text-body)',
               padding: '8px 14px',
               borderRadius: 8,
               fontSize: 13,
@@ -758,9 +758,9 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           <button
             onClick={() => setDrawerTab('personnel')}
             style={{
-              border: '1px solid #CBD5E1',
-              background: '#FFFFFF',
-              color: '#334155',
+              border: '1px solid var(--ez-hue-slate-border)',
+              background: 'var(--ez-color-surface)',
+              color: 'var(--ez-color-text-body)',
               padding: '8px 14px',
               borderRadius: 8,
               fontSize: 13,
@@ -772,7 +772,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             }}
             title="Kelola Data Sumber Proyek (Personil, Alat, JSA, RKK, AHSP)"
           >
-            <Settings size={15} color="#475569" />
+            <Settings size={15} color="var(--ez-color-text-slate)" />
             <span>Data Sumber</span>
           </button>
 
@@ -781,7 +781,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             <button
               onClick={() => handleExportClick('PDF')}
               style={{
-                background: '#2563EB',
+                background: 'var(--ez-color-primary)',
                 color: '#fff',
                 border: 0,
                 padding: '8px 16px',
@@ -853,9 +853,9 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             marginBottom: 16,
             padding: '10px 16px',
             borderRadius: 8,
-            background: exportNotice.startsWith('Gagal') ? '#FEF2F2' : '#F0FDF4',
-            color: exportNotice.startsWith('Gagal') ? '#DC2626' : '#15803D',
-            border: `1px solid ${exportNotice.startsWith('Gagal') ? '#FECACA' : '#BBF7D0'}`,
+            background: exportNotice.startsWith('Gagal') ? 'var(--ez-hue-rose-bg)' : 'var(--ez-hue-green-bg)',
+            color: exportNotice.startsWith('Gagal') ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)',
+            border: `1px solid ${exportNotice.startsWith('Gagal') ? 'var(--ez-hue-rose-border)' : 'var(--ez-hue-green-border)'}`,
             fontSize: 13,
             fontWeight: 600,
             display: 'flex',
@@ -875,9 +875,9 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             marginBottom: 18,
             padding: '12px 18px',
             borderRadius: 10,
-            background: '#FFFBEB',
+            background: 'var(--ez-hue-amber-bg)',
             border: '1px solid #FCD34D',
-            color: '#92400E',
+            color: 'var(--ez-hue-amber-text-dark)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -885,7 +885,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <AlertTriangle size={18} color="#D97706" />
+            <AlertTriangle size={18} color="var(--ez-hue-amber-text-deep)" />
             <div>
               <strong style={{ fontSize: 13 }}>Data Sumber Proyek Berubah:</strong>{' '}
               <span style={{ fontSize: 12.5 }}>
@@ -916,9 +916,9 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
       <div
         style={{
           display: 'flex',
-          background: '#fff',
-          border: '1px solid #E2E8F0',
-          borderRadius: 12,
+          background: 'var(--ez-color-surface)',
+          border: '1px solid var(--ez-color-border-line)',
+          borderRadius: 'var(--ez-radius-control)',
           padding: 6,
           marginBottom: 20,
           gap: 6,
@@ -943,8 +943,8 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 padding: '10px 14px',
                 border: 0,
                 borderRadius: 8,
-                background: isActive ? '#2563EB' : 'transparent',
-                color: isActive ? '#fff' : '#475569',
+                background: isActive ? 'var(--ez-color-primary)' : 'transparent',
+                color: isActive ? '#fff' : 'var(--ez-color-text-slate)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -963,9 +963,9 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
       {/* ✨ BANTU AI ASSISTANT PANEL */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #F0FDF4 0%, #EFF6FF 100%)',
-          border: '1px solid #BFDBFE',
-          borderRadius: 12,
+          background: 'linear-gradient(135deg, var(--ez-hue-green-bg) 0%, var(--ez-hue-blue-bg) 100%)',
+          border: '1px solid var(--ez-hue-blue-border)',
+          borderRadius: 'var(--ez-radius-control)',
           padding: '12px 18px',
           marginBottom: 18,
           display: 'flex',
@@ -976,14 +976,14 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#2563EB', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--ez-color-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Sparkles size={16} />
           </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 750, color: '#0F172A' }}>
+            <div style={{ fontSize: 13, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
               ✨ Bantu AI — Asisten Dokumen Konstruksi
             </div>
-            <div style={{ fontSize: 11.5, color: '#64748B' }}>
+            <div style={{ fontSize: 11.5, color: 'var(--ez-color-text-muted)' }}>
               Gunakan panduan standar LKPP/PUPR dan sinkronisasi otomatis nilai RAB untuk dokumen ini.
             </div>
           </div>
@@ -1007,9 +1007,9 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             style={{
               padding: '6px 12px',
               borderRadius: 6,
-              background: '#FFFFFF',
-              border: '1px solid #CBD5E1',
-              color: '#1D4ED8',
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-hue-slate-border)',
+              color: 'var(--ez-color-primary-hover)',
               fontSize: 12,
               fontWeight: 650,
               cursor: 'pointer',
@@ -1033,9 +1033,9 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             style={{
               padding: '6px 12px',
               borderRadius: 6,
-              background: '#FFFFFF',
-              border: '1px solid #CBD5E1',
-              color: '#15803D',
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-hue-slate-border)',
+              color: 'var(--ez-hue-green-text)',
               fontSize: 12,
               fontWeight: 650,
               cursor: 'pointer',
@@ -1055,7 +1055,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             style={{
               padding: '6px 12px',
               borderRadius: 6,
-              background: '#2563EB',
+              background: 'var(--ez-color-primary)',
               border: 'none',
               color: '#FFFFFF',
               fontSize: 12,
@@ -1129,14 +1129,14 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           <div
             className="a4-preview-sheet"
             style={{
-              background: '#fff',
+              background: 'var(--ez-color-surface)',
               width: 'min(794px, 100%)',
               minHeight: 1123,
               padding: '50px 55px',
               borderRadius: 4,
               boxShadow: '0 8px 30px rgba(15,23,42,0.12)',
               fontFamily: "'Segoe UI', Arial, sans-serif",
-              color: '#0F172A',
+              color: 'var(--ez-color-text-primary)',
               boxSizing: 'border-box',
               display: 'flex',
               flexDirection: 'column',
@@ -1160,10 +1160,10 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                       <div style={{ fontSize: 16, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         {activeHeader.companyName || master.companyName || 'PT KONSTRUKSI TAMA'}
                       </div>
-                      <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: 'var(--ez-color-text-slate)', marginTop: 2 }}>
                         {activeHeader.companyAddress || master.companyAddress || 'Jl. Raya Konstruksi No. 10'}
                       </div>
-                      <div style={{ fontSize: 10.5, color: '#64748B', marginTop: 1 }}>
+                      <div style={{ fontSize: 10.5, color: 'var(--ez-color-text-muted)', marginTop: 1 }}>
                         Telp: {activeHeader.companyPhone || master.companyPhone || '021-5551234'} | Email: {activeHeader.companyEmail || master.companyEmail || 'info@konstruksi.id'}
                       </div>
                     </div>
@@ -1174,7 +1174,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     <div style={{ fontSize: 16, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                       {master.companyName || 'PT EZRAB KONSTRUKSI TAMA'}
                     </div>
-                    <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: 'var(--ez-color-text-slate)', marginTop: 2 }}>
                       {master.companyAddress || 'Surabaya, Jawa Timur'}
                     </div>
                   </div>
@@ -1214,12 +1214,12 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     style={{
                       fontSize: 11.5,
                       lineHeight: 1.6,
-                      color: '#1E293B',
+                      color: 'var(--ez-color-text-strong)',
                       whiteSpace: 'pre-wrap',
                       background: '#FDFEFE',
                       padding: '12px 14px',
                       borderRadius: 6,
-                      border: '1px solid #F1F5F9',
+                      border: '1px solid var(--ez-color-surface-tertiary)',
                     }}
                   >
                     {resolvedTemplateBody.text}
@@ -1230,18 +1230,18 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 <div style={{ borderBottom: '2px solid #2563EB', paddingBottom: 14, marginBottom: 20 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                      <h1 style={{ margin: '0 0 4px 0', fontSize: 22, fontWeight: 800, color: '#1E293B' }}>
+                      <h1 style={{ margin: '0 0 4px 0', fontSize: 22, fontWeight: 800, color: 'var(--ez-color-text-strong)' }}>
                         {renderedDoc.metadata.name}
                       </h1>
-                      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600 }}>
+                      <div style={{ fontSize: 11, color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
                         EZRAB CONSTRUCTION DOCUMENT · {renderedDoc.metadata.code}
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div
                         style={{
-                          background: '#EFF6FF',
-                          color: '#2563EB',
+                          background: 'var(--ez-hue-blue-bg)',
+                          color: 'var(--ez-color-primary)',
                           padding: '3px 8px',
                           borderRadius: 4,
                           fontSize: 11,
@@ -1262,32 +1262,32 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               {!resolvedTemplateBody && (
                 <div
                   style={{
-                    background: '#F8FAFC',
-                    border: '1px solid #E2E8F0',
+                    background: 'var(--ez-color-surface-secondary)',
+                    border: '1px solid var(--ez-color-border-line)',
                     borderRadius: 6,
                     padding: '12px 16px',
                     marginBottom: 22,
                   }}
                 >
-                  <div style={{ fontSize: 11, fontWeight: 750, color: '#475569', marginBottom: 6, letterSpacing: '0.04em' }}>
+                  <div style={{ fontSize: 11, fontWeight: 750, color: 'var(--ez-color-text-slate)', marginBottom: 6, letterSpacing: '0.04em' }}>
                     INFORMASI PROYEK
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 20px', fontSize: 12 }}>
                     <div>
-                      <strong style={{ color: '#334155' }}>Nama Proyek:</strong> {renderedDoc.metadata.project}
+                      <strong style={{ color: 'var(--ez-color-text-body)' }}>Nama Proyek:</strong> {renderedDoc.metadata.project}
                     </div>
                     <div>
-                      <strong style={{ color: '#334155' }}>Lokasi:</strong> {renderedDoc.metadata.location}
+                      <strong style={{ color: 'var(--ez-color-text-body)' }}>Lokasi:</strong> {renderedDoc.metadata.location}
                     </div>
                     <div>
-                      <strong style={{ color: '#334155' }}>Pemilik (Owner):</strong> {renderedDoc.metadata.owner}
+                      <strong style={{ color: 'var(--ez-color-text-body)' }}>Pemilik (Owner):</strong> {renderedDoc.metadata.owner}
                     </div>
                     <div>
-                      <strong style={{ color: '#334155' }}>Nilai Kontrak:</strong>{' '}
+                      <strong style={{ color: 'var(--ez-color-text-body)' }}>Nilai Kontrak:</strong>{' '}
                       {renderedDoc.metadata.contractValue ? `Rp ${Number(renderedDoc.metadata.contractValue).toLocaleString('id-ID')}` : '—'}
                     </div>
                     <div>
-                      <strong style={{ color: '#334155' }}>Kontraktor:</strong> {renderedDoc.metadata.contractor}
+                      <strong style={{ color: 'var(--ez-color-text-body)' }}>Kontraktor:</strong> {renderedDoc.metadata.contractor}
                     </div>
                   </div>
                 </div>
@@ -1296,23 +1296,23 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               {/* Scope & Parameter Fields (when not offer-letter) */}
               {definition.id !== 'offer-letter' && definition.fields.length > 0 && (
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: '#1E293B' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: 'var(--ez-color-text-strong)' }}>
                     Ketentuan & Parameter Dokumen
                   </div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                     <thead>
-                      <tr style={{ background: '#2563EB', color: '#fff' }}>
+                      <tr style={{ background: 'var(--ez-color-primary)', color: '#fff' }}>
                         <th style={{ padding: '6px 10px', textAlign: 'left', border: '1px solid #2563EB' }}>Parameter / Klausul</th>
                         <th style={{ padding: '6px 10px', textAlign: 'left', border: '1px solid #2563EB' }}>Keterangan Nilai</th>
                       </tr>
                     </thead>
                     <tbody>
                       {definition.fields.map((f, i) => (
-                        <tr key={f.id} style={{ background: i % 2 === 0 ? '#FFFFFF' : '#F8FAFC' }}>
-                          <td style={{ padding: '5px 10px', border: '1px solid #E2E8F0', fontWeight: 600, color: '#334155' }}>
+                        <tr key={f.id} style={{ background: i % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)' }}>
+                          <td style={{ padding: '5px 10px', border: '1px solid var(--ez-color-border-line)', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>
                             {f.label}
                           </td>
-                          <td style={{ padding: '5px 10px', border: '1px solid #E2E8F0', color: '#0F172A' }}>
+                          <td style={{ padding: '5px 10px', border: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-primary)' }}>
                             {String(userValues[f.id] ?? master[f.id as keyof ProjectMasterData] ?? '—')}
                           </td>
                         </tr>
@@ -1325,7 +1325,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               {/* Data Tables if available */}
               {renderedDoc.tables.length > 0 && renderedDoc.tableColumns && (
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: '#1E293B' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: 'var(--ez-color-text-strong)' }}>
                     Lampiran Data Tabel
                   </div>
                   <div style={{ overflowX: 'auto' }}>
@@ -1341,11 +1341,11 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                       </thead>
                       <tbody>
                         {renderedDoc.tables.slice(0, 15).map((row, rIdx) => (
-                          <tr key={rIdx} style={{ background: rIdx % 2 === 0 ? '#FFFFFF' : '#F8FAFC' }}>
+                          <tr key={rIdx} style={{ background: rIdx % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)' }}>
                             {renderedDoc.tableColumns!.map((col) => {
                               const val = row[col.key];
                               return (
-                                <td key={col.key} style={{ padding: '4px 8px', border: '1px solid #E2E8F0' }}>
+                                <td key={col.key} style={{ padding: '4px 8px', border: '1px solid var(--ez-color-border-line)' }}>
                                   {typeof val === 'number' ? val.toLocaleString('id-ID') : String(val ?? '—')}
                                 </td>
                               );
@@ -1356,7 +1356,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     </table>
                   </div>
                   {renderedDoc.tables.length > 15 && (
-                    <div style={{ fontSize: 10, color: '#64748B', marginTop: 4, fontStyle: 'italic' }}>
+                    <div style={{ fontSize: 10, color: 'var(--ez-color-text-muted)', marginTop: 4, fontStyle: 'italic' }}>
                       Menampilkan 15 dari {renderedDoc.tables.length} baris (semua baris disertakan lengkap saat export).
                     </div>
                   )}
@@ -1365,17 +1365,17 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             </div>
 
             {/* Signature Area */}
-            <div style={{ marginTop: 30, borderTop: '1px solid #E2E8F0', paddingTop: 16 }}>
+            <div style={{ marginTop: 30, borderTop: '1px solid var(--ez-color-border-line)', paddingTop: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <div style={{ width: 230, textAlign: 'left', fontSize: 11 }}>
                   <div>{master.location || 'Surabaya'}, {renderedDoc.metadata.date}</div>
                   <div style={{ marginTop: 4 }}>Hormat kami,</div>
-                  <div style={{ fontWeight: 750, color: '#0F172A' }}>
+                  <div style={{ fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
                     {master.companyName || master.contractor || 'Penyedia Jasa'}
                   </div>
                   <div style={{ height: 48, display: 'flex', alignItems: 'center' }}>
                     {master.companySignature ? (
-                      <span style={{ fontSize: 10.5, color: '#16A34A', fontWeight: 600 }}>[Signature Attached]</span>
+                      <span style={{ fontSize: 10.5, color: 'var(--ez-hue-green-text-bright)', fontWeight: 600 }}>[Signature Attached]</span>
                     ) : (
                       <span style={{ color: '#94A3B8' }}>____________________</span>
                     )}
@@ -1383,7 +1383,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                   <div style={{ fontWeight: 750, borderTop: '1px solid #64748B', paddingTop: 4 }}>
                     {userValues['signatory.name'] || renderedDoc.signatures[0]?.name || master.director || 'Nama Penandatangan'}
                   </div>
-                  <div style={{ color: '#64748B' }}>{userValues['signatory.position'] || renderedDoc.signatures[0]?.position || 'Direktur Utama'}</div>
+                  <div style={{ color: 'var(--ez-color-text-muted)' }}>{userValues['signatory.position'] || renderedDoc.signatures[0]?.position || 'Direktur Utama'}</div>
                 </div>
               </div>
             </div>
@@ -1393,42 +1393,42 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
         {workspaceTab === 'data' && (
           <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {/* Auto Populated Source Summary */}
-            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#15803D', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <CheckCircle2 size={15} color="#16A34A" />
+            <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 10, padding: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--ez-hue-green-text)', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <CheckCircle2 size={15} color="var(--ez-hue-green-text-bright)" />
                 <span>Data Terisi Otomatis (Auto)</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                  <span style={{ color: '#64748B' }}>✓ Nama Pekerjaan:</span>
-                  <strong style={{ color: '#0F172A', textAlign: 'right', maxWidth: '60%' }}>{templateContext.project.name}</strong>
+                  <span style={{ color: 'var(--ez-color-text-muted)' }}>✓ Nama Pekerjaan:</span>
+                  <strong style={{ color: 'var(--ez-color-text-primary)', textAlign: 'right', maxWidth: '60%' }}>{templateContext.project.name}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                  <span style={{ color: '#64748B' }}>✓ Lokasi:</span>
-                  <strong style={{ color: '#0F172A' }}>{templateContext.project.location}</strong>
+                  <span style={{ color: 'var(--ez-color-text-muted)' }}>✓ Lokasi:</span>
+                  <strong style={{ color: 'var(--ez-color-text-primary)' }}>{templateContext.project.location}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                  <span style={{ color: '#64748B' }}>✓ Nilai RAB:</span>
-                  <strong style={{ color: '#2563EB' }}>{templateContext.rab.grandTotal}</strong>
+                  <span style={{ color: 'var(--ez-color-text-muted)' }}>✓ Nilai RAB:</span>
+                  <strong style={{ color: 'var(--ez-color-primary)' }}>{templateContext.rab.grandTotal}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                  <span style={{ color: '#64748B' }}>✓ Durasi:</span>
-                  <strong style={{ color: '#0F172A' }}>{templateContext.project.duration}</strong>
+                  <span style={{ color: 'var(--ez-color-text-muted)' }}>✓ Durasi:</span>
+                  <strong style={{ color: 'var(--ez-color-text-primary)' }}>{templateContext.project.duration}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                  <span style={{ color: '#64748B' }}>✓ Pemilik:</span>
-                  <strong style={{ color: '#0F172A' }}>{templateContext.project.owner}</strong>
+                  <span style={{ color: 'var(--ez-color-text-muted)' }}>✓ Pemilik:</span>
+                  <strong style={{ color: 'var(--ez-color-text-primary)' }}>{templateContext.project.owner}</strong>
                 </div>
               </div>
             </div>
 
             {/* KOP Perusahaan Selector */}
-            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 750, color: '#0F172A', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: 10, padding: 14 }}>
+              <div style={{ fontSize: 12, fontWeight: 750, color: 'var(--ez-color-text-primary)', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>Kop Perusahaan</span>
                 <button
                   onClick={() => setShowAddHeaderModal(true)}
-                  style={{ background: 'none', border: 0, color: '#2563EB', fontSize: 11.5, fontWeight: 650, cursor: 'pointer', padding: 0 }}
+                  style={{ background: 'none', border: 0, color: 'var(--ez-color-primary)', fontSize: 11.5, fontWeight: 650, cursor: 'pointer', padding: 0 }}
                 >
                   + Tambah / Paste
                 </button>
@@ -1437,7 +1437,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 value={selectedHeaderId}
                 onChange={(e) => setSelectedHeaderId(e.target.value)}
                 disabled={isViewingReadOnly}
-                style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12 }}
+                style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12 }}
               >
                 <option value="">Gunakan Kop Default Perusahaan</option>
                 {headers.map(h => (
@@ -1449,16 +1449,16 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             </div>
 
             {/* Data yang Perlu Anda Isi (USER Fields) */}
-            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 750, color: '#0F172A', marginBottom: 12 }}>
+            <div style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: 10, padding: 14 }}>
+              <div style={{ fontSize: 12, fontWeight: 750, color: 'var(--ez-color-text-primary)', marginBottom: 12 }}>
                 Data yang Perlu Anda Isi
               </div>
               {fieldClassification.userFields.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {fieldClassification.userFields.map(f => (
                     <div key={f.id}>
-                      <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
-                        {f.label} <span style={{ color: '#DC2626' }}>*</span>
+                      <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
+                        {f.label} <span style={{ color: 'var(--ez-hue-rose-text)' }}>*</span>
                       </label>
                       <input
                         type="text"
@@ -1466,13 +1466,13 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                         value={userValues[f.id] ?? ''}
                         disabled={isViewingReadOnly}
                         onChange={(e) => handleFieldChange(f.id, e.target.value)}
-                        style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, boxSizing: 'border-box' }}
+                        style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12, boxSizing: 'border-box' }}
                       />
                     </div>
                   ))}
                 </div>
               ) : (
-                <div style={{ fontSize: 12, color: '#64748B', fontStyle: 'italic' }}>
+                <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', fontStyle: 'italic' }}>
                   Semua data wajib untuk dokumen ini telah terpenuhi secara otomatis dari proyek.
                 </div>
               )}
@@ -1480,14 +1480,14 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
 
             {/* Data Opsional (OPTIONAL Fields) */}
             {fieldClassification.optionalFields.length > 0 && (
-              <details style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 10, padding: 12 }}>
-                <summary style={{ fontSize: 12, fontWeight: 700, color: '#475569', cursor: 'pointer' }}>
+              <details style={{ background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-line)', borderRadius: 10, padding: 12 }}>
+                <summary style={{ fontSize: 12, fontWeight: 700, color: 'var(--ez-color-text-slate)', cursor: 'pointer' }}>
                   Data Opsional ({fieldClassification.optionalFields.length})
                 </summary>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
                   {fieldClassification.optionalFields.map(f => (
                     <div key={f.id}>
-                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#475569', marginBottom: 3 }}>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--ez-color-text-slate)', marginBottom: 3 }}>
                         {f.label}
                       </label>
                       <input
@@ -1496,7 +1496,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                         value={userValues[f.id] ?? ''}
                         disabled={isViewingReadOnly}
                         onChange={(e) => handleFieldChange(f.id, e.target.value)}
-                        style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: 11.5, boxSizing: 'border-box' }}
+                        style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid var(--ez-color-border-line)', fontSize: 11.5, boxSizing: 'border-box' }}
                       />
                     </div>
                   ))}
@@ -1513,19 +1513,19 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           {/* REVISION HISTORY PANEL */}
           <div
             style={{
-              background: '#fff',
-              border: '1px solid #E2E8F0',
-              borderRadius: 12,
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-color-border-line)',
+              borderRadius: 'var(--ez-radius-control)',
               padding: 18,
               boxShadow: '0 1px 3px rgba(15,23,42,0.03)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 750, color: '#0F172A' }}>
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
                   Daftar Revisi Dokumen
                 </h3>
-                <div style={{ fontSize: 12, color: '#64748B' }}>
+                <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)' }}>
                   Revisi lama bersifat read-only dan aman dari penimpaan.
                 </div>
               </div>
@@ -1533,7 +1533,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 onClick={() => setShowRevisionModal(true)}
                 style={{
                   padding: '7px 12px',
-                  background: '#2563EB',
+                  background: 'var(--ez-color-primary)',
                   color: '#fff',
                   border: 0,
                   borderRadius: 6,
@@ -1565,13 +1565,13 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     style={{
                       padding: 12,
                       borderRadius: 8,
-                      border: `1px solid ${isSelected ? '#2563EB' : '#E2E8F0'}`,
-                      background: isSelected ? '#EFF6FF' : '#F8FAFC',
+                      border: `1px solid ${isSelected ? 'var(--ez-color-primary)' : 'var(--ez-color-border)'}`,
+                      background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-secondary)',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <strong style={{ fontSize: 13, color: '#0F172A' }}>
+                        <strong style={{ fontSize: 13, color: 'var(--ez-color-text-primary)' }}>
                           REV {String(rev.revision).padStart(2, '0')}
                         </strong>
                         {isCurrentActive && (
@@ -1580,16 +1580,16 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                           </span>
                         )}
                         {!isCurrentActive && (
-                          <span style={{ background: '#E2E8F0', color: '#475569', fontSize: 9.5, padding: '1px 5px', borderRadius: 4, fontWeight: 600 }}>
+                          <span style={{ background: 'var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)', fontSize: 9.5, padding: '1px 5px', borderRadius: 4, fontWeight: 600 }}>
                             READ-ONLY
                           </span>
                         )}
                       </div>
-                      <span style={{ fontSize: 11, color: '#64748B' }}>{dateStr}</span>
+                      <span style={{ fontSize: 11, color: 'var(--ez-color-text-muted)' }}>{dateStr}</span>
                     </div>
 
                     {rev.revisionDescription && (
-                      <div style={{ fontSize: 12, color: '#475569', marginTop: 4, fontStyle: 'italic' }}>
+                      <div style={{ fontSize: 12, color: 'var(--ez-color-text-slate)', marginTop: 4, fontStyle: 'italic' }}>
                         "{rev.revisionDescription}"
                       </div>
                     )}
@@ -1600,8 +1600,8 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                         style={{
                           flex: 1,
                           padding: '5px 8px',
-                          border: '1px solid #CBD5E1',
-                          background: '#fff',
+                          border: '1px solid var(--ez-hue-slate-border)',
+                          background: 'var(--ez-color-surface)',
                           borderRadius: 6,
                           fontSize: 11.5,
                           fontWeight: 600,
@@ -1621,7 +1621,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                           flex: 1,
                           padding: '5px 8px',
                           border: '1px solid #2563EB',
-                          background: '#2563EB',
+                          background: 'var(--ez-color-primary)',
                           color: '#fff',
                           borderRadius: 6,
                           fontSize: 11.5,
@@ -1646,25 +1646,25 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
           {/* EXPORT HISTORY PANEL */}
           <div
             style={{
-              background: '#fff',
-              border: '1px solid #E2E8F0',
-              borderRadius: 12,
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-color-border-line)',
+              borderRadius: 'var(--ez-radius-control)',
               padding: 18,
               boxShadow: '0 1px 3px rgba(15,23,42,0.03)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 750, color: '#0F172A' }}>
+                <h3 style={{ margin: 0, fontSize: 15, fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
                   Riwayat Ekspor (Audit Manifest)
                 </h3>
-                <div style={{ fontSize: 12, color: '#64748B' }}>
+                <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)' }}>
                   Semua berkas yang pernah diekspor tercatat di sini.
                 </div>
               </div>
               <button
                 onClick={refreshHistory}
-                style={{ border: 0, background: 'none', color: '#2563EB', fontSize: 12, cursor: 'pointer', fontWeight: 650 }}
+                style={{ border: 0, background: 'none', color: 'var(--ez-color-primary)', fontSize: 12, cursor: 'pointer', fontWeight: 650 }}
               >
                 Refresh
               </button>
@@ -1694,8 +1694,8 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                       style={{
                         padding: '10px 12px',
                         borderRadius: 8,
-                        border: `1px solid ${isSuccess ? '#E2E8F0' : '#FECACA'}`,
-                        background: isSuccess ? '#F8FAFC' : '#FEF2F2',
+                        border: `1px solid ${isSuccess ? 'var(--ez-color-border)' : 'var(--ez-hue-rose-border)'}`,
+                        background: isSuccess ? 'var(--ez-color-surface-secondary)' : 'var(--ez-hue-rose-bg)',
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1712,19 +1712,19 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                           >
                             {item.format}
                           </span>
-                          <span style={{ fontSize: 12.5, fontWeight: 650, color: '#1E293B' }}>
+                          <span style={{ fontSize: 12.5, fontWeight: 650, color: 'var(--ez-color-text-strong)' }}>
                             {item.fileName}
                           </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 11, color: '#64748B' }}>
+                          <span style={{ fontSize: 11, color: 'var(--ez-color-text-muted)' }}>
                             {dateStr} {timeStr}
                           </span>
                           <span
                             style={{
                               fontSize: 10.5,
                               fontWeight: 650,
-                              color: isSuccess ? '#16A34A' : '#DC2626',
+                              color: isSuccess ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-hue-rose-text)',
                             }}
                           >
                             {isSuccess ? 'BERHASIL' : 'GAGAL'}
@@ -1756,7 +1756,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
         >
           <div
             style={{
-              background: '#fff',
+              background: 'var(--ez-color-surface)',
               borderRadius: 14,
               width: 'min(480px, 100%)',
               padding: 24,
@@ -1766,13 +1766,13 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             <h3 style={{ margin: '0 0 8px 0', fontSize: 18, fontWeight: 750 }}>
               Create New Revision
             </h3>
-            <p style={{ margin: '0 0 16px 0', fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>
+            <p style={{ margin: '0 0 16px 0', fontSize: 13, color: 'var(--ez-color-text-muted)', lineHeight: 1.5 }}>
               Revisi saat ini (REV {String(activeRecord.revision).padStart(2, '0')}) akan diarsipkan sebagai{' '}
               <strong>read-only</strong>. Dokumen baru akan dibuat sebagai{' '}
               <strong>REV {String(activeRecord.revision + 1).padStart(2, '0')}</strong>.
             </p>
             <form onSubmit={handleCreateRevisionSubmit}>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: '#334155', marginBottom: 6 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 6 }}>
                 Deskripsi Perubahan Revisi:
               </label>
               <textarea
@@ -1783,7 +1783,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 placeholder="Contoh: Pembaruan volume pekerjaan & spesifikasi material sesuai addendum"
                 style={{
                   width: '100%',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   borderRadius: 8,
                   padding: 10,
                   fontSize: 13,
@@ -1797,8 +1797,8 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                   onClick={() => setShowRevisionModal(false)}
                   style={{
                     padding: '8px 16px',
-                    border: '1px solid #CBD5E1',
-                    background: '#fff',
+                    border: '1px solid var(--ez-hue-slate-border)',
+                    background: 'var(--ez-color-surface)',
                     borderRadius: 8,
                     fontSize: 13,
                     fontWeight: 600,
@@ -1812,7 +1812,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                   style={{
                     padding: '8px 18px',
                     border: 0,
-                    background: '#2563EB',
+                    background: 'var(--ez-color-primary)',
                     color: '#fff',
                     borderRadius: 8,
                     fontSize: 13,
@@ -1844,7 +1844,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
         >
           <div
             style={{
-              background: '#fff',
+              background: 'var(--ez-color-surface)',
               borderRadius: 14,
               width: 'min(500px, 100%)',
               padding: 24,
@@ -1855,28 +1855,28 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             {!validationModal.validation.valid ? (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <div style={{ background: '#FEF3C7', padding: 8, borderRadius: 50 }}>
-                    <AlertTriangle size={24} color="#D97706" />
+                  <div style={{ background: 'var(--ez-hue-amber-bg-deep)', padding: 8, borderRadius: 50 }}>
+                    <AlertTriangle size={24} color="var(--ez-hue-amber-text-deep)" />
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: '#92400E' }}>
+                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--ez-hue-amber-text-dark)' }}>
                       Dokumen belum siap
                     </h3>
-                    <div style={{ fontSize: 12, color: '#B45309', marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: 'var(--ez-hue-amber-text)', marginTop: 2 }}>
                       {validationModal.validation.errors.length} data perlu dilengkapi:
                     </div>
                   </div>
                 </div>
                 <div
                   style={{
-                    background: '#FFFBEB',
-                    border: '1px solid #FDE68A',
+                    background: 'var(--ez-hue-amber-bg)',
+                    border: '1px solid var(--ez-hue-amber-border)',
                     borderRadius: 8,
                     padding: '12px 16px',
                     marginBottom: 18,
                   }}
                 >
-                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: '#92400E' }}>
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: 'var(--ez-hue-amber-text-dark)' }}>
                     {validationModal.validation.errors.map((err) => (
                       <li key={err} style={{ marginBottom: 4 }}>• {err}</li>
                     ))}
@@ -1887,8 +1887,8 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     onClick={() => setValidationModal((v) => ({ ...v, show: false }))}
                     style={{
                       padding: '8px 16px',
-                      background: '#fff',
-                      border: '1px solid #CBD5E1',
+                      background: 'var(--ez-color-surface)',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       borderRadius: 8,
                       fontSize: 13,
                       fontWeight: 600,
@@ -1904,7 +1904,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     }}
                     style={{
                       padding: '9px 18px',
-                      background: '#2563EB',
+                      background: 'var(--ez-color-primary)',
                       color: '#fff',
                       border: 0,
                       borderRadius: 8,
@@ -1921,29 +1921,29 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
               /* If WARNING ONLY -> ALLOW "EXPORT ANYWAY" */
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <div style={{ background: '#FEF3C7', padding: 8, borderRadius: 50 }}>
-                    <AlertTriangle size={24} color="#D97706" />
+                  <div style={{ background: 'var(--ez-hue-amber-bg-deep)', padding: 8, borderRadius: 50 }}>
+                    <AlertTriangle size={24} color="var(--ez-hue-amber-text-deep)" />
                   </div>
-                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: '#92400E' }}>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--ez-hue-amber-text-dark)' }}>
                     Dokumen siap diekspor dengan catatan
                   </h3>
                 </div>
-                <p style={{ margin: '0 0 12px 0', fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
+                <p style={{ margin: '0 0 12px 0', fontSize: 13, color: 'var(--ez-color-text-slate)', lineHeight: 1.5 }}>
                   Dokumen memenuhi persyaratan utama, namun beberapa asset opsional belum tersedia:
                 </p>
                 <div
                   style={{
-                    background: '#FFFBEB',
-                    border: '1px solid #FDE68A',
+                    background: 'var(--ez-hue-amber-bg)',
+                    border: '1px solid var(--ez-hue-amber-border)',
                     borderRadius: 8,
                     padding: '12px 16px',
                     marginBottom: 18,
                   }}
                 >
-                  <div style={{ fontWeight: 700, fontSize: 12, color: '#B45309', marginBottom: 4 }}>
+                  <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--ez-hue-amber-text)', marginBottom: 4 }}>
                     WARNING:
                   </div>
-                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: '#92400E' }}>
+                  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'var(--ez-hue-amber-text-dark)' }}>
                     {validationModal.validation.warnings.map((w) => (
                       <li key={w}>{w}</li>
                     ))}
@@ -1954,8 +1954,8 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     onClick={() => setValidationModal((v) => ({ ...v, show: false }))}
                     style={{
                       padding: '8px 14px',
-                      background: '#fff',
-                      border: '1px solid #CBD5E1',
+                      background: 'var(--ez-color-surface)',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       borderRadius: 8,
                       fontSize: 13,
                       fontWeight: 600,
@@ -2015,7 +2015,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
         >
           <div
             style={{
-              background: '#fff',
+              background: 'var(--ez-color-surface)',
               borderRadius: 14,
               width: 'min(500px, 100%)',
               padding: 24,
@@ -2025,13 +2025,13 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
             <h3 style={{ margin: '0 0 6px 0', fontSize: 18, fontWeight: 750 }}>
               Kelola Kop Perusahaan
             </h3>
-            <p style={{ margin: '0 0 16px 0', fontSize: 12.5, color: '#64748B' }}>
+            <p style={{ margin: '0 0 16px 0', fontSize: 12.5, color: 'var(--ez-color-text-muted)' }}>
               Kop ini akan disimpan sebagai aset perusahaan yang dapat digunakan kembali untuk semua dokumen proyek.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Nama Label Kop
                 </label>
                 <input
@@ -2039,12 +2039,12 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                   placeholder="Contoh: Kop Utama PT Mandiri"
                   value={newHeaderName}
                   onChange={(e) => setNewHeaderName(e.target.value)}
-                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12, boxSizing: 'border-box' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Nama Legal Perusahaan
                 </label>
                 <input
@@ -2052,12 +2052,12 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                   placeholder="Contoh: PT MANDIRI BANGUN PERSADA"
                   value={newHeaderCompany}
                   onChange={(e) => setNewHeaderCompany(e.target.value)}
-                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12, boxSizing: 'border-box' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Alamat Kantor
                 </label>
                 <input
@@ -2065,13 +2065,13 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                   placeholder="Contoh: Jl. Sudirman No. 45, Jakarta Pusat"
                   value={newHeaderAddress}
                   onChange={(e) => setNewHeaderAddress(e.target.value)}
-                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12, boxSizing: 'border-box' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Telepon
                   </label>
                   <input
@@ -2079,11 +2079,11 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     placeholder="021-5551234"
                     value={newHeaderPhone}
                     onChange={(e) => setNewHeaderPhone(e.target.value)}
-                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12, boxSizing: 'border-box' }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                  <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                     Email Resmi
                   </label>
                   <input
@@ -2091,13 +2091,13 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                     placeholder="info@mandiri.co.id"
                     value={newHeaderEmail}
                     onChange={(e) => setNewHeaderEmail(e.target.value)}
-                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, boxSizing: 'border-box' }}
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid var(--ez-hue-slate-border)', fontSize: 12, boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: '#334155', marginBottom: 4 }}>
+                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 650, color: 'var(--ez-color-text-body)', marginBottom: 4 }}>
                   Upload Gambar Kop / Logo (Opsional PNG/JPG)
                 </label>
                 <input
@@ -2141,8 +2141,8 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 onClick={() => setShowAddHeaderModal(false)}
                 style={{
                   padding: '8px 14px',
-                  background: '#fff',
-                  border: '1px solid #CBD5E1',
+                  background: 'var(--ez-color-surface)',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   borderRadius: 8,
                   fontSize: 13,
                   fontWeight: 600,
@@ -2175,7 +2175,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
                 }}
                 style={{
                   padding: '8px 18px',
-                  background: '#2563EB',
+                  background: 'var(--ez-color-primary)',
                   color: '#fff',
                   border: 0,
                   borderRadius: 8,

@@ -53,9 +53,9 @@ export const ProjectContextSelectorModal: React.FC<ProjectContextSelectorModalPr
         style={{
           width: '100%',
           maxWidth: '440px',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '18px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           boxShadow: '0 20px 45px -10px rgba(15, 23, 42, 0.25)',
           overflow: 'hidden',
           display: 'flex',
@@ -67,7 +67,7 @@ export const ProjectContextSelectorModal: React.FC<ProjectContextSelectorModalPr
         <div
           style={{
             padding: '16px 20px',
-            borderBottom: '1px solid #F1F5F9',
+            borderBottom: '1px solid var(--ez-color-surface-tertiary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -79,8 +79,8 @@ export const ProjectContextSelectorModal: React.FC<ProjectContextSelectorModalPr
                 width: '34px',
                 height: '34px',
                 borderRadius: '10px',
-                backgroundColor: '#EFF6FF',
-                color: '#2563EB',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                color: 'var(--ez-color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -89,10 +89,10 @@ export const ProjectContextSelectorModal: React.FC<ProjectContextSelectorModalPr
               <Building2 size={18} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
+              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                 Pilih Konteks Proyek
               </h3>
-              <p style={{ margin: 0, fontSize: '11.5px', color: '#64748B' }}>
+              <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
                 Tentukan proyek aktif untuk analisis AI
               </p>
             </div>
@@ -105,8 +105,8 @@ export const ProjectContextSelectorModal: React.FC<ProjectContextSelectorModalPr
               height: '30px',
               borderRadius: '8px',
               border: 'none',
-              background: '#F1F5F9',
-              color: '#64748B',
+              background: 'var(--ez-color-surface-tertiary)',
+              color: 'var(--ez-color-text-muted)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -118,7 +118,7 @@ export const ProjectContextSelectorModal: React.FC<ProjectContextSelectorModalPr
         </div>
 
         {/* Search Input */}
-        <div style={{ padding: '12px 20px', borderBottom: '1px solid #F1F5F9' }}>
+        <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <Search size={15} color="#94A3B8" style={{ position: 'absolute', left: '12px' }} />
             <input
@@ -130,7 +130,7 @@ export const ProjectContextSelectorModal: React.FC<ProjectContextSelectorModalPr
                 width: '100%',
                 padding: '8px 12px 8px 36px',
                 borderRadius: '8px',
-                border: '1px solid #CBD5E1',
+                border: '1px solid var(--ez-hue-slate-border)',
                 fontSize: '12.5px',
                 outline: 'none',
               }}
@@ -159,9 +159,9 @@ export const ProjectContextSelectorModal: React.FC<ProjectContextSelectorModalPr
                     width: '100%',
                     textAlign: 'left',
                     padding: '12px 14px',
-                    borderRadius: '12px',
-                    border: `1.5px solid ${isSelected ? '#2563EB' : '#E2E8F0'}`,
-                    backgroundColor: isSelected ? '#EFF6FF' : '#FFFFFF',
+                    borderRadius: 'var(--ez-radius-control)',
+                    border: `1.5px solid ${isSelected ? 'var(--ez-color-primary)' : 'var(--ez-color-border)'}`,
+                    backgroundColor: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -171,16 +171,16 @@ export const ProjectContextSelectorModal: React.FC<ProjectContextSelectorModalPr
                 >
                   <div style={{ minWidth: 0, flex: 1, paddingRight: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 750, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 750, color: 'var(--ez-color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {proj.name}
                       </span>
                       {isSelected && (
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#2563EB', backgroundColor: '#DBEAFE', padding: '1px 6px', borderRadius: '4px' }}>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--ez-color-primary)', backgroundColor: 'var(--ez-hue-blue-bg-deep)', padding: '1px 6px', borderRadius: '4px' }}>
                           Aktif
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
                       {proj.location || 'Indonesia'} • {formatCurrencyIDR(proj.totalRab || 0)}
                     </div>
                   </div>
@@ -190,7 +190,7 @@ export const ProjectContextSelectorModal: React.FC<ProjectContextSelectorModalPr
                         width: '24px',
                         height: '24px',
                         borderRadius: '50%',
-                        backgroundColor: '#2563EB',
+                        backgroundColor: 'var(--ez-color-primary)',
                         color: '#FFFFFF',
                         display: 'flex',
                         alignItems: 'center',
@@ -209,7 +209,7 @@ export const ProjectContextSelectorModal: React.FC<ProjectContextSelectorModalPr
 
         {/* Footer with Create Shortcut */}
         {onCreateNewProject && (
-          <div style={{ padding: '12px 20px', borderTop: '1px solid #F1F5F9', backgroundColor: '#F8FAFC' }}>
+          <div style={{ padding: '12px 20px', borderTop: '1px solid var(--ez-color-surface-tertiary)', backgroundColor: 'var(--ez-color-surface-secondary)' }}>
             <button
               onClick={() => {
                 onClose();
@@ -219,9 +219,9 @@ export const ProjectContextSelectorModal: React.FC<ProjectContextSelectorModalPr
                 width: '100%',
                 padding: '9px 14px',
                 borderRadius: '10px',
-                border: '1px dashed #CBD5E1',
-                backgroundColor: '#FFFFFF',
-                color: '#2563EB',
+                border: '1px dashed var(--ez-hue-slate-border)',
+                backgroundColor: 'var(--ez-color-surface)',
+                color: 'var(--ez-color-primary)',
                 fontSize: '12.5px',
                 fontWeight: 650,
                 cursor: 'pointer',

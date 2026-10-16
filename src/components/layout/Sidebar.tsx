@@ -11,28 +11,28 @@ import {
   LineChart,
   FileText,
   Settings,
-  PanelLeftClose,
-  PanelLeftOpen,
   X,
   ChevronDown,
-  LogOut,
-  User as UserIcon,
-  Building2,
   Files,
-  Check,
+  CheckCircle2,
   Receipt,
   Package,
   HardHat,
   Truck,
   Tag,
-  Plus,
   FileSpreadsheet,
   FileCheck,
   Calendar,
+  Building2,
+  Plus,
+  Check,
   HelpCircle,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
 import { Project } from '../../types';
 import { useI18n } from '../../i18n';
+import { RabTemplateService } from '../../services/rabTemplateService';
 
 export interface SidebarProps {
   activeMenu: string;
@@ -76,12 +76,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { t } = useI18n();
   const [proyekSubmenuOpen, setProyekSubmenuOpen] = useState(true);
-  const [volumeSubmenuOpen, setVolumeSubmenuOpen] = useState(true);
+  // Floating pill toggle: slides sidebar completely away (manual only, no auto-expand)
+  const [isHidden, setIsHidden] = useState(false);
   const [rabSubmenuOpen, setRabSubmenuOpen] = useState(true);
-  const [projectPickerOpen, setProjectPickerOpen] = useState(false);
   const [databaseSubmenuOpen, setDatabaseSubmenuOpen] = useState(true);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; label: string } | null>(null);
+  const [projectPickerOpen, setProjectPickerOpen] = useState(false);
 
   // Volume Calculation Submenu Items
   const volumeSubItems = [
@@ -188,6 +189,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ).length;
   const archivedCount = projects.filter((p) => p.status === 'archived' || p.isArchived).length;
 
+  // Real template count from RAB template registry (never hardcoded)
+  const templateCount = RabTemplateService.getInstance().getAllTemplates().length;
+
   const handleMouseEnterItem = (e: React.MouseEvent<HTMLElement>, label: string, id: string) => {
     setHoveredItemId(id);
     if (!isMobile && sidebarCollapsed) {
@@ -243,8 +247,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'template-rab',
       label: t('nav.template_rab'),
       icon: Layers,
-      badge: '36-300',
-      badgeType: 'success',
+      badge: templateCount > 0 ? String(templateCount) : undefined,
+      badgeType: 'neutral',
     },
     // Database handled with dedicated expandable dropdown!
     {
@@ -286,8 +290,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 left: 0,
                 bottom: 0,
                 width: 'min(84vw, 290px)',
-                background: '#FFFFFF',
-                borderRight: '1px solid #E5E7EB',
+                background: 'var(--ez-color-surface)',
+                borderRight: '1px solid var(--ez-color-sidebar-border)',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
@@ -301,21 +305,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }
             : {
                 width: sidebarCollapsed ? '72px' : '256px',
-                background: '#FFFFFF',
-                borderRight: '1px solid #E5E7EB',
+                background: 'var(--ez-color-sidebar)',
+                borderRight: '1px solid var(--ez-color-sidebar-border)',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
                 flexShrink: 0,
                 position: 'sticky',
                 top: 0,
-                height: '100vh',
+                height: '100%',
+                marginLeft: isHidden ? (sidebarCollapsed ? '-72px' : '-256px') : '0',
+                transition: 'margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 200ms ease-out',
                 zIndex: 40,
-                transition: 'width 200ms ease-out',
               }
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, flex: 1, overflowY: 'auto', overflowX: 'hidden', paddingBottom: '8px' }}>
           {/* =========================================================================
               TOP: LOGO & WORKSPACE HEADER
              ========================================================================= */}
@@ -326,7 +331,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               alignItems: 'center',
               justifyContent: !isMobile && sidebarCollapsed ? 'center' : 'space-between',
               padding: !isMobile && sidebarCollapsed ? '0 12px' : '0 16px',
-              borderBottom: '1px solid #E5E7EB',
+              borderBottom: '1px solid var(--ez-color-sidebar-border)',
               flexShrink: 0,
             }}
           >
@@ -347,7 +352,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 style={{
                   width: '34px',
                   height: '34px',
-                  borderRadius: '9px',
+                  borderRadius: '8px',
                   overflow: 'hidden',
                   display: 'flex',
                   alignItems: 'center',
@@ -370,20 +375,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {(!sidebarCollapsed || isMobile) && (
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <span style={{ fontWeight: 800, fontSize: '16px', letterSpacing: '-0.025em', color: '#0F172A' }}>
+                    <span style={{ fontWeight: 800, fontSize: '16px', letterSpacing: '-0.025em', color: 'var(--ez-color-text-primary)' }}>
                       EZRAB
                     </span>
-                    <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#2563EB', display: 'inline-block' }} />
+                    <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--ez-color-primary)', display: 'inline-block' }} />
                   </div>
-                  <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 500, letterSpacing: '0.01em' }}>
-                    Construction Tech
+                  <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 500, letterSpacing: '0.01em' }}>
+                    {t('nav.tagline')}
                   </span>
                 </div>
               )}
             </div>
 
-            {/* Collapse toggle / Mobile close */}
-            {isMobile ? (
+            {/* Mobile drawer close (desktop uses floating pill toggle) */}
+            {isMobile && (
               <button
                 type="button"
                 onClick={onCloseMobileDrawer}
@@ -395,61 +400,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: '#F1F5F9',
-                  color: '#475569',
+                  background: 'var(--ez-color-surface-secondary)',
+                  color: 'var(--ez-color-sidebar-text)',
                   border: 'none',
                   cursor: 'pointer',
                 }}
               >
                 <X size={16} />
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={onToggleCollapse}
-                title={sidebarCollapsed ? t('nav.expand') : t('nav.collapse')}
-                aria-label={sidebarCollapsed ? t('nav.expand') : t('nav.collapse')}
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: '#F8FAFC',
-                  color: '#64748B',
-                  border: '1px solid #E2E8F0',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#F1F5F9';
-                  e.currentTarget.style.color = '#0F172A';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#F8FAFC';
-                  e.currentTarget.style.color = '#64748B';
-                }}
-              >
-                {sidebarCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
-              </button>
             )}
+
           </div>
 
-          {/* Workspace Selector: Proyek Saat Ini Dropdown */}
+
+          {/* Project selector — compact, minimal */}
           {(!sidebarCollapsed || isMobile) ? (
-            <div style={{ position: 'relative', margin: '12px 14px 6px 14px' }}>
-              <div
-                onClick={() => setProjectPickerOpen(!projectPickerOpen)}
+            <div style={{ position: 'relative', margin: '4px 0 8px 0' }}>
+              <button
+                type="button"
+                onClick={() => setProjectPickerOpen((v) => !v)}
+                aria-label={t('nav.pick_current_project')}
+                aria-expanded={projectPickerOpen}
                 style={{
-                  padding: '7px 10px',
-                  borderRadius: '10px',
-                  background: '#F8FAFC',
-                  border: projectPickerOpen ? '1.5px solid #2563EB' : '1px solid #E5E7EB',
+                  width: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  gap: '8px',
+                  padding: '8px 10px',
+                  borderRadius: '12px',
+                  background: 'var(--ez-color-surface)',
+                  border: '1px solid var(--ez-color-border)',
                   cursor: 'pointer',
+                  textAlign: 'left',
                   transition: 'all 0.15s ease',
                   boxShadow: projectPickerOpen ? '0 4px 12px rgba(37,99,235,0.08)' : 'none',
                 }}
@@ -459,41 +442,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     style={{
                       width: '28px',
                       height: '28px',
-                      borderRadius: '7px',
-                      background: '#EFF6FF',
-                      border: '1px solid #BFDBFE',
+                      borderRadius: '8px',
+                      background: 'var(--ez-color-primary-soft)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
-                      color: '#2563EB',
+                      color: 'var(--ez-color-primary)',
                     }}
                   >
                     <Building2 size={15} />
                   </div>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: '9px', fontWeight: 800, color: '#2563EB', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                      Proyek Saat Ini
+                    <div style={{ fontSize: '9px', fontWeight: 800, color: 'var(--ez-color-primary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                      {t('nav.current_project')}
                     </div>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {currentProject ? currentProject.name : 'Pilih Proyek'}
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {currentProject ? currentProject.name : t('nav.pick_project')}
                     </div>
                   </div>
                 </div>
-
                 <ChevronDown
                   size={14}
-                  color="#64748B"
+                  color="var(--ez-color-text-muted)"
                   style={{
                     transform: projectPickerOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                     transition: 'transform 0.2s ease',
                     flexShrink: 0,
-                    marginLeft: '4px',
                   }}
                 />
-              </div>
+              </button>
 
-              {/* Project Picker Dropdown Popover */}
               {projectPickerOpen && (
                 <div
                   style={{
@@ -502,9 +481,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     left: 0,
                     right: 0,
                     marginTop: '6px',
-                    backgroundColor: '#FFFFFF',
+                    backgroundColor: 'var(--ez-color-surface)',
                     borderRadius: '12px',
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--ez-color-border-soft)',
                     boxShadow: '0 12px 28px rgba(15,23,42,0.14)',
                     zIndex: 100,
                     maxHeight: '280px',
@@ -515,8 +494,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     gap: '4px',
                   }}
                 >
-                  <div style={{ padding: '6px 8px 4px', fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Daftar Proyek ({projects.length})
+                  <div style={{ padding: '6px 8px 4px', fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {t('nav.project_list')} ({projects.length})
                   </div>
                   {projects.map((proj) => {
                     const isSelected = currentProject?.id === proj.id;
@@ -534,34 +513,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           justifyContent: 'space-between',
                           padding: '7px 8px',
                           borderRadius: '8px',
-                          border: isSelected ? '1px solid #BFDBFE' : '1px solid transparent',
-                          background: isSelected ? '#EFF6FF' : 'transparent',
+                          border: isSelected ? '1px solid var(--ez-hue-blue-border)' : '1px solid transparent',
+                          background: isSelected ? 'var(--ez-color-primary-soft)' : 'transparent',
                           cursor: 'pointer',
                           textAlign: 'left',
                           width: '100%',
                           transition: 'background 0.12s ease',
                         }}
                         onMouseEnter={(e) => {
-                          if (!isSelected) e.currentTarget.style.background = '#F8FAFC';
+                          if (!isSelected) e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
                         }}
                         onMouseLeave={(e) => {
                           if (!isSelected) e.currentTarget.style.background = 'transparent';
                         }}
                       >
                         <div style={{ minWidth: 0, flex: 1, marginRight: '6px' }}>
-                          <div style={{ fontSize: '11.5px', fontWeight: 700, color: isSelected ? '#2563EB' : '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <div style={{ fontSize: '11.5px', fontWeight: 700, color: isSelected ? 'var(--ez-color-primary)' : 'var(--ez-color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {proj.name}
                           </div>
-                          <div style={{ fontSize: '10px', color: '#64748B' }}>
-                            {proj.projectNumber || proj.id} • {proj.status === 'completed' ? 'Selesai' : proj.status === 'in_progress' ? 'Berjalan' : 'Draft'}
+                          <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>
+                            {proj.projectNumber || proj.id} • {proj.status === 'completed' ? t('nav.st_selesai') : proj.status === 'in_progress' ? t('nav.st_berjalan') : t('nav.st_draft')}
                           </div>
                         </div>
-                        {isSelected && <Check size={14} color="#2563EB" style={{ flexShrink: 0 }} />}
+                        {isSelected && <Check size={14} color="var(--ez-color-primary)" style={{ flexShrink: 0 }} />}
                       </button>
                     );
                   })}
-
-                  <div style={{ borderTop: '1px solid #F1F5F9', marginTop: '4px', paddingTop: '4px' }}>
+                  <div style={{ borderTop: '1px solid var(--ez-color-surface-secondary)', marginTop: '4px', paddingTop: '4px' }}>
                     <button
                       type="button"
                       onClick={() => {
@@ -570,12 +548,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       }}
                       style={{
                         width: '100%',
-                        padding: '6px 8px',
-                        borderRadius: '6px',
+                        padding: '8px',
+                        borderRadius: '8px',
                         border: 'none',
-                        background: '#EFF6FF',
-                        color: '#2563EB',
-                        fontSize: '11px',
+                        background: 'var(--ez-color-primary-soft)',
+                        color: 'var(--ez-color-primary)',
+                        fontSize: '11.5px',
                         fontWeight: 700,
                         cursor: 'pointer',
                         display: 'flex',
@@ -585,25 +563,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       }}
                     >
                       <Plus size={13} />
-                      <span>+ Buat Proyek Baru</span>
+                      <span>+ {t('nav.create_project')}</span>
                     </button>
                   </div>
                 </div>
               )}
             </div>
           ) : (
-            <div style={{ display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', margin: '6px 0 10px 0' }}>
               <button
                 type="button"
                 onClick={() => onSelectMenu('proyek')}
-                title={`Proyek Saat Ini: ${currentProject ? currentProject.name : 'Pilih Proyek'}`}
+                title={`${t('nav.current_project')}: ${currentProject ? currentProject.name : t('nav.pick_project')}`}
+                aria-label={t('nav.pick_project_aria')}
                 style={{
                   width: '38px',
                   height: '38px',
-                  borderRadius: '10px',
-                  background: '#EFF6FF',
-                  border: '1px solid #BFDBFE',
-                  color: '#2563EB',
+                  borderRadius: '12px',
+                  background: 'var(--ez-color-primary-soft)',
+                  border: 'none',
+                  color: 'var(--ez-color-primary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -628,8 +607,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             {/* 1. BERANDA Header & Dashboard */}
             {(!sidebarCollapsed || isMobile) && (
-              <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '6px 12px 3px 12px' }}>
-                BERANDA
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '6px 12px 3px 12px' }}>
+                {t('nav.group_beranda')}
               </div>
             )}
             {(() => {
@@ -645,7 +624,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onMouseLeave={handleMouseLeaveItem}
                   aria-label={item.label}
                   style={{
-                    height: '40px',
+                    height: '36px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
@@ -653,8 +632,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     borderRadius: '8px',
                     fontSize: '13px',
                     fontWeight: active ? 650 : 500,
-                    color: active ? '#2563EB' : '#475569',
-                    background: active ? '#EFF6FF' : hoveredItemId === item.id ? '#F8FAFC' : 'transparent',
+                    color: active ? 'var(--ez-color-primary)' : 'var(--ez-color-sidebar-text)',
+                    background: active ? 'var(--ez-color-sidebar-active)' : hoveredItemId === item.id ? 'var(--ez-color-sidebar-hover)' : 'transparent',
                     border: 'none',
                     cursor: 'pointer',
                     textAlign: 'left',
@@ -663,315 +642,156 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     transition: 'all 0.15s ease',
                   }}
                 >
-                  <IconComp size={18} color={active ? '#2563EB' : '#64748B'} />
+                  <IconComp size={17} color={active ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
                   {(!sidebarCollapsed || isMobile) && <span>{item.label}</span>}
                 </button>
               );
             })()}
 
-            {/* 2. Proyek with Expandable Status Filter & Submodules */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <div
-                style={{
-                  height: '40px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'space-between',
-                  padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: (activeMenu === 'proyek' || activeMenu === 'manajemen-proyek') ? 650 : 500,
-                  color: (activeMenu === 'proyek' || activeMenu === 'manajemen-proyek') ? '#2563EB' : '#475569',
-                  background: (activeMenu === 'proyek' || activeMenu === 'manajemen-proyek') && !proyekSubmenuOpen ? '#EFF6FF' : hoveredItemId === 'proyek-parent' ? '#F8FAFC' : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  width: '100%',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={(e) => handleMouseEnterItem(e, 'Proyek', 'proyek-parent')}
-                onMouseLeave={handleMouseLeaveItem}
-              >
-                <div
+            {/* 2. PROYEK — status filters with real counts */}
+            {(!sidebarCollapsed || isMobile) && (
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
+                {t('nav.proyek')}
+              </div>
+            )}
+            {[
+              { label: t('nav.f_semua'), filter: 'Semua Proyek', count: totalProjects, icon: FolderKanban },
+              { label: t('nav.f_draft'), filter: 'Draft', count: draftCount, icon: FileText },
+              { label: t('nav.f_aktif'), filter: 'Sedang Dikerjakan', count: inProgressCount, icon: HardHat },
+              { label: t('nav.f_selesai'), filter: 'Selesai', count: completedCount, icon: CheckCircle2 },
+              { label: t('nav.f_arsip'), filter: 'Arsip', count: archivedCount, icon: Files },
+            ].map((sub) => {
+              const isSubActive = activeMenu === 'proyek' && projectFilter === sub.filter;
+              const SubIcon = sub.icon;
+              return (
+                <button
+                  key={sub.filter}
+                  type="button"
                   onClick={() => {
-                    onSelectProjectFilter('Semua Proyek');
+                    onSelectProjectFilter(sub.filter);
                     onSelectMenu('proyek', null);
                   }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, height: '100%' }}
-                >
-                  <FolderKanban size={18} color={(activeMenu === 'proyek' || activeMenu === 'manajemen-proyek') ? '#2563EB' : '#64748B'} />
-                  {(!sidebarCollapsed || isMobile) && <span>{t('nav.proyek')}</span>}
-                </div>
-
-                {(!sidebarCollapsed || isMobile) && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {totalProjects > 0 && (
-                      <span
-                        style={{
-                          fontSize: '10.5px',
-                          background: '#EFF6FF',
-                          color: '#2563EB',
-                          padding: '1px 7px',
-                          borderRadius: '999px',
-                          fontWeight: 700,
-                        }}
-                      >
-                        {totalProjects}
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setProyekSubmenuOpen(!proyekSubmenuOpen);
-                      }}
-                      style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: '2px', display: 'flex' }}
-                      title="Buka/Tutup Submenu Status Proyek"
-                      aria-label="Buka/Tutup Submenu Status Proyek"
-                    >
-                      <ChevronDown
-                        size={14}
-                        style={{
-                          transform: proyekSubmenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition: 'transform 0.2s ease',
-                        }}
-                      />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Sub-items Proyek */}
-              {(!sidebarCollapsed || isMobile) && proyekSubmenuOpen && (
-                <div
+                  onMouseEnter={(e) => handleMouseEnterItem(e, sub.label, `proyek-${sub.filter}`)}
+                  onMouseLeave={handleMouseLeaveItem}
+                  aria-label={sub.label}
                   style={{
-                    paddingLeft: '22px',
+                    height: '36px',
                     display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2px',
-                    borderLeft: '2px solid #E5E7EB',
-                    marginLeft: '20px',
-                    marginTop: '2px',
-                    marginBottom: '4px',
+                    alignItems: 'center',
+                    justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'space-between',
+                    padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: isSubActive ? 650 : 500,
+                    color: isSubActive ? 'var(--ez-color-primary)' : 'var(--ez-color-sidebar-text)',
+                    background: isSubActive ? 'var(--ez-color-sidebar-active)' : hoveredItemId === `proyek-${sub.filter}` ? 'var(--ez-color-sidebar-hover)' : 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    width: '100%',
+                    transition: 'all 0.15s ease',
                   }}
                 >
-                  {[
-                    { label: t('nav.f_semua'), filter: 'Semua Proyek', count: totalProjects },
-                    { label: t('nav.f_draft'), filter: 'Draft', count: draftCount },
-                    { label: t('nav.f_aktif'), filter: 'Sedang Dikerjakan', count: inProgressCount },
-                    { label: t('nav.f_selesai'), filter: 'Selesai', count: completedCount },
-                    { label: t('nav.f_arsip'), filter: 'Arsip', count: archivedCount },
-                  ].map((sub) => {
-                    const isSubActive = activeMenu === 'proyek' && projectFilter === sub.filter;
-                    return (
-                      <button
-                        key={sub.filter}
-                        type="button"
-                        onClick={() => {
-                          onSelectProjectFilter(sub.filter);
-                          onSelectMenu('proyek', null);
-                        }}
-                        style={{
-                          height: '28px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '0 8px',
-                          borderRadius: '6px',
-                          fontSize: '12px',
-                          fontWeight: isSubActive ? 650 : 500,
-                          color: isSubActive ? '#2563EB' : '#64748B',
-                          background: isSubActive ? '#EFF6FF' : 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          width: '100%',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <span>{sub.label}</span>
-                        {sub.count > 0 && (
-                          <span
-                            style={{
-                              fontSize: '10px',
-                              fontWeight: 650,
-                              padding: '0 5px',
-                              borderRadius: '999px',
-                              background: isSubActive ? '#DBEAFE' : '#F1F5F9',
-                              color: isSubActive ? '#1D4ED8' : '#94A3B8',
-                            }}
-                          >
-                            {sub.count}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <SubIcon size={17} color={isSubActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
+                    {(!sidebarCollapsed || isMobile) && <span>{sub.label}</span>}
+                  </span>
+                  {(!sidebarCollapsed || isMobile) && sub.count > 0 && (
+                    <span style={{ fontSize: '11px', fontWeight: 650, color: isSubActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)' }}>
+                      {sub.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
 
-                  <div style={{ height: '1px', background: '#F1F5F9', margin: '4px 0' }} />
+            {/* 3. VOLUME & QTO */}
+            {(!sidebarCollapsed || isMobile) && (
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
+                {t('nav.group_volume_qto')}
+              </div>
+            )}
+            {volumeSubItems.map((sub) => {
+              const isSubActive = sub.match(activeMenu);
+              const SubIcon = sub.icon;
+              return (
+                <button
+                  key={sub.id}
+                  type="button"
+                  onClick={() => onSelectMenu(sub.id)}
+                  onMouseEnter={(e) => handleMouseEnterItem(e, sub.label, sub.id)}
+                  onMouseLeave={handleMouseLeaveItem}
+                  aria-label={sub.label}
+                  style={{
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
+                    padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: isSubActive ? 650 : 500,
+                    color: isSubActive ? 'var(--ez-color-primary)' : 'var(--ez-color-sidebar-text)',
+                    background: isSubActive ? 'var(--ez-color-sidebar-active)' : hoveredItemId === sub.id ? 'var(--ez-color-sidebar-hover)' : 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    width: '100%',
+                    gap: '12px',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <SubIcon size={17} color={isSubActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
+                  {(!sidebarCollapsed || isMobile) && <span>{sub.label}</span>}
+                </button>
+              );
+            })}
 
-                  {/* Integrated Volume & QTO */}
-                  <button
-                    type="button"
-                    onClick={() => onSelectMenu('qto')}
-                    style={{
-                      height: '28px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '0 8px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: activeMenu === 'qto' ? 650 : 500,
-                      color: activeMenu === 'qto' ? '#2563EB' : '#64748B',
-                      background: activeMenu === 'qto' ? '#EFF6FF' : 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      width: '100%',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <Ruler size={13} color={activeMenu === 'qto' ? '#2563EB' : '#94A3B8'} />
-                    <span>Volume & QTO</span>
-                  </button>
+            {/* 3b. JADWAL & MANAJEMEN */}
+            {(!sidebarCollapsed || isMobile) && (
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
+                {t('nav.group_jadwal')}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => onSelectMenu('manajemen-proyek')}
+              onMouseEnter={(e) => handleMouseEnterItem(e, t('nav.jadwal_manajemen'), 'manajemen-proyek')}
+              onMouseLeave={handleMouseLeaveItem}
+              aria-label={t('nav.jadwal_manajemen')}
+              style={{
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
+                padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: activeMenu === 'manajemen-proyek' ? 650 : 500,
+                color: activeMenu === 'manajemen-proyek' ? 'var(--ez-color-primary)' : 'var(--ez-color-sidebar-text)',
+                background: activeMenu === 'manajemen-proyek' ? 'var(--ez-color-sidebar-active)' : hoveredItemId === 'manajemen-proyek' ? 'var(--ez-color-sidebar-hover)' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%',
+                gap: '12px',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Calendar size={17} color={activeMenu === 'manajemen-proyek' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
+              {(!sidebarCollapsed || isMobile) && <span>{t('nav.jadwal_manajemen')}</span>}
+            </button>
 
-                  {/* Integrated Jadwal & Manajemen Proyek */}
-                  <button
-                    type="button"
-                    onClick={() => onSelectMenu('manajemen-proyek')}
-                    style={{
-                      height: '28px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '0 8px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: activeMenu === 'manajemen-proyek' ? 650 : 500,
-                      color: activeMenu === 'manajemen-proyek' ? '#2563EB' : '#64748B',
-                      background: activeMenu === 'manajemen-proyek' ? '#EFF6FF' : 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      width: '100%',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <Calendar size={13} color={activeMenu === 'manajemen-proyek' ? '#2563EB' : '#94A3B8'} />
-                    <span>Jadwal & Manajemen</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* 3. Volume Calculation with Expandable Submenu */}
+            {/* 4. RAB & ESTIMASI */}
+            {(!sidebarCollapsed || isMobile) && (
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
+                {t('nav.group_rab')}
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
               <div
                 style={{
-                  height: '40px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'space-between',
-                  padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: isVolumeActive ? 650 : 500,
-                  color: isVolumeActive ? '#2563EB' : '#475569',
-                  background: isVolumeActive && !volumeSubmenuOpen ? '#EFF6FF' : hoveredItemId === 'volume-parent' ? '#F8FAFC' : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  width: '100%',
-                  transition: 'all 0.15s ease',
-                }}
-                onMouseEnter={(e) => handleMouseEnterItem(e, t('nav.volume_kalkulator'), 'volume-parent')}
-                onMouseLeave={handleMouseLeaveItem}
-              >
-                <div
-                  onClick={() => onSelectMenu('qto-vc')}
-                  style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, height: '100%' }}
-                >
-                  <Calculator size={18} color={isVolumeActive ? '#2563EB' : '#64748B'} />
-                  {(!sidebarCollapsed || isMobile) && <span>{t('nav.volume_kalkulator')}</span>}
-                </div>
-
-                {(!sidebarCollapsed || isMobile) && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setVolumeSubmenuOpen(!volumeSubmenuOpen);
-                    }}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: '2px', display: 'flex' }}
-                    title="Buka/Tutup Submenu Volume Calculation"
-                    aria-label="Buka/Tutup Submenu Volume Calculation"
-                  >
-                    <ChevronDown
-                      size={14}
-                      style={{
-                        transform: volumeSubmenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                        transition: 'transform 0.2s ease',
-                      }}
-                    />
-                  </button>
-                )}
-              </div>
-
-              {/* Sub-items Volume Calculation */}
-              {(!sidebarCollapsed || isMobile) && volumeSubmenuOpen && (
-                <div
-                  style={{
-                    paddingLeft: '22px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2px',
-                    borderLeft: '2px solid #E5E7EB',
-                    marginLeft: '20px',
-                    marginTop: '2px',
-                    marginBottom: '4px',
-                  }}
-                >
-                  {volumeSubItems.map((sub) => {
-                    const isSubActive = sub.match(activeMenu);
-                    const SubIcon = sub.icon;
-                    return (
-                      <button
-                        key={sub.id}
-                        type="button"
-                        onClick={() => onSelectMenu(sub.id)}
-                        style={{
-                          height: '28px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          padding: '0 8px',
-                          borderRadius: '6px',
-                          fontSize: '12px',
-                          fontWeight: isSubActive ? 650 : 500,
-                          color: isSubActive ? '#2563EB' : '#64748B',
-                          background: isSubActive ? '#EFF6FF' : 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          width: '100%',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        <SubIcon size={13} color={isSubActive ? '#2563EB' : '#94A3B8'} />
-                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {sub.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* 4. RAB & Estimasi with Expandable Submenu */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <div
-                style={{
-                  height: '40px',
+                  height: '36px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'space-between',
@@ -979,8 +799,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   borderRadius: '8px',
                   fontSize: '13px',
                   fontWeight: isRabActive ? 650 : 500,
-                  color: isRabActive ? '#2563EB' : '#475569',
-                  background: isRabActive && !rabSubmenuOpen ? '#EFF6FF' : hoveredItemId === 'rab-parent' ? '#F8FAFC' : 'transparent',
+                  color: isRabActive ? 'var(--ez-color-primary)' : 'var(--ez-color-sidebar-text)',
+                  background: isRabActive && !rabSubmenuOpen ? 'var(--ez-color-sidebar-active)' : hoveredItemId === 'rab-parent' ? 'var(--ez-color-sidebar-hover)' : 'transparent',
                   border: 'none',
                   cursor: 'pointer',
                   width: '100%',
@@ -993,7 +813,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => onSelectMenu('rab-spreadsheet')}
                   style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, height: '100%' }}
                 >
-                  <Coins size={18} color={isRabActive ? '#2563EB' : '#64748B'} />
+                  <Coins size={17} color={isRabActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
                   {(!sidebarCollapsed || isMobile) && <span>{t('nav.rab_estimasi')}</span>}
                 </div>
 
@@ -1004,9 +824,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       e.stopPropagation();
                       setRabSubmenuOpen(!rabSubmenuOpen);
                     }}
-                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: '2px', display: 'flex' }}
-                    title="Buka/Tutup Submenu RAB"
-                    aria-label="Buka/Tutup Submenu RAB"
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--ez-color-text-muted)', padding: '2px', display: 'flex' }}
+                    title={t('nav.toggle_rab')}
+                    aria-label={t('nav.toggle_rab')}
                   >
                     <ChevronDown
                       size={14}
@@ -1027,7 +847,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '2px',
-                    borderLeft: '2px solid #E5E7EB',
+                    borderLeft: '2px solid var(--ez-color-sidebar-border)',
                     marginLeft: '20px',
                     marginTop: '2px',
                     marginBottom: '4px',
@@ -1047,11 +867,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           alignItems: 'center',
                           gap: '8px',
                           padding: '0 8px',
-                          borderRadius: '6px',
+                          borderRadius: '8px',
                           fontSize: '12px',
                           fontWeight: isSubActive ? 650 : 500,
-                          color: isSubActive ? '#2563EB' : '#64748B',
-                          background: isSubActive ? '#EFF6FF' : 'transparent',
+                          color: isSubActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
+                          background: isSubActive ? 'var(--ez-color-sidebar-active)' : 'transparent',
                           border: 'none',
                           cursor: 'pointer',
                           textAlign: 'left',
@@ -1059,7 +879,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           transition: 'all 0.15s ease',
                         }}
                       >
-                        <SubIcon size={13} color={isSubActive ? '#2563EB' : '#94A3B8'} />
+                        <SubIcon size={13} color={isSubActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
                         <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {sub.label}
                         </span>
@@ -1077,13 +897,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
               return (
                 <React.Fragment key={item.id}>
                   {item.id === 'ezrab-ai' && (!sidebarCollapsed || isMobile) && (
-                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
-                      AI TOOLS
+                    <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
+                      {t('nav.group_ai')}
                     </div>
                   )}
                   {item.id === 'template-rab' && (!sidebarCollapsed || isMobile) && (
-                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
-                      DATA & REFERENSI
+                    <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
+                      {t('nav.group_data')}
                     </div>
                   )}
                   <button
@@ -1093,7 +913,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onMouseLeave={handleMouseLeaveItem}
                   aria-label={item.label}
                   style={{
-                    height: '40px',
+                    height: '36px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'space-between',
@@ -1101,8 +921,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     borderRadius: '8px',
                     fontSize: '13px',
                     fontWeight: active ? 650 : 500,
-                    color: active ? '#2563EB' : '#475569',
-                    background: active ? '#EFF6FF' : hoveredItemId === item.id ? '#F8FAFC' : 'transparent',
+                    color: active ? 'var(--ez-color-primary)' : 'var(--ez-color-sidebar-text)',
+                    background: active ? 'var(--ez-color-sidebar-active)' : hoveredItemId === item.id ? 'var(--ez-color-sidebar-hover)' : 'transparent',
                     border: 'none',
                     cursor: 'pointer',
                     textAlign: 'left',
@@ -1112,33 +932,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <IconComp size={18} color={active ? '#2563EB' : '#64748B'} />
+                    <IconComp size={17} color={active ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
                     {(!sidebarCollapsed || isMobile) && <span>{item.label}</span>}
                   </div>
 
                   {(!sidebarCollapsed || isMobile) && item.badge && (
                     <span
                       style={{
-                        fontSize: '9.5px',
-                        fontWeight: 700,
-                        padding: '1px 6px',
-                        borderRadius: '4px',
-                        background:
-                          item.badgeType === 'primary'
-                            ? active
-                              ? '#2563EB'
-                              : '#EFF6FF'
-                            : item.badgeType === 'success'
-                            ? '#DCFCE7'
-                            : '#F1F5F9',
-                        color:
-                          item.badgeType === 'primary'
-                            ? active
-                              ? '#FFFFFF'
-                              : '#2563EB'
-                            : item.badgeType === 'success'
-                            ? '#15803D'
-                            : '#64748B',
+                        fontSize: '10px',
+                        fontWeight: 650,
+                        color: item.badgeType === 'primary' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                       }}
                     >
                       {item.badge}
@@ -1151,7 +954,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div key="database-expandable-group" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <div
                       style={{
-                        height: '40px',
+                        height: '36px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'space-between',
@@ -1159,19 +962,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         borderRadius: '8px',
                         fontSize: '13px',
                         fontWeight: isDatabaseActive ? 650 : 500,
-                        color: isDatabaseActive ? '#2563EB' : '#475569',
+                        color: isDatabaseActive ? 'var(--ez-color-primary)' : 'var(--ez-color-sidebar-text)',
                         background:
                           isDatabaseActive && !databaseSubmenuOpen
-                            ? '#EFF6FF'
+                            ? 'var(--ez-color-sidebar-active)'
                             : hoveredItemId === 'database-parent'
-                            ? '#F8FAFC'
+                            ? 'var(--ez-color-sidebar-hover)'
                             : 'transparent',
                         border: 'none',
                         cursor: 'pointer',
                         width: '100%',
                         transition: 'all 0.15s ease',
                       }}
-                      onMouseEnter={(e) => handleMouseEnterItem(e, 'Database', 'database-parent')}
+                      onMouseEnter={(e) => handleMouseEnterItem(e, t('nav.database'), 'database-parent')}
                       onMouseLeave={handleMouseLeaveItem}
                     >
                       <div
@@ -1180,7 +983,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         }}
                         style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, height: '100%' }}
                       >
-                        <Database size={18} color={isDatabaseActive ? '#2563EB' : '#64748B'} />
+                        <Database size={17} color={isDatabaseActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
                         {(!sidebarCollapsed || isMobile) && <span>{t('nav.database')}</span>}
                       </div>
 
@@ -1195,12 +998,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             background: 'transparent',
                             border: 'none',
                             cursor: 'pointer',
-                            color: '#94A3B8',
+                            color: 'var(--ez-color-text-muted)',
                             padding: '2px',
                             display: 'flex',
                           }}
-                          title="Buka/Tutup Submenu Database"
-                          aria-label="Buka/Tutup Submenu Database"
+                          title={t('nav.toggle_db')}
+                          aria-label={t('nav.toggle_db')}
                         >
                           <ChevronDown
                             size={14}
@@ -1224,7 +1027,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           paddingRight: '6px',
                           marginTop: '2px',
                           marginBottom: '4px',
-                          borderLeft: '2px solid #E2E8F0',
+                          borderLeft: '2px solid var(--ez-color-border)',
                           marginLeft: '20px',
                         }}
                       >
@@ -1242,11 +1045,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 alignItems: 'center',
                                 gap: '8px',
                                 padding: '0 8px',
-                                borderRadius: '6px',
+                                borderRadius: '8px',
                                 fontSize: '12px',
                                 fontWeight: isSubActive ? 650 : 500,
-                                color: isSubActive ? '#2563EB' : '#64748B',
-                                background: isSubActive ? '#EFF6FF' : 'transparent',
+                                color: isSubActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
+                                background: isSubActive ? 'var(--ez-color-sidebar-active)' : 'transparent',
                                 border: 'none',
                                 cursor: 'pointer',
                                 textAlign: 'left',
@@ -1254,7 +1057,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 transition: 'all 0.12s ease',
                               }}
                             >
-                              <SubIcon size={14} color={isSubActive ? '#2563EB' : '#94A3B8'} />
+                              <SubIcon size={14} color={isSubActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
                               <span style={{ flex: 1 }}>{sub.label}</span>
                             </button>
                           );
@@ -1268,22 +1071,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
             })}
 
             {/* Separator to SYSTEM section */}
-            <div style={{ height: '1px', background: '#E5E7EB', margin: '8px 4px' }} />
+            <div style={{ height: '1px', background: 'var(--ez-color-sidebar-border)', margin: '8px 4px' }} />
 
             {/* SYSTEM: Pengaturan */}
             {(!sidebarCollapsed || isMobile) && (
-              <div style={{ fontSize: '10px', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '6px 12px 3px 12px' }}>
-                LAINNYA
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '6px 12px 3px 12px' }}>
+                {t('nav.group_lainnya')}
               </div>
             )}
             <button
               type="button"
               onClick={() => onSelectMenu('pengaturan')}
-              onMouseEnter={(e) => handleMouseEnterItem(e, 'Pengaturan', 'pengaturan')}
+              onMouseEnter={(e) => handleMouseEnterItem(e, t('nav.pengaturan'), 'pengaturan')}
               onMouseLeave={handleMouseLeaveItem}
               aria-label={t('nav.pengaturan')}
               style={{
-                height: '40px',
+                height: '36px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
@@ -1291,12 +1094,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 borderRadius: '8px',
                 fontSize: '13px',
                 fontWeight: activeMenu === 'pengaturan' || activeMenu === 'subscription' ? 650 : 500,
-                color: activeMenu === 'pengaturan' || activeMenu === 'subscription' ? '#2563EB' : '#475569',
+                color: activeMenu === 'pengaturan' || activeMenu === 'subscription' ? 'var(--ez-color-primary)' : 'var(--ez-color-sidebar-text)',
                 background:
                   activeMenu === 'pengaturan' || activeMenu === 'subscription'
-                    ? '#EFF6FF'
+                    ? 'var(--ez-color-sidebar-active)'
                     : hoveredItemId === 'pengaturan'
-                    ? '#F8FAFC'
+                    ? 'var(--ez-color-sidebar-hover)'
                     : 'transparent',
                 border: 'none',
                 cursor: 'pointer',
@@ -1307,24 +1110,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }}
             >
               <Settings
-                size={18}
-                color={activeMenu === 'pengaturan' || activeMenu === 'subscription' ? '#2563EB' : '#64748B'}
+                size={17}
+                color={activeMenu === 'pengaturan' || activeMenu === 'subscription' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'}
               />
               {(!sidebarCollapsed || isMobile) && <span>{t('nav.pengaturan')}</span>}
             </button>
-            {/* BANTUAN: Tutorial EZRAB */}
+            {/* Tutorial EZRAB */}
             <button
               type="button"
               onClick={() => {
                 if (typeof window !== 'undefined') {
                   window.dispatchEvent(new CustomEvent('ezrab:open-onboarding'));
                 }
+                if (isMobile) onCloseMobileDrawer();
               }}
-              onMouseEnter={(e) => handleMouseEnterItem(e, 'Tutorial', 'tutorial')}
+              onMouseEnter={(e) => handleMouseEnterItem(e, t('nav.tutorial'), 'tutorial')}
               onMouseLeave={handleMouseLeaveItem}
-              aria-label="Tutorial EZRAB"
+              aria-label={t('nav.tutorial_ezrab')}
               style={{
-                height: '40px',
+                height: '36px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
@@ -1332,8 +1136,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 borderRadius: '8px',
                 fontSize: '13px',
                 fontWeight: 500,
-                color: hoveredItemId === 'tutorial' ? '#2563EB' : '#475569',
-                background: hoveredItemId === 'tutorial' ? '#F8FAFC' : 'transparent',
+                color: hoveredItemId === 'tutorial' ? 'var(--ez-color-primary)' : 'var(--ez-color-sidebar-text)',
+                background: hoveredItemId === 'tutorial' ? 'var(--ez-color-sidebar-hover)' : 'transparent',
                 border: 'none',
                 cursor: 'pointer',
                 textAlign: 'left',
@@ -1343,26 +1147,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
               }}
             >
               <HelpCircle
-                size={18}
-                color={hoveredItemId === 'tutorial' ? '#2563EB' : '#64748B'}
+                size={17}
+                color={hoveredItemId === 'tutorial' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'}
               />
-              {(!sidebarCollapsed || isMobile) && <span>Tutorial</span>}
+              {(!sidebarCollapsed || isMobile) && <span>{t('nav.tutorial')}</span>}
             </button>
           </nav>
         </div>
 
         {/* =========================================================================
             BOTTOM: USER PROFILE & LOGOUT
+            Footer memakai background solid + z-index agar kartu profil tidak
+            pernah tampak tumpang tindih dengan item menu di atasnya.
            ========================================================================= */}
         <div
           style={{
-            padding: sidebarCollapsed && !isMobile ? '10px 8px' : '12px 14px',
-            borderTop: '1px solid #E5E7EB',
+            padding: sidebarCollapsed && !isMobile ? '12px 8px' : '12px 12px',
+            borderTop: '1px solid var(--ez-color-sidebar-border)',
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px',
+            gap: '10px',
             flexShrink: 0,
-            background: '#FFFFFF',
+            position: 'relative',
+            zIndex: 2,
+            background: isMobile ? 'var(--ez-color-surface)' : 'var(--ez-color-sidebar)',
           }}
         >
           {(!sidebarCollapsed || isMobile) && (
@@ -1371,8 +1179,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
-                padding: '4px 6px',
-                borderRadius: '8px',
+                padding: '6px 8px',
+                borderRadius: '12px',
+                background: 'var(--ez-color-surface)',
+                border: '1px solid var(--ez-color-border-soft)',
               }}
             >
               <div
@@ -1380,12 +1190,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   width: '32px',
                   height: '32px',
                   borderRadius: '50%',
-                  background: '#EFF6FF',
-                  border: '1px solid #BFDBFE',
+                  background: 'var(--ez-color-primary-soft)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#2563EB',
+                  color: 'var(--ez-color-primary)',
                   flexShrink: 0,
                 }}
               >
@@ -1395,8 +1204,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div
                   style={{
                     fontSize: '12px',
-                    fontWeight: 650,
-                    color: '#0F172A',
+                    fontWeight: 700,
+                    color: 'var(--ez-color-text-primary)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -1407,7 +1216,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div
                   style={{
                     fontSize: '10.5px',
-                    color: '#64748B',
+                    color: 'var(--ez-color-text-muted)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -1419,17 +1228,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
 
-          {/* Logout button */}
           <button
             type="button"
             onClick={() => {
               if (onBackToLanding) {
-                if (window.confirm('Apakah Anda yakin ingin keluar ke halaman beranda?')) {
+                if (window.confirm(t('nav.confirm_exit_home'))) {
                   onBackToLanding();
                 }
               }
             }}
-            onMouseEnter={(e) => handleMouseEnterItem(e, 'Keluar / Beranda', 'logout')}
+            onMouseEnter={(e) => handleMouseEnterItem(e, t('nav.back_landing'), 'logout')}
             onMouseLeave={handleMouseLeaveItem}
             title={t('nav.back_landing')}
             aria-label={t('nav.back_landing')}
@@ -1437,25 +1245,74 @@ export const Sidebar: React.FC<SidebarProps> = ({
               width: '100%',
               height: '36px',
               borderRadius: '8px',
-              background: '#F8FAFC',
-              border: '1px solid #E2E8F0',
-              color: '#64748B',
-              fontSize: '12px',
+              background: 'transparent',
+              border: 'none',
+              color: hoveredItemId === 'logout' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
+              fontSize: '12.5px',
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
               justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
               padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
-              gap: '10px',
+              gap: '12px',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
           >
             <LogOut size={16} />
-            {(!sidebarCollapsed || isMobile) && <span>Keluar / Beranda</span>}
+            {(!sidebarCollapsed || isMobile) && <span>{t('nav.back_landing')}</span>}
           </button>
         </div>
       </aside>
+
+      {/* Floating pill toggle — distinctive hide/show control on sidebar boundary.
+          NOT a conventional header chevron; NOT auto-expand on hover. */}
+      {!isMobile && (
+        <button
+          type="button"
+          onClick={() => setIsHidden((v) => !v)}
+          title={isHidden ? t('nav.show_sidebar') : t('nav.hide_sidebar')}
+          aria-label={isHidden ? t('nav.show_sidebar') : t('nav.hide_sidebar')}
+          aria-pressed={isHidden}
+          style={{
+            position: 'fixed',
+            // 8px clear of the sidebar edge so the capsule never crowds
+            // group-header text or item rows; bottom-anchored in the
+            // sidebar's neutral empty band instead of vertical center.
+            left: isHidden ? '8px' : sidebarCollapsed ? '68px' : '252px',
+            top: 'auto',
+            bottom: '32px',
+            transform: 'none',
+            width: '28px',
+            height: '64px',
+            borderRadius: '99px',
+            background: 'var(--ez-color-surface)',
+            border: '1px solid var(--ez-color-sidebar-border)',
+            boxShadow: '0 4px 16px rgba(38,54,75,0.12)',
+            cursor: 'pointer',
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'left 0.35s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, color 0.2s',
+            color: 'var(--ez-color-text-muted)',
+            fontSize: '14px',
+            fontWeight: 700,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--ez-color-primary)';
+            e.currentTarget.style.borderColor = 'var(--ez-color-primary)';
+            e.currentTarget.style.color = 'var(--ez-color-surface)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--ez-color-surface)';
+            e.currentTarget.style.borderColor = 'var(--ez-color-sidebar-border)';
+            e.currentTarget.style.color = 'var(--ez-color-text-muted)';
+          }}
+        >
+          {isHidden ? '›' : '‹'}
+        </button>
+      )}
 
       {/* Floating Tooltip when collapsed */}
       {!isMobile && sidebarCollapsed && tooltipPos && (
@@ -1465,12 +1322,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             left: '80px',
             top: `${tooltipPos.top}px`,
             transform: 'translateY(-50%)',
-            background: '#0F172A',
+            background: 'var(--ez-color-text-primary)',
             color: '#FFFFFF',
             fontSize: '11.5px',
             fontWeight: 600,
             padding: '5px 10px',
-            borderRadius: '6px',
+            borderRadius: '8px',
             whiteSpace: 'nowrap',
             zIndex: 99999,
             pointerEvents: 'none',

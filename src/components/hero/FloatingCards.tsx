@@ -289,7 +289,7 @@ export const FloatingCards: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
-          borderRadius: '999px',
+          borderRadius: 'var(--ez-radius-pill)',
           animation: 'export-badge-float 5.5s ease-in-out infinite',
           zIndex: 4,
         }}

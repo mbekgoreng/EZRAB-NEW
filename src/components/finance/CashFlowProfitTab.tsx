@@ -65,9 +65,9 @@ export const CashFlowProfitTab: React.FC<CashFlowProfitTabProps> = ({
       {/* 1. Header Banner */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -77,19 +77,19 @@ export const CashFlowProfitTab: React.FC<CashFlowProfitTabProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
           <div>
-            <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Arus Kas & Analisis Profitabilitas (Cash Flow & Profit Engine)
             </h2>
-            <div style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
+            <div style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
               Pemisahan tegas antara dana <strong>AKTUAL</strong> (kas masuk & keluar riil) dan dana <strong>PROYEKSI</strong> (rencana termin & Kurva-S).
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 750, color: '#166534', backgroundColor: '#DCFCE7', padding: '4px 10px', borderRadius: '6px', border: '1px solid #BBF7D0' }}>
+            <span style={{ fontSize: '11.5px', fontWeight: 750, color: 'var(--ez-hue-green-text-deep)', backgroundColor: 'var(--ez-hue-green-bg-deep)', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-green-border)' }}>
               AKTUAL: {formatRupiah(cashFlow.totalActualIn)} Masuk
             </span>
-            <span style={{ fontSize: '11.5px', fontWeight: 750, color: '#7C3AED', backgroundColor: '#F5F3FF', padding: '4px 10px', borderRadius: '6px', border: '1px solid #DDD6FE' }}>
+            <span style={{ fontSize: '11.5px', fontWeight: 750, color: 'var(--ez-hue-violet-text)', backgroundColor: 'var(--ez-hue-violet-bg)', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-violet-border)' }}>
               PROYEKSI: {formatRupiah(cashFlow.totalForecastIn)} Sisa Termin
             </span>
           </div>
@@ -99,9 +99,9 @@ export const CashFlowProfitTab: React.FC<CashFlowProfitTabProps> = ({
       {/* 2. Interactive Cash Flow Chart Card */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -111,10 +111,10 @@ export const CashFlowProfitTab: React.FC<CashFlowProfitTabProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
           <div>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Kurva Arus Kas Mingguan / Bulanan
             </h3>
-            <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
               Garis biru menunjukkan realisasi kas kumulatif, garis ungu putus-putus menunjukkan proyeksi deterministik.
             </div>
           </div>
@@ -132,9 +132,9 @@ export const CashFlowProfitTab: React.FC<CashFlowProfitTabProps> = ({
       {/* 3. Profitability Deep Dive Section */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -143,57 +143,57 @@ export const CashFlowProfitTab: React.FC<CashFlowProfitTabProps> = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Scale size={18} color="#2563EB" />
-          <h3 style={{ fontSize: '16px', fontWeight: 750, color: '#0F172A', margin: 0 }}>
+          <Scale size={18} color="var(--ez-hue-blue-text)" />
+          <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
             Analisis Margin Profitabilitas Proyek
           </h3>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
-          <div style={{ backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+          <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '14px', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
               Nilai Kontrak (Revenue)
             </div>
-            <div style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', marginTop: '4px' }}>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '4px' }}>
               {profitability.isContractAvailable ? formatRupiah(profitability.contractValue) : '-'}
             </div>
-            <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
               Dasar penagihan klien
             </div>
           </div>
 
-          <div style={{ backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+          <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '14px', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
               Estimasi Total Biaya (Cost)
             </div>
-            <div style={{ fontSize: '18px', fontWeight: 800, color: '#475569', marginTop: '4px' }}>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-slate)', marginTop: '4px' }}>
               {formatRupiah(profitability.projectedTotalCost)}
             </div>
-            <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
               Aktual + Sisa Budget RAB
             </div>
           </div>
 
-          <div style={{ backgroundColor: '#FEF2F2', padding: '14px', borderRadius: '10px', border: '1px solid #FECACA' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#991B1B', textTransform: 'uppercase' }}>
+          <div style={{ backgroundColor: 'var(--ez-hue-rose-bg)', padding: '14px', borderRadius: '10px', border: '1px solid var(--ez-hue-rose-border)' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-hue-red-text)', textTransform: 'uppercase' }}>
               Biaya Riil Aktual (Spent)
             </div>
-            <div style={{ fontSize: '18px', fontWeight: 800, color: '#DC2626', marginTop: '4px' }}>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-rose-text)', marginTop: '4px' }}>
               {formatRupiah(profitability.actualCost)}
             </div>
-            <div style={{ fontSize: '11px', color: '#991B1B', marginTop: '2px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--ez-hue-red-text)', marginTop: '2px' }}>
               {summary.expensesCount} catatan pengeluaran
             </div>
           </div>
 
-          <div style={{ backgroundColor: '#F0FDF4', padding: '14px', borderRadius: '10px', border: '1px solid #BBF7D0' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#166534', textTransform: 'uppercase' }}>
+          <div style={{ backgroundColor: 'var(--ez-hue-green-bg)', padding: '14px', borderRadius: '10px', border: '1px solid var(--ez-hue-green-border)' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-hue-green-text-deep)', textTransform: 'uppercase' }}>
               Proyeksi Margin Profit
             </div>
-            <div style={{ fontSize: '18px', fontWeight: 800, color: '#15803D', marginTop: '4px' }}>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-green-text)', marginTop: '4px' }}>
               {profitability.projectedProfit !== null ? formatRupiah(profitability.projectedProfit) : '-'}
             </div>
-            <div style={{ fontSize: '11px', color: '#166534', marginTop: '2px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--ez-hue-green-text-deep)', marginTop: '2px' }}>
               Margin: <strong>{profitability.projectedMarginPercent !== null ? `${profitability.projectedMarginPercent}%` : '-'}</strong>
             </div>
           </div>
@@ -203,9 +203,9 @@ export const CashFlowProfitTab: React.FC<CashFlowProfitTabProps> = ({
       {/* 4. Detailed Periodic Data Table */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -213,14 +213,14 @@ export const CashFlowProfitTab: React.FC<CashFlowProfitTabProps> = ({
           gap: '14px',
         }}
       >
-        <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
           Tabel Rincian Arus Kas (Per Periode)
         </h3>
 
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
             <thead>
-              <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569' }}>
+              <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', color: 'var(--ez-color-text-slate)' }}>
                 <th style={{ padding: '10px 14px', fontWeight: 700 }}>Periode</th>
                 <th style={{ padding: '10px 14px', fontWeight: 700 }}>Status</th>
                 <th style={{ padding: '10px 14px', fontWeight: 700, textAlign: 'right' }}>Kas Masuk</th>
@@ -235,8 +235,8 @@ export const CashFlowProfitTab: React.FC<CashFlowProfitTabProps> = ({
                 const isCumPositive = p.cumulativeCashFlow >= 0;
 
                 return (
-                  <tr key={p.periodKey} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <td style={{ padding: '10px 14px', fontWeight: 650, color: '#0F172A' }}>
+                  <tr key={p.periodKey} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
+                    <td style={{ padding: '10px 14px', fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>
                       {p.periodLabel}
                     </td>
                     <td style={{ padding: '10px 14px' }}>
@@ -246,24 +246,24 @@ export const CashFlowProfitTab: React.FC<CashFlowProfitTabProps> = ({
                           fontWeight: 700,
                           padding: '2px 6px',
                           borderRadius: '4px',
-                          backgroundColor: p.isForecast ? '#F5F3FF' : '#EFF6FF',
-                          color: p.isForecast ? '#7C3AED' : '#1E40AF',
-                          border: `1px solid ${p.isForecast ? '#DDD6FE' : '#BFDBFE'}`,
+                          backgroundColor: p.isForecast ? 'var(--ez-hue-violet-bg)' : 'var(--ez-hue-blue-bg)',
+                          color: p.isForecast ? 'var(--ez-hue-violet-text)' : 'var(--ez-hue-blue-text-deep)',
+                          border: `1px solid ${p.isForecast ? 'var(--ez-hue-violet-border)' : 'var(--ez-hue-blue-border)'}`,
                         }}
                       >
                         {p.isForecast ? 'PROYEKSI' : 'AKTUAL'}
                       </span>
                     </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#16A34A' }}>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-hue-green-text-bright)' }}>
                       {p.cashIn > 0 ? `+ ${formatRupiah(p.cashIn)}` : '-'}
                     </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: '#DC2626' }}>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-hue-rose-text)' }}>
                       {p.cashOut > 0 ? `- ${formatRupiah(p.cashOut)}` : '-'}
                     </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 750, color: isNetPositive ? '#15803D' : '#DC2626' }}>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 750, color: isNetPositive ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-rose-text)' }}>
                       {isNetPositive ? '+' : ''}{formatRupiah(p.netCashFlow)}
                     </td>
-                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: isCumPositive ? '#0F172A' : '#EF4444' }}>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: isCumPositive ? 'var(--ez-color-text-primary)' : '#EF4444' }}>
                       {formatRupiah(p.cumulativeCashFlow)}
                     </td>
                   </tr>

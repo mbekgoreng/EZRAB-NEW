@@ -38,9 +38,9 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
 
   if (laborList.length === 0) {
     return (
-      <div style={{ padding: '48px 24px', textAlign: 'center', color: '#64748B' }}>
-        <HardHat size={40} color="#94A3B8" style={{ margin: '0 auto 12px' }} />
-        <div style={{ fontSize: '14px', fontWeight: 700, color: '#0F172A' }}>
+      <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>
+        <HardHat size={40} color="var(--ez-color-text-faint)" style={{ margin: '0 auto 12px' }} />
+        <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
           Tidak ada tenaga kerja ditemukan
         </div>
         <div style={{ fontSize: '12px', marginTop: '4px' }}>
@@ -76,35 +76,35 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
           <col style={{ width: '110px' }} />
         </colgroup>
         <thead>
-          <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+          <tr style={{ backgroundColor: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)' }}>
             <th style={{ padding: '10px 8px', textAlign: 'center' }}>
               <input type="checkbox" style={{ cursor: 'pointer' }} />
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Tenaga Kerja (HSD L)
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Kategori Peran
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               SKK / Kualifikasi
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Satuan
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Upah Harian (OH)
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Upah / Jam (OJ)
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Wilayah Acuan
             </th>
-            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 10px', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Standar
             </th>
-            <th style={{ padding: '10px 6px', textAlign: 'center', fontSize: '10.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <th style={{ padding: '10px 6px', textAlign: 'center', fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Aksi
             </th>
           </tr>
@@ -119,9 +119,9 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
                 key={lab.id}
                 onClick={() => onSelectLabor(lab)}
                 style={{
-                  backgroundColor: isInspected ? '#EFF6FF' : '#ffffff',
-                  borderLeft: isInspected ? '3px solid #2563EB' : '3px solid transparent',
-                  borderBottom: '1px solid #F1F5F9',
+                  backgroundColor: isInspected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                  borderLeft: isInspected ? '3px solid var(--ez-color-primary)' : '3px solid transparent',
+                  borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                   cursor: 'pointer',
                   transition: 'background-color 0.15s',
                 }}
@@ -147,12 +147,12 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
                         width: '34px',
                         height: '34px',
                         borderRadius: '8px',
-                        backgroundColor: '#EFF6FF',
-                        border: '1px solid #DBEAFE',
+                        backgroundColor: 'var(--ez-hue-blue-bg)',
+                        border: '1px solid var(--ez-hue-blue-border)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#2563EB',
+                        color: 'var(--ez-color-primary)',
                         flexShrink: 0,
                       }}
                     >
@@ -162,7 +162,7 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
                       <div
                         style={{
                           fontWeight: 700,
-                          color: '#0F172A',
+                          color: 'var(--ez-color-text-primary)',
                           fontSize: '12.5px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -177,15 +177,15 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
                             fontSize: '10px',
                             fontWeight: 800,
                             fontFamily: 'monospace',
-                            color: '#1D4ED8',
-                            backgroundColor: '#EFF6FF',
+                            color: 'var(--ez-color-primary-hover)',
+                            backgroundColor: 'var(--ez-hue-blue-bg)',
                             padding: '1px 5px',
                             borderRadius: '4px',
                           }}
                         >
                           {lab.code}
                         </span>
-                        <span style={{ fontSize: '10.5px', color: '#94A3B8' }}>• 7 Jam/Hari</span>
+                        <span style={{ fontSize: '10.5px', color: 'var(--ez-color-text-faint)' }}>• 7 Jam/Hari</span>
                       </div>
                     </div>
                   </div>
@@ -204,24 +204,24 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
                       fontWeight: 700,
                       backgroundColor:
                         lab.roleCategory === 'MANDOR'
-                          ? '#FEF3C7'
+                          ? 'var(--ez-hue-amber-bg)'
                           : lab.roleCategory === 'TUKANG'
-                          ? '#E0F2FE'
+                          ? 'var(--ez-pastel-sky)'
                           : lab.roleCategory === 'KEPALA_TUKANG'
-                          ? '#EDE9FE'
+                          ? 'var(--ez-hue-violet-bg)'
                           : lab.roleCategory === 'AHLI'
-                          ? '#FCE7F3'
-                          : '#F1F5F9',
+                          ? 'var(--ez-hue-violet-bg)'
+                          : 'var(--ez-color-surface-tertiary)',
                       color:
                         lab.roleCategory === 'MANDOR'
-                          ? '#92400E'
+                          ? 'var(--ez-hue-amber-text)'
                           : lab.roleCategory === 'TUKANG'
-                          ? '#0369A1'
+                          ? 'var(--ez-color-info)'
                           : lab.roleCategory === 'KEPALA_TUKANG'
-                          ? '#6D28D9'
+                          ? 'var(--ez-hue-violet-text)'
                           : lab.roleCategory === 'AHLI'
-                          ? '#BE185D'
-                          : '#475569',
+                          ? 'var(--ez-hue-violet-text)'
+                          : 'var(--ez-color-text-slate)',
                     }}
                   >
                     {lab.roleCategory}
@@ -230,8 +230,8 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
 
                 {/* SKK / Kualifikasi */}
                 <td style={{ padding: `${padY} 10px` }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#334155', fontWeight: 600 }}>
-                    <Award size={13} color="#059669" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--ez-color-text-body)', fontWeight: 600 }}>
+                    <Award size={13} color="var(--ez-hue-green-text)" />
                     <span style={{ fontSize: '11.5px' }}>{lab.skkLevel}</span>
                   </div>
                 </td>
@@ -242,11 +242,11 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
                     style={{
                       fontSize: '11px',
                       fontWeight: 800,
-                      color: '#475569',
-                      backgroundColor: '#F8FAFC',
+                      color: 'var(--ez-color-text-slate)',
+                      backgroundColor: 'var(--ez-color-surface-secondary)',
                       padding: '2px 6px',
                       borderRadius: '5px',
-                      border: '1px solid #E2E8F0',
+                      border: '1px solid var(--ez-color-border-line)',
                     }}
                   >
                     {lab.unit}
@@ -260,20 +260,20 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
                     const isOverridden = Boolean(activeOverride && activeOverride.active);
                     return (
                       <>
-                        <div style={{ fontWeight: 800, color: isOverridden ? '#1D4ED8' : '#0F172A', fontSize: '13px' }}>
+                        <div style={{ fontWeight: 800, color: isOverridden ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text)', fontSize: '13px' }}>
                           Rp {(isOverridden && activeOverride ? activeOverride.price : adjustedRate.priceOH).toLocaleString('id-ID')}
                         </div>
                         {isOverridden ? (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                            <span style={{ fontSize: '9px', fontWeight: 800, color: '#92400E', backgroundColor: '#FEF3C7', padding: '1px 5px', borderRadius: '4px', display: 'inline-block' }}>
+                            <span style={{ fontSize: '9px', fontWeight: 800, color: 'var(--ez-hue-amber-text)', backgroundColor: 'var(--ez-hue-amber-bg)', padding: '1px 5px', borderRadius: '4px', display: 'inline-block' }}>
                               OVERRIDE PROYEK
                             </span>
-                            <span style={{ fontSize: '9.5px', color: '#94A3B8', textDecoration: 'line-through' }}>
+                            <span style={{ fontSize: '9.5px', color: 'var(--ez-color-text-faint)', textDecoration: 'line-through' }}>
                               Rp {adjustedRate.priceOH.toLocaleString('id-ID')}
                             </span>
                           </div>
                         ) : (
-                          <div style={{ fontSize: '10.5px', color: '#64748B' }}>
+                          <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>
                             Standar 1 OH
                           </div>
                         )}
@@ -284,25 +284,25 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
 
                 {/* Upah / Jam (OJ) */}
                 <td style={{ padding: `${padY} 10px` }}>
-                  <div style={{ fontWeight: 700, color: '#2563EB', fontSize: '12px' }}>
+                  <div style={{ fontWeight: 700, color: 'var(--ez-color-primary)', fontSize: '12px' }}>
                     Rp {adjustedRate.priceOJ.toLocaleString('id-ID')}
                   </div>
-                  <div style={{ fontSize: '10px', color: '#94A3B8' }}>1 OJ (OH/7)</div>
+                  <div style={{ fontSize: '10px', color: 'var(--ez-color-text-faint)' }}>1 OJ (OH/7)</div>
                 </td>
 
                 {/* Wilayah Acuan */}
                 <td style={{ padding: `${padY} 10px` }}>
-                  <div style={{ fontSize: '11.5px', fontWeight: 600, color: '#334155' }}>
+                  <div style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>
                     {adjustedRate.province}
                   </div>
-                  <div style={{ fontSize: '10px', color: '#64748B' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>
                     Faktor: {adjustedRate.factor}x
                   </div>
                 </td>
 
                 {/* Standar Acuan */}
                 <td style={{ padding: `${padY} 10px` }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#059669', fontSize: '11px', fontWeight: 700 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--ez-hue-green-text)', fontSize: '11px', fontWeight: 700 }}>
                     <CheckCircle2 size={13} />
                     <span>PUPR 2026</span>
                   </div>
@@ -319,9 +319,9 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
                       style={{
                         padding: '4px 6px',
                         borderRadius: '6px',
-                        border: '1px solid #E2E8F0',
-                        backgroundColor: '#ffffff',
-                        color: '#64748B',
+                        border: '1px solid var(--ez-color-border-line)',
+                        backgroundColor: 'var(--ez-color-surface)',
+                        color: 'var(--ez-color-text-muted)',
                         fontSize: '10.5px',
                         fontWeight: 700,
                         cursor: 'pointer',
@@ -337,9 +337,9 @@ export const LaborTableView: React.FC<LaborTableViewProps> = ({
                       style={{
                         padding: '4px 7px',
                         borderRadius: '6px',
-                        border: '1px solid #DBEAFE',
-                        backgroundColor: '#EFF6FF',
-                        color: '#2563EB',
+                        border: '1px solid var(--ez-hue-blue-border)',
+                        backgroundColor: 'var(--ez-hue-blue-bg)',
+                        color: 'var(--ez-color-primary)',
                         fontSize: '10.5px',
                         fontWeight: 700,
                         cursor: 'pointer',

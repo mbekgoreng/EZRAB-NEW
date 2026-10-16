@@ -575,7 +575,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
     >
       <div
         style={{
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           borderRadius: '16px',
           width: activeMode === 'selector' ? '740px' : '920px',
           maxWidth: '96vw',
@@ -591,11 +591,11 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
         <div
           style={{
             padding: '14px 20px',
-            borderBottom: '1px solid #E2E8F0',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: '#F8FAFC',
+            background: 'var(--ez-color-surface-secondary)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -610,13 +610,13 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   width: '32px',
                   height: '32px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
-                  background: '#FFFFFF',
+                  border: '1px solid var(--ez-hue-slate-border)',
+                  background: 'var(--ez-color-surface)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  color: '#475569',
+                  color: 'var(--ez-color-text-slate)',
                 }}
                 title="Kembali ke Pilihan Metode"
               >
@@ -624,7 +624,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
               </button>
             )}
             <div>
-              <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {activeMode === 'selector' && 'Tambah Pekerjaan ke RAB'}
                 {activeMode === 'ahsp' && 'Database Standar AHSP PUPR 2026'}
                 {activeMode === 'manual' && 'Input Pekerjaan Manual'}
@@ -632,7 +632,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                 {activeMode === 'template' && 'Pilih Item dari Library Template'}
                 {activeMode === 'duplicate' && 'Duplikasi dari Pekerjaan Eksisting'}
               </h2>
-              <span style={{ fontSize: '11px', color: '#64748B' }}>
+              <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
                 {activeMode === 'selector' && 'Pilih cara menambahkan pekerjaan ke RAB proyek Anda.'}
                 {activeMode === 'ahsp' && 'Cari analisa standar nasional untuk diadopsi ke lembar RAB.'}
                 {activeMode === 'manual' && 'Ketik rincian pekerjaan kustom dan tentukan volume serta harga.'}
@@ -652,7 +652,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
               borderRadius: '8px',
               border: 'none',
               background: 'transparent',
-              color: '#64748B',
+              color: 'var(--ez-color-text-muted)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -664,7 +664,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
         </div>
 
         {/* QUICK METHOD SWITCHER TABS */}
-        <div style={{ display: 'flex', background: '#F1F5F9', borderBottom: '1px solid #E2E8F0', padding: '4px 12px', gap: '6px', overflowX: 'auto' }}>
+        <div style={{ display: 'flex', background: 'var(--ez-color-surface-tertiary)', borderBottom: '1px solid var(--ez-color-border-line)', padding: '4px 12px', gap: '6px', overflowX: 'auto' }}>
           {[
             { id: 'selector', label: 'Pilih Metode', icon: Layers },
             { id: 'ahsp', label: '📚 Dari AHSP', icon: BookOpen },
@@ -688,8 +688,8 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   padding: '5px 12px',
                   borderRadius: '6px',
                   border: 'none',
-                  background: isActive ? '#FFFFFF' : 'transparent',
-                  color: isActive ? '#2563EB' : '#64748B',
+                  background: isActive ? 'var(--ez-color-surface)' : 'transparent',
+                  color: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                   fontSize: '11.5px',
                   fontWeight: isActive ? 750 : 550,
                   boxShadow: isActive ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
@@ -711,9 +711,9 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
           <div
             style={{
               padding: '8px 16px',
-              background: '#FEE2E2',
-              borderBottom: '1px solid #FECACA',
-              color: '#B91C1C',
+              background: 'var(--ez-hue-red-bg)',
+              borderBottom: '1px solid var(--ez-hue-rose-border)',
+              color: 'var(--ez-hue-red-text)',
               fontSize: '12px',
               display: 'flex',
               alignItems: 'center',
@@ -736,10 +736,10 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
               <div
                 onClick={() => setActiveMode('ahsp')}
                 style={{
-                  border: '1.5px solid #DBEAFE',
-                  borderRadius: '12px',
+                  border: '1.5px solid var(--ez-hue-blue-bg-deep)',
+                  borderRadius: 'var(--ez-radius-control)',
                   padding: '16px',
-                  background: '#FFFFFF',
+                  background: 'var(--ez-color-surface)',
                   cursor: 'pointer',
                   transition: 'all 0.18s ease',
                   display: 'flex',
@@ -748,12 +748,12 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   boxShadow: '0 2px 4px rgba(37, 99, 235, 0.04)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#2563EB';
+                  e.currentTarget.style.borderColor = 'var(--ez-color-primary)';
                   e.currentTarget.style.transform = 'translateY(-2px)';
                   e.currentTarget.style.boxShadow = '0 8px 16px rgba(37, 99, 235, 0.12)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#DBEAFE';
+                  e.currentTarget.style.borderColor = 'var(--ez-hue-blue-bg-deep)';
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.boxShadow = '0 2px 4px rgba(37, 99, 235, 0.04)';
                 }}
@@ -765,8 +765,8 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                         width: '40px',
                         height: '40px',
                         borderRadius: '10px',
-                        background: '#EFF6FF',
-                        border: '1px solid #BFDBFE',
+                        background: 'var(--ez-hue-blue-bg)',
+                        border: '1px solid var(--ez-hue-blue-border)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -775,18 +775,18 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     >
                       📚
                     </div>
-                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '999px', background: '#DBEAFE', color: '#1E40AF' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-blue-bg-deep)', color: 'var(--ez-hue-blue-text-deep)' }}>
                       PUPR 2026
                     </span>
                   </div>
-                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
                     Dari AHSP
                   </h3>
-                  <p style={{ fontSize: '11.5px', color: '#64748B', lineHeight: '1.45', margin: 0 }}>
+                  <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', lineHeight: '1.45', margin: 0 }}>
                     Gunakan pekerjaan dari database AHSP resmi yang tersedia lengkap dengan koefisien baku.
                   </p>
                 </div>
-                <div style={{ marginTop: '16px', fontSize: '12px', fontWeight: 750, color: '#2563EB', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ marginTop: '16px', fontSize: '12px', fontWeight: 750, color: 'var(--ez-color-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span>Pilih AHSP</span>
                   <span>→</span>
                 </div>
@@ -797,9 +797,9 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                 onClick={() => setActiveMode('manual')}
                 style={{
                   border: '1.5px solid #D1FAE5',
-                  borderRadius: '12px',
+                  borderRadius: 'var(--ez-radius-control)',
                   padding: '16px',
-                  background: '#FFFFFF',
+                  background: 'var(--ez-color-surface)',
                   cursor: 'pointer',
                   transition: 'all 0.18s ease',
                   display: 'flex',
@@ -825,8 +825,8 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                         width: '40px',
                         height: '40px',
                         borderRadius: '10px',
-                        background: '#ECFDF5',
-                        border: '1px solid #A7F3D0',
+                        background: 'var(--ez-hue-emerald-bg)',
+                        border: '1px solid var(--ez-hue-green-border-deep)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -835,18 +835,18 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     >
                       ✏️
                     </div>
-                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '999px', background: '#D1FAE5', color: '#065F46' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: '#D1FAE5', color: 'var(--ez-hue-green-text-deep)' }}>
                       Fleksibel
                     </span>
                   </div>
-                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
                     Manual
                   </h3>
-                  <p style={{ fontSize: '11.5px', color: '#64748B', lineHeight: '1.45', margin: 0 }}>
+                  <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', lineHeight: '1.45', margin: 0 }}>
                     Buat pekerjaan sendiri dengan mengisi uraian, volume, satuan, dan harga satuan secara mandiri.
                   </p>
                 </div>
-                <div style={{ marginTop: '16px', fontSize: '12px', fontWeight: 750, color: '#059669', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ marginTop: '16px', fontSize: '12px', fontWeight: 750, color: 'var(--ez-hue-green-text)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span>Buat Manual</span>
                   <span>→</span>
                 </div>
@@ -856,10 +856,10 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
               <div
                 onClick={() => setActiveMode('ai')}
                 style={{
-                  border: '1.5px solid #E0E7FF',
-                  borderRadius: '12px',
+                  border: '1.5px solid var(--ez-hue-indigo-bg)',
+                  borderRadius: 'var(--ez-radius-control)',
                   padding: '16px',
-                  background: '#FFFFFF',
+                  background: 'var(--ez-color-surface)',
                   cursor: 'pointer',
                   transition: 'all 0.18s ease',
                   display: 'flex',
@@ -873,7 +873,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   e.currentTarget.style.boxShadow = '0 8px 16px rgba(99, 102, 241, 0.14)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#E0E7FF';
+                  e.currentTarget.style.borderColor = 'var(--ez-hue-indigo-bg)';
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.boxShadow = '0 2px 4px rgba(99, 102, 241, 0.04)';
                 }}
@@ -885,7 +885,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                         width: '40px',
                         height: '40px',
                         borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%)',
+                        background: 'linear-gradient(135deg, var(--ez-hue-indigo-bg-soft) 0%, var(--ez-hue-indigo-bg) 100%)',
                         border: '1px solid #C7D2FE',
                         display: 'flex',
                         alignItems: 'center',
@@ -895,18 +895,18 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     >
                       🤖
                     </div>
-                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '999px', background: '#E0E7FF', color: '#3730A3' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-indigo-bg)', color: '#3730A3' }}>
                       Magic AI
                     </span>
                   </div>
-                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
                     Dengan AI
                   </h3>
-                  <p style={{ fontSize: '11.5px', color: '#64748B', lineHeight: '1.45', margin: 0 }}>
+                  <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', lineHeight: '1.45', margin: 0 }}>
                     Jelaskan pekerjaan dalam bahasa natural dan EZRAB membantu menyusun rincian estimasinya.
                   </p>
                 </div>
-                <div style={{ marginTop: '16px', fontSize: '12px', fontWeight: 750, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ marginTop: '16px', fontSize: '12px', fontWeight: 750, color: 'var(--ez-hue-indigo-text)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span>Gunakan AI</span>
                   <span>→</span>
                 </div>
@@ -916,10 +916,10 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
               <div
                 onClick={() => setActiveMode('template')}
                 style={{
-                  border: '1.5px solid #FEF3C7',
-                  borderRadius: '12px',
+                  border: '1.5px solid var(--ez-hue-amber-bg-deep)',
+                  borderRadius: 'var(--ez-radius-control)',
                   padding: '16px',
-                  background: '#FFFFFF',
+                  background: 'var(--ez-color-surface)',
                   cursor: 'pointer',
                   transition: 'all 0.18s ease',
                   display: 'flex',
@@ -933,7 +933,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   e.currentTarget.style.boxShadow = '0 8px 16px rgba(245, 158, 11, 0.12)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#FEF3C7';
+                  e.currentTarget.style.borderColor = 'var(--ez-hue-amber-bg-deep)';
                   e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.boxShadow = '0 2px 4px rgba(245, 158, 11, 0.04)';
                 }}
@@ -945,8 +945,8 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                         width: '40px',
                         height: '40px',
                         borderRadius: '10px',
-                        background: '#FFFBEB',
-                        border: '1px solid #FDE68A',
+                        background: 'var(--ez-hue-amber-bg)',
+                        border: '1px solid var(--ez-hue-amber-border)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -955,18 +955,18 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     >
                       📋
                     </div>
-                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '999px', background: '#FEF3C7', color: '#92400E' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text-dark)' }}>
                       Paket WBS
                     </span>
                   </div>
-                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
                     Dari Template
                   </h3>
-                  <p style={{ fontSize: '11.5px', color: '#64748B', lineHeight: '1.45', margin: 0 }}>
+                  <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', lineHeight: '1.45', margin: 0 }}>
                     Gunakan paket pekerjaan dari template bangunan (Rumah, Ruko, Gudang, Masjid, Kantor).
                   </p>
                 </div>
-                <div style={{ marginTop: '16px', fontSize: '12px', fontWeight: 750, color: '#D97706', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ marginTop: '16px', fontSize: '12px', fontWeight: 750, color: 'var(--ez-hue-amber-text-deep)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span>Pilih Template</span>
                   <span>→</span>
                 </div>
@@ -977,9 +977,9 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                 onClick={() => setActiveMode('duplicate')}
                 style={{
                   border: '1.5px solid #CFFAFE',
-                  borderRadius: '12px',
+                  borderRadius: 'var(--ez-radius-control)',
                   padding: '16px',
-                  background: '#FFFFFF',
+                  background: 'var(--ez-color-surface)',
                   cursor: 'pointer',
                   transition: 'all 0.18s ease',
                   display: 'flex',
@@ -1015,14 +1015,14 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     >
                       📑
                     </div>
-                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '999px', background: '#CFFAFE', color: '#155E75' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: '#CFFAFE', color: '#155E75' }}>
                       Cepat
                     </span>
                   </div>
-                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
                     Duplikasi
                   </h3>
-                  <p style={{ fontSize: '11.5px', color: '#64748B', lineHeight: '1.45', margin: 0 }}>
+                  <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', lineHeight: '1.45', margin: 0 }}>
                     Salin pekerjaan yang sudah ada dalam proyek ini dengan penyesuaian nama dan volume.
                   </p>
                 </div>
@@ -1041,13 +1041,13 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '10px' }}>
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Tujuan Kelompok WBS:
                   </label>
                   <select
                     value={targetCategory}
                     onChange={(e) => setTargetCategory(e.target.value)}
-                    style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1.5px solid #2563EB', fontSize: '12px', fontWeight: 650, color: '#1E40AF', background: '#EFF6FF' }}
+                    style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1.5px solid #2563EB', fontSize: '12px', fontWeight: 650, color: 'var(--ez-hue-blue-text-deep)', background: 'var(--ez-hue-blue-bg)' }}
                   >
                     {WORK_CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>
@@ -1058,13 +1058,13 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Kategori AHSP:
                   </label>
                   <select
                     value={ahspCategoryFilter}
                     onChange={(e) => setAhspCategoryFilter(e.target.value)}
-                    style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                    style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
                   >
                     <option value="ALL">Semua Kategori AHSP ({activeAhspItems.length} item)</option>
                     {availableAhspCategories.map((cat) => (
@@ -1076,7 +1076,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Cari Kode / Uraian / Keyword:
                   </label>
                   <div style={{ position: 'relative' }}>
@@ -1086,16 +1086,16 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                       placeholder="Contoh: pasangan bata, beton k-250..."
                       value={ahspSearch}
                       onChange={(e) => setAhspSearch(e.target.value)}
-                      style={{ width: '100%', height: '34px', paddingLeft: '32px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                      style={{ width: '100%', height: '34px', paddingLeft: '32px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
                     />
                   </div>
                 </div>
               </div>
 
               {/* Table of AHSP Items */}
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', maxHeight: '380px', overflowY: 'auto' }}>
+              <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', maxHeight: '380px', overflowY: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                  <thead style={{ position: 'sticky', top: 0, background: '#F8FAFC', borderBottom: '1px solid #CBD5E1', zIndex: 2 }}>
+                  <thead style={{ position: 'sticky', top: 0, background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-hue-slate-border)', zIndex: 2 }}>
                     <tr>
                       <th style={{ padding: '8px 8px', width: '36px', textAlign: 'center' }}>
                         <input
@@ -1108,7 +1108,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                               setBulkSelectedAhspCodes(new Set(filteredAhsp.map((i) => i.code)));
                             }
                           }}
-                          style={{ accentColor: '#2563EB', cursor: 'pointer' }}
+                          style={{ accentColor: 'var(--ez-color-primary)', cursor: 'pointer' }}
                         />
                       </th>
                       <th style={{ padding: '8px 10px', textAlign: 'left', width: '100px' }}>Kode AHSP</th>
@@ -1132,8 +1132,8 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                           <tr
                             key={item.id}
                             style={{
-                              borderBottom: '1px solid #F1F5F9',
-                              background: isBulkChecked ? '#EFF6FF' : '#FFFFFF',
+                              borderBottom: '1px solid var(--ez-color-surface-tertiary)',
+                              background: isBulkChecked ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                             }}
                           >
                             <td style={{ padding: '8px 8px', textAlign: 'center' }}>
@@ -1148,15 +1148,15 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                                     return next;
                                   });
                                 }}
-                                style={{ accentColor: '#2563EB', cursor: 'pointer' }}
+                                style={{ accentColor: 'var(--ez-color-primary)', cursor: 'pointer' }}
                               />
                             </td>
-                            <td style={{ padding: '8px 10px', fontFamily: 'monospace', fontWeight: 700, color: '#2563EB' }}>
+                            <td style={{ padding: '8px 10px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--ez-color-primary)' }}>
                               {item.code}
                             </td>
-                            <td style={{ padding: '8px 10px', fontWeight: 600, color: '#1E293B' }}>{item.name}</td>
-                            <td style={{ padding: '8px 8px', textAlign: 'center', color: '#64748B' }}>{item.unit}</td>
-                            <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
+                            <td style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--ez-color-text-strong)' }}>{item.name}</td>
+                            <td style={{ padding: '8px 8px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>{item.unit}</td>
+                            <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
                               {(() => {
                                 const up = priceResolver2026.resolveAhspUnitPrice(item).unitPrice;
                                 return up !== null && up > 0 ? formatCurrencyIDR(up) : '—';
@@ -1169,7 +1169,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                                   height: '28px',
                                   padding: '0 12px',
                                   borderRadius: '5px',
-                                  background: '#2563EB',
+                                  background: 'var(--ez-color-primary)',
                                   border: 'none',
                                   color: '#FFFFFF',
                                   fontSize: '11px',
@@ -1191,15 +1191,15 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   </tbody>
                 </table>
                 {filteredAhsp.length > 100 && (
-                  <div style={{ padding: '8px 12px', background: '#F8FAFC', color: '#64748B', fontSize: '11px', textAlign: 'center', borderTop: '1px solid #E2E8F0' }}>
+                  <div style={{ padding: '8px 12px', background: 'var(--ez-color-surface-secondary)', color: 'var(--ez-color-text-muted)', fontSize: '11px', textAlign: 'center', borderTop: '1px solid var(--ez-color-border-line)' }}>
                     Menampilkan 100 dari {filteredAhsp.length} data analisa AHSP. Gunakan kolom pencarian di atas untuk menyaring lebih spesifik.
                   </div>
                 )}
               </div>
 
               {bulkSelectedAhspCodes.size > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#EFF6FF', border: '1px solid #BFDBFE', padding: '10px 16px', borderRadius: '8px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#1E40AF' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-border)', padding: '10px 16px', borderRadius: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-blue-text-deep)' }}>
                     {bulkSelectedAhspCodes.size} pekerjaan AHSP dipilih untuk kelompok "{targetCategory}"
                   </span>
                   <button
@@ -1209,7 +1209,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                       height: '34px',
                       padding: '0 18px',
                       borderRadius: '6px',
-                      background: '#2563EB',
+                      background: 'var(--ez-color-primary)',
                       color: '#FFFFFF',
                       border: 'none',
                       fontSize: '12px',
@@ -1231,38 +1231,38 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
           {/* AHSP REFINEMENT VIEW */}
           {activeMode === 'ahsp' && selectedAhspItem && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '640px', margin: '0 auto' }}>
-              <div style={{ background: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0', padding: '16px' }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: '4px' }}>
+              <div style={{ background: 'var(--ez-color-surface-secondary)', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)', padding: '16px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>
                   Pekerjaan AHSP Terpilih:
                 </div>
-                <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: '0 0 10px 0' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 10px 0' }}>
                   {selectedAhspItem.name}
                 </h3>
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '12px' }}>
                   <div>
-                    <span style={{ color: '#64748B' }}>Kode AHSP: </span>
-                    <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#2563EB' }}>{selectedAhspItem.code}</span>
+                    <span style={{ color: 'var(--ez-color-text-muted)' }}>Kode AHSP: </span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--ez-color-primary)' }}>{selectedAhspItem.code}</span>
                   </div>
                   <div>
-                    <span style={{ color: '#64748B' }}>Satuan: </span>
-                    <span style={{ fontWeight: 700, color: '#0F172A' }}>{selectedAhspItem.unit}</span>
+                    <span style={{ color: 'var(--ez-color-text-muted)' }}>Satuan: </span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{selectedAhspItem.unit}</span>
                   </div>
                   <div>
-                    <span style={{ color: '#64748B' }}>Sumber: </span>
-                    <span style={{ fontWeight: 700, color: '#047857' }}>AHSP 2024 / PUPR</span>
+                    <span style={{ color: 'var(--ez-color-text-muted)' }}>Sumber: </span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-hue-green-text)' }}>AHSP 2024 / PUPR</span>
                   </div>
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     WBS Tujuan: <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <select
                     value={targetCategory}
                     onChange={(e) => setTargetCategory(e.target.value)}
-                    style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px', fontWeight: 600 }}
+                    style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px', fontWeight: 600 }}
                   >
                     {WORK_CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>
@@ -1273,7 +1273,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Volume ({selectedAhspItem.unit}): <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
@@ -1282,13 +1282,13 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     min="0.01"
                     value={ahspCustomVolume}
                     onChange={(e) => setAhspCustomVolume(parseFloat(e.target.value) || 0)}
-                    style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '13px', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+                    style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                   Harga Satuan (Otomatis dari Price Engine AHSP):
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -1296,16 +1296,16 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     type="number"
                     value={ahspCustomPrice}
                     onChange={(e) => setAhspCustomPrice(parseFloat(e.target.value) || 0)}
-                    style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '13px', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+                    style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
                   />
                 </div>
               </div>
 
               {/* Live Subtotal Card */}
-              <div style={{ background: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ background: 'var(--ez-hue-blue-bg)', borderRadius: '8px', border: '1px solid var(--ez-hue-blue-border)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <span style={{ fontSize: '11px', color: '#1E40AF', display: 'block' }}>Total Biaya Pekerjaan:</span>
-                  <span style={{ fontSize: '18px', fontWeight: 800, color: '#1D4ED8', fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--ez-hue-blue-text-deep)', display: 'block' }}>Total Biaya Pekerjaan:</span>
+                  <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-primary-hover)', fontVariantNumeric: 'tabular-nums' }}>
                     {formatCurrencyIDR(Math.round(ahspCustomVolume * ahspCustomPrice))}
                   </span>
                 </div>
@@ -1316,9 +1316,9 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                       height: '36px',
                       padding: '0 14px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
-                      background: '#FFFFFF',
-                      color: '#475569',
+                      border: '1px solid var(--ez-hue-slate-border)',
+                      background: 'var(--ez-color-surface)',
+                      color: 'var(--ez-color-text-slate)',
                       fontSize: '12px',
                       fontWeight: 650,
                       cursor: 'pointer',
@@ -1333,7 +1333,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                       height: '36px',
                       padding: '0 18px',
                       borderRadius: '6px',
-                      background: '#2563EB',
+                      background: 'var(--ez-color-primary)',
                       color: '#FFFFFF',
                       border: 'none',
                       fontSize: '12.5px',
@@ -1359,13 +1359,13 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxWidth: '720px', margin: '0 auto' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Kelompok WBS: <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <select
                     value={targetCategory}
                     onChange={(e) => setTargetCategory(e.target.value)}
-                    style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px', fontWeight: 600 }}
+                    style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px', fontWeight: 600 }}
                   >
                     {WORK_CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>
@@ -1375,7 +1375,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Kode Pekerjaan (Opsional):
                   </label>
                   <input
@@ -1383,13 +1383,13 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     placeholder="Contoh: A.1.1 atau KST.01"
                     value={manualCode}
                     onChange={(e) => setManualCode(e.target.value)}
-                    style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px' }}
+                    style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px' }}
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                   Uraian Pekerjaan: <span style={{ color: '#EF4444' }}>*</span>
                 </label>
                 <input
@@ -1397,13 +1397,13 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   placeholder="Misal: Pembuatan Saluran U-Ditch 30x30 cm + Tutup Heavy Duty"
                   value={manualDescription}
                   onChange={(e) => setManualDescription(e.target.value)}
-                  style={{ width: '100%', height: '36px', padding: '0 12px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px', fontWeight: 600 }}
+                  style={{ width: '100%', height: '36px', padding: '0 12px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px', fontWeight: 600 }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Volume: <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
@@ -1412,12 +1412,12 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     min="0.01"
                     value={manualVolume}
                     onChange={(e) => setManualVolume(parseFloat(e.target.value) || 0)}
-                    style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px', fontVariantNumeric: 'tabular-nums' }}
+                    style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px', fontVariantNumeric: 'tabular-nums' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Satuan: <span style={{ color: '#EF4444' }}>*</span>
                   </label>
                   <input
@@ -1425,18 +1425,18 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     placeholder="m¹, m², m³, kg"
                     value={manualUnit}
                     onChange={(e) => setManualUnit(e.target.value)}
-                    style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px' }}
+                    style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                     Harga Satuan (Rp):
                   </label>
                   <input
                     type="number"
                     placeholder="0"
-                    value={manualUnitPriceRaw}
+value={manualUnitPriceRaw}
                     onChange={(e) => setManualUnitPriceRaw(e.target.value)}
                     style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px', fontVariantNumeric: 'tabular-nums' }}
                   />
@@ -1445,7 +1445,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
 
               {/* Quick Unit Pills */}
               <div>
-                <span style={{ fontSize: '11px', color: '#64748B', marginRight: '6px' }}>Pilihan Cepat Satuan:</span>
+                <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginRight: '6px' }}>Pilihan Cepat Satuan:</span>
                 <div style={{ display: 'inline-flex', gap: '5px', flexWrap: 'wrap' }}>
                   {COMMON_UNITS.map((u) => (
                     <button
@@ -1457,9 +1457,9 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                         borderRadius: '4px',
                         fontSize: '11px',
                         fontWeight: manualUnit === u ? 700 : 500,
-                        background: manualUnit === u ? '#EFF6FF' : '#F1F5F9',
-                        color: manualUnit === u ? '#2563EB' : '#475569',
-                        border: manualUnit === u ? '1px solid #BFDBFE' : '1px solid #E2E8F0',
+                        background: manualUnit === u ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-tertiary)',
+                        color: manualUnit === u ? 'var(--ez-color-primary)' : 'var(--ez-color-text-slate)',
+                        border: manualUnit === u ? '1px solid var(--ez-hue-blue-border)' : '1px solid var(--ez-color-border-line)',
                         cursor: 'pointer',
                       }}
                     >
@@ -1470,7 +1470,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
               </div>
 
               <div>
-                <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                   Catatan Spesifikasi (Opsional):
                 </label>
                 <input
@@ -1478,16 +1478,16 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   placeholder="Contoh: Menggunakan semen MU-400 dan pasir pasang ayak"
                   value={manualNotes}
                   onChange={(e) => setManualNotes(e.target.value)}
-                  style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                  style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
                 />
               </div>
 
               {/* Live Calculation Preview Card */}
               <div
                 style={{
-                  background: '#F8FAFC',
+                  background: 'var(--ez-color-surface-secondary)',
                   borderRadius: '10px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   padding: '12px 16px',
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -1495,7 +1495,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                 }}
               >
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748B' }}>Total Nilai Pekerjaan:</div>
+<div style={{ fontSize: '11px', color: '#64748B' }}>Total Nilai Pekerjaan:</div>
                   <div style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
                     {Number.isFinite(manualUnitPrice)
                       ? formatCurrencyIDR(Math.round(manualVolume * manualUnitPrice))
@@ -1509,7 +1509,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     height: '38px',
                     padding: '0 20px',
                     borderRadius: '8px',
-                    background: manualDescription.trim() && manualVolume > 0 ? '#2563EB' : '#94A3B8',
+                    background: manualDescription.trim() && manualVolume > 0 ? 'var(--ez-color-primary)' : '#94A3B8',
                     color: '#FFFFFF',
                     border: 'none',
                     fontSize: '13px',
@@ -1532,18 +1532,18 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
              =================================================================== */}
           {activeMode === 'ai' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxWidth: '720px', margin: '0 auto' }}>
-              <div style={{ background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: '10px', padding: '12px 16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#4338CA', fontWeight: 750, fontSize: '12.5px', marginBottom: '4px' }}>
+              <div style={{ background: 'var(--ez-hue-indigo-bg-soft)', border: '1px solid #C7D2FE', borderRadius: '10px', padding: '12px 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ez-hue-indigo-text)', fontWeight: 750, fontSize: '12.5px', marginBottom: '4px' }}>
                   <Sparkles size={16} />
                   <span>Asisten Estimasi AI Konstruksi</span>
                 </div>
-                <p style={{ fontSize: '11.5px', color: '#4338CA', margin: 0, lineHeight: '1.45' }}>
+                <p style={{ fontSize: '11.5px', color: 'var(--ez-hue-indigo-text)', margin: 0, lineHeight: '1.45' }}>
                   Tuliskan pekerjaan yang Anda butuhkan (contoh: <em>"Tambahkan waterproofing kamar mandi 12 m2"</em>). AI akan menyusun estimasi volume, satuan, dan taksiran biaya wajar untuk dikonfirmasi.
                 </p>
               </div>
 
               <div>
-                <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                   Jelaskan Pekerjaan:
                 </label>
                 <textarea
@@ -1551,7 +1551,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
                   placeholder="Contoh: Tambahkan waterproofing kamar mandi 12 m2 lantai 2..."
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', fontSize: '12.5px', outline: 'none' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px', outline: 'none' }}
                 />
               </div>
 
@@ -1581,12 +1581,12 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
 
               {/* AI Structured Suggestion Preview Card */}
               {aiGeneratedItem && (
-                <div style={{ border: '1.5px solid #818CF8', borderRadius: '12px', padding: '16px', background: '#F8FAFC' }}>
+                <div style={{ border: '1.5px solid #818CF8', borderRadius: 'var(--ez-radius-control)', padding: '16px', background: 'var(--ez-color-surface-secondary)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#4F46E5', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-hue-indigo-text)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                       Saran EZRAB AI (Perlu Konfirmasi)
                     </span>
-                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '999px', background: '#E0E7FF', color: '#3730A3', fontWeight: 700 }}>
+                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-indigo-bg)', color: '#3730A3', fontWeight: 700 }}>
                       {aiGeneratedItem.category}
                     </span>
                   </div>
@@ -1597,62 +1597,62 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                         type="text"
                         value={aiGeneratedItem.description}
                         onChange={(e) => setAiGeneratedItem({ ...aiGeneratedItem, description: e.target.value })}
-                        style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px' }}
+                        style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px' }}
                       />
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
                         <input
                           type="number"
                           value={aiGeneratedItem.volume}
                           onChange={(e) => setAiGeneratedItem({ ...aiGeneratedItem, volume: parseFloat(e.target.value) || 0 })}
-                          style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                          style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
                         />
                         <input
                           type="text"
                           value={aiGeneratedItem.unit}
                           onChange={(e) => setAiGeneratedItem({ ...aiGeneratedItem, unit: e.target.value })}
-                          style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                          style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
                         />
                         <input
                           type="number"
                           value={aiGeneratedItem.unitPrice}
                           onChange={(e) => setAiGeneratedItem({ ...aiGeneratedItem, unitPrice: parseFloat(e.target.value) || 0 })}
-                          style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                          style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
                         />
                       </div>
                       <button
                         onClick={() => setAiIsEditingPreview(false)}
-                        style={{ height: '30px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', background: '#FFFFFF', fontSize: '11.5px', fontWeight: 650, cursor: 'pointer', alignSelf: 'flex-start' }}
+                        style={{ height: '30px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface)', fontSize: '11.5px', fontWeight: 650, cursor: 'pointer', alignSelf: 'flex-start' }}
                       >
                         Selesai Edit
                       </button>
                     </div>
                   ) : (
                     <>
-                      <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A', margin: '0 0 6px 0' }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 6px 0' }}>
                         {aiGeneratedItem.description}
                       </h4>
-                      <p style={{ fontSize: '11.5px', color: '#64748B', margin: '0 0 12px 0', lineHeight: '1.4' }}>
+                      <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', margin: '0 0 12px 0', lineHeight: '1.4' }}>
                         {aiGeneratedItem.notes}
                       </p>
                     </>
                   )}
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', background: '#FFFFFF', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0', marginBottom: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', background: 'var(--ez-color-surface)', padding: '10px', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)', marginBottom: '12px' }}>
                     <div>
-                      <div style={{ fontSize: '10.5px', color: '#64748B' }}>Volume</div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
+                      <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>Volume</div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                         {aiGeneratedItem.volume} {aiGeneratedItem.unit}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '10.5px', color: '#64748B' }}>Harga Satuan (Ref)</div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#0F172A' }}>
+                      <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>Harga Satuan (Ref)</div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                         {formatCurrencyIDR(aiGeneratedItem.unitPrice)}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '10.5px', color: '#64748B' }}>Total Biaya</div>
-                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#2563EB' }}>
+                      <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>Total Biaya</div>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-color-primary)' }}>
                         {formatCurrencyIDR(aiGeneratedItem.volume * aiGeneratedItem.unitPrice)}
                       </div>
                     </div>
@@ -1665,9 +1665,9 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                         height: '34px',
                         padding: '0 14px',
                         borderRadius: '6px',
-                        border: '1px solid #CBD5E1',
-                        background: '#FFFFFF',
-                        color: '#475569',
+                        border: '1px solid var(--ez-hue-slate-border)',
+                        background: 'var(--ez-color-surface)',
+                        color: 'var(--ez-color-text-slate)',
                         fontSize: '12px',
                         fontWeight: 650,
                         cursor: 'pointer',
@@ -1686,7 +1686,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                         height: '34px',
                         padding: '0 18px',
                         borderRadius: '6px',
-                        background: '#2563EB',
+                        background: 'var(--ez-color-primary)',
                         color: '#FFFFFF',
                         border: 'none',
                         fontSize: '12px',
@@ -1712,7 +1712,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
           {activeMode === 'template' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569' }}>
+                <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)' }}>
                   Pilih Template Bangunan:
                 </label>
                 <select
@@ -1721,7 +1721,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     setSelectedTemplateId(e.target.value);
                     setSelectedTemplateItemIds(new Set());
                   }}
-                  style={{ height: '34px', padding: '0 12px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px', fontWeight: 650, flex: 1, minWidth: '220px' }}
+                  style={{ height: '34px', padding: '0 12px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px', fontWeight: 650, flex: 1, minWidth: '220px' }}
                 >
                   {allTemplates.map((t: MasterBuildingTemplate) => (
                     <option key={t.id} value={t.id}>
@@ -1744,11 +1744,11 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                       height: '32px',
                       padding: '0 10px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
-                      background: '#FFFFFF',
+                      border: '1px solid var(--ez-hue-slate-border)',
+                      background: 'var(--ez-color-surface)',
                       fontSize: '11px',
                       fontWeight: 650,
-                      color: '#475569',
+                      color: 'var(--ez-color-text-slate)',
                       cursor: 'pointer',
                     }}
                   >
@@ -1760,7 +1760,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
               </div>
 
               {/* Template Items List */}
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', maxHeight: '360px', overflowY: 'auto' }}>
+              <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', maxHeight: '360px', overflowY: 'auto' }}>
                 {(!currentTemplate?.workItems || currentTemplate.workItems.length === 0) ? (
                   <div style={{ padding: '24px', textAlign: 'center', color: '#94A3B8', fontSize: '12px' }}>
                     Tidak ada rincian item dalam template ini.
@@ -1785,8 +1785,8 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                           alignItems: 'center',
                           padding: '8px 12px',
                           cursor: 'pointer',
-                          background: isChecked ? '#EFF6FF' : '#FFFFFF',
-                          borderBottom: '1px solid #F1F5F9',
+                          background: isChecked ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                          borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                           fontSize: '12px',
                           gap: '10px',
                         }}
@@ -1795,12 +1795,12 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => {}}
-                          style={{ accentColor: '#2563EB', cursor: 'pointer' }}
+                          style={{ accentColor: 'var(--ez-color-primary)', cursor: 'pointer' }}
                         />
-                        <div style={{ fontFamily: 'monospace', fontWeight: 700, color: '#2563EB', width: '90px' }}>
+                        <div style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--ez-color-primary)', width: '90px' }}>
                           {item.wbsCode || 'WBS.' + (idx + 1)}
                         </div>
-                        <div style={{ flex: 1, fontWeight: 550, color: '#334155' }}>{item.name}</div>
+<div style={{ flex: 1, fontWeight: 550, color: '#334155' }}>{item.name}</div>
                         <div style={{ color: '#64748B', width: '70px' }}>1 {item.unit}</div>
                         <div style={{ fontWeight: 700, color: '#0F172A', width: '110px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                           {estPrice == null ? 'Belum ada harga' : formatCurrencyIDR(estPrice)}
@@ -1812,7 +1812,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', color: '#64748B' }}>
+                <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
                   {selectedTemplateItemIds.size} pekerjaan dipilih
                 </span>
                 <button
@@ -1822,7 +1822,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     height: '36px',
                     padding: '0 18px',
                     borderRadius: '8px',
-                    background: selectedTemplateItemIds.size > 0 ? '#2563EB' : '#94A3B8',
+                    background: selectedTemplateItemIds.size > 0 ? 'var(--ez-color-primary)' : '#94A3B8',
                     color: '#FFFFFF',
                     border: 'none',
                     fontSize: '12.5px',
@@ -1850,7 +1850,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
           {activeMode === 'duplicate' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                   Cari Pekerjaan Eksisting dalam Proyek:
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -1860,13 +1860,13 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     placeholder="Ketik uraian atau kode pekerjaan..."
                     value={duplicateSearch}
                     onChange={(e) => setDuplicateSearch(e.target.value)}
-                    style={{ width: '100%', height: '34px', paddingLeft: '32px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                    style={{ width: '100%', height: '34px', paddingLeft: '32px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
                   />
                 </div>
               </div>
 
               {/* Existing Items Selector */}
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: '8px', maxHeight: '240px', overflowY: 'auto' }}>
+              <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', maxHeight: '240px', overflowY: 'auto' }}>
                 {existingItems.length === 0 ? (
                   <div style={{ padding: '24px', textAlign: 'center', color: '#94A3B8', fontSize: '12px' }}>
                     Belum ada item pekerjaan dalam proyek ini untuk diduplikasi.
@@ -1886,8 +1886,8 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                             alignItems: 'center',
                             gap: '10px',
                             cursor: 'pointer',
-                            background: isSelected ? '#EFF6FF' : '#FFFFFF',
-                            borderBottom: '1px solid #F1F5F9',
+                            background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                            borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                           }}
                         >
                           <input
@@ -1895,14 +1895,14 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                             name="dupSelect"
                             checked={isSelected}
                             onChange={() => {}}
-                            style={{ accentColor: '#2563EB', cursor: 'pointer' }}
+                            style={{ accentColor: 'var(--ez-color-primary)', cursor: 'pointer' }}
                           />
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '12px', fontWeight: 650, color: '#0F172A' }}>{it.description}</div>
-                            <div style={{ fontSize: '10.5px', color: '#64748B' }}>{it.sectionName || it.category}</div>
+                            <div style={{ fontSize: '12px', fontWeight: 650, color: 'var(--ez-color-text-primary)' }}>{it.description}</div>
+                            <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>{it.sectionName || it.category}</div>
                           </div>
-                          <div style={{ fontSize: '11.5px', color: '#64748B' }}>{it.volume} {it.unit}</div>
-                          <div style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
+                          <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>{it.volume} {it.unit}</div>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
                             {formatCurrencyIDR(it.unitPrice)}
                           </div>
                         </div>
@@ -1913,31 +1913,31 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
 
               {/* Duplicate Edit Form */}
               {selectedDuplicateItem && (
-                <div style={{ background: '#F8FAFC', borderRadius: '10px', padding: '14px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <h4 style={{ fontSize: '13px', fontWeight: 750, color: '#0F172A', margin: 0 }}>
+                <div style={{ background: 'var(--ez-color-surface-secondary)', borderRadius: '10px', padding: '14px', border: '1px solid var(--ez-color-border-line)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
                     Rincian Pekerjaan Duplikasi Baru:
                   </h4>
                   <div>
-                    <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '2px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>
                       Pekerjaan Baru:
                     </label>
                     <input
                       type="text"
                       value={duplicateNewDescription}
                       onChange={(e) => setDuplicateNewDescription(e.target.value)}
-                      style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12.5px', fontWeight: 600 }}
+                      style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px', fontWeight: 600 }}
                     />
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '10px' }}>
                     <div>
-                      <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '2px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>
                         WBS Tujuan:
                       </label>
                       <select
                         value={duplicateNewCategory}
                         onChange={(e) => setDuplicateNewCategory(e.target.value)}
-                        style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                        style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
                       >
                         {WORK_CATEGORIES.map((cat) => (
                           <option key={cat} value={cat}>
@@ -1948,7 +1948,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                     </div>
 
                     <div>
-                      <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '2px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '2px' }}>
                         Volume ({selectedDuplicateItem.unit}):
                       </label>
                       <input
@@ -1957,13 +1957,13 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                         min="0.01"
                         value={duplicateNewVolume}
                         onChange={(e) => setDuplicateNewVolume(parseFloat(e.target.value) || 0)}
-                        style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px', fontVariantNumeric: 'tabular-nums' }}
+                        style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px', fontVariantNumeric: 'tabular-nums' }}
                       />
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-                    <div style={{ fontSize: '12px', color: '#64748B' }}>
+<div style={{ fontSize: '12px', color: '#64748B' }}>
                       Total Biaya: <strong style={{ color: '#2563EB' }}>{selectedDuplicateItem.unitPrice != null ? formatCurrencyIDR(Math.round(duplicateNewVolume * selectedDuplicateItem.unitPrice)) : 'Belum ada harga'}</strong>
                     </div>
                     <button
@@ -1973,7 +1973,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
                         height: '34px',
                         padding: '0 18px',
                         borderRadius: '6px',
-                        background: '#2563EB',
+                        background: 'var(--ez-color-primary)',
                         color: '#FFFFFF',
                         border: 'none',
                         fontSize: '12px',

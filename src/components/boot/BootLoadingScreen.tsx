@@ -114,7 +114,7 @@ export function BootLoadingScreen({ ready = false, minDurationMs = 1200, onDone 
         justifyContent: 'center',
         gap: 20,
         padding: 24,
-        background: 'linear-gradient(180deg, var(--ezrab-bg, #ffffff) 0%, var(--ezrab-blue-soft, #eff6ff) 100%)',
+        background: 'linear-gradient(180deg, var(--ez-color-surface) 0%, var(--ez-color-background) 100%)',
         opacity: fading ? 0 : 1,
         transition: 'opacity 0.42s ease',
         pointerEvents: fading ? 'none' : 'auto',
@@ -159,7 +159,7 @@ export function BootLoadingScreen({ ready = false, minDurationMs = 1200, onDone 
             fontFamily: 'var(--ezrab-font-sans)',
             fontSize: 14,
             fontWeight: 600,
-            color: 'var(--ezrab-text, #111827)',
+            color: 'var(--ez-color-text-primary)',
             margin: '0 0 4px',
           }}
         >
@@ -169,7 +169,7 @@ export function BootLoadingScreen({ ready = false, minDurationMs = 1200, onDone 
           style={{
             fontFamily: 'var(--ezrab-font-sans)',
             fontSize: 12,
-            color: 'var(--ezrab-text-secondary, #64748b)',
+            color: 'var(--ez-color-text-muted)',
             margin: 0,
             minHeight: 18,
           }}
@@ -189,8 +189,8 @@ export function BootLoadingScreen({ ready = false, minDurationMs = 1200, onDone 
           style={{
             height: 8,
             borderRadius: 'var(--ezrab-radius-full, 9999px)',
-            background: 'var(--ezrab-surface-subtle, #f1f5f9)',
-            border: '1px solid var(--ezrab-border, #e5e7eb)',
+            background: 'var(--ez-color-surface-tertiary)',
+            border: '1px solid var(--ez-color-border-line)',
             overflow: 'hidden',
           }}
         >

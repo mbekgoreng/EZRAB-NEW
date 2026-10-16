@@ -40,7 +40,7 @@ export const EstimatorNavigation: React.FC<EstimatorNavigationProps> = ({
         display: 'flex',
         alignItems: 'center',
         gap: '24px',
-        borderBottom: '1px solid #E2E8F0',
+        borderBottom: '1px solid var(--ez-color-border-line)',
         marginBottom: '16px',
         paddingLeft: '4px',
         overflowX: 'auto',
@@ -61,7 +61,7 @@ export const EstimatorNavigation: React.FC<EstimatorNavigationProps> = ({
               padding: '10px 4px',
               fontSize: '13px',
               fontWeight: isActive ? 750 : 500,
-              color: isActive ? '#2563EB' : '#64748B',
+              color: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -74,7 +74,7 @@ export const EstimatorNavigation: React.FC<EstimatorNavigationProps> = ({
               if (!isActive) e.currentTarget.style.color = '#0F172A';
             }}
             onMouseLeave={(e) => {
-              if (!isActive) e.currentTarget.style.color = '#64748B';
+              if (!isActive) e.currentTarget.style.color = 'var(--ez-color-text-muted)';
             }}
           >
             <Icon size={16} color={isActive ? '#2563EB' : '#94A3B8'} />

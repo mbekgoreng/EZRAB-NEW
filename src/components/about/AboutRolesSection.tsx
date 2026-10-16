@@ -91,7 +91,7 @@ export const AboutRolesSection: React.FC = () => {
 
               <div>
                 <div className="ez-about-role-title">{role.title}</div>
-                <div style={{ fontSize: '11.5px', color: '#2563EB', fontWeight: 650, marginTop: '2px' }}>
+                <div style={{ fontSize: '11.5px', color: 'var(--ez-color-primary)', fontWeight: 650, marginTop: '2px' }}>
                   {role.subtitle}
                 </div>
               </div>

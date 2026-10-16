@@ -192,13 +192,13 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
           width: '100%',
           maxWidth: '960px',
           maxHeight: '94vh',
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           borderRadius: '16px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
         }}
       >
         {/* ---------------------------------------------------------------------
@@ -276,8 +276,8 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
         <div
           style={{
             padding: '10px 24px',
-            background: '#F8FAFC',
-            borderBottom: '1px solid #E2E8F0',
+            background: 'var(--ez-color-surface-secondary)',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -303,7 +303,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                   alignItems: 'center',
                   gap: '6px',
                   cursor: uploadedFile ? 'pointer' : 'default',
-                  color: currentStep === s.step ? '#2563EB' : currentStep > s.step ? '#059669' : '#94A3B8',
+                  color: currentStep === s.step ? 'var(--ez-color-primary)' : currentStep > s.step ? 'var(--ez-hue-green-text)' : '#94A3B8',
                   fontWeight: currentStep === s.step ? 800 : 600,
                 }}
               >
@@ -312,8 +312,8 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                     width: '20px',
                     height: '20px',
                     borderRadius: '50%',
-                    background: currentStep === s.step ? '#2563EB' : currentStep > s.step ? '#10B981' : '#E2E8F0',
-                    color: currentStep >= s.step ? '#FFFFFF' : '#64748B',
+                    background: currentStep === s.step ? 'var(--ez-color-primary)' : currentStep > s.step ? '#10B981' : 'var(--ez-color-border-line)',
+                    color: currentStep >= s.step ? '#FFFFFF' : 'var(--ez-color-text-muted)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -324,14 +324,14 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                   {currentStep > s.step ? <Check size={12} /> : s.step}
                 </div>
                 <span>{s.label}</span>
-                {s.step < 4 && <ChevronRight size={14} color="#CBD5E1" />}
+                {s.step < 4 && <ChevronRight size={14} color="var(--ez-hue-slate-border)" />}
               </div>
             ))}
           </div>
 
           {uploadedFile && (
-            <span style={{ fontSize: '11px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <FileSpreadsheet size={13} color="#2563EB" />
+            <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <FileSpreadsheet size={13} color="var(--ez-hue-blue-text)" />
               <strong>{uploadedFile.name}</strong> ({(uploadedFile.size / 1024).toFixed(1)} KB)
             </span>
           )}
@@ -386,7 +386,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                   flexDirection: 'column',
                   alignItems: 'center',
                   gap: '12px',
-                  background: '#F8FAFC',
+                  background: 'var(--ez-color-surface-secondary)',
                   cursor: 'pointer',
                   transition: 'background 0.2s',
                 }}
@@ -396,19 +396,19 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                     width: '56px',
                     height: '56px',
                     borderRadius: '14px',
-                    background: '#EFF6FF',
+                    background: 'var(--ez-hue-blue-bg)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
                 >
-                  <Upload size={28} color="#2563EB" />
+                  <Upload size={28} color="var(--ez-hue-blue-text)" />
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
+                  <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                     Tarik & Lepaskan File RAB Excel ke Sini
                   </div>
-                  <div style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
                     Mendukung format <strong>.XLSX, .XLS, .CSV</strong> (Standar RAB Proyek Indonesia)
                   </div>
                 </div>
@@ -421,7 +421,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                     marginTop: '8px',
                     padding: '8px 18px',
                     borderRadius: '8px',
-                    background: '#2563EB',
+                    background: 'var(--ez-color-primary)',
                     color: '#FFFFFF',
                     border: 'none',
                     fontSize: '12.5px',
@@ -438,17 +438,17 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                 style={{
                   maxWidth: '560px',
                   borderRadius: '10px',
-                  background: '#EFF6FF',
-                  border: '1px solid #BFDBFE',
+                  background: 'var(--ez-hue-blue-bg)',
+                  border: '1px solid var(--ez-hue-blue-border)',
                   padding: '12px 16px',
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: '10px',
                   fontSize: '11.5px',
-                  color: '#1E40AF',
+                  color: 'var(--ez-hue-blue-text-deep)',
                 }}
               >
-                <Sparkles size={16} color="#2563EB" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <Sparkles size={16} color="var(--ez-hue-blue-text)" style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div>
                   <strong>Deteksi Cerdas Tanpa Format Kaku:</strong> Mesin akan otomatis mengenali variasi nama kolom (e.g. <em>Vol, Kuantitas, HSP, Sat, Uraian Pekerjaan</em>) serta memisahkan grup judul WBS dan baris subtotal secara otomatis.
                 </div>
@@ -463,27 +463,27 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                     Pilih Lembar Kerja (Sheet) & Baris Judul Kolom (Header)
                   </div>
-                  <div style={{ fontSize: '12px', color: '#64748B' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
                     Tentukan lembar kerja yang memuat rincian volume dan harga RAB
                   </div>
                 </div>
 
                 {/* Sheet Switcher */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569' }}>Sheet:</span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-slate)' }}>Sheet:</span>
                   <select
                     value={selectedSheet}
                     onChange={(e) => handleSheetChange(e.target.value)}
                     style={{
                       padding: '6px 12px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '12.5px',
                       fontWeight: 700,
-                      background: '#FFFFFF',
+                      background: 'var(--ez-color-surface)',
                     }}
                   >
                     {analysisResult.sheetNames.map((sn) => (
@@ -498,13 +498,13 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
               {/* Raw Table Preview with Header Selector */}
               <div
                 style={{
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   borderRadius: '10px',
                   overflow: 'hidden',
-                  background: '#FFFFFF',
+                  background: 'var(--ez-color-surface)',
                 }}
               >
-                <div style={{ padding: '8px 12px', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', fontSize: '11px', color: '#64748B' }}>
+                <div style={{ padding: '8px 12px', background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
                   Klik salah satu baris di bawah ini jika baris judul kolom belum tepat:
                 </div>
                 <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
@@ -517,8 +517,8 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                             key={idx}
                             onClick={() => handleHeaderRowChange(idx)}
                             style={{
-                              background: isSelectedHeader ? '#EFF6FF' : idx % 2 === 0 ? '#FFFFFF' : '#FAFAFA',
-                              borderBottom: '1px solid #F1F5F9',
+                              background: isSelectedHeader ? 'var(--ez-hue-blue-bg)' : idx % 2 === 0 ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-faint)',
+                              borderBottom: '1px solid var(--ez-color-surface-tertiary)',
                               cursor: 'pointer',
                               borderLeft: isSelectedHeader ? '4px solid #2563EB' : '4px solid transparent',
                             }}
@@ -531,7 +531,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                                 key={cIdx}
                                 style={{
                                   padding: '6px 10px',
-                                  color: isSelectedHeader ? '#1E40AF' : '#334155',
+                                  color: isSelectedHeader ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-color-text-body)',
                                   fontWeight: isSelectedHeader ? 800 : 500,
                                 }}
                               >
@@ -554,10 +554,10 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
           {currentStep === 3 && analysisResult && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <div style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                   Pemetaan Kolom (Column Mapping)
                 </div>
-                <div style={{ fontSize: '12px', color: '#64748B' }}>
+                <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
                   Verifikasi kolom hasil deteksi otomatis atau sesuaikan secara manual
                 </div>
               </div>
@@ -568,10 +568,10 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                   display: 'grid',
                   gridTemplateColumns: '1fr 1fr',
                   gap: '12px',
-                  background: '#F8FAFC',
+                  background: 'var(--ez-color-surface-secondary)',
                   padding: '16px',
-                  borderRadius: '12px',
-                  border: '1px solid #E2E8F0',
+                  borderRadius: 'var(--ez-radius-control)',
+                  border: '1px solid var(--ez-color-border-line)',
                 }}
               >
                 {[
@@ -594,14 +594,14 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '4px',
-                        background: '#FFFFFF',
+                        background: 'var(--ez-color-surface)',
                         padding: '10px 12px',
                         borderRadius: '8px',
-                        border: field.req && currentVal === null ? '1px solid #FCA5A5' : '1px solid #E2E8F0',
+                        border: field.req && currentVal === null ? '1px solid #FCA5A5' : '1px solid var(--ez-color-border-line)',
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#1E293B' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-strong)' }}>
                           {field.label} {field.req && <span style={{ color: '#EF4444' }}>*</span>}
                         </span>
                         {currentVal !== null && conf > 0 && (
@@ -609,8 +609,8 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                             style={{
                               fontSize: '10px',
                               fontWeight: 750,
-                              color: '#059669',
-                              background: '#ECFDF5',
+                              color: 'var(--ez-hue-green-text)',
+                              background: 'var(--ez-hue-emerald-bg)',
                               padding: '1px 5px',
                               borderRadius: '4px',
                             }}
@@ -631,9 +631,9 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                         style={{
                           padding: '6px 8px',
                           borderRadius: '6px',
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid var(--ez-hue-slate-border)',
                           fontSize: '12px',
-                          background: '#FFFFFF',
+                          background: 'var(--ez-color-surface)',
                         }}
                       >
                         <option value="">-- Lewati / Tidak Ada --</option>
@@ -663,16 +663,16 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                   gap: '10px',
                 }}
               >
-                <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                  <div style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 700 }}>KELOMPOK WBS</div>
-                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>
+                <div style={{ padding: '10px 12px', borderRadius: '8px', background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)' }}>
+                  <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', fontWeight: 700 }}>KELOMPOK WBS</div>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
                     {analysisResult.detectedGroupsCount} Grup
                   </div>
                 </div>
 
-                <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
-                  <div style={{ fontSize: '10.5px', color: '#1E40AF', fontWeight: 700 }}>ITEM PEKERJAAN</div>
-                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#2563EB', marginTop: '2px' }}>
+                <div style={{ padding: '10px 12px', borderRadius: '8px', background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-border)' }}>
+                  <div style={{ fontSize: '10.5px', color: 'var(--ez-hue-blue-text-deep)', fontWeight: 700 }}>ITEM PEKERJAAN</div>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-primary)', marginTop: '2px' }}>
                     {analysisResult.detectedWorkItemsCount} Item
                   </div>
                 </div>
@@ -684,11 +684,11 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                   </div>
                 </div>
 
-                <div style={{ padding: '10px 12px', borderRadius: '8px', background: analysisResult.allAnomalies.length > 0 ? '#FEF3C7' : '#ECFDF5', border: `1px solid ${analysisResult.allAnomalies.length > 0 ? '#FCD34D' : '#A7F3D0'}` }}>
-                  <div style={{ fontSize: '10.5px', color: analysisResult.allAnomalies.length > 0 ? '#92400E' : '#065F46', fontWeight: 700 }}>
+                <div style={{ padding: '10px 12px', borderRadius: '8px', background: analysisResult.allAnomalies.length > 0 ? 'var(--ez-hue-amber-bg-deep)' : 'var(--ez-hue-emerald-bg)', border: `1px solid ${analysisResult.allAnomalies.length > 0 ? '#FCD34D' : 'var(--ez-hue-green-border-deep)'}` }}>
+                  <div style={{ fontSize: '10.5px', color: analysisResult.allAnomalies.length > 0 ? 'var(--ez-hue-amber-text-dark)' : 'var(--ez-hue-green-text-deep)', fontWeight: 700 }}>
                     ANOMALI / WARNING
                   </div>
-                  <div style={{ fontSize: '16px', fontWeight: 800, color: analysisResult.allAnomalies.length > 0 ? '#D97706' : '#059669', marginTop: '2px' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: analysisResult.allAnomalies.length > 0 ? 'var(--ez-hue-amber-text-deep)' : 'var(--ez-hue-green-text)', marginTop: '2px' }}>
                     {analysisResult.allAnomalies.length} Catatan
                   </div>
                 </div>
@@ -700,10 +700,10 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  background: '#F8FAFC',
+                  background: 'var(--ez-color-surface-secondary)',
                   padding: '8px 12px',
                   borderRadius: '8px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -719,9 +719,9 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                       style={{
                         padding: '4px 10px',
                         borderRadius: '6px',
-                        background: previewTab === t.key ? '#2563EB' : '#FFFFFF',
-                        color: previewTab === t.key ? '#FFFFFF' : '#475569',
-                        border: previewTab === t.key ? 'none' : '1px solid #CBD5E1',
+                        background: previewTab === t.key ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
+                        color: previewTab === t.key ? '#FFFFFF' : 'var(--ez-color-text-slate)',
+                        border: previewTab === t.key ? 'none' : '1px solid var(--ez-hue-slate-border)',
                         fontSize: '11.5px',
                         fontWeight: 700,
                         cursor: 'pointer',
@@ -737,9 +737,9 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                   style={{
                     padding: '4px 10px',
                     borderRadius: '6px',
-                    background: '#FFFFFF',
-                    border: '1px solid #CBD5E1',
-                    color: '#334155',
+                    background: 'var(--ez-color-surface)',
+                    border: '1px solid var(--ez-hue-slate-border)',
+                    color: 'var(--ez-color-text-body)',
                     fontSize: '11.5px',
                     fontWeight: 650,
                     cursor: 'pointer',
@@ -748,7 +748,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                     gap: '4px',
                   }}
                 >
-                  <Download size={13} color="#2563EB" />
+                  <Download size={13} color="var(--ez-hue-blue-text)" />
                   Unduh Laporan Audit CSV
                 </button>
               </div>
@@ -756,17 +756,17 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
               {/* TAB CONTENT TABLE */}
               <div
                 style={{
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   borderRadius: '10px',
                   overflow: 'hidden',
-                  background: '#FFFFFF',
+                  background: 'var(--ez-color-surface)',
                   maxHeight: '260px',
                   overflowY: 'auto',
                 }}
               >
                 {previewTab === 'VALID' && (
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
-                    <thead style={{ background: '#F1F5F9', color: '#475569', position: 'sticky', top: 0, zIndex: 5 }}>
+                    <thead style={{ background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', position: 'sticky', top: 0, zIndex: 5 }}>
                       <tr>
                         <th style={{ padding: '8px 10px' }}>No</th>
                         <th style={{ padding: '8px 10px' }}>Kode</th>
@@ -780,23 +780,23 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                     </thead>
                     <tbody>
                       {analysisResult.validItems.map((item, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                           <td style={{ padding: '6px 10px', color: '#94A3B8' }}>{idx + 1}</td>
-                          <td style={{ padding: '6px 10px', fontFamily: 'monospace', color: '#2563EB', fontWeight: 600 }}>
+                          <td style={{ padding: '6px 10px', fontFamily: 'monospace', color: 'var(--ez-color-primary)', fontWeight: 600 }}>
                             {item.code}
                           </td>
-                          <td style={{ padding: '6px 10px', color: '#64748B', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '6px 10px', color: 'var(--ez-color-text-muted)', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {item.groupName}
                           </td>
-                          <td style={{ padding: '6px 10px', fontWeight: 600, color: '#0F172A' }}>
+                          <td style={{ padding: '6px 10px', fontWeight: 600, color: 'var(--ez-color-text-primary)' }}>
                             {item.description}
                           </td>
                           <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700 }}>
                             {item.volume.toLocaleString('id-ID')}
                           </td>
-                          <td style={{ padding: '6px 10px', textAlign: 'center', color: '#64748B' }}>{item.unit}</td>
+                          <td style={{ padding: '6px 10px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>{item.unit}</td>
                           <td style={{ padding: '6px 10px', textAlign: 'right' }}>{formatCurrencyIDR(item.unitPrice)}</td>
-                          <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 750, color: '#1E40AF' }}>
+                          <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 750, color: 'var(--ez-hue-blue-text-deep)' }}>
                             {formatCurrencyIDR(item.amount || item.calculatedAmount)}
                           </td>
                         </tr>
@@ -813,11 +813,11 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                         style={{
                           padding: '8px 12px',
                           borderRadius: '6px',
-                          background: '#F8FAFC',
-                          border: '1px solid #E2E8F0',
+                          background: 'var(--ez-color-surface-secondary)',
+                          border: '1px solid var(--ez-color-border-line)',
                           fontSize: '12px',
                           fontWeight: 750,
-                          color: '#1E293B',
+                          color: 'var(--ez-color-text-strong)',
                         }}
                       >
                         {grp.description || grp.groupName} (Baris Excel {grp.rowNumber})
@@ -829,7 +829,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                 {previewTab === 'ANOMALIES' && (
                   <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {analysisResult.allAnomalies.length === 0 ? (
-                      <div style={{ padding: '20px', textAlign: 'center', color: '#059669', fontWeight: 600 }}>
+                      <div style={{ padding: '20px', textAlign: 'center', color: 'var(--ez-hue-green-text)', fontWeight: 600 }}>
                         <CheckCircle2 size={24} color="#10B981" style={{ margin: '0 auto 6px' }} />
                         Tidak ditemukan anomali atau error pada file ini!
                       </div>
@@ -840,8 +840,8 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                           style={{
                             padding: '8px 12px',
                             borderRadius: '6px',
-                            background: ano.severity === 'error' ? '#FEF2F2' : '#FFFBEB',
-                            border: `1px solid ${ano.severity === 'error' ? '#FECACA' : '#FDE68A'}`,
+                            background: ano.severity === 'error' ? 'var(--ez-hue-rose-bg)' : 'var(--ez-hue-amber-bg)',
+                            border: `1px solid ${ano.severity === 'error' ? 'var(--ez-hue-rose-border)' : 'var(--ez-hue-amber-border)'}`,
                             fontSize: '11.5px',
                             display: 'flex',
                             alignItems: 'center',
@@ -849,8 +849,8 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                           }}
                         >
                           <AlertTriangle size={14} color={ano.severity === 'error' ? '#DC2626' : '#D97706'} />
-                          <span style={{ fontWeight: 700, color: '#0F172A' }}>Baris {ano.rowNumber}:</span>
-                          <span style={{ color: '#475569' }}>{ano.message}</span>
+                          <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Baris {ano.rowNumber}:</span>
+                          <span style={{ color: 'var(--ez-color-text-slate)' }}>{ano.message}</span>
                         </div>
                       ))
                     )}
@@ -865,12 +865,12 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                         style={{
                           padding: '8px 12px',
                           borderRadius: '6px',
-                          background: '#F1F5F9',
+                          background: 'var(--ez-color-surface-tertiary)',
                           fontSize: '11.5px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          color: '#475569',
+                          color: 'var(--ez-color-text-slate)',
                         }}
                       >
                         <span>
@@ -892,8 +892,8 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
         <div
           style={{
             padding: '14px 24px',
-            background: '#F8FAFC',
-            borderTop: '1px solid #E2E8F0',
+            background: 'var(--ez-color-surface-secondary)',
+            borderTop: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -904,9 +904,9 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
             style={{
               padding: '8px 16px',
               borderRadius: '8px',
-              background: '#FFFFFF',
-              border: '1px solid #CBD5E1',
-              color: '#475569',
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-hue-slate-border)',
+              color: 'var(--ez-color-text-slate)',
               fontSize: '12.5px',
               fontWeight: 650,
               cursor: 'pointer',
@@ -922,9 +922,9 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                 style={{
                   padding: '8px 14px',
                   borderRadius: '8px',
-                  background: '#FFFFFF',
-                  border: '1px solid #CBD5E1',
-                  color: '#1E293B',
+                  background: 'var(--ez-color-surface)',
+                  border: '1px solid var(--ez-hue-slate-border)',
+                  color: 'var(--ez-color-text-strong)',
                   fontSize: '12.5px',
                   fontWeight: 650,
                   cursor: 'pointer',
@@ -947,7 +947,7 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                 style={{
                   padding: '8px 18px',
                   borderRadius: '8px',
-                  background: uploadedFile ? '#2563EB' : '#94A3B8',
+                  background: uploadedFile ? 'var(--ez-color-primary)' : '#94A3B8',
                   color: '#FFFFFF',
                   border: 'none',
                   fontSize: '12.5px',

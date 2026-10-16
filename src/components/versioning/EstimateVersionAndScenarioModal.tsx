@@ -160,13 +160,13 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
           width: '100%',
           maxWidth: '1020px',
           maxHeight: '94vh',
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           borderRadius: '16px',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
         }}
       >
         {/* ---------------------------------------------------------------------
@@ -244,8 +244,8 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
         <div
           style={{
             padding: '8px 24px',
-            background: '#F8FAFC',
-            borderBottom: '1px solid #E2E8F0',
+            background: 'var(--ez-color-surface-secondary)',
+            borderBottom: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -257,8 +257,8 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
               style={{
                 padding: '6px 14px',
                 borderRadius: '8px',
-                background: activeTab === 'VERSIONS' ? '#2563EB' : 'transparent',
-                color: activeTab === 'VERSIONS' ? '#FFFFFF' : '#475569',
+                background: activeTab === 'VERSIONS' ? 'var(--ez-color-primary)' : 'transparent',
+                color: activeTab === 'VERSIONS' ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                 border: 'none',
                 fontSize: '12.5px',
                 fontWeight: 700,
@@ -283,8 +283,8 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
               style={{
                 padding: '6px 14px',
                 borderRadius: '8px',
-                background: activeTab === 'COMPARE' ? '#2563EB' : 'transparent',
-                color: activeTab === 'COMPARE' ? '#FFFFFF' : '#475569',
+                background: activeTab === 'COMPARE' ? 'var(--ez-color-primary)' : 'transparent',
+                color: activeTab === 'COMPARE' ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                 border: 'none',
                 fontSize: '12.5px',
                 fontWeight: 700,
@@ -303,8 +303,8 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
               style={{
                 padding: '6px 14px',
                 borderRadius: '8px',
-                background: activeTab === 'SCENARIOS' ? '#2563EB' : 'transparent',
-                color: activeTab === 'SCENARIOS' ? '#FFFFFF' : '#475569',
+                background: activeTab === 'SCENARIOS' ? 'var(--ez-color-primary)' : 'transparent',
+                color: activeTab === 'SCENARIOS' ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                 border: 'none',
                 fontSize: '12.5px',
                 fontWeight: 700,
@@ -358,16 +358,16 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                   onSubmit={handleCreateRevisionSubmit}
                   style={{
                     padding: '16px',
-                    borderRadius: '12px',
-                    background: '#F8FAFC',
-                    border: '1px solid #CBD5E1',
+                    borderRadius: 'var(--ez-radius-control)',
+                    background: 'var(--ez-color-surface-secondary)',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '12px',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 800, color: '#0F172A' }}>
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                       Snapshot Riwayat Revisi Baru
                     </span>
                     <button
@@ -381,7 +381,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
 
                   <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '10px' }}>
                     <div>
-                      <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                         Nomor Versi
                       </label>
                       <input
@@ -393,14 +393,14 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                           width: '100%',
                           padding: '6px 8px',
                           borderRadius: '6px',
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid var(--ez-hue-slate-border)',
                           fontSize: '12px',
                           fontWeight: 700,
                         }}
                       />
                     </div>
                     <div>
-                      <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                      <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                         Uraian Perubahan / Revisi *
                       </label>
                       <input
@@ -413,7 +413,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                           width: '100%',
                           padding: '6px 10px',
                           borderRadius: '6px',
-                          border: '1px solid #CBD5E1',
+                          border: '1px solid var(--ez-hue-slate-border)',
                           fontSize: '12px',
                         }}
                       />
@@ -421,7 +421,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', display: 'block', marginBottom: '4px' }}>
                       Catatan Tambahan (Value Engineering & Log Perubahan)
                     </label>
                     <textarea
@@ -433,7 +433,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                         width: '100%',
                         padding: '6px 10px',
                         borderRadius: '6px',
-                        border: '1px solid #CBD5E1',
+                        border: '1px solid var(--ez-hue-slate-border)',
                         fontSize: '12px',
                         resize: 'none',
                       }}
@@ -447,9 +447,9 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       style={{
                         padding: '6px 12px',
                         borderRadius: '6px',
-                        background: '#FFFFFF',
-                        border: '1px solid #CBD5E1',
-                        color: '#475569',
+                        background: 'var(--ez-color-surface)',
+                        border: '1px solid var(--ez-hue-slate-border)',
+                        color: 'var(--ez-color-text-slate)',
                         fontSize: '12px',
                         fontWeight: 600,
                         cursor: 'pointer',
@@ -462,7 +462,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       style={{
                         padding: '6px 16px',
                         borderRadius: '6px',
-                        background: '#2563EB',
+                        background: 'var(--ez-color-primary)',
                         color: '#FFFFFF',
                         border: 'none',
                         fontSize: '12px',
@@ -491,9 +491,9 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                         key={ver.id || vIdx}
                         style={{
                           padding: '14px 18px',
-                          borderRadius: '12px',
-                          background: isLatest ? '#EFF6FF' : '#FFFFFF',
-                          border: isLatest ? '1px solid #BFDBFE' : '1px solid #E2E8F0',
+                          borderRadius: 'var(--ez-radius-control)',
+                          background: isLatest ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                          border: isLatest ? '1px solid var(--ez-hue-blue-border)' : '1px solid var(--ez-color-border-line)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -507,7 +507,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                             style={{
                               padding: '4px 10px',
                               borderRadius: '6px',
-                              background: ver.isBaseline ? '#0F172A' : '#2563EB',
+                              background: ver.isBaseline ? '#0F172A' : 'var(--ez-color-primary)',
                               color: '#FFFFFF',
                               fontSize: '12px',
                               fontWeight: 800,
@@ -520,7 +520,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
 
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#0F172A' }}>
+                              <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                                 {ver.description || ver.label || 'Snapshot Estimasi'}
                               </span>
                               {isLatest && (
@@ -528,8 +528,8 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                                   style={{
                                     fontSize: '10px',
                                     fontWeight: 800,
-                                    background: '#DBEAFE',
-                                    color: '#1E40AF',
+                                    background: 'var(--ez-hue-blue-bg-deep)',
+                                    color: 'var(--ez-hue-blue-text-deep)',
                                     padding: '1px 6px',
                                     borderRadius: '4px',
                                   }}
@@ -542,8 +542,8 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                                   style={{
                                     fontSize: '10px',
                                     fontWeight: 800,
-                                    background: '#F1F5F9',
-                                    color: '#475569',
+                                    background: 'var(--ez-color-surface-tertiary)',
+                                    color: 'var(--ez-color-text-slate)',
                                     padding: '1px 6px',
                                     borderRadius: '4px',
                                     display: 'flex',
@@ -556,7 +556,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                               )}
                             </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '11px', color: '#64748B', marginTop: '3px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '3px' }}>
                               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <Calendar size={12} color="#94A3B8" />
                                 {new Date(ver.timestamp).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
@@ -571,7 +571,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                             </div>
 
                             {ver.revisionNotes && (
-                              <div style={{ fontSize: '11.5px', color: '#475569', marginTop: '6px', fontStyle: 'italic', background: 'rgba(255,255,255,0.7)', padding: '4px 8px', borderRadius: '4px' }}>
+                              <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-slate)', marginTop: '6px', fontStyle: 'italic', background: 'rgba(255,255,255,0.7)', padding: '4px 8px', borderRadius: '4px' }}>
                                 "{ver.revisionNotes}"
                               </div>
                             )}
@@ -581,8 +581,8 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                         {/* Right: Cost & Restore Action */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
                           <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase' }}>Nilai Total RAB</div>
-                            <div style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
+                            <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>Nilai Total RAB</div>
+                            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
                               {formatCurrencyIDR(ver.costAfter || 0)}
                             </div>
                             {ver.difference !== 0 && (
@@ -590,7 +590,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                                 style={{
                                   fontSize: '11px',
                                   fontWeight: 700,
-                                  color: ver.difference > 0 ? '#DC2626' : '#059669',
+                                  color: ver.difference > 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)',
                                 }}
                               >
                                 {ver.difference > 0 ? '+' : ''}
@@ -611,9 +611,9 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                               style={{
                                 padding: '6px 12px',
                                 borderRadius: '6px',
-                                background: '#FFFFFF',
-                                border: '1px solid #CBD5E1',
-                                color: '#2563EB',
+                                background: 'var(--ez-color-surface)',
+                                border: '1px solid var(--ez-hue-slate-border)',
+                                color: 'var(--ez-color-primary)',
                                 fontSize: '12px',
                                 fontWeight: 700,
                                 cursor: 'pointer',
@@ -647,14 +647,14 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                   gridTemplateColumns: '1fr auto 1fr',
                   alignItems: 'center',
                   gap: '12px',
-                  background: '#F8FAFC',
+                  background: 'var(--ez-color-surface-secondary)',
                   padding: '12px 16px',
                   borderRadius: '10px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                 }}
               >
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '4px' }}>
                     Versi Dasar (Base / Before):
                   </label>
                   <select
@@ -664,10 +664,10 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       width: '100%',
                       padding: '6px 10px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '12px',
                       fontWeight: 700,
-                      background: '#FFFFFF',
+                      background: 'var(--ez-color-surface)',
                     }}
                   >
                     {versions.map((v) => (
@@ -683,7 +683,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '4px' }}>
                     Versi Target Pembanding (Target / After):
                   </label>
                   <select
@@ -693,10 +693,10 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       width: '100%',
                       padding: '6px 10px',
                       borderRadius: '6px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '12px',
                       fontWeight: 700,
-                      background: '#FFFFFF',
+                      background: 'var(--ez-color-surface)',
                     }}
                   >
                     {versions.map((v) => (
@@ -717,16 +717,16 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     gap: '12px',
                   }}
                 >
-                  <div style={{ padding: '10px 14px', borderRadius: '8px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                    <div style={{ fontSize: '10.5px', color: '#64748B', fontWeight: 700 }}>NILAI VERSI DASAR</div>
-                    <div style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>
+                  <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)' }}>
+                    <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', fontWeight: 700 }}>NILAI VERSI DASAR</div>
+                    <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
                       {formatCurrencyIDR(comparisonResult.baseTotal)}
                     </div>
                   </div>
 
-                  <div style={{ padding: '10px 14px', borderRadius: '8px', background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
-                    <div style={{ fontSize: '10.5px', color: '#1E40AF', fontWeight: 700 }}>NILAI VERSI TARGET</div>
-                    <div style={{ fontSize: '15px', fontWeight: 800, color: '#2563EB', marginTop: '2px' }}>
+                  <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-border)' }}>
+                    <div style={{ fontSize: '10.5px', color: 'var(--ez-hue-blue-text-deep)', fontWeight: 700 }}>NILAI VERSI TARGET</div>
+                    <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-primary)', marginTop: '2px' }}>
                       {formatCurrencyIDR(comparisonResult.targetTotal)}
                     </div>
                   </div>
@@ -735,14 +735,14 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     style={{
                       padding: '10px 14px',
                       borderRadius: '8px',
-                      background: comparisonResult.totalDelta >= 0 ? '#FEF2F2' : '#ECFDF5',
-                      border: `1px solid ${comparisonResult.totalDelta >= 0 ? '#FECACA' : '#A7F3D0'}`,
+                      background: comparisonResult.totalDelta >= 0 ? 'var(--ez-hue-rose-bg)' : 'var(--ez-hue-emerald-bg)',
+                      border: `1px solid ${comparisonResult.totalDelta >= 0 ? 'var(--ez-hue-rose-border)' : 'var(--ez-hue-green-border-deep)'}`,
                     }}
                   >
-                    <div style={{ fontSize: '10.5px', color: comparisonResult.totalDelta >= 0 ? '#DC2626' : '#059669', fontWeight: 700 }}>
+                    <div style={{ fontSize: '10.5px', color: comparisonResult.totalDelta >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)', fontWeight: 700 }}>
                       SELISIH PERUBAHAN
                     </div>
-                    <div style={{ fontSize: '15px', fontWeight: 850, color: comparisonResult.totalDelta >= 0 ? '#DC2626' : '#059669', marginTop: '2px' }}>
+                    <div style={{ fontSize: '15px', fontWeight: 850, color: comparisonResult.totalDelta >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)', marginTop: '2px' }}>
                       {comparisonResult.totalDelta >= 0 ? '+' : ''}
                       {formatCurrencyIDR(comparisonResult.totalDelta)} ({comparisonResult.percentageDelta >= 0 ? '+' : ''}
                       {comparisonResult.percentageDelta.toFixed(2)}%)
@@ -757,10 +757,10 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  background: '#F8FAFC',
+                  background: 'var(--ez-color-surface-secondary)',
                   padding: '8px 12px',
                   borderRadius: '8px',
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -769,9 +769,9 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     style={{
                       padding: '4px 10px',
                       borderRadius: '6px',
-                      background: diffFilter === 'ALL' ? '#2563EB' : '#FFFFFF',
-                      color: diffFilter === 'ALL' ? '#FFFFFF' : '#475569',
-                      border: diffFilter === 'ALL' ? 'none' : '1px solid #CBD5E1',
+                      background: diffFilter === 'ALL' ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
+                      color: diffFilter === 'ALL' ? '#FFFFFF' : 'var(--ez-color-text-slate)',
+                      border: diffFilter === 'ALL' ? 'none' : '1px solid var(--ez-hue-slate-border)',
                       fontSize: '11.5px',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -784,9 +784,9 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     style={{
                       padding: '4px 10px',
                       borderRadius: '6px',
-                      background: diffFilter === 'ADDED' ? '#059669' : '#FFFFFF',
-                      color: diffFilter === 'ADDED' ? '#FFFFFF' : '#059669',
-                      border: diffFilter === 'ADDED' ? 'none' : '1px solid #A7F3D0',
+                      background: diffFilter === 'ADDED' ? '#059669' : 'var(--ez-color-surface)',
+                      color: diffFilter === 'ADDED' ? '#FFFFFF' : 'var(--ez-hue-green-text)',
+                      border: diffFilter === 'ADDED' ? 'none' : '1px solid var(--ez-hue-green-border-deep)',
                       fontSize: '11.5px',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -799,9 +799,9 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     style={{
                       padding: '4px 10px',
                       borderRadius: '6px',
-                      background: diffFilter === 'REMOVED' ? '#DC2626' : '#FFFFFF',
-                      color: diffFilter === 'REMOVED' ? '#FFFFFF' : '#DC2626',
-                      border: diffFilter === 'REMOVED' ? 'none' : '1px solid #FECACA',
+                      background: diffFilter === 'REMOVED' ? '#DC2626' : 'var(--ez-color-surface)',
+                      color: diffFilter === 'REMOVED' ? '#FFFFFF' : 'var(--ez-hue-rose-text)',
+                      border: diffFilter === 'REMOVED' ? 'none' : '1px solid var(--ez-hue-rose-border)',
                       fontSize: '11.5px',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -814,9 +814,9 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     style={{
                       padding: '4px 10px',
                       borderRadius: '6px',
-                      background: diffFilter === 'CHANGED' ? '#D97706' : '#FFFFFF',
-                      color: diffFilter === 'CHANGED' ? '#FFFFFF' : '#D97706',
-                      border: diffFilter === 'CHANGED' ? 'none' : '1px solid #FDE68A',
+                      background: diffFilter === 'CHANGED' ? '#D97706' : 'var(--ez-color-surface)',
+                      color: diffFilter === 'CHANGED' ? '#FFFFFF' : 'var(--ez-hue-amber-text-deep)',
+                      border: diffFilter === 'CHANGED' ? 'none' : '1px solid var(--ez-hue-amber-border)',
                       fontSize: '11.5px',
                       fontWeight: 700,
                       cursor: 'pointer',
@@ -826,7 +826,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#FFFFFF', padding: '3px 8px', borderRadius: '6px', border: '1px solid #CBD5E1' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--ez-color-surface)', padding: '3px 8px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)' }}>
                   <Search size={13} color="#94A3B8" />
                   <input
                     type="text"
@@ -841,16 +841,16 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
               {/* Granular Diff Table */}
               <div
                 style={{
-                  border: '1px solid #E2E8F0',
+                  border: '1px solid var(--ez-color-border-line)',
                   borderRadius: '10px',
                   overflow: 'hidden',
-                  background: '#FFFFFF',
+                  background: 'var(--ez-color-surface)',
                   maxHeight: '260px',
                   overflowY: 'auto',
                 }}
               >
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
-                  <thead style={{ background: '#F1F5F9', color: '#475569', position: 'sticky', top: 0, zIndex: 5 }}>
+                  <thead style={{ background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', position: 'sticky', top: 0, zIndex: 5 }}>
                     <tr>
                       <th style={{ padding: '8px 10px' }}>Status</th>
                       <th style={{ padding: '8px 10px' }}>Kode</th>
@@ -869,7 +869,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       </tr>
                     ) : (
                       filteredDiffItems.map((dItem, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                           <td style={{ padding: '6px 10px' }}>
                             <span
                               style={{
@@ -879,35 +879,35 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                                 borderRadius: '4px',
                                 background:
                                   dItem.status === 'ADDED'
-                                    ? '#ECFDF5'
+                                    ? 'var(--ez-hue-emerald-bg)'
                                     : dItem.status === 'REMOVED'
-                                    ? '#FEF2F2'
+                                    ? 'var(--ez-hue-rose-bg)'
                                     : dItem.status === 'UNCHANGED'
-                                    ? '#F1F5F9'
-                                    : '#FFFBEB',
+                                    ? 'var(--ez-color-surface-tertiary)'
+                                    : 'var(--ez-hue-amber-bg)',
                                 color:
                                   dItem.status === 'ADDED'
-                                    ? '#059669'
+                                    ? 'var(--ez-hue-green-text)'
                                     : dItem.status === 'REMOVED'
-                                    ? '#DC2626'
+                                    ? 'var(--ez-hue-rose-text)'
                                     : dItem.status === 'UNCHANGED'
-                                    ? '#64748B'
-                                    : '#D97706',
+                                    ? 'var(--ez-color-text-muted)'
+                                    : 'var(--ez-hue-amber-text-deep)',
                               }}
                             >
                               {dItem.status}
                             </span>
                           </td>
-                          <td style={{ padding: '6px 10px', fontFamily: 'monospace', color: '#2563EB', fontWeight: 650 }}>
+                          <td style={{ padding: '6px 10px', fontFamily: 'monospace', color: 'var(--ez-color-primary)', fontWeight: 650 }}>
                             {dItem.code}
                           </td>
-                          <td style={{ padding: '6px 10px', fontWeight: 600, color: '#0F172A', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '6px 10px', fontWeight: 600, color: 'var(--ez-color-text-primary)', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {dItem.description}
                           </td>
-                          <td style={{ padding: '6px 10px', textAlign: 'right', color: '#64748B' }}>
+                          <td style={{ padding: '6px 10px', textAlign: 'right', color: 'var(--ez-color-text-muted)' }}>
                             {dItem.baseAmount !== undefined ? formatCurrencyIDR(dItem.baseAmount) : '-'}
                           </td>
-                          <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: '#0F172A' }}>
+                          <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                             {dItem.targetAmount !== undefined ? formatCurrencyIDR(dItem.targetAmount) : '-'}
                           </td>
                           <td
@@ -915,7 +915,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                               padding: '6px 10px',
                               textAlign: 'right',
                               fontWeight: 750,
-                              color: dItem.deltaAmount >= 0 ? '#DC2626' : '#059669',
+                              color: dItem.deltaAmount >= 0 ? 'var(--ez-hue-rose-text)' : 'var(--ez-hue-green-text)',
                             }}
                           >
                             {dItem.deltaAmount >= 0 ? '+' : ''}
@@ -953,8 +953,8 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                       style={{
                         padding: '12px',
                         borderRadius: '10px',
-                        background: isSelected ? '#EFF6FF' : '#FFFFFF',
-                        border: isSelected ? '2px solid #2563EB' : '1px solid #CBD5E1',
+                        background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                        border: isSelected ? '2px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
                         cursor: 'pointer',
                         display: 'flex',
                         flexDirection: 'column',
@@ -970,8 +970,8 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                             fontWeight: 800,
                             padding: '1px 6px',
                             borderRadius: '4px',
-                            background: scen.isBaseline ? '#0F172A' : isSelected ? '#2563EB' : '#E2E8F0',
-                            color: isSelected || scen.isBaseline ? '#FFFFFF' : '#475569',
+                            background: scen.isBaseline ? '#0F172A' : isSelected ? 'var(--ez-color-primary)' : 'var(--ez-color-border-line)',
+                            color: isSelected || scen.isBaseline ? '#FFFFFF' : 'var(--ez-color-text-slate)',
                           }}
                         >
                           {scen.code}
@@ -979,12 +979,12 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                         {scen.isBaseline && <Lock size={11} color="#64748B" />}
                       </div>
 
-                      <div style={{ fontSize: '12px', fontWeight: 800, color: '#0F172A', lineHeight: 1.3 }}>
+                      <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', lineHeight: 1.3 }}>
                         {scen.name}
                       </div>
 
                       <div style={{ marginTop: 'auto', paddingTop: '4px' }}>
-                        <div style={{ fontSize: '13px', fontWeight: 850, color: '#0F172A' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 850, color: 'var(--ez-color-text-primary)' }}>
                           {formatCurrencyIDR(scen.totalRab)}
                         </div>
                         {!scen.isBaseline && (
@@ -992,7 +992,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                             style={{
                               fontSize: '11px',
                               fontWeight: 750,
-                              color: scen.differenceFromBaseline <= 0 ? '#059669' : '#DC2626',
+                              color: scen.differenceFromBaseline <= 0 ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-rose-text)',
                             }}
                           >
                             {scen.percentageFromBaseline <= 0 ? '' : '+'}
@@ -1008,9 +1008,9 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
               {/* ACTIVE SCENARIO DETAIL & VALUE ENGINEERING BREAKDOWN */}
               <div
                 style={{
-                  background: '#F8FAFC',
-                  borderRadius: '12px',
-                  border: '1px solid #E2E8F0',
+                  background: 'var(--ez-color-surface-secondary)',
+                  borderRadius: 'var(--ez-radius-control)',
+                  border: '1px solid var(--ez-color-border-line)',
                   padding: '16px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1019,10 +1019,10 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
-                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#0F172A' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                       {activeScenario.name}
                     </span>
-                    <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '2px' }}>
+                    <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
                       {activeScenario.description}
                     </div>
                   </div>
@@ -1059,16 +1059,16 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                 {/* CATEGORY VALUE ENGINEERING VARIANCE TABLE */}
                 <div
                   style={{
-                    border: '1px solid #E2E8F0',
+                    border: '1px solid var(--ez-color-border-line)',
                     borderRadius: '8px',
                     overflow: 'hidden',
-                    background: '#FFFFFF',
+                    background: 'var(--ez-color-surface)',
                     maxHeight: '180px',
                     overflowY: 'auto',
                   }}
                 >
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
-                    <thead style={{ background: '#F1F5F9', color: '#475569', position: 'sticky', top: 0 }}>
+                    <thead style={{ background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', position: 'sticky', top: 0 }}>
                       <tr>
                         <th style={{ padding: '8px 10px' }}>Kelompok Pekerjaan (WBS)</th>
                         <th style={{ padding: '8px 10px', textAlign: 'right' }}>Baseline (Rp)</th>
@@ -1078,14 +1078,14 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                     </thead>
                     <tbody>
                       {categoryVariances.map((cVar, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                          <td style={{ padding: '6px 10px', fontWeight: 650, color: '#1E293B' }}>
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
+                          <td style={{ padding: '6px 10px', fontWeight: 650, color: 'var(--ez-color-text-strong)' }}>
                             {cVar.category}
                           </td>
-                          <td style={{ padding: '6px 10px', textAlign: 'right', color: '#64748B' }}>
+                          <td style={{ padding: '6px 10px', textAlign: 'right', color: 'var(--ez-color-text-muted)' }}>
                             {formatCurrencyIDR(cVar.baselineAmount)}
                           </td>
-                          <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: '#0F172A' }}>
+                          <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                             {formatCurrencyIDR(cVar.scenarioAmount)}
                           </td>
                           <td
@@ -1093,7 +1093,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                               padding: '6px 10px',
                               textAlign: 'right',
                               fontWeight: 750,
-                              color: cVar.deltaAmount <= 0 ? '#059669' : '#DC2626',
+                              color: cVar.deltaAmount <= 0 ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-rose-text)',
                             }}
                           >
                             {cVar.deltaAmount <= 0 ? '' : '+'}
@@ -1116,14 +1116,14 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
         <div
           style={{
             padding: '12px 24px',
-            background: '#F8FAFC',
-            borderTop: '1px solid #E2E8F0',
+            background: 'var(--ez-color-surface-secondary)',
+            borderTop: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
-          <div style={{ fontSize: '11px', color: '#64748B' }}>
+          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
             🔒 Baseline asli tidak pernah ditimpa saat menguji skenario Value Engineering
           </div>
 
@@ -1132,9 +1132,9 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
             style={{
               padding: '6px 16px',
               borderRadius: '6px',
-              background: '#FFFFFF',
-              border: '1px solid #CBD5E1',
-              color: '#475569',
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-hue-slate-border)',
+              color: 'var(--ez-color-text-slate)',
               fontSize: '12px',
               fontWeight: 650,
               cursor: 'pointer',

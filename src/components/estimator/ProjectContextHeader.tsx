@@ -48,7 +48,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
           alignItems: 'center',
           gap: '6px',
           fontSize: '12px',
-          color: '#64748B',
+          color: 'var(--ez-color-text-muted)',
           fontWeight: 500,
           marginBottom: '10px',
         }}
@@ -57,22 +57,22 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
         <span>›</span>
         <span>{projectName}</span>
         <span>›</span>
-        <span style={{ color: '#2563EB', fontWeight: 700 }}>Estimator Spreadsheet</span>
+        <span style={{ color: 'var(--ez-color-primary)', fontWeight: 700 }}>Estimator Spreadsheet</span>
       </div>
 
       {/* 2. Main Context Card */}
       <div
         style={{
-          background: '#FFFFFF',
-          borderRadius: '14px',
-          border: '1px solid #E2E8F0',
-          padding: '14px 20px',
+          background: 'var(--ez-color-surface)',
+          borderRadius: '20px',
+          border: '1px solid #EEF1F6',
+          padding: '16px 20px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '16px',
-          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
         }}
       >
         {/* Left: Thumbnail & Project Metadata */}
@@ -86,8 +86,8 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               overflow: 'hidden',
               flexShrink: 0,
               boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
-              border: '1px solid #E2E8F0',
-              background: '#F1F5F9',
+              border: '1px solid var(--ez-color-border-line)',
+              background: 'var(--ez-color-surface-tertiary)',
             }}
           >
             <img
@@ -112,7 +112,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
                 style={{
                   fontSize: '18px',
                   fontWeight: 800,
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   margin: 0,
                   letterSpacing: '-0.02em',
                 }}
@@ -126,12 +126,11 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
                   alignItems: 'center',
                   gap: '5px',
                   padding: '2px 9px',
-                  borderRadius: '999px',
+                  borderRadius: 'var(--ez-radius-pill)',
                   fontSize: '11px',
                   fontWeight: 700,
-                  background: isCompleted ? '#DCFCE7' : '#ECFDF5',
-                  color: isCompleted ? '#16A34A' : '#059669',
-                  border: `1px solid ${isCompleted ? '#BBF7D0' : '#A7F3D0'}`,
+                  background: 'var(--ez-pastel-mint)',
+                  color: 'var(--ez-hue-green-text)',
                 }}
               >
                 <span
@@ -153,7 +152,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
                 alignItems: 'center',
                 gap: '14px',
                 fontSize: '12px',
-                color: '#64748B',
+                color: 'var(--ez-color-text-muted)',
                 marginTop: '4px',
                 flexWrap: 'wrap',
               }}
@@ -167,11 +166,10 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
                 style={{
                   fontSize: '11px',
                   fontWeight: 600,
-                  background: '#F1F5F9',
-                  color: '#475569',
-                  padding: '1px 8px',
-                  borderRadius: '6px',
-                  border: '1px solid #E2E8F0',
+                  background: 'var(--ez-pastel-sky)',
+                  color: 'var(--ez-hue-blue-text-deep)',
+                  padding: '2px 10px',
+                  borderRadius: 'var(--ez-radius-pill)',
                 }}
               >
                 {projectBuildingType}
@@ -179,7 +177,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <User size={13} color="#94A3B8" />
-                <span>Klien: <strong style={{ color: '#334155', fontWeight: 650 }}>{projectClient}</strong></span>
+                <span>Klien: <strong style={{ color: 'var(--ez-color-text-body)', fontWeight: 650 }}>{projectClient}</strong></span>
               </div>
             </div>
           </div>
@@ -194,19 +192,19 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               height: '34px',
               padding: '0 12px',
               borderRadius: '8px',
-              background: '#FFFFFF',
-              border: '1px solid #CBD5E1',
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 650,
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface)')}
           >
             <FolderOpen size={14} color="#64748B" />
             <span>Ganti Proyek</span>
@@ -219,19 +217,19 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               height: '34px',
               padding: '0 12px',
               borderRadius: '8px',
-              background: '#FFFFFF',
-              border: '1px solid #CBD5E1',
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 650,
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface)')}
           >
             <Database size={14} color="#64748B" />
             <span>Import AHSP</span>
@@ -244,19 +242,19 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               height: '34px',
               padding: '0 12px',
               borderRadius: '8px',
-              background: '#FFFFFF',
-              border: '1px solid #CBD5E1',
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 650,
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface)')}
           >
             <Upload size={14} color="#64748B" />
             <span>Import Excel</span>
@@ -270,31 +268,30 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               height: '34px',
               padding: '0 10px',
               borderRadius: '8px',
-              background: '#FFFFFF',
-              border: '1px solid #CBD5E1',
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 650,
-              color: '#334155',
+              color: 'var(--ez-color-text-body)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface)')}
           >
-            <GitBranch size={14} color="#2563EB" />
+            <GitBranch size={14} color="var(--ez-hue-blue-text)" />
             <span>Versi & Skenario</span>
             <span
               style={{
                 fontSize: '10px',
                 fontWeight: 800,
-                background: '#EFF6FF',
-                color: '#2563EB',
+                background: 'var(--ez-pastel-sky)',
+                color: 'var(--ez-hue-blue-text-deep)',
                 padding: '1px 6px',
-                borderRadius: '999px',
-                border: '1px solid #BFDBFE',
+                borderRadius: 'var(--ez-radius-pill)',
               }}
             >
               {latestVersionLabel}
@@ -308,7 +305,7 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               height: '34px',
               padding: '0 14px',
               borderRadius: '8px',
-              background: '#2563EB',
+              background: 'var(--ez-color-primary)',
               border: '1px solid #1D4ED8',
               fontSize: '12px',
               fontWeight: 700,
@@ -320,8 +317,8 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               boxShadow: '0 1px 3px rgba(37, 99, 235, 0.25)',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#1D4ED8')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#2563EB')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-primary-hover)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-primary)')}
           >
             <Download size={14} color="#FFFFFF" />
             <span>Export</span>
@@ -335,17 +332,17 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
               width: '34px',
               height: '34px',
               borderRadius: '8px',
-              background: '#FFFFFF',
-              border: '1px solid #CBD5E1',
-              color: '#64748B',
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-hue-slate-border)',
+              color: 'var(--ez-color-text-muted)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#F8FAFC')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface)')}
           >
             <MoreHorizontal size={16} />
           </button>

@@ -27,11 +27,11 @@ export const Building3DLayer: React.FC = () => {
         <defs>
           <linearGradient id="wallGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-            <stop offset="100%" stopColor="#e2e8f0" stopOpacity="0.85" />
+            <stop offset="100%" stopColor="var(--ez-color-border-line)" stopOpacity="0.85" />
           </linearGradient>
 
           <linearGradient id="wallGradDark" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#cbd5e1" stopOpacity="0.9" />
+            <stop offset="0%" stopColor="var(--ez-hue-slate-border)" stopOpacity="0.9" />
             <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.8" />
           </linearGradient>
 
@@ -67,8 +67,8 @@ export const Building3DLayer: React.FC = () => {
         <polygon points="300,470 540,360 540,380 300,490" fill="#475569" fillOpacity="0.8" />
 
         {/* Ground Floor Main Block */}
-        <polygon points="120,330 300,420 300,280 120,200" fill="url(#wallGrad1)" stroke="#cbd5e1" strokeWidth="1" />
-        <polygon points="300,420 480,330 480,200 300,280" fill="url(#wallGradDark)" stroke="#cbd5e1" strokeWidth="1" />
+        <polygon points="120,330 300,420 300,280 120,200" fill="url(#wallGrad1)" stroke="var(--ez-hue-slate-border)" strokeWidth="1" />
+        <polygon points="300,420 480,330 480,200 300,280" fill="url(#wallGradDark)" stroke="var(--ez-hue-slate-border)" strokeWidth="1" />
 
         {/* Ground Floor Large Glass Facade */}
         <polygon points="140,315 280,385 280,270 140,210" fill="url(#glassGrad)" stroke="#38bdf8" strokeWidth="1.5" strokeOpacity="0.6" />
@@ -78,7 +78,7 @@ export const Building3DLayer: React.FC = () => {
 
         {/* Cantilever 2nd Floor Modern Overhang */}
         <polygon points="80,220 320,330 320,180 80,80" fill="url(#wallGrad1)" stroke="#2563eb" strokeWidth="1.5" strokeOpacity="0.4" />
-        <polygon points="320,330 520,230 520,90 320,180" fill="url(#wallGradDark)" stroke="#cbd5e1" strokeWidth="1" />
+        <polygon points="320,330 520,230 520,90 320,180" fill="url(#wallGradDark)" stroke="var(--ez-hue-slate-border)" strokeWidth="1" />
 
         {/* 2nd Floor Architectural Ribbon Window */}
         <polygon points="100,195 300,290 300,180 100,95" fill="url(#glassGrad)" stroke="#38bdf8" strokeWidth="1.5" strokeOpacity="0.7" />

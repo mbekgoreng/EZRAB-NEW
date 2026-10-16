@@ -35,9 +35,9 @@ export const UnifiedTransactionsTab: React.FC<UnifiedTransactionsTabProps> = ({
       {/* Header Banner */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
@@ -47,19 +47,19 @@ export const UnifiedTransactionsTab: React.FC<UnifiedTransactionsTabProps> = ({
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
           <div>
-            <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Buku Besar & Mutasi Transaksi Finansial
             </h2>
-            <div style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
+            <div style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
               Log terpusat seluruh pergerakan kas masuk, pembayaran invoice, pengeluaran proyek, dan komitmen hutang.
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: '#166534', backgroundColor: '#DCFCE7', padding: '4px 10px', borderRadius: '6px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-green-text-deep)', backgroundColor: 'var(--ez-hue-green-bg-deep)', padding: '4px 10px', borderRadius: '6px' }}>
               Total Masuk: {formatRupiah(transactionsData.totalIncome)}
             </span>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: '#DC2626', backgroundColor: '#FEE2E2', padding: '4px 10px', borderRadius: '6px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-rose-text)', backgroundColor: 'var(--ez-hue-red-bg)', padding: '4px 10px', borderRadius: '6px' }}>
               Total Keluar: {formatRupiah(transactionsData.totalExpense)}
             </span>
           </div>
@@ -69,9 +69,9 @@ export const UnifiedTransactionsTab: React.FC<UnifiedTransactionsTabProps> = ({
       {/* Main Table Container */}
       <div
         style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '20px 24px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
         }}

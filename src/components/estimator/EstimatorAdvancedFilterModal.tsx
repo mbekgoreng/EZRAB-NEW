@@ -65,7 +65,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
     >
       <div
         style={{
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           borderRadius: '14px',
           width: '460px',
           maxWidth: '92vw',
@@ -75,8 +75,8 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Filter size={18} color="#2563EB" />
-            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <Filter size={18} color="var(--ez-hue-blue-text)" />
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0 }}>
               Filter Lanjutan Item RAB
             </h3>
           </div>
@@ -88,13 +88,13 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {/* Kelompok WBS */}
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '4px' }}>
               Kelompok Pekerjaan (WBS):
             </label>
             <select
               value={localFilters.category}
               onChange={(e) => setLocalFilters({ ...localFilters, category: e.target.value })}
-              style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+              style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
             >
               <option value="ALL">Semua Kelompok Pekerjaan</option>
               {WORK_CATEGORIES.map((c) => (
@@ -107,13 +107,13 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
 
           {/* Sumber Volume / Analisa */}
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '4px' }}>
               Sumber Volume / Analisa:
             </label>
             <select
               value={localFilters.source}
               onChange={(e) => setLocalFilters({ ...localFilters, source: e.target.value })}
-              style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+              style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
             >
               <option value="ALL">Semua Sumber</option>
               <option value="MANUAL">MANUAL</option>
@@ -125,7 +125,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
 
           {/* Kisaran Harga Satuan */}
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '4px' }}>
               Rentang Harga Satuan (Rp):
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -134,21 +134,21 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
                 placeholder="Min Rp"
                 value={localFilters.minPrice || ''}
                 onChange={(e) => setLocalFilters({ ...localFilters, minPrice: e.target.value ? parseFloat(e.target.value) : null })}
-                style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
               />
               <input
                 type="number"
                 placeholder="Max Rp"
                 value={localFilters.maxPrice || ''}
                 onChange={(e) => setLocalFilters({ ...localFilters, maxPrice: e.target.value ? parseFloat(e.target.value) : null })}
-                style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+                style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
               />
             </div>
           </div>
 
           {/* Keterkaitan AHSP */}
           <div>
-            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', display: 'block', marginBottom: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)', display: 'block', marginBottom: '4px' }}>
               Status Pemetaan AHSP:
             </label>
             <select
@@ -160,7 +160,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
                   ahspLinkedOnly: v === 'ALL' ? null : v === 'LINKED',
                 });
               }}
-              style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '12px' }}
+              style={{ width: '100%', height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
             >
               <option value="ALL">Semua Item (Terpetakan & Manual)</option>
               <option value="LINKED">Hanya yang Terhubung AHSP Resmi</option>
@@ -176,9 +176,9 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
               height: '34px',
               padding: '0 12px',
               borderRadius: '6px',
-              border: '1px solid #E2E8F0',
-              background: '#FFFFFF',
-              color: '#64748B',
+              border: '1px solid var(--ez-color-border-line)',
+              background: 'var(--ez-color-surface)',
+              color: 'var(--ez-color-text-muted)',
               fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
@@ -193,13 +193,13 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={onClose}
-              style={{ height: '34px', padding: '0 14px', borderRadius: '6px', border: '1px solid #CBD5E1', background: '#F1F5F9', color: '#475569', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+              style={{ height: '34px', padding: '0 14px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
             >
               Batal
             </button>
             <button
               onClick={handleApply}
-              style={{ height: '34px', padding: '0 16px', borderRadius: '6px', border: 'none', background: '#2563EB', color: '#FFFFFF', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ height: '34px', padding: '0 16px', borderRadius: '6px', border: 'none', background: 'var(--ez-color-primary)', color: '#FFFFFF', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <Check size={14} />
               <span>Terapkan Filter</span>

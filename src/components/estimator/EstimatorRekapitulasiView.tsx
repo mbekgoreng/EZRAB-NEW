@@ -74,14 +74,14 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
       {/* 1. TOP STATS CARDS */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "14px" }}>
         {/* Card 1: Biaya Langsung */}
-        <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
+        <div className="ez-stat" style={{ background: "var(--ez-pastel-sky)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
             <span style={{ fontSize: "12px", fontWeight: 600, color: "#64748B" }}>Biaya Langsung (Real Cost)</span>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#EFF6FF", color: "#2563EB", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-blue-bg)", color: "var(--ez-hue-blue-text)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Layers size={16} />
             </div>
           </div>
-          <div style={{ fontSize: "20px", fontWeight: 800, color: "#0F172A", fontVariantNumeric: "tabular-nums" }}>
+          <div style={{ fontSize: "20px", fontWeight: 800, color: "var(--ez-color-text-primary)", fontVariantNumeric: "tabular-nums" }}>
             {formatCurrencyIDR(directCost)}
           </div>
           <span style={{ fontSize: "11.5px", color: "#94A3B8", marginTop: "4px", display: "block" }}>
@@ -90,14 +90,14 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
         </div>
 
         {/* Card 2: Overhead & Profit */}
-        <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
+        <div className="ez-stat" style={{ background: "var(--ez-pastel-mint)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "#64748B" }}>Overhead & Keuntungan ({(currentProject as any)?.overheadPercent ?? 10}%)</span>
+<span style={{ fontSize: "12px", fontWeight: 600, color: "#64748B" }}>Overhead & Keuntungan ({(currentProject as any)?.overheadPercent ?? 10}%)</span>
             <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#F0FDF4", color: "#16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <TrendingUp size={16} />
             </div>
           </div>
-          <div style={{ fontSize: "20px", fontWeight: 800, color: "#16A34A", fontVariantNumeric: "tabular-nums" }}>
+          <div style={{ fontSize: "20px", fontWeight: 800, color: "var(--ez-hue-green-text-bright)", fontVariantNumeric: "tabular-nums" }}>
             {formatCurrencyIDR(overheadNominal)}
           </div>
           <span style={{ fontSize: "11.5px", color: "#94A3B8", marginTop: "4px", display: "block" }}>
@@ -106,14 +106,14 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
         </div>
 
         {/* Card 3: PPN 11% */}
-        <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.04)" }}>
+        <div className="ez-stat" style={{ background: "var(--ez-pastel-cream)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
             <span style={{ fontSize: "12px", fontWeight: 600, color: "#64748B" }}>PPN 11%</span>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#FEF3C7", color: "#B45309", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-amber-bg-deep)", color: "var(--ez-hue-amber-text)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <ShieldCheck size={16} />
             </div>
           </div>
-          <div style={{ fontSize: "20px", fontWeight: 800, color: "#B45309", fontVariantNumeric: "tabular-nums" }}>
+          <div style={{ fontSize: "20px", fontWeight: 800, color: "var(--ez-hue-amber-text)", fontVariantNumeric: "tabular-nums" }}>
             {formatCurrencyIDR(ppnNominal)}
           </div>
           <span style={{ fontSize: "11.5px", color: "#94A3B8", marginTop: "4px", display: "block" }}>
@@ -122,14 +122,14 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
         </div>
 
         {/* Card 4: Grand Total RAB */}
-        <div style={{ background: "#FFFFFF", color: "#111827", border: "1px solid #E5E7EB", borderRadius: "14px", padding: "18px 20px", boxShadow: "0 1px 3px rgba(15,23,42,0.03)" }}>
+        <div className="ez-stat" style={{ background: "var(--ez-pastel-peach)", color: "var(--ez-color-text-primary)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
             <span style={{ fontSize: "12px", fontWeight: 600, color: "#64748B" }}>Grand Total RAB Proyek</span>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#EFF6FF", color: "#2563EB", border: "1px solid #DBEAFE", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-blue-bg)", color: "var(--ez-hue-blue-text)", border: "1px solid var(--ez-hue-blue-bg-deep)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <FileCheck size={16} />
             </div>
           </div>
-          <div style={{ fontSize: "21px", fontWeight: 800, color: "#2563EB", fontVariantNumeric: "tabular-nums" }}>
+          <div style={{ fontSize: "21px", fontWeight: 800, color: "var(--ez-hue-blue-text)", fontVariantNumeric: "tabular-nums" }}>
             {formatCurrencyIDR(grandTotal)}
           </div>
           <span style={{ fontSize: "11.5px", color: "#64748B", marginTop: "4px", display: "block" }}>
@@ -139,10 +139,10 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
       </div>
 
       {/* 2. REKAPITULASI TABLE & VISUAL WEIGHTS */}
-      <div style={{ background: "#FFFFFF", border: "1px solid #E2E8F0", borderRadius: "16px", padding: "24px", boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
+      <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "16px", padding: "24px", boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px", marginBottom: "18px" }}>
           <div>
-            <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#0F172A", margin: 0 }}>
+            <h3 style={{ fontSize: "16px", fontWeight: 800, color: "var(--ez-color-text-primary)", margin: 0 }}>
               Rekapitulasi Rencana Anggaran Biaya (RAB)
             </h3>
             <p style={{ fontSize: "12.5px", color: "#64748B", margin: "4px 0 0 0" }}>
@@ -159,9 +159,9 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
                   gap: "6px",
                   padding: "7px 14px",
                   borderRadius: "8px",
-                  border: "1px solid #CBD5E1",
-                  background: "#FFFFFF",
-                  color: "#334155",
+                  border: "1px solid var(--ez-hue-slate-border)",
+                  background: "var(--ez-color-surface)",
+                  color: "var(--ez-color-text-body)",
                   fontSize: "12.5px",
                   fontWeight: 600,
                   cursor: "pointer",
@@ -177,7 +177,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
         {/* Visual Progress Composition Bar */}
         {categoryList.length > 0 && (
           <div style={{ marginBottom: "22px" }}>
-            <div style={{ display: "flex", height: "12px", borderRadius: "6px", overflow: "hidden", gap: "2px", background: "#F1F5F9" }}>
+            <div style={{ display: "flex", height: "12px", borderRadius: "6px", overflow: "hidden", gap: "2px", background: "var(--ez-color-surface-tertiary)" }}>
               {categoryList.map((cat, idx) => (
                 <div
                   key={cat.no}
@@ -192,7 +192,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginTop: "10px" }}>
               {categoryList.map((cat, idx) => (
-                <div key={cat.no} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11.5px", color: "#475569" }}>
+                <div key={cat.no} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11.5px", color: "var(--ez-color-text-slate)" }}>
                   <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: colors[idx % colors.length] }} />
                   <span style={{ fontWeight: 600 }}>{cat.name}</span>
                   <span style={{ color: "#94A3B8" }}>({cat.weight.toFixed(1)}%)</span>
@@ -203,10 +203,10 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
         )}
 
         {/* Table */}
-        <div style={{ overflowX: "auto", border: "1px solid #E2E8F0", borderRadius: "10px" }}>
+        <div style={{ overflowX: "auto", border: "1px solid var(--ez-color-border-line)", borderRadius: "10px" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
             <thead>
-              <tr style={{ background: "#F8FAFC", borderBottom: "1px solid #E2E8F0", color: "#475569", fontWeight: 700, fontSize: "12px" }}>
+              <tr style={{ background: "var(--ez-color-surface-secondary)", borderBottom: "1px solid var(--ez-color-border-line)", color: "var(--ez-color-text-slate)", fontWeight: 700, fontSize: "12px" }}>
                 <th style={{ padding: "12px 14px", textAlign: "center", width: "50px" }}>No</th>
                 <th style={{ padding: "12px 14px", textAlign: "left" }}>Uraian Kelompok Pekerjaan (WBS)</th>
                 <th style={{ padding: "12px 14px", textAlign: "center", width: "100px" }}>Jumlah Item</th>
@@ -223,20 +223,20 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
                 </tr>
               ) : (
                 categoryList.map((cat) => (
-                  <tr key={cat.no} style={{ borderBottom: "1px solid #F1F5F9" }}>
+                  <tr key={cat.no} style={{ borderBottom: "1px solid var(--ez-color-surface-tertiary)" }}>
                     <td style={{ padding: "11px 14px", textAlign: "center", color: "#64748B", fontWeight: 600 }}>
                       {cat.no}
                     </td>
-                    <td style={{ padding: "11px 14px", fontWeight: 600, color: "#0F172A" }}>
+                    <td style={{ padding: "11px 14px", fontWeight: 600, color: "var(--ez-color-text-primary)" }}>
                       {cat.name}
                     </td>
                     <td style={{ padding: "11px 14px", textAlign: "center", color: "#64748B" }}>
                       {cat.count}
                     </td>
-                    <td style={{ padding: "11px 14px", textAlign: "right", fontWeight: 700, color: "#0F172A", fontVariantNumeric: "tabular-nums" }}>
+                    <td style={{ padding: "11px 14px", textAlign: "right", fontWeight: 700, color: "var(--ez-color-text-primary)", fontVariantNumeric: "tabular-nums" }}>
                       {formatCurrencyIDR(cat.total)}
                     </td>
-                    <td style={{ padding: "11px 14px", textAlign: "right", fontWeight: 600, color: "#2563EB", fontVariantNumeric: "tabular-nums" }}>
+                    <td style={{ padding: "11px 14px", textAlign: "right", fontWeight: 600, color: "var(--ez-hue-blue-text)", fontVariantNumeric: "tabular-nums" }}>
                       {cat.weight.toFixed(2)}%
                     </td>
                   </tr>
@@ -245,18 +245,18 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
             </tbody>
             {categoryList.length > 0 && (
               <tfoot>
-                <tr style={{ background: "#F8FAFC", borderTop: "2px solid #E2E8F0", fontWeight: 700 }}>
-                  <td colSpan={3} style={{ padding: "11px 14px", textAlign: "right", color: "#334155" }}>
+                <tr style={{ background: "var(--ez-color-surface-secondary)", borderTop: "2px solid var(--ez-color-border-line)", fontWeight: 700 }}>
+                  <td colSpan={3} style={{ padding: "11px 14px", textAlign: "right", color: "var(--ez-color-text-body)" }}>
                     Jumlah Biaya Langsung (A)
                   </td>
-                  <td style={{ padding: "11px 14px", textAlign: "right", color: "#0F172A", fontVariantNumeric: "tabular-nums" }}>
+                  <td style={{ padding: "11px 14px", textAlign: "right", color: "var(--ez-color-text-primary)", fontVariantNumeric: "tabular-nums" }}>
                     {formatCurrencyIDR(directCost)}
                   </td>
-                  <td style={{ padding: "11px 14px", textAlign: "right", color: "#2563EB" }}>
+                  <td style={{ padding: "11px 14px", textAlign: "right", color: "var(--ez-hue-blue-text)" }}>
                     100.00%
                   </td>
                 </tr>
-                <tr style={{ background: "#FFFFFF", borderTop: "1px solid #F1F5F9", color: "#475569" }}>
+                <tr style={{ background: "var(--ez-color-surface)", borderTop: "1px solid var(--ez-color-surface-tertiary)", color: "var(--ez-color-text-slate)" }}>
                   <td colSpan={3} style={{ padding: "9px 14px", textAlign: "right" }}>
                     Jasa Overhead & Keuntungan Pelaksana (10%) (B)
                   </td>
@@ -265,7 +265,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
                   </td>
                   <td style={{ padding: "9px 14px", textAlign: "right", color: "#94A3B8" }}>—</td>
                 </tr>
-                <tr style={{ background: "#FFFFFF", borderTop: "1px solid #F1F5F9", color: "#475569" }}>
+                <tr style={{ background: "var(--ez-color-surface)", borderTop: "1px solid var(--ez-color-surface-tertiary)", color: "var(--ez-color-text-slate)" }}>
                   <td colSpan={3} style={{ padding: "9px 14px", textAlign: "right" }}>
                     Pajak Pertambahan Nilai (PPN 11%) (C)
                   </td>
@@ -274,14 +274,14 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
                   </td>
                   <td style={{ padding: "9px 14px", textAlign: "right", color: "#94A3B8" }}>—</td>
                 </tr>
-                <tr style={{ background: "#EFF6FF", borderTop: "2px solid #BFDBFE", fontWeight: 800, fontSize: "14px" }}>
-                  <td colSpan={3} style={{ padding: "13px 14px", textAlign: "right", color: "#1E3A8A" }}>
+                <tr style={{ background: "var(--ez-hue-blue-bg)", borderTop: "2px solid var(--ez-hue-blue-border)", fontWeight: 800, fontSize: "14px" }}>
+                  <td colSpan={3} style={{ padding: "13px 14px", textAlign: "right", color: "var(--ez-hue-blue-text-deep)" }}>
                     TOTAL BIAYA PROYEK (A + B + C)
                   </td>
-                  <td style={{ padding: "13px 14px", textAlign: "right", color: "#2563EB", fontVariantNumeric: "tabular-nums" }}>
+                  <td style={{ padding: "13px 14px", textAlign: "right", color: "var(--ez-hue-blue-text)", fontVariantNumeric: "tabular-nums" }}>
                     {formatCurrencyIDR(grandTotal)}
                   </td>
-                  <td style={{ padding: "13px 14px", textAlign: "right", color: "#2563EB" }}>
+                  <td style={{ padding: "13px 14px", textAlign: "right", color: "var(--ez-hue-blue-text)" }}>
                     100.00%
                   </td>
                 </tr>

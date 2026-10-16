@@ -88,7 +88,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
           width: '580px',
           maxWidth: '100%',
           height: '100%',
-          backgroundColor: '#ffffff',
+          backgroundColor: 'var(--ez-color-surface)',
           boxShadow: '-8px 0 24px rgba(15, 23, 42, 0.15)',
           display: 'flex',
           flexDirection: 'column',
@@ -102,8 +102,8 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '1px solid #E2E8F0',
-            backgroundColor: '#F8FAFC',
+            borderBottom: '1px solid var(--ez-color-border-line)',
+            backgroundColor: 'var(--ez-color-surface-secondary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -115,21 +115,21 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                 width: '36px',
                 height: '36px',
                 borderRadius: '10px',
-                backgroundColor: '#EFF6FF',
-                border: '1px solid #DBEAFE',
+                backgroundColor: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-bg-deep)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#2563EB',
+                color: 'var(--ez-color-primary)',
               }}
             >
               <Sparkles size={20} />
             </div>
             <div>
-              <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
+              <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                 Resource Intelligence & Suggestion
               </h2>
-              <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '2px' }}>
+              <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
                 Bantu identifikasi tenaga kerja dan peralatan sesuai standar AHSP PUPR 2026.
               </div>
             </div>
@@ -155,16 +155,16 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
           <div
             style={{
               padding: '16px',
-              backgroundColor: '#F8FAFC',
-              border: '1px solid #E2E8F0',
-              borderRadius: '12px',
+              backgroundColor: 'var(--ez-color-surface-secondary)',
+              border: '1px solid var(--ez-color-border-line)',
+              borderRadius: 'var(--ez-radius-control)',
               display: 'flex',
               flexDirection: 'column',
               gap: '12px',
             }}
           >
             <div>
-              <label style={{ fontSize: '11.5px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '6px' }}>
                 Uraian Item Pekerjaan (DED / RAB):
               </label>
               <input
@@ -176,7 +176,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                   width: '100%',
                   padding: '9px 12px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   fontSize: '12.5px',
                   boxSizing: 'border-box',
                   outline: 'none',
@@ -196,9 +196,9 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                     setDurationDays(p.days);
                   }}
                   style={{
-                    border: '1px solid #E2E8F0',
-                    backgroundColor: '#ffffff',
-                    color: '#475569',
+                    border: '1px solid var(--ez-color-border-line)',
+                    backgroundColor: 'var(--ez-color-surface)',
+                    color: 'var(--ez-color-text-slate)',
                     fontSize: '10.5px',
                     fontWeight: 600,
                     padding: '4px 8px',
@@ -213,7 +213,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                   Volume:
                 </label>
                 <input
@@ -224,14 +224,14 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                     width: '100%',
                     padding: '7px 10px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12px',
                     boxSizing: 'border-box',
                   }}
                 />
               </div>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                   Satuan:
                 </label>
                 <input
@@ -242,14 +242,14 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                     width: '100%',
                     padding: '7px 10px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '12px',
                     boxSizing: 'border-box',
                   }}
                 />
               </div>
               <div>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '4px' }}>
                   Target Durasi:
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -261,12 +261,12 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                       width: '100%',
                       padding: '7px 10px',
                       borderRadius: '8px',
-                      border: '1px solid #CBD5E1',
+                      border: '1px solid var(--ez-hue-slate-border)',
                       fontSize: '12px',
                       boxSizing: 'border-box',
                     }}
                   />
-                  <span style={{ fontSize: '11px', color: '#64748B' }}>hari</span>
+                  <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>hari</span>
                 </div>
               </div>
             </div>
@@ -278,8 +278,8 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                 padding: '10px 16px',
                 borderRadius: '8px',
                 border: 'none',
-                backgroundColor: '#2563EB',
-                color: '#ffffff',
+                backgroundColor: 'var(--ez-color-primary)',
+                color: '#FFFFFF',
                 fontSize: '12.5px',
                 fontWeight: 700,
                 display: 'flex',
@@ -301,11 +301,11 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
               <div
                 style={{
                   padding: '12px 14px',
-                  backgroundColor: '#EFF6FF',
-                  border: '1px solid #DBEAFE',
+                  backgroundColor: 'var(--ez-hue-blue-bg)',
+                  border: '1px solid var(--ez-hue-blue-bg-deep)',
                   borderRadius: '10px',
                   fontSize: '12px',
-                  color: '#1E40AF',
+                  color: 'var(--ez-hue-blue-text-deep)',
                   lineHeight: 1.4,
                 }}
               >
@@ -317,8 +317,8 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                     style={{
                       fontSize: '10.5px',
                       fontWeight: 800,
-                      backgroundColor: '#DBEAFE',
-                      color: '#1D4ED8',
+                      backgroundColor: 'var(--ez-hue-blue-bg-deep)',
+                      color: 'var(--ez-color-primary-hover)',
                       padding: '2px 7px',
                       borderRadius: '4px',
                     }}
@@ -331,8 +331,8 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
 
               {/* Labor Recommendation Section */}
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 800, color: '#0F172A', marginBottom: '8px' }}>
-                  <HardHat size={16} color="#D97706" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginBottom: '8px' }}>
+                  <HardHat size={16} color="var(--ez-hue-amber-text-deep)" />
                   <span>Kebutuhan Tenaga Kerja:</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -341,8 +341,8 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                       key={idx}
                       style={{
                         padding: '10px 12px',
-                        backgroundColor: '#FFFBEB',
-                        border: '1px solid #FDE68A',
+                        backgroundColor: 'var(--ez-hue-amber-bg)',
+                        border: '1px solid var(--ez-hue-amber-border)',
                         borderRadius: '8px',
                         display: 'flex',
                         alignItems: 'center',
@@ -350,18 +350,18 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                       }}
                     >
                       <div>
-                        <div style={{ fontWeight: 700, color: '#92400E', fontSize: '12px' }}>
+                        <div style={{ fontWeight: 700, color: 'var(--ez-hue-amber-text-dark)', fontSize: '12px' }}>
                           [Utama] {item.role.name}
                         </div>
-                        <div style={{ fontSize: '10.5px', color: '#B45309', marginTop: '2px' }}>
+                        <div style={{ fontSize: '10.5px', color: 'var(--ez-hue-amber-text)', marginTop: '2px' }}>
                           Kebutuhan: <strong>{item.count} orang</strong> • Total {item.totalOH} OH (Koef: {item.coefficient})
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontWeight: 800, color: '#92400E', fontSize: '12px' }}>
+                        <div style={{ fontWeight: 800, color: 'var(--ez-hue-amber-text-dark)', fontSize: '12px' }}>
                           Rp {item.totalCost.toLocaleString('id-ID')}
                         </div>
-                        <div style={{ fontSize: '10px', color: '#B45309' }}>Rp {item.role.basePriceOH.toLocaleString('id-ID')}/OH</div>
+                        <div style={{ fontSize: '10px', color: 'var(--ez-hue-amber-text)' }}>Rp {item.role.basePriceOH.toLocaleString('id-ID')}/OH</div>
                       </div>
                     </div>
                   ))}
@@ -371,8 +371,8 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                       key={idx}
                       style={{
                         padding: '10px 12px',
-                        backgroundColor: '#F8FAFC',
-                        border: '1px solid #E2E8F0',
+                        backgroundColor: 'var(--ez-color-surface-secondary)',
+                        border: '1px solid var(--ez-color-border-line)',
                         borderRadius: '8px',
                         display: 'flex',
                         alignItems: 'center',
@@ -380,18 +380,18 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                       }}
                     >
                       <div>
-                        <div style={{ fontWeight: 700, color: '#334155', fontSize: '12px' }}>
+                        <div style={{ fontWeight: 700, color: 'var(--ez-color-text-body)', fontSize: '12px' }}>
                           [Pendukung] {item.role.name}
                         </div>
-                        <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '2px' }}>
+                        <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
                           Kebutuhan: <strong>{item.count} orang</strong> • Total {item.totalOH} OH (Koef: {item.coefficient})
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '12px' }}>
+                        <div style={{ fontWeight: 800, color: 'var(--ez-color-text-primary)', fontSize: '12px' }}>
                           Rp {item.totalCost.toLocaleString('id-ID')}
                         </div>
-                        <div style={{ fontSize: '10px', color: '#64748B' }}>Rp {item.role.basePriceOH.toLocaleString('id-ID')}/OH</div>
+                        <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>Rp {item.role.basePriceOH.toLocaleString('id-ID')}/OH</div>
                       </div>
                     </div>
                   ))}
@@ -400,12 +400,12 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
 
               {/* Equipment Recommendation Section */}
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 800, color: '#0F172A', marginBottom: '8px' }}>
-                  <Truck size={16} color="#2563EB" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginBottom: '8px' }}>
+                  <Truck size={16} color="var(--ez-hue-blue-text)" />
                   <span>Kebutuhan Alat Berat & Mesin:</span>
                 </div>
                 {breakdown.equipment.primary.length === 0 && breakdown.equipment.supporting.length === 0 ? (
-                  <div style={{ padding: '10px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '11.5px', color: '#64748B' }}>
+                  <div style={{ padding: '10px', backgroundColor: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
                     Pekerjaan ini tidak membutuhkan alat berat khusus (cukup peralatan tukang standar).
                   </div>
                 ) : (
@@ -415,8 +415,8 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                         key={idx}
                         style={{
                           padding: '10px 12px',
-                          backgroundColor: '#EFF6FF',
-                          border: '1px solid #BFDBFE',
+                          backgroundColor: 'var(--ez-hue-blue-bg)',
+                          border: '1px solid var(--ez-hue-blue-border)',
                           borderRadius: '8px',
                           display: 'flex',
                           alignItems: 'center',
@@ -424,18 +424,18 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                         }}
                       >
                         <div>
-                          <div style={{ fontWeight: 700, color: '#1E40AF', fontSize: '12px' }}>
+                          <div style={{ fontWeight: 700, color: 'var(--ez-hue-blue-text-deep)', fontSize: '12px' }}>
                             [Utama] {item.item.name}
                           </div>
-                          <div style={{ fontSize: '10.5px', color: '#1D4ED8', marginTop: '2px' }}>
+                          <div style={{ fontSize: '10.5px', color: 'var(--ez-color-primary-hover)', marginTop: '2px' }}>
                             Kebutuhan: <strong>{item.count} unit</strong> • Total {item.totalHours} jam mesin (Koef: {item.coefficient})
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontWeight: 800, color: '#1E40AF', fontSize: '12px' }}>
+                          <div style={{ fontWeight: 800, color: 'var(--ez-hue-blue-text-deep)', fontSize: '12px' }}>
                             Rp {item.totalCost.toLocaleString('id-ID')}
                           </div>
-                          <div style={{ fontSize: '10px', color: '#2563EB' }}>Rp {item.item.rentalPricePerHour.toLocaleString('id-ID')}/jam</div>
+                          <div style={{ fontSize: '10px', color: 'var(--ez-color-primary)' }}>Rp {item.item.rentalPricePerHour.toLocaleString('id-ID')}/jam</div>
                         </div>
                       </div>
                     ))}
@@ -445,8 +445,8 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                         key={idx}
                         style={{
                           padding: '10px 12px',
-                          backgroundColor: '#F8FAFC',
-                          border: '1px solid #E2E8F0',
+                          backgroundColor: 'var(--ez-color-surface-secondary)',
+                          border: '1px solid var(--ez-color-border-line)',
                           borderRadius: '8px',
                           display: 'flex',
                           alignItems: 'center',
@@ -454,18 +454,18 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                         }}
                       >
                         <div>
-                          <div style={{ fontWeight: 700, color: '#334155', fontSize: '12px' }}>
+                          <div style={{ fontWeight: 700, color: 'var(--ez-color-text-body)', fontSize: '12px' }}>
                             [Pendukung] {item.item.name}
                           </div>
-                          <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '2px' }}>
+                          <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
                             Kebutuhan: <strong>{item.count} unit</strong> • Total {item.totalHours} jam mesin
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontWeight: 800, color: '#0F172A', fontSize: '12px' }}>
+                          <div style={{ fontWeight: 800, color: 'var(--ez-color-text-primary)', fontSize: '12px' }}>
                             Rp {item.totalCost.toLocaleString('id-ID')}
                           </div>
-                          <div style={{ fontSize: '10px', color: '#64748B' }}>Rp {item.item.rentalPricePerHour.toLocaleString('id-ID')}/jam</div>
+                          <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>Rp {item.item.rentalPricePerHour.toLocaleString('id-ID')}/jam</div>
                         </div>
                       </div>
                     ))}
@@ -477,8 +477,8 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
               <div
                 style={{
                   padding: '14px',
-                  backgroundColor: '#F0FDF4',
-                  border: '1px solid #BBF7D0',
+                  backgroundColor: 'var(--ez-hue-green-bg)',
+                  border: '1px solid var(--ez-hue-green-border)',
                   borderRadius: '10px',
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -486,7 +486,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                 }}
               >
                 <div>
-                  <div style={{ fontSize: '11px', color: '#166534', fontWeight: 700, textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--ez-hue-green-text-deep)', fontWeight: 700, textTransform: 'uppercase' }}>
                     Total Estimasi Biaya Resource (Tenaga + Alat):
                   </div>
                   <div style={{ fontSize: '18px', fontWeight: 900, color: '#14532D', marginTop: '2px' }}>
@@ -503,7 +503,7 @@ export const AiResourceSuggestDrawer: React.FC<AiResourceSuggestDrawerProps> = (
                     borderRadius: '8px',
                     border: 'none',
                     backgroundColor: '#16A34A',
-                    color: '#ffffff',
+                    color: '#FFFFFF',
                     fontSize: '12px',
                     fontWeight: 700,
                     cursor: 'pointer',

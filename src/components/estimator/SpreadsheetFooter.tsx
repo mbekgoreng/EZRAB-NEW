@@ -32,9 +32,9 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
       {/* 1. Summary Bar (+ Tambah Kelompok, counts, Total RAB) */}
       <div
         style={{
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           borderRadius: '10px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           padding: '10px 16px',
           display: 'flex',
           alignItems: 'center',
@@ -53,45 +53,45 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
               height: '36px',
               padding: '0 14px',
               borderRadius: '6px',
-              background: '#FFFFFF',
-              border: '1px solid #CBD5E1',
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-hue-slate-border)',
               fontSize: '12px',
               fontWeight: 650,
-              color: '#2563EB',
+              color: 'var(--ez-color-primary)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#EFF6FF')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-hue-blue-bg)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface)')}
           >
-            <Plus size={14} color="#2563EB" />
+            <Plus size={14} color="var(--ez-hue-blue-text)" />
             <span>Tambah Kelompok</span>
           </button>
 
           {/* Group & Item counts text */}
-          <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}>
+          <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>
             {groupsCount} kelompok • {totalItemsCount} item
           </span>
         </div>
 
         {/* Right: Total RAB */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 650, color: '#475569' }}>
+          <span style={{ fontSize: '13px', fontWeight: 650, color: 'var(--ez-color-text-slate)' }}>
             Total RAB
           </span>
           <span
             style={{
               fontSize: '17px',
               fontWeight: 850,
-              color: '#0F172A',
+              color: 'var(--ez-color-text-primary)',
               fontVariantNumeric: 'tabular-nums',
               letterSpacing: '-0.02em',
             }}
           >
-            {formatCurrencyIDR(totalRab)}
+{formatCurrencyIDR(totalRab)}
           </span>
         </div>
       </div>
@@ -104,7 +104,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
           justifyContent: 'space-between',
           padding: '4px 8px',
           fontSize: '12px',
-          color: '#64748B',
+          color: 'var(--ez-color-text-muted)',
           flexWrap: 'wrap',
           gap: '10px',
         }}
@@ -120,11 +120,11 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
                 height: '28px',
                 padding: '0 22px 0 8px',
                 borderRadius: '5px',
-                border: '1px solid #CBD5E1',
-                background: '#FFFFFF',
+                border: '1px solid var(--ez-hue-slate-border)',
+                background: 'var(--ez-color-surface)',
                 fontSize: '11.5px',
                 fontWeight: 600,
-                color: '#334155',
+                color: 'var(--ez-color-text-body)',
                 cursor: 'pointer',
                 outline: 'none',
                 appearance: 'none',
@@ -155,9 +155,9 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
                 width: '26px',
                 height: '26px',
                 borderRadius: '5px',
-                border: '1px solid #CBD5E1',
-                background: '#FFFFFF',
-                color: currentPage <= 1 ? '#CBD5E1' : '#334155',
+                border: '1px solid var(--ez-hue-slate-border)',
+                background: 'var(--ez-color-surface)',
+                color: currentPage <= 1 ? 'var(--ez-hue-slate-border)' : 'var(--ez-color-text-body)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -171,7 +171,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
                 minWidth: '26px',
                 height: '26px',
                 borderRadius: '5px',
-                background: '#2563EB',
+                background: 'var(--ez-color-primary)',
                 color: '#FFFFFF',
                 display: 'flex',
                 alignItems: 'center',
@@ -189,9 +189,9 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
                 width: '26px',
                 height: '26px',
                 borderRadius: '5px',
-                border: '1px solid #CBD5E1',
-                background: '#FFFFFF',
-                color: currentPage >= totalPages ? '#CBD5E1' : '#334155',
+                border: '1px solid var(--ez-hue-slate-border)',
+                background: 'var(--ez-color-surface)',
+                color: currentPage >= totalPages ? 'var(--ez-hue-slate-border)' : 'var(--ez-color-text-body)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -213,7 +213,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
               background: isSaving ? '#F59E0B' : '#10B981',
             }}
           />
-          <span style={{ fontSize: '11.5px', fontWeight: 600, color: isSaving ? '#D97706' : '#059669' }}>
+          <span style={{ fontSize: '11.5px', fontWeight: 600, color: isSaving ? 'var(--ez-hue-amber-text-deep)' : 'var(--ez-hue-green-text)' }}>
             {isSaving ? 'Menyimpan perubahan...' : 'Semua perubahan disimpan'}
           </span>
         </div>

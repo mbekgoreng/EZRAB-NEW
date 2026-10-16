@@ -3,6 +3,13 @@
  * Dibuka dari Dokumen Saya untuk satu dokumen. Panel analisis kontekstual,
  * bukan chat permanen. Floating assistant global sudah disembunyikan di
  * menu ini oleh WorkspaceView (single-mascot rule).
+ *
+ * ADAPTASI (service cabang ini belum mendukung mode CHECKLIST / param
+ * history / flag truncated milik referensi):
+ * - Tab "Kelengkapan" dijalankan lewat mode CHAT dengan instruksi
+ *   pemeriksaan kelengkapan yang dibangun di komponen.
+ * - QA berjalan per-turn tanpa riwayat percakapan kontekstual.
+ * - Peringatan pemotongan dihitung lokal (batas service 140.000 karakter).
  */
 import React, { useMemo, useRef, useState } from 'react';
 import {
@@ -10,22 +17,41 @@ import {
   GitCompare, ClipboardCheck, Copy, Check, AlertTriangle, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { dokumenAiService } from '../service';
-import { docStore, historyStore, DocRecord, ChatMessage } from '../store';
-import { DocAiMode } from '../types';
+import type { DocRecord, ChatMessage, HistoryEntry, HistoryType } from '../view';
+import { useI18n } from '../../../i18n/I18nContext';
+
+/** Mode yang didukung service cabang ini. */
+type SvcMode = 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | 'CHAT';
 
 type AnaTab = 'summary' | 'qa' | 'extract' | 'compare' | 'checklist';
 
-const TABS: Array<{ id: AnaTab; label: string; icon: any }> = [
-  { id: 'summary', label: 'Ringkasan', icon: BookOpen },
-  { id: 'qa', label: 'Tanya Dokumen', icon: MessageCircle },
-  { id: 'extract', label: 'Ekstraksi Data', icon: Table2 },
-  { id: 'compare', label: 'Bandingkan', icon: GitCompare },
-  { id: 'checklist', label: 'Kelengkapan', icon: ClipboardCheck },
+const getTabs = (
+  t: (key: string) => string,
+): Array<{ id: AnaTab; label: string; icon: any }> => [
+  { id: 'summary', label: t('ai.doc.ana.tab_summary'), icon: BookOpen },
+  { id: 'qa', label: t('ai.doc.ana.tab_qa'), icon: MessageCircle },
+  { id: 'extract', label: t('ai.doc.ana.tab_extract'), icon: Table2 },
+  { id: 'compare', label: t('ai.doc.ana.tab_compare'), icon: GitCompare },
+  { id: 'checklist', label: t('ai.doc.ana.tab_checklist'), icon: ClipboardCheck },
 ];
 
-const MODE_OF: Record<AnaTab, DocAiMode> = {
-  summary: 'SUMMARY', qa: 'QA', extract: 'EXTRACT', compare: 'COMPARE', checklist: 'CHECKLIST',
+/* Tab Kelengkapan memakai mode CHAT (service belum punya CHECKLIST). */
+const MODE_OF: Record<AnaTab, SvcMode> = {
+  summary: 'SUMMARY', qa: 'QA', extract: 'EXTRACT', compare: 'COMPARE', checklist: 'CHAT',
 };
+
+const HISTORY_TYPE_OF: Record<AnaTab, HistoryType> = {
+  summary: 'summary', qa: 'qa', extract: 'extract', compare: 'compare', checklist: 'checklist',
+};
+
+const CHECKLIST_PROMPT =
+  'Periksa kelengkapan dokumen konstruksi ini. Untuk setiap aspek ' +
+  '(identitas proyek, lingkup pekerjaan, spesifikasi teknis, gambar acuan, ' +
+  'jadwal, RAB/nilai pekerjaan, tanda tangan/pengesahan), nyatakan ADA ' +
+  '(dengan kutipan bagian dokumen) atau TIDAK DITEMUKAN. Jangan mengarang ' +
+  'informasi yang tidak ada.';
+
+const MAX_DOC_CHARS = 140_000;
 
 function splitPages(text: string): string[] {
   const parts = text.split(/\[Halaman (\d+)\]/g);
@@ -37,9 +63,14 @@ function splitPages(text: string): string[] {
   return out.length ? out : [text];
 }
 
-export const DocAnalyzer: React.FC<{ doc: DocRecord; onBack: () => void; onDone: () => void }> = ({
-  doc, onBack, onDone,
-}) => {
+export const DocAnalyzer: React.FC<{
+  doc: DocRecord;
+  docs: DocRecord[];
+  onBack: () => void;
+  onAddHistory: (e: Omit<HistoryEntry, 'id' | 'at'>) => void;
+}> = ({ doc, docs, onBack, onAddHistory }) => {
+  const { t } = useI18n();
+  const TABS = getTabs(t);
   const [tab, setTab] = useState<AnaTab>('summary');
   const [pageIdx, setPageIdx] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -52,39 +83,47 @@ export const DocAnalyzer: React.FC<{ doc: DocRecord; onBack: () => void; onDone:
   const [question, setQuestion] = useState('');
   // Compare
   const [compareId, setCompareId] = useState('');
-  const others = useMemo(() => docStore.list().filter((d) => d.id !== doc.id && d.status === 'ready'), [doc.id]);
+  const others = useMemo(
+    () => docs.filter((d) => d.id !== doc.id && d.status === 'ready'),
+    [docs, doc.id]
+  );
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const pages = useMemo(() => splitPages(doc.text), [doc.text]);
 
   const scrollChat = () => setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
 
-  const runMode = async (mode: DocAiMode, prompt?: string, docTextOverride?: string, fileNameOverride?: string) => {
-    setBusy(true); setError(null); setResult(''); setTruncated(false);
+  const recordHistory = (anaTab: AnaTab, reply: string, chatLog?: ChatMessage[]) => {
+    onAddHistory({
+      type: HISTORY_TYPE_OF[anaTab],
+      docIds: [doc.id],
+      docNames: [doc.fileName],
+      title: `${TABS.find((t) => t.id === anaTab)?.label} — ${doc.fileName}`,
+      resultPreview: reply.slice(0, 300),
+      resultFull: reply,
+      ...(chatLog ? { chat: chatLog } : {}),
+    });
+  };
+
+  const runMode = async (anaTab: AnaTab, prompt?: string, docTextOverride?: string, fileNameOverride?: string) => {
+    const mode = MODE_OF[anaTab];
+    const docText = docTextOverride ?? doc.text;
+    setBusy(true); setError(null); setResult(''); setTruncated(docText.length > MAX_DOC_CHARS);
     try {
       const res = await dokumenAiService.chat({
-        documentText: docTextOverride ?? doc.text,
+        documentText: docText,
         fileName: fileNameOverride ?? doc.fileName,
         mode,
-        prompt,
-        history: mode === 'QA' ? chat.map((c) => ({ role: c.role, text: c.text })) : undefined,
+        prompt: anaTab === 'checklist' ? CHECKLIST_PROMPT : prompt,
       });
       if (res.success) {
         setResult(res.reply || '');
-        setTruncated(!!res.truncated);
-        historyStore.add({
-          type: mode === 'SUMMARY' ? 'summary' : mode === 'EXTRACT' ? 'extract' : mode === 'COMPARE' ? 'compare' : mode === 'CHECKLIST' ? 'checklist' : 'qa',
-          docIds: [doc.id], docNames: [doc.fileName],
-          title: `${TABS.find((t) => MODE_OF[t.id] === mode)?.label} — ${doc.fileName}`,
-          resultPreview: (res.reply || '').slice(0, 300),
-          resultFull: res.reply || '',
-        });
-        onDone();
+        recordHistory(anaTab, res.reply || '');
       } else {
-        setError(`${res.errorCode || 'ERROR'}: ${res.message || 'Gagal.'}`);
+        setError(`${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`);
       }
     } catch (e: any) {
-      setError(e?.message || 'Kesalahan tidak terduga.');
+      setError(e?.message || t('ai.doc.err_unexpected'));
     } finally {
       setBusy(false);
     }
@@ -99,34 +138,32 @@ export const DocAnalyzer: React.FC<{ doc: DocRecord; onBack: () => void; onDone:
     try {
       const res = await dokumenAiService.chat({
         documentText: doc.text, fileName: doc.fileName, mode: 'QA', prompt: q,
-        history: next.map((c) => ({ role: c.role, text: c.text })),
       });
       if (res.success) {
         const aiMsg: ChatMessage = { role: 'ai', text: res.reply || '', at: Date.now() };
         const final = [...next, aiMsg];
         setChat(final);
-        historyStore.add({
+        onAddHistory({
           type: 'qa', docIds: [doc.id], docNames: [doc.fileName],
-          title: `Tanya: ${q.slice(0, 60)} — ${doc.fileName}`,
+          title: `${t('ai.doc.ana.hist_ask_a')} ${q.slice(0, 60)} — ${doc.fileName}`,
           resultPreview: (res.reply || '').slice(0, 300), resultFull: res.reply || '',
           chat: final,
         });
-        onDone();
       } else {
-        setError(`${res.errorCode || 'ERROR'}: ${res.message || 'Gagal.'}`);
+        setError(`${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`);
       }
     } catch (e: any) {
-      setError(e?.message || 'Kesalahan tidak terduga.');
+      setError(e?.message || t('ai.doc.err_unexpected'));
     } finally {
       setBusy(false); scrollChat();
     }
   };
 
   const runCompare = () => {
-    const other = docStore.get(compareId);
-    if (!other) { setError('Pilih dokumen pembanding dulu.'); return; }
+    const other = docs.find((d) => d.id === compareId);
+    if (!other) { setError(t('ai.doc.ana.err_compare_first')); return; }
     const combined = `=== DOKUMEN 1: ${doc.fileName} ===\n${doc.text}\n\n=== DOKUMEN 2: ${other.fileName} ===\n${other.text}`;
-    runMode('COMPARE', undefined, combined, `${doc.fileName} vs ${other.fileName}`);
+    runMode('compare', undefined, combined, `${doc.fileName} vs ${other.fileName}`);
   };
 
   const copyResult = () => {
@@ -137,19 +174,19 @@ export const DocAnalyzer: React.FC<{ doc: DocRecord; onBack: () => void; onDone:
   return (
     <div className="docai-tab">
       <div className="docai-anabar">
-        <button className="docai-btn-ghost" onClick={onBack}><ArrowLeft size={16} /> Dokumen Saya</button>
+        <button className="docai-btn-ghost" onClick={onBack}><ArrowLeft size={16} /> {t('ai.doc.ana.back')}</button>
         <div className="docai-anatitle">
           <strong>{doc.fileName}</strong>
-          <span>{doc.kind.toUpperCase()} · {doc.pages ? `${doc.pages} hlm` : ''} · {doc.text.length.toLocaleString('id-ID')} karakter</span>
+          <span>{doc.kind.toUpperCase()} · {doc.pages ? `${doc.pages} ${t('ai.doc.ana.pages_abbr')}` : ''} · {doc.text.length.toLocaleString('id-ID')} {t('ai.doc.ana.chars')}</span>
         </div>
       </div>
 
       <div className="docai-anatabs">
-        {TABS.map((t) => {
-          const Icon = t.icon;
+        {TABS.map((tb) => {
+          const Icon = tb.icon;
           return (
-            <button key={t.id} className={tab === t.id ? 'active' : ''} onClick={() => { setTab(t.id); setResult(''); setError(null); }}>
-              <Icon size={15} /> {t.label}
+            <button key={tb.id} className={tab === tb.id ? 'active' : ''} onClick={() => { setTab(tb.id); setResult(''); setError(null); }}>
+              <Icon size={15} /> {tb.label}
             </button>
           );
         })}
@@ -159,16 +196,16 @@ export const DocAnalyzer: React.FC<{ doc: DocRecord; onBack: () => void; onDone:
         {/* VIEWER */}
         <div className="docai-viewer">
           <div className="docai-viewer-head">
-            <span>Preview teks terekstrak</span>
+            <span>{t('ai.doc.ana.viewer_head')}</span>
             {pages.length > 1 && (
               <div className="docai-pagenav">
                 <button onClick={() => setPageIdx((i) => Math.max(0, i - 1))} disabled={pageIdx === 0}><ChevronLeft size={14} /></button>
-                <span>Hlm {pageIdx + 1} / {pages.length}</span>
+                <span>{t('ai.doc.ana.page_abbr')} {pageIdx + 1} / {pages.length}</span>
                 <button onClick={() => setPageIdx((i) => Math.min(pages.length - 1, i + 1))} disabled={pageIdx === pages.length - 1}><ChevronRight size={14} /></button>
               </div>
             )}
           </div>
-          <div className="docai-viewer-body"><pre>{pages[pageIdx] || '(kosong)'}</pre></div>
+          <div className="docai-viewer-body"><pre>{pages[pageIdx] || t('ai.doc.ana.empty_pre')}</pre></div>
         </div>
 
         {/* PANEL */}
@@ -177,21 +214,21 @@ export const DocAnalyzer: React.FC<{ doc: DocRecord; onBack: () => void; onDone:
             <>
               <div className="docai-chat">
                 {chat.length === 0 && (
-                  <div className="docai-chat-empty">Tanya apa saja tentang <b>{doc.fileName}</b>. Jawaban hanya dari isi dokumen — jika tidak ditemukan, AI akan mengatakannya.</div>
+                  <div className="docai-chat-empty">{t('ai.doc.ana.chat_empty_a')} <b>{doc.fileName}</b>{t('ai.doc.ana.chat_empty_b')}</div>
                 )}
                 {chat.map((m, i) => (
                   <div key={i} className={`docai-msg ${m.role}`}>
                     <div className="docai-msg-b">{m.text}</div>
                   </div>
                 ))}
-                {busy && <div className="docai-msg ai"><div className="docai-msg-b"><Loader2 size={14} className="spin" /> Membaca dokumen…</div></div>}
+                {busy && <div className="docai-msg ai"><div className="docai-msg-b"><Loader2 size={14} className="spin" /> {t('ai.doc.ana.busy_reading')}</div></div>}
                 <div ref={chatEndRef} />
               </div>
               <div className="docai-qarow">
                 <input
                   value={question} onChange={(e) => setQuestion(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') askQuestion(); }}
-                  placeholder="Tanya tentang dokumen ini…" disabled={busy}
+                  placeholder={t('ai.doc.ana.qa_ph')} disabled={busy}
                 />
                 <button onClick={askQuestion} disabled={!question.trim() || busy}><Send size={15} /></button>
               </div>
@@ -200,9 +237,9 @@ export const DocAnalyzer: React.FC<{ doc: DocRecord; onBack: () => void; onDone:
             <>
               {tab === 'compare' && (
                 <div className="docai-comparepick">
-                  <label>Bandingkan dengan:</label>
+                  <label>{t('ai.doc.ana.compare_label')}</label>
                   <select value={compareId} onChange={(e) => setCompareId(e.target.value)} className="docai-select">
-                    <option value="">— pilih dokumen —</option>
+                    <option value="">{t('ai.doc.ana.compare_pick')}</option>
                     {others.map((o) => <option key={o.id} value={o.id}>{o.fileName}</option>)}
                   </select>
                 </div>
@@ -210,27 +247,27 @@ export const DocAnalyzer: React.FC<{ doc: DocRecord; onBack: () => void; onDone:
               <button
                 className="docai-btn-primary docai-runbtn"
                 disabled={busy}
-                onClick={() => tab === 'compare' ? runCompare() : runMode(MODE_OF[tab])}
+                onClick={() => tab === 'compare' ? runCompare() : runMode(tab)}
               >
-                {busy ? <><Loader2 size={15} className="spin" /> AI membaca…</> : `Jalankan ${TABS.find((t) => t.id === tab)?.label}`}
+                {busy ? <><Loader2 size={15} className="spin" /> {t('ai.doc.ana.run_busy')}</> : `${t('ai.doc.ana.run_a')} ${TABS.find((tb) => tb.id === tab)?.label}`}
               </button>
               {error && <div className="docai-error"><AlertTriangle size={14} /> {error}</div>}
-              {truncated && <div className="docai-warn">Dokumen dipotong ke 140.000 karakter untuk analisis. Hasil hanya dari bagian awal.</div>}
+              {truncated && <div className="docai-warn">{t('ai.doc.ana.warn_truncated')}</div>}
               {result && (
                 <div className="docai-result">
                   <div className="docai-result-head">
-                    <span>Hasil {TABS.find((t) => t.id === tab)?.label}</span>
-                    <button onClick={copyResult}>{copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Tersalin' : 'Salin'}</button>
+                    <span>{t('ai.doc.ana.result_a')} {TABS.find((tb) => tb.id === tab)?.label}</span>
+                    <button onClick={copyResult}>{copied ? <Check size={14} /> : <Copy size={14} />} {copied ? t('ai.doc.ana.copied') : t('ai.doc.ana.copy')}</button>
                   </div>
                   <div className="docai-result-body">{result}</div>
                 </div>
               )}
               {!result && !busy && (
                 <p className="docai-hint">
-                  {tab === 'summary' && 'Dapatkan ringkasan terstruktur: tujuan, poin utama, kesimpulan.'}
-                  {tab === 'extract' && 'Ekstrak tabel, angka, dan spesifikasi penting dari dokumen.'}
-                  {tab === 'compare' && 'Pilih dua dokumen untuk melihat perbedaan per bagian dengan referensi sumber.'}
-                  {tab === 'checklist' && 'Periksa kelengkapan dokumen konstruksi: bagian yang ada vs yang belum ditemukan.'}
+                  {tab === 'summary' && t('ai.doc.ana.hint_summary')}
+                  {tab === 'extract' && t('ai.doc.ana.hint_extract')}
+                  {tab === 'compare' && t('ai.doc.ana.hint_compare')}
+                  {tab === 'checklist' && t('ai.doc.ana.hint_checklist')}
                 </p>
               )}
             </>

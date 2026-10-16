@@ -39,25 +39,25 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
       title: 'Estimator',
       description: 'Membantu penyusunan RAB, QTO, perhitungan volume, dan analisa harga satuan AHSP proyek.',
       icon: Briefcase,
-      bg: '#F0FDF4',
-      color: '#15803D',
-      border: '#BBF7D0',
+      bg: 'var(--ez-hue-green-bg)',
+      color: 'var(--ez-hue-green-text)',
+      border: 'var(--ez-hue-green-border)',
     },
     DIREKSI: {
       title: 'Direksi',
       description: 'Melihat proyek, laporan eksekutif, memantau kemajuan Kurva S, dan memberikan persetujuan sesuai hak akses.',
       icon: Shield,
-      bg: '#FAF5FF',
-      color: '#7E22CE',
-      border: '#E9D5FF',
+      bg: 'var(--ez-hue-purple-bg)',
+      color: 'var(--ez-hue-purple-text)',
+      border: 'var(--ez-hue-purple-border)',
     },
     CLIENT: {
       title: 'Client',
       description: 'Melihat informasi proyek, ringkasan penawaran RAB, dan dokumen yang dibagikan khusus untuk pemilik proyek.',
       icon: Eye,
-      bg: '#FFFBEB',
-      color: '#B45309',
-      border: '#FDE68A',
+      bg: 'var(--ez-hue-amber-bg)',
+      color: 'var(--ez-hue-amber-text)',
+      border: 'var(--ez-hue-amber-border)',
     },
   };
 
@@ -132,9 +132,9 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
         style={{
           width: '100%',
           maxWidth: '520px',
-          background: '#FFFFFF',
+          background: 'var(--ez-color-surface)',
           borderRadius: '16px',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--ez-color-border-line)',
           boxShadow: '0 20px 48px rgba(15, 23, 42, 0.16)',
           overflow: 'hidden',
           display: 'flex',
@@ -146,11 +146,11 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
         <div
           style={{
             padding: '18px 24px',
-            borderBottom: '1px solid #F1F5F9',
+            borderBottom: '1px solid var(--ez-color-surface-tertiary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: '#FAFAFA',
+            background: 'var(--ez-color-surface-faint)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -159,8 +159,8 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                 width: '36px',
                 height: '36px',
                 borderRadius: '10px',
-                background: '#EFF6FF',
-                color: '#2563EB',
+                background: 'var(--ez-hue-blue-bg)',
+                color: 'var(--ez-color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -169,10 +169,10 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
               <UserPlus size={18} />
             </div>
             <div>
-              <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.01em' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: 0, letterSpacing: '-0.01em' }}>
                 Tambah Pengguna
               </h2>
-              <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0' }}>
+              <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0' }}>
                 Undang anggota tim baru untuk mengakses workspace Anda
               </p>
             </div>
@@ -187,7 +187,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
               borderRadius: '8px',
               background: 'transparent',
               border: 'none',
-              color: '#64748B',
+              color: 'var(--ez-color-text-muted)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -206,16 +206,16 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
               style={{
                 padding: '10px 14px',
                 borderRadius: '8px',
-                background: '#FEF2F2',
+                background: 'var(--ez-hue-rose-bg)',
                 border: '1px solid #FCA5A5',
-                color: '#991B1B',
+                color: 'var(--ez-hue-red-text)',
                 fontSize: '12.5px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
               }}
             >
-              <AlertCircle size={16} color="#DC2626" />
+              <AlertCircle size={16} color="var(--ez-hue-rose-text)" />
               <span>{errorMsg}</span>
             </div>
           )}
@@ -225,23 +225,23 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
               style={{
                 padding: '10px 14px',
                 borderRadius: '8px',
-                background: '#F0FDF4',
+                background: 'var(--ez-hue-green-bg)',
                 border: '1px solid #86EFAC',
-                color: '#166534',
+                color: 'var(--ez-hue-green-text-deep)',
                 fontSize: '12.5px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
               }}
             >
-              <CheckCircle2 size={16} color="#16A34A" />
+              <CheckCircle2 size={16} color="var(--ez-hue-green-text-bright)" />
               <span>{successMsg}</span>
             </div>
           )}
 
           {/* Form Fields */}
           <div>
-            <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
               Nama Lengkap <span style={{ color: '#EF4444' }}>*</span>
             </label>
             <div style={{ position: 'relative' }}>
@@ -258,9 +258,9 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                   paddingLeft: '36px',
                   paddingRight: '12px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   fontSize: '13px',
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   outline: 'none',
                 }}
               />
@@ -268,7 +268,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
               Alamat Email <span style={{ color: '#EF4444' }}>*</span>
             </label>
             <div style={{ position: 'relative' }}>
@@ -285,9 +285,9 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                   paddingLeft: '36px',
                   paddingRight: '12px',
                   borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
+                  border: '1px solid var(--ez-hue-slate-border)',
                   fontSize: '13px',
-                  color: '#0F172A',
+                  color: 'var(--ez-color-text-primary)',
                   outline: 'none',
                 }}
               />
@@ -296,7 +296,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                 Nomor WhatsApp
               </label>
               <div style={{ position: 'relative' }}>
@@ -312,9 +312,9 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                     paddingLeft: '36px',
                     paddingRight: '12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
-                    color: '#0F172A',
+                    color: 'var(--ez-color-text-primary)',
                     outline: 'none',
                   }}
                 />
@@ -322,7 +322,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
                 Perusahaan / Instansi
               </label>
               <div style={{ position: 'relative' }}>
@@ -338,9 +338,9 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                     paddingLeft: '36px',
                     paddingRight: '12px',
                     borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
+                    border: '1px solid var(--ez-hue-slate-border)',
                     fontSize: '13px',
-                    color: '#0F172A',
+                    color: 'var(--ez-color-text-primary)',
                     outline: 'none',
                   }}
                 />
@@ -350,7 +350,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
 
           {/* Role Selection */}
           <div>
-            <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+            <label style={{ display: 'block', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
               Role / Hak Akses <span style={{ color: '#EF4444' }}>*</span>
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
@@ -364,9 +364,9 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                     style={{
                       height: '38px',
                       borderRadius: '8px',
-                      border: isSel ? '2px solid #2563EB' : '1px solid #CBD5E1',
-                      background: isSel ? '#EFF6FF' : '#FFFFFF',
-                      color: isSel ? '#1D4ED8' : '#475569',
+                      border: isSel ? '2px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
+                      background: isSel ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                      color: isSel ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-slate)',
                       fontSize: '12.5px',
                       fontWeight: isSel ? 700 : 500,
                       cursor: 'pointer',
@@ -398,7 +398,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
               <div style={{ fontSize: '12.5px', fontWeight: 750, color: selectedRoleMeta.color }}>
                 Role: {selectedRoleMeta.title}
               </div>
-              <div style={{ fontSize: '11.5px', color: '#475569', marginTop: '2px', lineHeight: 1.4 }}>
+              <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-slate)', marginTop: '2px', lineHeight: 1.4 }}>
                 {selectedRoleMeta.description}
               </div>
             </div>
@@ -413,7 +413,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
               gap: '10px',
               marginTop: '12px',
               paddingTop: '16px',
-              borderTop: '1px solid #F1F5F9',
+              borderTop: '1px solid var(--ez-color-surface-tertiary)',
             }}
           >
             <button
@@ -424,9 +424,9 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                 height: '38px',
                 padding: '0 16px',
                 borderRadius: '8px',
-                background: '#F1F5F9',
-                color: '#475569',
-                border: '1px solid #CBD5E1',
+                background: 'var(--ez-color-surface-tertiary)',
+                color: 'var(--ez-color-text-slate)',
+                border: '1px solid var(--ez-hue-slate-border)',
                 fontSize: '12.5px',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -441,7 +441,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onU
                 height: '38px',
                 padding: '0 20px',
                 borderRadius: '8px',
-                background: '#2563EB',
+                background: 'var(--ez-color-primary)',
                 color: '#FFFFFF',
                 border: 'none',
                 fontSize: '12.5px',

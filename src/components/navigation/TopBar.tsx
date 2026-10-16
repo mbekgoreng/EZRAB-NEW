@@ -16,14 +16,22 @@ import {
   Keyboard,
   LifeBuoy,
   MessageSquare,
-  Plus,
+Sun,
+  Moon,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
 import { NotificationBell } from '../../notifications/NotificationBell';
 import type { NotificationItem } from '../../notifications/NotificationContext';
 import { ClientUserManagementService } from '../../services/userManagementService';
-import { UserRole, type Project } from '../../types';
-import { useI18n } from '../../i18n';
+import { UserRole } from '../../types';
+import { useI18n, LANG_OPTIONS } from '../../i18n';
+import type { Lang } from '../../i18n';
+
+/** Label ringkas bahasa untuk tombol selector bahasa. */
+const LANG_SHORT: Record<Lang, string> = { id: 'ID', en: 'EN', zh: '中文', ms: 'MY' };
 import { useRole } from '../../auth/RoleContext';
+import { useTheme } from '../../context/ThemeContext';
 
 interface TopBarProps {
   isMobile: boolean;
@@ -38,32 +46,7 @@ interface TopBarProps {
   onNavigate: (menu: string, tab?: string) => void;
   onLogout?: () => void;
   workspaceName?: string;
-}
-
-/** Indeks menu untuk pencarian global (label + kata kunci). */
-const MENU_SEARCH_INDEX: Array<{ id: string; label: string; keywords: string }> = [
-  { id: 'dashboard', label: 'Dashboard', keywords: 'beranda home utama ringkasan' },
-  { id: 'proyek', label: 'Proyek', keywords: 'projects daftar proyek portofolio' },
-  { id: 'qto-vc', label: 'Kalkulator Volume', keywords: 'volume kalkulator hitung qto' },
-  { id: 'rab-estimasi', label: 'RAB & Estimasi', keywords: 'rab estimasi anggaran biaya spreadsheet' },
-  { id: 'ezrab-ai', label: 'Ezrab Chat AI', keywords: 'chat ai asisten' },
-  { id: 'ded-ai', label: 'DED Estimate AI', keywords: 'ded estimate gambar ai' },
-  { id: 'dokumen-ai', label: 'AI Document', keywords: 'dokumen document ai' },
-  { id: 'template-rab', label: 'Template RAB', keywords: 'template' },
-  { id: 'keuangan-proyek', label: 'Keuangan Proyek', keywords: 'keuangan finance kas' },
-  { id: 'ahsp-2026', label: 'AHSP 2026', keywords: 'ahsp analisa harga satuan pupr' },
-  { id: 'database-material', label: 'Database Material', keywords: 'material bahan harga' },
-  { id: 'laporan', label: 'Laporan', keywords: 'laporan report boq rekap' },
-  { id: 'pengaturan', label: 'Pengaturan', keywords: 'pengaturan settings setelan' },
-];
-
-interface SearchResultItem {
-  key: string;
-  group: string;
-  label: string;
-  sub?: string;
-  icon: React.ReactNode;
-  run: () => void;
+breadcrumb?: React.ReactNode;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -78,100 +61,30 @@ export const TopBar: React.FC<TopBarProps> = ({
   onNavigate,
   onLogout,
   workspaceName = 'EZRAB Construction Workspace',
+  breadcrumb,
 }) => {
-  const { t } = useI18n();
+const { t, lang, setLang } = useI18n();
   const { activeRole, logoutRole } = useRole();
   const [currentUser, setCurrentUser] = useState(() => ClientUserManagementService.getCurrentUser());
   const [helpOpen, setHelpOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  const { effectiveTheme, setTheme } = useTheme();
+  const isDark = effectiveTheme === 'dark';
 
-  // ---------- Global search palette ----------
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [activeResultIdx, setActiveResultIdx] = useState(0);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const searchWrapRef = useRef<HTMLDivElement>(null);
-
-  const searchResults: SearchResultItem[] = React.useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return [];
-    const out: SearchResultItem[] = [];
-    // 1. Proyek (maks 4)
-    for (const p of projects) {
-      if (out.length >= 9) break;
-      const hay = `${p.name} ${p.clientName ?? ''} ${p.location ?? ''}`.toLowerCase();
-      if (!hay.includes(q)) continue;
-      out.push({
-        key: `project:${p.id}`,
-        group: 'Proyek',
-        label: p.name,
-        sub: [p.clientName, p.location].filter(Boolean).join(' • ') || undefined,
-        icon: <Building2 size={15} color="#2563EB" />,
-        run: () => onOpenProject?.(p.id),
-      });
-      if (out.filter((r) => r.group === 'Proyek').length >= 4) break;
-    }
-    // 2. Menu navigasi
-    for (const m of MENU_SEARCH_INDEX) {
-      if (out.length >= 9) break;
-      if (!`${m.label} ${m.keywords}`.toLowerCase().includes(q)) continue;
-      out.push({
-        key: `menu:${m.id}`,
-        group: 'Menu',
-        label: m.label,
-        icon: <ChevronRight size={15} color="#64748B" />,
-        run: () => onNavigate(m.id),
-      });
-    }
-    // 3. Aksi cepat
-    if ('buat proyek baru'.includes(q) || q.includes('proyek')) {
-      out.push({
-        key: 'action:create-project',
-        group: 'Aksi',
-        label: 'Buat proyek baru',
-        icon: <Plus size={15} color="#059669" />,
-        run: () => onCreateProject?.(),
-      });
-    }
-    return out.slice(0, 9);
-  }, [searchQuery, projects, onOpenProject, onNavigate, onCreateProject]);
-
-  const closeSearch = () => {
-    setSearchFocused(false);
-    setActiveResultIdx(0);
-  };
-
-  const pickResult = (r: SearchResultItem) => {
-    r.run();
-    onSearchChange('');
-    closeSearch();
-    searchInputRef.current?.blur();
-  };
-
-  // ⌘K / Ctrl+K fokus ke pencarian
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, []);
-
-  const handleNotificationItemClick = (item: NotificationItem) => {
+const handleNotificationItemClick = (item: NotificationItem) => {
     if (item.link) {
       const [menu, tab] = item.link.split(':');
       onNavigate(menu, tab);
     }
   };
-
   const handleNotificationSettings = () => {
     onNavigate('pengaturan', 'notifications');
   };
 
   const helpRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const langRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
   useEffect(() => {
@@ -182,12 +95,16 @@ export const TopBar: React.FC<TopBarProps> = ({
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setProfileOpen(false);
       }
+      if (langRef.current && !langRef.current.contains(event.target as Node)) {
+        setLangOpen(false);
+      }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setHelpOpen(false);
         setProfileOpen(false);
+        setLangOpen(false);
       }
     };
 
@@ -201,11 +118,11 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   const renderRoleBadge = (role: UserRole) => {
     const styles: Record<UserRole, { bg: string; color: string; border: string; label: string }> = {
-      SUPER_ADMIN: { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE', label: 'Super Admin' },
-      ESTIMATOR: { bg: '#F0FDF4', color: '#15803D', border: '#BBF7D0', label: 'Estimator' },
-      DIREKSI: { bg: '#FAF5FF', color: '#7E22CE', border: '#E9D5FF', label: 'Direksi' },
-      CLIENT: { bg: '#FFFBEB', color: '#B45309', border: '#FDE68A', label: 'Client' },
-      EDITOR: { bg: '#F1F5F9', color: '#475569', border: '#CBD5E1', label: 'Editor' },
+      SUPER_ADMIN: { bg: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary-hover)', border: 'var(--ez-hue-blue-border)', label: 'Super Admin' },
+      ESTIMATOR: { bg: 'var(--ez-hue-green-bg)', color: 'var(--ez-hue-green-text)', border: 'var(--ez-hue-green-border)', label: 'Estimator' },
+      DIREKSI: { bg: 'var(--ez-hue-purple-bg)', color: 'var(--ez-hue-purple-text)', border: 'var(--ez-hue-purple-border)', label: 'Direksi' },
+      CLIENT: { bg: 'var(--ez-hue-amber-bg)', color: 'var(--ez-hue-amber-text)', border: 'var(--ez-hue-amber-border)', label: 'Client' },
+      EDITOR: { bg: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)', border: 'var(--ez-color-border-strong)', label: 'Editor' },
     };
     const currentStyle = styles[role] || styles.SUPER_ADMIN;
 
@@ -233,20 +150,24 @@ export const TopBar: React.FC<TopBarProps> = ({
   return (
     <header
       style={{
-        height: isNarrowMobile ? '56px' : '64px',
-        background: '#FFFFFF',
-        borderBottom: '1px solid #E5E7EB',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: isNarrowMobile ? '0 12px' : '0 24px',
+        background: 'var(--ez-color-surface)',
+        borderBottom: '1px solid var(--ez-color-border-neutral)',
         position: 'sticky',
         top: 0,
         zIndex: 40,
-        gap: '16px',
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
       }}
     >
+      <div
+        style={{
+          height: isNarrowMobile ? '56px' : '64px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: isNarrowMobile ? '0 12px' : '0 24px',
+          gap: '16px',
+        }}
+      >
       {/* =======================================================================
           LEFT: BRAND LOGO / IDENTITY (MOBILE HAMBURGER)
          ======================================================================= */}
@@ -260,9 +181,9 @@ export const TopBar: React.FC<TopBarProps> = ({
               width: '38px',
               height: '38px',
               borderRadius: '8px',
-              background: '#F8FAFC',
-              border: '1px solid #E2E8F0',
-              color: '#1E293B',
+              background: 'var(--ez-color-surface-secondary)',
+              border: '1px solid var(--ez-color-border-line)',
+              color: 'var(--ez-color-text-ink)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -291,14 +212,14 @@ export const TopBar: React.FC<TopBarProps> = ({
                 width: '32px',
                 height: '32px',
                 borderRadius: '8px',
-                background: '#2563EB',
+                background: 'var(--ez-color-primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#ffffff',
+                color: 'var(--ez-color-on-primary)',
                 fontWeight: 800,
                 fontSize: '13px',
-                boxShadow: '0 2px 6px rgba(37,99,235,0.2)',
+                boxShadow: 'var(--ez-shadow-logo)',
               }}
             >
               EZ
@@ -330,7 +251,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         >
           <Search
             size={16}
-            color="#94A3B8"
+            color="var(--ez-color-text-faint)"
             style={{ position: 'absolute', left: '12px', pointerEvents: 'none' }}
           />
           <input
@@ -338,47 +259,29 @@ export const TopBar: React.FC<TopBarProps> = ({
             type="text"
             placeholder={t('nav.search_placeholder')}
           value={searchQuery}
-          onChange={(e) => { onSearchChange(e.target.value); setActiveResultIdx(0); setSearchFocused(true); }}
-          onFocus={() => setSearchFocused(true)}
-          onBlur={() => setTimeout(closeSearch, 120)}
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowDown' && searchResults.length > 0) {
-              e.preventDefault();
-              setActiveResultIdx((i) => (i + 1) % searchResults.length);
-            } else if (e.key === 'ArrowUp' && searchResults.length > 0) {
-              e.preventDefault();
-              setActiveResultIdx((i) => (i - 1 + searchResults.length) % searchResults.length);
-            } else if (e.key === 'Enter' && searchResults.length > 0) {
-              e.preventDefault();
-              pickResult(searchResults[activeResultIdx] ?? searchResults[0]);
-            } else if (e.key === 'Escape') {
-              onSearchChange('');
-              closeSearch();
-              searchInputRef.current?.blur();
-            }
-          }}
-          aria-label="Pencarian Global"
+onChange={(e) => onSearchChange(e.target.value)}
+          aria-label={t('nav.search_aria_label')}
           style={{
             width: '100%',
             height: '38px',
             paddingLeft: '36px',
             paddingRight: isNarrowMobile ? '12px' : '52px',
             borderRadius: '10px',
-            background: '#F8FAFC',
-            border: '1px solid #E2E8F0',
+            background: 'var(--ez-color-surface-secondary)',
+            border: '1px solid var(--ez-color-border-line)',
             fontSize: '13px',
-            color: '#0F172A',
+            color: 'var(--ez-color-text-primary)',
             outline: 'none',
             transition: 'border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease',
           }}
-          onFocusCapture={(e) => {
-            e.currentTarget.style.background = '#FFFFFF';
-            e.currentTarget.style.borderColor = '#2563EB';
-            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.1)';
+onFocus={(e) => {
+            e.currentTarget.style.background = 'var(--ez-color-surface)';
+            e.currentTarget.style.borderColor = 'var(--ez-color-primary)';
+            e.currentTarget.style.boxShadow = 'var(--ez-focus-ring)';
           }}
-          onBlurCapture={(e) => {
-            e.currentTarget.style.background = '#F8FAFC';
-            e.currentTarget.style.borderColor = '#E2E8F0';
+          onBlur={(e) => {
+            e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
+            e.currentTarget.style.borderColor = 'var(--ez-color-border-line)';
             e.currentTarget.style.boxShadow = 'none';
           }}
         />
@@ -389,11 +292,11 @@ export const TopBar: React.FC<TopBarProps> = ({
               right: '10px',
               fontSize: '11px',
               fontWeight: 600,
-              color: '#94A3B8',
-              border: '1px solid #E2E8F0',
+              color: 'var(--ez-color-text-faint)',
+              border: '1px solid var(--ez-color-border-line)',
               padding: '2px 6px',
               borderRadius: '5px',
-              background: '#FFFFFF',
+              background: 'var(--ez-color-surface)',
               pointerEvents: 'none',
             }}
           >
@@ -478,6 +381,124 @@ export const TopBar: React.FC<TopBarProps> = ({
          ======================================================================= */}
       <div style={{ display: 'flex', alignItems: 'center', gap: isNarrowMobile ? '8px' : '12px', flexShrink: 0 }}>
         
+{/* 0. THEME TOGGLE (terang/gelap) */}
+        <button
+          type="button"
+          onClick={() => setTheme(isDark ? 'light' : 'dark')}
+          title={isDark ? 'Mode terang' : 'Mode gelap'}
+          aria-label={isDark ? 'Mode terang' : 'Mode gelap'}
+          aria-pressed={isDark}
+          style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '10px',
+            border: '1px solid var(--ez-color-border-line)',
+            background: 'var(--ez-color-surface)',
+            color: 'var(--ez-color-text-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          {isDark ? <Sun size={17} /> : <Moon size={17} />}
+        </button>
+
+        {/* 0b. LANGUAGE SELECTOR (compact dropdown, wired to I18nContext) */}
+        <div style={{ position: 'relative' }} ref={langRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setLangOpen(!langOpen);
+              setHelpOpen(false);
+              setProfileOpen(false);
+            }}
+            title={t('nav.pilih_bahasa')}
+            aria-label={t('nav.pilih_bahasa')}
+            aria-expanded={langOpen}
+            style={{
+              height: '38px',
+              minWidth: '58px',
+              padding: '0 9px',
+              borderRadius: '10px',
+              border: '1px solid var(--ez-color-border-line)',
+              background: langOpen ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+              color: langOpen ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '3px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 800,
+              letterSpacing: '0.03em',
+              fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {LANG_SHORT[lang]}
+            <ChevronDown size={13} />
+          </button>
+
+          {langOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                right: 0,
+                width: '168px',
+                background: 'var(--ez-color-surface)',
+                borderRadius: '14px',
+                border: '1px solid var(--ez-color-border-line)',
+                boxShadow: 'var(--ez-shadow-popover)',
+                zIndex: 100,
+                overflow: 'hidden',
+                padding: '6px',
+                animation: 'ezrabFadeIn 0.18s ease-out',
+              }}
+            >
+              {LANG_OPTIONS.map((opt) => {
+                const isActive = opt.id === lang;
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => {
+                      setLang(opt.id);
+                      setLangOpen(false);
+                    }}
+                    style={{
+                      width: '100%',
+                      height: '36px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0 10px',
+                      borderRadius: '8px',
+                      background: isActive ? 'var(--ez-hue-blue-bg)' : 'transparent',
+                      border: 'none',
+                      color: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-body)',
+                      fontSize: '12.5px',
+                      fontWeight: isActive ? 700 : 500,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'background 0.12s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <span>{opt.nativeName}</span>
+                    {isActive && <Check size={14} />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* 1. NOTIFICATION BELL & POPOVER (real notification center) */}
         <NotificationBell
           isNarrowMobile={isNarrowMobile}
@@ -499,25 +520,25 @@ export const TopBar: React.FC<TopBarProps> = ({
                 width: '38px',
                 height: '38px',
                 borderRadius: '9px',
-                background: helpOpen ? '#EFF6FF' : 'transparent',
+                background: helpOpen ? 'var(--ez-hue-blue-bg)' : 'transparent',
                 border: 'none',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                color: helpOpen ? '#2563EB' : '#64748B',
+                color: helpOpen ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
                 transition: 'all 0.15s ease',
               }}
               onMouseEnter={(e) => {
                 if (!helpOpen) {
-                  e.currentTarget.style.background = '#F8FAFC';
-                  e.currentTarget.style.color = '#0F172A';
+                  e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
+                  e.currentTarget.style.color = 'var(--ez-color-text-primary)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (!helpOpen) {
                   e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#64748B';
+                  e.currentTarget.style.color = 'var(--ez-color-text-muted)';
                 }
               }}
             >
@@ -532,10 +553,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                   top: 'calc(100% + 8px)',
                   right: 0,
                   width: '280px',
-                  background: '#FFFFFF',
+                  background: 'var(--ez-color-surface)',
                   borderRadius: '14px',
-                  border: '1px solid #E2E8F0',
-                  boxShadow: '0 12px 32px rgba(15,23,42,0.12)',
+                  border: '1px solid var(--ez-color-border-line)',
+                  boxShadow: 'var(--ez-shadow-popover)',
                   zIndex: 100,
                   overflow: 'hidden',
                   animation: 'ezrabFadeIn 0.18s ease-out',
@@ -544,12 +565,12 @@ export const TopBar: React.FC<TopBarProps> = ({
                 <div
                   style={{
                     padding: '14px 16px',
-                    borderBottom: '1px solid #F1F5F9',
-                    background: '#FAFAFA',
+                    borderBottom: '1px solid var(--ez-color-surface-tertiary)',
+                    background: 'var(--ez-color-surface-faint)',
                   }}
                 >
-                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0F172A' }}>Bantuan & Panduan</div>
-                  <div style={{ fontSize: '11.5px', color: '#64748B', marginTop: '2px' }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Bantuan & Panduan</div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
                     Dokumentasi dan dukungan teknis EZRAB
                   </div>
                 </div>
@@ -558,7 +579,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   {[
                     { label: 'Panduan Penggunaan EZRAB', icon: BookOpen, action: () => { setHelpOpen(false); onNavigate('pengaturan', 'help'); } },
                     { label: 'Pusat Bantuan & FAQ', icon: LifeBuoy, action: () => { setHelpOpen(false); onNavigate('pengaturan', 'help'); } },
-                    { label: 'Shortcut Keyboard (⌘ K)', icon: Keyboard, action: () => { setHelpOpen(false); alert('Shortcut EZRAB:\n- ⌘ K / Ctrl+K: Cari Proyek\n- Esc: Tutup Modal / Popover\n- Shift+A: Magic AI Quick Assistant'); } },
+                    { label: 'Shortcut Keyboard (⌘ K)', icon: Keyboard, action: () => { setHelpOpen(false); alert(`${t('nav.shortcut_title')}:\n- ⌘ K / Ctrl+K: ${t('nav.shortcut_search')}\n- Esc: ${t('nav.shortcut_close')}\n- Shift+A: ${t('nav.shortcut_magic_ai')}`); } },
                     { label: 'Hubungi Support Teknis', icon: MessageSquare, action: () => { setHelpOpen(false); onNavigate('pengaturan', 'help'); } },
                   ].map((menuItem) => {
                     const Icon = menuItem.icon;
@@ -576,7 +597,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                           borderRadius: '8px',
                           background: 'transparent',
                           border: 'none',
-                          color: '#334155',
+                          color: 'var(--ez-color-text-body)',
                           fontSize: '12.5px',
                           fontWeight: 500,
                           cursor: 'pointer',
@@ -584,15 +605,15 @@ export const TopBar: React.FC<TopBarProps> = ({
                           transition: 'background 0.12s ease',
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.background = '#F8FAFC';
-                          e.currentTarget.style.color = '#2563EB';
+                          e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
+                          e.currentTarget.style.color = 'var(--ez-color-primary)';
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = '#334155';
+                          e.currentTarget.style.color = 'var(--ez-color-text-body)';
                         }}
                       >
-                        <Icon size={15} color="#64748B" />
+                        <Icon size={15} color="var(--ez-color-text-muted)" />
                         <span>{menuItem.label}</span>
                       </button>
                     );
@@ -602,17 +623,17 @@ export const TopBar: React.FC<TopBarProps> = ({
                 <div
                   style={{
                     padding: '10px 16px',
-                    background: '#FAFAFA',
-                    borderTop: '1px solid #F1F5F9',
+                    background: 'var(--ez-color-surface-faint)',
+                    borderTop: '1px solid var(--ez-color-surface-tertiary)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     fontSize: '11px',
-                    color: '#94A3B8',
+                    color: 'var(--ez-color-text-faint)',
                   }}
                 >
                   <span>Versi Aplikasi</span>
-                  <span style={{ fontWeight: 700, color: '#475569' }}>v2.0.0 (Production)</span>
+                  <span style={{ fontWeight: 700, color: 'var(--ez-color-text-slate)' }}>v2.0.0 (Production)</span>
                 </div>
               </div>
             )}
@@ -634,14 +655,14 @@ export const TopBar: React.FC<TopBarProps> = ({
               gap: '9px',
               padding: isNarrowMobile ? '2px' : '4px 8px 4px 4px',
               borderRadius: '10px',
-              background: profileOpen ? '#EFF6FF' : 'transparent',
-              border: profileOpen ? '1px solid #BFDBFE' : '1px solid transparent',
+              background: profileOpen ? 'var(--ez-hue-blue-bg)' : 'transparent',
+              border: profileOpen ? '1px solid var(--ez-hue-blue-border)' : '1px solid transparent',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
             onMouseEnter={(e) => {
               if (!profileOpen) {
-                e.currentTarget.style.background = '#F8FAFC';
+                e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
               }
             }}
             onMouseLeave={(e) => {
@@ -658,16 +679,16 @@ export const TopBar: React.FC<TopBarProps> = ({
                 height: isNarrowMobile ? '32px' : '34px',
                 borderRadius: '50%',
                 objectFit: 'cover',
-                border: '1.5px solid #E2E8F0',
+                border: '1.5px solid var(--ez-color-border-line)',
                 flexShrink: 0,
               }}
             />
             {!isNarrowMobile && (
               <div style={{ textAlign: 'left', lineHeight: 1.25 }}>
-                <div style={{ fontSize: '12.5px', fontWeight: 700, color: '#0F172A' }}>
+                <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                   {currentUser.name.split(',')[0]}
                 </div>
-                <div style={{ fontSize: '11px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+<div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span>{activeRole ? activeRole.name : 'Super Admin'}</span>
                 </div>
               </div>
@@ -682,10 +703,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                 top: 'calc(100% + 8px)',
                 right: 0,
                 width: '290px',
-                background: '#FFFFFF',
+                background: 'var(--ez-color-surface)',
                 borderRadius: '14px',
-                border: '1px solid #E2E8F0',
-                boxShadow: '0 12px 32px rgba(15,23,42,0.12)',
+                border: '1px solid var(--ez-color-border-line)',
+                boxShadow: 'var(--ez-shadow-popover)',
                 zIndex: 100,
                 overflow: 'hidden',
                 animation: 'ezrabFadeIn 0.18s ease-out',
@@ -695,8 +716,8 @@ export const TopBar: React.FC<TopBarProps> = ({
               <div
                 style={{
                   padding: '16px',
-                  borderBottom: '1px solid #F1F5F9',
-                  background: 'linear-gradient(180deg, #FAFAFA 0%, #FFFFFF 100%)',
+                  borderBottom: '1px solid var(--ez-color-surface-tertiary)',
+                  background: 'linear-gradient(180deg, var(--ez-color-surface-faint) 0%, var(--ez-color-surface) 100%)',
                 }}
               >
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
@@ -708,15 +729,15 @@ export const TopBar: React.FC<TopBarProps> = ({
                       height: '44px',
                       borderRadius: '50%',
                       objectFit: 'cover',
-                      border: '2px solid #FFFFFF',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                      border: '2px solid var(--ez-color-surface)',
+                      boxShadow: 'var(--ez-shadow-avatar)',
                     }}
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {currentUser.name}
                     </div>
-                    <div style={{ fontSize: '11.5px', color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '1px' }}>
+                    <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '1px' }}>
                       {currentUser.email}
                     </div>
                     <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
@@ -727,8 +748,8 @@ export const TopBar: React.FC<TopBarProps> = ({
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: '4px',
                             fontSize: '10px', fontWeight: 800, letterSpacing: '0.04em',
-                            color: '#7C3AED', background: '#F5F3FF',
-                            border: '1px solid #DDD6FE', padding: '3px 8px', borderRadius: '999px',
+color: 'var(--ez-hue-violet-text)', background: 'var(--ez-hue-violet-bg)',
+                            border: '1px solid var(--ez-hue-violet-border)', padding: '3px 8px', borderRadius: '999px',
                           }}
                         >
                           {t('auth.mode_demo')} · {activeRole.name}
@@ -743,16 +764,16 @@ export const TopBar: React.FC<TopBarProps> = ({
                     marginTop: '12px',
                     padding: '8px 10px',
                     borderRadius: '8px',
-                    background: '#F8FAFC',
-                    border: '1px solid #E2E8F0',
+                    background: 'var(--ez-color-surface-secondary)',
+                    border: '1px solid var(--ez-color-border-line)',
                     fontSize: '11px',
-                    color: '#475569',
+                    color: 'var(--ez-color-text-slate)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
                   }}
                 >
-                  <Building2 size={13} color="#64748B" />
+                  <Building2 size={13} color="var(--ez-color-text-muted)" />
                   <span style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {workspaceName}
                   </span>
@@ -818,7 +839,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                         borderRadius: '8px',
                         background: 'transparent',
                         border: 'none',
-                        color: '#334155',
+                        color: 'var(--ez-color-text-body)',
                         fontSize: '12.5px',
                         fontWeight: 500,
                         cursor: 'pointer',
@@ -826,26 +847,26 @@ export const TopBar: React.FC<TopBarProps> = ({
                         transition: 'background 0.12s ease',
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#F8FAFC';
-                        e.currentTarget.style.color = '#2563EB';
+                        e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
+                        e.currentTarget.style.color = 'var(--ez-color-primary)';
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.color = '#334155';
+                        e.currentTarget.style.color = 'var(--ez-color-text-body)';
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Icon size={15} color="#64748B" />
+                        <Icon size={15} color="var(--ez-color-text-muted)" />
                         <span>{item.label}</span>
                       </div>
-                      <ChevronRight size={13} color="#CBD5E1" />
+                      <ChevronRight size={13} color="var(--ez-color-border-strong)" />
                     </button>
                   );
                 })}
               </div>
 
               {/* Logout Footer */}
-              <div style={{ padding: '6px', borderTop: '1px solid #F1F5F9' }}>
+              <div style={{ padding: '6px', borderTop: '1px solid var(--ez-color-surface-tertiary)' }}>
                 <button
                   onClick={() => {
                     setProfileOpen(false);
@@ -867,7 +888,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                     borderRadius: '8px',
                     background: 'transparent',
                     border: 'none',
-                    color: '#DC2626',
+                    color: 'var(--ez-color-danger-strong)',
                     fontSize: '12.5px',
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -875,13 +896,13 @@ export const TopBar: React.FC<TopBarProps> = ({
                     transition: 'background 0.12s ease',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#FEE2E2';
+                    e.currentTarget.style.background = 'var(--ez-hue-red-bg)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = 'transparent';
                   }}
                 >
-                  <LogOut size={15} color="#DC2626" />
+<LogOut size={15} color="var(--ez-color-danger-strong)" />
                   <span>{t('nav.keluar_akun')}</span>
                 </button>
               </div>
@@ -889,6 +910,20 @@ export const TopBar: React.FC<TopBarProps> = ({
           )}
         </div>
       </div>
+      </div>
+      {breadcrumb && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: isNarrowMobile ? '4px 12px' : '6px 24px',
+            borderTop: '1px solid var(--ez-color-surface-tertiary)',
+            background: 'var(--ez-color-surface)',
+          }}
+        >
+          {breadcrumb}
+        </div>
+      )}
     </header>
   );
 };

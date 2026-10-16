@@ -27,11 +27,11 @@ function formatRupiah(n: number): string {
 }
 
 const CONFIDENCE_STYLES: Record<string, { bg: string; color: string; label: string }> = {
-  A: { bg: '#DCFCE7', color: '#166534', label: 'A — Verified' },
-  B: { bg: '#DBEAFE', color: '#1E40AF', label: 'B — 1 Ref. Estimate' },
-  C: { bg: '#FEF3C7', color: '#92400E', label: 'C — Multiple Refs' },
-  D: { bg: '#FED7AA', color: '#9A3412', label: 'D — Many Refs' },
-  BLOCKED: { bg: '#FEE2E2', color: '#991B1B', label: 'BLOCKED — Missing Data' },
+  A: { bg: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text-deep)', label: 'A — Verified' },
+  B: { bg: 'var(--ez-hue-blue-bg-deep)', color: 'var(--ez-hue-blue-text-deep)', label: 'B — 1 Ref. Estimate' },
+  C: { bg: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text-dark)', label: 'C — Multiple Refs' },
+  D: { bg: 'var(--ez-hue-orange-bg-deep)', color: '#9A3412', label: 'D — Many Refs' },
+  BLOCKED: { bg: 'var(--ez-hue-red-bg)', color: 'var(--ez-hue-red-text)', label: 'BLOCKED — Missing Data' },
 };
 
 export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ result }) => {
@@ -50,7 +50,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
           background: 'linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%)',
           borderRadius: '10px',
           padding: '14px 16px',
-          color: '#F8FAFC',
+          color: 'var(--ez-color-surface-secondary)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -81,8 +81,8 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
             <span
               style={{
                 fontSize: '9px',
-                background: result.noDoubleMarkup.status === 'PASS' ? '#DCFCE7' : '#FEE2E2',
-                color: result.noDoubleMarkup.status === 'PASS' ? '#166534' : '#991B1B',
+                background: result.noDoubleMarkup.status === 'PASS' ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-red-bg)',
+                color: result.noDoubleMarkup.status === 'PASS' ? 'var(--ez-hue-green-text-deep)' : 'var(--ez-hue-red-text)',
                 padding: '2px 6px',
                 borderRadius: '3px',
                 fontWeight: 700,
@@ -93,8 +93,8 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
             <span
               style={{
                 fontSize: '9px',
-                background: result.smkkStatus === 'APPLIED' ? '#DBEAFE' : '#FEF3C7',
-                color: result.smkkStatus === 'APPLIED' ? '#1E40AF' : '#92400E',
+                background: result.smkkStatus === 'APPLIED' ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-hue-amber-bg-deep)',
+                color: result.smkkStatus === 'APPLIED' ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-hue-amber-text-dark)',
                 padding: '2px 6px',
                 borderRadius: '3px',
                 fontWeight: 700,
@@ -109,26 +109,26 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
       {/* ── COST BREAKDOWN TABLE ────────────────────────────────── */}
       <div
         style={{
-          background: '#F8FAFC',
+          background: 'var(--ez-color-surface-secondary)',
           borderRadius: '8px',
-          border: '1px solid #CBD5E1',
+          border: '1px solid var(--ez-hue-slate-border)',
           overflow: 'hidden',
         }}
       >
-        <div style={{ padding: '10px 14px', borderBottom: '1px solid #E2E8F0', background: '#F1F5F9' }}>
-          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
+        <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface-tertiary)' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', textTransform: 'uppercase' }}>
             Cost Breakdown
           </span>
         </div>
         <div style={{ padding: '8px 14px' }}>
-          <CostRow label="Labor Cost" value={s.laborCost} color="#7C3AED" />
-          <CostRow label="Material Cost" value={s.materialCost} color="#2563EB" />
+          <CostRow label="Labor Cost" value={s.laborCost} color="var(--ez-hue-violet-text)" />
+          <CostRow label="Material Cost" value={s.materialCost} color="var(--ez-hue-blue-text)" />
           <CostRow label="Equipment Cost" value={s.equipmentCost} color="#0891B2" />
           <CostRow label="Direct Cost (L+M+E)" value={s.directCost} bold borderTop />
-          {s.smkk > 0 && <CostRow label={`SMKK`} value={s.smkk} color="#D97706" />}
-          <CostRow label={`Overhead (5%)`} value={s.overhead} color="#6B7280" />
-          <CostRow label={`Profit (5%)`} value={s.profit} color="#6B7280" />
-          <CostRow label={`Tax / PPN (11%)`} value={s.tax} color="#6B7280" />
+          {s.smkk > 0 && <CostRow label={`SMKK`} value={s.smkk} color="var(--ez-hue-amber-text-deep)" />}
+          <CostRow label={`Overhead (5%)`} value={s.overhead} color="var(--ez-color-text-warm)" />
+          <CostRow label={`Profit (5%)`} value={s.profit} color="var(--ez-color-text-warm)" />
+          <CostRow label={`Tax / PPN (11%)`} value={s.tax} color="var(--ez-color-text-warm)" />
           <CostRow label="FINAL COST" value={s.finalCost} bold large borderTop />
         </div>
       </div>
@@ -136,9 +136,9 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
       {/* ── WORK ITEMS ──────────────────────────────────────────── */}
       <div
         style={{
-          background: '#F8FAFC',
+          background: 'var(--ez-color-surface-secondary)',
           borderRadius: '8px',
-          border: '1px solid #CBD5E1',
+          border: '1px solid var(--ez-hue-slate-border)',
           overflow: 'hidden',
         }}
       >
@@ -148,14 +148,14 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
             width: '100%',
             padding: '10px 14px',
             border: 'none',
-            background: '#F1F5F9',
+            background: 'var(--ez-color-surface-tertiary)',
             cursor: 'pointer',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
           }}
         >
-          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', textTransform: 'uppercase' }}>
             Work Items ({result.workItems.length})
           </span>
           <span style={{ fontSize: '14px', color: '#94A3B8' }}>{showWorkItems ? '−' : '+'}</span>
@@ -170,20 +170,20 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '6px 0',
-                  borderBottom: idx < result.workItems.length - 1 ? '1px solid #F1F5F9' : 'none',
+                  borderBottom: idx < result.workItems.length - 1 ? '1px solid var(--ez-color-surface-tertiary)' : 'none',
                 }}
               >
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '11px', fontWeight: 600, color: '#1E293B' }}>{wi.name}</div>
-                  <div style={{ fontSize: '9.5px', color: '#64748B', marginTop: '1px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-strong)' }}>{wi.name}</div>
+                  <div style={{ fontSize: '9.5px', color: 'var(--ez-color-text-muted)', marginTop: '1px' }}>
                     {wi.quantity} {wi.unit} → AHSP: {wi.ahspCode} | Source: {wi.quantitySource}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'monospace', color: '#0F172A' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'monospace', color: 'var(--ez-color-text-primary)' }}>
                     {wi.priceStatus === 'RESOLVED' ? formatRupiah(wi.finalCost) : wi.priceStatus}
                   </div>
-                  <div style={{ fontSize: '9px', color: '#64748B' }}>
+                  <div style={{ fontSize: '9px', color: 'var(--ez-color-text-muted)' }}>
                     Direct: {formatRupiah(wi.directCost)}
                   </div>
                 </div>
@@ -196,9 +196,9 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
       {/* ── PARETO ANALYSIS ─────────────────────────────────────── */}
       <div
         style={{
-          background: '#F8FAFC',
+          background: 'var(--ez-color-surface-secondary)',
           borderRadius: '8px',
-          border: '1px solid #CBD5E1',
+          border: '1px solid var(--ez-hue-slate-border)',
           overflow: 'hidden',
         }}
       >
@@ -208,14 +208,14 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
             width: '100%',
             padding: '10px 14px',
             border: 'none',
-            background: '#F1F5F9',
+            background: 'var(--ez-color-surface-tertiary)',
             cursor: 'pointer',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
           }}
         >
-          <span style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-slate)', textTransform: 'uppercase' }}>
             Pareto Analysis (Top 5)
           </span>
           <span style={{ fontSize: '14px', color: '#94A3B8' }}>{showPareto ? '−' : '+'}</span>
@@ -223,17 +223,17 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
         {showPareto && (
           <div style={{ padding: '8px 14px' }}>
             {result.paretoAnalysis.slice(0, 5).map((p, idx) => (
-              <div key={idx} style={{ padding: '4px 0', borderBottom: idx < 4 ? '1px solid #F1F5F9' : 'none' }}>
+              <div key={idx} style={{ padding: '4px 0', borderBottom: idx < 4 ? '1px solid var(--ez-color-surface-tertiary)' : 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: '#1E293B' }}>{p.resource}</span>
-                  <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#0F172A' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--ez-color-text-strong)' }}>{p.resource}</span>
+                  <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                     {p.contributionPercent}%
                   </span>
                 </div>
                 <div
                   style={{
                     height: '4px',
-                    background: '#E2E8F0',
+                    background: 'var(--ez-color-border-line)',
                     borderRadius: '2px',
                     overflow: 'hidden',
                   }}
@@ -247,7 +247,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
                     }}
                   />
                 </div>
-                <div style={{ fontSize: '9px', color: '#64748B', marginTop: '1px' }}>
+                <div style={{ fontSize: '9px', color: 'var(--ez-color-text-muted)', marginTop: '1px' }}>
                   {formatRupiah(p.totalExpense)} | Cumulative: {p.cumulativePercent}%
                 </div>
               </div>
@@ -260,7 +260,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
       {result.assumptions.length > 0 && (
         <div
           style={{
-            background: '#FFFBEB',
+            background: 'var(--ez-hue-amber-bg)',
             borderRadius: '8px',
             border: '1px solid #FCD34D',
             overflow: 'hidden',
@@ -272,24 +272,24 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
               width: '100%',
               padding: '10px 14px',
               border: 'none',
-              background: '#FEF3C7',
+              background: 'var(--ez-hue-amber-bg-deep)',
               cursor: 'pointer',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
             }}
           >
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#92400E', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-hue-amber-text-dark)', textTransform: 'uppercase' }}>
               Assumptions ({result.assumptions.length})
             </span>
-            <span style={{ fontSize: '14px', color: '#D97706' }}>{showAssumptions ? '−' : '+'}</span>
+            <span style={{ fontSize: '14px', color: 'var(--ez-hue-amber-text-deep)' }}>{showAssumptions ? '−' : '+'}</span>
           </button>
           {showAssumptions && (
             <div style={{ padding: '8px 14px' }}>
               {result.assumptions.map((a, idx) => (
-                <div key={idx} style={{ padding: '4px 0', fontSize: '10.5px', color: '#78350F' }}>
+                <div key={idx} style={{ padding: '4px 0', fontSize: '10.5px', color: 'var(--ez-hue-amber-text-dark)' }}>
                   <strong>{a.field}</strong>: {a.value} ({a.type})
-                  <div style={{ fontSize: '9.5px', color: '#92400E', marginTop: '1px' }}>{a.note}</div>
+                  <div style={{ fontSize: '9.5px', color: 'var(--ez-hue-amber-text-dark)', marginTop: '1px' }}>{a.note}</div>
                 </div>
               ))}
             </div>
@@ -298,7 +298,7 @@ export const WeirCostSummaryPanel: React.FC<WeirCostSummaryPanelProps> = ({ resu
       )}
 
       {/* ── LOCATION INFO ───────────────────────────────────────── */}
-      <div style={{ fontSize: '10px', color: '#64748B', textAlign: 'center', padding: '4px' }}>
+      <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', textAlign: 'center', padding: '4px' }}>
         Location: {result.locationInfo.projectLocation} → {result.locationInfo.resolvedRegion}
         | Price Source: {result.locationInfo.priceSource}
         | Date: {result.locationInfo.priceDate}
@@ -322,7 +322,7 @@ const CostRow: React.FC<{
       display: 'flex',
       justifyContent: 'space-between',
       padding: borderTop ? '6px 0 2px' : '3px 0',
-      borderTop: borderTop ? '1px solid #CBD5E1' : 'none',
+      borderTop: borderTop ? '1px solid var(--ez-hue-slate-border)' : 'none',
       marginTop: borderTop ? '4px' : '0',
     }}
   >
@@ -330,7 +330,7 @@ const CostRow: React.FC<{
       style={{
         fontSize: large ? '13px' : '11px',
         fontWeight: bold ? 800 : 500,
-        color: color || '#475569',
+        color: color || 'var(--ez-color-text-slate)',
       }}
     >
       {label}
@@ -340,7 +340,7 @@ const CostRow: React.FC<{
         fontSize: large ? '15px' : '11px',
         fontWeight: bold ? 800 : 600,
         fontFamily: 'monospace',
-        color: bold ? '#0F172A' : color || '#475569',
+        color: bold ? 'var(--ez-color-text-primary)' : color || 'var(--ez-color-text-slate)',
       }}
     >
       {formatRupiah(value)}

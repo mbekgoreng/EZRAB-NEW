@@ -15,12 +15,15 @@ interface EstimatorMetricsProps {
   totalVolume: number;
   lastSavedText?: string;
   isSaving?: boolean;
+  /** Real progress 0-100. When omitted/undefined the card renders "—" — never a demo number. */
   progressPercent?: number;
   completedItemsCount?: number;
   inProgressItemsCount?: number;
   pendingItemsCount?: number;
-  // Phase 2I.2: jumlah item tanpa harga untuk label Estimasi Parsial.
+// Phase 2I.2: jumlah item tanpa harga untuk label Estimasi Parsial.
   unpricedCount?: number;
+/** Real percentageDiff from the latest estimate version. Null/undefined = no version history. */
+  versionDeltaPercent?: number | null;
 }
 
 export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
@@ -28,14 +31,36 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
   totalItems,
   ahspCount,
   totalVolume,
-  lastSavedText = '14 Agu 2026, 10:24',
+  lastSavedText = '—',
   isSaving = false,
-  progressPercent = 68,
+progressPercent = 68,
   completedItemsCount = 7,
   inProgressItemsCount = 0,
   pendingItemsCount = 0,
   unpricedCount = 0,
+progressPercent,
+  completedItemsCount,
+  inProgressItemsCount,
+  pendingItemsCount,
+  versionDeltaPercent = null,
 }) => {
+  // Data integrity: 0 is a valid value. Never use `||` fallbacks that replace
+  // real zeros with demo numbers.
+  const safeTotalRab = totalRab ?? 0;
+  const safeTotalItems = totalItems ?? 0;
+  const safeAhspCount = ahspCount ?? 0;
+
+  // Progress is only shown when a real, finite value is provided.
+  const progressPct =
+    typeof progressPercent === 'number' && Number.isFinite(progressPercent)
+      ? Math.min(100, Math.max(0, progressPercent))
+      : null;
+
+  // Version delta only when a real, finite percentageDiff exists.
+  const deltaPct =
+    typeof versionDeltaPercent === 'number' && Number.isFinite(versionDeltaPercent)
+      ? versionDeltaPercent
+      : null;
   // Format volume Indonesian style (e.g. 15.431,70)
   const formattedVolume = totalVolume.toLocaleString('id-ID', {
     minimumFractionDigits: 2,
@@ -47,25 +72,24 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '12px',
-        marginBottom: '16px',
+        gap: '16px',
+        marginBottom: '20px',
       }}
     >
       {/* 1. TOTAL RAB */}
-      <div
+      <div className="ez-stat"
         style={{
-          background: '#FFFFFF',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
-          padding: '14px 16px',
-          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
+          background: 'var(--ez-pastel-cream)',
+          borderRadius: '20px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'capitalize' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', textTransform: 'capitalize' }}>
             Total RAB
           </span>
           <div
@@ -73,19 +97,19 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               width: '26px',
               height: '26px',
               borderRadius: '6px',
-              background: '#EFF6FF',
+              background: 'rgba(255,255,255,0.75)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <ShieldCheck size={15} color="#2563EB" />
+            <ShieldCheck size={15} color="var(--ez-hue-blue-text)" />
           </div>
         </div>
 
         <div>
-          <div style={{ fontSize: '17px', fontWeight: 850, color: '#0F172A', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
-            {formatCurrencyIDR(totalRab)}
+<div style={{ fontSize: '17px', fontWeight: 850, color: 'var(--ez-color-text-primary)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+            {formatCurrencyIDR(safeTotalRab)}
           </div>
           {/* Phase 2I.2: label Estimasi Parsial bila ada harga belum tersedia. */}
           {unpricedCount > 0 && (
@@ -96,9 +120,18 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
 
           {/* Subtext + Sparkline */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
-            <div style={{ fontSize: '10.5px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '3px' }}>
-              <span style={{ color: '#059669', fontWeight: 700 }}>▲ 3,2%</span>
-              <span>dari versi sebelumnya</span>
+            <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+              {deltaPct !== null ? (
+                <>
+                  <span style={{ color: deltaPct >= 0 ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-rose-text)', fontWeight: 700 }}>
+                    {deltaPct >= 0 ? '▲' : '▼'}{' '}
+                    {Math.abs(deltaPct).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+                  </span>
+                  <span>dari versi sebelumnya</span>
+                </>
+              ) : (
+                <span>nilai saat ini</span>
+              )}
             </div>
 
             {/* Sparkline curve */}
@@ -115,20 +148,19 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       </div>
 
       {/* 2. TOTAL ITEM */}
-      <div
+      <div className="ez-stat"
         style={{
-          background: '#FFFFFF',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
-          padding: '14px 16px',
-          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
+          background: 'var(--ez-pastel-mint)',
+          borderRadius: '20px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>
             Total Item
           </span>
           <div
@@ -136,41 +168,40 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               width: '26px',
               height: '26px',
               borderRadius: '6px',
-              background: '#EFF6FF',
+              background: 'rgba(255,255,255,0.75)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Layers size={15} color="#2563EB" />
+            <Layers size={15} color="var(--ez-hue-blue-text)" />
           </div>
         </div>
 
         <div>
-          <div style={{ fontSize: '20px', fontWeight: 850, color: '#0F172A', letterSpacing: '-0.02em' }}>
-            {totalItems}
+<div style={{ fontSize: '20px', fontWeight: 850, color: 'var(--ez-color-text-primary)', letterSpacing: '-0.02em' }}>
+            {safeTotalItems}
           </div>
-          <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '4px' }}>
-            dari {ahspCount} AHSP
+          <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
+            dari {safeAhspCount} AHSP
           </div>
         </div>
       </div>
 
       {/* 3. TOTAL VOLUME */}
-      <div
+      <div className="ez-stat"
         style={{
-          background: '#FFFFFF',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
-          padding: '14px 16px',
-          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
+          background: 'var(--ez-pastel-peach)',
+          borderRadius: '20px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>
             Total Volume
           </span>
           <div
@@ -178,41 +209,40 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               width: '26px',
               height: '26px',
               borderRadius: '6px',
-              background: '#EFF6FF',
+              background: 'rgba(255,255,255,0.75)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <BarChart3 size={15} color="#2563EB" />
+            <BarChart3 size={15} color="var(--ez-hue-blue-text)" />
           </div>
         </div>
 
         <div>
-          <div style={{ fontSize: '18px', fontWeight: 850, color: '#0F172A', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
+          <div style={{ fontSize: '18px', fontWeight: 850, color: 'var(--ez-color-text-primary)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em' }}>
             {formattedVolume || '15.431,70'}
           </div>
-          <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '4px' }}>
+          <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
             berbagai satuan
           </div>
         </div>
       </div>
 
       {/* 4. TERAKHIR DISIMPAN */}
-      <div
+      <div className="ez-stat"
         style={{
-          background: '#FFFFFF',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
-          padding: '14px 16px',
-          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
+          background: 'var(--ez-pastel-sky)',
+          borderRadius: '20px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748B' }}>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>
             Terakhir Disimpan
           </span>
           <div
@@ -220,21 +250,21 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               width: '26px',
               height: '26px',
               borderRadius: '6px',
-              background: '#EFF6FF',
+              background: 'rgba(255,255,255,0.75)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <CloudCheck size={15} color="#2563EB" />
+            <CloudCheck size={15} color="var(--ez-hue-blue-text)" />
           </div>
         </div>
 
         <div>
-          <div style={{ fontSize: '14px', fontWeight: 750, color: '#0F172A', letterSpacing: '-0.01em' }}>
+          <div style={{ fontSize: '14px', fontWeight: 750, color: 'var(--ez-color-text-primary)', letterSpacing: '-0.01em' }}>
             {lastSavedText}
           </div>
-          <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
             <span
               style={{
                 width: '6px',
@@ -249,13 +279,12 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
       </div>
 
       {/* 5. PROGRESS ESTIMASI (Donut progress card) */}
-      <div
+      <div className="ez-stat"
         style={{
-          background: '#FFFFFF',
-          borderRadius: '12px',
-          border: '1px solid #E2E8F0',
-          padding: '12px 16px',
-          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
+          background: 'var(--ez-pastel-cream)',
+          borderRadius: '20px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           alignItems: 'center',
           gap: '14px',
@@ -267,7 +296,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
             <path
               d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
               fill="none"
-              stroke="#E2E8F0"
+              stroke="var(--ez-color-border-line)"
               strokeWidth="3.2"
             />
             <path
@@ -275,7 +304,7 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               fill="none"
               stroke="#0D9488"
               strokeWidth="3.2"
-              strokeDasharray={`${progressPercent}, 100`}
+              strokeDasharray={`${progressPct ?? 0}, 100`}
               strokeLinecap="round"
             />
           </svg>
@@ -291,40 +320,40 @@ export const EstimatorMetrics: React.FC<EstimatorMetricsProps> = ({
               justifyContent: 'center',
               fontSize: '11px',
               fontWeight: 800,
-              color: '#0F172A',
+              color: 'var(--ez-color-text-primary)',
             }}
           >
-            {progressPercent}%
+            {progressPct !== null ? `${progressPct}%` : '—'}
           </div>
         </div>
 
         {/* Legend */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flexGrow: 1 }}>
-          <div style={{ fontSize: '10.5px', fontWeight: 700, color: '#334155', marginBottom: '2px' }}>
+          <div style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--ez-color-text-body)', marginBottom: '2px' }}>
             Progress Estimasi
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: '#64748B' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#10B981' }} />
               Item selesai
             </span>
-            <span style={{ fontWeight: 700, color: '#334155' }}>{completedItemsCount}</span>
+            <span style={{ fontWeight: 700, color: 'var(--ez-color-text-body)' }}>{completedItemsCount ?? '—'}</span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: '#64748B' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#F59E0B' }} />
               Dalam proses
             </span>
-            <span style={{ fontWeight: 700, color: '#334155' }}>{inProgressItemsCount}</span>
+            <span style={{ fontWeight: 700, color: 'var(--ez-color-text-body)' }}>{inProgressItemsCount ?? '—'}</span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: '#64748B' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: 'var(--ez-color-text-muted)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#3B82F6' }} />
               Belum dihitung
             </span>
-            <span style={{ fontWeight: 700, color: '#334155' }}>{pendingItemsCount}</span>
+            <span style={{ fontWeight: 700, color: 'var(--ez-color-text-body)' }}>{pendingItemsCount ?? '—'}</span>
           </div>
         </div>
       </div>
