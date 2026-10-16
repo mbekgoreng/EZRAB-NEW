@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ProjectProvider } from './context/ProjectContext';
 import { ExactLandingPage } from './components/landing/ExactLandingPage';
 import { AboutPage } from './components/about/AboutPage';
@@ -44,6 +44,8 @@ export const App: React.FC = () => {
   const [bootReady, setBootReady] = useState(false);
   const { open: tourOpen, closeTour } = useOnboardingTour();
   const [tourPending, setTourPending] = useState(false);
+  /** welcome otomatis hanya ditampilkan sekali per sesi, saat masuk workspace */
+  const autoTourShownRef = useRef(false);
 
   useEffect(() => {
     if (location.pathname === paths.app()) navigateTo(paths.dashboard(), { replace: true });
@@ -64,8 +66,17 @@ export const App: React.FC = () => {
   const handleBootDone = useCallback(() => {
     setBooted(true);
     migrateLegacyOnboardingFlag(); // idempoten: pengguna lama tidak ditanya ulang
-    setTourPending(shouldShowOnboarding());
   }, []);
+
+  // Welcome otomatis HANYA di dalam workspace (/app/*), bukan di landing page.
+  // Mencakup alur landing -> klik Masuk -> dashboard (tanpa reboot).
+  useEffect(() => {
+    if (!booted || !isWorkspace || autoTourShownRef.current) return;
+    if (!shouldShowOnboarding()) return;
+    autoTourShownRef.current = true;
+    const t = window.setTimeout(() => setTourPending(true), 900);
+    return () => window.clearTimeout(t);
+  }, [booted, isWorkspace]);
 
   const handleTourClose = useCallback((completed: boolean) => {
     setTourPending(false);
