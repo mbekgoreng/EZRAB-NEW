@@ -32,7 +32,16 @@ test('CORS: production origin allowed', () => {
 });
 test('CORS: arbitrary vercel.app subdomain REJECTED by default (wildcard removed)', () => {
   const res = mkRes();
-  eq(applyCors(mkReq({ origin: 'https://ezrab-site-abc123-yf-arch.vercel.app' }), res), false);
+  eq(applyCors(mkReq({ origin: 'https://attacker-random.vercel.app' }), res), false);
+});
+test('CORS: yf-arch team preview allowed by default (Phase 5 policy)', () => {
+  const res = mkRes();
+  eq(applyCors(mkReq({ origin: 'https://ezrab-site-abc123-yf-arch.vercel.app' }), res), true);
+  eq(res.headers['access-control-allow-origin'], 'https://ezrab-site-abc123-yf-arch.vercel.app');
+});
+test('CORS: suffix-spoofed origin REJECTED', () => {
+  const res = mkRes();
+  eq(applyCors(mkReq({ origin: 'https://yf-arch.vercel.app.attacker.example' }), res), false);
 });
 test('CORS: preview origin allowed when explicitly allowlisted via env', () => {
   process.env.CORS_ALLOWED_ORIGINS = 'https://ezrab-site-abc123-yf-arch.vercel.app';
