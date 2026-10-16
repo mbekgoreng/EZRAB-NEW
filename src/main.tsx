@@ -6,6 +6,7 @@ import { I18nProvider } from './i18n';
 import { RoleProvider } from './auth/RoleContext';
 import { AuthProvider } from './auth/AuthContext';
 import './styles/global.css';
+import './styles/premium-themes.css';
 import './styles/magic-ai.css';
 import './styles/assistant-wizard.css';
 import './styles/landing-experience.css';
@@ -25,10 +26,3 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </ThemeProvider>
   </React.StrictMode>
 );
-
-// Hide the loading splash once React has mounted
-(window as unknown as { __reactMounted?: boolean; __hideLoading?: () => void }).__reactMounted = true;
-if (typeof (window as unknown as { __hideLoading?: () => void }).__hideLoading === 'function') {
-  // Small delay so the app has painted at least once
-  setTimeout(() => (window as unknown as { __hideLoading?: () => void }).__hideLoading?.(), 300);
-}

@@ -1,0 +1,127 @@
+/* =========================================================================
+   Tema Premium EZRAB — untuk pelanggan berbayar.
+   Dipilih via Pengaturan → Tampilan (ThemeModal).
+   Ketiganya dark-based: pakai selector html[data-premium-theme] agar menang
+   atas [data-theme="dark"] tanpa peduli urutan import.
+   Aktif bersama data-theme="dark" yang dipaksa oleh ThemeContext.
+   ========================================================================= */
+
+/* ---- 1. Blueprint — biru blueprint tua, aksen putih + cyan garis gambar ---- */
+html[data-premium-theme="blueprint"] {
+  --ez-color-background: #0d2f5c;
+  --ez-color-surface: #123f6e;
+  --ez-color-surface-secondary: #0f3b73;
+  --ez-color-surface-tertiary: #16467f;
+  --ez-color-surface-faint: #0e3568;
+  --ez-color-on-primary: #ffffff;
+  --ez-color-sidebar: #0b2850;
+  --ez-color-sidebar-border: #1e4e89;
+  --ez-color-sidebar-text: #b9cde8;
+  --ez-color-sidebar-active: #16467f;
+  --ez-color-sidebar-hover: #143d6b;
+  --ez-color-text-primary: #f2f7ff;
+  --ez-color-text: #f2f7ff;
+  --ez-color-text-secondary: #a9c2e2;
+  --ez-color-text-body: #c3d6ef;
+  --ez-color-text-muted: #7e9cc4;
+  --ez-color-text-faint: #5d7ba3;
+  --ez-color-text-strong: #ffffff;
+  --ez-color-border: #2a5a94;
+  --ez-color-border-soft: #1e4a7e;
+  --ez-color-border-line: #2f619e;
+  --ez-color-border-strong: #3d70ad;
+  --ez-color-border-neutral: #2a5a94;
+  --ez-color-primary: #38bdf8;
+  --ez-color-primary-hover: #7dd3fc;
+  --ez-color-primary-soft: rgba(56, 189, 248, 0.16);
+  --ez-color-accent: #22d3ee;
+  --ezrab-bg: #0d2f5c;
+  --ezrab-surface: #123f6e;
+  --ezrab-card-bg: #123f6e;
+  --ezrab-card-border: #2a5a94;
+  --ezrab-text: #f2f7ff;
+  --ezrab-text-secondary: #a9c2e2;
+  --ezrab-text-muted: #7e9cc4;
+  --ezrab-text-inverse: #0d2f5c;
+  --ezrab-border: #2a5a94;
+}
+
+/* ---- 2. Midnight Gold — navy-charcoal + aksen emas ---- */
+html[data-premium-theme="gold"] {
+  --ez-color-background: #0e1526;
+  --ez-color-surface: #162032;
+  --ez-color-surface-secondary: #121a2c;
+  --ez-color-surface-tertiary: #1c2740;
+  --ez-color-surface-faint: #141d31;
+  --ez-color-on-primary: #0e1526;
+  --ez-color-sidebar: #0b1120;
+  --ez-color-sidebar-border: #232f4a;
+  --ez-color-sidebar-text: #9aa3b8;
+  --ez-color-sidebar-active: #1e2a44;
+  --ez-color-sidebar-hover: #1a2540;
+  --ez-color-text-primary: #f0ede4;
+  --ez-color-text: #f0ede4;
+  --ez-color-text-secondary: #a8b0c2;
+  --ez-color-text-body: #c9cfdd;
+  --ez-color-text-muted: #7c8699;
+  --ez-color-text-faint: #5b6478;
+  --ez-color-text-strong: #fffdf6;
+  --ez-color-border: #26314a;
+  --ez-color-border-soft: #1c2539;
+  --ez-color-border-line: #2c3a56;
+  --ez-color-border-strong: #3a4a68;
+  --ez-color-border-neutral: #26314a;
+  --ez-color-primary: #d4a94e;
+  --ez-color-primary-hover: #e3b968;
+  --ez-color-primary-soft: rgba(212, 169, 78, 0.16);
+  --ez-color-accent: #d4a94e;
+  --ezrab-bg: #0e1526;
+  --ezrab-surface: #162032;
+  --ezrab-card-bg: #162032;
+  --ezrab-card-border: #26314a;
+  --ezrab-text: #f0ede4;
+  --ezrab-text-secondary: #a8b0c2;
+  --ezrab-text-muted: #7c8699;
+  --ezrab-text-inverse: #0e1526;
+  --ezrab-border: #26314a;
+}
+
+/* ---- 3. Emerald — hijau zamrud tua + aksen mint/emas lembut ---- */
+html[data-premium-theme="emerald"] {
+  --ez-color-background: #0a3329;
+  --ez-color-surface: #0e4234;
+  --ez-color-surface-secondary: #0c3b2e;
+  --ez-color-surface-tertiary: #12503e;
+  --ez-color-surface-faint: #0d4132;
+  --ez-color-on-primary: #0a3329;
+  --ez-color-sidebar: #082a21;
+  --ez-color-sidebar-border: #1d5a46;
+  --ez-color-sidebar-text: #a9cdbd;
+  --ez-color-sidebar-active: #14503c;
+  --ez-color-sidebar-hover: #104639;
+  --ez-color-text-primary: #effaf4;
+  --ez-color-text: #effaf4;
+  --ez-color-text-secondary: #9dc3b2;
+  --ez-color-text-body: #bfe0d1;
+  --ez-color-text-muted: #7aa08d;
+  --ez-color-text-faint: #5c7f6f;
+  --ez-color-text-strong: #ffffff;
+  --ez-color-border: #1e5a46;
+  --ez-color-border-soft: #17493a;
+  --ez-color-border-line: #256452;
+  --ez-color-border-strong: #33745f;
+  --ez-color-border-neutral: #1e5a46;
+  --ez-color-primary: #5eead4;
+  --ez-color-primary-hover: #99f6e4;
+  --ez-color-primary-soft: rgba(94, 234, 212, 0.16);
+  --ez-color-accent: #e7c873;
+  --ezrab-bg: #0a3329;
+  --ezrab-surface: #0e4234;
+  --ezrab-card-bg: #0e4234;
+  --ezrab-card-border: #1e5a46;
+  --ezrab-text: #effaf4;
+  --ezrab-text-secondary: #9dc3b2;
+  --ezrab-text-muted: #7aa08d;
+  --ezrab-text-inverse: #0a3329;
+  --ezrab-border: #1e5a46;
+}

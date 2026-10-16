@@ -1,6 +1,6 @@
 import React from 'react';
-import { X, Check, Sun, Moon, Laptop, Sparkles, LayoutGrid, Zap } from 'lucide-react';
-import { useTheme, AccentColor, ThemeMode, InterfaceDensity, MotionMode } from '../../context/ThemeContext';
+import { X, Check, Sun, Moon, Laptop, Sparkles, LayoutGrid, Zap, Crown } from 'lucide-react';
+import { useTheme, AccentColor, ThemeMode, InterfaceDensity, MotionMode, PremiumTheme } from '../../context/ThemeContext';
 
 interface ThemeModalProps {
   isOpen: boolean;
@@ -8,7 +8,7 @@ interface ThemeModalProps {
 }
 
 export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
-  const { theme, setTheme, accent, setAccent, density, setDensity, motion, setMotion } = useTheme();
+  const { theme, setTheme, accent, setAccent, density, setDensity, motion, setMotion, premiumTheme, setPremiumTheme } = useTheme();
 
   if (!isOpen) return null;
 
@@ -17,6 +17,13 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
     { id: 'emerald', name: 'Emerald', color: 'var(--ez-hue-green-text)' },
     { id: 'violet', name: 'Violet', color: 'var(--ez-hue-violet-text)' },
     { id: 'amber', name: 'Amber Gold', color: 'var(--ez-hue-amber-text-deep)' },
+  ];
+
+  const premiumThemes: { id: PremiumTheme; name: string; desc: string; swatch: string }[] = [
+    { id: 'default', name: 'Default', desc: 'Tema standar', swatch: 'linear-gradient(135deg,#F2F7FF 50%,#0F172A 50%)' },
+    { id: 'blueprint', name: 'Blueprint', desc: 'Biru gambar kerja', swatch: 'linear-gradient(135deg,#0F3B73 60%,#22D3EE 60%)' },
+    { id: 'gold', name: 'Midnight Gold', desc: 'Navy + emas', swatch: 'linear-gradient(135deg,#0E1526 60%,#D4A94E 60%)' },
+    { id: 'emerald', name: 'Emerald', desc: 'Zamrud + mint', swatch: 'linear-gradient(135deg,#0C3B2E 60%,#5EEAD4 60%)' },
   ];
 
   return (
@@ -109,7 +116,43 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* 2. Accent Color */}
+        {/* 2. Tema Premium */}
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ezrab-text-muted)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+            <Crown size={14} /> Tema Premium
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+            {premiumThemes.map(({ id, name, desc, swatch }) => (
+              <button
+                key={id}
+                onClick={() => setPremiumTheme(id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  border: `1.5px solid ${premiumTheme === id ? 'var(--ezrab-blue)' : 'var(--ezrab-border)'}`,
+                  background: premiumTheme === id ? 'var(--ezrab-blue-soft)' : 'transparent',
+                  color: 'var(--ezrab-text)',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                <span style={{ width: '28px', height: '28px', borderRadius: '8px', background: swatch, border: '1px solid var(--ezrab-border)', flexShrink: 0 }} />
+                <span>
+                  <span style={{ display: 'block' }}>{name}</span>
+                  <span style={{ display: 'block', fontSize: '11px', fontWeight: 400, color: 'var(--ezrab-text-muted)' }}>{desc}</span>
+                </span>
+                {premiumTheme === id && <Check size={14} style={{ marginLeft: 'auto', color: 'var(--ezrab-blue)' }} />}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 3. Accent Color */}
         <div>
           <label style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ezrab-text-muted)', display: 'block', marginBottom: '10px' }}>
             Warna Aksen SaaS
@@ -141,7 +184,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* 3. Interface Density */}
+        {/* 4. Interface Density */}
         <div>
           <label style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ezrab-text-muted)', display: 'block', marginBottom: '10px' }}>
             Kepadatan Antarmuka
@@ -169,7 +212,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* 4. Motion Mode */}
+        {/* 5. Motion Mode */}
         <div>
           <label style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ezrab-text-muted)', display: 'block', marginBottom: '10px' }}>
             Sistem Animasi

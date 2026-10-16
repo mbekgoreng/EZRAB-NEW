@@ -7,7 +7,6 @@ import { WorkspaceView } from './components/dashboard/WorkspaceView';
 import { DemoModal } from './components/common/DemoModal';
 import { ThemeModal } from './components/common/ThemeModal';
 import { NotificationProvider } from './notifications/NotificationContext';
-import { BootLoadingScreen } from './components/boot/BootLoadingScreen';
 import {
   OnboardingTour,
   migrateLegacyOnboardingFlag,
@@ -139,9 +138,9 @@ export const App: React.FC = () => {
   const [demoModalOpen, setDemoModalOpen] = useState(false);
   const [themeModalOpen, setThemeModalOpen] = useState(false);
 
-  // Boot sequence: loading screen -> (onboarding on first run) -> content.
-  const [booted, setBooted] = useState(false);
-  const [bootReady, setBootReady] = useState(false);
+  // Boot screen dihapus (permintaan user): aplikasi langsung tampil.
+  // Flag migrasi onboarding tetap dijalankan sekali saat mount.
+  const [booted] = useState(true);
   const { open: tourOpen, closeTour } = useOnboardingTour();
   const [tourPending, setTourPending] = useState(false);
   /** welcome otomatis hanya ditampilkan sekali per sesi, saat masuk workspace */
@@ -157,14 +156,7 @@ export const App: React.FC = () => {
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
   }, [isAbout, isWorkspace, workspaceRoute]);
 
-  // App shell is ready as soon as React mounts; the boot screen enforces
-  // its own minimum display duration before calling onDone.
   useEffect(() => {
-    setBootReady(true);
-  }, []);
-
-  const handleBootDone = useCallback(() => {
-    setBooted(true);
     migrateLegacyOnboardingFlag(); // idempoten: pengguna lama tidak ditanya ulang
   }, []);
 
@@ -303,21 +295,14 @@ export const App: React.FC = () => {
     <NotificationProvider>
       <ToastProvider>
         <OnboardingProvider>
-          {!booted && (
-            <BootLoadingScreen ready={bootReady} minDurationMs={1200} onDone={handleBootDone} />
-          )}
-          {booted && (
-            <>
-              {/* Banner fail-safe hanya di mode 'failsafe-demo' (AUTH_ENABLED=true
-                  tanpa Supabase valid). Di mode 'open'/'real-login' tidak tampil. */}
-              {AUTH_MODE === 'failsafe-demo' && <AuthFailsafeBanner />}
-              {content}
-              <OnboardingTour open={tourOpen || tourPending} onClose={handleTourClose} />
-              <OnboardingOrchestrator />
-              <FeatureTutorialPlayer />
-              <WelcomeSlotGuard active={tourOpen || tourPending} />
-            </>
-          )}
+          {/* Banner fail-safe hanya di mode 'failsafe-demo' (AUTH_ENABLED=true
+              tanpa Supabase valid). Di mode 'open'/'real-login' tidak tampil. */}
+          {AUTH_MODE === 'failsafe-demo' && <AuthFailsafeBanner />}
+          {content}
+          <OnboardingTour open={tourOpen || tourPending} onClose={handleTourClose} />
+          <OnboardingOrchestrator />
+          <FeatureTutorialPlayer />
+          <WelcomeSlotGuard active={tourOpen || tourPending} />
         </OnboardingProvider>
       </ToastProvider>
     </NotificationProvider>

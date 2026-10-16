@@ -4,6 +4,8 @@ export type ThemeMode = 'light' | 'dark' | 'system';
 export type AccentColor = 'blue' | 'emerald' | 'violet' | 'amber';
 export type InterfaceDensity = 'compact' | 'comfortable' | 'spacious';
 export type MotionMode = 'full' | 'reduced' | 'off';
+/** Tema premium (pelanggan berbayar): dark-based, override via data-premium-theme. */
+export type PremiumTheme = 'default' | 'blueprint' | 'gold' | 'emerald';
 
 interface ThemeContextType {
   theme: ThemeMode;
@@ -15,6 +17,8 @@ interface ThemeContextType {
   setDensity: (density: InterfaceDensity) => void;
   motion: MotionMode;
   setMotion: (motion: MotionMode) => void;
+  premiumTheme: PremiumTheme;
+  setPremiumTheme: (t: PremiumTheme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -36,13 +40,21 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return (localStorage.getItem('ezrab_motion') as MotionMode) || 'full';
   });
 
+  const [premiumTheme, setPremiumTheme] = useState<PremiumTheme>(() => {
+    const v = localStorage.getItem('ezrab_premium_theme') as PremiumTheme | null;
+    return v === 'blueprint' || v === 'gold' || v === 'emerald' ? v : 'default';
+  });
+
   const [effectiveTheme, setEffectiveTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
     localStorage.setItem('ezrab_theme', theme);
+    localStorage.setItem('ezrab_premium_theme', premiumTheme);
     const root = document.documentElement;
 
     const resolveTheme = () => {
+      // Tema premium selalu dark-based.
+      if (premiumTheme !== 'default') return 'dark';
       if (theme === 'system') {
         const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         return isDark ? 'dark' : 'light';
@@ -53,7 +65,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const active = resolveTheme();
     setEffectiveTheme(active);
     root.setAttribute('data-theme', active);
-  }, [theme]);
+    if (premiumTheme === 'default') root.removeAttribute('data-premium-theme');
+    else root.setAttribute('data-premium-theme', premiumTheme);
+  }, [theme, premiumTheme]);
 
   useEffect(() => {
     localStorage.setItem('ezrab_accent', accent);
@@ -82,6 +96,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setDensity,
         motion,
         setMotion,
+        premiumTheme,
+        setPremiumTheme,
       }}
     >
       {children}
