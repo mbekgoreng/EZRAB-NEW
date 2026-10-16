@@ -95,8 +95,9 @@ export const getRoleAccount = (roleId: string): RoleAccount | undefined =>
   ROLE_ACCOUNTS.find((r) => r.id === roleId);
 
 /**
- * Verifikasi PIN sebuah role. Perbandingan dilakukan digit-per-digit agar
- * tidak ada jalan pintas tipe data (mis. "111111 " dengan spasi ditolak).
+ * Verifikasi PIN sebuah role. Input di-trim dulu (spasi tempel tak sengaja
+ * tidak menggagalkan), lalu harus persis 6 digit dan dibandingkan secara
+ * constant-time terhadap config — tidak ada jalan pintas tipe data.
  * Mengembalikan true hanya jika cocok persis dengan config.
  */
 export function verifyRolePin(roleId: string, pin: string): boolean {
