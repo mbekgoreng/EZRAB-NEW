@@ -237,7 +237,9 @@ export class CostCompositionEngine {
         unitPrice = priceRes.resolvedPrice?.price || 0;
         priceSource = priceRes.resolvedPrice?.priceSource;
         priceStatus = priceRes.resolvedPrice?.location?.includes('Project') ? 'OVERRIDDEN' : 'RESOLVED';
-        fallbackKind = 'OFFICIAL_AHSP';
+        // Provenance honesty: the master DB mixes official AHSP with seeded
+        // market prices. A market-seeded hit must NEVER wear RESMI AHSP.
+        fallbackKind = priceRes.resolvedPrice?.sourceTier === 'MARKET' ? 'MARKET_REFERENCE' : 'OFFICIAL_AHSP';
         if (priceRes.resolvedPrice) {
           prov = PriceProvenanceEngine.createProvenance(priceRes.resolvedPrice);
           provenanceList.push(prov);

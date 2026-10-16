@@ -61,6 +61,7 @@ export class PriceRepository {
         periodVersion: item.periodVersion || '2026-Q1',
         effectiveDate: item.lastUpdated || '2026-01-15',
         priceSource: item.priceSource || 'SE 12/SE/Db/2026',
+        sourceTier: 'OFFICIAL',
         specification: item.specification,
         provenance: {
           sourceName: item.priceSource || 'Katalog Acuan HSD 2026',
@@ -99,6 +100,8 @@ export class PriceRepository {
         periodVersion: item.periodVersion || '2026-Q1',
         effectiveDate: item.lastUpdated || '2026-01-01',
         priceSource: item.priceSource || 'EZRAB Master Database 2026',
+        // Commercial/market price list — never label as RESMI AHSP.
+        sourceTier: 'MARKET',
         brand: (item as any).brand,
         specification: item.specification,
         provenance: {
@@ -142,6 +145,9 @@ export class PriceRepository {
           periodVersion: '2022-Q1',
           effectiveDate: '2022-01-01',
           priceSource: ahsp.regulationSource || 'Permen PUPR No. 1/PRT/M/2022',
+          // ARCHIVED 2022 regulation: official provenance, but must not be
+          // presented as current 2026 AHSP (see SourceGovernanceRegistry).
+          sourceTier: 'OFFICIAL',
           provenance: {
             sourceName: ahsp.regulationSource || 'Permen PUPR No. 1/PRT/M/2022',
             location: 'Nasional',
@@ -183,6 +189,7 @@ export class PriceRepository {
           periodVersion: '2026-Q1',
           effectiveDate: '2026-01-01',
           priceSource: ahsp.sourceDocument || 'SE DJBK 2026',
+          sourceTier: 'OFFICIAL',
           provenance: {
             sourceName: ahsp.sourceDocument || 'SE DJBK 2026',
             location: 'Nasional',
@@ -217,6 +224,7 @@ export class PriceRepository {
             periodVersion: '2026-Q1',
             effectiveDate: priceInfo.effectiveDate || '2026-03-01',
             priceSource: priceInfo.source || 'EZRAB Material Ecosystem',
+            sourceTier: 'MARKET',
             brand: m.brand,
             specification: m.specification,
             provenance: {
@@ -261,6 +269,7 @@ export class PriceRepository {
               periodVersion: '2026-Q1',
               effectiveDate: p.priceDate || '2026-03-01',
               priceSource: p.sourceName || 'EZRAB Material 2026',
+              sourceTier: 'MARKET',
               brand: m.brand,
               specification: m.specification,
               provenance: {
@@ -303,6 +312,9 @@ export class PriceRepository {
             periodVersion: '2026-Q1',
             effectiveDate: lab.effectiveDate,
             priceSource: lab.regulationSource,
+            // Seeded labor data: keep the claimed reference string, but the
+            // tier is MARKET — hand-typed numbers must not wear RESMI AHSP.
+            sourceTier: 'MARKET',
             specification: `${lab.skillLevel} — ${lab.skkLevel || 'Standar Mandor'} (7 Jam Kerja/Hari)`,
             provenance: {
               sourceName: lab.regulationSource,
@@ -342,6 +354,7 @@ export class PriceRepository {
             periodVersion: '2026-Q1',
             effectiveDate: eq.provenance.effectiveDate,
             priceSource: eq.provenance.sourceName,
+            sourceTier: 'MARKET',
             specification: `${eq.capacity} — ${eq.specification} (BBM: ${eq.fuelConsumptionLiterPerHour} L/jam)`,
             provenance: {
               sourceName: eq.provenance.sourceName,

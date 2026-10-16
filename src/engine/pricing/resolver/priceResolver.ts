@@ -360,10 +360,14 @@ export class PriceResolver {
 
       // Check keyword overlap and similarity
       if (normPName.includes(normalizedNameQuery) || normalizedNameQuery.includes(normPName)) {
-        // PHASE 1 unit guard (WARNING ONLY — audit C-06).
-        // A name-containment match whose unit differs is exactly the shape of the
-        // `zak` ↔ `kg` defect that underpriced cement by roughly 42×.
-        if (normalizedUnitQuery && normPUnit !== normalizedUnitQuery) {
+        // UNIT GATE (fail-closed): a name-containment match whose unit is
+        // incompatible with the requested unit is recorded as a UNIT_MISMATCH
+        // warning but is NEVER a resolution candidate. Multiplying it silently
+        // misprices (the zak/kg defect that underpriced cement roughly 42x).
+        // It stays visible in `allCandidates` for transparency, but cannot
+        // become resolvedPrice.
+        const unitMismatch = !!normalizedUnitQuery && normPUnit !== normalizedUnitQuery;
+        if (unitMismatch) {
           recordPriceWarning({
             kind: 'UNIT_MISMATCH',
             queryName: qObj.name || qObj.code || '',
@@ -373,7 +377,7 @@ export class PriceResolver {
             price: p.price,
             sourceName: p.provenance?.sourceName || p.priceSource,
             region: p.location,
-            notes: `Satuan permintaan "${qObj.unit}" tidak sama dengan satuan kandidat "${p.unit}".`,
+            notes: `Satuan permintaan "${qObj.unit}" tidak sama dengan satuan kandidat "${p.unit}". Kandidat ditolak dari resolusi — harga tidak diisi, bukan Rp0.`,
           });
         }
 
@@ -382,11 +386,13 @@ export class PriceResolver {
         if (normBrandQuery && normPBrand.includes(normBrandQuery)) matchScore += 5;
         if (normalizedUnitQuery && normPUnit === normalizedUnitQuery) matchScore += 5;
 
-        partialCandidates.push({
-          price: p,
-          matchScore,
-          matchReason: 'Substring name match with specification overlap',
-        });
+        if (!unitMismatch) {
+          partialCandidates.push({
+            price: p,
+            matchScore,
+            matchReason: 'Substring name match with specification overlap',
+          });
+        }
 
         allCandidates.push({
           id: p.id,
@@ -420,7 +426,11 @@ export class PriceResolver {
             region: p.location,
             notes: `Hanya ${matchCount}/${queryTerms.length} kata kunci cocok; nama lengkap tidak pernah cocok.`,
           });
-          if (normalizedUnitQuery && normPUnit !== normalizedUnitQuery) {
+          // UNIT GATE (fail-closed): same rule as the containment branch above —
+          // a keyword-only match with an incompatible unit is warned about but
+          // never becomes a resolution candidate.
+          const kwUnitMismatch = !!normalizedUnitQuery && normPUnit !== normalizedUnitQuery;
+          if (kwUnitMismatch) {
             recordPriceWarning({
               kind: 'UNIT_MISMATCH',
               queryName: qObj.name || qObj.code || '',
@@ -430,15 +440,17 @@ export class PriceResolver {
               price: p.price,
               sourceName: p.provenance?.sourceName || p.priceSource,
               region: p.location,
-              notes: `Satuan permintaan "${qObj.unit}" tidak sama dengan satuan kandidat "${p.unit}" (pencocokan kata kunci).`,
+              notes: `Satuan permintaan "${qObj.unit}" tidak sama dengan satuan kandidat "${p.unit}" (pencocokan kata kunci). Kandidat ditolak dari resolusi.`,
             });
           }
           const termScore = Math.round(40 + ratio * 45);
-          partialCandidates.push({
-            price: p,
-            matchScore: termScore,
-            matchReason: `Matched ${matchCount}/${queryTerms.length} keyword terms`,
-          });
+          if (!kwUnitMismatch) {
+            partialCandidates.push({
+              price: p,
+              matchScore: termScore,
+              matchReason: `Matched ${matchCount}/${queryTerms.length} keyword terms`,
+            });
+          }
 
           allCandidates.push({
             id: p.id,

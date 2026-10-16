@@ -128,13 +128,14 @@ export class SelfCheckEngine {
           field: 'PRICE',
           severity: 'WARNING',
           description: 'Harga satuan nol atau belum terisi.',
-          repaired: true,
-          repairAction: 'Menetapkan estimasi harga dasar sementara.',
+          repaired: false,
+          repairAction: 'Harga TIDAK dikarang: ditandai PRICE_UNRESOLVED, perlu input/verifikasi harga.',
         });
-        cloned.unitPrice = 100000;
-        cloned.totalPrice = SafeDecimalEngine.safeMultiply(100000, qty, 2);
-        cloned.confidence = 0.65;
-        assumptions.push('Self-repair: harga satuan sementara ditetapkan Rp 100.000.');
+        cloned.unitPrice = null;
+        cloned.totalPrice = null;
+        cloned.priceStatus = 'PRICE_UNRESOLVED';
+        cloned.confidence = Math.min(cloned.confidence || 0.7, 0.5);
+        assumptions.push('Self-check: harga satuan BELUM TERSEDIA (PRICE_UNRESOLVED) — tidak dikarang, perlu input harga.');
       } else {
         // Deterministic Recalculation
         cloned.totalPrice = SafeDecimalEngine.safeMultiply(uPrice, qty, 2);

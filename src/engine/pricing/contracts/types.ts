@@ -36,6 +36,13 @@ export interface PriceDefinition {
   specification?: string;
   projectId?: string;
   provenance: PriceProvenanceMetadata;
+  /**
+   * Provenance tier of this price record, set at ingest time.
+   * 'OFFICIAL' = angka berasal dari regulasi/dokumen resmi (SE DJBK, Permen PUPR, AHSP nasional).
+   * 'MARKET'   = angka seed pasar/komersial (supplier, katalog material, database upah/alat).
+   * Dipakai komposisi biaya agar harga pasar tidak pernah dilabeli RESMI AHSP.
+   */
+  sourceTier?: 'OFFICIAL' | 'MARKET';
 }
 
 export interface PriceContext {
