@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ProjectProvider } from './context/ProjectContext';
 import { ExactLandingPage } from './components/landing/ExactLandingPage';
+import { EngineeringCinemaPreview, LANDING_CINEMA_PREVIEW_PATH } from './components/landing/EngineeringCinemaPreview';
 import { AboutPage } from './components/about/AboutPage';
 import { AuthModal } from './components/auth/AuthModal';
 import { WorkspaceView } from './components/dashboard/WorkspaceView';
@@ -132,6 +133,9 @@ export const App: React.FC = () => {
   const workspaceRoute = parseWorkspaceRoute(location.pathname, location.search);
   const isWorkspace = isAppPath(location.pathname);
   const isAbout = location.pathname === '/about' || location.hash === '#tentang';
+  // PREVIEW VARIANT (branch preview/landing-engineering-cinema): landing alternatif
+  // "Engineering Cinema". Tidak menyentuh landing utama (ExactLandingPage).
+  const isLandingCinemaPreview = location.pathname === LANDING_CINEMA_PREVIEW_PATH;
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authInitialTab, setAuthInitialTab] = useState<'masuk' | 'daftar'>('daftar');
@@ -153,8 +157,9 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (isWorkspace) document.title = workspaceRoute.status === 'not-found' ? 'Halaman Tidak Ditemukan — EZRAB' : `${routeLabel(workspaceRoute)} — EZRAB`;
     else if (isAbout) document.title = 'Tentang EZRAB';
+    else if (isLandingCinemaPreview) document.title = 'EZRAB — Engineering Cinema (Preview)';
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
-  }, [isAbout, isWorkspace, workspaceRoute]);
+  }, [isAbout, isWorkspace, isLandingCinemaPreview, workspaceRoute]);
 
   useEffect(() => {
     migrateLegacyOnboardingFlag(); // idempoten: pengguna lama tidak ditanya ulang
@@ -243,6 +248,8 @@ export const App: React.FC = () => {
         onOpenFeatures={handleOpenFeatures}
       />
     );
+  } else if (isLandingCinemaPreview) {
+    content = <EngineeringCinemaPreview />;
   } else {
     content = (
       <div
