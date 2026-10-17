@@ -1,0 +1,18 @@
+# EZRAB — robots.txt (domain utama aplikasi)
+#
+# Blog publik tinggal di SUBDOMAIN blog.ezrab.site dan memiliki
+# robots.txt + sitemap.xml sendiri (dibangun saat build:blog).
+# File ini HANYA mengatur domain utama.
+#
+# Sitemap domain utama: belum ada (TODO bila halaman publik utama
+# butuh sitemap sendiri). Jangan cantumkan sitemap blog di sini —
+# sitemap blog ada di https://blog.ezrab.site/sitemap.xml.
+
+User-agent: *
+Allow: /
+Allow: /fitur
+Allow: /about
+Disallow: /app/
+Disallow: /masuk
+Disallow: /daftar
+Disallow: /api/

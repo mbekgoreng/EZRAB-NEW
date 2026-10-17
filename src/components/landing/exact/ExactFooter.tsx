@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { navigateTo, paths } from '../../../routing/routes';
+import { getBlogBaseUrl } from '../../../blog/site';
 
 interface ExactFooterProps {
   // Footer mandiri: link "Tentang EZRAB" selalu ke landing page.
@@ -129,6 +130,10 @@ export const ExactFooter: React.FC<ExactFooterProps> = () => {
             <div className="ez-minimal-footer-col">
               <h4 className="ez-minimal-footer-col-title">Sumber Daya</h4>
               <ul className="ez-minimal-footer-links">
+                <li>
+                  {/* Blog tinggal di subdomain — tautan absolut, tanpa SPA navigate */}
+                  <a href={getBlogBaseUrl()}>Blog</a>
+                </li>
                 <li><a href="#faq">FAQ</a></li>
                 <li><a href="#panduan">Panduan</a></li>
                 <li><a href="#dukungan">Dukungan</a></li>

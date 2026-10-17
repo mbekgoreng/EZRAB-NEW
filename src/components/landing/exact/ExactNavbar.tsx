@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Menu, X } from 'lucide-react';
+import { getBlogBaseUrl } from '../../../blog/site';
 
 interface ExactNavbarProps {
   onOpenAuth: (tab: 'masuk' | 'daftar') => void;
@@ -81,6 +82,10 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
             className="ez-nav-link"
           >
             Harga
+          </a>
+          {/* Blog tinggal di subdomain — tautan absolut */}
+          <a href={getBlogBaseUrl()} className="ez-nav-link">
+            Blog
           </a>
         </nav>
 

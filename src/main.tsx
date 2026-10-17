@@ -12,6 +12,7 @@ import './styles/assistant-wizard.css';
 import './styles/landing-experience.css';
 import './styles/material-intelligence.css';
 import './styles/ded-rab-v3.css';
+import './blog/blog.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

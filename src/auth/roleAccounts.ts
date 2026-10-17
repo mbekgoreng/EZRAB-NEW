@@ -32,7 +32,8 @@ export type RoleCapability =
   | 'edit-estimate' // membuat/mengubah RAB, QTO, volume
   | 'export-doc' // ekspor Excel/PDF/laporan
   | 'manage-users' // mengelola tim & anggota (sensitif)
-  | 'manage-security'; // pengaturan keamanan akun (sensitif)
+  | 'manage-security' // pengaturan keamanan akun (sensitif)
+  | 'manage-blog'; // mengelola CMS blog (draft→publish; TIDAK diberikan ke role demo manapun secara default)
 
 export interface RoleAccount {
   id: RoleId;

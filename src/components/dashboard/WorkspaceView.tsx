@@ -93,6 +93,7 @@ import { RabTemplateService } from '../../services/rabTemplateService';
 import { RabTemplate } from '../../types/rabTemplate';
 import { CreateProjectModal } from '../projects/CreateProjectModal';
 import { TenderDocumentsView } from '../document/TenderDocumentsView';
+import { BlogAdminPage } from '../../blog/cms/BlogAdminPage';
 import { Sidebar } from '../layout/Sidebar';
 import { EnterpriseEntryPage } from '../enterprise/EnterpriseEntryPage';
 import { ProjectFinanceView } from '../finance/ProjectFinanceView';
@@ -700,6 +701,9 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           <main style={{ padding: isNarrowMobile ? '16px 14px' : '24px 28px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>
             <PricingSection onSelectPlan={() => setActiveMenu('magic-ai')} />
           </main>
+        ) : activeMenu === 'blog-admin' ? (
+          // CMS blog — internal, tidak ada di sidebar. Gate capability di BlogAdminPage.
+          <BlogAdminPage />
         ) : (
           <main data-tour="dashboard" style={{ padding: isNarrowMobile ? '16px 14px' : '24px 28px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <DashboardViewSwitcher

@@ -46,6 +46,8 @@ export const paths = {
   settings: (section?: string) => `${APP_PREFIX}/settings${section ? `/${section}` : ''}`,
   subscription: () => `${APP_PREFIX}/subscription`,
   enterprise: () => `${APP_PREFIX}/enterprise`,
+  // CMS blog — workspace internal, tidak tampil di sidebar publik.
+  blogAdmin: () => `${APP_PREFIX}/blog`,
   accountPreferences: () => `${APP_PREFIX}/account/preferences`,
   project: {
     dashboard: (projectId: string) => projectRoot(projectId),
@@ -219,6 +221,9 @@ export const parseWorkspaceRoute = (pathname: string, search: string = ''): Work
   // route ini harus jujur 404 daripada diam-diam menampilkan dashboard.
   if (path === `${APP_PREFIX}/enterprise`) return { scope: 'global', menu: 'enterprise', status: 'not-found' };
   if (path === `${APP_PREFIX}/subscription`) return { scope: 'global', menu: 'subscription', status: 'ok' };
+  // /app/blog: CMS blog — hanya untuk sesi role dengan capability 'manage-blog'
+  // (gate di BlogAdminPage). Sengaja tidak dimasukkan ke sidebar publik.
+  if (path === `${APP_PREFIX}/blog`) return { scope: 'global', menu: 'blog-admin', status: 'ok' };
   if (path === `${APP_PREFIX}/resources` || path === `${APP_PREFIX}/material-harga`) {
     const type = query.get('type');
     return {
@@ -302,6 +307,7 @@ export const routeLabel = (route: WorkspaceRoute) => {
     'dokumen-ai': 'Dokumen AI',
     pengaturan: 'Pengaturan',
     subscription: 'Subscription',
+    'blog-admin': 'Blog CMS',
   };
   return labels[route.menu] || 'EZRAB';
 };
