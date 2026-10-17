@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ProjectProvider } from './context/ProjectContext';
 import { ExactLandingPage } from './components/landing/ExactLandingPage';
 import { EngineeringCinemaPreview, LANDING_CINEMA_PREVIEW_PATH } from './components/landing/EngineeringCinemaPreview';
+import { CinemaEnginePreview } from './components/landing/cinema-engine/CinemaEnginePreview';
+import { CINEMA_ENGINE_PREVIEW_PATH } from './components/landing/cinema-engine/CinemaEngineHero';
 import { AboutPage } from './components/about/AboutPage';
 import { AuthModal } from './components/auth/AuthModal';
 import { WorkspaceView } from './components/dashboard/WorkspaceView';
@@ -136,6 +138,8 @@ export const App: React.FC = () => {
   // PREVIEW VARIANT (branch preview/landing-engineering-cinema): landing alternatif
   // "Engineering Cinema". Tidak menyentuh landing utama (ExactLandingPage).
   const isLandingCinemaPreview = location.pathname === LANDING_CINEMA_PREVIEW_PATH;
+  // PHASE 1 PROTOTYPE (cinema-engine): route preview terisolasi, kill switch di modul.
+  const isCinemaEnginePreview = location.pathname === CINEMA_ENGINE_PREVIEW_PATH;
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authInitialTab, setAuthInitialTab] = useState<'masuk' | 'daftar'>('daftar');
@@ -158,8 +162,9 @@ export const App: React.FC = () => {
     if (isWorkspace) document.title = workspaceRoute.status === 'not-found' ? 'Halaman Tidak Ditemukan — EZRAB' : `${routeLabel(workspaceRoute)} — EZRAB`;
     else if (isAbout) document.title = 'Tentang EZRAB';
     else if (isLandingCinemaPreview) document.title = 'EZRAB — Engineering Cinema (Preview)';
+    else if (isCinemaEnginePreview) document.title = 'EZRAB — Cinema Engine (Prototipe Fase 1)';
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
-  }, [isAbout, isWorkspace, isLandingCinemaPreview, workspaceRoute]);
+  }, [isAbout, isWorkspace, isLandingCinemaPreview, isCinemaEnginePreview, workspaceRoute]);
 
   useEffect(() => {
     migrateLegacyOnboardingFlag(); // idempoten: pengguna lama tidak ditanya ulang
@@ -250,6 +255,8 @@ export const App: React.FC = () => {
     );
   } else if (isLandingCinemaPreview) {
     content = <EngineeringCinemaPreview />;
+  } else if (isCinemaEnginePreview) {
+    content = <CinemaEnginePreview />;
   } else {
     content = (
       <div
