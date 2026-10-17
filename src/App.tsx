@@ -3,6 +3,7 @@ import { ProjectProvider } from './context/ProjectContext';
 import { ExactLandingPage } from './components/landing/ExactLandingPage';
 import { AboutPage } from './components/about/AboutPage';
 import { FeaturesPage } from './components/landing/features/FeaturesPage';
+import { AdvantagesPage } from './components/landing/advantages/AdvantagesPage';
 import { AuthModal } from './components/auth/AuthModal';
 import { WorkspaceView } from './components/dashboard/WorkspaceView';
 import { DemoModal } from './components/common/DemoModal';
@@ -133,6 +134,7 @@ export const App: React.FC = () => {
   const isWorkspace = isAppPath(location.pathname);
   const isAbout = location.pathname === '/about' || location.hash === '#tentang';
   const isFeatures = location.pathname === '/fitur';
+  const isAdvantages = location.pathname === '/keunggulan';
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authInitialTab, setAuthInitialTab] = useState<'masuk' | 'daftar'>('daftar');
@@ -154,8 +156,9 @@ export const App: React.FC = () => {
     if (isWorkspace) document.title = workspaceRoute.status === 'not-found' ? 'Halaman Tidak Ditemukan — EZRAB' : `${routeLabel(workspaceRoute)} — EZRAB`;
     else if (isAbout) document.title = 'Tentang EZRAB';
     else if (isFeatures) document.title = 'Kenali EZRAB — Fitur Lengkap';
+    else if (isAdvantages) document.title = 'Keunggulan EZRAB — Mengapa Memilih EZRAB';
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
-  }, [isAbout, isFeatures, isWorkspace, workspaceRoute]);
+  }, [isAbout, isFeatures, isAdvantages, isWorkspace, workspaceRoute]);
 
   useEffect(() => {
     migrateLegacyOnboardingFlag(); // idempoten: pengguna lama tidak ditanya ulang
@@ -261,6 +264,18 @@ export const App: React.FC = () => {
         onBackToLanding={handleReturnToLanding}
         onOpenWorkspace={() => handleSetWorkspace(true)}
         onOpenPricing={handleOpenPricing}
+        onOpenAdvantages={() => {
+          navigateTo('/keunggulan');
+          window.scrollTo(0, 0);
+        }}
+      />
+    );
+  } else if (isAdvantages) {
+    content = (
+      <AdvantagesPage
+        onBackToLanding={handleReturnToLanding}
+        onOpenWorkspace={() => handleSetWorkspace(true)}
+        onOpenFeatures={handleOpenFeaturesPage}
       />
     );
   } else {

@@ -16,12 +16,14 @@ import {
   StartSection,
   TransparencySection,
   FaqSection,
+  WayfindingSection,
 } from './FeatureSections';
 
 interface FeaturesPageProps {
   onBackToLanding: () => void;
   onOpenWorkspace: () => void;
   onOpenPricing: () => void;
+  onOpenAdvantages: () => void;
 }
 
 const Section: React.FC<{
@@ -57,6 +59,7 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
   onBackToLanding,
   onOpenWorkspace,
   onOpenPricing,
+  onOpenAdvantages,
 }) => {
   // Satu momen gerak: reveal saat scroll, sekali saja per elemen.
   useEffect(() => {
@@ -234,22 +237,34 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
         </div>
       </Section>
 
-      {/* Pricing teaser */}
-      <section className="fp-section" aria-label="Informasi paket">
-        <div className="fp-container fp-pricing-teaser fp-reveal">
-          <div>
-            <h2 className="fp-h2">Mulai gratis. Naik kelas saat siap.</h2>
-            <p className="fp-sub" style={{ margin: 0 }}>
-              Free untuk mencoba · Starter Rp 59.999/bln · Pro Rp 79.999/bln
-            </p>
+      {/* Wayfinding — hub "Kenali EZRAB": tiga jalur + mulai menggunakan */}
+      <section id="mulai-dari-sini" className="fp-section" aria-labelledby="mulai-dari-sini-title">
+        <div className="fp-container">
+          <div className="fp-sec-head fp-reveal" aria-hidden="true">
+            <span className="fp-sec-tag">N</span>
+            <span className="fp-sec-rule" />
+            <span className="fp-sec-meta">MULAI DARI SINI</span>
           </div>
-          <button type="button" className="fp-btn-primary" onClick={onOpenPricing}>
-            Lihat Semua Harga <ArrowRight size={16} />
-          </button>
+          <h2 id="mulai-dari-sini-title" className="fp-h2 fp-reveal">
+            Kenali prosesnya. Pahami estimasinya. Kendalikan hasilnya.
+          </h2>
+          <p className="fp-sub fp-reveal">
+            Tiga jalur untuk melanjutkan — pilih yang paling sesuai dengan kebutuhan Anda saat ini.
+          </p>
+          <div className="fp-reveal" style={{ ['--fp-d' as any]: '0.08s' }}>
+            <WayfindingSection
+              onExploreFeatures={() =>
+                document.getElementById('ekosistem')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
+              onOpenAdvantages={onOpenAdvantages}
+              onOpenPricing={onOpenPricing}
+              onOpenWorkspace={onOpenWorkspace}
+            />
+          </div>
         </div>
       </section>
 
-      {/* N — Final CTA */}
+      {/* O — Final CTA */}
       <section className="fp-final" aria-labelledby="final-title">
         <div className="fp-final-ring" aria-hidden="true" />
         <div className="fp-container fp-reveal">

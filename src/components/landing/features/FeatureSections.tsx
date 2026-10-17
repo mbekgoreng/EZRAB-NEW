@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, Check, ShieldCheck, ArrowRight } from 'lucide-react';
+import { ChevronDown, Check, ShieldCheck, ArrowRight, Layers, Award, Tag } from 'lucide-react';
 import {
   PROBLEMS,
   AI_ROLES,
@@ -221,3 +221,68 @@ export const FaqSection: React.FC = () => (
     ))}
   </div>
 );
+
+/* ---------- Wayfinding: tiga jalur + CTA mulai (hub "Kenali EZRAB") ---------- */
+export const WayfindingSection: React.FC<{
+  onExploreFeatures: () => void;
+  onOpenAdvantages: () => void;
+  onOpenPricing: () => void;
+  onOpenWorkspace: () => void;
+}> = ({ onExploreFeatures, onOpenAdvantages, onOpenPricing, onOpenWorkspace }) => {
+  const paths = [
+    {
+      icon: Layers,
+      title: 'Pelajari Fitur',
+      desc: 'Tiga belas modul dalam satu alur kerja — dari DED hingga laporan.',
+      action: onExploreFeatures,
+      cta: 'Lihat ekosistem',
+    },
+    {
+      icon: Award,
+      title: 'Pahami Keunggulan',
+      desc: 'Mengapa memilih EZRAB: integritas harga, AI yang bisa ditinjau.',
+      action: onOpenAdvantages,
+      cta: 'Buka halaman Keunggulan',
+    },
+    {
+      icon: Tag,
+      title: 'Lihat Harga',
+      desc: 'Free untuk mencoba · Starter Rp 59.999/bln · Pro Rp 79.999/bln.',
+      action: onOpenPricing,
+      cta: 'Bandingkan paket',
+    },
+  ];
+  return (
+    <div>
+      <div className="fp-grid-3">
+        {paths.map((p) => {
+          const Icon = p.icon;
+          return (
+            <button
+              key={p.title}
+              type="button"
+              onClick={p.action}
+              className="fp-card fp-wayfind-card"
+              aria-label={`${p.title}: ${p.cta}`}
+            >
+              <span className="fp-wayfind-icon" aria-hidden="true">
+                <Icon size={20} />
+              </span>
+              <h3 className="fp-card-title">{p.title}</h3>
+              <p className="fp-card-desc">{p.desc}</p>
+              <span className="fp-wayfind-link">
+                {p.cta} <ArrowRight size={14} aria-hidden="true" />
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="fp-wayfind-cta">
+        <button type="button" className="fp-btn-primary fp-btn-lg" onClick={onOpenWorkspace}>
+          Mulai Menggunakan EZRAB <ArrowRight size={16} />
+        </button>
+        <p className="fp-wayfind-note">Tanpa kartu kredit · Mode demo langsung bisa dicoba</p>
+      </div>
+    </div>
+  );
+};

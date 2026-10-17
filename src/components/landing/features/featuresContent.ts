@@ -210,4 +210,5 @@ export const ANCHORS = [
   { id: 'untuk-siapa', label: 'Untuk Siapa' },
   { id: 'mulai', label: 'Cara Mulai' },
   { id: 'faq', label: 'FAQ' },
+  { id: 'mulai-dari-sini', label: 'Mulai' },
 ];
