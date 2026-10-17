@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import { getBlogBaseUrl } from '../../../blog/site';
+import { navigateTo } from '../../../routing/routes';
 
 interface ExactNavbarProps {
   onOpenAuth: (tab: 'masuk' | 'daftar') => void;
   onBackToLanding?: () => void;
   onOpenAbout?: () => void;
+  onOpenAdvantages?: () => void;
 }
 
 export const ExactNavbar: React.FC<ExactNavbarProps> = ({
   onOpenAuth,
   onBackToLanding,
+  onOpenAdvantages,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -35,6 +38,13 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
     if (elem) {
       elem.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const handleGoPage = (path: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    setMobileMenuOpen(false);
+    navigateTo(path);
+    window.scrollTo(0, 0);
   };
 
   return (
@@ -75,6 +85,24 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
             className="ez-nav-link"
           >
             Fitur
+          </a>
+          <a
+            href="/fitur"
+            onClick={handleGoPage('/fitur')}
+            className="ez-nav-link"
+          >
+            Kenali EZRAB
+          </a>
+          <a
+            href="/keunggulan"
+            onClick={(e) => {
+              e.preventDefault();
+              setMobileMenuOpen(false);
+              onOpenAdvantages?.();
+            }}
+            className="ez-nav-link"
+          >
+            Keunggulan
           </a>
           <a
             href="#harga"
@@ -125,7 +153,9 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
         <div className="ez-flagship-menu-kicker">EXPLORE EZRAB</div>
         <a href="#beranda" onClick={handleScrollTo('beranda')}><span>01</span> Beranda</a>
         <a href="#fitur" onClick={handleScrollTo('fitur')}><span>02</span> Fitur Utama</a>
-        <a href="#harga" onClick={handleScrollTo('harga')}><span>03</span> Harga</a>
+        <a href="/fitur" onClick={handleGoPage('/fitur')}><span>03</span> Kenali EZRAB</a>
+        <a href="/keunggulan" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); onOpenAdvantages?.(); }}><span>04</span> Keunggulan</a>
+        <a href="#harga" onClick={handleScrollTo('harga')}><span>05</span> Harga</a>
         <button type="button" onClick={() => { setMobileMenuOpen(false); onOpenAuth('masuk'); }}>
           Masuk ke Workspace <ArrowRight size={16} />
         </button>

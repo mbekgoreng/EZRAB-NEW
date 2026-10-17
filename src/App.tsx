@@ -296,6 +296,10 @@ export const App: React.FC = () => {
           onOpenDemo={() => setDemoModalOpen(true)}
           onBackToLanding={handleReturnToLanding}
           onOpenAbout={handleOpenAbout}
+          onOpenAdvantages={() => {
+            navigateTo('/keunggulan');
+            window.scrollTo(0, 0);
+          }}
         />
 
         {/* Modals — AuthModal hanya aktif di mode 'real-login' (fail-safe). */}

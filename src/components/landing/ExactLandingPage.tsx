@@ -35,6 +35,7 @@ interface ExactLandingPageProps {
   onOpenDemo: () => void;
   onBackToLanding: () => void;
   onOpenAbout?: () => void;
+  onOpenAdvantages?: () => void;
 }
 
 export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
@@ -43,6 +44,7 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
   onOpenDemo,
   onBackToLanding,
   onOpenAbout,
+  onOpenAdvantages,
 }) => {
   // Defer non-critical landing CSS: only the navbar/hero styles above are
   // bundled synchronously (landing-critical.css). The full stylesheet is
@@ -58,6 +60,7 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
         onOpenAuth={onOpenAuth}
         onBackToLanding={onBackToLanding}
         onOpenAbout={onOpenAbout}
+        onOpenAdvantages={onOpenAdvantages}
       />
 
       {/* Main Sections */}
