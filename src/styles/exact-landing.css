@@ -8725,12 +8725,13 @@ body,
   }
 }
 
-/* 4-Card Pricing Grid */
+/* 3-Card Pricing Grid (Free, Starter, Pro) — centered */
 .ez-pricing-cards-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 340px));
   gap: 22px;
   align-items: stretch;
+  justify-content: center;
   margin-bottom: 50px;
 }
 

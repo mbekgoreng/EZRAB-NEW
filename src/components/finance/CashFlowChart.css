@@ -1,0 +1,81 @@
+/**
+ * CashFlowChart — premium motion design.
+ * Semua animasi murni CSS/SVG (tanpa dependency baru), dihormati oleh
+ * prefers-reduced-motion. Entrance hanya jalan saat mount & ganti periode.
+ */
+
+/* ---------- entrance ---------- */
+.cf-anim-grid { animation: cfFadeIn 0.28s ease-out backwards; }
+
+.cf-anim-bar {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: cfGrowY 0.55s cubic-bezier(0.22, 0.9, 0.3, 1.12) backwards;
+}
+
+.cf-anim-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: cfDraw 0.9s ease-out 0.35s forwards;
+}
+
+.cf-anim-fade { animation: cfFadeIn 0.6s ease-out backwards; }
+
+.cf-anim-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cfPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+.cf-anim-alert { animation: cfSlideFade 0.32s ease-out backwards; }
+
+.cf-tooltip-inner { animation: cfFadeIn 0.16s ease-out; }
+
+@keyframes cfFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cfGrowY { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes cfDraw { to { stroke-dashoffset: 0; } }
+@keyframes cfPop { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+@keyframes cfSlideFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ---------- interaksi ---------- */
+.cf-bar-group { cursor: pointer; }
+.cf-bar-group:focus { outline: none; }
+.cf-bar-group:focus-visible { outline: 2px solid var(--ez-color-primary); outline-offset: 3px; border-radius: 6px; }
+
+.cf-dim { transition: opacity 0.15s ease; }
+
+.cf-legend-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 11.5px;
+  color: var(--ez-color-text-slate);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.cf-legend-btn:hover { background: var(--ez-color-surface-tertiary); }
+.cf-legend-btn:focus-visible { outline: 2px solid var(--ez-color-primary); outline-offset: 1px; }
+.cf-legend-btn[aria-pressed="false"] { opacity: 0.45; }
+
+.cf-gran-btn:focus-visible { outline: 2px solid var(--ez-color-primary); outline-offset: 1px; }
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .cf-anim-grid,
+  .cf-anim-bar,
+  .cf-anim-line,
+  .cf-anim-fade,
+  .cf-anim-dot,
+  .cf-anim-alert,
+  .cf-tooltip-inner {
+    animation: none !important;
+  }
+  .cf-anim-line {
+    stroke-dasharray: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}
