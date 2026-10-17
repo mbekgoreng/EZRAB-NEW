@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ProjectProvider } from './context/ProjectContext';
 import { ExactLandingPage } from './components/landing/ExactLandingPage';
 import { AboutPage } from './components/about/AboutPage';
-import { FeaturesPage } from './components/landing/FeaturesPage';
+import { FeaturesPage } from './components/landing/features/FeaturesPage';
 import { AuthModal } from './components/auth/AuthModal';
 import { WorkspaceView } from './components/dashboard/WorkspaceView';
 import { DemoModal } from './components/common/DemoModal';
@@ -155,7 +155,7 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (isWorkspace) document.title = workspaceRoute.status === 'not-found' ? 'Halaman Tidak Ditemukan — EZRAB' : `${routeLabel(workspaceRoute)} — EZRAB`;
     else if (isAbout) document.title = 'Tentang EZRAB';
-    else if (isFeatures) document.title = 'Semua Fitur — EZRAB';
+    else if (isFeatures) document.title = 'Kenali EZRAB — Fitur Lengkap';
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
   }, [isAbout, isFeatures, isWorkspace, workspaceRoute]);
 
