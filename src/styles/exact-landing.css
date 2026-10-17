@@ -8862,7 +8862,7 @@ body,
   border: 1px solid var(--ez-color-border-line);
 }
 
-.ez-price-card.basic .ez-plan-icon-wrap {
+.ez-price-card.starter .ez-plan-icon-wrap {
   background: var(--ez-hue-blue-bg);
   color: #2563eb;
   border: 1px solid var(--ez-hue-blue-bg-deep);
@@ -8872,11 +8872,6 @@ body,
   background: #2563eb;
   color: #ffffff;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-}
-
-.ez-price-card.enterprise .ez-plan-icon-wrap {
-  background: #0f172a;
-  color: #ffffff;
 }
 
 .ez-price-plan-name {
@@ -8890,6 +8885,37 @@ body,
 .ez-price-amount-block {
   margin-bottom: 18px;
   min-height: 68px;
+}
+
+/* Promo: harga coret + badge diskon */
+.ez-promo-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  min-height: 22px;
+}
+.ez-promo-original {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ez-color-text-muted, #8a99b0);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+.ez-promo-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  padding: 3px 10px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+  animation: ez-promo-pulse 2.4s ease-in-out infinite;
+}
+@keyframes ez-promo-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
 }
 
 .ez-price-number-row {
@@ -9058,13 +9084,13 @@ body,
   transform: translateY(-2px);
 }
 
-.ez-pricing-cta-btn.basic {
+.ez-pricing-cta-btn.starter {
   background: #ffffff;
   color: #2563eb;
   border: 1.5px solid #2563eb;
 }
 
-.ez-pricing-cta-btn.basic:hover {
+.ez-pricing-cta-btn.starter:hover {
   background: var(--ez-hue-blue-bg);
   transform: translateY(-2px);
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.15);
@@ -9084,18 +9110,7 @@ body,
   box-shadow: 0 12px 26px -4px rgba(37, 99, 235, 0.5);
 }
 
-.ez-pricing-cta-btn.enterprise {
-  background: #0f172a;
-  color: #ffffff;
-  border: 1.5px solid #0f172a;
-}
 
-.ez-pricing-cta-btn.enterprise:hover {
-  background: #1e293b;
-  border-color: #1e293b;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.3);
-}
 
 .ez-cta-icon-box {
   display: inline-flex;

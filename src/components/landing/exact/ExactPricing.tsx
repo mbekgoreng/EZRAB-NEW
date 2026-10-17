@@ -32,10 +32,14 @@ interface PlanConfig {
   periodLabelMonthly: string;
   periodLabelAnnual: string;
   annualBilledText?: string;
+  /** Harga coret (harga normal sebelum promo), mis. 'Rp 125.000' */
+  originalPrice?: string;
+  /** Badge diskon promo, mis. 'HEMAT 52%' */
+  discountBadge?: string;
   features: PlanFeature[];
   ctaText: string;
   isPopular?: boolean;
-  styleVariant: 'free' | 'basic' | 'pro' | 'enterprise';
+  styleVariant: 'free' | 'starter' | 'pro';
   icon: React.ReactNode;
 }
 
@@ -50,33 +54,38 @@ const PLANS: PlanConfig[] = [
     periodLabelMonthly: 'selamanya',
     periodLabelAnnual: 'selamanya',
     features: [
-      { text: '1 Project' },
-      { text: 'QTO & Volume Calculator' },
-      { text: 'Export PDF' }
+      { text: '1 Proyek' },
+      { text: 'Kalkulator QTO dasar' },
+      { text: 'Database AHSP 2026 (lihat)' },
+      { text: 'Export PDF' },
+      { text: 'Tutorial & panduan' }
     ],
-    ctaText: 'Pilih Gratis',
+    ctaText: 'Mulai Gratis',
     styleVariant: 'free',
     icon: <Zap size={20} />
   },
   {
-    id: 'basic',
-    name: 'Basic',
-    monthlyPrice: 'Rp 44.900',
-    annualPrice: 'Rp 38.165',
-    monthlyNum: 44900,
-    annualNum: 38165,
+    id: 'starter',
+    name: 'Starter',
+    monthlyPrice: 'Rp 59.999',
+    annualPrice: 'Rp 50.999',
+    monthlyNum: 59999,
+    annualNum: 50999,
     periodLabelMonthly: '/bulan',
     periodLabelAnnual: '/bulan',
-    annualBilledText: 'Dibayar Rp 457.980/tahun',
+    annualBilledText: 'Dibayar Rp 611.988/tahun',
+    originalPrice: 'Rp 125.000',
+    discountBadge: 'HEMAT 52%',
     features: [
-      { text: '5 Project' },
-      { text: 'QTO & Volume Calculator' },
-      { text: 'RAB & BOQ' },
-      { text: 'Export PDF & Excel' },
-      { text: 'Basic Support' }
+      { text: '10 Proyek' },
+      { text: 'Semua kalkulator QTO' },
+      { text: 'RAB & BOQ lengkap' },
+      { text: 'Export Excel & PDF' },
+      { text: 'DED → RAB AI (kuota harian)' },
+      { text: 'Database harga material' }
     ],
-    ctaText: 'Mulai Basic',
-    styleVariant: 'basic',
+    ctaText: 'Pilih Starter',
+    styleVariant: 'starter',
     icon: <Layers size={20} />
   },
   {
@@ -84,44 +93,27 @@ const PLANS: PlanConfig[] = [
     name: 'Pro',
     badge: 'PALING POPULER',
     isPopular: true,
-    monthlyPrice: 'Rp 74.999',
-    annualPrice: 'Rp 63.749',
-    monthlyNum: 74999,
-    annualNum: 63749,
+    monthlyPrice: 'Rp 79.999',
+    annualPrice: 'Rp 67.999',
+    monthlyNum: 79999,
+    annualNum: 67999,
     periodLabelMonthly: '/bulan',
     periodLabelAnnual: '/bulan',
-    annualBilledText: 'Dibayar Rp 764.990/tahun',
+    annualBilledText: 'Dibayar Rp 815.988/tahun',
+    originalPrice: 'Rp 180.000',
+    discountBadge: 'HEMAT 56%',
     features: [
-      { text: 'Unlimited Project' },
-      { text: 'Semua Fitur Lengkap' },
-      { text: 'Export Excel & PDF' },
-      { text: 'AHSP' },
-      { text: 'Kurva S' },
-      { text: 'Priority Support' }
+      { text: '20 Proyek' },
+      { text: 'Semua fitur Starter' },
+      { text: 'Kuota AI prioritas' },
+      { text: 'Kurva S & laporan advanced' },
+      { text: 'Kolaborasi tim' },
+      { text: '3 tema premium' },
+      { text: 'Priority support' }
     ],
-    ctaText: 'Mulai Pro',
+    ctaText: 'Pilih Pro',
     styleVariant: 'pro',
     icon: <Crown size={20} />
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    monthlyPrice: 'Rp 99.000',
-    annualPrice: 'Rp 84.150',
-    monthlyNum: 99000,
-    annualNum: 84150,
-    periodLabelMonthly: '/bulan',
-    periodLabelAnnual: '/bulan',
-    annualBilledText: 'Dibayar Rp 1.009.800/tahun',
-    features: [
-      { text: 'Custom Requirement' },
-      { text: 'Integrasi Sistem' },
-      { text: 'Training & Support' },
-      { text: 'Dedicated Manager' }
-    ],
-    ctaText: 'Hubungi Kami',
-    styleVariant: 'enterprise',
-    icon: <Building2 size={20} />
   }
 ];
 
@@ -233,7 +225,7 @@ export const ExactPricing: React.FC<ExactPricingProps> = ({ onSelectPlan }) => {
           </div>
         </div>
 
-        {/* 4 Pricing Cards Grid (Free, Basic, Pro, Enterprise) */}
+        {/* 3 Pricing Cards Grid (Free, Starter, Pro) */}
         <div className="ez-pricing-cards-grid">
           {PLANS.map((plan, idx) => {
             const isAnnual = billingCycle === 'annual';
@@ -271,6 +263,13 @@ export const ExactPricing: React.FC<ExactPricingProps> = ({ onSelectPlan }) => {
 
                 {/* Price Display with Animated Transition */}
                 <div className="ez-price-amount-block">
+                  {/* Harga coret + badge diskon promo */}
+                  {plan.originalPrice && plan.discountBadge && !isAnnual && (
+                    <div className="ez-promo-row">
+                      <span className="ez-promo-original">{plan.originalPrice}</span>
+                      <span className="ez-promo-badge">{plan.discountBadge}</span>
+                    </div>
+                  )}
                   <div className={`ez-price-number-row ${priceFading ? 'is-fading' : ''}`}>
                     <span className="ez-price-num tabular-nums">{priceDisplay}</span>
                     <span className="ez-price-period">{periodDisplay}</span>

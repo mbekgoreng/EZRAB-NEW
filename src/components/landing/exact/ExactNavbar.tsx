@@ -11,7 +11,6 @@ interface ExactNavbarProps {
 export const ExactNavbar: React.FC<ExactNavbarProps> = ({
   onOpenAuth,
   onBackToLanding,
-  onOpenAbout,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -52,12 +51,13 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
           className="ez-nav-logo"
         >
           <img
-            src="/images/ezrab-logo.png"
+            src="/images/ez-logo.png"
             alt="EZRAB - AI Construction Estimator"
             className="ez-nav-brand-logo"
             fetchPriority="high"
             decoding="async"
           />
+          <span className="ez-nav-logo-text" style={{ marginLeft: '10px' }}>EZRAB</span>
         </a>
 
         {/* Center: Navigation Links */}
@@ -82,20 +82,6 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
             className="ez-nav-link"
           >
             Harga
-          </a>
-          <a
-            href="#tentang"
-            onClick={(e) => {
-              if (onOpenAbout) {
-                e.preventDefault();
-                onOpenAbout();
-              } else {
-                handleScrollTo('tentang')(e);
-              }
-            }}
-            className="ez-nav-link"
-          >
-            Tentang
           </a>
         </nav>
 
@@ -136,15 +122,6 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
         <a href="#beranda" onClick={handleScrollTo('beranda')}><span>01</span> Beranda</a>
         <a href="#fitur" onClick={handleScrollTo('fitur')}><span>02</span> Fitur Utama</a>
         <a href="#harga" onClick={handleScrollTo('harga')}><span>03</span> Harga</a>
-        <a href="#tentang" onClick={(event) => {
-          setMobileMenuOpen(false);
-          if (onOpenAbout) {
-            event.preventDefault();
-            onOpenAbout();
-          } else {
-            handleScrollTo('tentang')(event);
-          }
-        }}><span>04</span> Tentang</a>
         <button type="button" onClick={() => { setMobileMenuOpen(false); onOpenAuth('masuk'); }}>
           Masuk ke Workspace <ArrowRight size={16} />
         </button>

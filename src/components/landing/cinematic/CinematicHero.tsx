@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import './cinematic-hero.css';
 import { ProductStage } from './ProductStage';
+import { ArchitecturalBackground } from '../architectural/ArchitecturalBackground';
 
 interface CinematicHeroProps {
   onStartFree?: () => void;
@@ -43,16 +44,12 @@ const FLOATING_BADGES = [
  * No backend calls; all demo figures are labelled demo data.
  */
 export const CinematicHero: React.FC<CinematicHeroProps> = ({ onStartFree, onOpenDemo }) => (
-  <section className="ch-hero" aria-label="EZRAB — Dari Perencanaan. Menjadi Kepastian.">
-    {/* Blueprint RAB backdrop (GPU-friendly slow drift) */}
+  <section className="ch-hero" aria-label="EZRAB — Dari Gambar Kerja ke RAB. Otomatis.">
+    {/* Parametric building backdrop — Three.js: blueprint menggambar diri,
+        wireframe tower merakit lantai per lantai, aliran cahaya, partikel.
+        (Pengganti webp statis; otomatis fallback bila WebGL tak tersedia.) */}
     <div className="ch-hero-bg" aria-hidden="true">
-      <img
-        src="/images/landing/ezrab-rab-blueprint-hero.webp"
-        alt=""
-        className="ch-hero-bg-img"
-        loading="eager"
-        fetchPriority="high"
-      />
+      <ArchitecturalBackground mode={0} />
       <div className="ch-hero-bg-veil" />
       <div className="ch-hero-grid" />
     </div>
@@ -60,21 +57,19 @@ export const CinematicHero: React.FC<CinematicHeroProps> = ({ onStartFree, onOpe
     <div className="ch-hero-inner">
       <div className="ch-hero-copy">
         <h1 className="ch-headline">
-          Dari Perencanaan.
+          Dari Gambar Kerja
           <br />
-          Menjadi <span className="ch-headline-accent">Kepastian.</span>
+          ke RAB. <span className="ch-headline-accent">Otomatis.</span>
         </h1>
         <p className="ch-subheadline">
-          Hubungkan dokumen teknis, estimasi biaya, volume pekerjaan, AHSP, dan
-          manajemen proyek dalam satu platform konstruksi berbasis AI.
+          EZRAB membaca DED Anda, menghitung volume (QTO), menerapkan AHSP
+          2026, dan merakit RAB siap tender — dalam hitungan menit, akurat
+          sampai rupiah terakhir.
         </p>
         <div className="ch-cta-row">
           <button type="button" className="ch-cta-primary" onClick={onStartFree}>
             Mulai dengan EZRAB
             <ArrowRight size={16} aria-hidden="true" />
-          </button>
-          <button type="button" className="ch-cta-secondary" onClick={onOpenDemo}>
-            Lihat Demo Produk
           </button>
         </div>
         <p className="ch-hero-note">Gratis untuk memulai · Tanpa kartu kredit</p>
