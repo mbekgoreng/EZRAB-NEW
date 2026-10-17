@@ -206,7 +206,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
   const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
   const [systemCurrency, setSystemCurrency] = useState('IDR');
-  const { premiumTheme, setPremiumTheme } = useTheme();
+  const { premiumTheme, setPremiumTheme, canUsePremiumThemes } = useTheme();
   const { theme: appTheme, setTheme: setAppTheme } = useTheme();
 
   const [notifProject, setNotifProject] = useState(true);
@@ -1169,74 +1169,131 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </p>
               </div>
 
-              {/* Tema Tampilan */}
+              {/* Mode Tampilan */}
               <div>
                 <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '8px' }}>
                   Mode Tampilan
                 </label>
                 <select
                   value={appTheme}
+                  disabled={premiumTheme !== 'default'}
                   onChange={(e) => {
                     setAppTheme(e.target.value as any);
                     setToastMessage(t('settings.tersimpan'));
                     setSavedToast(true);
                   }}
-                  style={{ width: '100%', maxWidth: '420px', height: '40px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', background: 'var(--ez-color-surface)' }}
+                  style={{ width: '100%', maxWidth: '420px', height: '40px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', background: 'var(--ez-color-surface)', opacity: premiumTheme !== 'default' ? 0.55 : 1, cursor: premiumTheme !== 'default' ? 'not-allowed' : 'pointer' }}
                 >
                   <option value="light">Light Clean Mode (Standar Kontras Tinggi)</option>
                   <option value="dark">Dark Mode</option>
                   <option value="system">Ikuti Preferensi Perangkat</option>
                 </select>
+                {premiumTheme !== 'default' && (
+                  <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', margin: '6px 0 0' }}>
+                    Mode Tampilan tidak berpengaruh saat Tema Premium aktif — pilih Default untuk menggunakannya.
+                  </p>
+                )}
               </div>
 
-              {/* Tema Premium */}
+              {/* Theme Studio — Tema Premium */}
               <div>
                 <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '8px' }}>
                   Tema Premium
                 </label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '12px' }}>
                   {([
-                    { id: 'default', name: 'Default', desc: 'Tema standar aplikasi', swatch: '#2563EB' },
-                    { id: 'blueprint', name: 'Blueprint', desc: 'Biru gambar teknik', swatch: '#0F3B73' },
-                    { id: 'gold', name: 'Midnight Gold', desc: 'Navy + aksen emas', swatch: '#D4A94E' },
-                    { id: 'emerald', name: 'Emerald', desc: 'Hijau zamrud gelap', swatch: '#0C3B2E' },
-                  ] as Array<{ id: PremiumTheme; name: string; desc: string; swatch: string }>).map(({ id, name, desc, swatch }) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => {
-                        setPremiumTheme(id);
-                        setToastMessage(t('settings.tersimpan'));
-                        setSavedToast(true);
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        padding: '12px',
-                        borderRadius: '10px',
-                        border: `1.5px solid ${premiumTheme === id ? 'var(--ez-color-primary)' : 'var(--ez-color-border-strong)'}`,
-                        background: premiumTheme === id ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                        color: 'var(--ez-color-text-primary)',
-                        fontWeight: 600,
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                      }}
-                    >
-                      <span style={{ width: '32px', height: '32px', borderRadius: '8px', background: swatch, border: '1px solid var(--ez-color-border-strong)', flexShrink: 0 }} />
-                      <span>
-                        <span style={{ display: 'block' }}>{name}</span>
-                        <span style={{ display: 'block', fontSize: '11px', fontWeight: 400, color: 'var(--ez-color-text-muted)' }}>{desc}</span>
-                      </span>
-                      {premiumTheme === id && (
-                        <span style={{ marginLeft: 'auto', fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-primary)' }}>Aktif</span>
-                      )}
-                    </button>
-                  ))}
+                    { id: 'default', name: 'Default', desc: 'Tema standar aplikasi', swatch: '#2563EB', pv: { bg: '#F2F7FF', surface: '#FFFFFF', sidebar: '#E8EEF7', primary: '#2563EB', text: '#0F172A', muted: '#94A3B8', border: '#E2E8F0' } },
+                    { id: 'blueprint', name: 'Blueprint', desc: 'Biru gambar teknik', swatch: '#0F3B73', pv: { bg: '#0d2f5c', surface: '#123f6e', sidebar: '#0b2850', primary: '#38bdf8', text: '#f2f7ff', muted: '#7e9cc4', border: '#2a5a94' } },
+                    { id: 'gold', name: 'Midnight Gold', desc: 'Navy + aksen emas', swatch: '#D4A94E', pv: { bg: '#0e1526', surface: '#162032', sidebar: '#0b1120', primary: '#d4a94e', text: '#f0ede4', muted: '#7c8699', border: '#26314a' } },
+                    { id: 'emerald', name: 'Emerald', desc: 'Hijau zamrud gelap', swatch: '#0C3B2E', pv: { bg: '#0a3329', surface: '#0e4234', sidebar: '#082a21', primary: '#5eead4', text: '#effaf4', muted: '#7aa08d', border: '#1e5a46' } },
+                  ] as Array<{ id: PremiumTheme; name: string; desc: string; swatch: string; pv: Record<string, string> }>).map(({ id, name, desc, swatch, pv }) => {
+                    const isActive = premiumTheme === id;
+                    const isPremium = id !== 'default';
+                    const locked = isPremium && !canUsePremiumThemes();
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        disabled={locked}
+                        onClick={() => {
+                          if (locked) {
+                            setToastMessage('Tema premium memerlukan paket Pro.');
+                            setSavedToast(true);
+                            return;
+                          }
+                          setPremiumTheme(id);
+                          setToastMessage(t('settings.tersimpan'));
+                          setSavedToast(true);
+                        }}
+                        style={{
+                          borderRadius: '12px',
+                          border: `1.5px solid ${isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-border-strong)'}`,
+                          background: 'var(--ez-color-surface)',
+                          padding: 0,
+                          overflow: 'hidden',
+                          cursor: locked ? 'not-allowed' : 'pointer',
+                          textAlign: 'left',
+                          opacity: locked ? 0.75 : 1,
+                          position: 'relative',
+                        }}
+                      >
+                        {/* Preview visual — miniatur memakai palet asli tiap tema */}
+                        <div style={{ height: '104px', background: pv.bg, display: 'flex', position: 'relative' }}>
+                          <div style={{ width: '22%', background: pv.sidebar, borderRight: `1px solid ${pv.border}`, padding: '8px 6px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            {[0, 1, 2].map((i) => (
+                              <div key={i} style={{ height: '5px', borderRadius: '3px', background: i === 0 ? pv.primary : pv.muted, opacity: i === 0 ? 1 : 0.45 }} />
+                            ))}
+                          </div>
+                          <div style={{ flex: 1, padding: '8px' }}>
+                            <div style={{ height: '14px', borderRadius: '4px', background: pv.surface, border: `1px solid ${pv.border}`, marginBottom: '6px', display: 'flex', alignItems: 'center', padding: '0 6px' }}>
+                              <div style={{ width: '34px', height: '5px', borderRadius: '3px', background: pv.primary }} />
+                            </div>
+                            <div style={{ display: 'flex', gap: '5px' }}>
+                              <div style={{ flex: 1, height: '26px', borderRadius: '4px', background: pv.surface, border: `1px solid ${pv.border}`, padding: '4px 5px' }}>
+                                <div style={{ height: '4px', borderRadius: '2px', background: pv.muted, opacity: 0.6, marginBottom: '3px' }} />
+                                <div style={{ height: '4px', borderRadius: '2px', background: pv.muted, opacity: 0.35, width: '70%' }} />
+                              </div>
+                              <div style={{ width: '30px', height: '26px', borderRadius: '4px', background: pv.surface, border: `1px solid ${pv.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: '14px', height: '6px', borderRadius: '3px', background: pv.primary }} />
+                              </div>
+                            </div>
+                            <div style={{ marginTop: '6px', display: 'flex', gap: '4px' }}>
+                              {[0, 1, 2].map((i) => (
+                                <div key={i} style={{ flex: 1, height: '8px', borderRadius: '3px', background: i === 1 ? pv.primary : pv.surface, border: `1px solid ${pv.border}`, opacity: i === 1 ? 0.85 : 1 }} />
+                              ))}
+                            </div>
+                          </div>
+                          {locked && (
+                            <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,14,24,0.55)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                              <Lock size={18} color="#fff" />
+                              <span style={{ fontSize: '10px', fontWeight: 700, color: '#fff' }}>Butuh Pro</span>
+                            </div>
+                          )}
+                        </div>
+                        {/* Info */}
+                        <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ width: '26px', height: '26px', borderRadius: '8px', background: swatch, border: '1px solid var(--ez-color-border-strong)', flexShrink: 0 }} />
+                          <span style={{ flex: 1 }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
+                              {name}
+                              {isPremium && (
+                                <span style={{ fontSize: '9px', fontWeight: 800, letterSpacing: '0.06em', padding: '2px 6px', borderRadius: '20px', background: 'var(--ez-color-primary-soft)', color: 'var(--ez-color-primary)', border: '1px solid var(--ez-color-primary)' }}>
+                                  PRO
+                                </span>
+                              )}
+                            </span>
+                            <span style={{ display: 'block', fontSize: '11px', fontWeight: 400, color: 'var(--ez-color-text-muted)' }}>{desc}</span>
+                          </span>
+                          {isActive && (
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-primary)', flexShrink: 0 }}>Aktif</span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
                 <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', margin: '8px 0 0' }}>
-                  Tema premium selalu menggunakan dasar gelap.
+                  Tema premium selalu menggunakan dasar gelap. Pratinjau di atas memakai palet asli tiap tema.
                 </p>
               </div>
 

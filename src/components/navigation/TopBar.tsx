@@ -118,7 +118,7 @@ const { t, lang, setLang } = useI18n();
         group: 'Proyek',
         label: p.name,
         sub: [p.clientName, p.location].filter(Boolean).join(' • ') || undefined,
-        icon: <Building2 size={15} color="#2563EB" />,
+        icon: <Building2 size={15} color="var(--ez-color-primary)" />,
         run: () => onOpenProject?.(p.id),
       });
       if (out.filter((r) => r.group === 'Proyek').length >= 4) break;
@@ -131,7 +131,7 @@ const { t, lang, setLang } = useI18n();
         key: `menu:${m.id}`,
         group: 'Menu',
         label: m.label,
-        icon: <ChevronRight size={15} color="#64748B" />,
+        icon: <ChevronRight size={15} color="var(--ez-color-text-muted)" />,
         run: () => onNavigate(m.id),
       });
     }
@@ -141,7 +141,7 @@ const { t, lang, setLang } = useI18n();
         key: 'action:create-project',
         group: 'Aksi',
         label: 'Buat proyek baru',
-        icon: <Plus size={15} color="#059669" />,
+        icon: <Plus size={15} color="var(--ez-color-success)" />,
         run: () => onCreateProject?.(),
       });
     }
@@ -432,9 +432,9 @@ onFocus={(e) => {
               top: 'calc(100% + 8px)',
               left: 0,
               right: 0,
-              background: '#FFFFFF',
+              background: 'var(--ez-color-surface)',
               borderRadius: '14px',
-              border: '1px solid #E2E8F0',
+              border: '1px solid var(--ez-color-border)',
               boxShadow: '0 16px 40px rgba(15,23,42,0.14)',
               zIndex: 100,
               overflow: 'hidden',
@@ -443,7 +443,7 @@ onFocus={(e) => {
             }}
           >
             {searchResults.length === 0 ? (
-              <div style={{ padding: '18px 16px', fontSize: 13, color: '#94A3B8', textAlign: 'center' }}>
+              <div style={{ padding: '18px 16px', fontSize: 13, color: 'var(--ez-color-text-muted)', textAlign: 'center' }}>
                 Tidak ada hasil untuk “{searchQuery.trim()}”.
               </div>
             ) : (
@@ -455,7 +455,7 @@ onFocus={(e) => {
                   return (
                     <div key={r.key}>
                       {header && (
-                        <div style={{ padding: '10px 14px 4px', fontSize: 10.5, fontWeight: 800, letterSpacing: '0.06em', color: '#94A3B8' }}>
+                        <div style={{ padding: '10px 14px 4px', fontSize: 10.5, fontWeight: 800, letterSpacing: '0.06em', color: 'var(--ez-color-text-muted)' }}>
                           {header.toUpperCase()}
                         </div>
                       )}
@@ -468,7 +468,7 @@ onFocus={(e) => {
                           alignItems: 'center',
                           gap: 10,
                           padding: '9px 14px',
-                          background: i === activeResultIdx ? '#EFF6FF' : 'transparent',
+                          background: i === activeResultIdx ? 'var(--ez-color-primary-soft)' : 'transparent',
                           border: 'none',
                           cursor: 'pointer',
                           textAlign: 'left',
@@ -476,11 +476,11 @@ onFocus={(e) => {
                       >
                         <span style={{ flexShrink: 0, display: 'flex' }}>{r.icon}</span>
                         <span style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--ez-color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {r.label}
                           </span>
                           {r.sub && (
-                            <span style={{ display: 'block', fontSize: 11.5, color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <span style={{ display: 'block', fontSize: 11.5, color: 'var(--ez-color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {r.sub}
                             </span>
                           )}

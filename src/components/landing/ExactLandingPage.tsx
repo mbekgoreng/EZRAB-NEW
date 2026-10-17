@@ -33,7 +33,6 @@ interface ExactLandingPageProps {
   onOpenWorkspace: () => void;
   onOpenAuth: (tab?: 'masuk' | 'daftar') => void;
   onOpenDemo: () => void;
-  onOpenTheme: () => void;
   onBackToLanding: () => void;
   onOpenAbout?: () => void;
 }
@@ -42,7 +41,6 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
   onOpenWorkspace,
   onOpenAuth,
   onOpenDemo,
-  onOpenTheme,
   onBackToLanding,
   onOpenAbout,
 }) => {
@@ -58,7 +56,6 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
       {/* 1. Fixed Dark Navbar */}
       <ExactNavbar
         onOpenAuth={onOpenAuth}
-        onOpenTheme={onOpenTheme}
         onBackToLanding={onBackToLanding}
         onOpenAbout={onOpenAbout}
       />

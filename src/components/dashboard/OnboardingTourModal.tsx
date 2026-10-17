@@ -290,7 +290,7 @@ export const OnboardingTourModal: React.FC<OnboardingTourModalProps> = ({
                 padding: '8px 18px',
                 borderRadius: '12px',
                 background: 'var(--ez-color-primary)',
-                color: '#FFFFFF',
+                color: 'var(--ez-color-on-primary)',
                 border: 'none',
                 fontSize: '13px',
                 fontWeight: 650,

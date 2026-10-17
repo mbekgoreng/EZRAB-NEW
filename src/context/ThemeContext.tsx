@@ -19,6 +19,15 @@ interface ThemeContextType {
   setMotion: (motion: MotionMode) => void;
   premiumTheme: PremiumTheme;
   setPremiumTheme: (t: PremiumTheme) => void;
+  /**
+   * Hook point entitlement tema premium.
+   * PENTING: ini BUKAN keamanan — hanya saklar UI client-side.
+   * Hari ini selalu true (belum ada auth/backend subscription; AUTH_ENABLED=false).
+   * Saat backend entitlement tervalidasi server tersedia, ganti isi fungsi ini
+   * dengan pengecekan subscription sungguhan. Jangan pernah mengandalkan
+   * nilai ini sebagai satu-satunya penjaga akses premium.
+   */
+  canUsePremiumThemes: () => boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -46,6 +55,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   const [effectiveTheme, setEffectiveTheme] = useState<'light' | 'dark'>('light');
+
+  // Hook point entitlement — lihat dokumentasi di interface. Selalu true
+  // sampai ada backend subscription tervalidasi server.
+  const canUsePremiumThemes = React.useCallback(() => true, []);
 
   useEffect(() => {
     localStorage.setItem('ezrab_theme', theme);
@@ -98,6 +111,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setMotion,
         premiumTheme,
         setPremiumTheme,
+        canUsePremiumThemes,
       }}
     >
       {children}

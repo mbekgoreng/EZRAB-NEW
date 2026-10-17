@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Menu, X } from 'lucide-react';
+import { navigateTo } from '../../../routing/routes';
 
 interface ExactNavbarProps {
   onOpenAuth: (tab: 'masuk' | 'daftar') => void;
-  onOpenTheme?: () => void;
   onBackToLanding?: () => void;
   onOpenAbout?: () => void;
 }
@@ -83,6 +83,18 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
           >
             Harga
           </a>
+          <a
+            href="/blog"
+            onClick={(e) => {
+              e.preventDefault();
+              setMobileMenuOpen(false);
+              navigateTo('/blog');
+              window.scrollTo({ top: 0 });
+            }}
+            className="ez-nav-link"
+          >
+            Blog
+          </a>
         </nav>
 
         {/* Right: Actions */}
@@ -122,6 +134,7 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
         <a href="#beranda" onClick={handleScrollTo('beranda')}><span>01</span> Beranda</a>
         <a href="#fitur" onClick={handleScrollTo('fitur')}><span>02</span> Fitur Utama</a>
         <a href="#harga" onClick={handleScrollTo('harga')}><span>03</span> Harga</a>
+        <a href="/blog" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); navigateTo('/blog'); window.scrollTo({ top: 0 }); }}><span>04</span> Blog</a>
         <button type="button" onClick={() => { setMobileMenuOpen(false); onOpenAuth('masuk'); }}>
           Masuk ke Workspace <ArrowRight size={16} />
         </button>

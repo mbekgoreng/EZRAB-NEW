@@ -1,10 +1,22 @@
 /* =========================================================================
    Tema Premium EZRAB — untuk pelanggan berbayar.
-   Dipilih via Pengaturan → Tampilan (ThemeModal).
+   Dipilih via Pengaturan → Tema (tab Tema).
    Ketiganya dark-based: pakai selector html[data-premium-theme] agar menang
    atas [data-theme="dark"] tanpa peduli urutan import.
    Aktif bersama data-theme="dark" yang dipaksa oleh ThemeContext.
+   Entitlement: hook canUsePremiumThemes() di ThemeContext (client-side
+   saja sampai backend subscription tervalidasi server tersedia).
    ========================================================================= */
+
+/* Aturan global semua tema premium */
+html[data-premium-theme] {
+  color-scheme: dark;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html[data-premium-theme] body {
+    transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease;
+  }
+}
 
 /* ---- 1. Blueprint — biru blueprint tua, aksen putih + cyan garis gambar ---- */
 html[data-premium-theme="blueprint"] {
@@ -124,4 +136,111 @@ html[data-premium-theme="emerald"] {
   --ezrab-text-muted: #7aa08d;
   --ezrab-text-inverse: #0a3329;
   --ezrab-border: #1e5a46;
+}
+
+/* =========================================================================
+   Hue/status tints per tema — menutup gap --ez-hue-* (dipakai 112 file:
+   badge, pill status, selected state) dan --ez-pastel-* agar tidak belang.
+   Warna semantik (sukses/peringatan/bahaya) dipertahankan karakternya,
+   hanya di-tint agar selaras dengan tiap tema.
+   ========================================================================= */
+
+/* ---- Blueprint: hue biru-cyan ---- */
+html[data-premium-theme="blueprint"] {
+  --ez-hue-blue-bg: rgba(56, 189, 248, 0.20);
+  --ez-hue-blue-border: rgba(56, 189, 248, 0.35);
+  --ez-hue-blue-bg-deep: rgba(56, 189, 248, 0.30);
+  --ez-hue-blue-text-deep: #7dd3fc;
+  --ez-hue-sky-bg: rgba(56, 189, 248, 0.22);
+  --ez-hue-green-bg: rgba(52, 211, 153, 0.20);
+  --ez-hue-green-border: rgba(52, 211, 153, 0.32);
+  --ez-hue-green-text: #6ee7b7;
+  --ez-hue-emerald-bg: rgba(52, 211, 153, 0.20);
+  --ez-hue-amber-bg: rgba(251, 191, 36, 0.22);
+  --ez-hue-amber-border: rgba(251, 191, 36, 0.34);
+  --ez-hue-amber-text: #fcd34d;
+  --ez-hue-red-bg: rgba(248, 113, 113, 0.22);
+  --ez-hue-red-text: #fca5a5;
+  --ez-hue-rose-bg: rgba(251, 113, 133, 0.22);
+  --ez-hue-rose-border: rgba(251, 113, 133, 0.32);
+  --ez-hue-rose-text: #fca5a5;
+  --ez-hue-purple-bg: rgba(129, 140, 248, 0.22);
+  --ez-hue-purple-border: rgba(129, 140, 248, 0.32);
+  --ez-hue-purple-text: #a5b4fc;
+  --ez-hue-slate-bg: rgba(148, 163, 184, 0.18);
+  --ez-hue-slate-border: #2a5a94;
+  --ez-hue-slate-text: #a9c2e2;
+  --ez-pastel-cream: rgba(253, 243, 216, 0.14);
+  --ez-pastel-mint: rgba(226, 244, 216, 0.14);
+  --ez-pastel-peach: rgba(255, 233, 214, 0.14);
+  --ez-pastel-sky: rgba(227, 238, 251, 0.16);
+}
+
+/* ---- Midnight Gold: hue emas hangat ---- */
+html[data-premium-theme="gold"] {
+  --ez-hue-blue-bg: rgba(120, 140, 180, 0.18);
+  --ez-hue-blue-border: rgba(120, 140, 180, 0.30);
+  --ez-hue-blue-bg-deep: rgba(120, 140, 180, 0.26);
+  --ez-hue-blue-text-deep: #a8b0c2;
+  --ez-hue-sky-bg: rgba(120, 140, 180, 0.18);
+  --ez-hue-green-bg: rgba(52, 211, 153, 0.16);
+  --ez-hue-green-border: rgba(52, 211, 153, 0.28);
+  --ez-hue-green-text: #6ee7b7;
+  --ez-hue-emerald-bg: rgba(52, 211, 153, 0.16);
+  --ez-hue-amber-bg: rgba(212, 169, 78, 0.22);
+  --ez-hue-amber-border: rgba(212, 169, 78, 0.38);
+  --ez-hue-amber-text: #e3b968;
+  --ez-hue-amber-bg-deep: rgba(212, 169, 78, 0.30);
+  --ez-hue-amber-text-deep: #e3b968;
+  --ez-hue-red-bg: rgba(248, 113, 113, 0.20);
+  --ez-hue-red-text: #fca5a5;
+  --ez-hue-rose-bg: rgba(251, 113, 133, 0.20);
+  --ez-hue-rose-border: rgba(251, 113, 133, 0.30);
+  --ez-hue-rose-text: #fca5a5;
+  --ez-hue-purple-bg: rgba(167, 139, 250, 0.18);
+  --ez-hue-purple-border: rgba(167, 139, 250, 0.28);
+  --ez-hue-purple-text: #c4b5fd;
+  --ez-hue-slate-bg: rgba(148, 163, 184, 0.16);
+  --ez-hue-slate-border: #26314a;
+  --ez-hue-slate-text: #a8b0c2;
+  --ez-pastel-cream: rgba(212, 169, 78, 0.14);
+  --ez-pastel-mint: rgba(226, 244, 216, 0.12);
+  --ez-pastel-peach: rgba(255, 233, 214, 0.12);
+  --ez-pastel-sky: rgba(227, 238, 251, 0.12);
+}
+
+/* ---- Emerald: hue mint/zamrud ---- */
+html[data-premium-theme="emerald"] {
+  --ez-hue-blue-bg: rgba(56, 189, 248, 0.14);
+  --ez-hue-blue-border: rgba(56, 189, 248, 0.26);
+  --ez-hue-blue-bg-deep: rgba(56, 189, 248, 0.22);
+  --ez-hue-blue-text-deep: #7dd3fc;
+  --ez-hue-sky-bg: rgba(56, 189, 248, 0.16);
+  --ez-hue-green-bg: rgba(94, 234, 212, 0.18);
+  --ez-hue-green-border: rgba(94, 234, 212, 0.32);
+  --ez-hue-green-text: #99f6e4;
+  --ez-hue-green-bg-deep: rgba(94, 234, 212, 0.26);
+  --ez-hue-green-text-deep: #99f6e4;
+  --ez-hue-green-text-bright: #5eead4;
+  --ez-hue-emerald-bg: rgba(94, 234, 212, 0.18);
+  --ez-hue-amber-bg: rgba(231, 200, 115, 0.18);
+  --ez-hue-amber-border: rgba(231, 200, 115, 0.32);
+  --ez-hue-amber-text: #e7c873;
+  --ez-hue-amber-bg-deep: rgba(231, 200, 115, 0.26);
+  --ez-hue-amber-text-deep: #e7c873;
+  --ez-hue-red-bg: rgba(248, 113, 113, 0.20);
+  --ez-hue-red-text: #fca5a5;
+  --ez-hue-rose-bg: rgba(251, 113, 133, 0.20);
+  --ez-hue-rose-border: rgba(251, 113, 133, 0.30);
+  --ez-hue-rose-text: #fca5a5;
+  --ez-hue-purple-bg: rgba(167, 139, 250, 0.16);
+  --ez-hue-purple-border: rgba(167, 139, 250, 0.26);
+  --ez-hue-purple-text: #c4b5fd;
+  --ez-hue-slate-bg: rgba(148, 163, 184, 0.16);
+  --ez-hue-slate-border: #1e5a46;
+  --ez-hue-slate-text: #9dc3b2;
+  --ez-pastel-cream: rgba(231, 200, 115, 0.12);
+  --ez-pastel-mint: rgba(94, 234, 212, 0.14);
+  --ez-pastel-peach: rgba(255, 233, 214, 0.12);
+  --ez-pastel-sky: rgba(125, 211, 252, 0.12);
 }
