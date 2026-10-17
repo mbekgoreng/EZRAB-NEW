@@ -41,6 +41,7 @@ import {
   Calendar,
   Percent,
   SlidersHorizontal,
+  Palette,
   Search,
   CheckCircle2,
   Clock,
@@ -205,8 +206,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
 
   const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
   const [systemCurrency, setSystemCurrency] = useState('IDR');
-  const [systemTheme, setSystemTheme] = useState<'light' | 'dark' | 'system'>('light');
   const { premiumTheme, setPremiumTheme } = useTheme();
+  const { theme: appTheme, setTheme: setAppTheme } = useTheme();
 
   const [notifProject, setNotifProject] = useState(true);
   const [notifRab, setNotifRab] = useState(true);
@@ -487,7 +488,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       group: t('settings.grup_akun'),
       items: [
         { id: 'profile' as SettingsTabId, label: t('settings.tab_profil'), icon: User },
-        { id: 'preferences' as SettingsTabId, label: t('settings.tab_preferensi'), icon: SlidersHorizontal },
+        { id: 'preferences' as SettingsTabId, label: t('settings.tab_preferensi'), icon: Palette },
         { id: 'notifications' as SettingsTabId, label: t('settings.tab_notifikasi'), icon: Bell },
         { id: 'security' as SettingsTabId, label: t('settings.tab_keamanan'), icon: Shield },
       ],
@@ -1168,66 +1169,28 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 </p>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pilih_bahasa')}</label>
-                  <select
-                    value={lang}
-                    onChange={(e) => {
-                      setLang(e.target.value as Lang);
-                      setToastMessage(t('settings.tersimpan'));
-                      setSavedToast(true);
-                    }}
-                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
-                  >
-                    {LANG_OPTIONS.map((opt) => (
-                      <option key={opt.id} value={opt.id}>
-                        {opt.nativeName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Format Tanggal</label>
-                  <select
-                    value={dateFormat}
-                    onChange={(e) => setDateFormat(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
-                  >
-                    <option value="DD/MM/YYYY">DD/MM/YYYY (Contoh: 27/09/2026)</option>
-                    <option value="YYYY-MM-DD">YYYY-MM-DD (Standar ISO)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Mata Uang Default</label>
-                  <select
-                    value={systemCurrency}
-                    onChange={(e) => setSystemCurrency(e.target.value)}
-                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
-                  >
-                    <option value="IDR">Rupiah Indonesia (IDR - Rp)</option>
-                    <option value="USD">US Dollar (USD - $)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tema Tampilan (Theme)</label>
-                  <select
-value={systemTheme}
-                    onChange={(e) => setSystemTheme(e.target.value as any)}
-                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
-                  >
-                    <option value="light">Light Clean Mode (Standar Kontras Tinggi)</option>
-                    <option value="dark">Dark Mode</option>
-                    <option value="system">Ikuti Preferensi Perangkat</option>
-                  </select>
-                </div>
+              {/* Tema Tampilan */}
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '8px' }}>
+                  Mode Tampilan
+                </label>
+                <select
+                  value={appTheme}
+                  onChange={(e) => {
+                    setAppTheme(e.target.value as any);
+                    setToastMessage(t('settings.tersimpan'));
+                    setSavedToast(true);
+                  }}
+                  style={{ width: '100%', maxWidth: '420px', height: '40px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', background: 'var(--ez-color-surface)' }}
+                >
+                  <option value="light">Light Clean Mode (Standar Kontras Tinggi)</option>
+                  <option value="dark">Dark Mode</option>
+                  <option value="system">Ikuti Preferensi Perangkat</option>
+                </select>
               </div>
 
               {/* Tema Premium */}
-              <div style={{ marginTop: '4px' }}>
+              <div>
                 <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '8px' }}>
                   Tema Premium
                 </label>
@@ -1250,7 +1213,7 @@ value={systemTheme}
                         display: 'flex',
                         alignItems: 'center',
                         gap: '10px',
-                        padding: '10px 12px',
+                        padding: '12px',
                         borderRadius: '10px',
                         border: `1.5px solid ${premiumTheme === id ? 'var(--ez-color-primary)' : 'var(--ez-color-border-strong)'}`,
                         background: premiumTheme === id ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
@@ -1261,17 +1224,71 @@ value={systemTheme}
                         textAlign: 'left',
                       }}
                     >
-                      <span style={{ width: '28px', height: '28px', borderRadius: '8px', background: swatch, border: '1px solid var(--ez-color-border-strong)', flexShrink: 0 }} />
+                      <span style={{ width: '32px', height: '32px', borderRadius: '8px', background: swatch, border: '1px solid var(--ez-color-border-strong)', flexShrink: 0 }} />
                       <span>
                         <span style={{ display: 'block' }}>{name}</span>
                         <span style={{ display: 'block', fontSize: '11px', fontWeight: 400, color: 'var(--ez-color-text-muted)' }}>{desc}</span>
                       </span>
+                      {premiumTheme === id && (
+                        <span style={{ marginLeft: 'auto', fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-primary)' }}>Aktif</span>
+                      )}
                     </button>
                   ))}
                 </div>
                 <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', margin: '8px 0 0' }}>
                   Tema premium selalu menggunakan dasar gelap.
                 </p>
+              </div>
+
+              {/* Umum */}
+              <div style={{ borderTop: '1px solid var(--ez-color-surface-tertiary)', paddingTop: '16px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '12px' }}>
+                  Umum
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>{t('settings.pilih_bahasa')}</label>
+                    <select
+                      value={lang}
+                      onChange={(e) => {
+                        setLang(e.target.value as Lang);
+                        setToastMessage(t('settings.tersimpan'));
+                        setSavedToast(true);
+                      }}
+                      style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
+                    >
+                      {LANG_OPTIONS.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.nativeName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Format Tanggal</label>
+                    <select
+                      value={dateFormat}
+                      onChange={(e) => setDateFormat(e.target.value)}
+                      style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
+                    >
+                      <option value="DD/MM/YYYY">DD/MM/YYYY (Contoh: 27/09/2026)</option>
+                      <option value="YYYY-MM-DD">YYYY-MM-DD (Standar ISO)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Mata Uang Default</label>
+                    <select
+                      value={systemCurrency}
+                      onChange={(e) => setSystemCurrency(e.target.value)}
+                      style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
+                    >
+                      <option value="IDR">Rupiah Indonesia (IDR - Rp)</option>
+                      <option value="USD">US Dollar (USD - $)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
           )}
