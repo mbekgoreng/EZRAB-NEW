@@ -19,7 +19,7 @@ export const BlogNotFound: React.FC<{ slug?: string }> = ({ slug }) => (
             'Halaman yang Anda cari tidak tersedia atau sudah diarsipkan.'
           )}
         </p>
-        <a className="ezb-btn" href="/">
+        <a className="ezb-btn" href="./">
           Kembali ke Blog
         </a>
       </div>

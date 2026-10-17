@@ -11,6 +11,8 @@ publishedAt: "2026-10-17"
 updatedAt: "2026-10-17"
 seoTitle: "Panduan Menyusun RAB Rumah Tinggal: Tahapan & Kesalahan Umum | EZRAB"
 seoDescription: "Tahapan menyusun RAB rumah tinggal yang benar: baca gambar, QTO, WBS, analisa harga satuan, rekap, cek kewajaran — dan 5 kesalahan umum yang wajib dihindari."
+cover: "/images/blog/cover-rab-rumah.jpg"
+cta: "rab"
 ---
 
 RAB rumah tinggal terlihat sederhana — bangunannya kecil, item pekerjaannya "itu-itu saja". Justru di sinilah jebakannya: karena dianggap mudah, banyak RAB rumah disusun terburu-buru, volumenya dikira-kira, dan harga satuannya diambil dari "katanya". Hasilnya bisa ditebak: anggaran jebol di tengah jalan, atau sebaliknya — penawaran kemahalan hingga kalah tender.

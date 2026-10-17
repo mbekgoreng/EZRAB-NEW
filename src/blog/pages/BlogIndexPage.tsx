@@ -237,7 +237,7 @@ export const BlogIndexPage: React.FC<Props> = ({ repo, initialCategory, initialQ
               <section className="ezb-widget" aria-label="Pilihan editor">
                 <h3>Pilihan Editor</h3>
                 {editorsPicks.map((a, i) => (
-                  <a key={a.slug} className="ezb-pop-item" href={`/${a.slug}`}>
+                  <a key={a.slug} className="ezb-pop-item" href={`./${a.slug}`}>
                     <span className="ezb-pop-num" aria-hidden="true">
                       {i + 1}
                     </span>

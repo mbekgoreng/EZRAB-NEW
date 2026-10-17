@@ -14,23 +14,20 @@ export const BlogNav: React.FC = () => {
   return (
     <header className="ezb-nav">
       <div className="ezb-nav-inner">
-        <a className="ezb-nav-brand" href="/" aria-label="EZRAB Blog — Beranda">
-          <span className="ezb-nav-mark" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M4 20V8l8-4 8 4v12h-5v-6H9v6H4z"
-                fill="currentColor"
-                opacity="0.95"
-              />
-            </svg>
-          </span>
-          <span>EZRAB</span>
+        <a className="ezb-nav-brand" href="./" aria-label="EZRAB Blog — Beranda">
+          {/* Logo asli EZRAB (varian gelap untuk navbar terang). Path relatif: valid di subdomain (/) maupun /blog/ (preview/domain utama). */}
+          <img
+            src="./images/blog/ezrab-logo.png"
+            alt="EZRAB"
+            className="ezb-nav-logo"
+            height={30}
+          />
         </a>
         <nav className="ezb-nav-links" aria-label="Navigasi utama">
           <a href={main}>Beranda</a>
           <a href={`${main}/fitur`}>Fitur</a>
           <a href={`${main}/#harga`}>Harga</a>
-          <a href="/" aria-current="page">
+          <a href="./" aria-current="page">
             Blog
           </a>
         </nav>
@@ -60,7 +57,7 @@ export const BlogFooter: React.FC = () => {
       <div className="ezb-footer-inner">
         <span>© 2026 EZRAB — Platform AI untuk RAB &amp; estimasi konstruksi.</span>
         <span>
-          <a href="/">Blog</a>
+          <a href="./">Blog</a>
           <a href={`${main}/fitur`}>Fitur</a>
           <a href={main}>Beranda</a>
         </span>

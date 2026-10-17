@@ -86,6 +86,12 @@
   font-size: 17px;
 }
 
+.ezb-nav-logo {
+  display: block;
+  height: 30px;
+  width: auto;
+}
+
 .ezb-nav-links {
   display: flex;
   align-items: center;

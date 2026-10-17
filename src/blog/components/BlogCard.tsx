@@ -16,8 +16,9 @@ export const formatBlogDate = (iso?: string): string => {
 
 export const BlogCard: React.FC<{ article: BlogArticle }> = ({ article }) => {
   const style = categoryStyle(article.category);
+  // Link relatif (./slug): benar di subdomain (/) maupun path /blog/ (preview/domain utama).
   return (
-    <a className="ezb-card" href={`/${article.slug}`}>
+    <a className="ezb-card" href={`./${article.slug}`}>
       <div className="ezb-card-cover" role="img" aria-label={`Ilustrasi: ${article.category}`}>
         {article.cover ? (
           <img src={article.cover} alt="" loading="lazy" />

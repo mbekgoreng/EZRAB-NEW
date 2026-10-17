@@ -12,6 +12,8 @@ updatedAt: "2026-10-17"
 seoTitle: "Cara Membaca dan Memakai AHSP 2026 untuk Menyusun RAB | EZRAB"
 seoDescription: "Pelajari cara membaca AHSP 2026: struktur analisa harga satuan, koefisien tenaga–bahan–alat, alur AHSP ke HSP ke RAB, dan penyesuaian harga daerah — dengan langkah praktis di EZRAB."
 featured: true
+cover: "/images/blog/cover-ahsp-2026.jpg"
+cta: "ahsp"
 ---
 
 Bagi siapa pun yang menyusun Rencana Anggaran Biaya (RAB), AHSP adalah fondasi metodologis yang menentukan apakah angka dalam RAB dapat dipertanggungjawabkan atau sekadar tebakan yang dibungkus tabel. Namun di lapangan, banyak estimator — terutama yang baru berkecimpung — memperlakukan AHSP sebagai daftar harga: dibuka, dicari pekerjaan yang mirip, angkanya disalin ke RAB. Cara pakai seperti ini menyimpan risiko besar: salah membaca koefisien, salah satuan, atau lupa menyesuaikan harga dasar dengan kondisi daerah bisa membuat selisih anggaran mencapai puluhan persen.

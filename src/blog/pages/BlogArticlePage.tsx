@@ -47,7 +47,7 @@ export const BlogArticlePage: React.FC<Props> = ({ article, repo }) => {
       <div className="ezb-container">
         <Breadcrumb
           items={[
-            { label: 'Blog', href: '/' },
+            { label: 'Blog', href: './' },
             { label: article.title },
           ]}
         />
@@ -91,9 +91,10 @@ export const BlogArticlePage: React.FC<Props> = ({ article, repo }) => {
             </section>
           )}
 
-          <CtaBlock variant={article.cta} />
-
           <RelatedArticles articles={related} />
+
+          {/* Penutup halaman = marketing EZRAB (selalu terakhir, setelah konten & artikel terkait). */}
+          <CtaBlock variant={article.cta} />
         </article>
 
         <Toc items={toc} />
