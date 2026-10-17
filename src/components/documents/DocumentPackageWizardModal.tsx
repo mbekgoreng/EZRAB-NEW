@@ -265,6 +265,7 @@ export const DocumentPackageWizardModal: React.FC<DocumentPackageWizardModalProp
           ? 'Nama perusahaan wajib diisi sebelum membuat dokumen.'
           : 'Nama penandatangan wajib diisi sebelum membuat dokumen.'
       );
+      setStep(3);
       return;
     }
     setIdentityError(null);

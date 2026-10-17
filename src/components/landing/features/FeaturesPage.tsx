@@ -20,7 +20,6 @@ import {
 
 interface FeaturesPageProps {
   onBackToLanding: () => void;
-  onOpenAbout: () => void;
   onOpenWorkspace: () => void;
   onOpenPricing: () => void;
 }
@@ -51,7 +50,6 @@ const Section: React.FC<{
  */
 export const FeaturesPage: React.FC<FeaturesPageProps> = ({
   onBackToLanding,
-  onOpenAbout,
   onOpenWorkspace,
   onOpenPricing,
 }) => {
@@ -235,7 +233,7 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
         </div>
       </section>
 
-      <ExactFooter onOpenAbout={onOpenAbout} />
+      <ExactFooter />
     </div>
   );
 };

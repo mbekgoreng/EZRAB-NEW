@@ -107,7 +107,7 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
 
       {/* 14. Clean Modern Footer */}
       <Suspense fallback={null}>
-        <ExactFooter onOpenAbout={onOpenAbout} />
+        <ExactFooter />
       </Suspense>
     </div>
   );

@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { navigateTo, paths } from '../../../routing/routes';
 
 interface ExactFooterProps {
-  onOpenAbout?: () => void;
+  // Footer mandiri: link "Tentang EZRAB" selalu ke landing page.
 }
 
-export const ExactFooter: React.FC<ExactFooterProps> = ({ onOpenAbout }) => {
+export const ExactFooter: React.FC<ExactFooterProps> = () => {
   const [lineDrawn, setLineDrawn] = useState(false);
   const footerRef = useRef<HTMLElement>(null);
 
@@ -109,12 +110,11 @@ export const ExactFooter: React.FC<ExactFooterProps> = ({ onOpenAbout }) => {
               <ul className="ez-minimal-footer-links">
                 <li>
                   <a
-                    href="#tentang"
+                    href="/"
                     onClick={(e) => {
-                      if (onOpenAbout) {
-                        e.preventDefault();
-                        onOpenAbout();
-                      }
+                      e.preventDefault();
+                      navigateTo(paths.home());
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                   >
                     Tentang EZRAB

@@ -262,7 +262,6 @@ export const App: React.FC = () => {
     content = (
       <FeaturesPage
         onBackToLanding={handleReturnToLanding}
-        onOpenAbout={handleOpenAbout}
         onOpenWorkspace={() => handleSetWorkspace(true)}
         onOpenPricing={handleOpenPricing}
       />
