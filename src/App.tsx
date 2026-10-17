@@ -3,10 +3,6 @@ import { ProjectProvider } from './context/ProjectContext';
 import { ExactLandingPage } from './components/landing/ExactLandingPage';
 import { AboutPage } from './components/about/AboutPage';
 import { FeaturesPage } from './components/landing/features/FeaturesPage';
-import { BlogIndexPage } from './blog/pages/BlogIndexPage';
-import { BlogArticlePage } from './blog/pages/BlogArticlePage';
-import { BlogNotFound } from './blog/pages/BlogNotFound';
-import { getClientBlogRepository } from './blog/repo';
 import { AuthModal } from './components/auth/AuthModal';
 import { WorkspaceView } from './components/dashboard/WorkspaceView';
 import { DemoModal } from './components/common/DemoModal';
@@ -137,11 +133,6 @@ export const App: React.FC = () => {
   const isWorkspace = isAppPath(location.pathname);
   const isAbout = location.pathname === '/about' || location.hash === '#tentang';
   const isFeatures = location.pathname === '/fitur';
-  // Blog publik: /blog dan /blog/:slug (trailing slash dinormalisasi).
-  const blogPath = location.pathname.replace(/\/+$/, '') || '/';
-  const isBlogIndex = blogPath === '/blog';
-  const isBlogArticle = blogPath.startsWith('/blog/') && blogPath.length > 6;
-  const blogSlug = isBlogArticle ? decodeURIComponent(blogPath.slice(6).split('/')[0]) : null;
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authInitialTab, setAuthInitialTab] = useState<'masuk' | 'daftar'>('daftar');
@@ -163,14 +154,8 @@ export const App: React.FC = () => {
     if (isWorkspace) document.title = workspaceRoute.status === 'not-found' ? 'Halaman Tidak Ditemukan — EZRAB' : `${routeLabel(workspaceRoute)} — EZRAB`;
     else if (isAbout) document.title = 'Tentang EZRAB';
     else if (isFeatures) document.title = 'Kenali EZRAB — Fitur Lengkap';
-    else if (isBlogIndex) document.title = 'EZRAB Blog — Pengetahuan RAB & Estimasi Konstruksi';
-    else if (isBlogArticle) {
-      const repo = getClientBlogRepository();
-      const article = blogSlug ? repo.getPublishedBySlug(blogSlug) : undefined;
-      document.title = article ? `${article.seoTitle || article.title} — EZRAB Blog` : 'Artikel Tidak Ditemukan — EZRAB Blog';
-    }
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
-  }, [isAbout, isFeatures, isWorkspace, isBlogIndex, isBlogArticle, blogSlug, workspaceRoute]);
+  }, [isAbout, isFeatures, isWorkspace, workspaceRoute]);
 
   useEffect(() => {
     migrateLegacyOnboardingFlag(); // idempoten: pengguna lama tidak ditanya ulang
@@ -278,18 +263,6 @@ export const App: React.FC = () => {
         onOpenPricing={handleOpenPricing}
       />
     );
-  } else if (isBlogIndex || isBlogArticle) {
-    const repo = getClientBlogRepository();
-    if (isBlogArticle) {
-      const article = blogSlug ? repo.getPublishedBySlug(blogSlug) : undefined;
-      content = article ? (
-        <BlogArticlePage article={article} repo={repo} />
-      ) : (
-        <BlogNotFound slug={blogSlug || undefined} />
-      );
-    } else {
-      content = <BlogIndexPage repo={repo} />;
-    }
   } else {
     content = (
       <div
