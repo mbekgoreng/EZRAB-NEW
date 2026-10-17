@@ -28,11 +28,20 @@ export const FeaturesHero: React.FC<FeaturesHeroProps> = ({ onOpenWorkspace }) =
       <div className="fh-veil" aria-hidden="true" />
 
       <div className="fh-inner">
-        <p className="fh-eyebrow">KENALI EZRAB</p>
+        {/* Motif garis dimensi gambar kerja */}
+        <div className="fh-dim" aria-hidden="true">
+          <span className="fh-dim-tick" />
+          <span className="fh-dim-line" />
+          <span className="fh-dim-label">DED → RAB</span>
+          <span className="fh-dim-line" />
+          <span className="fh-dim-tick" />
+        </div>
         <h1 id="fh-title" className="fh-title">
-          Dari Gambar Kerja Menjadi
+          Dari Gambar Kerja
           <br />
-          Rencana Anggaran yang <span className="fh-accent">Terstruktur.</span>
+          Menjadi Rencana Anggaran
+          <br />
+          yang <span className="fh-accent">Terstruktur.</span>
         </h1>
         <p className="fh-lead">
           EZRAB membantu proses estimasi konstruksi melalui AI, perhitungan
@@ -57,6 +66,15 @@ export const FeaturesHero: React.FC<FeaturesHeroProps> = ({ onOpenWorkspace }) =
           ))}
         </nav>
       </div>
+
+      <button
+        type="button"
+        className="fh-scroll"
+        onClick={() => scrollTo('mengapa')}
+        aria-label="Gulir ke bagian berikutnya"
+      >
+        <span className="fh-scroll-line" aria-hidden="true" />
+      </button>
     </section>
   );
 };

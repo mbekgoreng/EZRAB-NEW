@@ -9,20 +9,23 @@ import {
   FAQS,
 } from './featuresContent';
 
-/* ---------- B — Mengapa EZRAB ---------- */
+/* ---------- B — Mengapa EZRAB: pernyataan editorial ---------- */
 export const WhySection: React.FC = () => (
-  <div>
-    <div className="fp-grid-3">
-      {PROBLEMS.map((p) => (
-        <div key={p.title} className="fp-card fp-card-problem">
-          <h3 className="fp-card-title">{p.title}</h3>
-          <p className="fp-card-desc">{p.desc}</p>
-          <p className="fp-card-how">
+  <div className="fp-problems">
+    {PROBLEMS.map((p, i) => (
+      <article key={p.title} className="fp-problem">
+        <span className="fp-problem-no" aria-hidden="true">
+          {String(i + 1).padStart(2, '0')}
+        </span>
+        <h3 className="fp-problem-title">{p.title}</h3>
+        <div className="fp-problem-body">
+          <p className="fp-problem-desc">{p.desc}</p>
+          <p className="fp-problem-how">
             <Check size={14} aria-hidden="true" /> {p.how}
           </p>
         </div>
-      ))}
-    </div>
+      </article>
+    ))}
   </div>
 );
 
@@ -66,16 +69,21 @@ export const AhspSection: React.FC = () => (
   </div>
 );
 
-/* ---------- G — Peran AI ---------- */
+/* ---------- G — Peran AI: panel editorial ---------- */
 export const AiRolesSection: React.FC = () => (
-  <div className="fp-grid-3">
-    {AI_ROLES.map((r) => (
-      <div key={r.name} className="fp-card">
-        <div className="fp-step-no">{r.when}</div>
-        <h3 className="fp-card-title">{r.name}</h3>
-        <p className="fp-card-desc">{r.desc}</p>
-        <p className="fp-card-how">{r.cta}</p>
-      </div>
+  <div className="fp-roles">
+    {AI_ROLES.map((r, i) => (
+      <article key={r.name} className="fp-role">
+        <span className="fp-role-ghost" aria-hidden="true">
+          {['I', 'II', 'III'][i]}
+        </span>
+        <div>
+          <span className="fp-role-when">{r.when}</span>
+          <h3 className="fp-role-name">{r.name}</h3>
+          <p className="fp-role-desc">{r.desc}</p>
+          <p className="fp-role-cta">{r.cta}</p>
+        </div>
+      </article>
     ))}
   </div>
 );

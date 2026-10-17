@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ArrowRight, Zap, Check } from 'lucide-react';
 import './features-page.css';
 import { ExactFooter } from '../exact/ExactFooter';
@@ -26,20 +26,25 @@ interface FeaturesPageProps {
 
 const Section: React.FC<{
   id: string;
-  eyebrow: string;
+  marker: string;
+  meta: string;
   title: React.ReactNode;
   sub?: string;
   alt?: boolean;
   children: React.ReactNode;
-}> = ({ id, eyebrow, title, sub, alt, children }) => (
+}> = ({ id, marker, meta, title, sub, alt, children }) => (
   <section id={id} className={`fp-section ${alt ? 'fp-section-alt' : ''}`} aria-labelledby={`${id}-title`}>
     <div className="fp-container">
-      <div className="fp-eyebrow">{eyebrow}</div>
-      <h2 id={`${id}-title`} className="fp-h2">
+      <div className="fp-sec-head fp-reveal" aria-hidden="true">
+        <span className="fp-sec-tag">{marker}</span>
+        <span className="fp-sec-rule" />
+        <span className="fp-sec-meta">{meta}</span>
+      </div>
+      <h2 id={`${id}-title`} className="fp-h2 fp-reveal">
         {title}
       </h2>
-      {sub && <p className="fp-sub">{sub}</p>}
-      {children}
+      {sub && <p className="fp-sub fp-reveal">{sub}</p>}
+      <div className="fp-reveal" style={{ ['--fp-d' as any]: '0.08s' }}>{children}</div>
     </div>
   </section>
 );
@@ -53,6 +58,28 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
   onOpenWorkspace,
   onOpenPricing,
 }) => {
+  // Satu momen gerak: reveal saat scroll, sekali saja per elemen.
+  useEffect(() => {
+    const els = Array.from(document.querySelectorAll('.fp-page .fp-reveal'));
+    if (!('IntersectionObserver' in window)) {
+      els.forEach((el) => el.classList.add('is-in'));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('is-in');
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -6% 0px' },
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   return (
     <div className="fp-page">
       {/* Nav */}
@@ -71,7 +98,8 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
       {/* B — Mengapa EZRAB */}
       <Section
         id="mengapa"
-        eyebrow="MENGAPA EZRAB"
+        marker="B"
+        meta="MENGAPA EZRAB"
         title={<>Masalah nyata di meja estimator, <br />diselesaikan dari akarnya.</>}
         sub="Lima pola yang berulang di proyek konstruksi — dan bagaimana EZRAB membantu mengatasinya berdasarkan kemampuan yang benar-benar tersedia."
       >
@@ -81,7 +109,8 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
       {/* C — Ekosistem */}
       <Section
         id="ekosistem"
-        eyebrow="EKOSISTEM EZRAB"
+        marker="C"
+        meta="EKOSISTEM"
         title="Satu alur kerja, tiga belas modul yang saling terhubung."
         sub="Setiap modul punya peran berbeda. Diagram ini menunjukkan bagaimana data mengalir di antara mereka — bukan sekadar daftar fitur."
         alt
@@ -92,7 +121,8 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
       {/* D — DED → RAB AI */}
       <Section
         id="ded-ai"
-        eyebrow="DED → RAB AI"
+        marker="D"
+        meta="DED → RAB AI"
         title="Dari gambar kerja menjadi draft RAB — dengan Anda sebagai penentu akhir."
         sub="AI membaca dan mengusulkan; sistem menghitung dari sumber terverifikasi; Anda meninjau sebelum menyetujui."
       >
@@ -102,7 +132,8 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
       {/* E — QTO & kalkulator */}
       <Section
         id="qto"
-        eyebrow="QTO & KALKULATOR VOLUME"
+        marker="E"
+        meta="QTO & KALKULATOR"
         title="Masukkan dimensi, bukan volume."
         sub="24 kalkulator parametrik bergambar menghitung volume, berat, dan luas dari ukuran gambar kerja. Coba cara kerjanya di demo interaktif ini."
         alt
@@ -113,7 +144,8 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
       {/* F — AHSP & integritas */}
       <Section
         id="ahsp"
-        eyebrow="AHSP 2026 & INTEGRITAS HARGA"
+        marker="F"
+        meta="AHSP 2026"
         title="Harga yang bisa ditelusur sampai ke sumbernya."
         sub="Analisa harga satuan bukan sekadar angka — melainkan rantai: pekerjaan, koefisien, komponen, dan harga yang saling terkait."
       >
@@ -123,7 +155,8 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
       {/* G — AI Assistant */}
       <Section
         id="ai-assistant"
-        eyebrow="AI ASSISTANT"
+        marker="G"
+        meta="AI ASSISTANT"
         title="Tiga AI, tiga peran yang jelas berbeda."
         sub="Bukan satu fitur yang samar. Masing-masing dipakai di momen yang berbeda dalam alur kerja Anda."
         alt
@@ -134,7 +167,8 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
       {/* H — Dokumen AI */}
       <Section
         id="dokumen-ai"
-        eyebrow="DOKUMEN AI"
+        marker="H"
+        meta="DOKUMEN AI"
         title="Dokumen proyek yang bisa diajak bekerja."
         sub="Unggah, proses, tinjau, dan hasilkan — dengan riwayat yang transparan."
       >
@@ -144,7 +178,8 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
       {/* I — Manajemen & laporan */}
       <Section
         id="manajemen"
-        eyebrow="MANAJEMEN PROYEK & LAPORAN"
+        marker="I"
+        meta="MANAJEMEN & LAPORAN"
         title="Estimasi selesai bukan berarti pekerjaan selesai."
         sub="Atur proyek, pantau progres dan keuangan, lalu export laporan yang siap dibagikan."
         alt
@@ -155,7 +190,8 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
       {/* J — Untuk siapa */}
       <Section
         id="untuk-siapa"
-        eyebrow="UNTUK SIAPA"
+        marker="J"
+        meta="UNTUK SIAPA"
         title="Dibangun untuk orang-orang yang menghitung bangunan."
         sub="Enam peran, enam kebutuhan — masing-masing dengan modul yang relevan."
       >
@@ -165,7 +201,8 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
       {/* K — Cara mulai */}
       <Section
         id="mulai"
-        eyebrow="CARA MEMULAI"
+        marker="K"
+        meta="CARA MEMULAI"
         title="Enam langkah menuju RAB pertama Anda."
         sub="Alur onboarding mengikuti cara kerja estimator — bukan teka-teki."
         alt
@@ -176,7 +213,8 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
       {/* L — Transparansi */}
       <Section
         id="transparansi"
-        eyebrow="KEUNGGULAN & TRANSPARANSI"
+        marker="L"
+        meta="TRANSPARANSI"
         title="Klaim yang bisa Anda periksa sendiri."
         sub="Tanpa 'paling akurat' atau '100% otomatis'. Hanya prinsip kerja yang terbukti di implementasi."
       >
@@ -186,7 +224,8 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
       {/* M — FAQ */}
       <Section
         id="faq"
-        eyebrow="FAQ"
+        marker="M"
+        meta="FAQ"
         title="Pertanyaan sebelum mulai."
         alt
       >
@@ -197,7 +236,7 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
 
       {/* Pricing teaser */}
       <section className="fp-section" aria-label="Informasi paket">
-        <div className="fp-container fp-pricing-teaser">
+        <div className="fp-container fp-pricing-teaser fp-reveal">
           <div>
             <h2 className="fp-h2">Mulai gratis. Naik kelas saat siap.</h2>
             <p className="fp-sub" style={{ margin: 0 }}>
@@ -212,7 +251,8 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
 
       {/* N — Final CTA */}
       <section className="fp-final" aria-labelledby="final-title">
-        <div className="fp-container">
+        <div className="fp-final-ring" aria-hidden="true" />
+        <div className="fp-container fp-reveal">
           <Zap size={28} className="fp-final-icon" aria-hidden="true" />
           <h2 id="final-title" className="fp-h2">
             Kenali Alur Kerjanya. Temukan Cara Kerja yang Lebih Terstruktur.
