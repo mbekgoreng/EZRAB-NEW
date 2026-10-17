@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Menu, X, Palette } from 'lucide-react';
+import { ArrowRight, Menu, X } from 'lucide-react';
 
 interface ExactNavbarProps {
   onOpenAuth: (tab: 'masuk' | 'daftar') => void;
@@ -10,7 +10,6 @@ interface ExactNavbarProps {
 
 export const ExactNavbar: React.FC<ExactNavbarProps> = ({
   onOpenAuth,
-  onOpenTheme,
   onBackToLanding,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -88,18 +87,6 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
 
         {/* Right: Actions */}
         <div className="ez-nav-actions">
-          {onOpenTheme && (
-            <button
-              type="button"
-              className="ez-btn-ghost-dark"
-              onClick={onOpenTheme}
-              aria-label="Pengaturan tema"
-              title="Tema & tampilan"
-              style={{ padding: '8px 10px' }}
-            >
-              <Palette size={16} />
-            </button>
-          )}
           <button
             className="ez-btn-ghost-dark"
             onClick={() => onOpenAuth('masuk')}
@@ -135,11 +122,6 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
         <a href="#beranda" onClick={handleScrollTo('beranda')}><span>01</span> Beranda</a>
         <a href="#fitur" onClick={handleScrollTo('fitur')}><span>02</span> Fitur Utama</a>
         <a href="#harga" onClick={handleScrollTo('harga')}><span>03</span> Harga</a>
-        {onOpenTheme && (
-          <button type="button" onClick={() => { setMobileMenuOpen(false); onOpenTheme(); }}>
-            Tema & Tampilan <Palette size={16} />
-          </button>
-        )}
         <button type="button" onClick={() => { setMobileMenuOpen(false); onOpenAuth('masuk'); }}>
           Masuk ke Workspace <ArrowRight size={16} />
         </button>

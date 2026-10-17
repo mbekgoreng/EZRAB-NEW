@@ -62,6 +62,7 @@ import { ClientUserManagementService, WorkspaceMember } from '../../services/use
 import { AddUserModal } from './AddUserModal';
 import { UserRole, Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
+import { useTheme, type PremiumTheme } from '../../context/ThemeContext';
 import { useI18n, LANG_OPTIONS, type Lang } from '../../i18n';
 import { useRole } from '../../auth/RoleContext';
 import { ONBOARDING_OPEN_EVENT } from '../onboarding/OnboardingTour';
@@ -205,6 +206,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
   const [systemCurrency, setSystemCurrency] = useState('IDR');
   const [systemTheme, setSystemTheme] = useState<'light' | 'dark' | 'system'>('light');
+  const { premiumTheme, setPremiumTheme } = useTheme();
 
   const [notifProject, setNotifProject] = useState(true);
   const [notifRab, setNotifRab] = useState(true);
@@ -1222,6 +1224,54 @@ value={systemTheme}
                     <option value="system">Ikuti Preferensi Perangkat</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Tema Premium */}
+              <div style={{ marginTop: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '8px' }}>
+                  Tema Premium
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+                  {([
+                    { id: 'default', name: 'Default', desc: 'Tema standar aplikasi', swatch: '#2563EB' },
+                    { id: 'blueprint', name: 'Blueprint', desc: 'Biru gambar teknik', swatch: '#0F3B73' },
+                    { id: 'gold', name: 'Midnight Gold', desc: 'Navy + aksen emas', swatch: '#D4A94E' },
+                    { id: 'emerald', name: 'Emerald', desc: 'Hijau zamrud gelap', swatch: '#0C3B2E' },
+                  ] as Array<{ id: PremiumTheme; name: string; desc: string; swatch: string }>).map(({ id, name, desc, swatch }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => {
+                        setPremiumTheme(id);
+                        setToastMessage(t('settings.tersimpan'));
+                        setSavedToast(true);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '10px 12px',
+                        borderRadius: '10px',
+                        border: `1.5px solid ${premiumTheme === id ? 'var(--ez-color-primary)' : 'var(--ez-color-border-strong)'}`,
+                        background: premiumTheme === id ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                        color: 'var(--ez-color-text-primary)',
+                        fontWeight: 600,
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <span style={{ width: '28px', height: '28px', borderRadius: '8px', background: swatch, border: '1px solid var(--ez-color-border-strong)', flexShrink: 0 }} />
+                      <span>
+                        <span style={{ display: 'block' }}>{name}</span>
+                        <span style={{ display: 'block', fontSize: '11px', fontWeight: 400, color: 'var(--ez-color-text-muted)' }}>{desc}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', margin: '8px 0 0' }}>
+                  Tema premium selalu menggunakan dasar gelap.
+                </p>
               </div>
             </div>
           )}
