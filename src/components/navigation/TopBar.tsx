@@ -17,8 +17,9 @@ import {
   LifeBuoy,
   MessageSquare,
   Plus,
-Sun,
+  Sun,
   Moon,
+  Palette,
   ChevronDown,
   Check,
 } from 'lucide-react';
@@ -28,6 +29,14 @@ import { ClientUserManagementService } from '../../services/userManagementServic
 import { UserRole, type Project } from '../../types';
 import { useI18n, LANG_OPTIONS } from '../../i18n';
 import type { Lang } from '../../i18n';
+
+/** Pilihan tema — dipindah ke menu profil (pojok kanan atas). */
+const THEME_OPTIONS: { id: PremiumTheme; name: string; desc: string; swatch: string }[] = [
+  { id: 'default', name: 'Default', desc: 'Tema standar aplikasi', swatch: '#2563EB' },
+  { id: 'blueprint', name: 'Blueprint', desc: 'Biru gambar teknik', swatch: '#0F3B73' },
+  { id: 'gold', name: 'Midnight Gold', desc: 'Navy + aksen emas', swatch: '#D4A94E' },
+  { id: 'emerald', name: 'Emerald', desc: 'Hijau zamrud gelap', swatch: '#0C3B2E' },
+];
 
 /** Label ringkas bahasa untuk tombol selector bahasa. */
 const LANG_SHORT: Record<Lang, string> = { id: 'ID', en: 'EN', zh: '中文', ms: 'MY' };
@@ -59,7 +68,7 @@ const MENU_SEARCH_INDEX: Array<{ id: string; label: string; keywords: string }> 
   { id: 'pengaturan', label: 'Pengaturan', keywords: 'pengaturan settings setelan' },
 ];
 import { useRole } from '../../auth/RoleContext';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme, type PremiumTheme } from '../../context/ThemeContext';
 
 interface TopBarProps {
   isMobile: boolean;
@@ -96,6 +105,7 @@ const { t, lang, setLang } = useI18n();
   const [currentUser, setCurrentUser] = useState(() => ClientUserManagementService.getCurrentUser());
   const [helpOpen, setHelpOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
 
   // ---------- Global search palette ----------
@@ -172,7 +182,7 @@ const { t, lang, setLang } = useI18n();
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
-  const { effectiveTheme, setTheme } = useTheme();
+  const { effectiveTheme, setTheme, theme, premiumTheme, setPremiumTheme, canUsePremiumThemes } = useTheme();
   const isDark = effectiveTheme === 'dark';
 
 const handleNotificationItemClick = (item: NotificationItem) => {
@@ -197,6 +207,7 @@ const handleNotificationItemClick = (item: NotificationItem) => {
       }
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setProfileOpen(false);
+        setThemeOpen(false);
       }
       if (langRef.current && !langRef.current.contains(event.target as Node)) {
         setLangOpen(false);
@@ -207,6 +218,7 @@ const handleNotificationItemClick = (item: NotificationItem) => {
       if (event.key === 'Escape') {
         setHelpOpen(false);
         setProfileOpen(false);
+        setThemeOpen(false);
         setLangOpen(false);
       }
     };
@@ -983,6 +995,167 @@ color: 'var(--ez-hue-violet-text)', background: 'var(--ez-hue-violet-bg)',
                     </button>
                   );
                 })}
+              </div>
+
+              {/* Theme Section — pindahan dari Pengaturan */}
+              <div style={{ padding: '6px', borderTop: '1px solid var(--ez-color-surface-tertiary)' }}>
+                <button
+                  onClick={() => setThemeOpen(!themeOpen)}
+                  aria-expanded={themeOpen}
+                  style={{
+                    width: '100%',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0 10px',
+                    borderRadius: '8px',
+                    background: themeOpen ? 'var(--ez-color-surface-secondary)' : 'transparent',
+                    border: 'none',
+                    color: 'var(--ez-color-text-body)',
+                    fontSize: '12.5px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background 0.12s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
+                    e.currentTarget.style.color = 'var(--ez-color-primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!themeOpen) {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = 'var(--ez-color-text-body)';
+                    }
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Palette size={15} color="var(--ez-color-text-muted)" />
+                    <span>Tema</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>
+                      {THEME_OPTIONS.find((o) => o.id === premiumTheme)?.name ?? 'Default'}
+                    </span>
+                    <ChevronDown
+                      size={13}
+                      color="var(--ez-color-border-strong)"
+                      style={{ transform: themeOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }}
+                    />
+                  </div>
+                </button>
+
+                {themeOpen && (
+                  <div style={{ padding: '2px 2px 6px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.05em', color: 'var(--ez-color-text-muted)', padding: '8px 8px 6px' }}>
+                      MODE TAMPILAN
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', padding: '0 4px' }}>
+                      {(['light', 'dark', 'system'] as const).map((m) => {
+                        const modeDisabled = premiumTheme !== 'default';
+                        const modeActive = theme === m;
+                        return (
+                          <button
+                            key={m}
+                            disabled={modeDisabled}
+                            onClick={() => setTheme(m)}
+                            style={{
+                              flex: 1,
+                              height: '30px',
+                              borderRadius: '8px',
+                              fontSize: '11.5px',
+                              fontWeight: 700,
+                              border: `1px solid ${modeActive ? 'var(--ez-color-primary)' : 'var(--ez-color-border-line)'}`,
+                              background: modeActive ? 'var(--ez-color-primary-soft)' : 'transparent',
+                              color: modeActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-body)',
+                              cursor: modeDisabled ? 'not-allowed' : 'pointer',
+                              opacity: modeDisabled ? 0.5 : 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '5px',
+                            }}
+                          >
+                            {m === 'light' && <Sun size={12} />}
+                            {m === 'dark' && <Moon size={12} />}
+                            {m === 'light' ? 'Terang' : m === 'dark' ? 'Gelap' : 'Sistem'}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div style={{ fontSize: '10px', fontWeight: 800, letterSpacing: '0.05em', color: 'var(--ez-color-text-muted)', padding: '10px 8px 4px' }}>
+                      TEMA
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      {THEME_OPTIONS.map((opt) => {
+                        const isActive = premiumTheme === opt.id;
+                        const isPremium = opt.id !== 'default';
+                        const locked = isPremium && !canUsePremiumThemes();
+                        return (
+                          <button
+                            key={opt.id}
+                            disabled={locked}
+                            onClick={() => {
+                              if (!locked) setPremiumTheme(opt.id);
+                            }}
+                            title={locked ? 'Tema premium memerlukan paket Pro' : opt.desc}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              width: '100%',
+                              padding: '7px 8px',
+                              borderRadius: '8px',
+                              border: 'none',
+                              background: isActive ? 'var(--ez-color-primary-soft)' : 'transparent',
+                              cursor: locked ? 'not-allowed' : 'pointer',
+                              textAlign: 'left',
+                              opacity: locked ? 0.6 : 1,
+                            }}
+                            onMouseEnter={(e) => {
+                              if (!isActive) e.currentTarget.style.background = 'var(--ez-color-surface-secondary)';
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!isActive) e.currentTarget.style.background = 'transparent';
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: '22px',
+                                height: '22px',
+                                borderRadius: '7px',
+                                background: opt.swatch,
+                                border: '1px solid var(--ez-color-border-strong)',
+                                flexShrink: 0,
+                              }}
+                            />
+                            <span style={{ flex: 1, minWidth: 0 }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>
+                                {opt.name}
+                                {isPremium && (
+                                  <span style={{ fontSize: '8.5px', fontWeight: 800, letterSpacing: '0.06em', padding: '1px 5px', borderRadius: '20px', background: 'var(--ez-color-primary-soft)', color: 'var(--ez-color-primary)', border: '1px solid var(--ez-color-primary)' }}>
+                                    PRO
+                                  </span>
+                                )}
+                              </span>
+                              <span style={{ display: 'block', fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>
+                                {locked ? 'Butuh paket Pro' : opt.desc}
+                              </span>
+                            </span>
+                            {isActive && <Check size={14} color="var(--ez-color-primary)" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {premiumTheme !== 'default' && (
+                      <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', padding: '6px 8px 2px' }}>
+                        Mode Tampilan nonaktif saat tema premium dipakai.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Logout Footer */}
