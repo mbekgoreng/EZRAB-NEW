@@ -11,6 +11,7 @@ import {
   FileCheck2,
   ArrowRight,
 } from 'lucide-react';
+import { navigateTo } from '../../../routing/routes';
 
 interface WorkflowStep {
   id: string;
@@ -281,6 +282,32 @@ export const ExactWorkflow: React.FC = () => {
                 </div>
               );
             })}
+          </div>
+          {/* Link ke halaman Semua Fitur */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '28px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                navigateTo('/fitur');
+                window.scrollTo({ top: 0 });
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.25)',
+                color: '#e8eefb',
+                borderRadius: '999px',
+                padding: '11px 26px',
+                fontSize: '14px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+              }}
+            >
+              Jelajahi semua fitur EZRAB <ArrowRight size={15} />
+            </button>
           </div>
         </div>
       </div>

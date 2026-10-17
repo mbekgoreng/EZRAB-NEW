@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ProjectProvider } from './context/ProjectContext';
 import { ExactLandingPage } from './components/landing/ExactLandingPage';
 import { AboutPage } from './components/about/AboutPage';
+import { FeaturesPage } from './components/landing/FeaturesPage';
 import { AuthModal } from './components/auth/AuthModal';
 import { WorkspaceView } from './components/dashboard/WorkspaceView';
 import { DemoModal } from './components/common/DemoModal';
@@ -132,6 +133,7 @@ export const App: React.FC = () => {
   const workspaceRoute = parseWorkspaceRoute(location.pathname, location.search);
   const isWorkspace = isAppPath(location.pathname);
   const isAbout = location.pathname === '/about' || location.hash === '#tentang';
+  const isFeatures = location.pathname === '/fitur';
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authInitialTab, setAuthInitialTab] = useState<'masuk' | 'daftar'>('daftar');
@@ -153,8 +155,9 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (isWorkspace) document.title = workspaceRoute.status === 'not-found' ? 'Halaman Tidak Ditemukan — EZRAB' : `${routeLabel(workspaceRoute)} — EZRAB`;
     else if (isAbout) document.title = 'Tentang EZRAB';
+    else if (isFeatures) document.title = 'Semua Fitur — EZRAB';
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
-  }, [isAbout, isWorkspace, workspaceRoute]);
+  }, [isAbout, isFeatures, isWorkspace, workspaceRoute]);
 
   useEffect(() => {
     migrateLegacyOnboardingFlag(); // idempoten: pengguna lama tidak ditanya ulang
@@ -194,6 +197,18 @@ export const App: React.FC = () => {
   const handleOpenAbout = () => {
     navigateTo(paths.about());
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleOpenFeaturesPage = () => {
+    navigateTo('/fitur');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleOpenPricing = () => {
+    navigateTo(paths.home());
+    setTimeout(() => {
+      document.getElementById('harga')?.scrollIntoView({ behavior: 'smooth' });
+    }, 150);
   };
 
   const handleOpenAuth = (tab: 'masuk' | 'daftar' = 'masuk') => {
@@ -241,6 +256,15 @@ export const App: React.FC = () => {
         onBackToLanding={handleReturnToLanding}
         onOpenWorkspace={() => handleSetWorkspace(true)}
         onOpenFeatures={handleOpenFeatures}
+      />
+    );
+  } else if (isFeatures) {
+    content = (
+      <FeaturesPage
+        onBackToLanding={handleReturnToLanding}
+        onOpenAbout={handleOpenAbout}
+        onOpenWorkspace={() => handleSetWorkspace(true)}
+        onOpenPricing={handleOpenPricing}
       />
     );
   } else {

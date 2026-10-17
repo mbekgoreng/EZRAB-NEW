@@ -108,7 +108,7 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
         alignItems: 'center',
         gap: '6px',
         flexWrap: 'wrap',
-        padding: '6px 0',
+        padding: '2px 0',
       }}
     >
       {/* 1. Dashboard (Always Root) */}

@@ -105,9 +105,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
         aria-expanded={open}
         style={{
           position: 'relative',
-          width: '38px',
-          height: '38px',
-          borderRadius: '9px',
+          width: '32px',
+          height: '32px',
+          borderRadius: '8px',
           background: open ? 'var(--ez-hue-blue-bg)' : 'transparent',
           border: 'none',
           display: 'flex',

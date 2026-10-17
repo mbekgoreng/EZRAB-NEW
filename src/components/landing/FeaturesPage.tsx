@@ -24,6 +24,7 @@ import { ExactFooter } from './exact/ExactFooter';
 
 interface FeaturesPageProps {
   onBackToLanding: () => void;
+  onOpenAbout: () => void;
   onOpenWorkspace: () => void;
   onOpenPricing: () => void;
 }
@@ -175,6 +176,7 @@ const FaqItem: React.FC<{ q: string; a: string }> = ({ q, a }) => {
 
 export const FeaturesPage: React.FC<FeaturesPageProps> = ({
   onBackToLanding,
+  onOpenAbout,
   onOpenWorkspace,
   onOpenPricing,
 }) => {
@@ -381,7 +383,7 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
         </div>
       </section>
 
-      <ExactFooter onOpenAbout={onBackToLanding} />
+      <ExactFooter onOpenAbout={onOpenAbout} />
     </div>
   );
 };

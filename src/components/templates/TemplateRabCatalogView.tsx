@@ -6,6 +6,8 @@ import {
   Home,
   Sparkles,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   Plus,
   Milestone,
   Droplets,
@@ -90,6 +92,15 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
   const [sourceFilter, setSourceFilter] = useState<'ALL' | 'OFFICIAL' | 'USER'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'POPULAR' | 'NAME' | 'ITEMS'>('POPULAR');
+
+  // Pagination (tombol Sebelumnya / Berikutnya)
+  const PAGE_SIZE = 12;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset halaman ke 1 setiap filter berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, selectedSubcategory, sourceFilter, searchQuery, sortBy]);
 
   // Reset subcategory selection when category changes
   useEffect(() => {
@@ -218,6 +229,11 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
 
     return list;
   }, [templates, selectedCategory, selectedSubcategory, sourceFilter, searchQuery, sortBy]);
+
+  // Paginated slice
+  const totalPages = Math.max(1, Math.ceil(filteredTemplates.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedTemplates = filteredTemplates.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // Action Handlers
   const handleOpenBuilder = (templateToEdit?: RabTemplate) => {
@@ -819,7 +835,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                 gap: '12px'
               }}
             >
-              {filteredTemplates.map(tpl => {
+              {paginatedTemplates.map(tpl => {
                 const Icon = getCategoryIcon(tpl.category);
                 const isUser = tpl.metadata.source === 'USER_TEMPLATE' || tpl.metadata.source === 'USER';
 
@@ -1113,6 +1129,97 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Pagination: Sebelumnya / Nomor / Berikutnya */}
+          {filteredTemplates.length > PAGE_SIZE && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '16px 0 4px',
+              }}
+            >
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--ez-hue-slate-border)',
+                  background: safePage === 1 ? 'var(--ez-color-surface-tertiary)' : 'var(--ez-color-surface)',
+                  color: safePage === 1 ? '#94A3B8' : 'var(--ez-color-text-body)',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  cursor: safePage === 1 ? 'not-allowed' : 'pointer',
+                  opacity: safePage === 1 ? 0.6 : 1,
+                }}
+              >
+                <ChevronLeft size={14} />
+                <span>Sebelumnya</span>
+              </button>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+                  .reduce<Array<number | '… '>>((acc, p, idx, arr) => {
+                    if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('… ');
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, idx) =>
+                    p === '… ' ? (
+                      <span key={`gap-${idx}`} style={{ fontSize: '12px', color: '#94A3B8', padding: '0 4px' }}>…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setCurrentPage(p as number)}
+                        style={{
+                          minWidth: '32px',
+                          height: '32px',
+                          borderRadius: '8px',
+                          border: p === safePage ? 'none' : '1px solid var(--ez-hue-slate-border)',
+                          background: p === safePage ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
+                          color: p === safePage ? '#FFFFFF' : 'var(--ez-color-text-body)',
+                          fontSize: '12.5px',
+                          fontWeight: p === safePage ? 700 : 500,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={safePage === totalPages}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: safePage === totalPages ? '1px solid var(--ez-hue-slate-border)' : 'none',
+                  background: safePage === totalPages ? 'var(--ez-color-surface-tertiary)' : 'var(--ez-color-primary)',
+                  color: safePage === totalPages ? '#94A3B8' : '#FFFFFF',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  cursor: safePage === totalPages ? 'not-allowed' : 'pointer',
+                  opacity: safePage === totalPages ? 0.6 : 1,
+                  boxShadow: safePage === totalPages ? 'none' : '0 2px 6px rgba(37, 99, 235, 0.3)',
+                }}
+              >
+                <span>Berikutnya</span>
+                <ChevronRight size={14} />
+              </button>
             </div>
           )}
         </div>

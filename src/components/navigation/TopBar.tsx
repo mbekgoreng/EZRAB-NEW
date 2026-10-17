@@ -263,12 +263,12 @@ const handleNotificationItemClick = (item: NotificationItem) => {
     >
       <div
         style={{
-          height: isNarrowMobile ? '56px' : '64px',
+          height: isNarrowMobile ? '48px' : '54px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: isNarrowMobile ? '0 12px' : '0 24px',
-          gap: '16px',
+          padding: isNarrowMobile ? '0 12px' : '0 20px',
+          gap: '12px',
         }}
       >
       {/* =======================================================================
@@ -281,9 +281,9 @@ const handleNotificationItemClick = (item: NotificationItem) => {
             aria-label="Buka Menu Navigasi"
             className="ezrab-touch-target"
             style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '8px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '7px',
               background: 'var(--ez-color-surface-secondary)',
               border: '1px solid var(--ez-color-border-line)',
               color: 'var(--ez-color-text-ink)',
@@ -366,10 +366,10 @@ const handleNotificationItemClick = (item: NotificationItem) => {
           aria-label={t('nav.search_aria_label')}
           style={{
             width: '100%',
-            height: '38px',
-            paddingLeft: '36px',
-            paddingRight: isNarrowMobile ? '12px' : '52px',
-            borderRadius: '10px',
+            height: '32px',
+            paddingLeft: '34px',
+            paddingRight: isNarrowMobile ? '12px' : '50px',
+            borderRadius: '8px',
             background: 'var(--ez-color-surface-secondary)',
             border: '1px solid var(--ez-color-border-line)',
             fontSize: '13px',
@@ -499,7 +499,7 @@ onFocus={(e) => {
       {/* =======================================================================
           RIGHT: NOTIFICATION + HELP + PROFILE MENU
          ======================================================================= */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: isNarrowMobile ? '8px' : '12px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isNarrowMobile ? '6px' : '10px', flexShrink: 0 }}>
         
 {/* 0. THEME TOGGLE (terang/gelap) */}
         <button
@@ -509,9 +509,9 @@ onFocus={(e) => {
           aria-label={isDark ? 'Mode terang' : 'Mode gelap'}
           aria-pressed={isDark}
           style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '10px',
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
             border: '1px solid var(--ez-color-border-line)',
             background: 'var(--ez-color-surface)',
             color: 'var(--ez-color-text-muted)',
@@ -537,10 +537,10 @@ onFocus={(e) => {
             aria-label={t('nav.pilih_bahasa')}
             aria-expanded={langOpen}
             style={{
-              height: '38px',
-              minWidth: '58px',
-              padding: '0 9px',
-              borderRadius: '10px',
+              height: '32px',
+              minWidth: '54px',
+              padding: '0 8px',
+              borderRadius: '8px',
               border: '1px solid var(--ez-color-border-line)',
               background: langOpen ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
               color: langOpen ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
@@ -637,9 +637,9 @@ onFocus={(e) => {
               aria-label="Bantuan"
               aria-expanded={helpOpen}
               style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '9px',
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
                 background: helpOpen ? 'var(--ez-hue-blue-bg)' : 'transparent',
                 border: 'none',
                 display: 'flex',
@@ -772,9 +772,9 @@ onFocus={(e) => {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '9px',
-              padding: isNarrowMobile ? '2px' : '4px 8px 4px 4px',
-              borderRadius: '10px',
+              gap: '8px',
+              padding: isNarrowMobile ? '2px' : '3px 6px 3px 3px',
+              borderRadius: '8px',
               background: profileOpen ? 'var(--ez-hue-blue-bg)' : 'transparent',
               border: profileOpen ? '1px solid var(--ez-hue-blue-border)' : '1px solid transparent',
               cursor: 'pointer',
@@ -795,8 +795,8 @@ onFocus={(e) => {
               src={currentUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
               alt={currentUser.name}
               style={{
-                width: isNarrowMobile ? '32px' : '34px',
-                height: isNarrowMobile ? '32px' : '34px',
+                width: isNarrowMobile ? '28px' : '30px',
+                height: isNarrowMobile ? '28px' : '30px',
                 borderRadius: '50%',
                 objectFit: 'cover',
                 border: '1.5px solid var(--ez-color-border-line)',
@@ -1036,7 +1036,7 @@ color: 'var(--ez-hue-violet-text)', background: 'var(--ez-hue-violet-bg)',
           style={{
             display: 'flex',
             alignItems: 'center',
-            padding: isNarrowMobile ? '4px 12px' : '6px 24px',
+            padding: isNarrowMobile ? '2px 12px' : '3px 20px',
             borderTop: '1px solid var(--ez-color-surface-tertiary)',
             background: 'var(--ez-color-surface)',
           }}
