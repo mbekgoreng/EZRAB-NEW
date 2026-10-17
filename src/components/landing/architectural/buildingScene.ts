@@ -6,7 +6,11 @@
  *  - wireframe tower that assembles floor by floor, then solidifies to glass
  *  - blue light pulses flowing along structural edges
  *  - drifting floor grid (slow camera-perspective scroll), light particles
- *  - very slow cinematic camera orbit / dolly
+ *  - section-cut scanner sweeping the tower (architectural section feel)
+ *  - topographic contour rings expanding on the site plane
+ *  - annex massing block assembling with phase offset (composition depth)
+ *  - sun-path arc with traveling sun dot (site-analysis diagram feel)
+ *  - slow cinematic camera orbit / dolly, framing the tower large & right
  *  - seamless 32s master loop (end state == start state)
  *
  * Layer B (product storytelling) drives this scene through `setMode(i)`:
@@ -75,6 +79,14 @@ export class ArchitecturalScene {
   private gridMatA!: THREE.Material;
   private gridMatB!: THREE.Material;
   private buildingTop = 14;
+  // Parametric additions: section scanner, contour rings, annex, sun-path
+  private scanner!: THREE.LineSegments;
+  private scannerMat!: THREE.LineBasicMaterial;
+  private contours: { line: THREE.LineLoop; mat: THREE.LineBasicMaterial; phase: number }[] = [];
+  private annexFloors: { group: THREE.Group; edges: THREE.LineBasicMaterial; targetY: number }[] = [];
+  private sunDot!: THREE.Mesh;
+  private sunDotMat!: THREE.MeshBasicMaterial;
+  private sunCurve!: THREE.EllipseCurve;
 
   constructor(private canvas: HTMLCanvasElement, opts: ArchitecturalSceneOptions = {}) {
     const detail = opts.detail ?? 'high';
@@ -86,7 +98,7 @@ export class ArchitecturalScene {
 
     this.scene.fog = new THREE.FogExp2(0x060d1a, 0.024);
     this.camera = new THREE.PerspectiveCamera(42, 1, 0.1, 220);
-    this.camera.position.set(17, 10.5, 21);
+    this.camera.position.set(13, 10, 16);
 
     this.buildGrid();
     this.buildBlueprintPlan();
@@ -94,6 +106,10 @@ export class ArchitecturalScene {
     this.buildDimensionLines();
     this.buildPulses();
     this.buildParticles();
+    this.buildScanner();
+    this.buildContours();
+    this.buildAnnex(detail === 'high' ? 4 : 3);
+    this.buildSunPath();
 
     this.resize(canvas.clientWidth || 16, canvas.clientHeight || 9);
   }
@@ -214,6 +230,79 @@ export class ArchitecturalScene {
     this.scene.add(this.particles);
   }
 
+  /** Glowing section-cut frame sweeping vertically through the tower. */
+  private buildScanner(): void {
+    const geo = new THREE.EdgesGeometry(new THREE.BoxGeometry(11.5, 0.55, 9.5));
+    this.scannerMat = new THREE.LineBasicMaterial({ color: 0x9fdcff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+    this.scanner = new THREE.LineSegments(geo, this.scannerMat);
+    this.scanner.position.y = -1;
+    this.scene.add(this.scanner);
+  }
+
+  /** Topographic contour rings expanding on the site plane. */
+  private buildContours(): void {
+    const rings = 7;
+    for (let i = 0; i < rings; i++) {
+      const curve = new THREE.EllipseCurve(0, 0, 1, 1, 0, TAU, false, 0);
+      const pts = curve.getPoints(72);
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      // lay flat on XZ plane
+      geo.rotateX(-Math.PI / 2);
+      const mat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0 });
+      const line = new THREE.LineLoop(geo, mat);
+      line.position.set(0, 0.06 + i * 0.008, 0);
+      this.scene.add(line);
+      this.contours.push({ line, mat, phase: i / rings });
+    }
+  }
+
+  /** Secondary wireframe massing block — composition depth, phase-offset assembly. */
+  private buildAnnex(floorCount: number): void {
+    const slabGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(5, 0.25, 4));
+    const colGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(0.25, 1.5, 0.25));
+    const corners: [number, number][] = [[-2.2, -1.7], [2.2, -1.7], [-2.2, 1.7], [2.2, 1.7]];
+    for (let i = 0; i < floorCount; i++) {
+      const group = new THREE.Group();
+      const edges = new THREE.LineBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0 });
+      group.add(new THREE.LineSegments(slabGeo, edges));
+      for (const [cx, cz] of corners) {
+        const col = new THREE.LineSegments(colGeo, edges);
+        col.position.set(cx, -0.85, cz);
+        group.add(col);
+      }
+      const targetY = 1.1 + i * 1.55;
+      group.position.set(9.5, -3, -5.5);
+      this.scene.add(group);
+      this.annexFloors.push({ group, edges, targetY });
+    }
+  }
+
+  /** Sun-path arc (site-analysis diagram) with a traveling sun dot. */
+  private buildSunPath(): void {
+    this.sunCurve = new THREE.EllipseCurve(0, 0, 24, 15, Math.PI * 0.12, Math.PI * 0.88, false, 0);
+    const pts = this.sunCurve.getPoints(80);
+    const geo = new THREE.BufferGeometry().setFromPoints(pts);
+    const arcMat = new THREE.LineBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.22 });
+    const arc = new THREE.Line(geo, arcMat);
+    arc.position.set(-2, 1.5, -20);
+    this.scene.add(arc);
+    // tick marks along the arc
+    const tickGeo = new THREE.BufferGeometry();
+    const tp: number[] = [];
+    for (let i = 0; i <= 8; i++) {
+      const pt = this.sunCurve.getPoint(i / 8);
+      tp.push(pt.x, pt.y - 0.7, 0, pt.x, pt.y + 0.7, 0);
+    }
+    tickGeo.setAttribute('position', new THREE.Float32BufferAttribute(tp, 3));
+    const ticks = new THREE.LineSegments(tickGeo, new THREE.LineBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.3 }));
+    ticks.position.copy(arc.position);
+    this.scene.add(ticks);
+    this.sunDotMat = new THREE.MeshBasicMaterial({ color: 0xfde68a, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+    this.sunDot = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 12), this.sunDotMat);
+    this.sunDot.position.copy(arc.position);
+    this.scene.add(this.sunDot);
+  }
+
   // --------------------------------------------------------------- control
 
   setMode(i: number): void {
@@ -319,6 +408,34 @@ export class ArchitecturalScene {
       pu.mesh.scale.setScalar(s);
     }
 
+    // --- section-cut scanner sweeping the tower (loop-synced)
+    this.scanner.position.y = lerp(-1.5, this.buildingTop + 2.5, smoothstep(0.3, 0.78, p));
+    this.scannerMat.opacity = 0.65 * smoothstep(0.28, 0.38, p) * (1 - smoothstep(0.7, 0.8, p));
+
+    // --- topographic contour rings (continuous expansion, seamless wrap)
+    for (const c of this.contours) {
+      const rp = (p + c.phase) % 1;
+      const sc = 5 + rp * 22;
+      c.line.scale.set(sc, 1, sc * 0.82);
+      c.mat.opacity = 0.28 * (1 - rp) * M.grid;
+    }
+
+    // --- annex massing assembly (phase-offset from main tower)
+    const an = this.annexFloors.length;
+    this.annexFloors.forEach((f, i) => {
+      const rise0 = 0.22 + (i / an) * 0.3;
+      const rise = smoothstep(rise0, rise0 + 0.2, p);
+      const sink = 1 - smoothstep(0.88, 0.985, p);
+      const a = Math.min(rise, sink);
+      f.group.position.y = lerp(-3, f.targetY, a);
+      f.edges.opacity = 0.6 * a;
+    });
+
+    // --- sun-path dot traveling the arc
+    const sp = this.sunCurve.getPoint(p);
+    this.sunDot.position.set(-2 + sp.x, 1.5 + sp.y, -20);
+    this.sunDotMat.opacity = 0.5 + 0.5 * Math.sin(p * TAU);
+
     // --- particles drift
     const pos = this.particlePos;
     for (let i = 0; i < this.particleCount; i++) {
@@ -335,12 +452,12 @@ export class ArchitecturalScene {
     (this.gridMatA as THREE.LineBasicMaterial).opacity = 0.34 * M.grid;
     (this.gridMatB as THREE.LineBasicMaterial).opacity = 0.42 * M.grid;
 
-    // --- cinematic camera: very slow orbit + dolly + bob
+    // --- cinematic camera: closer (tower fills the frame) + slow orbit/dolly/bob
     const ang = 0.72 + Math.sin(t * 0.055) * 0.055 + (t % LOOP_S) * 0.0011;
-    const rad = 26.5 + Math.sin((t % LOOP_S) * TAU / LOOP_S) * 1.1;
-    const y = 10.5 + Math.sin(t * 0.11) * 0.55;
+    const rad = 20.5 + Math.sin((t % LOOP_S) * TAU / LOOP_S) * 1.0;
+    const y = 10 + Math.sin(t * 0.11) * 0.5;
     this.camera.position.set(Math.sin(ang) * rad, y, Math.cos(ang) * rad);
-    // lookAt shifted left so the architecture sits right-of-center ("agak ke kanan")
-    this.camera.lookAt(-3.5, 4.6, 0);
+    // lookAt pushed further left so the architecture sits clearly right-of-center
+    this.camera.lookAt(-6.5, 4.8, 0);
   }
 }
