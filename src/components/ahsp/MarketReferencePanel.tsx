@@ -20,6 +20,8 @@ import type {
 import { aiPriceSearchService } from '../../services/aiPriceSearchService';
 import { assumptionStore } from '../../engine/pricing/assumption/assumptionStore';
 import { useRole } from '../../auth/RoleContext';
+import { AiPriceEstimatePanel } from './AiPriceEstimatePanel';
+import { AI_ESTIMATE_LABEL, type AiPriceEstimate } from '../../engine/pricing/aiEstimate/aiPriceEstimate';
 
 interface Props {
   componentCode: string;
@@ -66,6 +68,30 @@ export const MarketReferencePanel: React.FC<Props> = ({
 
   const refs = useMemo(() => relevantRefs(componentName), [componentName, tick]);
   const refresh = () => { setTick((t) => t + 1); onChanged(); };
+
+  /** Harga sudah ter-resolve (resmi/terverifikasi)? Jika ya, panel AI disembunyikan. */
+  const hasResolvedPrice = refs.some((r) => r.verificationStatus === 'MARKET_VERIFIED');
+
+  const handleApplyAiEstimate = (est: AiPriceEstimate) => {
+    // Simpan sebagai price_assumption DRAFT — label AI selalu di sourceNote.
+    assumptionStore.create(
+      {
+        resourceCode: componentCode,
+        resourceName: componentName,
+        resourceType: 'material',
+        price: est.estimatedPrice,
+        unit: componentUnit,
+        sourceNote:
+          `${AI_ESTIMATE_LABEL} — perkiraan ${est.method === 'ai' ? 'AI' : 'heuristik'} ` +
+          `(confidence ${Math.round(est.confidence * 100)}%) dari ${est.sources.length} sumber. ` +
+          `Diverifikasi-oleh: ${est.acknowledgedBy ?? 'user'}. BUKAN harga resmi.`,
+        validFrom: new Date().toISOString().slice(0, 10),
+        notes: est.reasoning,
+      },
+      est.acknowledgedBy ?? 'user'
+    );
+    refresh();
+  };
 
   const handleAdd = () => {
     const price = parseFloat(form.listedPrice);
@@ -329,6 +355,15 @@ export const MarketReferencePanel: React.FC<Props> = ({
             </button>
           </div>
         ) : null}
+
+        {/* Perkiraan Harga AI — hanya untuk harga yang belum tersedia */}
+        <AiPriceEstimatePanel
+          componentCode={componentCode}
+          componentName={componentName}
+          componentUnit={componentUnit}
+          hasResolvedPrice={hasResolvedPrice}
+          onApply={handleApplyAiEstimate}
+        />
       </div>
     </div>
   );

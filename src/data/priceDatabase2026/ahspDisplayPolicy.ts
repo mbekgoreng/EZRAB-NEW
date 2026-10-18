@@ -75,3 +75,15 @@ export function ahspCompletenessNote(
     `yang sudah berharga (parsial), bukan total biaya langsung yang lengkap.`
   );
 }
+
+/**
+ * Label tampilan untuk harga perkiraan AI (perintah user 2026-10-18).
+ * Aturan: label "*Harga Perkiraan AI*" SELALU menyertai angka — tidak ada
+ * tampilan harga perkiraan AI tanpa label ini.
+ */
+export const AI_ESTIMATE_LABEL = '*Harga Perkiraan AI*';
+
+export function formatAiEstimatedPrice(price: number | null | undefined): string | null {
+  if (price === null || price === undefined || !(price > 0)) return null;
+  return `Rp ${Math.round(price).toLocaleString('id-ID')} ${AI_ESTIMATE_LABEL}`;
+}

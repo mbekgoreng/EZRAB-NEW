@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import { getBlogBaseUrl } from '../../../blog/site';
 import { navigateTo } from '../../../routing/routes';
@@ -10,13 +10,23 @@ interface ExactNavbarProps {
   onOpenAdvantages?: () => void;
 }
 
+type NavKey = 'beranda' | 'kenali' | 'keunggulan';
+
+const keyForPath = (pathname: string): NavKey => {
+  if (pathname === '/keunggulan') return 'keunggulan';
+  if (pathname === '/fitur') return 'kenali';
+  return 'beranda';
+};
+
 export const ExactNavbar: React.FC<ExactNavbarProps> = ({
   onOpenAuth,
   onBackToLanding,
-  onOpenAdvantages,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeKey, setActiveKey] = useState<NavKey>(() =>
+    typeof window === 'undefined' ? 'beranda' : keyForPath(window.location.pathname)
+  );
 
   useEffect(() => {
     const handleScroll = () => {
@@ -27,36 +37,78 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleScrollTo = (id: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    setMobileMenuOpen(false);
-    if (id === 'beranda') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      return;
-    }
-    const elem = document.getElementById(id);
-    if (elem) {
-      elem.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  // Strip biru mengikuti halaman aktif — sinkron dengan setiap navigasi SPA.
+  useEffect(() => {
+    const sync = () => setActiveKey(keyForPath(window.location.pathname));
+    window.addEventListener('popstate', sync);
+    window.addEventListener('hashchange', sync);
+    window.addEventListener('ezrab:navigate', sync);
+    return () => {
+      window.removeEventListener('popstate', sync);
+      window.removeEventListener('hashchange', sync);
+      window.removeEventListener('ezrab:navigate', sync);
+    };
+  }, []);
 
-  const handleGoPage = (path: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    setMobileMenuOpen(false);
-    navigateTo(path);
-    window.scrollTo(0, 0);
-  };
+  /** Pindah halaman (SPA) lalu ke atas. */
+  const goPage = useCallback(
+    (path: string) => (e: React.MouseEvent) => {
+      e.preventDefault();
+      setMobileMenuOpen(false);
+      if (window.location.pathname !== path) {
+        navigateTo(path);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    []
+  );
+
+  /** Ke section landing (#fitur / #harga) — dari halaman lain, pindah dulu ke landing. */
+  const goLandingSection = useCallback(
+    (sectionId: string) => (e: React.MouseEvent) => {
+      e.preventDefault();
+      setMobileMenuOpen(false);
+      // Coba scroll beberapa kali — landing butuh waktu render setelah navigasi.
+      const scrollWithRetry = (attempts: number) => {
+        const el = document.getElementById(sectionId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Koreksi posisi akhir (layout bisa bergeser saat aset dimuat).
+          setTimeout(() => {
+            const top = el.getBoundingClientRect().top + window.scrollY;
+            window.scrollTo({ top: Math.max(0, top - 70), behavior: 'smooth' });
+          }, 900);
+          return;
+        }
+        if (attempts > 0) setTimeout(() => scrollWithRetry(attempts - 1), 400);
+      };
+      if (window.location.pathname !== '/') {
+        navigateTo('/');
+        setTimeout(() => scrollWithRetry(8), 300);
+      } else {
+        scrollWithRetry(3);
+      }
+    },
+    []
+  );
+
+  const linkCls = (key: NavKey) =>
+    `ez-nav-link${activeKey === key ? ' active' : ''}`;
 
   return (
     <header className={`ez-nav-dark ${isScrolled ? 'is-scrolled' : ''}`}>
       <div className="ez-nav-inner">
         {/* Left: Logo */}
         <a
-          href="#"
+          href="/"
           onClick={(e) => {
             e.preventDefault();
+            setMobileMenuOpen(false);
             if (onBackToLanding) onBackToLanding();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            else {
+              navigateTo('/');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
           }}
           className="ez-nav-logo"
         >
@@ -72,43 +124,19 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
 
         {/* Center: Navigation Links */}
         <nav className="ez-nav-links">
-          <a
-            href="#beranda"
-            onClick={handleScrollTo('beranda')}
-            className="ez-nav-link active"
-          >
+          <a href="/" onClick={goPage('/')} className={linkCls('beranda')}>
             Beranda
           </a>
-          <a
-            href="#fitur"
-            onClick={handleScrollTo('fitur')}
-            className="ez-nav-link"
-          >
+          <a href="/#fitur" onClick={goLandingSection('fitur')} className="ez-nav-link">
             Fitur
           </a>
-          <a
-            href="/fitur"
-            onClick={handleGoPage('/fitur')}
-            className="ez-nav-link"
-          >
+          <a href="/fitur" onClick={goPage('/fitur')} className={linkCls('kenali')}>
             Kenali EZRAB
           </a>
-          <a
-            href="/keunggulan"
-            onClick={(e) => {
-              e.preventDefault();
-              setMobileMenuOpen(false);
-              onOpenAdvantages?.();
-            }}
-            className="ez-nav-link"
-          >
+          <a href="/keunggulan" onClick={goPage('/keunggulan')} className={linkCls('keunggulan')}>
             Keunggulan
           </a>
-          <a
-            href="#harga"
-            onClick={handleScrollTo('harga')}
-            className="ez-nav-link"
-          >
+          <a href="/#harga" onClick={goLandingSection('harga')} className="ez-nav-link">
             Harga
           </a>
           {/* Blog tinggal di subdomain — tautan absolut */}
@@ -151,11 +179,11 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
         aria-label="Navigasi utama"
       >
         <div className="ez-flagship-menu-kicker">EXPLORE EZRAB</div>
-        <a href="#beranda" onClick={handleScrollTo('beranda')}><span>01</span> Beranda</a>
-        <a href="#fitur" onClick={handleScrollTo('fitur')}><span>02</span> Fitur Utama</a>
-        <a href="/fitur" onClick={handleGoPage('/fitur')}><span>03</span> Kenali EZRAB</a>
-        <a href="/keunggulan" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); onOpenAdvantages?.(); }}><span>04</span> Keunggulan</a>
-        <a href="#harga" onClick={handleScrollTo('harga')}><span>05</span> Harga</a>
+        <a href="/" onClick={goPage('/')}><span>01</span> Beranda</a>
+        <a href="/#fitur" onClick={goLandingSection('fitur')}><span>02</span> Fitur Utama</a>
+        <a href="/fitur" onClick={goPage('/fitur')}><span>03</span> Kenali EZRAB</a>
+        <a href="/keunggulan" onClick={goPage('/keunggulan')}><span>04</span> Keunggulan</a>
+        <a href="/#harga" onClick={goLandingSection('harga')}><span>05</span> Harga</a>
         <button type="button" onClick={() => { setMobileMenuOpen(false); onOpenAuth('masuk'); }}>
           Masuk ke Workspace <ArrowRight size={16} />
         </button>
