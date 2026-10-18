@@ -34,6 +34,9 @@ import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { useProject } from '../../context/ProjectContext';
 import { saveProjectAhspFromCatalog } from '../../project-data/ahspBridge';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
+import { getAhspDirectPrice, canFinalizeAhsp, ahspCompletenessNote } from '../../data/priceDatabase2026/ahspDisplayPolicy';
+import { applyMarketOverlay, type AugmentedComponent } from '../../engine/pricing/market/ahspMarketOverlay';
+import { MarketReferencePanel } from './MarketReferencePanel';
 import type { AhspUnitPriceComposition } from '../../data/priceDatabase2026/types';
 
 interface AhspExplorerViewProps {
@@ -97,6 +100,9 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
   // Modals & Interactive State
   const [selectedAhsp, setSelectedAhsp] = useState<NationalAHSPItem | null>(null);
   const [addToRabModalItem, setAddToRabModalItem] = useState<NationalAHSPItem | null>(null);
+  const [marketPanelFor, setMarketPanelFor] = useState<{ code: string; name: string; unit: string } | null>(null);
+  // Tick agar overlay pasar dihitung ulang setelah panel mengubah review store.
+  const [marketTick, setMarketTick] = useState(0);
   const [showAuditModal, setShowAuditModal] = useState<boolean>(false);
   const [inputVolume, setInputVolume] = useState<number>(1);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -194,15 +200,15 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
       if (sortBy === 'priceAsc') {
         const ca = priceResolver2026.resolveAhspUnitPrice(a);
         const cb = priceResolver2026.resolveAhspUnitPrice(b);
-        const pa = (ca.hspPrice ?? ca.unitPrice) ?? Number.POSITIVE_INFINITY;
-        const pb = (cb.hspPrice ?? cb.unitPrice) ?? Number.POSITIVE_INFINITY;
+        const pa = getAhspDirectPrice(ca) ?? Number.POSITIVE_INFINITY;
+        const pb = getAhspDirectPrice(cb) ?? Number.POSITIVE_INFINITY;
         return pa - pb;
       }
       if (sortBy === 'priceDesc') {
         const ca = priceResolver2026.resolveAhspUnitPrice(a);
         const cb = priceResolver2026.resolveAhspUnitPrice(b);
-        const pa = (ca.hspPrice ?? ca.unitPrice) ?? -1;
-        const pb = (cb.hspPrice ?? cb.unitPrice) ?? -1;
+        const pa = getAhspDirectPrice(ca) ?? -1;
+        const pb = getAhspDirectPrice(cb) ?? -1;
         return pb - pa;
       }
       return 0;
@@ -224,10 +230,24 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
     return priceResolver2026.resolveAhspUnitPrice(selectedAhsp);
   }, [selectedAhsp]);
 
+  // Overlay harga pasar terverifikasi (view-layer; tidak mengubah data resmi).
+  // marketTick: overlay membaca review store (mutable) → hitung ulang tiap tick.
+  const selectedAhspAugmented = useMemo(() => {
+    if (!selectedAhspComposition) return null;
+    return applyMarketOverlay(selectedAhspComposition);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAhspComposition, marketTick]);
+
   const addToRabComposition = useMemo(() => {
     if (!addToRabModalItem) return null;
     return priceResolver2026.resolveAhspUnitPrice(addToRabModalItem);
   }, [addToRabModalItem]);
+
+  const addToRabAugmented = useMemo(() => {
+    if (!addToRabComposition) return null;
+    return applyMarketOverlay(addToRabComposition);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addToRabComposition, marketTick]);
 
   // Handle Domain Switch
   const handleDomainChange = (domain: AHSPDomain | 'ALL') => {
@@ -248,13 +268,23 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
   const handleConfirmAddToRab = () => {
     if (!addToRabModalItem) return;
 
-    const hsp = addToRabComposition?.hspPrice ?? addToRabComposition?.unitPrice ?? 0;
+    // AHSP parsial/belum lengkap TIDAK boleh masuk RAB sebagai harga final.
+    // Total kerja = Biaya Langsung (D); Biaya Umum & Keuntungan dinonaktifkan.
+    // Komposisi augmented: komponen ber-harga-pasar-terverifikasi ikut terhitung.
+    const comp = addToRabAugmented;
+    const gate = canFinalizeAhsp(comp);
+    if (!gate.ok) {
+      showToast(`Tidak dapat ditambahkan: ${gate.reason}`);
+      return;
+    }
+    const hsp = getAhspDirectPrice(comp)!;
+    const marketNote = comp?.hasMarketPrices ? ' (sebagian harga dari referensi pasar terverifikasi)' : '';
     const enrichedItem: NationalAHSPItem = {
       ...addToRabModalItem,
       unitPrice: hsp,
-      totalLabor: addToRabComposition?.labor.subtotalPerUnit || 0,
-      totalMaterial: addToRabComposition?.material.subtotalPerUnit || 0,
-      totalEquipment: addToRabComposition?.equipment.subtotalPerUnit || 0,
+      totalLabor: addToRabAugmented?.labor.subtotalPerUnit || 0,
+      totalMaterial: addToRabAugmented?.material.subtotalPerUnit || 0,
+      totalEquipment: addToRabAugmented?.equipment.subtotalPerUnit || 0,
     };
 
     if (onAddAhspToRab) {
@@ -270,13 +300,13 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
         totalPrice: hsp * inputVolume,
         category: addToRabModalItem.category || 'Pekerjaan',
         sectionName: addToRabModalItem.category || 'Pekerjaan',
-        laborPrice: addToRabComposition?.labor.subtotalPerUnit || 0,
-        materialPrice: addToRabComposition?.material.subtotalPerUnit || 0,
-        equipmentPrice: addToRabComposition?.equipment.subtotalPerUnit || 0,
+        laborPrice: addToRabAugmented?.labor.subtotalPerUnit || 0,
+        materialPrice: addToRabAugmented?.material.subtotalPerUnit || 0,
+        equipmentPrice: addToRabAugmented?.equipment.subtotalPerUnit || 0,
       });
     }
 
-    showToast(`Berhasil menambahkan ${addToRabModalItem.code} (${inputVolume} ${addToRabModalItem.unit}) ke RAB!`);
+    showToast(`Berhasil menambahkan ${addToRabModalItem.code} (${inputVolume} ${addToRabModalItem.unit}) ke RAB!${marketNote}`);
     setAddToRabModalItem(null);
     setInputVolume(1);
   };
@@ -288,7 +318,14 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
       return;
     }
     const comp = priceResolver2026.resolveAhspUnitPrice(item);
-    const hsp = comp.hspPrice ?? comp.unitPrice ?? 0;
+    // AHSP parsial tidak disimpan sebagai AHSP lengkap (termasuk overlay pasar).
+    const augmented = applyMarketOverlay(comp);
+    const gate = canFinalizeAhsp(augmented);
+    if (!gate.ok) {
+      showToast(`Tidak dapat disimpan: ${gate.reason}`);
+      return;
+    }
+    const hsp = getAhspDirectPrice(augmented)!;
     const enrichedItem: NationalAHSPItem = {
       ...item,
       unitPrice: hsp,
@@ -298,6 +335,55 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
     };
     saveProjectAhspFromCatalog(currentProject.id, enrichedItem);
     showToast(`Analisa ${item.code} berhasil disimpan ke AHSP Proyek "${currentProject.name}"!`);
+  };
+
+  // Baris komponen AHSP: dukung harga pasar terverifikasi + aksi cari referensi.
+  const renderCompRow = (
+    r: AugmentedComponent,
+    badge: { label: string; bg: string; fg: string },
+    key: number
+  ) => {
+    const price = r.unitPrice ?? r.marketUnitPrice;
+    const hasPrice = price !== null && price > 0;
+    return (
+      <tr key={key} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
+        <td style={{ padding: '8px 10px', color: 'var(--ez-color-text-primary)', fontWeight: 500 }}>
+          {r.itemName} {r.itemCode && <span style={{ color: 'var(--ez-color-text-muted)', fontSize: '11px' }}>({r.itemCode})</span>}
+        </td>
+        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+          <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: 'var(--ez-radius-pill)', background: badge.bg, color: badge.fg }}>
+            {badge.label}
+          </span>
+          {r.isMarketPriced ? (
+            <span title={'Harga pasar terverifikasi dari ' + (r.marketSourceName || 'toko')} style={{ display: 'inline-block', marginLeft: '4px', fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: 'var(--ez-radius-pill)', background: '#dcfce7', color: '#166534' }}>
+              Pasar
+            </span>
+          ) : null}
+        </td>
+        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-primary)' }}>
+          {r.coefficient}
+        </td>
+        <td style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>{r.unit}</td>
+        <td style={{ padding: '8px 10px', textAlign: 'right', color: hasPrice ? 'var(--ez-color-text)' : '#94A3B8' }}>
+          {hasPrice ? (
+            <>{price!.toLocaleString('id-ID')}{r.isMarketPriced ? <span style={{ fontSize: '10px', color: '#16a34a' }}> *</span> : null}</>
+          ) : (
+            <>
+              <div>Belum ada data</div>
+              <button
+                onClick={() => setMarketPanelFor({ code: r.itemCode, name: r.itemName, unit: r.unit })}
+                style={{ marginTop: '4px', fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-primary)', background: 'transparent', border: '1px solid var(--ez-color-primary)', borderRadius: '8px', padding: '4px 10px', cursor: 'pointer' }}
+              >
+                Cari Referensi Harga
+              </button>
+            </>
+          )}
+        </td>
+        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: r.subtotalPerUnit !== null ? 'var(--ez-color-text)' : '#94A3B8' }}>
+          {r.subtotalPerUnit !== null ? Math.round(r.subtotalPerUnit).toLocaleString('id-ID') : '—'}
+        </td>
+      </tr>
+    );
   };
 
   return (
@@ -1032,7 +1118,8 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             const laborTotal = composition.labor.subtotalPerUnit || (item.totalLabor ?? 0);
             const materialTotal = composition.material.subtotalPerUnit || (item.totalMaterial ?? 0);
             const equipTotal = composition.equipment.subtotalPerUnit || (item.totalEquipment ?? 0);
-            const hspPrice = composition.hspPrice ?? composition.unitPrice ?? item.unitPrice;
+            // Harga tampil = Biaya Langsung (D); E dinonaktifkan.
+            const hspPrice = getAhspDirectPrice(composition) ?? item.unitPrice;
             const pricingStatus = (hspPrice && hspPrice > 0 && item.domain === 'SMKK') ? 'FULL' : composition.pricingStatus;
 
             const domainColor = DOMAIN_COLOR_MAP[item.domain] || { bg: 'var(--ez-color-surface-tertiary)', text: '#475569', border: 'var(--ez-color-border)' };
@@ -1455,13 +1542,19 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
 
             {/* Modal Body: Rincian Koefisien Table */}
             <div style={{ padding: '20px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {selectedAhspComposition?.pricingStatus === 'PARTIAL' && (
+              {selectedAhspAugmented?.hasMarketPrices ? (
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', padding: '10px 14px', borderRadius: 'var(--ez-radius-card)', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Info size={15} style={{ flexShrink: 0 }} />
+                  <span><strong>Harga Pasar:</strong> {selectedAhspAugmented.marketPricedCount} komponen memakai referensi pasar terverifikasi (bertanda <strong>Pasar *</strong>). Bukan harga resmi AHSP.</span>
+                </div>
+              ) : null}
+              {selectedAhspAugmented?.pricingStatus === 'PARTIAL' && (
                 <div style={{ background: 'var(--ez-pastel-cream)', border: '1px solid #FDF3D8', color: 'var(--ez-hue-amber-text)', padding: '10px 14px', borderRadius: 'var(--ez-radius-card)', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <AlertTriangle size={15} style={{ flexShrink: 0 }} />
-                  <span><strong>Harga Parsial:</strong> Beberapa komponen sumber daya belum memiliki data harga di database 2026. Subtotal di bawah mencerminkan komponen yang telah terpetakan ({selectedAhspComposition.resolvedComponents} dari {selectedAhspComposition.totalComponents} item).</span>
+                  <span><strong>Harga Parsial:</strong> Beberapa komponen sumber daya belum memiliki data harga di database 2026. Subtotal di bawah mencerminkan komponen yang telah terpetakan ({selectedAhspAugmented.resolvedComponents} dari {selectedAhspAugmented.totalComponents} item).</span>
                 </div>
               )}
-              {selectedAhspComposition?.pricingStatus === 'MISSING' && (
+              {selectedAhspAugmented?.pricingStatus === 'MISSING' && (
                 <div style={{ background: 'var(--ez-hue-slate-bg)', border: '1px solid var(--ez-color-border-soft)', color: 'var(--ez-color-text-slate)', padding: '10px 14px', borderRadius: 'var(--ez-radius-card)', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Info size={15} style={{ flexShrink: 0 }} />
                   <span><strong>Harga Belum Tersedia:</strong> Belum ada data harga satuan untuk komponen pada analisa ini di database standar 2026. Anda dapat menyesuaikan harga secara manual setelah menambahkan ke proyek.</span>
@@ -1481,148 +1574,99 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                 </thead>
                 <tbody>
                   {/* 1. Labor Components */}
-                  {(selectedAhspComposition?.labor.components.length ?? 0) > 0 && (
+                  {(selectedAhspAugmented?.labor.components.length ?? 0) > 0 && (
                     <>
                       <tr style={{ background: 'var(--ez-pastel-sky)', fontWeight: 800, color: 'var(--ez-hue-blue-text-deep)' }}>
                         <td colSpan={6} style={{ padding: '6px 10px', fontSize: '11.5px' }}>
                           A. TENAGA KERJA (UPAH)
                         </td>
                       </tr>
-                      {selectedAhspComposition!.labor.components.map((r, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
-                          <td style={{ padding: '8px 10px', color: 'var(--ez-color-text-primary)', fontWeight: 500 }}>
-                            {r.itemName} {r.itemCode && <span style={{ color: 'var(--ez-color-text-muted)', fontSize: '11px' }}>({r.itemCode})</span>}
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-pastel-sky)', color: 'var(--ez-hue-blue-text-deep)' }}>
-                              TENAGA
-                            </span>
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-primary)' }}>
-                            {r.coefficient}
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>{r.unit || 'OH'}</td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', color: r.unitPrice !== null ? 'var(--ez-color-text)' : '#94A3B8' }}>
-                            {r.unitPrice !== null ? r.unitPrice.toLocaleString('id-ID') : 'Belum ada data'}
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: r.subtotalPerUnit !== null ? 'var(--ez-color-text)' : '#94A3B8' }}>
-                            {r.subtotalPerUnit !== null ? Math.round(r.subtotalPerUnit).toLocaleString('id-ID') : '—'}
-                          </td>
-                        </tr>
-                      ))}
+                      {selectedAhspAugmented!.labor.components.map((r, i) =>
+                        renderCompRow(r, { label: 'TENAGA', bg: 'var(--ez-pastel-sky)', fg: 'var(--ez-hue-blue-text-deep)' }, i)
+                      )}
                     </>
                   )}
 
                   {/* 2. Material Components */}
-                  {(selectedAhspComposition?.material.components.length ?? 0) > 0 && (
+                  {(selectedAhspAugmented?.material.components.length ?? 0) > 0 && (
                     <>
                       <tr style={{ background: 'var(--ez-pastel-cream)', fontWeight: 800, color: 'var(--ez-hue-amber-text)' }}>
                         <td colSpan={6} style={{ padding: '6px 10px', fontSize: '11.5px' }}>
                           B. BAHAN / MATERIAL
                         </td>
                       </tr>
-                      {selectedAhspComposition!.material.components.map((r, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
-                          <td style={{ padding: '8px 10px', color: 'var(--ez-color-text-primary)', fontWeight: 500 }}>
-                            {r.itemName} {r.itemCode && <span style={{ color: 'var(--ez-color-text-muted)', fontSize: '11px' }}>({r.itemCode})</span>}
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-pastel-cream)', color: 'var(--ez-hue-amber-text)' }}>
-                              BAHAN
-                            </span>
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-primary)' }}>
-                            {r.coefficient}
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>{r.unit}</td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', color: r.unitPrice !== null ? 'var(--ez-color-text)' : '#94A3B8' }}>
-                            {r.unitPrice !== null ? r.unitPrice.toLocaleString('id-ID') : 'Belum ada data'}
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: r.subtotalPerUnit !== null ? 'var(--ez-color-text)' : '#94A3B8' }}>
-                            {r.subtotalPerUnit !== null ? Math.round(r.subtotalPerUnit).toLocaleString('id-ID') : '—'}
-                          </td>
-                        </tr>
-                      ))}
+                      {selectedAhspAugmented!.material.components.map((r, i) =>
+                        renderCompRow(r, { label: 'BAHAN', bg: 'var(--ez-pastel-cream)', fg: 'var(--ez-hue-amber-text)' }, i)
+                      )}
                     </>
                   )}
 
                   {/* 3. Equipment Components */}
-                  {(selectedAhspComposition?.equipment.components.length ?? 0) > 0 && (
+                  {(selectedAhspAugmented?.equipment.components.length ?? 0) > 0 && (
                     <>
                       <tr style={{ background: 'var(--ez-hue-purple-bg-soft)', fontWeight: 800, color: 'var(--ez-hue-purple-text)' }}>
                         <td colSpan={6} style={{ padding: '6px 10px', fontSize: '11.5px' }}>
                           C. PERALATAN
                         </td>
                       </tr>
-                      {selectedAhspComposition!.equipment.components.map((r, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
-                          <td style={{ padding: '8px 10px', color: 'var(--ez-color-text-primary)', fontWeight: 500 }}>
-                            {r.itemName} {r.itemCode && <span style={{ color: 'var(--ez-color-text-muted)', fontSize: '11px' }}>({r.itemCode})</span>}
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-purple-bg-deep)', color: 'var(--ez-hue-violet-text)' }}>
-                              ALAT
-                            </span>
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-primary)' }}>
-                            {r.coefficient}
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>{r.unit}</td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', color: r.unitPrice !== null ? 'var(--ez-color-text)' : '#94A3B8' }}>
-                            {r.unitPrice !== null ? r.unitPrice.toLocaleString('id-ID') : 'Belum ada data'}
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: r.subtotalPerUnit !== null ? 'var(--ez-color-text)' : '#94A3B8' }}>
-                            {r.subtotalPerUnit !== null ? Math.round(r.subtotalPerUnit).toLocaleString('id-ID') : '—'}
-                          </td>
-                        </tr>
-                      ))}
+                      {selectedAhspAugmented!.equipment.components.map((r, i) =>
+                        renderCompRow(r, { label: 'ALAT', bg: 'var(--ez-hue-purple-bg-deep)', fg: 'var(--ez-hue-violet-text)' }, i)
+                      )}
                     </>
                   )}
 
                   {/* Subtotals & Grand Total */}
+                  {/* Biaya Langsung (D = A + B + C). Biaya Umum & Keuntungan (E)
+                      DINONAKTIFKAN sementara: tidak dihitung, tidak ditampilkan,
+                      tidak ditambahkan ke total (keputusan tampilan EZRAB). */}
                   <tr style={{ fontWeight: 700, background: 'var(--ez-hue-slate-bg)', borderTop: '2px solid var(--ez-color-border-line)' }}>
                     <td colSpan={5} style={{ padding: '10px', textAlign: 'right', fontSize: '12.5px', color: 'var(--ez-color-text-slate)' }}>
-                      Jumlah Biaya Langsung (D = A + B + C):
+                      Jumlah Biaya Langsung (D = A + B + C)
+                      {selectedAhspAugmented && selectedAhspAugmented.pricingStatus === 'PARTIAL' ? ' (parsial)' : ''}:
                     </td>
                     <td style={{ padding: '10px', textAlign: 'right', color: 'var(--ez-color-text-primary)', fontSize: '13.5px', fontWeight: 800 }}>
-                      {selectedAhspComposition && selectedAhspComposition.unitPrice !== null && selectedAhspComposition.unitPrice > 0
-                        ? formatCurrencyIDR(selectedAhspComposition.unitPrice)
+                      {selectedAhspAugmented && selectedAhspAugmented.unitPrice !== null && selectedAhspAugmented.unitPrice > 0
+                        ? formatCurrencyIDR(selectedAhspAugmented.unitPrice)
                         : '—'}
                     </td>
                   </tr>
 
-                  {selectedAhspComposition && selectedAhspComposition.overheadAmount !== undefined && selectedAhspComposition.overheadAmount !== null && selectedAhspComposition.overheadAmount > 0 ? (
-                    <tr style={{ fontWeight: 700, background: 'var(--ez-color-surface-secondary)' }}>
-                      <td colSpan={5} style={{ padding: '8px 10px', textAlign: 'right', fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
-                        Biaya Umum dan Keuntungan 10% (E):
-                      </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', color: 'var(--ez-color-text-muted)', fontSize: '13px', fontWeight: 700 }}>
-                        {formatCurrencyIDR(selectedAhspComposition.overheadAmount)}
-                      </td>
-                    </tr>
-                  ) : null}
+                  {(() => {
+                    const note = ahspCompletenessNote(selectedAhspAugmented);
+                    return note ? (
+                      <tr style={{ background: 'var(--ez-pastel-amber)', borderTop: '1px solid var(--ez-hue-amber-border)' }}>
+                        <td colSpan={6} style={{ padding: '10px 12px', fontSize: '12.5px', color: 'var(--ez-hue-amber-text-deep)', fontWeight: 700 }}>
+                          {note}
+                        </td>
+                      </tr>
+                    ) : null;
+                  })()}
 
                   <tr style={{ fontWeight: 800, background: 'var(--ez-pastel-sky)', borderTop: '1.5px solid var(--ez-hue-blue-bg-deep)' }}>
                     <td colSpan={5} style={{ padding: '12px 10px', textAlign: 'right', fontSize: '13.5px', color: 'var(--ez-hue-blue-text-deep)' }}>
-                      Harga Satuan Pekerjaan (F = D + E):
+                      Harga Satuan Pekerjaan (D = Biaya Langsung):
                     </td>
-                    <td style={{ padding: '12px 10px', textAlign: 'right', color: (selectedAhspComposition?.pricingStatus === 'FULL' || selectedAhsp?.domain === 'SMKK') ? 'var(--ez-hue-green-text)' : selectedAhspComposition?.pricingStatus === 'PARTIAL' ? 'var(--ez-hue-amber-text-deep)' : 'var(--ez-color-text-muted)', fontSize: '16px', fontWeight: 900 }}>
+                    <td style={{ padding: '12px 10px', textAlign: 'right', color: (selectedAhspAugmented?.pricingStatus === 'FULL' || selectedAhsp?.domain === 'SMKK') ? 'var(--ez-hue-green-text)' : selectedAhspAugmented?.pricingStatus === 'PARTIAL' ? 'var(--ez-hue-amber-text-deep)' : 'var(--ez-color-text-muted)', fontSize: '16px', fontWeight: 900 }}>
                       {(() => {
-                        const finalP = selectedAhspComposition?.hspPrice ?? selectedAhspComposition?.unitPrice ?? selectedAhsp?.unitPrice;
-                        return finalP !== null && finalP !== undefined && finalP > 0
-                          ? formatCurrencyIDR(finalP)
+                        const comp = selectedAhspAugmented;
+                        // Total = Biaya Langsung (D). Untuk item tanpa komponen tapi
+                        // ber-DHSP resmi, pakai harga resmi sebagai referensi.
+                        const dPrice = getAhspDirectPrice(comp);
+                        const isFull = comp?.pricingStatus === 'FULL' || selectedAhsp?.domain === 'SMKK';
+                        return isFull && dPrice !== null && dPrice > 0
+                          ? formatCurrencyIDR(dPrice)
                           : 'Harga belum tersedia';
                       })()}
                     </td>
                   </tr>
 
-                  {selectedAhspComposition?.officialDhspPrice && selectedAhspComposition.officialDhspPrice !== (selectedAhspComposition.hspPrice ?? selectedAhspComposition.unitPrice) ? (
+                  {selectedAhspAugmented?.officialDhspPrice && selectedAhspAugmented.officialDhspPrice !== getAhspDirectPrice(selectedAhspAugmented) ? (
                     <tr style={{ fontWeight: 800, background: 'var(--ez-pastel-mint)', borderTop: '1px solid var(--ez-hue-green-border)' }}>
                       <td colSpan={5} style={{ padding: '10px', textAlign: 'right', fontSize: '13px', color: 'var(--ez-hue-green-text)' }}>
                         Daftar Harga Satuan Pekerjaan Resmi (DHSP):
                       </td>
                       <td style={{ padding: '10px', textAlign: 'right', color: 'var(--ez-hue-green-text)', fontSize: '15px', fontWeight: 900 }}>
-                        {formatCurrencyIDR(selectedAhspComposition.officialDhspPrice)}
+                        {formatCurrencyIDR(selectedAhspAugmented.officialDhspPrice)}
                       </td>
                     </tr>
                   ) : null}
@@ -1648,7 +1692,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px' }}>
                   <div><strong>Pedoman:</strong> SE DJBK No. 47/SE/Dk/2026 ({selectedAhsp.domain === 'CIPTA_KARYA' ? 'Lampiran VI' : selectedAhsp.domain === 'SUMBER_DAYA_AIR' ? 'Lampiran IV' : selectedAhsp.domain === 'BINA_MARGA' ? 'Lampiran V' : 'Lampiran III'})</div>
                   <div><strong>Workbook:</strong> {selectedAhsp.domain === 'BINA_MARGA' ? 'AHSP 2026 Bina Marga.xlsx' : 'ahsp bina kontruksi 2026.xlsx'}</div>
-                  <div><strong>Lokasi / Sheet:</strong> {selectedAhspComposition?.provenanceSource || (selectedAhsp as any).source?.sheet || 'Analisis Resmi'}</div>
+                  <div><strong>Lokasi / Sheet:</strong> {selectedAhspAugmented?.provenanceSource || (selectedAhsp as any).source?.sheet || 'Analisis Resmi'}</div>
                   <div><strong>Price Master:</strong> {selectedAhsp.domain === 'BINA_MARGA' ? 'Upah Bahan & DHSP Bina Marga 2026' : 'Upah Bahan & DHSP Cipta Karya 2026'}</div>
                   <div><strong>Status:</strong> <span style={{ color: 'var(--ez-hue-green-text-bright)', fontWeight: 700 }}>VERIFIED</span></div>
                 </div>
@@ -1757,6 +1801,20 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
       {/* =========================================================================
           9. ADD TO RAB MODAL (VOLUME INPUT)
          ========================================================================= */}
+      {marketPanelFor && (
+        <MarketReferencePanel
+          componentCode={marketPanelFor.code}
+          componentName={marketPanelFor.name}
+          componentUnit={marketPanelFor.unit}
+          onClose={() => setMarketPanelFor(null)}
+          onChanged={() => {
+            // Panel mengubah store; overlay dihitung ulang via useMemo pada
+            // render berikutnya (selectedAhspComposition tidak berubah, tapi
+            // applyMarketOverlay membaca store terbaru → paksa via tick).
+            setMarketTick((t) => t + 1);
+          }}
+        />
+      )}
       {addToRabModalItem && (
         <div
           style={{
@@ -1817,13 +1875,23 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                 {addToRabModalItem.name}
               </div>
               {(() => {
-                const rabHsp = addToRabComposition?.hspPrice ?? addToRabComposition?.unitPrice;
+                // Harga kerja = Biaya Langsung (D). AHSP parsial tidak bisa lanjut.
+                const comp = addToRabAugmented;
+                const rabD = getAhspDirectPrice(comp);
+                const gate = canFinalizeAhsp(comp);
                 return (
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', marginTop: '6px' }}>
-                    {rabHsp !== null && (rabHsp ?? 0) > 0
-                      ? `${formatCurrencyIDR(rabHsp!)} / ${addToRabModalItem.unit}`
-                      : 'Harga belum tersedia'}
-                  </div>
+                  <>
+                    <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', marginTop: '6px' }}>
+                      {gate.ok && rabD !== null && rabD > 0
+                        ? `${formatCurrencyIDR(rabD)} / ${addToRabModalItem.unit}`
+                        : 'Harga belum tersedia'}
+                    </div>
+                    {!gate.ok ? (
+                      <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 700, color: 'var(--ez-hue-amber-text-deep)', background: 'var(--ez-pastel-amber)', border: '1px solid var(--ez-hue-amber-border)', borderRadius: '8px', padding: '8px 10px' }}>
+                        {gate.reason} Tidak dapat ditambahkan sebagai harga final.
+                      </div>
+                    ) : null}
+                  </>
                 );
               })()}
             </div>
@@ -1868,9 +1936,10 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-hue-green-text)' }}>Total Estimasi Biaya:</span>
               <span style={{ fontSize: '16px', fontWeight: 900, color: 'var(--ez-hue-green-text)' }}>
                 {(() => {
-                  const rabHsp = addToRabComposition?.hspPrice ?? addToRabComposition?.unitPrice;
-                  return rabHsp !== null && (rabHsp ?? 0) > 0
-                    ? formatCurrencyIDR(rabHsp! * (inputVolume || 0))
+                  const comp = addToRabAugmented;
+                  const rabD = getAhspDirectPrice(comp);
+                  return canFinalizeAhsp(comp).ok && rabD !== null && rabD > 0
+                    ? formatCurrencyIDR(rabD * (inputVolume || 0))
                     : '—';
                 })()}
               </span>
@@ -1895,17 +1964,17 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               </button>
               <button
                 onClick={handleConfirmAddToRab}
-                disabled={inputVolume <= 0}
+                disabled={inputVolume <= 0 || !canFinalizeAhsp(addToRabAugmented).ok}
                 style={{
                   flex: 2,
                   height: '40px',
                   borderRadius: 'var(--ez-radius-control)',
-                  background: inputVolume > 0 ? 'var(--ez-color-primary)' : '#94A3B8',
+                  background: inputVolume > 0 && canFinalizeAhsp(addToRabAugmented).ok ? 'var(--ez-color-primary)' : '#94A3B8',
                   color: 'var(--ez-color-on-primary)',
                   border: 'none',
                   fontSize: '13px',
                   fontWeight: 700,
-                  cursor: inputVolume > 0 ? 'pointer' : 'not-allowed',
+                  cursor: inputVolume > 0 && canFinalizeAhsp(addToRabAugmented).ok ? 'pointer' : 'not-allowed',
                 }}
               >
                 Konfirmasi + Tambah ke RAB

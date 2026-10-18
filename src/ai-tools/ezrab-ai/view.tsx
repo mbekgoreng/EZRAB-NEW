@@ -246,6 +246,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           // FASE 5A/5B: use the deterministic direct total from the live RAB snapshot
           // (same source as get_project_total tool), not the stored grand total.
           projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
+          projectItems: projectSnapshot?.items ?? null,
           projectCostBreakdown: projectSnapshot?.costBreakdown
             ? {
                 grandTotal: projectSnapshot.costBreakdown.grandTotal,

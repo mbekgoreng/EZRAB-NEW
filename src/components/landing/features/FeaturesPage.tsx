@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { ArrowRight, Zap, Check } from 'lucide-react';
 import './features-page.css';
 import { ExactFooter } from '../exact/ExactFooter';
+import { ExactNavbar } from '../exact/ExactNavbar';
 import { FeaturesHero } from './FeaturesHero';
-import { EcosystemDiagram } from './EcosystemDiagram';
 import { DedFlowVisual } from './DedFlowVisual';
 import { QtoDemo } from './QtoDemo';
 import {
@@ -51,6 +51,10 @@ const Section: React.FC<{
   </section>
 );
 
+const Ecosystem3D = lazy(() =>
+  import('./Ecosystem3D').then((m) => ({ default: m.Ecosystem3D }))
+);
+
 /**
  * /fitur — "Kenali EZRAB": pusat penjelasan produk.
  * Bukan hero landing page, bukan dashboard aplikasi.
@@ -85,15 +89,12 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
 
   return (
     <div className="fp-page">
-      {/* Nav */}
-      <header className="fp-nav">
-        <button type="button" className="fp-nav-back" onClick={onBackToLanding} aria-label="Kembali ke beranda">
-          <span className="fp-nav-logo-text">EZRAB</span>
-        </button>
-        <button type="button" className="fp-nav-cta" onClick={onOpenWorkspace}>
-          Coba EZRAB <ArrowRight size={14} />
-        </button>
-      </header>
+      {/* Nav — sama seperti landing page */}
+      <ExactNavbar
+        onOpenAuth={() => onOpenWorkspace()}
+        onBackToLanding={onBackToLanding}
+        onOpenAdvantages={onOpenAdvantages}
+      />
 
       {/* A — Cinematic hero */}
       <FeaturesHero onOpenWorkspace={onOpenWorkspace} />
@@ -114,11 +115,18 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
         id="ekosistem"
         marker="C"
         meta="EKOSISTEM"
-        title="Satu alur kerja, tiga belas modul yang saling terhubung."
-        sub="Setiap modul punya peran berbeda. Diagram ini menunjukkan bagaimana data mengalir di antara mereka — bukan sekadar daftar fitur."
+        title="Kenali Ekosistem EZRAB"
+        sub="Dari gambar kerja hingga kendali biaya proyek, setiap proses dirancang untuk saling terhubung."
         alt
       >
-        <EcosystemDiagram />
+        <Suspense fallback={<div className="eco3d-canvas" style={{ height: 560 }} />}>
+          <Ecosystem3D
+            onOpenWorkspace={onOpenWorkspace}
+            onExploreFeatures={() => {
+              document.getElementById('ded-ai')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          />
+        </Suspense>
       </Section>
 
       {/* D — DED → RAB AI */}

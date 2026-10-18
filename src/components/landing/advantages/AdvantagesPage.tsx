@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import './advantages-page.css';
 import { ExactFooter } from '../exact/ExactFooter';
+import { ExactNavbar } from '../exact/ExactNavbar';
 import { AdvantagesHero } from './AdvantagesHero';
 import {
   ProblemSection,
@@ -92,15 +93,12 @@ export const AdvantagesPage: React.FC<AdvantagesPageProps> = ({
 
   return (
     <div className="adv-page">
-      {/* Nav */}
-      <header className="adv-nav">
-        <button type="button" className="adv-nav-back" onClick={onBackToLanding} aria-label="Kembali ke beranda">
-          <span className="adv-nav-logo-text">EZRAB</span>
-        </button>
-        <button type="button" className="adv-nav-cta" onClick={onOpenWorkspace}>
-          Coba EZRAB <ArrowRight size={14} />
-        </button>
-      </header>
+      {/* Nav — sama seperti landing page */}
+      <ExactNavbar
+        onOpenAuth={() => onOpenWorkspace()}
+        onBackToLanding={onBackToLanding}
+        onOpenAdvantages={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      />
 
       {/* 01 — Opening */}
       <AdvantagesHero onExploreWorkflow={scrollToWorkflow} onOpenFeatures={onOpenFeatures} />

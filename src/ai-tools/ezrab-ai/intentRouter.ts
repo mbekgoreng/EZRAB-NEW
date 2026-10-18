@@ -25,6 +25,8 @@ export type ChatIntent =
   | 'SEARCH_AHSP'
   | 'QUERY_PROJECT_TOTAL'
   | 'QUERY_PROJECT_LIST'
+  | 'QUERY_MOST_EXPENSIVE_ITEMS'
+  | 'QUERY_CHEAPEST_ITEMS'
   | 'UNKNOWN';
 
 export interface IntentResult {
@@ -93,6 +95,13 @@ const PATTERNS: Pattern[] = [
   // Queries with params — trigger words are non-capturing so m[1] is always the keyword
   { intent: 'SEARCH_AHSP', re: /\b(?:cari|search|carikan)\b.*\bahsp\b\s+(.+)/, paramGroup: true },
   { intent: 'SEARCH_AHSP', re: /\bahsp\b\s+(.+)/, paramGroup: true },
+  // Item termahal/termurah — deterministik dari snapshot RAB (tanpa AI).
+  // Cakup varian: "material paling mahal", "item termahal", "pekerjaan terbesar biayanya", dll.
+  // Ditempatkan SEBELUM QUERY_PROJECT_TOTAL agar "berapa material termahal proyek" tidak tersedot ke total.
+  { intent: 'QUERY_MOST_EXPENSIVE_ITEMS', re: /\b(material|bahan|item|pekerjaan|komponen)\b.*\b(paling mahal|termahal|tertinggi|terbesar)\b/ },
+  { intent: 'QUERY_MOST_EXPENSIVE_ITEMS', re: /\b(paling mahal|termahal|tertinggi|terbesar)\b.*\b(material|bahan|item|pekerjaan|komponen|biaya|harga)\b/ },
+  { intent: 'QUERY_CHEAPEST_ITEMS', re: /\b(material|bahan|item|pekerjaan|komponen)\b.*\b(paling murah|termurah|terendah|terkecil)\b/ },
+  { intent: 'QUERY_CHEAPEST_ITEMS', re: /\b(paling murah|termurah|terendah|terkecil)\b.*\b(material|bahan|item|pekerjaan|komponen|biaya|harga)\b/ },
   { intent: 'QUERY_PROJECT_TOTAL', re: /\b(berapa|total|jumlah)\b.*\b(biaya|total|anggaran)\b.*\bproyek\b/ },
   { intent: 'QUERY_PROJECT_LIST', re: /\b(daftar|list|semua)\b.*\bproyek\b/ },
 ];

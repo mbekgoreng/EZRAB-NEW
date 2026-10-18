@@ -21,6 +21,15 @@ export interface ChatActionContext {
   projects: Array<{ id: string; name: string }>;
   /** Project RAB direct total (null if unknown) */
   projectTotal: number | null;
+  /** RAB items of the active project (for deterministic ranking) */
+  projectItems?: Array<{
+    description: string;
+    unit: string;
+    volume: number;
+    unitPrice: number | null;
+    totalPrice: number;
+    priceStatus: string;
+  }> | null;
   /** Canonical cost breakdown (null if unknown) */
   projectCostBreakdown?: {
     grandTotal: number;
@@ -131,6 +140,48 @@ export function executeIntent(
       if (!tool) return { ok: false, message: 'Pencarian AHSP tidak tersedia saat ini.' };
       const result = tool.invoke({ kata_kunci: param });
       return { ok: !result.startsWith('ERROR'), message: result };
+    }
+
+    case 'QUERY_MOST_EXPENSIVE_ITEMS':
+    case 'QUERY_CHEAPEST_ITEMS': {
+      const cheapest = intent === 'QUERY_CHEAPEST_ITEMS';
+      if (!ctx.activeProject) {
+        return { ok: true, message: 'Tidak ada proyek aktif. Buka salah satu proyek dulu, lalu tanyakan lagi.' };
+      }
+      const items = (ctx.projectItems ?? []).filter(
+        (it) => it.priceStatus === 'PRICE_RESOLVED' && it.totalPrice > 0
+      );
+      if (items.length === 0) {
+        return {
+          ok: true,
+          message:
+            `Proyek "${ctx.activeProject.name}" belum memiliki item RAB berharga. ` +
+            `Tambahkan item dan harga satuannya dulu di menu RAB & Estimasi, lalu tanyakan lagi.`,
+        };
+      }
+      const sorted = [...items].sort((a, b) =>
+        cheapest ? a.totalPrice - b.totalPrice : b.totalPrice - a.totalPrice
+      );
+      const top = sorted.slice(0, 5);
+      const label = cheapest ? 'termurah' : 'termahal';
+      const lines = top.map(
+        (it, i) =>
+          `${i + 1}. ${it.description} — ${fmtIDR(it.totalPrice)}` +
+          (it.unitPrice ? ` (${it.volume} ${it.unit} × ${fmtIDR(it.unitPrice)})` : '')
+      );
+      // Harga satuan tertinggi bisa beda item dengan total tertinggi — sebutkan bila beda.
+      const byUnit = [...items]
+        .filter((it) => (it.unitPrice ?? 0) > 0)
+        .sort((a, b) => (b.unitPrice ?? 0) - (a.unitPrice ?? 0))[0];
+      let extra = '';
+      if (!cheapest && byUnit && top[0] && byUnit.description !== top[0].description) {
+        extra = `\n\nHarga satuan tertinggi: ${byUnit.description} — ${fmtIDR(byUnit.unitPrice ?? 0)}/${byUnit.unit}.`;
+      }
+      return {
+        ok: true,
+        message:
+          `Item ${label} di proyek "${ctx.activeProject.name}" (berdasarkan total harga):\n${lines.join('\n')}${extra}`,
+      };
     }
 
     default:
