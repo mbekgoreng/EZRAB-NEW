@@ -99,13 +99,21 @@ function newRequestId() {
   return 'req_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
 }
 
-async function callGemini(key, model, message, systemPrompt, temperature, maxTokens, jsonMode) {
+async function callGemini(key, model, message, systemPrompt, temperature, maxTokens, jsonMode, media) {
   const contents = [];
   if (systemPrompt) {
     contents.push({ role: 'user', parts: [{ text: '[SYSTEM]\n' + systemPrompt }] });
     contents.push({ role: 'model', parts: [{ text: 'Baik, saya mengerti.' }] });
   }
-  contents.push({ role: 'user', parts: [{ text: message }] });
+  // Vision: lampirkan gambar/PDF sebagai inlineData (format native Gemini).
+  const parts = [{ text: message }];
+  if (media && media.imageDataBase64) {
+    parts.push({ inlineData: { mimeType: media.imageMimeType || 'image/png', data: media.imageDataBase64 } });
+  }
+  if (media && media.pdfDataBase64) {
+    parts.push({ inlineData: { mimeType: 'application/pdf', data: media.pdfDataBase64 } });
+  }
+  contents.push({ role: 'user', parts });
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), ATTEMPT_TIMEOUT_MS);
   const started = Date.now();
@@ -134,10 +142,21 @@ async function callGemini(key, model, message, systemPrompt, temperature, maxTok
   }
 }
 
-async function callOAI(base, key, model, provider, message, systemPrompt, temperature, maxTokens, jsonMode) {
+async function callOAI(base, key, model, provider, message, systemPrompt, temperature, maxTokens, jsonMode, media) {
   const messages = [];
   if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
-  messages.push({ role: 'user', content: message });
+  // Vision via OpenAI-compatible image_url. PDF tidak didukung chat-completions
+  // generik → hanya gambar yang diteruskan; PDF ditangani Gemini.
+  const userContent = [{ type: 'text', text: message }];
+  if (media && media.imageDataBase64) {
+    userContent.push({
+      type: 'image_url',
+      image_url: {
+        url: `data:${media.imageMimeType || 'image/png'};base64,${media.imageDataBase64}`,
+      },
+    });
+  }
+  messages.push({ role: 'user', content: userContent });
   const ctl = new AbortController();
   const t = setTimeout(() => ctl.abort(), ATTEMPT_TIMEOUT_MS);
   const started = Date.now();
@@ -176,20 +195,40 @@ export async function executeAI(o, onAttempt) {
   // never override it. See composeSystemPrompt().
   const { message, mode = 'fast', temperature = 0.3, maxTokens = 4000, jsonMode = false } = o;
   const systemPrompt = composeSystemPrompt(o.systemPrompt);
+  // Vision media (sudah disanitasi validateAiInput): teruskan ke provider.
+  const media =
+    o.imageDataBase64 || o.pdfDataBase64
+      ? { imageDataBase64: o.imageDataBase64, imageMimeType: o.imageMimeType, pdfDataBase64: o.pdfDataBase64 }
+      : undefined;
+  const hasImage = Boolean(media && media.imageDataBase64);
+  const hasPdf = Boolean(media && media.pdfDataBase64);
 
   const gk = envKeys('GEMINI_API_KEY', 6);
   const zk = zyrouterKey();
   const ak = envKeys('ATRIA_API_KEY', 14);
 
   const attempts = [];
-  if (mode === 'advanced') {
-    if (zk) attempts.push(() => callOAI(ZYROUTER_BASE, zk, ADVANCED_MODEL, 'zyrouter', message, systemPrompt, temperature, maxTokens, jsonMode));
-    gk.forEach((k) => attempts.push(() => callGemini(k, FAST_MODEL, message, systemPrompt, temperature, maxTokens, jsonMode)));
+  const geminiCall = (k, model) => () => callGemini(k, model, message, systemPrompt, temperature, maxTokens, jsonMode, media);
+  const zyrouterCall = () => () => callOAI(ZYROUTER_BASE, zk, ADVANCED_MODEL, 'zyrouter', message, systemPrompt, temperature, maxTokens, jsonMode, media);
+  const atriaCall = (k) => () => callOAI(ATRIA_BASE, k, ATRIA_MODEL, 'atria', message, systemPrompt, temperature, maxTokens, jsonMode, media);
+
+  if (mode === 'vision') {
+    // Vision: Gemini dulu (native inlineData gambar+PDF), lalu ZyRouter/Atria
+    // via image_url (hanya gambar; PDF butuh Gemini).
+    gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
+    if (hasImage && zk) attempts.push(zyrouterCall());
+    if (hasImage) ak.forEach((k) => attempts.push(atriaCall(k)));
+    if (hasPdf && gk.length === 0) {
+      return { ok: false, error: 'Vision PDF membutuhkan GEMINI_API_KEY_* — tidak ada key Gemini terkonfigurasi', requestId, attempts: [] };
+    }
+  } else if (mode === 'advanced') {
+    if (zk) attempts.push(zyrouterCall());
+    gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
   } else {
-    gk.forEach((k) => attempts.push(() => callGemini(k, FAST_MODEL, message, systemPrompt, temperature, maxTokens, jsonMode)));
-    if (zk) attempts.push(() => callOAI(ZYROUTER_BASE, zk, ADVANCED_MODEL, 'zyrouter', message, systemPrompt, temperature, maxTokens, jsonMode));
+    gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
+    if (zk) attempts.push(zyrouterCall());
   }
-  ak.slice(0, 3).forEach((k) => attempts.push(() => callOAI(ATRIA_BASE, k, ATRIA_MODEL, 'atria', message, systemPrompt, temperature, maxTokens, jsonMode)));
+  if (mode !== 'vision') ak.forEach((k) => attempts.push(atriaCall(k)));
 
   if (attempts.length === 0) {
     return { ok: false, error: 'No AI provider keys configured', requestId, attempts: [] };
@@ -300,6 +339,9 @@ export async function handleAiRequest(req, res, opts = {}) {
     durationMs,
     promptChars: input.message.length,
     promptHash: sha256hex(input.message).slice(0, 16),
+    hasImage: Boolean(input.imageDataBase64),
+    imageChars: input.imageDataBase64 ? input.imageDataBase64.length : 0,
+    hasPdf: Boolean(input.pdfDataBase64),
     ipHash: ipHash(req),
     authMethod: auth.method,
     userId: auth.user ? auth.user.id : null,

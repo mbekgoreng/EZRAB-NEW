@@ -186,11 +186,31 @@ export function validateAiInput(body) {
   if (!message.trim()) errors.push('message/prompt wajib diisi');
   if (message.length > 20000) errors.push('message/prompt maksimal 20000 karakter');
   const rawMode = String(body.mode || body.capabilityMode || 'fast').toLowerCase();
-  const mode = rawMode === 'advanced' ? 'advanced' : 'fast';
+  // 'vision' = multimodal (gambar/PDF ikut dikirim ke provider). Nilai lain
+  // yang tak dikenal tetap di-clamp ke 'fast' agar tak jadi mode liar.
+  const mode = rawMode === 'advanced' || rawMode === 'vision' ? rawMode : 'fast';
   const temperature = clampNum(body.temperature, 0, 1, 0.3);
   const maxTokens = Math.round(clampNum(body.maxTokens, 100, 8000, 4000));
   const systemPrompt = String(body.systemPrompt || '').slice(0, 8000);
   const jsonMode = Boolean(body.jsonMode);
+  // Media (vision): base64 murni atau data URL. Batas 3,5 juta karakter
+  // (~2,6 MB biner) agar tetap di bawah limit body Vercel.
+  const { data: imageDataBase64, mime: imageMimeType, error: imageError } = sanitizeMedia(
+    body.imageDataBase64,
+    body.imageMimeType,
+    ['image/png', 'image/jpeg', 'image/webp'],
+    'image/png',
+    'imageDataBase64'
+  );
+  if (imageError) errors.push(imageError);
+  const { data: pdfDataBase64, error: pdfError } = sanitizeMedia(
+    body.pdfDataBase64,
+    'application/pdf',
+    ['application/pdf'],
+    'application/pdf',
+    'pdfDataBase64'
+  );
+  if (pdfError) errors.push(pdfError);
   return {
     errors,
     input: {
@@ -200,9 +220,44 @@ export function validateAiInput(body) {
       maxTokens,
       systemPrompt,
       jsonMode,
+      imageDataBase64,
+      imageMimeType,
+      pdfDataBase64,
       productId: body.productId ? String(body.productId) : undefined,
     },
   };
+}
+
+/**
+ * Sanitasi satu lampiran media base64. Mengembalikan { data, mime, error }.
+ * - Terima base64 murni atau data URL (prefix dilepas).
+ * - Tolak karakter di luar alfabet base64 dan ukuran melebihi batas.
+ * - mimeType di luar allowlist → pakai default (jangan 400, cukup normalisasi).
+ */
+const MAX_MEDIA_B64_CHARS = 3500000;
+function sanitizeMedia(raw, mimeType, allowlist, defaultMime, fieldName) {
+  if (raw === undefined || raw === null || raw === '') {
+    return { data: undefined, mime: undefined, error: undefined };
+  }
+  let data = String(raw).trim().replace(/\s+/g, '');
+  const dataUrlMatch = data.match(/^data:([a-zA-Z0-9.+-]+\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  let mime = String(mimeType || '').trim().toLowerCase();
+  if (dataUrlMatch) {
+    if (!mime) mime = dataUrlMatch[1].toLowerCase();
+    data = dataUrlMatch[2];
+  }
+  if (!allowlist.includes(mime)) mime = defaultMime;
+  if (!/^[A-Za-z0-9+/=]+$/.test(data)) {
+    return { data: undefined, mime: undefined, error: `${fieldName}: bukan base64 valid` };
+  }
+  if (data.length > MAX_MEDIA_B64_CHARS) {
+    return {
+      data: undefined,
+      mime: undefined,
+      error: `${fieldName}: ukuran melebihi batas (${Math.round(data.length / 1e6)} jt karakter, maks 3,5 jt)`,
+    };
+  }
+  return { data, mime, error: undefined };
 }
 
 // --------------------------------------------------------------- logging ---
