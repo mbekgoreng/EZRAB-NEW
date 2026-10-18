@@ -42,6 +42,7 @@ function verifiedRef(over: Partial<MarketPriceReference> = {}): MarketPriceRefer
   return {
     id: 'MPR-T1', materialId: null, canonicalName: 'Paku 5 cm', aliases: [],
     spec: { category: 'paku', keyAttributes: { panjang_mm: 50 } },
+    needSpec: { category: 'paku', keyAttributes: { panjang_mm: 50 } },
     sourceName: 'Mitra10', sourceType: 'toko_bangunan', sourceProductId: null,
     productUrl: 'https://example.com/paku-5cm', sellerName: 'Mitra10', brand: null,
     productTitle: 'Paku beton 5 cm', listedPrice: 25000, currency: 'IDR',
@@ -209,5 +210,27 @@ describe('Market Price Intelligence — Tahap 1', () => {
     const c = cand({ sourceType: 'ai_suggested', productUrl: 'https://x.id/p' });
     const m = matchCandidate(needPaku5cm, c);
     expect(m.matchConfidence).toBeLessThanOrEqual(0.45);
+  });
+
+  it('15. approve menolak referensi yang spec/satuannya tidak cocok (re-validasi)', () => {
+    const store = new MarketReviewStore();
+    // Spec tidak cocok (paku 7cm untuk kebutuhan paku 5cm) tapi satuan valid
+    // → NEEDS_REVIEW; approve harus menolak di re-validasi, bukan lolos.
+    const spec = { category: 'paku', keyAttributes: { panjang_mm: 70 } };
+    const bad = cand({ spec: spec as any, productUrl: 'https://x.id/paku-7cm' });
+    const { added } = store.ingest(needPaku5cm, [bad], 'estimator-1');
+    expect(added[0].verificationStatus).toBe('NEEDS_REVIEW');
+    const d = store.approve(added[0].id, 'estimator-1', 'MAT-001');
+    expect(d.ok).toBe(false);
+    expect(d.reason).toContain('tidak lolos verifikasi');
+  });
+
+  it('16. approve menolak referensi tanpa URL bukti', () => {
+    const store = new MarketReviewStore();
+    const noUrl = cand({ productUrl: undefined });
+    const { added } = store.ingest(needPaku5cm, [noUrl], 'estimator-1');
+    const d = store.approve(added[0].id, 'estimator-1', 'MAT-001');
+    expect(d.ok).toBe(false);
+    expect(d.reason).toContain('URL bukti');
   });
 });

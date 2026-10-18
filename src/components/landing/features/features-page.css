@@ -1295,141 +1295,56 @@
   }
 }
 
-/* ---- Ecosystem 3D -------------------------------------------------------- */
-.eco3d-wrap {
+/* ---- Ecosystem Flow (diagram 2D) ------------------------------------------ */
+.ecoflow-wrap {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.eco3d-canvas {
-  position: relative;
+.ecoflow-svg {
   width: 100%;
-  border-radius: 20px;
-  overflow: hidden;
+  height: auto;
+  display: block;
   background: radial-gradient(120% 90% at 50% 10%, #101a33 0%, #0b1226 55%, #070d1d 100%);
   border: 1px solid rgba(96, 165, 250, 0.18);
-  cursor: pointer;
+  border-radius: 20px;
 }
 
-.eco3d-canvas canvas {
-  display: block;
-  width: 100% !important;
-  height: 100% !important;
+.ecoflow-flow {
+  stroke-dashoffset: 0;
+  animation: ecoflow-dash 1.2s linear infinite;
 }
 
-.eco3d-label {
-  position: absolute;
-  transform: translate(-50%, -130%);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 11px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #e2e8f0;
-  background: rgba(11, 18, 38, 0.82);
-  border: 1px solid;
-  border-radius: 999px;
-  white-space: nowrap;
-  pointer-events: none;
-  backdrop-filter: blur(6px);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+@keyframes ecoflow-dash {
+  to { stroke-dashoffset: -22; }
 }
 
-.eco3d-label.is-active {
-  transform: translate(-50%, -130%) scale(1.12);
-  box-shadow: 0 0 18px rgba(96, 165, 250, 0.45);
-  color: #fff;
-}
+.ecoflow-mobile { display: none; }
 
-.eco3d-label-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.eco3d-infocard {
-  position: absolute;
-  left: 16px;
-  bottom: 16px;
-  max-width: 320px;
-  padding: 14px 16px;
-  background: rgba(11, 18, 38, 0.9);
-  border: 1px solid rgba(96, 165, 250, 0.25);
-  border-radius: 14px;
-  backdrop-filter: blur(8px);
-  pointer-events: none;
-}
-
-.eco3d-infocard-role,
-.eco3d-detail .eco3d-infocard-role {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-
-.eco3d-infocard-name {
-  font-size: 16px;
-  font-weight: 800;
-  color: #f8fafc;
-  margin-bottom: 4px;
-}
-
-.eco3d-infocard-desc {
-  font-size: 13px;
-  line-height: 1.55;
-  color: #cbd5e1;
-}
-
-.eco3d-infocard-hint {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-  font-size: 11.5px;
-  color: #93c5fd;
-}
-
-.eco3d-controls {
+.ecoflow-bar {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.eco3d-btn {
+.ecoflow-hint {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  height: 36px;
-  padding: 0 14px;
+  gap: 6px;
   font-size: 12.5px;
-  font-weight: 700;
-  color: #cbd5e1;
-  background: rgba(30, 58, 95, 0.35);
-  border: 1px solid rgba(96, 165, 250, 0.3);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.15s ease;
+  color: #94a3b8;
 }
 
-.eco3d-btn:hover {
-  background: rgba(30, 58, 95, 0.6);
-  color: #fff;
-}
-
-.eco3d-legend {
+.ecoflow-legend {
   display: flex;
   gap: 12px;
   margin-left: auto;
   flex-wrap: wrap;
 }
 
-.eco3d-legend-item {
+.ecoflow-legend-item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1437,45 +1352,32 @@
   color: #94a3b8;
 }
 
-.eco3d-legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
+.ecoflow-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
 
-.eco3d-detail {
+.ecoflow-detail {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
   padding: 18px 20px;
   background: rgba(11, 18, 38, 0.85);
-  border: 1px solid rgba(96, 165, 250, 0.25);
+  border: 1px solid;
   border-radius: 16px;
 }
 
-.eco3d-detail-name {
-  font-size: 20px;
+.ecoflow-detail-tier {
+  font-size: 11px;
   font-weight: 800;
-  color: #f8fafc;
-  margin-bottom: 6px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
 }
 
-.eco3d-detail-desc {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #cbd5e1;
-  max-width: 560px;
-}
+.ecoflow-detail-name { font-size: 20px; font-weight: 800; color: #f8fafc; margin-bottom: 6px; }
+.ecoflow-detail-desc { margin: 0; font-size: 14px; line-height: 1.6; color: #cbd5e1; max-width: 560px; }
+.ecoflow-detail-actions { display: flex; gap: 10px; flex-shrink: 0; }
 
-.eco3d-detail-actions {
-  display: flex;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.eco3d-cta {
+.ecoflow-cta {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1488,141 +1390,70 @@
   border: none;
   border-radius: 12px;
   cursor: pointer;
-  transition: background 0.15s ease;
   white-space: nowrap;
 }
+.ecoflow-cta:hover { background: #1d4ed8; }
 
-.eco3d-cta:hover {
-  background: #1d4ed8;
-}
-
-/* Mobile: daftar kartu vertikal */
-.eco3d-mobile-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.eco3d-mobile-card {
-  text-align: left;
-  padding: 14px 16px;
-  background: rgba(11, 18, 38, 0.7);
-  border: 1px solid rgba(96, 165, 250, 0.18);
-  border-left: 3px solid;
+.ecoflow-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #cbd5e1;
+  background: rgba(30, 58, 95, 0.35);
+  border: 1px solid rgba(96, 165, 250, 0.3);
   border-radius: 12px;
   cursor: pointer;
-  width: 100%;
 }
+.ecoflow-btn:hover { background: rgba(30, 58, 95, 0.6); color: #fff; }
 
-.eco3d-mobile-name {
-  font-size: 14px;
-  font-weight: 800;
-  margin-bottom: 4px;
-}
-
-.eco3d-mobile-desc {
-  font-size: 13px;
-  color: #cbd5e1;
-  line-height: 1.5;
-}
-
-.eco3d-mobile-role {
-  margin-top: 6px;
-  font-size: 11px;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* Ringkasan alur */
-.eco3d-flow {
-  margin-top: 8px;
-  padding: 22px;
-  background: rgba(11, 18, 38, 0.6);
-  border: 1px solid rgba(96, 165, 250, 0.15);
-  border-radius: 16px;
-  text-align: center;
-}
-
-.eco3d-flow-steps {
+/* Mobile: tumpukan vertikal */
+.ecoflow-mcard {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.eco3d-flow-step {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #e2e8f0;
-  padding: 8px 14px;
-  background: rgba(37, 99, 235, 0.14);
-  border: 1px solid rgba(59, 130, 246, 0.35);
-  border-radius: 999px;
-}
-
-.eco3d-flow-arrow {
-  color: #3b82f6;
-  font-weight: 800;
-}
-
-.eco3d-flow-note {
-  font-size: 13px;
-  color: #94a3b8;
-  margin: 0 0 16px;
-}
-
-.eco3d-flow-ctas {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-/* Fallback */
-.eco3d-fallback-title {
-  font-size: 18px;
-  font-weight: 800;
-  color: #f8fafc;
-  margin: 0 0 14px;
-}
-
-.eco3d-fallback-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 12px;
-  margin-bottom: 14px;
-}
-
-.eco3d-fallback-card {
+  width: 100%;
+  text-align: left;
   padding: 14px 16px;
-  background: rgba(11, 18, 38, 0.7);
+  background: rgba(11, 18, 38, 0.85);
   border: 1px solid;
-  border-radius: 12px;
+  border-radius: 14px;
+  cursor: pointer;
+  color: inherit;
 }
-
-.eco3d-fallback-name {
-  font-size: 14px;
-  font-weight: 800;
-  margin-bottom: 4px;
+.ecoflow-mcard > span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.ecoflow-mstep {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800; color: #0b1226; flex-shrink: 0;
 }
+.ecoflow-micon { flex-shrink: 0; display: inline-flex; }
+.ecoflow-mname { font-size: 14px; font-weight: 800; color: #f1f5f9; }
+.ecoflow-mdesc { font-size: 12.5px; color: #94a3b8; line-height: 1.45; }
+.ecoflow-marrow { text-align: center; font-size: 18px; font-weight: 800; line-height: 1; padding: 2px 0; }
+.ecoflow-mside { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.ecoflow-mcard-sm { padding: 12px; }
+.ecoflow-mcard-sm .ecoflow-mname { font-size: 13px; }
 
-.eco3d-fallback-desc {
-  font-size: 12.5px;
-  color: #cbd5e1;
-  line-height: 1.5;
-}
+/* Ringkasan alur */
+.ecoflow-flow { margin-top: 4px; padding: 22px; background: rgba(11,18,38,0.6);
+  border: 1px solid rgba(96,165,250,0.15); border-radius: 16px; text-align: center; }
+.ecoflow-flow-steps { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.ecoflow-flow-step { font-size: 13.5px; font-weight: 700; color: #e2e8f0; padding: 8px 14px;
+  background: rgba(37,99,235,0.14); border: 1px solid rgba(59,130,246,0.35); border-radius: 999px; }
+.ecoflow-flow-arrow { color: #3b82f6; font-weight: 800; }
+.ecoflow-flow-note { font-size: 13px; color: #94a3b8; margin: 0 0 16px; }
+.ecoflow-flow-ctas { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
-.eco3d-fallback-role {
-  margin-top: 6px;
-  font-size: 11px;
-  color: #94a3b8;
+@media (max-width: 767px) {
+  .ecoflow-svg { display: none; }
+  .ecoflow-mobile { display: flex; flex-direction: column; }
+  .ecoflow-legend { margin-left: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .eco3d-label {
-    transition: none;
-  }
+  .ecoflow-flow { animation: none; }
 }

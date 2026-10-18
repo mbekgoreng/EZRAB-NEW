@@ -51,8 +51,8 @@ const Section: React.FC<{
   </section>
 );
 
-const Ecosystem3D = lazy(() =>
-  import('./Ecosystem3D').then((m) => ({ default: m.Ecosystem3D }))
+const EcosystemFlow = lazy(() =>
+  import('./EcosystemFlow').then((m) => ({ default: m.EcosystemFlow }))
 );
 
 /**
@@ -119,8 +119,8 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
         sub="Dari gambar kerja hingga kendali biaya proyek, setiap proses dirancang untuk saling terhubung."
         alt
       >
-        <Suspense fallback={<div className="eco3d-canvas" style={{ height: 560 }} />}>
-          <Ecosystem3D
+        <Suspense fallback={<div style={{ height: 420 }} />}>
+          <EcosystemFlow
             onOpenWorkspace={onOpenWorkspace}
             onExploreFeatures={() => {
               document.getElementById('ded-ai')?.scrollIntoView({ behavior: 'smooth' });

@@ -33,6 +33,7 @@ export type RoleCapability =
   | 'export-doc' // ekspor Excel/PDF/laporan
   | 'manage-users' // mengelola tim & anggota (sensitif)
   | 'manage-security' // pengaturan keamanan akun (sensitif)
+  | 'verify-prices' // verifikasi referensi harga pasar (setujui/tolak)
   | 'manage-blog'; // mengelola CMS blog (draft→publish; TIDAK diberikan ke role demo manapun secara default)
 
 export interface RoleAccount {
@@ -64,7 +65,7 @@ export const ROLE_ACCOUNTS: RoleAccount[] = [
     title: 'Analisa AHSP Cepat',
     description: 'Penyesuaian koefisien bahan, upah lokal, dan simulasi harga penawaran.',
     pin: '222222',
-    capabilities: ['view-dashboard', 'edit-estimate', 'export-doc'],
+    capabilities: ['view-dashboard', 'edit-estimate', 'export-doc', 'verify-prices'],
   },
   {
     id: 'kontraktor',
@@ -80,7 +81,7 @@ export const ROLE_ACCOUNTS: RoleAccount[] = [
     title: 'Owner Estimate (OE)',
     description: 'Penyusunan Engineer Estimate dan HPS yang transparan dan siap audit.',
     pin: '444444',
-    capabilities: ['view-dashboard', 'edit-estimate', 'export-doc'],
+    capabilities: ['view-dashboard', 'edit-estimate', 'export-doc', 'verify-prices'],
   },
   {
     id: 'team',
@@ -88,7 +89,7 @@ export const ROLE_ACCOUNTS: RoleAccount[] = [
     title: 'Kolaborasi Terpadu',
     description: 'Sinkronisasi engineering lapangan, pengadaan material, dan keuangan.',
     pin: '555555',
-    capabilities: ['view-dashboard', 'edit-estimate', 'export-doc', 'manage-users', 'manage-security'],
+    capabilities: ['view-dashboard', 'edit-estimate', 'export-doc', 'manage-users', 'manage-security', 'verify-prices'],
   },
 ];
 

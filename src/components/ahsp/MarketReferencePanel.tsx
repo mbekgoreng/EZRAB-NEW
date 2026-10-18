@@ -19,6 +19,7 @@ import type {
 } from '../../engine/pricing/market/types';
 import { aiPriceSearchService } from '../../services/aiPriceSearchService';
 import { assumptionStore } from '../../engine/pricing/assumption/assumptionStore';
+import { useRole } from '../../auth/RoleContext';
 
 interface Props {
   componentCode: string;
@@ -60,6 +61,8 @@ export const MarketReferencePanel: React.FC<Props> = ({
   });
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const { hasCapability } = useRole();
+  const canVerify = hasCapability('verify-prices');
 
   const refs = useMemo(() => relevantRefs(componentName), [componentName, tick]);
   const refresh = () => { setTick((t) => t + 1); onChanged(); };
@@ -146,6 +149,7 @@ export const MarketReferencePanel: React.FC<Props> = ({
   };
 
   const handleApprove = (id: string) => {
+    if (!canVerify) { setAiMsg('Anda tidak memiliki wewenang verifikasi harga.'); return; }
     const d = marketReviewStore.approve(id, 'estimator', componentCode);
     if (!d.ok) { setAiMsg(d.reason || 'Gagal menyetujui.'); return; }
     // Tautkan ke price_assumptions sebagai DRAFT (tetap berlabel pasar).
@@ -173,6 +177,7 @@ export const MarketReferencePanel: React.FC<Props> = ({
   };
 
   const handleReject = (id: string) => {
+    if (!canVerify) { setAiMsg('Anda tidak memiliki wewenang verifikasi harga.'); return; }
     if (!rejectReason.trim()) { setAiMsg('Isi alasan penolakan dulu.'); return; }
     marketReviewStore.reject(id, 'estimator', rejectReason.trim());
     setRejecting(null);
@@ -243,14 +248,20 @@ export const MarketReferencePanel: React.FC<Props> = ({
                     </a>
                   ) : null}
                   {(r.verificationStatus === 'MARKET_REFERENCE' || r.verificationStatus === 'NEEDS_REVIEW') ? (
-                    <>
-                      <button onClick={() => handleApprove(r.id)} style={{ fontSize: '12px', fontWeight: 700, color: '#fff', background: '#16a34a', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer' }}>
-                        Setujui Harga
-                      </button>
-                      <button onClick={() => setRejecting(rejecting === r.id ? null : r.id)} style={{ fontSize: '12px', fontWeight: 700, color: '#991b1b', background: '#fee2e2', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer' }}>
-                        Tolak
-                      </button>
-                    </>
+                    canVerify ? (
+                      <>
+                        <button onClick={() => handleApprove(r.id)} style={{ fontSize: '12px', fontWeight: 700, color: '#fff', background: '#16a34a', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer' }}>
+                          Setujui Harga
+                        </button>
+                        <button onClick={() => setRejecting(rejecting === r.id ? null : r.id)} style={{ fontSize: '12px', fontWeight: 700, color: '#991b1b', background: '#fee2e2', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer' }}>
+                          Tolak
+                        </button>
+                      </>
+                    ) : (
+                      <span style={{ fontSize: '11.5px', color: '#92400e', background: '#fef3c7', padding: '6px 10px', borderRadius: '8px' }}>
+                        Verifikasi hanya untuk peran berwenang (Estimator/Konsultan/Tim).
+                      </span>
+                    )
                   ) : null}
                 </div>
                 {rejecting === r.id ? (

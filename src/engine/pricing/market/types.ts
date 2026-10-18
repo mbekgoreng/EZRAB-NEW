@@ -47,6 +47,11 @@ export interface MarketPriceReference {
   canonicalName: string;
   aliases: string[];
   spec: MaterialSpec;
+  /**
+   * Spec KEBUTUHAN saat referensi didaftarkan (untuk re-validasi saat
+   * approve — referensi harus cocok dengan kebutuhan, bukan dengan dirinya).
+   */
+  needSpec: MaterialSpec;
   /** Sumber */
   sourceName: string;
   sourceType: MarketSourceType;

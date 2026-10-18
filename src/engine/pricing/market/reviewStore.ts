@@ -64,6 +64,7 @@ export class MarketReviewStore {
         canonicalName: need.canonicalName,
         aliases: [],
         spec: c.spec,
+        needSpec: need.spec,
         sourceName: c.sourceName,
         sourceType: c.sourceType,
         sourceProductId: c.sourceProductId ?? null,
@@ -118,6 +119,21 @@ export class MarketReviewStore {
     }
     if (ref.normalizedUnitPrice === null || ref.normalizedUnitPrice <= 0) {
       return { ok: false, reason: 'harga per satuan dasar belum dapat dinormalisasi' };
+    }
+    // Re-validasi kecocokan spesifikasi & satuan saat persetujuan — bukan
+    // hanya saat input. Referensi harus cocok dengan KEBUTUHAN (needSpec),
+    // bukan dengan dirinya sendiri. Yang tidak cocok TIDAK boleh lolos.
+    const need: MatchNeed = {
+      canonicalName: ref.canonicalName,
+      spec: ref.needSpec,
+      normalizedUnit: ref.normalizedUnit,
+    };
+    const check = matchCandidate(need, ref);
+    if (!check.comparable) {
+      return {
+        ok: false,
+        reason: `tidak lolos verifikasi: ${check.blockers.join('; ') || 'spesifikasi/satuan tidak cocok'}`,
+      };
     }
     const old = ref.verificationStatus;
     ref.verificationStatus = 'MARKET_VERIFIED';
