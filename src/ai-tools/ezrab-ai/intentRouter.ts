@@ -7,6 +7,7 @@
  * Never fabricates: intents return structured results; actions are executed
  * by the registry, not by string templating.
  */
+import { isGameCommand } from '../../game-space/command';
 
 export type ChatIntent =
   | 'GREETING'
@@ -22,6 +23,7 @@ export type ChatIntent =
   | 'OPEN_DED_ESTIMATE'
   | 'OPEN_SETTINGS'
   | 'OPEN_DASHBOARD'
+  | 'OPEN_GAME_SPACE'
   | 'SEARCH_AHSP'
   | 'QUERY_PROJECT_TOTAL'
   | 'QUERY_PROJECT_LIST'
@@ -61,6 +63,7 @@ const SLASH_COMMANDS: Record<string, ChatIntent> = {
   '/dashboard': 'OPEN_DASHBOARD',
   '/help': 'HELP',
   '/bantuan': 'HELP',
+  '/game': 'OPEN_GAME_SPACE',
 };
 
 // ---- Natural-language patterns (Indonesian, incl. informal) ----
@@ -126,7 +129,12 @@ export function routeIntent(rawInput: string): IntentResult {
     };
   }
 
-  // 2. Pattern matching
+  // 2. Game Space command — deterministic, runs fully local (no AI call, no credits)
+  if (isGameCommand(rawInput)) {
+    return { intent: 'OPEN_GAME_SPACE', confidence: 0.95, needsClarification: false, localOnly: true };
+  }
+
+  // 3. Pattern matching
   for (const p of PATTERNS) {
     const m = input.match(p.re);
     if (m) {
@@ -143,7 +151,7 @@ export function routeIntent(rawInput: string): IntentResult {
     }
   }
 
-  // 3. No match → AI online
+  // 4. No match → AI online
   return { intent: 'UNKNOWN', confidence: 0, needsClarification: false, localOnly: false };
 }
 
@@ -169,6 +177,7 @@ export const HELP_TEXT = `Perintah yang tersedia:
 /dokumen — Buka AI Document
 /ded — Buka DED Estimate AI
 /dashboard — Kembali ke dashboard
+/game — Buka EZRAB Game Space 🎮
 
 🔍 Pencarian:
 "cari ahsp [kata kunci]" — Cari harga satuan AHSP 2026

@@ -45,6 +45,8 @@ export interface ActionResult {
   message: string;
   /** Whether the chat navigated away (UI may want to react) */
   navigated?: boolean;
+  /** Whether the chat should open the Game Space overlay panel */
+  openGameSpace?: boolean;
 }
 
 const MENU_LABELS: Record<string, string> = {
@@ -91,6 +93,14 @@ export function executeIntent(
   }
 
   switch (intent) {
+    case 'OPEN_GAME_SPACE':
+      // Fully local: no navigation, no AI provider call, no credits touched.
+      return {
+        ok: true,
+        message: 'Membuka EZRAB Game Space 🎮 — pilih game dan langsung main, tanpa memakai AI credits.',
+        openGameSpace: true,
+      };
+
     case 'OPEN_PROJECT_CREATE':
       ctx.navigate('proyek');
       return {
