@@ -772,6 +772,12 @@ onFocus={(e) => {
           </div>
         )}
 
+        {/* 2b. AI CREDIT BALANCE (simulasi) — menuju halaman Kredit AI */}
+        <CreditBalance
+          compact={isNarrowMobile}
+          onOpenCreditPage={() => onNavigate('kredit-ai')}
+        />
+
         {/* 3. PROFILE AVATAR & DROPDOWN MENU */}
         <div style={{ position: 'relative' }} ref={profileRef}>
           <button

@@ -65,6 +65,8 @@ export const UnifiedBreadcrumb: React.FC<UnifiedBreadcrumbProps> = ({
         return 'Manajemen Proyek';
       case 'pengaturan':
         return 'Pengaturan';
+      case 'kredit-ai':
+        return 'Kredit AI';
       case 'subscription':
         return 'Langganan & Billing';
       case 'database-material':

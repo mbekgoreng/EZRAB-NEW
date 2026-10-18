@@ -40,6 +40,8 @@ import { Project, RabItem } from '../../types';
 import { EzrabAiView } from '../../ai-tools/ezrab-ai/view';
 import { DedAiEstimateView } from '../../ai-tools/ded-ai-estimate/view';
 import { DokumenAiView } from '../../ai-tools/document-ai/view';
+import { CreditPage } from '../../ai-credits/CreditPage';
+import '../../ai-credits/ai-credits.css';
 import { MagicAiSuperView } from '../magic-ai/MagicAiSuperView';
 import { ProjectsView } from '../projects/ProjectsView';
 import { FirstProjectChecklist } from '../onboarding/FirstProjectChecklist';
@@ -479,6 +481,10 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
         ) : activeMenu === 'dokumen-ai' ? (
           <main style={{ minHeight: 'calc(100vh - 64px)', background: 'var(--ez-color-background)' }}>
             <DokumenAiView />
+          </main>
+        ) : activeMenu === 'kredit-ai' ? (
+          <main style={{ minHeight: 'calc(100vh - 64px)', background: 'var(--ez-color-background)' }}>
+            <CreditPage onBack={() => setActiveMenu('dashboard')} />
           </main>
         ) : (activeMenu === 'rab-estimasi' ||
              activeMenu === 'rab-spreadsheet' ||
