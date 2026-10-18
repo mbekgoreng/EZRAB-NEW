@@ -69,6 +69,7 @@ const MENU_SEARCH_INDEX: Array<{ id: string; label: string; keywords: string }> 
 ];
 import { useRole } from '../../auth/RoleContext';
 import { useTheme, type PremiumTheme } from '../../context/ThemeContext';
+import { CreditBalance } from '../../ai-credits/components/CreditBalance';
 
 interface TopBarProps {
   isMobile: boolean;
