@@ -8,7 +8,7 @@
  *   user + catatan jujur ke AI bahwa gambar tak bisa dilihat model teks),
  *   timestamp, mode Cepat/Mendalam, tombol chat baru, salin jawaban.
  */
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import {
   Send, Sparkles, Loader2, Zap, Brain,
   Copy, Check, Mic, Paperclip, X, Plus, ImagePlus,
@@ -16,6 +16,7 @@ import {
 import { ezrabAiService } from './service';
 import { renderMarkdown } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
+import { consumePendingAiEntry } from '../aiNavigation';
 import { executeIntent, ChatActionContext } from './actionRegistry';
 import { notificationBus } from '../../notifications/notificationBus';
 import { EZRABMascot3D } from '../../components/mascot/EZRABMascot3D';
@@ -23,6 +24,10 @@ import { useProject } from '../../context/ProjectContext';
 import { buildProjectSnapshot, ProjectSnapshot } from './projectContext';
 import { unifiedConversationStore } from '../../services/ai/conversation/unifiedConversationStore';
 import './ezrab-ai-chat.css';
+
+// Game Space is lazy-loaded: three.js + game code split into their own chunk,
+// only fetched when the user opens it via the `game` command.
+const GameSpaceOverlay = lazy(() => import('../../game-space/GameSpaceOverlay'));
 
 interface ChatEntry {
   role: 'user' | 'assistant';
@@ -106,6 +111,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [attached, setAttached] = useState<{ url: string; name: string } | null>(null);
   const [listening, setListening] = useState(false);
+  /** Game Space overlay — opened by the `game` command, closed back to chat. */
+  const [gameSpaceOpen, setGameSpaceOpen] = useState(false);
 
   /* ---- FASE 5A: project grounding + conversation persistence ---- */
   const { currentProject, projectRabItems } = useProject();
@@ -118,6 +125,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   // Conversation store is keyed by project; use a stable key when none is active.
   const storeProjectId = effProject?.id ?? '__ezrab_ai_global__';
   const convIdRef = useRef<string | null>(null);
+  // True setelah percakapan tersimpan selesai di-restore — entry AI baru
+  // diproses setelah ini agar tidak menimpa riwayat (stale closure).
+  const [conversationReady, setConversationReady] = useState(false);
 
   // Load persisted conversation on mount / project change.
   useEffect(() => {
@@ -135,6 +145,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     } catch {
       /* storage failure is non-fatal — chat still works in-memory */
     }
+    setConversationReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeProjectId]);
 
@@ -262,6 +273,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         else {
           const res = executeIntent(routed.intent, routed.param, ctx);
           reply = res.message;
+          // Game Space opens as an in-chat panel — fully local, no AI call.
+          if (res.openGameSpace) setGameSpaceOpen(true);
         }
         setMessages((prev) => [...prev, { role: 'assistant', content: reply, ts: Date.now() }]);
         persistMessage('assistant', reply);
@@ -310,6 +323,55 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       setBusy(false);
     }
   };
+
+  /* ---- Kontrak navigasi AI terpusat (Tahap B: prefill default).
+   * Entry point dari menu lain mendaftarkan initialPrompt lewat requestAiEntry().
+   * - sendMode 'prefill' (default): prompt dimasukkan ke kotak input agar
+   *   pengguna meninjau sebelum mengirim; TIDAK menimpa draft yang sedang diketik.
+   * - sendMode 'autosend': prompt langsung dikirim — hanya untuk entry point
+   *   yang eksplisit (terdokumentasi di pemanggil).
+   * Entry dikonsumsi sekali-pakai; prompt tidak terkirim dua kali saat remount
+   * (guard ref + konsumsi atomik). Pemrosesan lewat state injectedPrompt agar
+   * closure `messages` selalu segar (tidak menimpa riwayat hasil restore). */
+  const [injectedPrompt, setInjectedPrompt] = useState<{
+    text: string;
+    sendMode: 'prefill' | 'autosend';
+  } | null>(null);
+  const mountConsumeRef = useRef(false);
+  const takePendingEntry = useCallback(() => {
+    const entry = consumePendingAiEntry('chat_agent');
+    const text = entry?.initialPrompt?.trim();
+    if (!text) return;
+    setInjectedPrompt({ text, sendMode: entry?.sendMode ?? 'prefill' });
+  }, []);
+  // Jalur 1: view baru di-mount setelah navigasi.
+  useEffect(() => {
+    if (mountConsumeRef.current) return;
+    mountConsumeRef.current = true;
+    takePendingEntry();
+  }, [takePendingEntry]);
+  // Jalur 2: view SUDAH ter-mount saat entry didaftarkan (tanpa navigasi ulang).
+  useEffect(() => {
+    const onEntry = () => takePendingEntry();
+    window.addEventListener('ezrab:ai-entry', onEntry);
+    return () => window.removeEventListener('ezrab:ai-entry', onEntry);
+  }, [takePendingEntry]);
+  // Pemrosesan: tunggu percakapan siap + tidak sibuk.
+  useEffect(() => {
+    if (!injectedPrompt || !conversationReady || busy) return;
+    if (injectedPrompt.sendMode === 'autosend') {
+      const text = injectedPrompt.text;
+      setInjectedPrompt(null);
+      submit(text);
+    } else if (!input.trim()) {
+      setInput(injectedPrompt.text);
+      setInjectedPrompt(null);
+      requestAnimationFrame(() => autoresize());
+    }
+    // Bila input sedang terisi: biarkan draft pengguna; prompt titipan
+    // menunggu (tidak dihapus, tidak ditimpa) hingga input dikosongkan.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [injectedPrompt, conversationReady, busy, input]);
 
   const copyMsg = (idx: number, text: string) => {
     navigator.clipboard?.writeText(text).catch(() => {});
@@ -571,6 +633,13 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
 
       {/* ===== Composer di bawah (hanya saat sudah ada percakapan) ===== */}
       {messages.length > 0 && composer(false)}
+
+      {/* ===== EZRAB Game Space — in-chat interactive panel ===== */}
+      {gameSpaceOpen && (
+        <Suspense fallback={null}>
+          <GameSpaceOverlay onClose={() => setGameSpaceOpen(false)} />
+        </Suspense>
+      )}
     </div>
   );
 };
