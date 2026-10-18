@@ -208,6 +208,103 @@
 .gs-card-zen .gs-card-cta { color: #78350f; }
 .gs-card-stack .gs-card-cta { color: #4c1d95; }
 .gs-card-build .gs-card-cta { color: #1e3a8a; }
+/* ===== 10 game 2D — card themes ===== */
+.gs-card-bongkar { background: linear-gradient(135deg, #7c2d12 0%, #c2410c 55%, #ea580c 100%); }
+.gs-card-bongkar .gs-card-cta { color: #7c2d12; }
+.gs-card-flappy { background: linear-gradient(135deg, #0c4a6e 0%, #0284c7 55%, #38bdf8 100%); }
+.gs-card-flappy .gs-card-cta { color: #0c4a6e; }
+.gs-card-ketapel { background: linear-gradient(135deg, #3f3f46 0%, #71717a 55%, #a1a1aa 100%); }
+.gs-card-ketapel .gs-card-cta { color: #3f3f46; }
+.gs-card-lari { background: linear-gradient(135deg, #14532d 0%, #16a34a 55%, #4ade80 100%); }
+.gs-card-lari .gs-card-cta { color: #14532d; }
+.gs-card-sudoku { background: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 55%, #8b5cf6 100%); }
+.gs-card-sudoku .gs-card-cta { color: #4c1d95; }
+.gs-card-selamat { background: linear-gradient(135deg, #713f12 0%, #ca8a04 55%, #facc15 100%); }
+.gs-card-selamat .gs-card-cta { color: #713f12; }
+.gs-card-tebas { background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 55%, #f87171 100%); }
+.gs-card-tebas .gs-card-cta { color: #7f1d1d; }
+.gs-card-kata { background: linear-gradient(135deg, #134e4a 0%, #0d9488 55%, #2dd4bf 100%); }
+.gs-card-kata .gs-card-cta { color: #134e4a; }
+.gs-card-gabung { background: linear-gradient(135deg, #7c2d12 0%, #b45309 55%, #f59e0b 100%); }
+.gs-card-gabung .gs-card-cta { color: #7c2d12; }
+.gs-card-soccer { background: linear-gradient(135deg, #052e16 0%, #15803d 55%, #22c55e 100%); }
+.gs-card-soccer .gs-card-cta { color: #052e16; }
+
+/* ===== Game 2D — shared layout (dipakai semua game via useGameCanvas) ===== */
+.gs2d-wrap {
+  position: relative; display: flex; flex-direction: column;
+  width: 100%; height: 100%; min-height: 420px; overflow: hidden;
+  background: #0b1020; border-radius: 14px;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+}
+.gs2d-canvas { flex: 1; width: 100%; min-height: 0; display: block; touch-action: none; }
+.gs2d-hud {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px; pointer-events: none;
+}
+.gs2d-hud > * { pointer-events: auto; }
+.gs2d-score {
+  font-weight: 900; font-size: 20px; color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,.5); font-variant-numeric: tabular-nums;
+}
+.gs2d-best {
+  font-weight: 700; font-size: 11.5px; color: rgba(255,255,255,.85);
+  text-shadow: 0 1px 4px rgba(0,0,0,.5);
+}
+.gs2d-topbtns { display: flex; gap: 8px; }
+.gs2d-iconbtn {
+  width: 36px; height: 36px; border-radius: 10px; border: none; cursor: pointer;
+  background: rgba(15,23,42,.55); color: #fff; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px); transition: transform .12s ease, background .12s ease;
+}
+.gs2d-iconbtn:hover { background: rgba(15,23,42,.75); transform: scale(1.06); }
+.gs2d-overlay {
+  position: absolute; inset: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(8,12,26,.72); backdrop-filter: blur(3px); padding: 20px;
+}
+.gs2d-panel {
+  background: #fff; border-radius: 18px; padding: 24px 22px; max-width: 340px; width: 100%;
+  text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.4);
+  max-height: 100%; overflow-y: auto;
+}
+.gs2d-panel h2 { margin: 0 0 6px; font-size: 21px; font-weight: 900; color: #0F172A; }
+.gs2d-panel p { margin: 0 0 12px; font-size: 13.5px; color: #475569; line-height: 1.55; }
+.gs2d-panel .gs2d-joke {
+  background: #FEF9C3; border: 1px dashed #CA8A04; border-radius: 10px;
+  padding: 8px 10px; font-size: 12.5px; color: #713F12; margin-bottom: 14px; font-style: italic;
+}
+.gs2d-btn {
+  display: inline-block; border: none; cursor: pointer;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff;
+  font-weight: 800; font-size: 15px; padding: 12px 28px; border-radius: 12px;
+  font-family: inherit; transition: transform .12s ease, box-shadow .12s ease;
+  box-shadow: 0 6px 18px rgba(37,99,235,.35);
+}
+.gs2d-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(37,99,235,.45); }
+.gs2d-btn:active { transform: translateY(1px); }
+.gs2d-btn-secondary {
+  background: #F1F5F9; color: #0F172A; box-shadow: none; margin-top: 8px;
+}
+.gs2d-controls {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); pointer-events: none;
+}
+.gs2d-controls > * { pointer-events: auto; }
+.gs2d-ctlbtn {
+  border: none; cursor: pointer; font-family: inherit;
+  background: rgba(15,23,42,.6); color: #fff; font-weight: 800;
+  border-radius: 14px; padding: 14px 18px; font-size: 14px;
+  backdrop-filter: blur(4px); user-select: none; -webkit-user-select: none;
+  touch-action: none; min-width: 76px;
+}
+.gs2d-ctlbtn:active { background: rgba(37,99,235,.8); transform: scale(.96); }
+@media (prefers-reduced-motion: reduce) {
+  .gs2d-btn, .gs2d-iconbtn { transition: none; }
+}
 
 /* ===== Game Space v2 — canvas vignette (depth) ===== */
 .gs-canvas-wrap.gs-vignette::after {

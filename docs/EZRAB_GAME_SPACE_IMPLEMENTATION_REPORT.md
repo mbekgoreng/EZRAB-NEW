@@ -209,3 +209,69 @@ Permintaan user: "game apa yang menarik? fungsi hanya menghilangkan stress" — 
 5. File throwaway test (`test-harness.tsx`, `scripts/gs-*.mjs`) sudah dihapus; yang tersisa hanya kode produk + `src/test/gameSpaceV2.test.ts`.
 
 **File baru (17):** `fx/{textures,audio,particles,juice,BaseEngine}.ts`, `games/demolition/{logic,DemolitionEngine,Demolition}.tsx`, `games/zen-build/{logic,ZenEngine,ZenBuild}.tsx`, `games/stack/{logic,StackEngine,Stack}.tsx`, `src/test/gameSpaceV2.test.ts`. **Diubah (3):** `GameSpaceOverlay.tsx` (4 kartu + lazy), `game-space.css` (v2 styles), laporan ini.
+
+## 10. Game Space REBUILD — 10 game 2D canvas (2026-10-19)
+
+**Latar:** user menolak 3 game 3D v2 ("jelek"). Diganti total dengan 10 game 2D canvas kelas "game asli", semua bertema konstruksi + humor "frustasi estimator/konsultan". Dihapus: `games/zen-build/`, `games/stack/`, `games/demolition/` (3D), `src/test/gameSpaceV2.test.ts`. Dipertahankan: `games/build-challenge/` (apa adanya), `fx/audio.ts` (sfx dipakai ulang).
+
+### 10.1 Arsitektur 2D
+
+Shared kit baru `src/game-space/engine2d/` (kontrak di `engine2d/README.md`):
+- `helpers.ts` — rand/clamp/lerp/AABB/distToSegment/ease/fmtTime (pure, testable)
+- `canvas.ts` — DPR-resize (cap 2x)
+- `loop.ts` — rAF fixed-timestep 60Hz + pause + spiral guard
+- `input.ts` — Pointer Events (mouse+touch) + keyboard (edge-trigger `wasPressed`)
+- `particles.ts` — pool 700 partikel 2D (circle/rect/spark), hormati reduced-motion
+- `juice2d.ts` — Shake2D (trauma-based), FloatScores (teks melayang di canvas), popText (popup DOM)
+- `audio.ts` — re-export `sfx` (WebAudio prosedural, tanpa aset)
+- `best.ts` — best score localStorage (guarded)
+- `useGameCanvas.ts` — hook React: canvas + loop + input + particles + shake + scores + auto-resize + pushHud throttled
+
+Pola tiap game: `games/<slug>/{logic.ts (pure), <Nama>.tsx (default export, props {onExit}), logic.test.ts}`. Menu `GameSpaceOverlay.tsx` ditulis ulang: 11 kartu lazy (10 baru + Build Challenge).
+
+### 10.2 Daftar game
+
+| # | Game | Konsep | Level/progression |
+|---|------|--------|-------------------|
+| 1 | Bongkar Rumah 💥 | Ketuk blok rumah sampai rata; fisika runtuh berantai | 4 level (rumah→ruko→apartemen→tower), kombo x5, best % |
+| 2 | Flappy Mandor 🪖 | Flappy bird mandor berhelm vs crane & balok | Gap/speed naik, medali per 10 gate |
+| 3 | Ketapel Konstruksi 🎯 | Angry-birds: wrecking ball robohkan struktur + berkas REV-13 | 10 level, bintang 1–3 persist |
+| 4 | Lari Proyek 🏃 | Endless runner: lompat/nunduk, bata jatuh berperingatan | Speed tier, langit siang→malam, helm +50 |
+| 5 | Sudoku Tukang 🧩 | Sudoku 9×9, generator solusi-unik | 4 difficulty, notes, hint 3×, 3 salah = gagal, best time |
+| 6 | Selamatkan Mandor ✏️ | Save-the-dog: gambar garis lindungi mandor | 15 level, ink meter, fisika pantul |
+| 7 | Tebas Material 🍉 | Fruit-ninja swipe; awas dinamit | Wave makin cepat, kombo, 3 nyawa |
+| 8 | Sambung Kata 🔤 | Word-connect kosakata konstruksi ID (80+ kata) | 3 pack × 20 level, hint, progress persist |
+| 9 | Gabung Blok 🧱 | 2048: BATA→…→MENARA (8 tier) | Best score, lanjut setelah menang |
+| 10 | Head Soccer Mandor ⚽ | Head soccer vs AI | Turnamen 5 level AI, 60 dtk, sudden death |
+
+Semua game: tutorial overlay, pause, mute, best score, juice (partikel/shake/sfx/popup), layar menang/kalah + teks humor estimator, 390px touch, reduced-motion.
+
+### 10.3 Hasil test (dijalankan ulang independen oleh koordinator)
+
+| Game | Unit test |
+|------|-----------|
+| bongkar-rumah | 19/19 |
+| flappy-mandor | 17/17 |
+| ketapel-konstruksi | 26/26 |
+| lari-proyek | 26/26 |
+| sudoku-tukang | 28/28 |
+| selamatkan-mandor | 16/16 |
+| tebas-material | 20/20 |
+| sambung-kata | 85/85 |
+| gabung-blok | 25/25 |
+| head-soccer-mandor | 25/25 |
+| **Total baru** | **287/287** |
+| gameSpace.test.ts (lama) | 54/54 |
+
+- `tsc` scoped (engine2d + overlay + 10 game): 0 error.
+- Screenshot Playwright per game (harness /tmp/gs2d-w1..w5): tiap worker membaca & mengiterasi sendiri; koordinator spot-check independen (ketapel, lari-proyek) — **lolos "seperti game asli"** (objek berlapis base+highlight+outline+detail, background gradien + parallax, bayangan, partikel). 0 console/page error di semua sesi.
+- Dikerjakan 5 worker paralel (2 game/worker), masing-masing: implementasi penuh + test + screenshot + review visual sendiri.
+
+### 10.4 Yang belum terverifikasi / catatan
+
+1. **Jalur chat-penuh-di-browser** tetap NOT TESTED (batasan pre-existing).
+2. **SFX di perangkat nyata** belum didengar (WebAudio butuh gesture; wiring benar di headless).
+3. **HP fisik** — pointer events menyatukan mouse+touch, belum diuji di device nyata.
+4. **Performa HP low-end** belum diukur FPS (DPR cap 2, partikel pooled).
+5. Full-project `tsc`/`vite build` tidak dijalankan (pre-existing OOM & canvg).
+6. File game: 10 folder × 3 file + engine2d (11 file + README). Semua uncommitted — menunggu push oleh parent.

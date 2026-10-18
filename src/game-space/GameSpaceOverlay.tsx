@@ -3,19 +3,26 @@
  *
  * Rendered inside the chat container when the `game` command is detected.
  * The game list and each game are lazy-loaded: opening the overlay pulls a
- * small menu chunk; each Three.js game chunk only loads when the user
- * presses "Main". Closing the overlay unmounts everything (engine.dispose).
+ * small menu chunk; each 2D game chunk only loads when the user presses
+ * "Main". Closing the overlay unmounts everything.
  */
 
 import React, { Suspense, useState } from 'react';
 import { X, Gamepad2, ChevronRight, ArrowLeft, Loader2 } from 'lucide-react';
 import './game-space.css';
 
-// Lazy: each game (+ its three.js scene) splits into its own chunk.
+// Lazy: each game splits into its own chunk (2D canvas, no three.js).
+const BongkarRumah = React.lazy(() => import('./games/bongkar-rumah/BongkarRumah'));
+const FlappyMandor = React.lazy(() => import('./games/flappy-mandor/FlappyMandor'));
+const KetapelKonstruksi = React.lazy(() => import('./games/ketapel-konstruksi/KetapelKonstruksi'));
+const LariProyek = React.lazy(() => import('./games/lari-proyek/LariProyek'));
+const SudokuTukang = React.lazy(() => import('./games/sudoku-tukang/SudokuTukang'));
+const SelamatkanMandor = React.lazy(() => import('./games/selamatkan-mandor/SelamatkanMandor'));
+const TebasMaterial = React.lazy(() => import('./games/tebas-material/TebasMaterial'));
+const SambungKata = React.lazy(() => import('./games/sambung-kata/SambungKata'));
+const GabungBlok = React.lazy(() => import('./games/gabung-blok/GabungBlok'));
+const HeadSoccerMandor = React.lazy(() => import('./games/head-soccer-mandor/HeadSoccerMandor'));
 const BuildChallenge = React.lazy(() => import('./games/build-challenge/BuildChallenge'));
-const Demolition = React.lazy(() => import('./games/demolition/Demolition'));
-const ZenBuild = React.lazy(() => import('./games/zen-build/ZenBuild'));
-const Stack = React.lazy(() => import('./games/stack/Stack'));
 
 interface Props {
   onClose: () => void;
@@ -34,34 +41,95 @@ interface GameDef {
 
 const GAMES: GameDef[] = [
   {
-    id: 'demolition',
-    title: 'Bongkar Bangunan',
-    tagline: 'Ketuk gedungnya, saksikan runtuh berantai. Pelepas stres paling ampuh.',
+    id: 'bongkar-rumah',
+    title: 'Bongkar Rumah',
+    tagline: 'Ketuk rumahnya sampai rata dengan tanah. 4 level: rumah, ruko, apartemen, tower.',
     emoji: '💥',
-    meta: 'Tanpa timer · kombo · 100% rata',
-    theme: 'gs-card-demolition',
+    meta: '4 level · kombo runtuh · pelepas stres',
+    theme: 'gs-card-bongkar',
     badge: 'PELEPAS STRES',
-    component: Demolition,
+    component: BongkarRumah,
   },
   {
-    id: 'zen-build',
-    title: 'Zen Build',
-    tagline: 'Bangun sesukamu di bawah langit senja. Tanpa timer, tanpa skor, tanpa salah.',
-    emoji: '🌅',
-    meta: 'Mode bebas · potongan ∞ · undo',
-    theme: 'gs-card-zen',
-    badge: 'SANTAI',
-    component: ZenBuild,
+    id: 'flappy-mandor',
+    title: 'Flappy Mandor',
+    tagline: 'Terbangkan mandor berhelm lewati crane & balok. Jangan sampai jatuh!',
+    emoji: '🪖',
+    meta: 'Medali tiap 10 gate · best score',
+    theme: 'gs-card-flappy',
+    component: FlappyMandor,
   },
   {
-    id: 'stack',
-    title: 'Stack Menara',
-    tagline: 'Ketuk pas balok sejajar — susun menara setinggi mungkin sampai malam berbintang.',
-    emoji: '🗼',
-    meta: 'Satu ketukan · perfect = kombo',
-    theme: 'gs-card-stack',
-    badge: 'FOKUS',
-    component: Stack,
+    id: 'ketapel-konstruksi',
+    title: 'Ketapel Konstruksi',
+    tagline: 'Luncurkan wrecking ball, robohkan struktur & berkas revisi. 10 level.',
+    emoji: '🎯',
+    meta: '10 level · bintang 1–3',
+    theme: 'gs-card-ketapel',
+    component: KetapelKonstruksi,
+  },
+  {
+    id: 'lari-proyek',
+    title: 'Lari Proyek',
+    tagline: 'Endless runner: lompat & nunduk hindari barier, lubang & bata jatuh.',
+    emoji: '🏃',
+    meta: 'Endless · kumpulkan helm',
+    theme: 'gs-card-lari',
+    component: LariProyek,
+  },
+  {
+    id: 'sudoku-tukang',
+    title: 'Sudoku Tukang',
+    tagline: 'Sudoku 9×9 klasik. 4 tingkat kesulitan, mode catatan, timer.',
+    emoji: '🧩',
+    meta: '4 difficulty · best time',
+    theme: 'gs-card-sudoku',
+    component: SudokuTukang,
+  },
+  {
+    id: 'selamatkan-mandor',
+    title: 'Selamatkan Mandor',
+    tagline: 'Gambar garis pelindung, selamatkan mandor dari hujan bata. 15 level.',
+    emoji: '✏️',
+    meta: '15 level · fisika garis',
+    theme: 'gs-card-selamat',
+    component: SelamatkanMandor,
+  },
+  {
+    id: 'tebas-material',
+    title: 'Tebas Material',
+    tagline: 'Swipe tebas material beterbangan. Kombo swipe, awas dinamit!',
+    emoji: '🍉',
+    meta: 'Kombo · 3 nyawa',
+    theme: 'gs-card-tebas',
+    component: TebasMaterial,
+  },
+  {
+    id: 'sambung-kata',
+    title: 'Sambung Kata',
+    tagline: 'Susun istilah konstruksi dari roda huruf. 3 pack × 20 level.',
+    emoji: '🔤',
+    meta: '60 level · kosakata proyek',
+    theme: 'gs-card-kata',
+    component: SambungKata,
+  },
+  {
+    id: 'gabung-blok',
+    title: 'Gabung Blok',
+    tagline: '2048 ala kontraktor: BATA → BATAKO → … → MENARA.',
+    emoji: '🧱',
+    meta: '8 tier · best score',
+    theme: 'gs-card-gabung',
+    component: GabungBlok,
+  },
+  {
+    id: 'head-soccer-mandor',
+    title: 'Head Soccer Mandor',
+    tagline: 'Sundul & tendang bola, kalahkan 5 level AI dalam turnamen.',
+    emoji: '⚽',
+    meta: 'Turnamen 5 level',
+    theme: 'gs-card-soccer',
+    component: HeadSoccerMandor,
   },
   {
     id: 'build-challenge',
@@ -98,7 +166,7 @@ export const GameSpaceOverlay: React.FC<Props> = ({ onClose }) => {
             <div>
               <div className="gs-title">EZRAB Game Space</div>
               <div className="gs-subtitle">
-                {activeGame ? activeGame.title : 'Mini-game 3D di dalam chat — tanpa AI, tanpa kuota'}
+                {activeGame ? activeGame.title : 'Mini-game 2D di dalam chat — tanpa AI, tanpa kuota'}
               </div>
             </div>
           </div>
@@ -130,14 +198,14 @@ export const GameSpaceOverlay: React.FC<Props> = ({ onClose }) => {
                 </button>
               ))}
             </div>
-            <p className="gs-menu-note">🎮 Dibuat dengan Three.js — berjalan 100% lokal di perangkatmu.</p>
+            <p className="gs-menu-note">🎮 Berjalan 100% lokal di perangkatmu — tanpa AI, tanpa kuota.</p>
           </div>
         ) : (
           <Suspense
             fallback={
               <div className="gs-loading">
                 <Loader2 size={28} className="spin" />
-                <p>Memuat scene 3D…</p>
+                <p>Memuat game…</p>
               </div>
             }
           >
