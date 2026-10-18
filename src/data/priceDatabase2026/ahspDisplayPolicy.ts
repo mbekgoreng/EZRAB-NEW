@@ -78,10 +78,10 @@ export function ahspCompletenessNote(
 
 /**
  * Label tampilan untuk harga perkiraan AI (perintah user 2026-10-18).
- * Aturan: label "*Harga Perkiraan AI*" SELALU menyertai angka — tidak ada
+ * Aturan: label "Harga Estimasi" SELALU menyertai angka — tidak ada
  * tampilan harga perkiraan AI tanpa label ini.
  */
-export const AI_ESTIMATE_LABEL = '*Harga Perkiraan AI*';
+export const AI_ESTIMATE_LABEL = 'Harga Estimasi';
 
 export function formatAiEstimatedPrice(price: number | null | undefined): string | null {
   if (price === null || price === undefined || !(price > 0)) return null;

@@ -1,13 +1,13 @@
 /**
- * Panel Perkiraan Harga AI untuk satu komponen AHSP yang harganya tidak tersedia.
+ * Panel Harga Estimasi untuk satu komponen AHSP yang harganya tidak tersedia.
  * ============================================================================
- * - Tombol "Minta Perkiraan AI" → requestAiPriceEstimate (AI, fallback heuristik).
- * - Hasil SELALU tampil dengan label "*Harga Perkiraan AI*".
- * - "Pakai perkiraan ini" butuh checkbox acknowledgment eksplisit.
+ * - Estimasi dibuat OTOMATIS saat panel dibuka (AI, fallback heuristik).
+ * - Hasil SELALU tampil dengan label "Harga Estimasi".
+ * - "Pakai estimasi ini" butuh checkbox acknowledgment eksplisit.
  * - Setelah dipakai: onApply(estimate) → parent membuat price_assumption
- *   berstatus DRAFT dengan sourceNote "*Harga Perkiraan AI*".
+ *   berstatus DRAFT dengan sourceNote "Harga Estimasi".
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, Loader2, CheckCircle2, XCircle, Info } from 'lucide-react';
 import {
   requestAiPriceEstimate,
@@ -41,30 +41,46 @@ export const AiPriceEstimatePanel: React.FC<Props> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ackChecked, setAckChecked] = useState(false);
+  const fetchedRef = useRef(false);
 
-  if (hasResolvedPrice) return null;
-
-  const handleRequest = async () => {
+  // Estimasi dibuat otomatis saat panel dibuka (tidak ada tombol "minta").
+  useEffect(() => {
+    if (hasResolvedPrice || fetchedRef.current) return;
+    fetchedRef.current = true;
+    const cached = aiEstimateStore.latestFor(componentCode);
+    if (cached) {
+      setEstimate(cached);
+      return;
+    }
+    let cancelled = false;
     setLoading(true);
     setError(null);
-    try {
-      const est = await requestAiPriceEstimate({ componentCode, componentName, unit: componentUnit });
-      if (!est) {
-        setError(
-          'Tidak ada sumber harga yang bisa dipakai sebagai dasar perkiraan. ' +
-          'Tambahkan referensi harga pasar terlebih dahulu.'
-        );
-      } else {
-        aiEstimateStore.save(est);
-        setEstimate(est);
-        setAckChecked(false);
-      }
-    } catch (e: any) {
-      setError(e?.message || 'Gagal meminta perkiraan AI.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    requestAiPriceEstimate({ componentCode, componentName, unit: componentUnit })
+      .then((est) => {
+        if (cancelled) return;
+        if (!est) {
+          setError(
+            'Tidak ada sumber harga yang bisa dipakai sebagai dasar estimasi. ' +
+            'Tambahkan referensi harga pasar terlebih dahulu.'
+          );
+        } else {
+          aiEstimateStore.save(est);
+          setEstimate(est);
+          setAckChecked(false);
+        }
+      })
+      .catch((e: any) => {
+        if (!cancelled) setError(e?.message || 'Gagal membuat estimasi.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [componentCode, componentName, componentUnit, hasResolvedPrice]);
+
+  if (hasResolvedPrice) return null;
 
   const handleApply = () => {
     if (!estimate || !ackChecked) return;
@@ -84,7 +100,7 @@ export const AiPriceEstimatePanel: React.FC<Props> = ({
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <Sparkles size={16} color="#a855f7" />
-        <strong style={{ fontSize: 13.5 }}>Perkiraan Harga AI</strong>
+        <strong style={{ fontSize: 13.5 }}>{AI_ESTIMATE_LABEL}</strong>
         <span
           style={{
             fontSize: 11,
@@ -95,38 +111,20 @@ export const AiPriceEstimatePanel: React.FC<Props> = ({
             borderRadius: 999,
           }}
         >
-          {AI_ESTIMATE_LABEL}
+          AI
         </span>
       </div>
 
       <p style={{ fontSize: 12.5, color: '#64748b', margin: '0 0 10px', lineHeight: 1.5 }}>
-        Harga komponen ini belum tersedia. AI dapat membuat perkiraan berdasarkan
+        Harga komponen ini belum tersedia. Estimasi dibuat otomatis oleh AI berdasarkan
         referensi harga pasar dan data material saat ini — <em>bukan harga resmi</em>.
       </p>
 
-      {!estimate && (
-        <button
-          type="button"
-          onClick={handleRequest}
-          disabled={loading}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            height: 38,
-            padding: '0 16px',
-            fontSize: 13,
-            fontWeight: 700,
-            color: '#fff',
-            background: loading ? '#c4b5fd' : '#a855f7',
-            border: 'none',
-            borderRadius: 10,
-            cursor: loading ? 'wait' : 'pointer',
-          }}
-        >
-          {loading ? <Loader2 size={15} className="spin" /> : <Sparkles size={15} />}
-          {loading ? 'Meminta perkiraan…' : 'Minta Perkiraan AI'}
-        </button>
+      {loading && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#7c3aed', padding: '8px 0' }}>
+          <Loader2 size={15} className="spin" />
+          Membuat estimasi…
+        </div>
       )}
 
       {error && (
@@ -136,7 +134,7 @@ export const AiPriceEstimatePanel: React.FC<Props> = ({
         </div>
       )}
 
-      {estimate && (
+      {estimate && !loading && (
         <div style={{ marginTop: 4 }}>
           <div
             style={{
@@ -147,7 +145,7 @@ export const AiPriceEstimatePanel: React.FC<Props> = ({
             }}
           >
             <div style={{ fontSize: 11, color: '#64748b', marginBottom: 2 }}>
-              Perkiraan {estimate.method === 'ai' ? 'AI' : 'heuristik (AI tidak terjangkau)'} ·{' '}
+              {estimate.method === 'ai' ? 'Estimasi AI' : 'Estimasi heuristik (AI tidak terjangkau)'} ·{' '}
               confidence {Math.round(estimate.confidence * 100)}%
             </div>
             <div style={{ fontSize: 20, fontWeight: 800, color: '#7c3aed' }}>
@@ -159,7 +157,7 @@ export const AiPriceEstimatePanel: React.FC<Props> = ({
             </div>
             <div style={{ marginTop: 8 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', marginBottom: 4 }}>
-                DASAR PERKIRAAN ({estimate.sources.length} sumber):
+                DASAR ESTIMASI ({estimate.sources.length} sumber):
               </div>
               <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: '#475569' }}>
                 {estimate.sources.map((s, i) => (
@@ -216,25 +214,7 @@ export const AiPriceEstimatePanel: React.FC<Props> = ({
                 cursor: ackChecked ? 'pointer' : 'not-allowed',
               }}
             >
-              <CheckCircle2 size={15} /> Pakai perkiraan ini
-            </button>
-            <button
-              type="button"
-              onClick={handleRequest}
-              disabled={loading}
-              style={{
-                height: 36,
-                padding: '0 14px',
-                fontSize: 13,
-                fontWeight: 600,
-                color: '#7c3aed',
-                background: 'transparent',
-                border: '1px solid #c4b5fd',
-                borderRadius: 10,
-                cursor: 'pointer',
-              }}
-            >
-              Minta ulang
+              <CheckCircle2 size={15} /> Pakai estimasi ini
             </button>
           </div>
         </div>

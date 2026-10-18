@@ -51,8 +51,8 @@ function resetStores() {
 
 describe('aiPriceEstimate', () => {
 
-  it('1. label khusus terdefinisi dan mengandung kata AI', () => {
-    expect(AI_ESTIMATE_LABEL).toContain('Perkiraan AI');
+  it('1. label khusus terdefinisi dan bernama "Harga Estimasi"', () => {
+    expect(AI_ESTIMATE_LABEL).toBe('Harga Estimasi');
   });
 
   it('2. gatherEstimateSources memakai referensi pasar terverifikasi dulu', () => {
@@ -112,7 +112,7 @@ describe('aiPriceEstimate', () => {
     expect(formatAiEstimatedPrice(-5)).toBeNull();
     const f = formatAiEstimatedPrice(99000)!;
     expect(f).toContain('99.000');
-    expect(f).toContain('*Harga Perkiraan AI*');
+    expect(f).toContain('Harga Estimasi');
   });
 
   it('9. display policy: tidak pernah mengubah null menjadi 0', () => {

@@ -10,6 +10,11 @@ import {
 import { DedAiMode, DedAiProjectType } from './types';
 import { useI18n } from '../../i18n/I18nContext';
 import './dedAi.css';
+import '../../ai-credits/ai-credits.css';
+import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
+import { tariffFor } from '../../ai-credits/config';
+import { CreditBalance } from '../../ai-credits/components/CreditBalance';
+import { CreditTopUpModal } from '../../ai-credits/components/CreditTopUpModal';
 
 export interface DedAiFileItem {
   file: File;
@@ -27,6 +32,8 @@ export interface DedAiSession {
   targetProjectId: string | null;
   /** true = gunakan pipeline Full AI (terisolasi), false = pipeline lama */
   fullAi?: boolean;
+  /** Estimasi kredit simulasi yang disetujui user (kategori dipilih user). */
+  creditEstimate?: { category: string; credits: number };
 }
 
 interface Props {
@@ -43,6 +50,14 @@ const MAX_FILES = 5;
 
 const fmtSize = (b: number) =>
   b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
+
+/** Label kategori kompleksitas DED (dipilih user — bukan hasil deteksi AI). */
+const COMPLEXITY_OPTIONS = [
+  { value: 'simple' as const, label: 'Sederhana', desc: '1–2 lantai, denah simpel', tariffKey: 'ded-ai/simple' },
+  { value: 'medium' as const, label: 'Menengah', desc: '2–3 lantai / ruko', tariffKey: 'ded-ai/medium' },
+  { value: 'complex' as const, label: 'Kompleks', desc: 'Gedung / struktur khusus', tariffKey: 'ded-ai/complex' },
+];
+const complexityLabel = (v: string) => COMPLEXITY_OPTIONS.find((o) => o.value === v)?.label ?? v;
 
 export const DedAiInputView: React.FC<Props> = ({
   initialSession, projects, drafts, onStart, onLoadDraft, onDeleteDraft,
@@ -65,6 +80,13 @@ export const DedAiInputView: React.FC<Props> = ({
   const [useExisting, setUseExisting] = useState(initialSession.targetProjectId !== null);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // --- AI Credits (simulasi): kategori dipilih user, bukan dideteksi AI ---
+  const [complexity, setComplexity] = useState<'simple' | 'medium' | 'complex'>('simple');
+  const [creditApproved, setCreditApproved] = useState(false);
+  const [creditTopUpOpen, setCreditTopUpOpen] = useState(false);
+  const { balance, consume } = useCreditSimulation();
+  const dedEstimate = tariffFor(`ded-ai/${complexity}`);
+  const dedTarget = dedEstimate.target ?? dedEstimate.max;
 
   const addFiles = (list: FileList | File[]) => {
     const arr = Array.from(list);
@@ -88,7 +110,11 @@ export const DedAiInputView: React.FC<Props> = ({
   const canStart = validFiles.length > 0;
 
   const handleStart = () => {
-    if (!canStart) return;
+    if (!canStart || !creditApproved) return;
+    // --- AI Credits: catat pemakaian SIMULASI (batas target kategori) ---
+    consume('ded-ai', dedTarget, `DED AI (${complexityLabel(complexity)}): ${validFiles.length} dokumen`, {
+      jobReference: `ded-${Date.now().toString(36)}`,
+    });
     const chosenProjectId = useExisting ? targetProjectId : null;
     const name =
       projectName.trim() ||
@@ -102,6 +128,7 @@ export const DedAiInputView: React.FC<Props> = ({
       mode,
       targetProjectId: chosenProjectId,
       fullAi,
+      creditEstimate: { category: complexityLabel(complexity), credits: dedTarget },
     });
   };
 
@@ -249,8 +276,70 @@ export const DedAiInputView: React.FC<Props> = ({
         </div>
       </div>
 
+      {/* ---- Estimasi Kredit AI (simulasi) ---- */}
+      <div className="dedai-card" style={{ marginTop: 18 }}>
+        <h2><span className="ico"><Zap size={18} /></span> Estimasi Kredit AI</h2>
+        <p className="sub">
+          Pilih kategori yang paling mendekati dokumen Anda. Kategori ini pilihan Anda —
+          bukan hasil deteksi otomatis. Angka berikut simulasi frontend.
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <CreditBalance compact showTopUp={false} />
+          <span style={{ fontSize: 12, color: 'var(--ez-color-text-faint)' }}>saldo simulasi</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 12 }}>
+          {COMPLEXITY_OPTIONS.map((o) => {
+            const t = tariffFor(o.tariffKey);
+            const active = complexity === o.value;
+            return (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => { setComplexity(o.value); setCreditApproved(false); }}
+                style={{
+                  textAlign: 'left', padding: 12, borderRadius: 12, cursor: 'pointer',
+                  border: active ? '2px solid var(--ez-color-primary)' : '1px solid var(--ez-color-border-line)',
+                  background: active ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                }}
+                aria-pressed={active}
+              >
+                <div style={{ fontWeight: 800, fontSize: 13.5 }}>{o.label}</div>
+                <div style={{ fontSize: 12, color: 'var(--ez-color-text-faint)', margin: '2px 0 6px' }}>{o.desc}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ez-color-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                  ±{t.target!.toLocaleString('id-ID')} kredit
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <div className="aic-estimate" style={{ marginBottom: 10 }}>
+          <span>Estimasi pemakaian: <strong>{dedTarget.toLocaleString('id-ID')} kredit</strong> (maksimum simulasi)</span>
+          <span className="aic-sim">simulasi</span>
+        </div>
+        {balance.total < dedTarget && (
+          <div className="aic-low-notice" style={{ marginBottom: 10 }}>
+            <AlertTriangle size={16} />
+            <span>Saldo simulasi ({balance.total.toLocaleString('id-ID')}) di bawah estimasi. Anda tetap bisa lanjut setelah menyetujui, atau top-up dulu.</span>
+            <button type="button" onClick={() => setCreditTopUpOpen(true)}>Top-up</button>
+          </div>
+        )}
+        <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 13, cursor: 'pointer', lineHeight: 1.5 }}>
+          <input
+            type="checkbox"
+            checked={creditApproved}
+            onChange={(e) => setCreditApproved(e.target.checked)}
+            style={{ marginTop: 3 }}
+          />
+          <span>
+            Saya menyetujui estimasi <strong>{dedTarget.toLocaleString('id-ID')} kredit (simulasi)</strong> untuk
+            analisis DED kategori <strong>{complexityLabel(complexity)}</strong>. Saya paham angka ini
+            simulasi frontend, bukan penagihan nyata.
+          </span>
+        </label>
+      </div>
+
       <div className="dedai-cta">
-        <button className="dedai-btn primary" disabled={!canStart} onClick={handleStart}>
+        <button className="dedai-btn primary" disabled={!canStart || !creditApproved} onClick={handleStart}>
           {t('ai.ded.input.cta')} <ArrowRight size={18} />
         </button>
       </div>
@@ -259,6 +348,12 @@ export const DedAiInputView: React.FC<Props> = ({
           {t('ai.ded.input.cta_hint')}
         </p>
       )}
+      {canStart && !creditApproved && (
+        <p style={{ textAlign: 'center', color: 'var(--ez-color-text-muted)', fontSize: 12.5, marginTop: 10 }}>
+          Centang persetujuan estimasi kredit di atas untuk memulai analisis.
+        </p>
+      )}
+      {creditTopUpOpen && <CreditTopUpModal onClose={() => setCreditTopUpOpen(false)} />}
 
       {/* ---- Draft tersimpan ---- */}
       {drafts.length > 0 && (

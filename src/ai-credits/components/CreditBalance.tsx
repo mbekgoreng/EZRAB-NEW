@@ -11,7 +11,8 @@ import { CreditTopUpModal } from './CreditTopUpModal';
 
 interface Props {
   compact?: boolean;
-  onOpenCreditPage: () => void;
+  /** Jika tidak disediakan, widget hanya menampilkan saldo (tidak bisa diklik). */
+  onOpenCreditPage?: () => void;
   showTopUp?: boolean;
 }
 
@@ -29,8 +30,10 @@ export const CreditBalance: React.FC<Props> = ({ compact, onOpenCreditPage, show
         type="button"
         className={cls}
         onClick={onOpenCreditPage}
-        title={`Saldo kredit AI (simulasi): ${balance.total.toLocaleString('id-ID')} kredit. Klik untuk rincian.`}
+        disabled={!onOpenCreditPage}
+        title={`Saldo kredit AI (simulasi): ${balance.total.toLocaleString('id-ID')} kredit.${onOpenCreditPage ? ' Klik untuk rincian.' : ''}`}
         aria-label={`Saldo kredit AI ${balance.total} kredit, paket ${balance.plan}`}
+        style={!onOpenCreditPage ? { cursor: 'default' } : undefined}
       >
         <span className="aic-coin"><Coins size={12} /></span>
         <span className="aic-amount">{formatCreditsShort(balance.total)}</span>

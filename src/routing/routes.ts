@@ -34,6 +34,7 @@ export const paths = {
   ezrabAi: () => `${APP_PREFIX}/ezrab-ai`,
   dedAiEstimate: () => `${APP_PREFIX}/ded-ai`,
   dokumenAi: () => `${APP_PREFIX}/dokumen-ai`,
+  kreditAi: () => `${APP_PREFIX}/kredit-ai`,
   volumeCalculation: () => `${APP_PREFIX}/volume-calculation`,
   templates: () => `${APP_PREFIX}/template-rab`,
   ahsp: () => `${APP_PREFIX}/ahsp`,
@@ -93,6 +94,7 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
       case 'ezrab-ai': return paths.ezrabAi();
       case 'ded-ai': return paths.dedAiEstimate();
       case 'dokumen-ai': return paths.dokumenAi();
+      case 'kredit-ai': return paths.kreditAi();
       case 'magic-ai':
       case 'ai-assistant': return paths.magicAi(mode);
       case 'volume-calculation':
@@ -144,6 +146,8 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
     case 'cash-flow': return paths.project.finance(project);
     case 'proyek': return paths.projects();
     case 'manajemen-proyek': return paths.project.dashboard(project);
+    // Kredit AI selalu halaman global (bukan per-proyek).
+    case 'kredit-ai': return paths.kreditAi();
     case 'rab-estimasi': return paths.project.estimate(project);
     case 'daftar-pekerjaan':
     case 'pekerjaan':
@@ -204,6 +208,8 @@ export const parseWorkspaceRoute = (pathname: string, search: string = ''): Work
   if (path === `${APP_PREFIX}/ezrab-ai`) return { scope: 'global', menu: 'ezrab-ai', status: 'ok' };
   if (path === `${APP_PREFIX}/ded-ai`) return { scope: 'global', menu: 'ded-ai', status: 'ok' };
   if (path === `${APP_PREFIX}/dokumen-ai`) return { scope: 'global', menu: 'dokumen-ai', status: 'ok' };
+  // /app/kredit-ai: halaman Kredit AI (Phase 1 frontend — simulasi, tanpa sidebar).
+  if (path === `${APP_PREFIX}/kredit-ai`) return { scope: 'global', menu: 'kredit-ai', status: 'ok' };
   if (path === `${APP_PREFIX}/volume-calculation` || path === `${APP_PREFIX}/qto-vc`) return { scope: 'global', menu: 'qto-vc', status: 'ok' };
   // /app/pekerjaan: alias publik untuk Daftar Pekerjaan (temuan audit 2026-10-13:
   // route ini 404). Di-render oleh DaftarPekerjaanView via menu 'daftar-pekerjaan'.
@@ -305,6 +311,7 @@ export const routeLabel = (route: WorkspaceRoute) => {
     'ezrab-ai': 'EZRAB AI',
     'ded-ai': 'DED AI Estimate',
     'dokumen-ai': 'Dokumen AI',
+    'kredit-ai': 'Kredit AI',
     pengaturan: 'Pengaturan',
     subscription: 'Subscription',
     'blog-admin': 'Blog CMS',

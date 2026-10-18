@@ -1,17 +1,17 @@
 /**
  * Perkiraan Harga AI untuk komponen AHSP yang harganya tidak tersedia.
  * ============================================================================
- * PERINTAH USER (2026-10-18): untuk harga AHSP yang tidak tersedia, AI boleh
- * membuat perkiraan ("ngarang") berdasarkan sumber tertentu pada harga
- * material saat ini — dengan tampilan khusus "*Harga Perkiraan AI*".
+ * PERINTAH USER (2026-10-18, revisi): untuk harga AHSP yang tidak tersedia, AI
+ * membuat estimasi ("ngarang") yang masuk logika berdasarkan harga pasar
+ * saat ini — ditampilkan langsung sebagai "Harga Estimasi" (tanpa tombol
+ * permintaan terpisah).
  *
  * Batasan integritas (tetap berlaku):
  * - TIDAK PERNAH menggantikan harga resmi (official) atau harga pasar
  *   terverifikasi. Hanya mengisi slot yang null.
- * - TIDAK PERNAH otomatis: selalu atas permintaan eksplisit user per komponen.
- * - Label "*Harga Perkiraan AI*" SELALU tampil di mana pun harga ini muncul.
- * - Memakai perkiraan sebagai harga kerja butuh acknowledgment eksplisit
- *   ("Saya paham ini perkiraan AI, bukan harga resmi").
+ * - Label "Harga Estimasi" SELALU tampil di mana pun harga ini muncul.
+ * - Memakai estimasi sebagai harga kerja butuh acknowledgment eksplisit
+ *   ("Saya paham ini Harga Estimasi, bukan harga resmi").
  * - Sumber yang dipakai dicatat dan ditampilkan (transparan).
  *
  * Alur: kumpulkan sumber (referensi pasar terverifikasi > perlu-tinjau >
@@ -24,7 +24,7 @@ import { extractSpec, compareKeyAttributes } from '../market/specProfiles';
 import type { MarketPriceReference } from '../market/types';
 
 /** Label khusus yang SELALU menyertai harga perkiraan AI. */
-export const AI_ESTIMATE_LABEL = '*Harga Perkiraan AI*';
+export const AI_ESTIMATE_LABEL = 'Harga Estimasi';
 
 export type EstimateSourceKind =
   | 'market_verified'
@@ -274,7 +274,7 @@ class AiEstimateStore {
 export const aiEstimateStore = new AiEstimateStore();
 
 /**
- * Format tampilan: "Rp 125.000 *Harga Perkiraan AI*".
+ * Format tampilan: "Rp 125.000 Harga Estimasi".
  * Label SELALU ikut — tidak ada tampilan harga perkiraan tanpa label.
  */
 export function formatAiEstimatePrice(estimatedPrice: number): string {

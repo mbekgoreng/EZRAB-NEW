@@ -16,6 +16,7 @@ import { DedAiCalculator } from './calculator';
 import { groupByWbs, WbsGroup } from './wbsClassifier';
 import { useI18n } from '../../i18n/I18nContext';
 import './dedAi.css';
+import '../../ai-credits/ai-credits.css';
 
 export type ItemStatus = 'valid' | 'review' | 'blocked' | 'no-price';
 
@@ -64,10 +65,13 @@ interface Props {
   onOpenSpreadsheet: () => void;
   draftSaved: boolean;
   finalized: boolean;
+  /** Estimasi kredit simulasi yang disetujui (dari input view). */
+  creditEstimate?: { category: string; credits: number };
 }
 
 export const DedAiResultView: React.FC<Props> = ({
   output, onBackToInput, onSaveDraft, onFinalize, onOpenSpreadsheet, draftSaved, finalized,
+  creditEstimate,
 }) => {
   const { t } = useI18n();
   const statusMeta = getStatusMeta(t);
@@ -232,6 +236,24 @@ export const DedAiResultView: React.FC<Props> = ({
         <div className="dedai-step-line done" />
         <div className="dedai-step active"><span className="n">3</span> {t('ai.ded.input.step_3')}</div>
       </div>
+
+      {/* ---- Ringkasan pemakaian kredit (simulasi) ---- */}
+      {creditEstimate && (
+        <div className="aic-card" style={{ margin: '0 0 16px' }}>
+          <div className="aic-k">Pemakaian kredit AI (simulasi)</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, flexWrap: 'wrap', gap: 8 }}>
+            <span style={{ fontSize: 13.5 }}>
+              DED AI · kategori <strong>{creditEstimate.category}</strong>
+            </span>
+            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums' }}>
+              {creditEstimate.credits.toLocaleString('id-ID')} kredit <span className="aic-sim" style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 999, background: 'var(--ez-color-surface-secondary)', border: '1px dashed var(--ez-color-border-line)' }}>simulasi</span>
+            </strong>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--ez-color-text-faint)', marginTop: 4 }}>
+            Dicatat sebagai pemakaian simulasi — bukan penagihan nyata.
+          </div>
+        </div>
+      )}
 
       {/* ---- Ringkasan ---- */}
       <div className="dedai-stats">

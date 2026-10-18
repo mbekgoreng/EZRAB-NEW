@@ -19,11 +19,25 @@ import {
 import { dokumenAiService } from '../service';
 import type { DocRecord, ChatMessage, HistoryEntry, HistoryType } from '../view';
 import { useI18n } from '../../../i18n/I18nContext';
+import '../../../ai-credits/ai-credits.css';
+import { useCreditSimulation } from '../../../ai-credits/useCreditSimulation';
+import { tariffFor } from '../../../ai-credits/config';
+import { CreditBalance } from '../../../ai-credits/components/CreditBalance';
+import { CreditEstimateBadge } from '../../../ai-credits/components/CreditEstimateBadge';
 
 /** Mode yang didukung service cabang ini. */
 type SvcMode = 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | 'CHAT';
 
 type AnaTab = 'summary' | 'qa' | 'extract' | 'compare' | 'checklist';
+
+/** Kategori estimasi kredit per tab analisis (simulasi). */
+const TAB_CREDIT_CATEGORY: Record<AnaTab, 'simple' | 'complex'> = {
+  summary: 'simple',
+  qa: 'simple',
+  extract: 'complex',
+  compare: 'complex',
+  checklist: 'complex',
+};
 
 const getTabs = (
   t: (key: string) => string,
@@ -88,6 +102,9 @@ export const DocAnalyzer: React.FC<{
     [docs, doc.id]
   );
   const chatEndRef = useRef<HTMLDivElement>(null);
+  // --- AI Credits (simulasi frontend) ---
+  const { consume } = useCreditSimulation();
+  const docEstimate = tariffFor(`ai-document/${TAB_CREDIT_CATEGORY[tab]}`);
 
   const pages = useMemo(() => splitPages(doc.text), [doc.text]);
 
@@ -119,6 +136,8 @@ export const DocAnalyzer: React.FC<{
       if (res.success) {
         setResult(res.reply || '');
         recordHistory(anaTab, res.reply || '');
+        // --- AI Credits: catat pemakaian SIMULASI ---
+        consume('ai-document', docEstimate.max, `AI Document (${anaTab}): ${doc.fileName.slice(0, 50)}`);
       } else {
         setError(`${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`);
       }
@@ -179,6 +198,7 @@ export const DocAnalyzer: React.FC<{
           <strong>{doc.fileName}</strong>
           <span>{doc.kind.toUpperCase()} · {doc.pages ? `${doc.pages} ${t('ai.doc.ana.pages_abbr')}` : ''} · {doc.text.length.toLocaleString('id-ID')} {t('ai.doc.ana.chars')}</span>
         </div>
+        <CreditBalance compact showTopUp={false} />
       </div>
 
       <div className="docai-anatabs">
@@ -190,6 +210,9 @@ export const DocAnalyzer: React.FC<{
             </button>
           );
         })}
+        <span style={{ marginLeft: 'auto', alignSelf: 'center' }}>
+          <CreditEstimateBadge estimate={docEstimate} />
+        </span>
       </div>
 
       <div className="docai-analayout">

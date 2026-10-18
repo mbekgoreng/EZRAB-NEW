@@ -530,6 +530,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         onOpenSpreadsheet={handleOpenSpreadsheet}
         draftSaved={draftSaved}
         finalized={finalized}
+        creditEstimate={session.creditEstimate}
       />
     );
   }

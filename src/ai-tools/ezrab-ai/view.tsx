@@ -23,6 +23,12 @@ import { useProject } from '../../context/ProjectContext';
 import { buildProjectSnapshot, ProjectSnapshot } from './projectContext';
 import { unifiedConversationStore } from '../../services/ai/conversation/unifiedConversationStore';
 import './ezrab-ai-chat.css';
+import '../../ai-credits/ai-credits.css';
+import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
+import { tariffFor } from '../../ai-credits/config';
+import { CreditBalance } from '../../ai-credits/components/CreditBalance';
+import { CreditEstimateBadge } from '../../ai-credits/components/CreditEstimateBadge';
+import { CreditTopUpModal } from '../../ai-credits/components/CreditTopUpModal';
 
 interface ChatEntry {
   role: 'user' | 'assistant';
@@ -32,6 +38,8 @@ interface ChatEntry {
   ts: number;
   imageUrl?: string;
   imageName?: string;
+  /** Kredit simulasi yang dipakai untuk respons ini (hanya AI). */
+  creditsUsed?: number;
 }
 
 /* ---- Tipe minimal Web Speech API (Chrome: webkitSpeechRecognition) ---- */
@@ -105,6 +113,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [greeting] = useState(() => GREETINGS[Math.floor(Math.random() * GREETINGS.length)]);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [attached, setAttached] = useState<{ url: string; name: string } | null>(null);
+  // --- AI Credits (simulasi frontend) ---
+  const { balance, consume } = useCreditSimulation();
+  const [creditConfirm, setCreditConfirm] = useState<{ estimate: number; pending: () => void } | null>(null);
+  const [creditTopUpOpen, setCreditTopUpOpen] = useState(false);
+  const chatEstimate = tariffFor(mode === 'fast' ? 'chat-ai/fast' : 'chat-ai/advanced');
   const [listening, setListening] = useState(false);
 
   /* ---- FASE 5A: project grounding + conversation persistence ---- */
@@ -214,6 +227,17 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const submit = async (text?: string) => {
     const msg = (text ?? input).trim();
     if ((!msg && !attached) || busy) return;
+    // --- AI Credits: intent lokal tidak memanggil AI → tanpa biaya ---
+    const preRouted = routeIntent(msg);
+    const needsAi = !(preRouted.localOnly && preRouted.intent !== 'UNKNOWN') && !preRouted.needsClarification;
+    if (needsAi && balance.total < chatEstimate.max) {
+      // Saldo simulasi tidak cukup → dialog konfirmasi (bukan blokir diam-diam).
+      setCreditConfirm({
+        estimate: chatEstimate.max,
+        pending: () => { setCreditConfirm(null); void submit(text); },
+      });
+      return;
+    }
     const img = attached;
     /* Catatan jujur ke model teks: ia tidak bisa melihat gambar */
     const content = img && !msg
@@ -283,12 +307,18 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         mode,
         projectSnapshot,
       } as any);
+      // --- AI Credits: catat pemakaian SIMULASI (batas atas estimasi, transparan) ---
+      const simUsed = chatEstimate.max;
+      consume('chat-ai', simUsed, `Chat AI (${mode === 'fast' ? 'Cepat' : 'Mendalam'}): ${msg.slice(0, 60)}`, {
+        model: mode === 'fast' ? 'FAST' : 'ADVANCED',
+      });
       const assistantEntry: ChatEntry = {
         role: 'assistant',
         content: res.reply,
         isError: !res.success,
         model: (res as any).model,
         ts: Date.now(),
+        creditsUsed: res.success ? simUsed : undefined,
       };
       setMessages((prev) => [...prev, assistantEntry]);
       persistMessage('assistant', res.reply);
@@ -453,6 +483,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         <ImagePlus size={11} /> Gambar dilampirkan sebagai catatan — model teks belum bisa "melihat" gambar
         <span> • </span>Ezrab AI bisa salah, cek ulang angka penting 😉
       </div>
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 6 }}>
+        <CreditEstimateBadge estimate={chatEstimate} />
+      </div>
     </div>
   );
 
@@ -480,6 +513,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           </div>
         </div>
         <div className="ezchat2-actions">
+          <CreditBalance compact onOpenCreditPage={() => onNavigate?.('kredit-ai')} />
           <div className="ezchat2-modes">
             <button className={mode === 'fast' ? 'active' : ''} onClick={() => setMode('fast')}>
               <Zap size={13} /> Cepat
@@ -548,6 +582,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                     <div className="ezchat2-text md-body">{renderMarkdown(m.content)}</div>
                     <div className="ezchat2-meta">
                       {m.model && <span className="ezchat2-model"><Sparkles size={11} /> {m.model}</span>}
+                      {m.creditsUsed !== undefined && (
+                        <span className="ezchat2-model" title="Pemakaian simulasi frontend — bukan penagihan nyata">
+                          ⚡ {m.creditsUsed} kredit (simulasi)
+                        </span>
+                      )}
                       <button className="ezchat2-copy" onClick={() => copyMsg(i, m.content)} title="Salin jawaban">
                         {copiedIdx === i ? <Check size={13} /> : <Copy size={13} />}
                       </button>
@@ -572,6 +611,34 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
 
       {/* ===== Composer di bawah (hanya saat sudah ada percakapan) ===== */}
       {messages.length > 0 && composer(false)}
+
+      {/* ===== Dialog saldo tidak cukup (simulasi) ===== */}
+      {creditConfirm && (
+        <div className="aic-modal-veil" onClick={() => setCreditConfirm(null)} role="dialog" aria-modal="true" aria-label="Saldo kredit tidak cukup">
+          <div className="aic-modal aic" onClick={(e) => e.stopPropagation()}>
+            <h3>Saldo kredit tidak cukup</h3>
+            <p className="aic-sub">
+              Mode {mode === 'fast' ? 'Cepat' : 'Mendalam'} membutuhkan estimasi hingga{' '}
+              <strong>{creditConfirm.estimate} kredit (simulasi)</strong>, sedangkan saldo
+              simulasi Anda {balance.total.toLocaleString('id-ID')} kredit.
+            </p>
+            <div className="aic-confirm-list">
+              <div className="row"><span>Estimasi pemakaian</span><strong>{creditConfirm.estimate} kredit</strong></div>
+              <div className="row"><span>Saldo simulasi</span><strong>{balance.total.toLocaleString('id-ID')} kredit</strong></div>
+            </div>
+            <div className="aic-modal-actions">
+              <button type="button" className="aic-btn-ghost" onClick={() => setCreditConfirm(null)}>Batal</button>
+              <button type="button" className="aic-btn-ghost" onClick={() => { setCreditConfirm(null); setCreditTopUpOpen(true); }}>
+                Top-up (simulasi)
+              </button>
+              <button type="button" className="aic-btn-primary" onClick={() => creditConfirm.pending()}>
+                Tetap kirim
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {creditTopUpOpen && <CreditTopUpModal onClose={() => setCreditTopUpOpen(false)} />}
     </div>
   );
 };
