@@ -3,16 +3,19 @@
  *
  * Rendered inside the chat container when the `game` command is detected.
  * The game list and each game are lazy-loaded: opening the overlay pulls a
- * small menu chunk; the Three.js game chunk only loads when the user presses
- * "Main". Closing the overlay unmounts everything (engine.dispose runs).
+ * small menu chunk; each Three.js game chunk only loads when the user
+ * presses "Main". Closing the overlay unmounts everything (engine.dispose).
  */
 
 import React, { Suspense, useState } from 'react';
 import { X, Gamepad2, ChevronRight, ArrowLeft, Loader2 } from 'lucide-react';
 import './game-space.css';
 
-// Lazy: game code (+ three.js scene) splits into its own chunk.
+// Lazy: each game (+ its three.js scene) splits into its own chunk.
 const BuildChallenge = React.lazy(() => import('./games/build-challenge/BuildChallenge'));
+const Demolition = React.lazy(() => import('./games/demolition/Demolition'));
+const ZenBuild = React.lazy(() => import('./games/zen-build/ZenBuild'));
+const Stack = React.lazy(() => import('./games/stack/Stack'));
 
 interface Props {
   onClose: () => void;
@@ -24,16 +27,49 @@ interface GameDef {
   tagline: string;
   emoji: string;
   meta: string;
+  theme: string;
+  badge?: string;
   component: React.LazyExoticComponent<React.FC<{ onExit: () => void }>>;
 }
 
 const GAMES: GameDef[] = [
+  {
+    id: 'demolition',
+    title: 'Bongkar Bangunan',
+    tagline: 'Ketuk gedungnya, saksikan runtuh berantai. Pelepas stres paling ampuh.',
+    emoji: '💥',
+    meta: 'Tanpa timer · kombo · 100% rata',
+    theme: 'gs-card-demolition',
+    badge: 'PELEPAS STRES',
+    component: Demolition,
+  },
+  {
+    id: 'zen-build',
+    title: 'Zen Build',
+    tagline: 'Bangun sesukamu di bawah langit senja. Tanpa timer, tanpa skor, tanpa salah.',
+    emoji: '🌅',
+    meta: 'Mode bebas · potongan ∞ · undo',
+    theme: 'gs-card-zen',
+    badge: 'SANTAI',
+    component: ZenBuild,
+  },
+  {
+    id: 'stack',
+    title: 'Stack Menara',
+    tagline: 'Ketuk pas balok sejajar — susun menara setinggi mungkin sampai malam berbintang.',
+    emoji: '🗼',
+    meta: 'Satu ketukan · perfect = kombo',
+    theme: 'gs-card-stack',
+    badge: 'FOKUS',
+    component: Stack,
+  },
   {
     id: 'build-challenge',
     title: 'Build Challenge',
     tagline: 'Susun pondasi, kolom, balok & atap jadi bangunan 3D.',
     emoji: '🏗️',
     meta: '3 level • ±5 menit • mouse & sentuh',
+    theme: 'gs-card-build',
     component: BuildChallenge,
   },
 ];
@@ -80,10 +116,13 @@ export const GameSpaceOverlay: React.FC<Props> = ({ onClose }) => {
             </p>
             <div className="gs-cards">
               {GAMES.map((g) => (
-                <button key={g.id} className="gs-card" onClick={() => setActiveGame(g)}>
+                <button key={g.id} className={`gs-card ${g.theme}`} onClick={() => setActiveGame(g)}>
                   <span className="gs-card-emoji">{g.emoji}</span>
                   <span className="gs-card-body">
-                    <span className="gs-card-title">{g.title}</span>
+                    <span className="gs-card-title-row">
+                      <span className="gs-card-title">{g.title}</span>
+                      {g.badge && <span className="gs-card-badge">{g.badge}</span>}
+                    </span>
                     <span className="gs-card-tagline">{g.tagline}</span>
                     <span className="gs-card-meta">{g.meta}</span>
                   </span>
@@ -91,7 +130,7 @@ export const GameSpaceOverlay: React.FC<Props> = ({ onClose }) => {
                 </button>
               ))}
             </div>
-            <p className="gs-menu-note">🎮 Game lain segera hadir. Punya ide game? Ceritakan di chat.</p>
+            <p className="gs-menu-note">🎮 Dibuat dengan Three.js — berjalan 100% lokal di perangkatmu.</p>
           </div>
         ) : (
           <Suspense

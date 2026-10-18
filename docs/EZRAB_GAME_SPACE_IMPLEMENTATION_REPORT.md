@@ -162,3 +162,50 @@ Metode: halaman uji sementara memuat `GameSpaceOverlay` persis seperti `EzrabAiV
 1. Verifikasi manual di preview Vercel: ketik `game` di Ezrab Chat AI → mainkan 1 level → kembali ke chat.
 2. Jika OK: grant push tunggal untuk branch ini.
 3. (Opsional, di luar scope) Skor persisten lintas sesi (localStorage, mengikuti pola penyimpanan aman aplikasi) dan game kedua setelah Build Challenge terbukti disukai.
+
+---
+
+## 9. Game Space v2 — tiga game pelepas stres (2026-10-19)
+
+Permintaan user: "game apa yang menarik? fungsi hanya menghilangkan stress" — dijawab dengan ranking 3 opsi, user memilih **ketiganya sekaligus**, dengan arahan visual: "tidak 3d yang bosenin, ada depth texture nya, seperti game asli".
+
+**Status:** diimplementasikan & teruji, **BELUM commit/push/deploy** (sesuai batasan). Tidak ada dependency npm baru, tidak ada AI calls, tidak ada DB migration. Test lama tetap hijau.
+
+### 9.1 Arsitektur v2
+
+**Shared FX kit** (`src/game-space/fx/`) — dipakai ketiga game:
+- `textures.ts` — tekstur prosedural via canvas (TANPA aset eksternal): beton (speckle + retak rambut), fasad kaca (grid jendela + jendela menyala + kilau diagonal), bata (running bond + mortar), kayu (serat + knot), aspal, tanah, gradient langit, blob shadow, soft dot sprite. Semua SRGB + RepeatWrapping.
+- `particles.ts` — `DustBurst` (pooled THREE.Points, 900 partikel, gravitasi + bounce + fade tanpa alokasi per-frame) dan `AmbientMotes` (kunang-kunang ambient).
+- `audio.ts` — SFX WebAudio prosedural: pop (perfect), thud (mendarat), crumble (roboh), chime (kombo/menang), whoosh, fail, click. Singleton `sfx`; mute persisten di localStorage.
+- `juice.ts` — `Shake` (trauma-based camera shake), `SkyDome` (shader gradient + bintang + transisi palet, sudah include tonemapping/colorspace chunks agar cocok dengan renderer), `comboPopup` (teks HTML melayang), `SlowMo` (dip time-scale saat perfect).
+- `BaseEngine.ts` — renderer antialias + PCFSoftShadowMap + ACESFilmicToneMapping; directional hangat ber-shadow + hemisphere sejuk + rim light; kamera perspektif (parallax pointer + shake); ResizeObserver; loop rAF dt-clamp + slow-mo; tracked disposables; registry activeCount per game. Pelajaran: jangan panggil tick() sinkron di constructor (field subclass belum ada) dan jangan pakai deklarasi field `!:` untuk nilai yang di-assign di buildScene() (define-semantics menimpanya jadi undefined — bug stack tertangkap di test browser, diperbaiki pakai `declare`).
+
+**Tiga game baru** (masing-masing `logic.ts` murni + `*Engine.ts` + `*.tsx`):
+1. **Bongkar Bangunan** (`games/demolition/`) — ketuk blok gedung (44 blok, fasad kaca/beton/pilar) jadi puing; blok tanpa penyangga runtuh berantai (chain reaction — inti pelepas stres); skor = % diratakan + bonus kombo; puing fisik (gravitasi + bounce + debu + camera shake); tumpukan rubble tumbuh di kaki gedung; selebrasi 100% + tombol "Bangun Lagi".
+2. **Zen Build** (`games/zen-build/`) — mode bebas: tanpa timer/skor/aturan, 5 potongan (beton/kayu/bata/kaca/atap) tak terbatas, undo + clear; langit senja + kunang-kunang + bayangan panjang; ghost preview; suara lembut.
+3. **Stack Menara** (`games/stack/`) — balok meluncur, ketuk untuk jatuhkan; overhang terpotong jadi puing jatuh; perfect = lebar penuh + glow + slow-mo + kombo; kamera naik mengikuti menara; langit siang → senja → malam berbintang (transisi di ketinggian 8 & 16); game over hanya jika meleset total; best score di localStorage.
+
+**Menu** (`GameSpaceOverlay.tsx`): 4 kartu gradien kaya (demolition oranye, zen senja, stack ungu, build biru) + badge (PELEPAS STRES/SANTAI/FOKUS), deskripsi, meta. **CSS** (`game-space.css`): tema kartu, vignette overlay di canvas (depth), progress bar demolition, hint bar, badge kombo, reduced-motion.
+
+### 9.2 Hasil test v2
+
+**Unit (tsx, logika murni):** `src/test/gameSpaceV2.test.ts` — **18/18 PASS**: generasi gedung deterministik 44 blok, hit langsung vs cascade (kolom roboh 6 blok, tower ikut 8 blok), miss tidak mengubah skor, jendela kombo 1.5 dtk, 100% → won; zen place/undo/clear/bounds; stack mover bounce, perfect/slice/miss, footprint benar saat sumbu berganti (bug logika sumbu-z tertangkap & diperbaiki sebelum test), akumulasi bonus kombo.
+
+**Browser (Playwright + Chromium SwiftShader, harness throwaway yang sudah dihapus):** **18/18 PASS** —
+- demolition: tap canvas asli → skor 50; cascade → skor 230 & 39%; HUD sinkron; activeCount 1→0; 0 console error.
+- zen: tap asli → count 1; 20 potongan via probe; HUD sinkron; activeCount 1→0; 0 console error.
+- stack: 8 perfect deterministik → skor 44 + kombo 8 (sesuai rumus); tap asli tidak crash; activeCount 1→0; 0 console error.
+- mobile 390px touch: tap menghancurkan blok, tanpa overflow horizontal.
+- **tsc scoped** `src/game-space/**`: 0 error. **Regresi:** gameSpace.test.ts 54/54, chatAiContextAware 25/25 — tetap hijau.
+
+**Review visual (screenshot dibaca manual):** demolition — gedung kaca/beton bertekstur + puing beterbangan + debu + rubble + hazard ring + langit gradien = layak "game asli" ✅; zen — senja lembut + potongan bata/kayu/kaca bertekstur + kunang-kunang ✅ (langit sempat terlalu jenuh → diperbaiki via kompresi gradien sky dome + koreksi output color space); stack — menara gradien + langit senja bergradasi + badge Perfect x8 ✅ (awan sempat menutupi langit → opacity dikecilkan & digeser ke tepi); menu 4 kartu gradien ✅.
+
+### 9.3 Yang belum terverifikasi / catatan
+
+1. **Jalur chat-penuh-di-browser** (ketik `game` di chat nyata) tetap NOT TESTED — batasan pre-existing (aplikasi penuh tidak bisa di-mount di headless sandbox). Wiring tidak berubah dari v1 (sudah teruji).
+2. **SFX di perangkat nyata** belum didengar telinga manusia — WebAudio prosedural teruji tidak error di headless; verifikasi rasa di preview.
+3. **Performa di HP kentang**: pixel ratio dibatasi + partikel pooled, tetapi belum diukur FPS di device low-end — disarankan uji di HP user.
+4. Full-project `tsc`/`vite build` tidak dijalankan (pre-existing OOM & canvg); scoped tsc game-space bersih.
+5. File throwaway test (`test-harness.tsx`, `scripts/gs-*.mjs`) sudah dihapus; yang tersisa hanya kode produk + `src/test/gameSpaceV2.test.ts`.
+
+**File baru (17):** `fx/{textures,audio,particles,juice,BaseEngine}.ts`, `games/demolition/{logic,DemolitionEngine,Demolition}.tsx`, `games/zen-build/{logic,ZenEngine,ZenBuild}.tsx`, `games/stack/{logic,StackEngine,Stack}.tsx`, `src/test/gameSpaceV2.test.ts`. **Diubah (3):** `GameSpaceOverlay.tsx` (4 kartu + lazy), `game-space.css` (v2 styles), laporan ini.
