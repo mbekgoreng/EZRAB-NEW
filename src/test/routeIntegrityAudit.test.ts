@@ -111,6 +111,36 @@ console.log('\n[5] Modul proyek tak dikenal -> not-found (bukan crash):');
   check('route global tak dikenal -> not-found', r2.status === 'not-found', JSON.stringify(r2));
 }
 
+// ---------------------------------------------------------------- 6. Fidelity sub-menu RAB
+// Temuan 2026-10-19: routeForMenu('rab-spreadsheet'|...) tidak punya case ->
+// jatuh ke default (dashboard); sinkronisasi route lalu menimpa activeMenu
+// sehingga klik "Spreadsheet" malah mendarat di dashboard. Test lama hanya
+// memeriksa status ok (tidak 404) sehingga bug ini lolos. Sekarang menu hasil
+// parse HARUS sama persis dengan menu asal, dengan/tanpa project.
+console.log('\n[6] Fidelity round-trip sub-menu RAB (temuan 2026-10-19):');
+{
+  const menus = [
+    'rab-spreadsheet', 'rab-rekapitulasi', 'rab-analisa-harga',
+    'rab-kurva-s', 'rab-catatan', 'rab-pengaturan',
+  ];
+  let ok = 0;
+  let total = 0;
+  for (const m of menus) {
+    for (const pid of [null, 'proj-123']) {
+      total++;
+      const url = routeForMenu(m, pid);
+      const r = parse(url);
+      const good = r.status === 'ok' && r.menu === m;
+      if (!good) console.log(`    ✗ menu=${m} pid=${pid} -> ${url} => ${JSON.stringify(r)}`);
+      else ok++;
+    }
+  }
+  check(`${ok}/${total} sub-menu RAB round-trip persis`, ok === total);
+  // URL tanpa tab tetap ke tab default (spreadsheet) seperti perilaku lama.
+  const r0 = parse(paths.estimate());
+  check("paths.estimate() tanpa tab -> 'rab-estimasi'", r0.menu === 'rab-estimasi', r0.menu);
+}
+
 console.log(`\nHasil: ${passed} lolos, ${failed} gagal`);
 if (failed > 0) {
   console.log('GAGAL:', failures.join(', '));

@@ -29,7 +29,10 @@ export const paths = {
   app: () => APP_PREFIX,
   projects: (status?: string) => `${PROJECTS_PREFIX}${status ? `?status=${encodeURIComponent(status)}` : ''}`,
   dashboard: () => `${APP_PREFIX}/dashboard`,
-  estimate: () => `${APP_PREFIX}/estimate`,
+  // tab: sub-menu RAB (spreadsheet|rekapitulasi|analisa-harga|kurva-s|catatan|pengaturan).
+  // Tanpa tab = tab default (spreadsheet). Dipakai routeForMenu agar klik sub-menu
+  // sidebar tidak jatuh ke default (dashboard) lalu menimpa activeMenu via sinkronisasi route.
+  estimate: (tab?: string) => `${APP_PREFIX}/estimate${tab ? `?tab=${encodeURIComponent(tab)}` : ''}`,
   magicAi: (mode?: 'chat' | 'ded-rab' | 'dokumen-ai') => `${APP_PREFIX}/magic-ai${mode ? `?mode=${mode}` : ''}`,
   ezrabAi: () => `${APP_PREFIX}/ezrab-ai`,
   dedAiEstimate: () => `${APP_PREFIX}/ded-ai`,
@@ -52,12 +55,12 @@ export const paths = {
   accountPreferences: () => `${APP_PREFIX}/account/preferences`,
   project: {
     dashboard: (projectId: string) => projectRoot(projectId),
-    estimate: (projectId: string, view?: 'work-items') =>
-      `${projectRoot(projectId)}/estimate${view ? `?view=${view}` : ''}`,
+    estimate: (projectId: string, view?: 'work-items', tab?: string) =>
+      `${projectRoot(projectId)}/estimate${view ? `?view=${view}` : tab ? `?tab=${encodeURIComponent(tab)}` : ''}`,
     qto: (projectId: string, view?: 'calculator') =>
       `${projectRoot(projectId)}/qto${view ? `?view=${view}` : ''}`,
     ahsp: (projectId: string) => `${projectRoot(projectId)}/ahsp`,
-    resources: (projectId: string, type: 'material' | 'labor' | 'equipment' | 'suppliers' = 'material') =>
+    resources: (projectId: string, type: 'material' | 'labor' | 'equipment' | 'suppliers' | 'project-price' = 'material') =>
       `${projectRoot(projectId)}/resources?type=${type}`,
     schedule: (projectId: string) => `${projectRoot(projectId)}/schedule`,
     curveS: (projectId: string) => `${projectRoot(projectId)}/curve-s`,
@@ -91,6 +94,12 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
       case 'dashboard': return paths.dashboard();
       case 'proyek': return paths.projects();
       case 'rab-estimasi': return paths.estimate();
+      case 'rab-spreadsheet': return paths.estimate('spreadsheet');
+      case 'rab-rekapitulasi': return paths.estimate('rekapitulasi');
+      case 'rab-analisa-harga': return paths.estimate('analisa-harga');
+      case 'rab-kurva-s': return paths.estimate('kurva-s');
+      case 'rab-catatan': return paths.estimate('catatan');
+      case 'rab-pengaturan': return paths.estimate('pengaturan');
       case 'ezrab-ai': return paths.ezrabAi();
       case 'ded-ai': return paths.dedAiEstimate();
       case 'dokumen-ai': return paths.dokumenAi();
@@ -149,6 +158,12 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
     // Kredit AI selalu halaman global (bukan per-proyek).
     case 'kredit-ai': return paths.kreditAi();
     case 'rab-estimasi': return paths.project.estimate(project);
+    case 'rab-spreadsheet': return paths.project.estimate(project, undefined, 'spreadsheet');
+    case 'rab-rekapitulasi': return paths.project.estimate(project, undefined, 'rekapitulasi');
+    case 'rab-analisa-harga': return paths.project.estimate(project, undefined, 'analisa-harga');
+    case 'rab-kurva-s': return paths.project.estimate(project, undefined, 'kurva-s');
+    case 'rab-catatan': return paths.project.estimate(project, undefined, 'catatan');
+    case 'rab-pengaturan': return paths.project.estimate(project, undefined, 'pengaturan');
     case 'daftar-pekerjaan':
     case 'pekerjaan':
     case 'qto-daftar': return paths.project.estimate(project, 'work-items');
@@ -168,7 +183,7 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
     case 'database-alat':
     case 'alat': return paths.project.resources(project, 'equipment');
     case 'harga-proyek':
-    case 'project-price': return paths.project.resources(project, 'material');
+    case 'project-price': return paths.project.resources(project, 'project-price');
     case 'resource-library':
     case 'suppliers': return paths.project.resources(project, 'suppliers');
     case 'jadwal': return paths.project.schedule(project);
@@ -184,6 +199,19 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
     case 'subscription': return paths.subscription();
     case 'pengaturan': return paths.project.settings(project);
     default: return paths.project.dashboard(project);
+  }
+};
+
+/** Peta ?tab= pada route estimate -> id menu sidebar RAB yang tepat. */
+const estimateTabToMenu = (tab: string | null): WorkspaceMenu => {
+  switch (tab) {
+    case 'spreadsheet': return 'rab-spreadsheet';
+    case 'rekapitulasi': return 'rab-rekapitulasi';
+    case 'analisa-harga': return 'rab-analisa-harga';
+    case 'kurva-s': return 'rab-kurva-s';
+    case 'catatan': return 'rab-catatan';
+    case 'pengaturan': return 'rab-pengaturan';
+    default: return 'rab-estimasi';
   }
 };
 
@@ -203,7 +231,7 @@ export const parseWorkspaceRoute = (pathname: string, search: string = ''): Work
   // Global routes
   if (path === APP_PREFIX || path === `${APP_PREFIX}/dashboard`) return { scope: 'global', menu: 'dashboard', status: 'ok' };
   if (path === `${APP_PREFIX}/projects`) return { scope: 'global', menu: 'proyek', status: 'ok' };
-  if (path === `${APP_PREFIX}/estimate`) return { scope: 'global', menu: 'rab-estimasi', status: 'ok' };
+  if (path === `${APP_PREFIX}/estimate`) return { scope: 'global', menu: estimateTabToMenu(query.get('tab')), status: 'ok' };
   if (path === `${APP_PREFIX}/magic-ai` || path === `${APP_PREFIX}/ai`) return { scope: 'global', menu: 'magic-ai', mode, status: 'ok' };
   if (path === `${APP_PREFIX}/ezrab-ai`) return { scope: 'global', menu: 'ezrab-ai', status: 'ok' };
   if (path === `${APP_PREFIX}/ded-ai`) return { scope: 'global', menu: 'ded-ai', status: 'ok' };
@@ -259,12 +287,27 @@ export const parseWorkspaceRoute = (pathname: string, search: string = ''): Work
   const module = match[2] || 'dashboard';
   const base = { scope: 'project' as const, projectId, status: 'ok' as const };
   if (module === 'dashboard') return { ...base, menu: 'manajemen-proyek' };
-  if (module === 'estimate') return { ...base, menu: query.get('view') === 'work-items' ? 'daftar-pekerjaan' : 'rab-estimasi' };
+  if (module === 'estimate') {
+    if (query.get('view') === 'work-items') return { ...base, menu: 'daftar-pekerjaan' };
+    return { ...base, menu: estimateTabToMenu(query.get('tab')) };
+  }
   if (module === 'qto') return { ...base, menu: query.get('view') === 'calculator' ? 'qto-vc' : 'qto' };
   if (module === 'ahsp') return { ...base, menu: 'ahsp-2026' };
   if (module === 'resources') {
     const type = query.get('type');
-    return { ...base, menu: type === 'labor' ? 'database-upah' : type === 'equipment' ? 'database-alat' : type === 'suppliers' ? 'suppliers' : 'database-material' };
+    return {
+      ...base,
+      menu:
+        type === 'labor'
+          ? 'database-upah'
+          : type === 'equipment'
+          ? 'database-alat'
+          : type === 'suppliers'
+          ? 'suppliers'
+          : type === 'project-price'
+          ? 'harga-proyek'
+          : 'database-material',
+    };
   }
   if (module === 'schedule') return { ...base, menu: 'jadwal' };
   if (module === 'curve-s') return { ...base, menu: 'kurva-s' };
@@ -289,6 +332,12 @@ export const routeLabel = (route: WorkspaceRoute) => {
     proyek: 'Proyek',
     'manajemen-proyek': 'Manajemen Proyek',
     'rab-estimasi': 'RAB & Estimasi',
+    'rab-spreadsheet': 'RAB Spreadsheet',
+    'rab-rekapitulasi': 'Rekapitulasi RAB',
+    'rab-analisa-harga': 'Analisa Harga',
+    'rab-kurva-s': 'Kurva S',
+    'rab-catatan': 'Catatan',
+    'rab-pengaturan': 'Pengaturan RAB',
     'daftar-pekerjaan': 'Daftar Pekerjaan',
     qto: 'QTO',
     'qto-vc': 'Volume Calculation',
