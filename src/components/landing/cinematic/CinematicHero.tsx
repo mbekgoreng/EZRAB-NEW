@@ -44,7 +44,7 @@ const FLOATING_BADGES = [
  * No backend calls; all demo figures are labelled demo data.
  */
 export const CinematicHero: React.FC<CinematicHeroProps> = ({ onStartFree, onOpenDemo }) => (
-  <section className="ch-hero" aria-label="EZRAB — Dari Gambar Kerja ke RAB. Otomatis.">
+  <section className="ch-hero" aria-label="Rancang anggaran proyekmu dengan mudah, cepat, dan terkendali bersama EZRAB.">
     {/* Parametric building backdrop — Three.js: blueprint menggambar diri,
         wireframe tower merakit lantai per lantai, aliran cahaya, partikel.
         (Pengganti webp statis; otomatis fallback bila WebGL tak tersedia.) */}
@@ -57,9 +57,11 @@ export const CinematicHero: React.FC<CinematicHeroProps> = ({ onStartFree, onOpe
     <div className="ch-hero-inner">
       <div className="ch-hero-copy">
         <h1 className="ch-headline">
-          Dari Gambar Kerja
+          Rancang anggaran proyekmu
           <br />
-          ke RAB. <span className="ch-headline-accent">Otomatis.</span>
+          dengan mudah, cepat, dan terkendali
+          <br />
+          bersama <span className="ch-headline-accent">EZRAB.</span>
         </h1>
         <p className="ch-subheadline">
           EZRAB membaca DED Anda, menghitung volume (QTO), menerapkan AHSP
