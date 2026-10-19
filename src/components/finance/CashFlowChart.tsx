@@ -50,6 +50,26 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
       </div>
     );
   }
+  // Validasi data: deteksi nilai tidak valid (NaN/Infinity) dari engine.
+  // JANGAN sembunyikan diam-diam — tampilkan peringatan yang jujur.
+  // Grafik tetap render dengan data valid agar tidak crash, tapi user diberi tahu.
+  const invalidCount = points.filter(
+    (pt) =>
+      !Number.isFinite(pt.cashIn) ||
+      !Number.isFinite(pt.cashOut) ||
+      !Number.isFinite(pt.netCashFlow) ||
+      !Number.isFinite(pt.cumulativeCashFlow)
+  ).length;
+  const dataPoints =
+    invalidCount === 0
+      ? points
+      : points.filter(
+          (pt) =>
+            Number.isFinite(pt.cashIn) &&
+            Number.isFinite(pt.cashOut) &&
+            Number.isFinite(pt.netCashFlow) &&
+            Number.isFinite(pt.cumulativeCashFlow)
+        );
 
   // Chart dimensions
   const svgWidth = 780;
@@ -62,7 +82,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
   const chartHeight = svgHeight - paddingTop - paddingBottom;
 
   // Find scale range (logika skala tidak diubah)
-  const allValues = points.flatMap((p) => [p.cashIn, p.cashOut, p.cumulativeCashFlow]);
+  const allValues = dataPoints.flatMap((p) => [p.cashIn, p.cashOut, p.cumulativeCashFlow]);
   const minVal = Math.min(0, ...allValues);
   const maxVal = Math.max(10_000_000, ...allValues);
   const range = maxVal - minVal || 1;
@@ -71,14 +91,14 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
     return paddingTop + chartHeight - ((val - minVal) / range) * chartHeight;
   };
 
-  const stepX = points.length > 1 ? chartWidth / (points.length - 1) : chartWidth / 2;
+  const stepX = dataPoints.length > 1 ? chartWidth / (dataPoints.length - 1) : chartWidth / 2;
   const getX = (idx: number) => paddingLeft + idx * stepX;
 
   const zeroY = getY(0);
 
   // Build SVG Paths for Cumulative Line (separating Actual and Forecast)
-  const actualPoints = points.filter((p) => !p.isForecast);
-  const forecastPoints = points.filter((p) => p.isForecast);
+  const actualPoints = dataPoints.filter((p) => !p.isForecast);
+  const forecastPoints = dataPoints.filter((p) => p.isForecast);
 
   let cumulativeActualPath = '';
   actualPoints.forEach((p, i) => {
@@ -90,7 +110,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
   let cumulativeForecastPath = '';
   if (forecastPoints.length > 0) {
     const startIndex = actualPoints.length > 0 ? actualPoints.length - 1 : 0;
-    const startPoint = points[startIndex];
+    const startPoint = dataPoints[startIndex];
     cumulativeForecastPath = `M ${getX(startIndex)} ${getY(startPoint.cumulativeCashFlow)}`;
     forecastPoints.forEach((p, i) => {
       const idx = actualPoints.length + i;
@@ -109,7 +129,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
   let netForecastPath = '';
   if (forecastPoints.length > 0) {
     const startIndex = actualPoints.length > 0 ? actualPoints.length - 1 : 0;
-    const startPoint = points[startIndex];
+    const startPoint = dataPoints[startIndex];
     netForecastPath = `M ${getX(startIndex)} ${getY(startPoint.netCashFlow)}`;
     forecastPoints.forEach((p, i) => {
       const idx = actualPoints.length + i;
@@ -118,7 +138,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
   }
 
   // Titik defisit terdalam — murni turunan data engine, bukan karangan
-  const forecastWithIdx = points
+  const forecastWithIdx = dataPoints
     .map((p, i) => ({ p, i }))
     .filter(({ p }) => p.isForecast);
   const lowest =
@@ -142,9 +162,9 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
     });
   };
 
-  const hoveredPoint = activeIndex !== null ? points[activeIndex] : null;
+  const hoveredPoint = activeIndex !== null ? dataPoints[activeIndex] : null;
   // Kurangi kepadatan label di layar kecil / banyak periode (data tetap utuh)
-  const labelEvery = points.length > 14 ? 2 : 1;
+  const labelEvery = dataPoints.length > 14 ? 2 : 1;
 
   // Posisi tooltip mengikuti titik (persentase thd dimensi SVG), flip di tepi kanan
   const tipX = activeIndex !== null ? getX(activeIndex) : 0;
@@ -186,6 +206,24 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {/* Peringatan data invalid — jujur, tidak disembunyikan */}
+      {invalidCount > 0 && (
+        <div
+          role="alert"
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            backgroundColor: '#FFFBEB', border: '1px solid #FDE68A',
+            borderRadius: '8px', padding: '8px 12px',
+            fontSize: '12px', color: '#92400E',
+          }}
+        >
+          <span style={{ fontWeight: 700 }}>⚠ Data tidak valid:</span>
+          <span>
+            {invalidCount} periode memiliki nilai yang tidak valid (NaN/Infinity) dan tidak ditampilkan.
+            Periksa sumber data di engine keuangan.
+          </span>
+        </div>
+      )}
       {/* Chart Controls & Legend */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }} role="group" aria-label="Legenda grafik — klik untuk tampil/sembunyikan seri">
@@ -260,7 +298,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
             viewBox={`0 0 ${svgWidth} ${svgHeight}`}
             style={{ width: '100%', height: 'auto', display: 'block' }}
             role="img"
-            aria-label={`Grafik arus kas: ${points.length} periode, ${forecastPoints.length} periode proyeksi`}
+            aria-label={`Grafik arus kas: ${dataPoints.length} periode, ${forecastPoints.length} periode proyeksi`}
             onClick={() => {
               setPinnedIndex(null);
               setHoveredIndex(null);
@@ -342,7 +380,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
             )}
 
             {/* Bar Groups (Cash In & Out) */}
-            {points.map((p, idx) => {
+            {dataPoints.map((p, idx) => {
               const x = getX(idx);
               const barWidth = Math.max(6, Math.min(22, stepX * 0.35));
               const inHeight = Math.max(0, zeroY - getY(p.cashIn));
@@ -518,7 +556,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
             )}
 
             {/* Cumulative Data Points Dots */}
-            {points.map((p, idx) => {
+            {dataPoints.map((p, idx) => {
               if (p.isForecast ? !showFc : !showCum) return null;
               const x = getX(idx);
               const y = getY(p.cumulativeCashFlow);
