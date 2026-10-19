@@ -42,11 +42,14 @@ const ZYROUTER_BASE = 'https://api.zyrouter.com/v1';
 const ATRIA_BASE = 'https://api.atria-asi.ai/v1';
 const DAHL_BASE = 'https://inference.dahl.global/v1';
 const GEMINI_OAI_BASE = 'https://generativelanguage.googleapis.com/v1beta/openai';
+const RIVER_BASE = 'https://api.river.ai/v1';
 const FAST_MODEL = 'gemini-3.5-flash-lite';
 const ADVANCED_MODEL = 'geminiflash-3.8';
 const ATRIA_MODEL = 'Atria-Dawn-Preview';
 const DAHL_MODEL = 'deepseek-ai/DeepSeek-V4-Flash-0731';
 const GEMINI_OAI_MODEL = 'gemini-3.8-flash';
+const RIVER_TEXT_MODEL = 'nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4';
+const RIVER_VISION_MODEL = 'deepseek-ai/DeepSeek-V4.1-Flash';
 const ATTEMPT_TIMEOUT_MS = 55000;
 
 // ---------------------------------------------------------------------------
@@ -234,6 +237,7 @@ export async function executeAI(o, onAttempt) {
   const ak = envKeys('ATRIA_API_KEY', 14);
   const dk = envKeys('DAHL_API_KEY', 80);
   const gok = envKeys('GEMINI_OAI_KEY', 12);
+  const rk = envKeys('RIVER_API_KEY', 10);
 
   const attempts = [];
   const geminiCall = (k, model) => () => callGemini(k, model, message, systemPrompt, temperature, maxTokens, jsonMode, media);
@@ -241,6 +245,8 @@ export async function executeAI(o, onAttempt) {
   const atriaCall = (k) => () => callOAI(ATRIA_BASE, k, ATRIA_MODEL, 'atria', message, systemPrompt, temperature, maxTokens, jsonMode, media);
   const dahlCall = (k) => () => callOAI(DAHL_BASE, k, DAHL_MODEL, 'dahl', message, systemPrompt, temperature, maxTokens, jsonMode, media);
   const geminiOaiCall = (k) => () => callOAI(GEMINI_OAI_BASE, k, GEMINI_OAI_MODEL, 'gemini-oai', message, systemPrompt, temperature, maxTokens, jsonMode, media);
+  const riverTextCall = (k) => () => callOAI(RIVER_BASE, k, RIVER_TEXT_MODEL, 'river-text', message, systemPrompt, temperature, maxTokens, jsonMode, media);
+  const riverVisionCall = (k) => () => callOAI(RIVER_BASE, k, RIVER_VISION_MODEL, 'river-vision', message, systemPrompt, temperature, maxTokens, jsonMode, media);
 
   if (mode === 'vision') {
     // Vision: Gemini dulu (native inlineData gambar+PDF), lalu ZyRouter/Atria
@@ -248,6 +254,7 @@ export async function executeAI(o, onAttempt) {
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
     if (hasImage && zk) attempts.push(zyrouterCall());
     if (hasImage) ak.forEach((k) => attempts.push(atriaCall(k)));
+    if (hasImage) rk.forEach((k) => attempts.push(riverVisionCall(k)));
     if (hasPdf && gk.length === 0) {
       return { ok: false, error: 'Vision PDF membutuhkan GEMINI_API_KEY_* — tidak ada key Gemini terkonfigurasi', requestId, attempts: [] };
     }
@@ -261,6 +268,7 @@ export async function executeAI(o, onAttempt) {
   if (mode !== 'vision') ak.forEach((k) => attempts.push(atriaCall(k)));
   // Dahl & Gemini-OAI: OpenAI-compatible, ditambahkan ke chain non-vision
   if (mode !== 'vision') dk.forEach((k) => attempts.push(dahlCall(k)));
+  if (mode !== 'vision') rk.forEach((k) => attempts.push(riverTextCall(k)));
   if (mode !== 'vision') gok.forEach((k) => attempts.push(geminiOaiCall(k)));
 
   if (attempts.length === 0) {
