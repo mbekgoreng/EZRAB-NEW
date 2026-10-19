@@ -182,6 +182,52 @@ test('kata berhuruf ganda tetap bisa disubmit (BATA)', () => {
   assert.equal(r.status, 'target');
 });
 
+console.log('\n[8] invarian keras 60 level');
+test('wheel: huruf distinct, 6-8; kata unik; urut terpanjang-dulu', () => {
+  for (let p = 0; p < PACK_COUNT; p += 1) {
+    for (let l = 0; l < LEVELS_PER_PACK; l += 1) {
+      const lv = generateLevel(p, l);
+      assert.equal(new Set(lv.letters).size, lv.letters.length, `p${p}l${l}: huruf wheel duplikat`);
+      assert.ok(
+        lv.letters.length >= MIN_WHEEL_LETTERS && lv.letters.length <= MAX_WHEEL_LETTERS,
+        `p${p}l${l}: wheel ${lv.letters.length}`,
+      );
+      assert.equal(new Set(lv.words).size, lv.words.length, `p${p}l${l}: kata duplikat`);
+      for (let k = 1; k < lv.words.length; k += 1) {
+        assert.ok(
+          lv.words[k - 1].length >= lv.words[k].length,
+          `p${p}l${l}: kata tidak urut terpanjang dulu`,
+        );
+      }
+    }
+  }
+});
+test('setiap huruf tiap kata target ada di wheel', () => {
+  for (let p = 0; p < PACK_COUNT; p += 1) {
+    for (let l = 0; l < LEVELS_PER_PACK; l += 1) {
+      const lv = generateLevel(p, l);
+      const set = new Set(lv.letters);
+      for (const w of lv.words) {
+        for (const c of w) assert.ok(set.has(c), `p${p}l${l}: huruf ${c} dari ${w} tak ada di wheel`);
+      }
+    }
+  }
+});
+test('revealHint tak pernah menunjuk kata yang sudah ditemukan', () => {
+  for (let p = 0; p < PACK_COUNT; p += 1) {
+    for (let l = 0; l < LEVELS_PER_PACK; l += 1) {
+      const lv = generateLevel(p, l);
+      const found: string[] = [];
+      for (const w of lv.words) {
+        const h = revealHint(lv, found);
+        assert.ok(h !== null && !found.includes(h.word), `p${p}l${l}: hint menunjuk kata lama`);
+        found.push(h.word);
+      }
+      assert.equal(revealHint(lv, found), null, `p${p}l${l}: hint harus null saat tuntas`);
+    }
+  }
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed > 0) {
   console.log('failures:', failures.join(', '));

@@ -3,8 +3,9 @@
  */
 import { strict as assert } from 'node:assert';
 import {
-  createState, step, setLine, clearLine, inkLeft, lineLength,
-  starsFor, resetState, LEVELS, KIND_R, foremanPos,
+  createState, step, setLine, clearLine, inkLeft, lineLength, smoothLine,
+  starsFor, resetState, LEVELS, KIND_R, foremanPos, WARN_LEAD,
+  FAIR_START, HEAD_ZONE,
   type MandorState, type Vec,
 } from './logic';
 
@@ -198,6 +199,103 @@ test('resetState mengulang level dari awal', () => {
   assert.equal(s.time, 0);
   assert.equal(s.bodies.length, 0);
   assert.equal(s.spawnIdx, 0);
+});
+
+console.log('\n[5] smoothing garis');
+test('smoothLine menghaluskan zigzag: panjang menyusut, deviasi kecil', () => {
+  // zigzag kasar di sekitar garis lurus y=100, amplitudo 12px
+  const raw: Vec[] = [];
+  for (let x = 0; x <= 200; x += 8) raw.push({ x, y: 100 + (x / 8 % 2 === 0 ? 12 : -12) });
+  const sm = smoothLine(raw);
+  assert.ok(lineLength(sm) < lineLength(raw), 'lebih pendek setelah smoothing');
+  assert.ok(lineLength(sm) > 190, `tetap membentang: ${lineLength(sm).toFixed(1)}`);
+  // titik ujung dipertahankan (niat user); interior harus halus
+  for (let i = 1; i < sm.length - 1; i += 1) {
+    assert.ok(Math.abs(sm[i].y - 100) < 8, `deviasi interior ${Math.abs(sm[i].y - 100).toFixed(1)} < 8px`);
+  }
+  // spacing seragam ~8px
+  for (let i = 1; i < sm.length; i += 1) {
+    const d = Math.hypot(sm[i].x - sm[i - 1].x, sm[i].y - sm[i - 1].y);
+    assert.ok(d <= 9.5, `spacing ${d.toFixed(1)} <= 9.5`);
+  }
+});
+test('garis hasil smoothing tetap jadi collider believable', () => {
+  const s = mk();
+  s.level = { ...s.level, spawns: [] };
+  const raw: Vec[] = [];
+  for (let x = 100; x <= 290; x += 7) raw.push({ x, y: 300 + ((x % 14 === 0) ? 10 : -10) });
+  setLine(s, raw); // smoothing terjadi di dalam setLine
+  assert.ok(s.line.length >= 3, 'garis tersimpan');
+  s.bodies.push({
+    x: 195, y: 180, vx: 0, vy: 320, r: KIND_R.bata,
+    kind: 'bata', rot: 0, spin: 0, landed: false, landT: 0,
+  });
+  let sawThud = false;
+  for (let i = 0; i < 90 && !sawThud; i += 1) {
+    step(s, 1 / 60);
+    if (s.thuds.length > 0) sawThud = true;
+  }
+  assert.ok(sawThud, 'benda memantul di garis yang dihaluskan');
+  assert.equal(s.status, 'play');
+});
+test('smoothLine < 3 titik: kembalikan apa adanya', () => {
+  assert.deepEqual(smoothLine([]), []);
+  assert.deepEqual(smoothLine([{ x: 1, y: 2 }]), [{ x: 1, y: 2 }]);
+});
+
+console.log('\n[6] fairness & telegraph');
+test('tidak ada spawn tepat di atas mandor di 2 detik pertama (15 level)', () => {
+  for (let i = 0; i < LEVELS.length; i += 1) {
+    for (const ev of LEVELS[i].spawns) {
+      assert.ok(
+        !(ev.at < FAIR_START && Math.abs(ev.xf - 0.5) < HEAD_ZONE),
+        `L${i + 1} ${LEVELS[i].name}: at=${ev.at} xf=${ev.xf}`,
+      );
+    }
+  }
+});
+test('pending: telegraph muncul WARN_LEAD detik sebelum spawn', () => {
+  const s = mk();
+  s.level = {
+    ...s.level,
+    spawns: [{ at: 2.0, xf: 0.3, kind: 'bata', vy0: 120 }],
+  };
+  step(s, 0.5); // t=0.5 → 1.5s sebelum spawn: belum pending
+  assert.equal(s.pending.length, 0);
+  step(s, 0.5); // t=1.0 → 1.0s sebelum spawn: pending
+  assert.equal(s.pending.length, 1);
+  assert.equal(s.pending[0].xf, 0.3);
+  step(s, 1.1); // t=2.1 → sudah spawn: pending kosong
+  assert.equal(s.pending.length, 0);
+  assert.equal(s.bodies.length, 1);
+});
+
+console.log('\n[7] ink fairness: atap kanonis menang di semua level');
+// Desain: solusi nyaman/lega (margin 90px) → sisa 25-42% (2 bintang);
+// garis presisi & hemat → 3 bintang. Tidak pelit, tidak berlebihan.
+test('15 level: solusi wajar menang & sisa tinta ≥ 25%', () => {
+  for (let i = 0; i < LEVELS.length; i += 1) {
+    const s = createState(i, W, H);
+    const xfs = s.level.spawns.map((e) => e.xf);
+    const minX = Math.max(12, Math.min(...xfs) * W - 90);
+    const maxX = Math.min(W - 12, Math.max(...xfs) * W + 90);
+    const fy = s.foreman.y;
+    const pts: Vec[] = [];
+    const N = 25;
+    for (let k = 0; k < N; k += 1) {
+      const t = k / (N - 1);
+      pts.push({
+        x: minX + (maxX - minX) * t,
+        y: fy - 110 - 60 * (1 - Math.pow(2 * t - 1, 2)),
+      });
+    }
+    setLine(s, pts);
+    const maxSteps = Math.ceil((s.level.duration + 2) * 60);
+    for (let k = 0; k < maxSteps && s.status === 'play'; k += 1) step(s, 1 / 60);
+    const leftFrac = inkLeft(s) / s.inkMax;
+    assert.equal(s.status, 'win', `L${i + 1} ${s.level.name}: status=${s.status}`);
+    assert.ok(leftFrac >= 0.25, `L${i + 1}: sisa tinta ${(leftFrac * 100).toFixed(0)}% < 25%`);
+  }
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

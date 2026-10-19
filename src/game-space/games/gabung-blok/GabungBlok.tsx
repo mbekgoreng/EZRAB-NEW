@@ -6,8 +6,10 @@ import React, { useRef, useState, useCallback } from 'react';
 import { useGameCanvas, GameApi, clamp } from '../../engine2d';
 import { bestKey, getBest, setBest } from '../../engine2d/best';
 import { popText } from '../../engine2d/juice2d';
+import { drawNoise, hashRand } from './fx';
 import {
   TIERS, MAX_TIER, Dir, move, spawnRandom, canMove, newBoard, tierScore,
+  pushUndo, popUndo, type UndoEntry,
 } from './logic';
 
 type Screen = 'tutorial' | 'play' | 'pause' | 'win' | 'over';
@@ -34,6 +36,115 @@ function rr(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: n
   ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
+}
+
+/** Lapisan tekstur material per tier (bata, beton, kayu, kaca) — prosedural, stabil. */
+function drawTileTexture(
+  ctx: CanvasRenderingContext2D, tier: number,
+  x: number, y: number, s: number,
+): void {
+  const t = TIERS[tier];
+  ctx.save();
+  rr(ctx, x, y, s, s, 10);
+  ctx.clip();
+  ctx.strokeStyle = t.dark;
+  ctx.fillStyle = t.dark;
+  const R = hashRand(tier * 977 + 13);
+  switch (tier) {
+    case 0: { // BATA: susunan spesi horizontal
+      ctx.globalAlpha = 0.22;
+      ctx.lineWidth = Math.max(1, s * 0.02);
+      for (let k = 1; k < 4; k += 1) {
+        const yy = y + (s * k) / 4;
+        ctx.beginPath();
+        ctx.moveTo(x + 4, yy);
+        ctx.lineTo(x + s - 4, yy);
+        ctx.stroke();
+      }
+      break;
+    }
+    case 1: // BATAKO: pori beton
+      ctx.globalAlpha = 0.18;
+      for (let k = 0; k < 10; k += 1) {
+        ctx.beginPath();
+        ctx.arc(
+          x + s * (0.12 + R() * 0.76), y + s * (0.12 + R() * 0.76),
+          Math.max(1, s * 0.03), 0, Math.PI * 2,
+        );
+        ctx.fill();
+      }
+      break;
+    case 2: { // DINDING: bekas roskam acian
+      ctx.globalAlpha = 0.16;
+      ctx.lineWidth = Math.max(1, s * 0.025);
+      for (let k = 0; k < 3; k += 1) {
+        const a0 = R() * Math.PI * 2;
+        ctx.beginPath();
+        ctx.arc(x + s * R(), y + s * R(), s * (0.2 + R() * 0.25), a0, a0 + 2.2);
+        ctx.stroke();
+      }
+      break;
+    }
+    case 3: { // RUMAH: papan kayu vertikal
+      ctx.globalAlpha = 0.15;
+      ctx.lineWidth = Math.max(1, s * 0.02);
+      for (let k = 1; k < 5; k += 1) {
+        const xx = x + (s * k) / 5;
+        ctx.beginPath();
+        ctx.moveTo(xx, y + 4);
+        ctx.lineTo(xx, y + s - 4);
+        ctx.stroke();
+      }
+      break;
+    }
+    case 4: // RUKO: bintik beton
+      ctx.globalAlpha = 0.15;
+      for (let k = 0; k < 14; k += 1) {
+        const d = Math.max(1.5, s * 0.025);
+        ctx.fillRect(x + s * R(), y + s * R(), d, d);
+      }
+      break;
+    case 5: { // APARTEMEN: kilau kaca diagonal
+      ctx.globalAlpha = 0.13;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(x + s * 0.18, y);
+      ctx.lineTo(x + s * 0.46, y);
+      ctx.lineTo(x + s * 0.12, y + s);
+      ctx.lineTo(x - s * 0.16, y + s);
+      ctx.closePath();
+      ctx.fill();
+      break;
+    }
+    case 6: { // GEDUNG: brushed metal vertikal
+      ctx.globalAlpha = 0.12;
+      ctx.fillStyle = '#ffffff';
+      for (let k = 0; k < 5; k += 1) {
+        ctx.fillRect(x + s * (0.1 + k * 0.2), y + 4, s * 0.05, s - 8);
+      }
+      break;
+    }
+    default: { // MENARA: aura emas
+      ctx.globalAlpha = 0.30;
+      ctx.strokeStyle = '#fff3c4';
+      ctx.lineWidth = Math.max(1.5, s * 0.03);
+      ctx.beginPath();
+      ctx.arc(x + s / 2, y + s / 2, s * 0.42, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 0.16;
+      ctx.beginPath();
+      ctx.arc(x + s / 2, y + s / 2, s * 0.30, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+  // inner bottom shade: bobot di bawah
+  ctx.globalAlpha = 1;
+  const sh = ctx.createLinearGradient(0, y + s * 0.55, 0, y + s);
+  sh.addColorStop(0, 'rgba(0,0,0,0)');
+  sh.addColorStop(1, 'rgba(0,0,0,0.16)');
+  ctx.fillStyle = sh;
+  ctx.fillRect(x, y, s, s);
+  ctx.restore();
 }
 
 /** Ikon mini tiap tier, digambar di dalam tile. cx,cy = tengah area ikon, s = ukuran. */
@@ -186,6 +297,9 @@ interface GameState {
   flashAt: Map<number, number>;
   won: boolean;
   over: boolean;
+  history: UndoEntry[];
+  /** token anti-balapan: timer layar game-over yang basi diabaikan */
+  overToken: number;
 }
 
 export default function GabungBlok({ onExit }: { onExit: () => void }): React.ReactElement {
@@ -203,6 +317,7 @@ export default function GabungBlok({ onExit }: { onExit: () => void }): React.Re
     : { score: 0, best: getBest(BEST) });
   const [screen, setScreen] = useState<Screen>(debugOver ?? 'tutorial');
   const [muted, setMuted] = useState(false);
+  const [canUndo, setCanUndo] = useState(false);
   const apiRef = useRef<GameApi | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const stateRef = useRef<GameState | null>(null);
@@ -225,6 +340,9 @@ export default function GabungBlok({ onExit }: { onExit: () => void }): React.Re
       api.sfx.click();
       return;
     }
+    // simpan snapshot SEBELUM gerakan untuk undo
+    st.history = pushUndo(st.history, old, st.score);
+    setCanUndo(true);
     st.board = r.board;
     st.score += r.gained;
     pushScore(st.score);
@@ -286,23 +404,56 @@ export default function GabungBlok({ onExit }: { onExit: () => void }): React.Re
       api.sfx.fail();
       api.shake.add(0.4);
       if (wrapRef.current) popText(wrapRef.current, 'Lahan habis!', { size: 32, color: '#FF8A8A' });
+      const token = ++st.overToken;
       window.setTimeout(() => {
+        if (st.overToken !== token || !st.over) return; // sudah di-undo
         api.loop.setPaused(true);
         setScreen('over');
       }, 900);
     }
   }, [pushScore]);
 
+  const doUndo = useCallback(() => {
+    const api = apiRef.current;
+    const st = stateRef.current;
+    if (!api || !st) return;
+    const scr = screenRef.current;
+    // undo boleh dipakai saat main; setelah game-over pun bisa (rescue)
+    if (scr !== 'play' && scr !== 'over') return;
+    const { entry, stack } = popUndo(st.history);
+    if (!entry) {
+      api.sfx.click();
+      return;
+    }
+    st.history = stack;
+    st.board = entry.board;
+    st.score = entry.score;
+    st.spawnAt.clear();
+    st.flashAt.clear();
+    const wasOver = st.over;
+    st.over = false;
+    st.overToken += 1; // batalkan timer layar game-over yang tertunda
+    pushScore(st.score);
+    setCanUndo(stack.length > 0);
+    if (wasOver) {
+      api.loop.setPaused(false);
+      setScreen('play');
+    }
+    api.sfx.whoosh();
+  }, [pushScore]);
+
   const resetGame = useCallback(() => {
     const st: GameState = {
       board: newBoard(Math.random), score: 0, time: 0,
       spawnAt: new Map(), flashAt: new Map(), won: false, over: false,
+      history: [], overToken: 0,
     };
     for (let i = 0; i < 16; i += 1) {
       if (st.board[i] > 0) st.spawnAt.set(i, 0);
     }
     stateRef.current = st;
     setHud({ score: 0, best: getBest(BEST) });
+    setCanUndo(false);
   }, []);
 
   const canvasRef = useGameCanvas((api) => {
@@ -344,6 +495,7 @@ export default function GabungBlok({ onExit }: { onExit: () => void }): React.Re
       const st = stateRef.current;
       if (!st) return;
       st.time += dt;
+      if (api.input.wasPressed('KeyZ') || api.input.wasPressed('KeyU')) doUndo();
       if (screenRef.current !== 'play') return;
       if (api.input.wasPressed('ArrowLeft') || api.input.wasPressed('KeyA')) doMove('left');
       else if (api.input.wasPressed('ArrowRight') || api.input.wasPressed('KeyD')) doMove('right');
@@ -424,6 +576,14 @@ export default function GabungBlok({ onExit }: { onExit: () => void }): React.Re
         </div>
         <div style={scoreBox}>SKOR<div style={scoreNum}>{hud.score}</div></div>
         <div style={scoreBox}>TERBAIK<div style={scoreNum}>{hud.best}</div></div>
+        <button
+          onClick={doUndo}
+          style={{ ...iconBtn, opacity: canUndo ? 1 : 0.35 }}
+          aria-label="Urungkan langkah terakhir"
+          title="Urungkan (Z)"
+        >
+          ↩️
+        </button>
         <button onClick={togglePause} style={iconBtn} aria-label="Jeda">
           {screen === 'pause' ? '▶' : '⏸'}
         </button>
@@ -436,7 +596,7 @@ export default function GabungBlok({ onExit }: { onExit: () => void }): React.Re
       <canvas ref={canvasRef} style={{ flex: 1, width: '100%', display: 'block', touchAction: 'none' }} />
 
       <div style={{ padding: '8px 12px 12px', color: '#8EA2C7', fontSize: 12, textAlign: 'center', zIndex: 5 }}>
-        Swipe / Panah / WASD untuk geser blok
+        Swipe / Panah / WASD untuk geser blok • Z = undo
       </div>
 
       {screen === 'tutorial' && (
@@ -445,6 +605,9 @@ export default function GabungBlok({ onExit }: { onExit: () => void }): React.Re
           <p style={p}>
             Geser blok bangunan untuk menggabungkan dua yang sama.
             Dari <b>BATA</b> sampai jadi <b>MENARA</b>!
+          </p>
+          <p style={{ ...p, fontSize: 13 }}>
+            ↩️ Salah geser? <b>Undo</b> siap menyelamatkan — kayak revisi RAB yang bisa dibatalkan.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', margin: '10px 0' }}>
             {TIERS.map((t) => (
@@ -489,7 +652,8 @@ export default function GabungBlok({ onExit }: { onExit: () => void }): React.Re
           <h2 style={{ ...h2, color: '#FF8A8A' }}>🧱 Lahan Habis!</h2>
           <p style={p}>Kayak budget proyek — tiba-tiba nggak ada ruang gerak.</p>
           <p style={p}>Skor: <b>{hud.score}</b> • Terbaik: <b>{hud.best}</b></p>
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={doUndo} style={{ ...btn, background: '#4ade80', color: '#052e12' }}>↩️ Urungkan</button>
             <button onClick={start} style={{ ...btn, background: '#F2B441', color: '#3A2A08' }}>Main Lagi</button>
             <button onClick={onExit} style={{ ...btn, background: '#33456B', color: '#fff' }}>Keluar</button>
           </div>
@@ -593,6 +757,18 @@ function drawGame(api: GameApi, st: GameState): void {
   rr(ctx, geo.ox, geo.oy, geo.size, geo.size, 16);
   ctx.stroke();
 
+  // bevel + tekstur panel
+  ctx.save();
+  rr(ctx, geo.ox, geo.oy, geo.size, geo.size, 16);
+  ctx.clip();
+  const pb = ctx.createLinearGradient(0, geo.oy, 0, geo.oy + 60);
+  pb.addColorStop(0, 'rgba(160,190,235,0.14)');
+  pb.addColorStop(1, 'rgba(160,190,235,0)');
+  ctx.fillStyle = pb;
+  ctx.fillRect(geo.ox, geo.oy, geo.size, 60);
+  drawNoise(ctx, W, H, '#9db8e8', 0.05);
+  ctx.restore();
+
   // sel kosong
   for (let i = 0; i < 16; i += 1) {
     const { cx, cy } = cellCenter(geo, i);
@@ -643,6 +819,9 @@ function drawGame(api: GameApi, st: GameState): void {
     ctx.strokeStyle = info.dark;
     ctx.stroke();
 
+    // lapisan tekstur material per tier
+    drawTileTexture(ctx, tier, x, y, s);
+
     // highlight atas
     ctx.fillStyle = 'rgba(255,255,255,0.28)';
     rr(ctx, x + s * 0.08, y + s * 0.06, s * 0.84, s * 0.3, 8 * scale);
@@ -652,11 +831,14 @@ function drawGame(api: GameApi, st: GameState): void {
     const labelH = s * 0.22;
     const iconS = s * 0.52;
     drawTierIcon(ctx, tier, cx, cy - s * 0.06, iconS);
-    ctx.fillStyle = info.text;
     ctx.font = `900 ${Math.max(9, s * 0.15)}px 'Plus Jakarta Sans','Inter',system-ui,sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(info.name, cx, cy + s / 2 - labelH / 2);
+    const ly = cy + s / 2 - labelH / 2;
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillText(info.name, cx, ly + 1);
+    ctx.fillStyle = info.text;
+    ctx.fillText(info.name, cx, ly);
 
     // flash gabungan
     const fl = st.flashAt.get(i);
@@ -673,7 +855,8 @@ function drawGame(api: GameApi, st: GameState): void {
     ctx.restore();
   }
 
-  // vignette
+  // vignette + film grain
+  drawNoise(ctx, W, H, '#cfe0ff', 0.045);
   const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.45, W / 2, H / 2, Math.max(W, H) * 0.75);
   vg.addColorStop(0, 'rgba(0,0,0,0)');
   vg.addColorStop(1, 'rgba(0,0,0,0.35)');

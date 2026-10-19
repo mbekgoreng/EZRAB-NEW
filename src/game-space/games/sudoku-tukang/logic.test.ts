@@ -215,6 +215,59 @@ test('isComplete false bila ada yang salah', () => {
   assert.equal(isComplete(s), false);
 });
 
+console.log('\n[5] uniqueness sweep: 8 seed × 4 difficulty (programmatic)');
+for (const d of diffs) {
+  test(`semua puzzle ${d} solusi UNIK & clue tepat (8 seed)`, () => {
+    for (let sd = 0; sd < 8; sd += 1) {
+      const p = generatePuzzle(d, mulberry32(7000 + sd * 131 + d.length * 17));
+      assert.equal(countSolutions(p.puzzle, 2), 1, `seed ${sd}: solusi tidak unik`);
+      assert.equal(p.clues, CLUES[d], `seed ${sd}: clue ${p.clues} != ${CLUES[d]}`);
+      assert.equal(
+        p.puzzle.filter((v) => v !== null).length,
+        CLUES[d],
+        `seed ${sd}: clue fisik tidak cocok`,
+      );
+      for (let i = 0; i < 81; i += 1) {
+        if (p.puzzle[i] !== null) assert.equal(p.puzzle[i], p.solution[i], `seed ${sd}: clue bukan subset solusi`);
+      }
+    }
+  });
+}
+test('salah di sel yang sudah benar tetap dihitung (koreksi jadi salah)', () => {
+  const p = generatePuzzle('gampang', mulberry32(5));
+  const s = createState(p.puzzle, p.solution);
+  const i = firstOpen(p);
+  setCellValue(s, i, p.solution[i]); // benar dulu
+  assert.equal(s.mistakes, 0);
+  const r = setCellValue(s, i, (p.solution[i] % 9) + 1); // diganti salah
+  assert.equal(r.mistake, true);
+  assert.equal(s.mistakes, 1);
+});
+test('nilai sama berulang tidak dihitung ganda', () => {
+  const p = generatePuzzle('gampang', mulberry32(5));
+  const s = createState(p.puzzle, p.solution);
+  const i = firstOpen(p);
+  const wrong = (p.solution[i] % 9) + 1;
+  setCellValue(s, i, wrong);
+  const r = setCellValue(s, i, wrong);
+  assert.equal(r.ok, true);
+  assert.equal(r.mistake, false);
+  assert.equal(s.mistakes, 1);
+});
+test('notes tidak mempengaruhi isComplete/validasi', () => {
+  const p = generatePuzzle('gampang', mulberry32(5));
+  const s = createState(p.puzzle, p.solution);
+  for (let i = 0; i < 81; i += 1) {
+    if (!s.locked[i]) {
+      toggleNote(s, i, 1);
+      toggleNote(s, i, 9);
+      setCellValue(s, i, p.solution[i]); // notes ikut terhapus saat diisi
+      assert.deepEqual(s.notes[i], []);
+    }
+  }
+  assert.equal(isComplete(s), true);
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed > 0) {
   console.log('failures:', failures.join(', '));

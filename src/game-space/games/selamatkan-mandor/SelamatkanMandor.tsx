@@ -11,7 +11,7 @@ import { popText } from '../../engine2d/juice2d';
 import { clamp, TAU } from '../../engine2d/helpers';
 import {
   createState, step, setLine, clearLine, inkLeft,
-  starsFor, resetState, LEVELS,
+  starsFor, resetState, LEVELS, KIND_R, WARN_LEAD,
   type MandorState, type Vec, type Body, type FallKind,
 } from './logic';
 
@@ -25,6 +25,9 @@ interface Rt {
   levelIndex: number;
   lastStatus: string;
   hudT: number;
+  /** telegraph shadows: key -> {x, kind, at} */
+  telegraphs: Map<string, { x: number; kind: FallKind; at: number }>;
+  deadAt: number;
 }
 
 const STARS_KEY = bestKey('selamatkan-mandor', 'stars');
@@ -36,6 +39,56 @@ const KIND_COLORS: Record<FallKind, string[]> = {
   ember: ['#cbd5e1', '#64748b', '#a8a29e'],
 };
 
+/** Quip kematian — dipilih acak tiap mandor tumbang. */
+const DEATH_QUIPS = [
+  'Helmnya KW!',
+  'Bata 1 – Helm 0.',
+  'AHSP tidak menanggung malu.',
+  '"Saya cuma disuruh ngawasin!" — mandor',
+  'Estimasi meleset: helm vs bata.',
+  'Lembur dibayar, helm tidak.',
+];
+
+/* ---------- procedural fx audio (di luar sfx engine) ---------- */
+let fxCtx: AudioContext | null = null;
+function fxAudio(): AudioContext | null {
+  try {
+    if (!fxCtx) {
+      const AC = window.AudioContext
+        || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      fxCtx = new AC();
+    }
+    if (fxCtx.state === 'suspended') void fxCtx.resume();
+    return fxCtx;
+  } catch {
+    return null;
+  }
+}
+
+/** Siulan benda jatuh: sine sweep 1350→260Hz selama ~0.6 detik. */
+function whistleFall(muted: boolean): void {
+  if (muted) return;
+  const ctx = fxAudio();
+  if (!ctx) return;
+  try {
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(1350, t);
+    o.frequency.exponentialRampToValueAtTime(260, t + 0.55);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.16, t + 0.07);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.start(t);
+    o.stop(t + 0.65);
+  } catch {
+    /* noop */
+  }
+}
+
 export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
   const [screen, setScreen] = useState<Screen>('menu');
   const [paused, setPaused] = useState(false);
@@ -44,12 +97,14 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
   const [stars, setStars] = useState<number[]>(() => getJson<number[]>(STARS_KEY, []));
   const [unlocked, setUnlocked] = useState<number>(() => getJson<number>(UNLOCK_KEY, 1));
   const [winStars, setWinStars] = useState(0);
+  const [deadQuip, setDeadQuip] = useState(DEATH_QUIPS[0]);
 
   const apiRef = useRef<GameApi | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const rt = useRef<Rt>({
     state: null, drawing: false, pts: [], t: 0,
     levelIndex: 0, lastStatus: 'play', hudT: 0,
+    telegraphs: new Map(), deadAt: 0,
   });
   const screenRef = useRef<Screen>(screen);
   screenRef.current = screen;
@@ -70,6 +125,7 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
     rt.current.drawing = false;
     rt.current.pts = [];
     rt.current.lastStatus = 'play';
+    rt.current.telegraphs.clear();
     setPaused(false);
     api?.loop.setPaused(false);
     setScreen('intro');
@@ -123,7 +179,9 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
   const doDead = () => {
     const api = apiRef.current;
     const s = rt.current.state;
-    setScreen('dead');
+    const quip = DEATH_QUIPS[(Math.random() * DEATH_QUIPS.length) | 0];
+    setDeadQuip(quip);
+    rt.current.deadAt = rt.current.t; // overlay menyusul 1.1 dtk (animasi dulu)
     if (api && s) {
       api.sfx.fail();
       api.shake.add(0.65);
@@ -132,6 +190,7 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
         speed: [120, 420], life: [0.6, 1.2], size: [3, 7], gravity: 600,
       });
       api.scores.add(s.foreman.x, s.foreman.y - 60, 'DUAKH!', { color: '#ef4444', size: 26 });
+      if (wrapRef.current) popText(wrapRef.current, quip, { size: 22, color: '#fca5a5' });
     }
   };
 
@@ -169,6 +228,30 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
         else if (s.status === 'dead') doDead();
       }
 
+      // telegraph: pending baru → siulan + catat; yang kedaluwarsa dibuang
+      if (s.status === 'play') {
+        const seen = r.telegraphs;
+        const cur = new Set<string>();
+        for (const ev of s.pending) {
+          const key = `${ev.at.toFixed(2)}|${ev.xf.toFixed(3)}`;
+          cur.add(key);
+          if (!seen.has(key)) {
+            seen.set(key, { x: ev.xf * s.W, kind: ev.kind, at: ev.at });
+            whistleFall(api.sfx.muted);
+          }
+        }
+        for (const k of Array.from(seen.keys())) {
+          if (!cur.has(k)) seen.delete(k);
+        }
+      } else {
+        r.telegraphs.clear();
+      }
+
+      // overlay 'dead' menyusul 1.1 dtk setelah animasi tumbang
+      if (s.status === 'dead' && screenRef.current === 'play' && r.t - r.deadAt > 1.1) {
+        setScreen('dead');
+      }
+
       r.hudT += dt;
       if (r.hudT > 0.12) {
         r.hudT = 0;
@@ -180,7 +263,7 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
       }
     });
 
-    api.setRender(() => drawScene(api, rt.current));
+    api.setRender(() => drawScene(api, rt.current, screenRef.current === 'menu' || screenRef.current === 'intro'));
 
     api.input.onDown = (p) => {
       const r = rt.current;
@@ -274,6 +357,7 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
     rt.current.drawing = false;
     rt.current.pts = [];
     rt.current.lastStatus = 'play';
+    rt.current.telegraphs.clear();
     setPaused(false);
     apiRef.current?.loop.setPaused(false);
     setScreen('play');
@@ -307,6 +391,7 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
 
       {(screen === 'play' || screen === 'win' || screen === 'dead') && (
         <div style={styles.hud}>
+          <div style={styles.hudItem}>🏗️ <b>Lv{rt.current.levelIndex + 1}</b></div>
           <div style={styles.hudItem}>⏱ <b>{hud.timeLeft.toFixed(0)}s</b></div>
           <div style={{ flex: 1 }}>
             <div style={styles.inkLabel}>🖊️ Tinta spidol</div>
@@ -374,16 +459,15 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
         <Overlay>
           <div style={styles.levelTag}>LEVEL {rt.current.levelIndex + 1}/15</div>
           <div style={styles.cardTitle}>{lvl.name}</div>
-          <p style={styles.cardText}>{lvl.sub}</p>
+          <p style={styles.cardText}>
+            Gambar <b>satu garis atap</b> di atas mandor — selamatkan dia selama <b>{lvl.duration} detik</b>! Tinta terbatas, garis hemat = bintang 3.
+          </p>
           <div style={styles.chipRow}>
             <span style={styles.chip}>⏱ {lvl.duration}s</span>
             <span style={styles.chip}>📦 {lvl.spawns.length} benda</span>
             <span style={styles.chip}>🖊️ {lvl.ink}px tinta</span>
             {lvlStars > 0 && <span style={styles.chip}>🏆 {'★'.repeat(lvlStars)}</span>}
           </div>
-          <p style={{ ...styles.cardText, fontSize: 12, color: '#64748b' }}>
-            Gambar garis dengan jari/mouse. Tinta terbatas — garis hemat = bintang 3!
-          </p>
           <div style={styles.btnRow}>
             <button style={styles.primaryBtn} onClick={startPlay}>Mulai 🦺</button>
             <button style={styles.ghostBtn} onClick={backToMenu}>Pilih Level</button>
@@ -432,11 +516,11 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
         <Overlay>
           <div style={{ fontSize: 46 }}>🪖💥</div>
           <div style={styles.cardTitle}>ADUH!</div>
-          <p style={styles.cardText}>
-            <b>Bata jatuh tepat di helm. Helmnya KW.</b>
+          <p style={{ ...styles.cardText, fontSize: 17, fontWeight: 800, color: '#b91c1c' }}>
+            {deadQuip}
           </p>
           <p style={{ ...styles.cardText, fontSize: 12, color: '#64748b' }}>
-            *"AHSP bilang helm cukup. Harga pasar bilang tidak."*
+            *"Mandor tumbang, tapi helmnya tetap mengkilap. Prioritas."*
           </p>
           <div style={styles.btnRow}>
             <button style={styles.primaryBtn} onClick={retry}>Coba Lagi 💪</button>
@@ -450,7 +534,7 @@ export default function SelamatkanMandor({ onExit }: { onExit: () => void }) {
 
 /* ================= drawing ================= */
 
-function drawScene(api: GameApi, r: Rt): void {
+function drawScene(api: GameApi, r: Rt, ghostHint: boolean): void {
   const { ctx, W, H } = api;
   const s = r.state;
   const t = r.t;
@@ -482,6 +566,9 @@ function drawScene(api: GameApi, r: Rt): void {
   drawClouds(ctx, W, H, t, 0.45, 8, 0.75);
   // --- buildings back layer ---
   drawBuildings(ctx, W, H, '#b8c9dd', 0.42, 60, 7);
+  // --- tower crane siluet (lapisan parallax jauh) ---
+  drawCrane(ctx, W * 0.16, H * 0.42 + 120, 190, '#9db4cc', t);
+  drawCrane(ctx, W * 0.68, H * 0.42 + 120, 150, '#a9bfd4', t + 2);
   // --- buildings front layer ---
   drawBuildings(ctx, W, H, '#8ba3bd', 0.58, 110, 13);
   drawClouds(ctx, W, H, t, 0.62, 15, 1);
@@ -517,6 +604,31 @@ function drawScene(api: GameApi, r: Rt): void {
 
   if (!s) return;
 
+  // --- telegraph: bayangan peringatan yg membesar + ring merah + "!" ---
+  for (const tg of r.telegraphs.values()) {
+    const prog = clamp(1 - (tg.at - s.time) / WARN_LEAD, 0, 1);
+    const maxR = KIND_R[tg.kind] * 1.5;
+    const rad = 6 + (maxR - 6) * prog;
+    const pulse = 0.5 + 0.5 * Math.sin(t * 10);
+    ctx.fillStyle = `rgba(185,28,28,${0.16 + 0.3 * prog})`;
+    ctx.beginPath();
+    ctx.ellipse(tg.x, groundY + 26, rad, 7, 0, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(220,38,38,${0.45 + 0.4 * pulse * prog})`;
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([7, 5]);
+    ctx.lineDashOffset = -t * 30;
+    ctx.beginPath();
+    ctx.ellipse(tg.x, groundY + 26, rad + 5, 9.5, 0, 0, TAU);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = `rgba(220,38,38,${0.55 + 0.35 * prog})`;
+    ctx.font = `900 ${Math.round(12 + 10 * prog)}px 'Plus Jakarta Sans','Inter',system-ui,sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('!', tg.x, groundY - 4 - 34 * prog);
+  }
+
   // --- shadows + bodies ---
   for (const b of s.bodies) {
     const hFrac = clamp(1 - (groundY - b.y) / (H * 0.8), 0, 1);
@@ -526,32 +638,87 @@ function drawScene(api: GameApi, r: Rt): void {
     ctx.fill();
   }
   for (const b of s.bodies) {
-    drawBody(ctx, b, groundY);
+    drawBody(ctx, b);
   }
 
-  // --- foreman ---
-  drawForeman(ctx, s.foreman.x, s.foreman.y, s.foreman.r, t, s.status === 'dead');
+  // --- tingkat panik mandor: benda jatuh yg mengarah ke kepalanya ---
+  let panic = 0;
+  for (const b of s.bodies) {
+    if (b.landed || b.vy <= 0) continue;
+    const dx = Math.abs(b.x - s.foreman.x);
+    const dy = s.foreman.y - b.y;
+    if (dx < 120 && dy > -20 && dy < 320) panic = Math.max(panic, clamp(1 - dx / 120, 0, 1));
+  }
+  const mood: 'worried' | 'dead' | 'happy' =
+    s.status === 'dead' ? 'dead' : s.status === 'win' ? 'happy' : 'worried';
+  const blink = mood === 'worried' && panic < 0.35 && (t % 3.6) < 0.13;
+  drawForeman(ctx, s.foreman.x, s.foreman.y, s.foreman.r, t, {
+    blink,
+    panic: mood === 'worried' ? panic : 0,
+    mood,
+    sinceDead: mood === 'dead' ? Math.max(0, t - r.deadAt) : 0,
+  });
 
-  // --- player line: marker stroke + outline ---
-  const pts = r.drawing ? r.pts : s.line;
+  // --- garis spidol: glow + outline + gradient core + highlight ---
+  const pts = s.line; // selalu versi yg dihaluskan (setLine)
   if (pts.length >= 2) {
-    for (const [lw, color] of [[12, '#0f172a'], [6.5, '#38bdf8']] as const) {
-      ctx.strokeStyle = color;
-      ctx.lineWidth = lw;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+    const trace = () => {
       ctx.beginPath();
       ctx.moveTo(pts[0].x, pts[0].y);
       for (let i = 1; i < pts.length; i += 1) ctx.lineTo(pts[i].x, pts[i].y);
-      ctx.stroke();
-    }
-    // marker highlight
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    };
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(56,189,248,0.28)';
+    ctx.lineWidth = 22;
+    trace();
+    ctx.stroke();
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 12;
+    trace();
+    ctx.stroke();
+    const lg = ctx.createLinearGradient(pts[0].x, pts[0].y, pts[pts.length - 1].x, pts[pts.length - 1].y);
+    lg.addColorStop(0, '#38bdf8');
+    lg.addColorStop(0.5, '#22d3ee');
+    lg.addColorStop(1, '#818cf8');
+    ctx.strokeStyle = lg;
+    ctx.lineWidth = 6.5;
+    trace();
+    ctx.stroke();
+    // highlight mengkilap
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(pts[0].x, pts[0].y - 1.5);
-    for (let i = 1; i < pts.length; i += 1) ctx.lineTo(pts[i].x, pts[i].y - 1.5);
+    ctx.moveTo(pts[0].x, pts[0].y - 1.6);
+    for (let i = 1; i < pts.length; i += 1) ctx.lineTo(pts[i].x, pts[i].y - 1.6);
     ctx.stroke();
+  }
+
+  // --- petunjuk tutorial: atap hantu berdenyut di menu/intro ---
+  if (ghostHint) {
+    const fx = s.foreman.x;
+    const fy = s.foreman.y;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 5;
+    ctx.setLineDash([12, 9]);
+    ctx.lineDashOffset = -t * 40;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(fx - 110, fy - 80);
+    ctx.quadraticCurveTo(fx, fy - 170, fx + 110, fy - 80);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    const bobY = Math.sin(t * 3) * 6;
+    ctx.font = `800 15px 'Plus Jakarta Sans','Inter',system-ui,sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.strokeStyle = 'rgba(15,23,42,0.45)';
+    ctx.lineWidth = 4;
+    const label = '👆 Gambar garis atap di sini!';
+    ctx.strokeText(label, fx, fy - 185 + bobY);
+    ctx.fillText(label, fx, fy - 185 + bobY);
+    ctx.restore();
   }
 
   // --- vignette ---
@@ -607,7 +774,49 @@ function drawBuildings(
   }
 }
 
-function drawBody(ctx: CanvasRenderingContext2D, b: Body, groundY: number): void {
+/** Siluet tower crane di lapisan jauh — kait berayun pelan. */
+function drawCrane(
+  ctx: CanvasRenderingContext2D, x: number, baseY: number, h: number,
+  color: string, t: number,
+): void {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.strokeStyle = color;
+  // menara
+  ctx.fillRect(x - 5, baseY - h, 10, h);
+  ctx.fillRect(x - 9, baseY - h * 0.66, 18, 4);
+  ctx.fillRect(x - 9, baseY - h * 0.33, 18, 4);
+  // puncak + jib
+  ctx.beginPath();
+  ctx.moveTo(x - 8, baseY - h);
+  ctx.lineTo(x, baseY - h - 24);
+  ctx.lineTo(x + 8, baseY - h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillRect(x - 78, baseY - h - 4, 148, 8); // jib
+  ctx.fillRect(x + 66, baseY - h - 4, 26, 8); // counter-jib
+  ctx.fillRect(x + 66, baseY - h - 22, 20, 20); // counterweight
+  // tie bars
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x, baseY - h - 22);
+  ctx.lineTo(x - 72, baseY - h);
+  ctx.moveTo(x, baseY - h - 22);
+  ctx.lineTo(x + 62, baseY - h);
+  ctx.stroke();
+  // kabel + kait berayun
+  const sway = Math.sin(t * 0.9 + x) * 8;
+  const hx = x - 48 + sway;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(x - 48, baseY - h + 4);
+  ctx.quadraticCurveTo(x - 48 + sway * 0.4, baseY - h + 34, hx, baseY - h + 62);
+  ctx.stroke();
+  ctx.fillRect(hx - 6, baseY - h + 62, 12, 11);
+  ctx.restore();
+}
+
+function drawBody(ctx: CanvasRenderingContext2D, b: Body): void {
   ctx.save();
   ctx.translate(b.x, b.y);
   ctx.rotate(b.rot);
@@ -634,20 +843,46 @@ function drawBody(ctx: CanvasRenderingContext2D, b: Body, groundY: number): void
     roundRectPath(ctx, -w / 2 + 3, -h / 2 + 3, w - 6, 6, 3);
     ctx.fill();
   } else if (b.kind === 'palu') {
-    // handle
-    ctx.fillStyle = '#92400e';
+    // handle: kayu + serat
+    const hg = ctx.createLinearGradient(-4, 0, 4, 0);
+    hg.addColorStop(0, '#a16207');
+    hg.addColorStop(0.5, '#c07f1a');
+    hg.addColorStop(1, '#854d0e');
+    ctx.fillStyle = hg;
     ctx.strokeStyle = '#451a03';
     roundRectPath(ctx, -4, -22, 8, 34, 3);
     ctx.fill();
     ctx.stroke();
-    // head
-    ctx.fillStyle = '#94a3b8';
+    ctx.strokeStyle = 'rgba(69,26,3,0.6)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-1.5, -18);
+    ctx.quadraticCurveTo(1, -6, -1.5, 8);
+    ctx.moveTo(2, -16);
+    ctx.quadraticCurveTo(-0.5, -2, 2, 10);
+    ctx.stroke();
+    // head: metal + highlight + baut
+    const mg = ctx.createLinearGradient(0, -32, 0, -18);
+    mg.addColorStop(0, '#cbd5e1');
+    mg.addColorStop(1, '#64748b');
+    ctx.fillStyle = mg;
     ctx.strokeStyle = '#334155';
     roundRectPath(ctx, -16, -32, 32, 14, 3);
     ctx.fill();
     ctx.stroke();
-    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.fillRect(-13, -30, 26, 4);
+    ctx.fillStyle = '#334155';
+    for (const bx of [-10, 10]) {
+      ctx.beginPath();
+      ctx.arc(bx, -25, 2.2, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath();
+      ctx.arc(bx - 0.7, -25.7, 0.8, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#334155';
+    }
   } else {
     // ember semen: trapezoid bucket
     ctx.fillStyle = '#64748b';
@@ -660,7 +895,7 @@ function drawBody(ctx: CanvasRenderingContext2D, b: Body, groundY: number): void
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    // cement surface
+    // cement surface + texture dots
     ctx.fillStyle = '#a8a29e';
     ctx.beginPath();
     ctx.ellipse(0, -13, 15, 5, 0, 0, TAU);
@@ -668,6 +903,19 @@ function drawBody(ctx: CanvasRenderingContext2D, b: Body, groundY: number): void
     ctx.strokeStyle = '#57534e';
     ctx.lineWidth = 1.5;
     ctx.stroke();
+    ctx.fillStyle = 'rgba(87,83,78,0.55)';
+    for (const [dx, dy] of [[-7, -13], [2, -15], [8, -12], [-2, -11]] as const) {
+      ctx.beginPath();
+      ctx.arc(dx, dy, 1.4, 0, TAU);
+      ctx.fill();
+    }
+    // rivets on the rim
+    ctx.fillStyle = '#e7e5e4';
+    for (const rx of [-11, -4, 4, 11]) {
+      ctx.beginPath();
+      ctx.arc(rx, -6, 1.8, 0, TAU);
+      ctx.fill();
+    }
     // rim highlight
     ctx.fillStyle = 'rgba(255,255,255,0.3)';
     ctx.fillRect(-15, -11, 30, 4);
@@ -679,22 +927,38 @@ function drawBody(ctx: CanvasRenderingContext2D, b: Body, groundY: number): void
     ctx.stroke();
   }
   ctx.restore();
-  void groundY;
+}
+
+interface ForemanOpts {
+  blink: boolean;
+  /** 0..1 — keringat, mata melotot, gemetar */
+  panic: number;
+  mood: 'worried' | 'dead' | 'happy';
+  sinceDead: number;
 }
 
 function drawForeman(
   ctx: CanvasRenderingContext2D, x: number, y: number, r: number,
-  t: number, dead: boolean,
+  t: number, o: ForemanOpts,
 ): void {
+  const dead = o.mood === 'dead';
+  const happy = o.mood === 'happy';
+  // animasi tumbang: miring ke samping dgn easing
+  const tilt = dead ? Math.min(1, o.sinceDead * 2.6) ** 2 * 1.35 : 0;
+  const tremble = o.panic > 0 ? Math.sin(t * 42) * 2.2 * o.panic : 0;
   const bob = dead ? 0 : Math.sin(t * 3.2) * 1.6;
+  // shadow: selalu di tanah (tak ikut miring)
   ctx.save();
-  ctx.translate(x, y + bob);
-
-  // shadow
+  ctx.translate(x + tremble, y + bob);
   ctx.fillStyle = 'rgba(15,23,42,0.25)';
   ctx.beginPath();
   ctx.ellipse(0, r + 22 - bob, 26, 7, 0, 0, TAU);
   ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(x + tremble, y + bob);
+  ctx.rotate(tilt);
 
   // legs
   ctx.fillStyle = '#1e3a5f';
@@ -727,6 +991,22 @@ function drawForeman(
   ctx.beginPath();
   ctx.arc(0, -r + 2, 2.2, 0, TAU);
   ctx.fill();
+  // lipatan rompi + strip reflektif + sabuk
+  ctx.strokeStyle = 'rgba(23,37,84,0.55)';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(-13, -r + 16);
+  ctx.quadraticCurveTo(-6, -r + 20, -12, -r + 26);
+  ctx.moveTo(13, -r + 16);
+  ctx.quadraticCurveTo(6, -r + 20, 12, -r + 26);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(226,232,240,0.85)';
+  ctx.fillRect(-16, -r - 1, 32, 4); // strip reflektif
+  ctx.fillStyle = '#0f172a';
+  roundRectPath(ctx, -16, r - 2, 32, 6, 3); // sabuk
+  ctx.fill();
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillRect(-4, r - 1, 8, 4); // gesper
 
   // arms
   ctx.strokeStyle = '#1d4ed8';
@@ -749,10 +1029,8 @@ function drawForeman(
   ctx.fill();
   ctx.stroke();
 
-  // face
-  ctx.fillStyle = '#1f2937';
+  // face: dead (X + bintang pusing) | happy (lega) | worried/blink/panic
   if (dead) {
-    // X eyes
     for (const ex of [-6, 6]) {
       ctx.strokeStyle = '#1f2937';
       ctx.lineWidth = 2;
@@ -763,19 +1041,58 @@ function drawForeman(
       ctx.lineTo(ex - 4, -r - 12);
       ctx.stroke();
     }
+    // bintang pusing mengorbit kepala
+    for (let i = 0; i < 3; i += 1) {
+      const a = t * 4 + (i * TAU) / 3;
+      ctx.fillStyle = '#fde047';
+      ctx.save();
+      ctx.translate(Math.cos(a) * 24, -r - 30 + Math.sin(a) * 8);
+      ctx.rotate(a);
+      ctx.fillRect(-3.5, -3.5, 7, 7);
+      ctx.restore();
+    }
+  } else if (happy) {
+    // mata lega tertutup + senyum lebar + pipi merona
+    ctx.strokeStyle = '#1f2937';
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = 'round';
+    for (const ex of [-6, 6]) {
+      ctx.beginPath();
+      ctx.arc(ex, -r - 15, 4.5, Math.PI * 1.1, Math.PI * 1.9);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(0, -r - 8, 7, Math.PI * 0.15, Math.PI * 0.85);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(244,114,182,0.5)';
+    ctx.beginPath();
+    ctx.arc(-11, -r - 10, 3.2, 0, TAU);
+    ctx.arc(11, -r - 10, 3.2, 0, TAU);
+    ctx.fill();
+  } else if (o.blink) {
+    ctx.strokeStyle = '#1f2937';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    for (const ex of [-6, 6]) {
+      ctx.beginPath();
+      ctx.moveTo(ex - 4.5, -r - 16);
+      ctx.lineTo(ex + 4.5, -r - 16);
+      ctx.stroke();
+    }
   } else {
-    // worried eyes: white + pupil up
+    // mata khawatir — makin panik makin melotot
+    const eyeR = 4.6 + o.panic * 2.2;
     for (const ex of [-6, 6]) {
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(ex, -r - 16, 4.6, 0, TAU);
+      ctx.arc(ex, -r - 16, eyeR, 0, TAU);
       ctx.fill();
       ctx.fillStyle = '#1f2937';
       ctx.beginPath();
-      ctx.arc(ex, -r - 17.5, 2.2, 0, TAU);
+      ctx.arc(ex, -r - 17.5 - o.panic * 1.5, 2.4 - o.panic * 0.7, 0, TAU);
       ctx.fill();
     }
-    // worried brows
+    // alis khawatir
     ctx.strokeStyle = '#1f2937';
     ctx.lineWidth = 1.8;
     ctx.beginPath();
@@ -784,10 +1101,37 @@ function drawForeman(
     ctx.moveTo(10, -r - 24);
     ctx.lineTo(3, -r - 22);
     ctx.stroke();
-    // small frown
-    ctx.beginPath();
-    ctx.arc(0, -r - 4, 4, Math.PI * 1.15, Math.PI * 1.85);
-    ctx.stroke();
+    if (o.panic > 0.45) {
+      // mulut "O" panik
+      ctx.fillStyle = '#7c2d12';
+      ctx.beginPath();
+      ctx.ellipse(0, -r - 5, 3.4, 4.6, 0, 0, TAU);
+      ctx.fill();
+    } else {
+      // cemberut kecil
+      ctx.strokeStyle = '#1f2937';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(0, -r - 4, 4, Math.PI * 1.15, Math.PI * 1.85);
+      ctx.stroke();
+    }
+    // keringat panik menetes
+    if (o.panic > 0.25) {
+      const sw = (t * 2.4) % 1;
+      ctx.fillStyle = `rgba(125,211,252,${0.9 * (1 - sw)})`;
+      for (const sx of [-14, 14]) {
+        const sy = -r - 26 + sw * 14;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 2.6, 0, TAU);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(sx - 2.6, sy - 1);
+        ctx.lineTo(sx, sy - 6);
+        ctx.lineTo(sx + 2.6, sy - 1);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
   }
 
   // helmet: yellow dome + brim + highlight
@@ -820,6 +1164,17 @@ function drawForeman(
   ctx.moveTo(0, hy - 17);
   ctx.lineTo(0, hy - 2);
   ctx.stroke();
+  // tali helm ke dagu
+  if (!dead) {
+    ctx.strokeStyle = '#854d0e';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(-15, hy + 2);
+    ctx.quadraticCurveTo(-17, -r - 8, -9, -r - 6);
+    ctx.moveTo(15, hy + 2);
+    ctx.quadraticCurveTo(17, -r - 8, 9, -r - 6);
+    ctx.stroke();
+  }
 
   ctx.restore();
 }

@@ -52,14 +52,27 @@ export const KIND_NAME: Record<FallKind, string> = {
   ember: 'ember semen',
 };
 
+/**
+ * Telegraph lead time (seconds): how long before a spawn the warning
+ * shadow + falling whistle appear. Gives the player time to anticipate.
+ */
+export const WARN_LEAD = 1.2;
+
+/**
+ * Fairness rule: no body may spawn directly above the foreman
+ * (|xf - 0.5| < HEAD_ZONE) within the first FAIR_START seconds.
+ */
+export const FAIR_START = 2.0;
+export const HEAD_ZONE = 0.09;
+
 /** 15 data-driven levels. */
 export const LEVELS: LevelDef[] = [
   {
     name: 'Apel Pagi',
     sub: 'Satu bata nyasar. Gambar garis di atas helm mandor.',
-    duration: 10, ink: 420, gravity: 1300,
+    duration: 10, ink: 440, gravity: 1300,
     spawns: [
-      { at: 1.5, xf: 0.5, kind: 'bata', vy0: 120 },
+      { at: 1.5, xf: 0.35, kind: 'bata', vy0: 120 },
       { at: 4.5, xf: 0.42, kind: 'bata', vy0: 120 },
       { at: 7.0, xf: 0.58, kind: 'bata', vy0: 120 },
     ],
@@ -67,9 +80,9 @@ export const LEVELS: LevelDef[] = [
   {
     name: 'Shift Pagi',
     sub: 'Bata mulai berani jatuh lebih cepat.',
-    duration: 12, ink: 440, gravity: 1350,
+    duration: 12, ink: 460, gravity: 1350,
     spawns: [
-      { at: 1.0, xf: 0.5, kind: 'bata', vy0: 150 },
+      { at: 1.0, xf: 0.65, kind: 'bata', vy0: 150 },
       { at: 3.5, xf: 0.38, kind: 'bata', vy0: 150 },
       { at: 6.0, xf: 0.62, kind: 'bata', vy0: 150 },
       { at: 8.5, xf: 0.5, kind: 'bata', vy0: 170 },
@@ -78,9 +91,9 @@ export const LEVELS: LevelDef[] = [
   {
     name: 'Tukang Lupa Helm',
     sub: 'Dua bata sekaligus. Untung mandor pakai helm.',
-    duration: 13, ink: 460, gravity: 1400,
+    duration: 13, ink: 480, gravity: 1400,
     spawns: [
-      { at: 1.0, xf: 0.5, kind: 'bata', vy0: 160 },
+      { at: 1.0, xf: 0.35, kind: 'bata', vy0: 160 },
       { at: 2.5, xf: 0.35, kind: 'bata', vy0: 160 },
       { at: 4.0, xf: 0.65, kind: 'bata', vy0: 160 },
       { at: 6.5, xf: 0.5, kind: 'bata', vy0: 190 },
@@ -93,7 +106,7 @@ export const LEVELS: LevelDef[] = [
     sub: 'Hati-hati: palu memantul lebih liar dari bata.',
     duration: 14, ink: 480, gravity: 1450,
     spawns: [
-      { at: 1.0, xf: 0.5, kind: 'bata', vy0: 170 },
+      { at: 1.0, xf: 0.65, kind: 'bata', vy0: 170 },
       { at: 3.0, xf: 0.5, kind: 'palu', vy0: 150 },
       { at: 5.5, xf: 0.38, kind: 'bata', vy0: 190 },
       { at: 7.5, xf: 0.62, kind: 'palu', vy0: 160 },
@@ -106,7 +119,7 @@ export const LEVELS: LevelDef[] = [
     sub: 'Ember semen ikutan jatuh. Berat, bro.',
     duration: 15, ink: 500, gravity: 1500,
     spawns: [
-      { at: 1.0, xf: 0.5, kind: 'ember', vy0: 140 },
+      { at: 1.0, xf: 0.35, kind: 'ember', vy0: 140 },
       { at: 3.5, xf: 0.4, kind: 'bata', vy0: 190 },
       { at: 5.0, xf: 0.6, kind: 'bata', vy0: 190 },
       { at: 7.5, xf: 0.5, kind: 'palu', vy0: 170 },
@@ -117,7 +130,7 @@ export const LEVELS: LevelDef[] = [
   {
     name: 'Angin Kencang',
     sub: 'Material jatuh dari kiri-kanan. Perlebar atap spidolmu.',
-    duration: 15, ink: 520, gravity: 1550,
+    duration: 15, ink: 540, gravity: 1550,
     spawns: [
       { at: 1.0, xf: 0.3, kind: 'bata', vy0: 180 },
       { at: 2.5, xf: 0.7, kind: 'bata', vy0: 180 },
@@ -133,7 +146,7 @@ export const LEVELS: LevelDef[] = [
     sub: 'Durasi lebih lama. Stamina spidol diuji.',
     duration: 18, ink: 540, gravity: 1600,
     spawns: [
-      { at: 1.0, xf: 0.5, kind: 'bata', vy0: 190 },
+      { at: 1.0, xf: 0.65, kind: 'bata', vy0: 190 },
       { at: 3.0, xf: 0.38, kind: 'bata', vy0: 190 },
       { at: 5.0, xf: 0.62, kind: 'palu', vy0: 175 },
       { at: 7.0, xf: 0.5, kind: 'ember', vy0: 155 },
@@ -148,7 +161,7 @@ export const LEVELS: LevelDef[] = [
     sub: 'Semua orang panik. Material jatuh makin ngawur.',
     duration: 18, ink: 540, gravity: 1650,
     spawns: [
-      { at: 0.8, xf: 0.5, kind: 'ember', vy0: 160 },
+      { at: 0.8, xf: 0.35, kind: 'ember', vy0: 160 },
       { at: 2.5, xf: 0.32, kind: 'palu', vy0: 180 },
       { at: 4.0, xf: 0.68, kind: 'palu', vy0: 180 },
       { at: 6.0, xf: 0.5, kind: 'bata', vy0: 215 },
@@ -164,7 +177,7 @@ export const LEVELS: LevelDef[] = [
     sub: 'Licin! Benda jatuh lebih cepat dari biasanya.',
     duration: 19, ink: 560, gravity: 1800,
     spawns: [
-      { at: 0.8, xf: 0.5, kind: 'bata', vy0: 230 },
+      { at: 0.8, xf: 0.65, kind: 'bata', vy0: 230 },
       { at: 2.2, xf: 0.4, kind: 'bata', vy0: 230 },
       { at: 3.8, xf: 0.6, kind: 'palu', vy0: 205 },
       { at: 5.5, xf: 0.5, kind: 'ember', vy0: 180 },
@@ -181,7 +194,7 @@ export const LEVELS: LevelDef[] = [
     sub: 'Konsultan datang bawa palu. Entah kenapa.',
     duration: 20, ink: 560, gravity: 1850,
     spawns: [
-      { at: 0.7, xf: 0.5, kind: 'palu', vy0: 200 },
+      { at: 0.7, xf: 0.35, kind: 'palu', vy0: 200 },
       { at: 2.0, xf: 0.38, kind: 'palu', vy0: 200 },
       { at: 3.5, xf: 0.62, kind: 'palu', vy0: 200 },
       { at: 5.2, xf: 0.5, kind: 'bata', vy0: 240 },
@@ -199,7 +212,7 @@ export const LEVELS: LevelDef[] = [
     sub: 'Semua material turun sekaligus. Gambar atap yang kokoh!',
     duration: 20, ink: 580, gravity: 1900,
     spawns: [
-      { at: 0.6, xf: 0.5, kind: 'ember', vy0: 185 },
+      { at: 0.6, xf: 0.65, kind: 'ember', vy0: 185 },
       { at: 1.5, xf: 0.35, kind: 'bata', vy0: 245 },
       { at: 1.5, xf: 0.65, kind: 'bata', vy0: 245 },
       { at: 3.2, xf: 0.5, kind: 'palu', vy0: 215 },
@@ -240,7 +253,7 @@ export const LEVELS: LevelDef[] = [
     sub: 'Klien revisi, mandor yang kena getahnya. Klasik.',
     duration: 22, ink: 600, gravity: 2000,
     spawns: [
-      { at: 0.5, xf: 0.5, kind: 'bata', vy0: 250 },
+      { at: 0.5, xf: 0.35, kind: 'bata', vy0: 250 },
       { at: 1.6, xf: 0.35, kind: 'palu', vy0: 225 },
       { at: 2.8, xf: 0.65, kind: 'palu', vy0: 225 },
       { at: 4.2, xf: 0.5, kind: 'ember', vy0: 195 },
@@ -261,7 +274,7 @@ export const LEVELS: LevelDef[] = [
     sub: 'Semua orang melempar barang. Selamatkan satu-satunya mandor setia.',
     duration: 23, ink: 600, gravity: 2100,
     spawns: [
-      { at: 0.5, xf: 0.5, kind: 'ember', vy0: 200 },
+      { at: 0.5, xf: 0.65, kind: 'ember', vy0: 200 },
       { at: 1.3, xf: 0.3, kind: 'bata', vy0: 260 },
       { at: 2.1, xf: 0.7, kind: 'bata', vy0: 260 },
       { at: 3.0, xf: 0.5, kind: 'palu', vy0: 235 },
@@ -285,7 +298,7 @@ export const LEVELS: LevelDef[] = [
     sub: 'Level terakhir. Bertahanlah demi berita acara yang mulus.',
     duration: 25, ink: 620, gravity: 2150,
     spawns: [
-      { at: 0.5, xf: 0.5, kind: 'bata', vy0: 260 },
+      { at: 0.5, xf: 0.35, kind: 'bata', vy0: 260 },
       { at: 1.2, xf: 0.32, kind: 'palu', vy0: 240 },
       { at: 2.0, xf: 0.68, kind: 'palu', vy0: 240 },
       { at: 3.0, xf: 0.5, kind: 'ember', vy0: 210 },
@@ -336,6 +349,11 @@ export interface MandorState {
   thuds: ThudEvent[];
   hits: Vec[];
   lands: Vec[];
+  /**
+   * Telegraph: spawn events due within WARN_LEAD seconds (not yet spawned).
+   * The UI draws a growing ground shadow + plays a falling whistle for these.
+   */
+  pending: SpawnEvent[];
 }
 
 export function foremanPos(W: number, H: number): { x: number; y: number; r: number } {
@@ -362,7 +380,72 @@ export function createState(levelIndex: number, W: number, H: number): MandorSta
     thuds: [],
     hits: [],
     lands: [],
+    pending: [],
   };
+}
+
+/**
+ * Smooth a raw pointer polyline into a believable marker stroke:
+ *  1. drop near-duplicate points (< 3px apart),
+ *  2. two passes of Chaikin corner-cutting (kills touchscreen zigzag),
+ *  3. resample to ~8px spacing so the collider sees even segments.
+ * Always keeps the first and last points.
+ */
+export function smoothLine(raw: Vec[]): Vec[] {
+  if (raw.length < 3) return raw.map((p) => ({ ...p }));
+  // 1. dedupe
+  const pts: Vec[] = [raw[0]];
+  for (let i = 1; i < raw.length; i += 1) {
+    const prev = pts[pts.length - 1];
+    if (Math.hypot(raw[i].x - prev.x, raw[i].y - prev.y) >= 3) pts.push(raw[i]);
+  }
+  if (pts.length < 3) return pts.map((p) => ({ ...p }));
+
+  // 1b. moving average (window 3): bunuh jitter frekuensi-tinggi dulu
+  const ma: Vec[] = [{ ...pts[0] }];
+  for (let i = 1; i < pts.length - 1; i += 1) {
+    ma.push({
+      x: (pts[i - 1].x + pts[i].x + pts[i + 1].x) / 3,
+      y: (pts[i - 1].y + pts[i].y + pts[i + 1].y) / 3,
+    });
+  }
+  ma.push({ ...pts[pts.length - 1] });
+
+  // 2. Chaikin x2
+  let work = ma;
+  for (let pass = 0; pass < 2; pass += 1) {
+    const out: Vec[] = [work[0]];
+    for (let i = 0; i < work.length - 1; i += 1) {
+      const a = work[i];
+      const b = work[i + 1];
+      out.push(
+        { x: a.x * 0.75 + b.x * 0.25, y: a.y * 0.75 + b.y * 0.25 },
+        { x: a.x * 0.25 + b.x * 0.75, y: a.y * 0.25 + b.y * 0.75 },
+      );
+    }
+    out.push(work[work.length - 1]);
+    work = out;
+  }
+
+  // 3. resample: titik tiap ~8px sepanjang polyline (seragam, ujung ikut)
+  const res: Vec[] = [{ ...work[0] }];
+  let walked = 0;
+  let target = 8;
+  for (let i = 1; i < work.length; i += 1) {
+    const a = work[i - 1];
+    const b = work[i];
+    const segLen = Math.hypot(b.x - a.x, b.y - a.y);
+    while (walked + segLen >= target && segLen > 1e-9) {
+      const t = (target - walked) / segLen;
+      res.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+      target += 8;
+    }
+    walked += segLen;
+  }
+  const last = work[work.length - 1];
+  const tail = res[res.length - 1];
+  if (Math.hypot(last.x - tail.x, last.y - tail.y) > 1) res.push({ ...last });
+  return res;
 }
 
 export function lineLength(pts: Vec[]): number {
@@ -374,13 +457,15 @@ export function lineLength(pts: Vec[]): number {
 }
 
 /**
- * Replace the drawn line. Points beyond the ink budget are trimmed;
+ * Replace the drawn line. The raw pointer polyline is smoothed first
+ * (no jagged zigzag), then points beyond the ink budget are trimmed;
  * only the affordable prefix is kept.
  */
 export function setLine(state: MandorState, pts: Vec[]): void {
+  const smooth = smoothLine(pts);
   const kept: Vec[] = [];
   let used = 0;
-  for (const p of pts) {
+  for (const p of smooth) {
     if (kept.length === 0) {
       kept.push(p);
       continue;
@@ -538,6 +623,14 @@ export function step(state: MandorState, dt: number): void {
   while (state.spawnIdx < spawns.length && spawns[state.spawnIdx].at <= state.time) {
     spawnBody(state, spawns[state.spawnIdx]);
     state.spawnIdx += 1;
+  }
+
+  // telegraph: events due within WARN_LEAD (not yet spawned)
+  state.pending = [];
+  for (let i = state.spawnIdx; i < spawns.length; i += 1) {
+    const ev = spawns[i];
+    if (ev.at - state.time > WARN_LEAD) break;
+    if (ev.at > state.time) state.pending.push(ev);
   }
 
   // substep so fast bodies can't tunnel through the line

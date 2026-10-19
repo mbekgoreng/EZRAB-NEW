@@ -45,8 +45,19 @@ export interface FlyingItem {
 
 export const GRAVITY = 1500; // px/s^2
 export const SLICE_POINTS = 10;
+/**
+ * Toleransi bilah (px): swipe tidak harus TEPAT mengenai — ada
+ * "lebar pedang" 14px di tiap sisi. Kunci fairness untuk item cepat.
+ */
+export const BLADE_PAD = 14;
 export const START_LIVES = 3;
-export const COMBO_MIN = 3;
+/** Kombo mulai dari 2 tebasan dalam satu swipe (slow-mo + bonus). */
+export const COMBO_MIN = 2;
+/** Slow-mo saat kombo: timeScale & durasi (detik). */
+export const SLOWMO_SCALE = 0.3;
+export const SLOWMO_T = 0.3;
+/** 2 detik pertama run: tidak ada dinamit (fairness, hasil play-test). */
+export const GRACE_NO_DYNAMITE_T = 2.0;
 
 /** Particle splash palette per material kind. */
 export const SPLASH: Record<ItemKind, string[]> = {
@@ -77,20 +88,40 @@ export function pickKind(rng: Rng): ItemKind {
 
 let nextId = 1;
 
+export interface SpawnOpts {
+  /** true -> dinamit tidak boleh muncul (grace period awal run). */
+  noDinamit?: boolean;
+}
+
+/** pickKind tapi dinamit dikecualikan (untuk grace period). */
+export function pickKindSafe(rng: Rng): ItemKind {
+  let k = pickKind(rng);
+  let guard = 0;
+  while (k === 'dinamit' && guard < 32) {
+    k = pickKind(rng);
+    guard += 1;
+  }
+  return k === 'dinamit' ? 'bata' : k;
+}
+
 /**
  * Spawn one item below the screen, tossed upward.
  * vy is derived from gravity so the apex lands mid-screen regardless of H.
  */
-export function spawnItem(rng: Rng, W: number, H: number, speedMul = 1): FlyingItem {
-  const kind = pickKind(rng);
-  const r = kind === 'dinamit' ? 24 + rng() * 6 : 30 + rng() * 12;
-  const apex = H * (0.42 + rng() * 0.34); // how high above the bottom it flies
+export function spawnItem(rng: Rng, W: number, H: number, speedMul = 1, opts: SpawnOpts = {}): FlyingItem {
+  const kind = opts.noDinamit ? pickKindSafe(rng) : pickKind(rng);
+  // material BESAR & juicy; dinamit sedikit lebih kecil tapi tetap jelas
+  const r = kind === 'dinamit' ? 26 + rng() * 6 : 34 + rng() * 14;
+  // spawn bias ke tengah (fairness): satu sabetan horizontal di tengah
+  // layar mengenai sebagian besar item — seperti Fruit Ninja.
+  // apex TINGGI: waktu terbang ~2 detik, pemain sempat membidik.
+  const apex = H * (0.55 + rng() * 0.30); // how high above the bottom it flies
   return {
     id: nextId++,
     kind,
-    x: r + 12 + rng() * Math.max(1, W - 2 * (r + 12)),
+    x: W * (0.12 + rng() * 0.76),
     y: H + 40,
-    vx: (rng() - 0.5) * W * 0.5,
+    vx: (rng() - 0.5) * W * 0.35,
     vy: -Math.sqrt(2 * GRAVITY * apex) * speedMul,
     rot: rng() * Math.PI * 2,
     vr: (rng() - 0.5) * 6,
@@ -139,6 +170,7 @@ export interface SliceResult {
 /**
  * Which whole (non-half) items does the swipe segment (ax,ay)->(bx,by)
  * touch? A zero-length segment (tap) degrades to a point test.
+ * BLADE_PAD memberi toleransi "lebar pedang" agar item cepat tetap adil.
  */
 export function sliceCheck(
   items: FlyingItem[],
@@ -150,7 +182,7 @@ export function sliceCheck(
   const hit: FlyingItem[] = [];
   const rest: FlyingItem[] = [];
   for (const it of items) {
-    if (!it.half && distToSegment(it.x, it.y, ax, ay, bx, by) < it.r) {
+    if (!it.half && distToSegment(it.x, it.y, ax, ay, bx, by) < it.r + BLADE_PAD) {
       hit.push(it);
     } else {
       rest.push(it);
@@ -159,33 +191,48 @@ export function sliceCheck(
   return { hit, rest };
 }
 
-/** Split a sliced item into two flying halves. */
+/** Split a sliced item into two flying halves (juicy: tendangan kuat). */
 export function splitItem(item: FlyingItem, rng: Rng): FlyingItem[] {
-  const kick = 130 + rng() * 90;
+  const kick = 170 + rng() * 120;
   const mk = (side: 0 | 1, dir: number): FlyingItem => ({
     ...item,
     id: nextId++,
     half: true,
     side,
     vx: item.vx + dir * kick,
-    vy: item.vy - 150 - rng() * 80,
-    vr: item.vr + dir * (4 + rng() * 5),
-    life: 1.15,
+    vy: item.vy - 180 - rng() * 100,
+    vr: item.vr + dir * (5 + rng() * 6),
+    life: 1.25,
   });
   return [mk(0, -1), mk(1, 1)];
 }
 
-/** Difficulty wave: spawn interval shrinks 1.1s -> 0.45s, speed rises. */
+/**
+ * Difficulty wave (fairness-tuned): spawn interval 1.45s -> 0.6s menyusut
+ * PELAN, speed naik PELAN. Dengan miss = -1 nyawa, spawn agresif = mati
+ * sebelum bereaksi; curve ini memberi pemain ruang bernapas di awal.
+ */
 export function waveFor(elapsed: number): { interval: number; speedMul: number } {
   return {
-    interval: Math.max(0.45, 1.1 - elapsed * 0.009),
-    speedMul: 1 + Math.min(0.9, elapsed * 0.012),
+    interval: Math.max(0.6, 1.45 - elapsed * 0.007),
+    speedMul: 1 + Math.min(0.7, elapsed * 0.008),
   };
 }
+
+/** Batas item bersamaan di layar (anti-banjir miss). */
+export const MAX_ITEMS = 9;
 
 /** Combo bonus: >= COMBO_MIN slices in one swipe earns slices*5 extra. */
 export function comboBonus(slicesInSwipe: number): number {
   return slicesInSwipe >= COMBO_MIN ? slicesInSwipe * 5 : 0;
+}
+
+/**
+ * Nyawa hilang saat item jatuh tanpa dislice.
+ * Dinamit yang jatuh = beruntung (tidak ada penalti); material = -1 nyawa.
+ */
+export function missLivesLost(kind: ItemKind): number {
+  return kind === 'dinamit' ? 0 : 1;
 }
 
 /** Points for one clean slice (before combo bonus). */

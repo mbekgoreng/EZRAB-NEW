@@ -4,8 +4,8 @@
 import { strict as assert } from 'node:assert';
 import {
   mulberry32, spawnItem, stepItems, sliceCheck, splitItem,
-  waveFor, comboBonus, slicePoints, pickKind, SPLASH,
-  GRAVITY, START_LIVES, COMBO_MIN,
+  waveFor, comboBonus, slicePoints, pickKind, pickKindSafe, missLivesLost, SPLASH,
+  GRAVITY, START_LIVES, COMBO_MIN, SLOWMO_SCALE, SLOWMO_T, GRACE_NO_DYNAMITE_T, MAX_ITEMS, BLADE_PAD,
   type FlyingItem, type Rng,
 } from './logic';
 
@@ -59,6 +59,31 @@ test('dinamit kadang muncul (distribusi)', () => {
   for (let i = 0; i < 300; i += 1) kinds.add(pickKind(rng));
   assert.ok(kinds.has('dinamit'), 'dinamit tidak pernah muncul dalam 300 spawn');
   assert.equal(kinds.size, 5, 'harus ada 5 jenis item');
+});
+test('grace 2 detik: noDinamit -> dinamit TIDAK PERNAH muncul', () => {
+  const rng = mulberry32(42);
+  for (let i = 0; i < 300; i += 1) {
+    const it = spawnItem(rng, W, H, 1, { noDinamit: true });
+    assert.notEqual(it.kind, 'dinamit', `dinamit muncul saat grace (iter ${i})`);
+  }
+});
+test('pickKindSafe: tidak pernah dinamit', () => {
+  const rng = mulberry32(7);
+  for (let i = 0; i < 300; i += 1) {
+    assert.notEqual(pickKindSafe(rng), 'dinamit');
+  }
+});
+test('konstanta grace & slow-mo', () => {
+  assert.equal(GRACE_NO_DYNAMITE_T, 2.0);
+  assert.equal(SLOWMO_SCALE, 0.3);
+  assert.equal(SLOWMO_T, 0.3);
+});
+test('miss material = -1 nyawa; miss dinamit = 0 (beruntung)', () => {
+  assert.equal(missLivesLost('bata'), 1);
+  assert.equal(missLivesLost('kayu'), 1);
+  assert.equal(missLivesLost('semangka'), 1);
+  assert.equal(missLivesLost('beton'), 1);
+  assert.equal(missLivesLost('dinamit'), 0);
 });
 
 console.log('\n[2] fisika');
@@ -123,6 +148,16 @@ test('slice tepat di tepi radius masih kena', () => {
   const { hit } = sliceCheck([it], 100 - 31, 200, 100 - 31, 400);
   assert.equal(hit.length, 1);
 });
+test('BLADE_PAD: toleransi lebar pedang 14px (fairness item cepat)', () => {
+  assert.equal(BLADE_PAD, 14);
+  const it = mkItem({ x: 100, y: 300, r: 32 });
+  // jarak 40 = di luar radius tapi dalam radius+pad -> kena
+  const { hit } = sliceCheck([it], 100 - 40, 200, 100 - 40, 400);
+  assert.equal(hit.length, 1, 'dalam BLADE_PAD harus kena');
+  // jarak 60 = di luar radius+pad -> tidak kena
+  const { hit: hit2 } = sliceCheck([it], 100 - 60, 200, 100 - 60, 400);
+  assert.equal(hit2.length, 0, 'di luar BLADE_PAD tidak boleh kena');
+});
 
 console.log('\n[4] belahan');
 test('splitItem menghasilkan 2 half dengan velocity berlawanan', () => {
@@ -143,17 +178,24 @@ test('half kedaluwarsa sesuai life', () => {
 });
 
 console.log('\n[5] wave & skor');
-test('wave: interval menyusut 1.1 → 0.45, speed naik', () => {
+test('wave: interval 1.45 → 0.6 menyusut PELAN, speed naik PELAN (fair)', () => {
   const w0 = waveFor(0);
   const wLate = waveFor(300);
-  assert.ok(Math.abs(w0.interval - 1.1) < 1e-9, `interval awal=${w0.interval}`);
-  assert.ok(Math.abs(wLate.interval - 0.45) < 1e-9, `interval akhir=${wLate.interval}`);
+  assert.ok(Math.abs(w0.interval - 1.45) < 1e-9, `interval awal=${w0.interval}`);
+  assert.ok(Math.abs(wLate.interval - 0.6) < 1e-9, `interval akhir=${wLate.interval}`);
   assert.ok(wLate.speedMul > w0.speedMul, 'speed harus naik');
-  assert.ok(wLate.speedMul <= 1.9 + 1e-9, 'speed dibatasi');
+  assert.ok(wLate.speedMul <= 1.7 + 1e-9, 'speed dibatasi');
+  // tidak boleh terlalu agresif di awal: interval awal >= 1.3s
+  assert.ok(w0.interval >= 1.3, 'spawn awal terlalu cepat — pemain belum bereaksi');
 });
-test('kombo: <3 slice tanpa bonus, ≥3 dapat N*5', () => {
+test('MAX_ITEMS membatasi banjir item (anti miss massal)', () => {
+  assert.ok(MAX_ITEMS <= 10, `MAX_ITEMS=${MAX_ITEMS} terlalu banyak`);
+});
+test('kombo: <2 slice tanpa bonus, ≥2 dapat N*5 (slow-mo + popup)', () => {
+  assert.equal(COMBO_MIN, 2);
   assert.equal(comboBonus(0), 0);
-  assert.equal(comboBonus(2), 0);
+  assert.equal(comboBonus(1), 0);
+  assert.equal(comboBonus(2), 10);
   assert.equal(comboBonus(COMBO_MIN), COMBO_MIN * 5);
   assert.equal(comboBonus(5), 25);
 });

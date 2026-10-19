@@ -10,6 +10,7 @@
 import React, { Suspense, useState } from 'react';
 import { X, Gamepad2, ChevronRight, ArrowLeft, Loader2 } from 'lucide-react';
 import './game-space.css';
+import { ARCADE_GAMES } from './games/arcade/manifest';
 
 // Lazy: each game splits into its own chunk (2D canvas, no three.js).
 const BongkarRumah = React.lazy(() => import('./games/bongkar-rumah/BongkarRumah'));
@@ -24,6 +25,25 @@ const GabungBlok = React.lazy(() => import('./games/gabung-blok/GabungBlok'));
 const HeadSoccerMandor = React.lazy(() => import('./games/head-soccer-mandor/HeadSoccerMandor'));
 const BuildChallenge = React.lazy(() => import('./games/build-challenge/BuildChallenge'));
 
+// Arcade 50: komponen per game, tetap lazy per chunk.
+// 5 game memakai nama komponen Indonesia (reskin) — dipetakan eksplisit.
+const ARCADE_COMP: Record<string, string> = {
+  'connect-four': 'ArcadeSambungPipa',
+  'dice-roll': 'ArcadeDaduProyek',
+  'fruit-slicer': 'ArcadeTebasBambu',
+  'insect-catch': 'ArcadeTangkapPerkakas',
+  'shape-clicker': 'ArcadeKetokPaku',
+};
+function pascal(slug: string): string {
+  return slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+}
+const arcadeComp = (id: string): React.LazyExoticComponent<React.FC<{ onExit: () => void }>> => {
+  const name = ARCADE_COMP[id] ?? `Arcade${pascal(id)}`;
+  return React.lazy(() => import(`./games/arcade/${id}/${name}.tsx`)) as React.LazyExoticComponent<
+    React.FC<{ onExit: () => void }>
+  >;
+};
+
 interface Props {
   onClose: () => void;
 }
@@ -32,10 +52,12 @@ interface GameDef {
   id: string;
   title: string;
   tagline: string;
-  emoji: string;
+  emoji?: string;
+  art?: string;
   meta: string;
   theme: string;
   badge?: string;
+  cat: 'construction' | 'arcade';
   component: React.LazyExoticComponent<React.FC<{ onExit: () => void }>>;
 }
 
@@ -48,6 +70,7 @@ const GAMES: GameDef[] = [
     meta: '4 level · kombo runtuh · pelepas stres',
     theme: 'gs-card-bongkar',
     badge: 'PELEPAS STRES',
+    cat: 'construction',
     component: BongkarRumah,
   },
   {
@@ -57,6 +80,7 @@ const GAMES: GameDef[] = [
     emoji: '🪖',
     meta: 'Medali tiap 10 gate · best score',
     theme: 'gs-card-flappy',
+    cat: 'construction',
     component: FlappyMandor,
   },
   {
@@ -66,6 +90,7 @@ const GAMES: GameDef[] = [
     emoji: '🎯',
     meta: '10 level · bintang 1–3',
     theme: 'gs-card-ketapel',
+    cat: 'construction',
     component: KetapelKonstruksi,
   },
   {
@@ -75,6 +100,7 @@ const GAMES: GameDef[] = [
     emoji: '🏃',
     meta: 'Endless · kumpulkan helm',
     theme: 'gs-card-lari',
+    cat: 'construction',
     component: LariProyek,
   },
   {
@@ -84,6 +110,7 @@ const GAMES: GameDef[] = [
     emoji: '🧩',
     meta: '4 difficulty · best time',
     theme: 'gs-card-sudoku',
+    cat: 'construction',
     component: SudokuTukang,
   },
   {
@@ -93,6 +120,7 @@ const GAMES: GameDef[] = [
     emoji: '✏️',
     meta: '15 level · fisika garis',
     theme: 'gs-card-selamat',
+    cat: 'construction',
     component: SelamatkanMandor,
   },
   {
@@ -102,6 +130,7 @@ const GAMES: GameDef[] = [
     emoji: '🍉',
     meta: 'Kombo · 3 nyawa',
     theme: 'gs-card-tebas',
+    cat: 'construction',
     component: TebasMaterial,
   },
   {
@@ -111,6 +140,7 @@ const GAMES: GameDef[] = [
     emoji: '🔤',
     meta: '60 level · kosakata proyek',
     theme: 'gs-card-kata',
+    cat: 'construction',
     component: SambungKata,
   },
   {
@@ -120,6 +150,7 @@ const GAMES: GameDef[] = [
     emoji: '🧱',
     meta: '8 tier · best score',
     theme: 'gs-card-gabung',
+    cat: 'construction',
     component: GabungBlok,
   },
   {
@@ -129,6 +160,7 @@ const GAMES: GameDef[] = [
     emoji: '⚽',
     meta: 'Turnamen 5 level',
     theme: 'gs-card-soccer',
+    cat: 'construction',
     component: HeadSoccerMandor,
   },
   {
@@ -138,12 +170,40 @@ const GAMES: GameDef[] = [
     emoji: '🏗️',
     meta: '3 level • ±5 menit • mouse & sentuh',
     theme: 'gs-card-build',
+    cat: 'construction',
     component: BuildChallenge,
   },
+  // ---- Arcade 50 (reskin total tema konstruksi, dari manifest) ----
+  ...ARCADE_GAMES.map((g) => ({
+    id: `arcade-${g.id}`,
+    title: g.title,
+    tagline: g.desc,
+    art: g.art,
+    meta: 'Arcade · best score tersimpan',
+    theme: 'gs-card-arcade',
+    cat: 'arcade' as const,
+    component: arcadeComp(g.id),
+  })),
+];
+
+type Tab = 'all' | 'construction' | 'arcade';
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'all', label: 'Semua' },
+  { id: 'construction', label: 'Konstruksi' },
+  { id: 'arcade', label: 'Arcade' },
 ];
 
 export const GameSpaceOverlay: React.FC<Props> = ({ onClose }) => {
   const [activeGame, setActiveGame] = useState<GameDef | null>(null);
+  const [tab, setTab] = useState<Tab>('all');
+  const [query, setQuery] = useState('');
+
+  const q = query.trim().toLowerCase();
+  const visible = GAMES.filter(
+    (g) =>
+      (tab === 'all' || g.cat === tab) &&
+      (!q || g.title.toLowerCase().includes(q) || g.tagline.toLowerCase().includes(q)),
+  );
 
   return (
     <div
@@ -179,13 +239,41 @@ export const GameSpaceOverlay: React.FC<Props> = ({ onClose }) => {
         {!activeGame ? (
           <div className="gs-menu">
             <p className="gs-menu-intro">
-              Istirahat sebentar dari hitung-hitungan? Pilih game di bawah ini. Skor tersimpan
-              lokal di perangkatmu — tidak memakai AI credits.
+              Istirahat sebentar dari hitung-hitungan? {GAMES.length} game menunggu.
+              Skor tersimpan lokal di perangkatmu — tidak memakai AI credits.
             </p>
+            <div className="gs-tabs" role="tablist" aria-label="Kategori game">
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  role="tab"
+                  aria-selected={tab === t.id}
+                  className={`gs-tab${tab === t.id ? ' gs-tab-active' : ''}`}
+                  onClick={() => setTab(t.id)}
+                >
+                  {t.label}
+                  <span className="gs-tab-count">
+                    {t.id === 'all' ? GAMES.length : GAMES.filter((g) => g.cat === t.id).length}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <input
+              className="gs-search"
+              type="search"
+              placeholder="Cari game… (mis. mandor, bata, puzzle)"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Cari game"
+            />
             <div className="gs-cards">
-              {GAMES.map((g) => (
+              {visible.map((g) => (
                 <button key={g.id} className={`gs-card ${g.theme}`} onClick={() => setActiveGame(g)}>
-                  <span className="gs-card-emoji">{g.emoji}</span>
+                  {g.art ? (
+                    <img className="gs-card-art" src={g.art} alt="" loading="lazy" />
+                  ) : (
+                    <span className="gs-card-emoji">{g.emoji}</span>
+                  )}
                   <span className="gs-card-body">
                     <span className="gs-card-title-row">
                       <span className="gs-card-title">{g.title}</span>
@@ -197,6 +285,9 @@ export const GameSpaceOverlay: React.FC<Props> = ({ onClose }) => {
                   <span className="gs-card-cta">Main <ChevronRight size={16} /></span>
                 </button>
               ))}
+              {visible.length === 0 && (
+                <p className="gs-empty">Tidak ketemu — coba kata kunci lain.</p>
+              )}
             </div>
             <p className="gs-menu-note">🎮 Berjalan 100% lokal di perangkatmu — tanpa AI, tanpa kuota.</p>
           </div>

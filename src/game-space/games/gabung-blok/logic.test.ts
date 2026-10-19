@@ -4,6 +4,7 @@
 import { strict as assert } from 'node:assert';
 import {
   move, spawnRandom, canMove, emptyCells, newBoard, tierScore, MAX_TIER, Dir,
+  pushUndo, popUndo, type UndoEntry,
 } from './logic';
 
 let passed = 0;
@@ -148,6 +149,117 @@ for (const d of ['left', 'right', 'up', 'down'] as Dir[]) {
     assert.equal(move(b, d).moved, false);
   });
 }
+
+console.log('\n[7] undo');
+test('pushUndo/popUndo: LIFO, tidak mutasi argumen', () => {
+  const b1 = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  const b2 = [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  let st: UndoEntry[] = [];
+  st = pushUndo(st, b1, 10);
+  st = pushUndo(st, b2, 30);
+  assert.equal(st.length, 2);
+  const r1 = popUndo(st);
+  assert.deepEqual(r1.entry?.board, b2);
+  assert.equal(r1.entry?.score, 30);
+  assert.equal(r1.stack.length, 1);
+  // argumen asli tidak termutasi
+  assert.equal(st.length, 2);
+  const r2 = popUndo(r1.stack);
+  assert.deepEqual(r2.entry?.board, b1);
+  assert.equal(r2.entry?.score, 10);
+  const r3 = popUndo(r2.stack);
+  assert.equal(r3.entry, null);
+  assert.deepEqual(r3.stack, []);
+});
+test('pushUndo menyalin board (snapshot beku)', () => {
+  const b = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  const st = pushUndo([], b, 0);
+  b[0] = 9; // mutasi setelah push
+  const { entry } = popUndo(st);
+  assert.equal(entry?.board[0], 1, 'snapshot ikut berubah!');
+});
+test('pushUndo dibatasi cap (default 40)', () => {
+  let st: UndoEntry[] = [];
+  const b = new Array(16).fill(0);
+  for (let k = 0; k < 55; k += 1) st = pushUndo(st, b, k);
+  assert.equal(st.length, 40);
+  assert.equal(st[0].score, 15); // 15 entri tertua dibuang
+  assert.equal(st[39].score, 54);
+});
+test('undo mengembalikan skor & board pra-gerakan (simulasi komponen)', () => {
+  const rng = () => 0.5;
+  let board = newBoard(rng);
+  let score = 0;
+  let hist: UndoEntry[] = [];
+  // mainkan 5 gerakan legal
+  const dirs: Dir[] = ['left', 'up', 'right', 'down', 'left'];
+  let played = 0;
+  for (const d of dirs) {
+    const r = move(board, d);
+    if (!r.moved) continue;
+    hist = pushUndo(hist, board, score);
+    board = r.board;
+    score += r.gained;
+    spawnRandom(board, rng);
+    played += 1;
+  }
+  assert.ok(played > 0, 'tidak ada gerakan legal?');
+  const before = { board: board.slice(), score };
+  const { entry, stack } = popUndo(hist);
+  assert.ok(entry !== null);
+  board = entry.board;
+  score = entry.score;
+  hist = stack;
+  void hist;
+  // setelah undo, board & skor == snapshot pra-gerakan terakhir
+  assert.notDeepEqual(board, before.board, 'board tidak berubah setelah undo?');
+  assert.ok(score <= before.score, 'skor undo lebih besar dari sebelum undo?');
+});
+
+console.log('\n[8] stress: 150 game × gerakan acak (tanpa crash, tanpa stuck)');
+test('ratusan gerakan acak: invarian terjaga, game-over tepat', () => {
+  const mulberry = (seed: number): (() => number) => {
+    let a = seed >>> 0;
+    return () => {
+      a |= 0; a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  };
+  const DIRS: Dir[] = ['left', 'right', 'up', 'down'];
+  let moves = 0;
+  let overs = 0;
+  for (let g = 0; g < 150; g += 1) {
+    const rng = mulberry(9000 + g);
+    let board = newBoard(rng);
+    let guard = 0;
+    for (;;) {
+      guard += 1;
+      assert.ok(guard < 3000, 'stuck: 3000 iterasi tanpa game-over');
+      assert.equal(board.length, 16);
+      for (const v of board) assert.ok(v >= 0 && v <= MAX_TIER + 1, `tier liar: ${v}`);
+      const dir = DIRS[Math.floor(rng() * 4)];
+      const snapshot = board.slice();
+      const r = move(board, dir);
+      assert.deepEqual(board, snapshot, 'move() memutasi input!');
+      assert.ok(r.gained >= 0, 'skor negatif');
+      board = r.board;
+      if (!r.moved) {
+        assert.deepEqual(board, snapshot, 'no-op move mengubah papan!');
+        continue;
+      }
+      moves += 1;
+      spawnRandom(board, rng);
+      if (!canMove(board)) {
+        overs += 1;
+        break; // game-over tepat: tidak ada langkah legal tersisa
+      }
+    }
+  }
+  assert.ok(moves > 5000, `gerakan terlalu sedikit: ${moves}`);
+  assert.equal(overs, 150, 'tidak semua game berakhir game-over');
+});
 
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed > 0) {

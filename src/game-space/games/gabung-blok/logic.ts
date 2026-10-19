@@ -145,3 +145,36 @@ export function newBoard(rng: Rng = Math.random): number[] {
   spawnRandom(b, rng);
   return b;
 }
+
+/* ---------------- undo ---------------- */
+
+export interface UndoEntry {
+  board: number[];
+  score: number;
+}
+
+/**
+ * Simpan snapshot sebelum gerakan. Pure: tidak memutasi argumen.
+ * Dibatasi `cap` entri terakhir (default 40).
+ */
+export function pushUndo(
+  stack: readonly UndoEntry[],
+  board: number[],
+  score: number,
+  cap = 40,
+): UndoEntry[] {
+  const next: UndoEntry[] = [...stack, { board: [...board], score }];
+  return next.length > cap ? next.slice(next.length - cap) : next;
+}
+
+/** Ambil snapshot terakhir. Pure: tidak memutasi argumen. */
+export function popUndo(stack: readonly UndoEntry[]): {
+  entry: UndoEntry | null;
+  stack: UndoEntry[];
+} {
+  if (stack.length === 0) return { entry: null, stack: [] };
+  return {
+    entry: { board: [...stack[stack.length - 1].board], score: stack[stack.length - 1].score },
+    stack: stack.slice(0, -1),
+  };
+}

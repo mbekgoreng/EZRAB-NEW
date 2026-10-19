@@ -1,8 +1,15 @@
 /**
  * Flappy Mandor — pure game logic (tanpa DOM/window).
  *
- * Mandor berhelm terbang melewati celah antara crane (atas) dan
- * tumpukan balok (bawah). Fisika, tabrakan, dan kesulitan murni di sini.
+ * Mandor berhelm terbang melewati celah struktur crane kuning (atas) dan
+ * menara crane (bawah). Fisika, tabrakan, dan kesulitan murni di sini.
+ *
+ * Fairness rules (hasil play-test):
+ *  - phase 'ready': burung hover/bobbing, tidak jatuh, gate diam.
+ *    Tap PERTAMA = flap SEKALIGUS startRun().
+ *  - GRACE_T detik setelah run mulai: tidak ada tabrakan gate.
+ *  - Gate pertama cukup jauh: mustahil tabrakan sebelum ~2.4 detik.
+ *  - Difficulty curve halus: gap & speed berubah bertahap, tanpa loncat.
  */
 
 /* ---------------- constants ---------------- */
@@ -10,8 +17,14 @@
 export const GRAVITY = 1500; // px/s^2
 export const FLAP_V = 430; // kecepatan ke atas saat tap
 export const BIRD_R = 14;
-export const GATE_W = 64;
-export const GATE_SPACING = 260;
+export const GATE_W = 72;
+export const GATE_SPACING = 270;
+/** Grace period setelah run mulai: tabrakan gate diabaikan (detik). */
+export const GRACE_T = 1.0;
+/** Buffer input flap: tap sedikit lebih awal tetap dihitung (detik). */
+export const FLAP_BUFFER_S = 0.1;
+/** Jarak gate pertama dari kiri layar (kelipatan W) — anti-bunuh-dini. */
+export const FIRST_GATE_X = 1.45;
 
 /* ---------------- seeded rng ---------------- */
 
@@ -34,15 +47,21 @@ export interface Difficulty {
   speed: number;
 }
 
-/** Celah menyempit & kecepatan naik seiring gate terlewati. */
+/**
+ * Celah menyempit & kecepatan naik BERTAHAP seiring gate terlewati.
+ * gapH: 214 -> 150 (turun 1.4/gate). speed: 172 -> naik 2.2/gate.
+ */
 export function difficulty(passed: number): Difficulty {
   return {
-    gapH: Math.max(150, 210 - passed * 2),
-    speed: 180 + passed * 3,
+    gapH: Math.max(150, 214 - passed * 1.4),
+    speed: 172 + passed * 2.2,
   };
 }
 
 /* ---------------- entities ---------------- */
+
+/** 'ready' = tap-untuk-mulai (hover, gate diam). 'play' = run berjalan. */
+export type Phase = 'ready' | 'play';
 
 export interface Bird {
   x: number;
@@ -61,11 +80,15 @@ export interface Gate {
 }
 
 export interface FlapState {
+  phase: Phase;
   bird: Bird;
   gates: Gate[];
   passed: number;
   alive: boolean;
+  /** waktu run (detik). 0 selama phase 'ready'. */
   t: number;
+  /** jam animasi bobbing selama 'ready'. */
+  readyT: number;
   W: number;
   H: number;
   groundY: number;
@@ -121,24 +144,63 @@ export function createGate(
   return { x, gapY, gapH, w: GATE_W, passed: false };
 }
 
+/**
+ * State awal SELALU 'ready': burung hover di tengah, gate diam,
+ * tidak ada fisika jatuh. Tap pertama memanggil startRun().
+ */
 export function createState(seed: number, W: number, H: number): FlapState {
   const rng = mulberry32(seed);
   const groundY = H - 64;
   const d = difficulty(0);
   const gates: Gate[] = [];
-  let x = W + 120;
+  let x = W * FIRST_GATE_X;
   for (let i = 0; i < 3; i += 1) {
     gates.push(createGate(rng, x, d.gapH, H, groundY));
     x += GATE_SPACING;
   }
   return {
+    phase: 'ready',
     bird: createBird(W * 0.32, H * 0.42),
     gates,
     passed: 0,
     alive: true,
     t: 0,
+    readyT: 0,
     W, H, groundY,
   };
+}
+
+/**
+ * Majukan animasi idle selama 'ready': bobbing halus, gate TETAP diam,
+ * burung TIDAK jatuh. Dipanggil tiap frame saat phase === 'ready'.
+ */
+export function updateReady(s: FlapState, dt: number): void {
+  if (s.phase !== 'ready') return;
+  s.readyT += dt;
+  // anchor di tengah layar; bobbing dihitung saat render dari readyT.
+  // Pastikan tidak ada sisa velocity jatuh:
+  s.bird.vy = 0;
+}
+
+/** Offset bobbing (px) untuk render selama 'ready'. */
+export function readyBobOffset(s: FlapState): number {
+  return Math.sin(s.readyT * 2.6) * 10;
+}
+
+/**
+ * Tap PERTAMA: mulai run SEKALIGUS flap. Setelah ini phase === 'play'
+ * dan updateState() menjalankan fisika + grace period.
+ */
+export function startRun(s: FlapState): void {
+  if (s.phase !== 'ready') return;
+  s.phase = 'play';
+  s.t = 0;
+  flap(s.bird);
+}
+
+/** Apakah tabrakan gate sedang di-grace (detik pertama run)? */
+export function inGrace(s: FlapState): boolean {
+  return s.phase === 'play' && s.t < GRACE_T;
 }
 
 export interface StepResult {
@@ -147,12 +209,13 @@ export interface StepResult {
 }
 
 /**
- * Majukan satu frame. Menggerakkan gate, cek skor & tabrakan.
+ * Majukan satu frame saat 'play'. Menggerakkan gate, cek skor & tabrakan.
+ * Selama GRACE_T pertama: tabrakan gate diabaikan (fairness).
  * rng dipakai untuk gate baru (inject di test).
  */
 export function updateState(s: FlapState, dt: number, rng: () => number): StepResult {
   const res: StepResult = { scored: false, died: null };
-  if (!s.alive) return res;
+  if (!s.alive || s.phase !== 'play') return res;
   s.t += dt;
 
   stepBird(s.bird, dt);
@@ -176,7 +239,8 @@ export function updateState(s: FlapState, dt: number, rng: () => number): StepRe
     b.y = b.r;
     b.vy = Math.max(b.vy, 0);
   }
-  // tanah: mati
+  // tanah: mati (berlaku juga saat grace — pemain yang memulai run
+  // sudah bereaksi lewat tap pertama)
   if (b.y + b.r >= s.groundY) {
     b.y = s.groundY - b.r;
     s.alive = false;
@@ -190,6 +254,7 @@ export function updateState(s: FlapState, dt: number, rng: () => number): StepRe
       s.passed += 1;
       res.scored = true;
     }
+    if (inGrace(s)) continue; // grace: lewati cek tabrakan gate
     if (g.x - b.r < b.x && b.x < g.x + g.w + b.r) {
       const topH = g.gapY - g.gapH / 2;
       const botY = g.gapY + g.gapH / 2;

@@ -11,6 +11,7 @@ import {
   levelComplete, nextPosition, appendSelection, HINTS_PER_PACK, PACK_NAMES,
   type Level,
 } from './logic';
+import { drawNoise, hashRand } from './fx';
 
 const FONT = "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif";
 const BK = bestKey('sambung-kata', 'best');
@@ -73,18 +74,22 @@ function computeLayout(W: number, H: number, n: number, maxLen: number, wordCoun
   // wheel gets whatever vertical space remains below the slots
   const wheelTop = slotTop + slotH + 12;
   const wheelAvail = Math.max(150, H - 10 - wheelTop);
-  const R = Math.max(64, Math.min(W * 0.30, wheelAvail / 2 - 36));
+  const btnR = 27;
+  const nr = 30; // fixed node radius target; R adapts
+  // width budget: wheel + nodes + side gap + buttons must fit on screen
+  const sidePad = 40; // node-edge → button-center clearance (no overlap on 390px)
+  const maxRWidth = Math.max(64, (W - 16) / 2 - nr - sidePad - btnR);
+  const R = Math.max(64, Math.min(W * 0.30, wheelAvail / 2 - 36, maxRWidth));
   const cy = wheelTop + wheelAvail / 2;
-  const nr = clamp(Math.min(30, (Math.PI * R) / Math.max(4, n) - 4), 18, 30);
+  const nodeR = clamp(Math.min(30, (Math.PI * R) / Math.max(4, n) - 4), 18, 30);
   const nodePos = Array.from({ length: n }, (_, i) => {
     const a = -Math.PI / 2 + (i * TAU) / n;
     return { x: cx + Math.cos(a) * R, y: cy + Math.sin(a) * R };
   });
-  const btnR = 27;
   return {
-    cx, cy, R, nr, nodePos,
-    okPos: { x: Math.min(W - btnR - 8, cx + R + nr + 30), y: cy },
-    clrPos: { x: Math.max(btnR + 8, cx - R - nr - 30), y: cy },
+    cx, cy, R, nr: nodeR, nodePos,
+    okPos: { x: cx + R + nodeR + sidePad, y: cy },
+    clrPos: { x: cx - R - nodeR - sidePad, y: cy },
     btnR,
     slotTop,
     bw,
@@ -130,46 +135,107 @@ function drawBackground(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   vg.addColorStop(1, 'rgba(4,8,16,0.42)');
   ctx.fillStyle = vg;
   ctx.fillRect(0, 0, W, H);
+  drawNoise(ctx, W, H, '#bcd6f5', 0.05);
 }
 
 function drawNode(
   ctx: CanvasRenderingContext2D, x: number, y: number, nr: number,
   ch: string, selected: boolean, order: number,
 ): void {
-  // outer metal ring
+  // selected: warm outer glow
+  if (selected) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(253,224,71,0.85)';
+    ctx.shadowBlur = 22;
+    ctx.fillStyle = 'rgba(253,224,71,0.25)';
+    ctx.beginPath();
+    ctx.arc(x, y, nr + 6, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  }
+  // outer metal ring (brushed)
   const ring = ctx.createLinearGradient(x - nr, y - nr, x + nr, y + nr);
-  ring.addColorStop(0, selected ? '#fde047' : '#8fa8c4');
-  ring.addColorStop(1, selected ? '#b45309' : '#4a6076');
+  ring.addColorStop(0, selected ? '#fde047' : '#9db2ca');
+  ring.addColorStop(0.5, selected ? '#d97706' : '#5f748c');
+  ring.addColorStop(1, selected ? '#b45309' : '#43566c');
   ctx.fillStyle = ring;
   ctx.beginPath();
   ctx.arc(x, y, nr, 0, TAU);
   ctx.fill();
+  // brushed-metal ticks around the ring (deterministic)
+  ctx.save();
+  ctx.strokeStyle = selected ? 'rgba(120,53,15,0.5)' : 'rgba(230,240,250,0.28)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let k = 0; k < 28; k += 1) {
+    const a = (k / 28) * TAU + (ch.charCodeAt(0) % 7) * 0.05;
+    const r1 = nr - 2.5;
+    const r2 = nr - 7;
+    ctx.moveTo(x + Math.cos(a) * r1, y + Math.sin(a) * r1);
+    ctx.lineTo(x + Math.cos(a) * r2, y + Math.sin(a) * r2);
+  }
+  ctx.stroke();
+  ctx.restore();
   // wooden face
   const face = ctx.createRadialGradient(x - nr * 0.3, y - nr * 0.35, nr * 0.2, x, y, nr * 0.85);
-  face.addColorStop(0, selected ? '#ffe9a8' : '#e8d9b8');
+  face.addColorStop(0, selected ? '#ffe9a8' : '#f0e2c0');
+  face.addColorStop(0.6, selected ? '#f5c452' : '#d9bd85');
   face.addColorStop(1, selected ? '#e0a83c' : '#b99a63');
   ctx.fillStyle = face;
   ctx.beginPath();
   ctx.arc(x, y, nr - 5, 0, TAU);
   ctx.fill();
+  // wood grain: 3 faint arcs (stable per letter)
+  ctx.save();
+  ctx.strokeStyle = selected ? 'rgba(146,64,14,0.35)' : 'rgba(90,60,20,0.28)';
+  ctx.lineWidth = 1.2;
+  const gr = hashRand(ch.charCodeAt(0) * 131 + 7);
+  for (let k = 0; k < 3; k += 1) {
+    const rr2 = nr * (0.28 + k * 0.2);
+    const a0 = gr() * TAU;
+    ctx.beginPath();
+    ctx.arc(x, y, rr2, a0, a0 + Math.PI * (0.7 + gr() * 0.6));
+    ctx.stroke();
+  }
+  ctx.restore();
   ctx.lineWidth = 2;
   ctx.strokeStyle = 'rgba(90,60,20,0.5)';
+  ctx.beginPath();
+  ctx.arc(x, y, nr - 5, 0, TAU);
   ctx.stroke();
-  // letter
-  ctx.fillStyle = selected ? '#5b3a05' : '#3d2c12';
-  ctx.font = `900 ${Math.round(nr * 0.95)}px ${FONT}`;
+  // top gloss crescent on the wood
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.ellipse(x - nr * 0.18, y - nr * 0.42, nr * 0.34, nr * 0.16, -0.5, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+  // embossed letter: light underlay, dark ink on top
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
+  ctx.font = `900 ${Math.round(nr * 0.95)}px ${FONT}`;
+  ctx.fillStyle = selected ? 'rgba(255,248,225,0.9)' : 'rgba(255,250,235,0.55)';
+  ctx.fillText(ch, x, y + 2.5);
+  ctx.fillStyle = selected ? '#5b3a05' : '#3d2c12';
   ctx.fillText(ch, x, y + 1);
   if (selected) {
-    // order badge
-    ctx.fillStyle = '#b45309';
+    // order badge with its own mini 3D
+    const bx = x + nr * 0.62;
+    const by = y - nr * 0.62;
+    const bg2 = ctx.createLinearGradient(0, by - 10, 0, by + 10);
+    bg2.addColorStop(0, '#fbbf24');
+    bg2.addColorStop(1, '#b45309');
+    ctx.fillStyle = bg2;
     ctx.beginPath();
-    ctx.arc(x + nr * 0.62, y - nr * 0.62, 10, 0, TAU);
+    ctx.arc(bx, by, 10, 0, TAU);
     ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.stroke();
     ctx.fillStyle = '#fff';
     ctx.font = `900 12px ${FONT}`;
-    ctx.fillText(String(order + 1), x + nr * 0.62, y - nr * 0.62 + 1);
+    ctx.fillText(String(order + 1), bx, by + 1);
   }
 }
 
@@ -177,15 +243,42 @@ function drawCircleBtn(
   ctx: CanvasRenderingContext2D, x: number, y: number, r: number,
   bg1: string, bg2: string, label: string, labelColor: string,
 ): void {
+  // drop shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.45)';
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetY = 4;
   const g = ctx.createLinearGradient(x, y - r, x, y + r);
   g.addColorStop(0, bg1);
+  g.addColorStop(0.55, bg2);
   g.addColorStop(1, bg2);
   ctx.fillStyle = g;
   ctx.beginPath();
   ctx.arc(x, y, r, 0, TAU);
   ctx.fill();
+  ctx.restore();
+  // rim light + bottom weight
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, TAU);
+  ctx.clip();
+  const rim = ctx.createLinearGradient(0, y - r, 0, y + r);
+  rim.addColorStop(0, 'rgba(255,255,255,0.35)');
+  rim.addColorStop(0.35, 'rgba(255,255,255,0)');
+  rim.addColorStop(1, 'rgba(0,0,0,0.22)');
+  ctx.fillStyle = rim;
+  ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  // top gloss crescent
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.ellipse(x, y - r * 0.52, r * 0.52, r * 0.22, 0, 0, TAU);
+  ctx.fill();
+  ctx.restore();
   ctx.lineWidth = 2.5;
   ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, TAU);
   ctx.stroke();
   ctx.fillStyle = labelColor;
   if (label === 'back') {
@@ -499,10 +592,22 @@ export default function SambungKata({ onExit }: { onExit: () => void }): React.J
           ctx.fill();
           ctx.lineWidth = 2;
           ctx.stroke();
+          if (isFound) {
+            // gloss strip clipped to the tile
+            ctx.save();
+            ctx.clip();
+            ctx.fillStyle = 'rgba(255,255,255,0.30)';
+            ctx.fillRect(bx, rowY, bw, bh * 0.32);
+            ctx.restore();
+          }
           const ch = isFound ? word[li] : s.hints[word] && li === 0 ? s.hints[word] : '';
           if (ch) {
-            ctx.fillStyle = isFound ? '#4a2c00' : 'rgba(253,224,71,0.55)';
             ctx.font = `900 ${Math.round(bw * 0.62)}px ${FONT}`;
+            if (isFound) {
+              ctx.fillStyle = 'rgba(255,250,230,0.85)';
+              ctx.fillText(ch, bx + bw / 2, rowY + bh / 2 + 2);
+            }
+            ctx.fillStyle = isFound ? '#4a2c00' : 'rgba(253,224,71,0.55)';
             ctx.fillText(ch, bx + bw / 2, rowY + bh / 2 + 1);
           } else if (!isFound) {
             ctx.fillStyle = 'rgba(150,190,230,0.25)';

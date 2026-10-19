@@ -14,6 +14,7 @@ import {
   DIFF_LABEL, CLUES, MAX_HINTS,
   type Difficulty, type SudokuState,
 } from './logic';
+import { drawNoise, drawBlueprintGrid } from './fx';
 
 type Screen = 'diff' | 'loading' | 'tutorial' | 'play' | 'win' | 'lose';
 
@@ -301,6 +302,16 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
 
   return (
     <div ref={wrapRef} style={styles.wrap}>
+      {/* 3D keycap skin: layered gradient + top highlight + bottom edge (pure CSS, no assets) */}
+      <style>{`
+        .stk-padbtn{background:linear-gradient(180deg,#ffffff 0%,#edf2fb 55%,#d8e3f6 100%);border:1px solid #b2c0d9;box-shadow:0 3px 0 #a6b6d2,0 8px 16px rgba(30,58,138,.16),inset 0 1px 0 #ffffff;transition:transform .06s ease,box-shadow .06s ease,opacity .15s ease;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+        .stk-padbtn:active{transform:translateY(3px);box-shadow:0 0 0 #a6b6d2,0 3px 8px rgba(30,58,138,.16),inset 0 1px 0 #ffffff}
+        .stk-toolbtn{background:linear-gradient(180deg,#ffffff 0%,#edf2fb 55%,#d8e3f6 100%);border:1px solid #b2c0d9;box-shadow:0 3px 0 #a6b6d2,0 6px 12px rgba(30,58,138,.12),inset 0 1px 0 #ffffff;transition:transform .06s ease,box-shadow .06s ease,background .15s ease;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+        .stk-toolbtn:active{transform:translateY(3px);box-shadow:0 0 0 #a6b6d2,0 2px 6px rgba(30,58,138,.12),inset 0 1px 0 #ffffff}
+        .stk-toolbtn.on{background:linear-gradient(180deg,#3b78f5 0%,#1d4ed8 60%,#1a44b8 100%);border-color:#1e40af;color:#ffffff;box-shadow:0 3px 0 #162e75,0 6px 14px rgba(29,78,216,.40),inset 0 1px 0 rgba(255,255,255,.40)}
+        .stk-diffbtn{background:linear-gradient(180deg,#ffffff 0%,#f4f7fc 60%,#e6ecf7 100%);border:2px solid #dbe3f2;box-shadow:0 3px 0 #c3cede,0 8px 16px rgba(30,58,138,.10),inset 0 1px 0 #ffffff;transition:transform .06s ease,box-shadow .06s ease;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+        .stk-diffbtn:active{transform:translateY(3px);box-shadow:0 0 0 #c3cede,0 3px 8px rgba(30,58,138,.10),inset 0 1px 0 #ffffff}
+      `}</style>
       {/* ===== header ===== */}
       <div style={styles.topbar}>
         <button style={styles.iconBtn} onClick={onExit} title="Keluar">✕</button>
@@ -346,6 +357,7 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
               <button
                 key={n}
+                className="stk-padbtn"
                 style={{ ...styles.padBtn, opacity: counts[n - 1] >= 9 ? 0.35 : 1 }}
                 onClick={() => pressDigit(n)}
               >
@@ -354,14 +366,16 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
             ))}
           </div>
           <div style={styles.toolRow}>
-            <button style={{ ...styles.toolBtn, flex: 1 }} onClick={pressErase}>⌫ Hapus</button>
+            <button className="stk-toolbtn" style={{ ...styles.toolBtn, flex: 1 }} onClick={pressErase}>⌫ Hapus</button>
             <button
-              style={{ ...styles.toolBtn, flex: 1, background: noteMode ? '#1d4ed8' : '#ffffff', color: noteMode ? '#fff' : '#1e293b' }}
+              className={noteMode ? 'stk-toolbtn on' : 'stk-toolbtn'}
+              style={{ ...styles.toolBtn, flex: 1 }}
               onClick={() => { apiRef.current?.sfx.click(); setNoteMode((m) => !m); }}
             >
               ✏️ Catatan {noteMode ? 'ON' : 'OFF'}
             </button>
             <button
+              className="stk-toolbtn"
               style={{ ...styles.toolBtn, flex: 1, opacity: hud.hintsLeft > 0 ? 1 : 0.4 }}
               onClick={pressHint}
             >
@@ -382,7 +396,7 @@ export default function SudokuTukang({ onExit }: { onExit: () => void }) {
           <p style={styles.cardText}>Pilih tingkat kesulitan gambar:</p>
           <div style={styles.diffGrid}>
             {DIFFS.map((d) => (
-              <button key={d} style={styles.diffBtn} onClick={() => chooseDiff(d)}>
+              <button key={d} className="stk-diffbtn" style={styles.diffBtn} onClick={() => chooseDiff(d)}>
                 <div style={{ fontSize: 20 }}>{DIFF_EMOJI[d]}</div>
                 <div style={{ fontWeight: 800 }}>{DIFF_LABEL[d]}</div>
                 <div style={{ fontSize: 11, color: '#64748b' }}>{CLUES[d]} petunjuk</div>
@@ -491,13 +505,15 @@ function drawSudoku(api: GameApi, rt: Rt): void {
   const { ctx, W, H } = api;
   const s = rt.state;
 
-  // background: soft blueprint-desk gradient
+  // background: soft blueprint-desk gradient + faint grid + grain
   const bg = ctx.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0, '#f8fafc');
   bg.addColorStop(0.6, '#eef2f7');
   bg.addColorStop(1, '#e2e8f0');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
+  drawBlueprintGrid(ctx, W, H, 30, 'rgba(90,120,170,0.08)');
+  drawNoise(ctx, W, H, '#8aa0c2', 0.05);
 
   const pad = 10;
   const n = Math.min(W, H);
@@ -515,6 +531,18 @@ function drawSudoku(api: GameApi, rt: Rt): void {
   roundRect(ctx, gx - 6, gy - 6, cell * 9 + 12, cell * 9 + 12, 14);
   ctx.fillStyle = '#ffffff';
   ctx.fill();
+  ctx.restore();
+  // bevel: bright top-inner edge fading down (machined-paper look)
+  ctx.save();
+  roundRect(ctx, gx - 6, gy - 6, cell * 9 + 12, cell * 9 + 12, 14);
+  ctx.clip();
+  const bevel = ctx.createLinearGradient(0, gy - 6, 0, gy + 44);
+  bevel.addColorStop(0, 'rgba(255,255,255,0.9)');
+  bevel.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = bevel;
+  ctx.fillRect(gx - 6, gy - 6, cell * 9 + 12, 50);
+  // faint paper grain inside the panel
+  drawNoise(ctx, W, H, '#94a3b8', 0.04);
   ctx.restore();
 
   if (!s) {
@@ -549,8 +577,20 @@ function drawSudoku(api: GameApi, rt: Rt): void {
         }
       }
       if (fill) {
-        ctx.fillStyle = fill;
-        ctx.fillRect(gx + c * cell + 0.5, gy + r * cell + 0.5, cell - 1, cell - 1);
+        if (i === sel) {
+          // selected cell: soft radial glow (lampiran sorot mandor)
+          const ccx = gx + c * cell + cell / 2;
+          const ccy = gy + r * cell + cell / 2;
+          const sg = ctx.createRadialGradient(ccx, ccy, cell * 0.08, ccx, ccy, cell * 0.75);
+          sg.addColorStop(0, '#fffbd6');
+          sg.addColorStop(0.6, '#fde68a');
+          sg.addColorStop(1, 'rgba(253,230,138,0.45)');
+          ctx.fillStyle = sg;
+          ctx.fillRect(gx + c * cell + 0.5, gy + r * cell + 0.5, cell - 1, cell - 1);
+        } else {
+          ctx.fillStyle = fill;
+          ctx.fillRect(gx + c * cell + 0.5, gy + r * cell + 0.5, cell - 1, cell - 1);
+        }
       }
     }
   }
@@ -579,7 +619,11 @@ function drawSudoku(api: GameApi, rt: Rt): void {
         ctx.font = `${s.locked[i] ? 800 : 700} ${Math.round(cell * 0.52)}px 'Plus Jakarta Sans','Inter',system-ui,sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = s.locked[i] ? '#1e293b' : wrong ? '#dc2626' : '#1d4ed8';
+        const main = s.locked[i] ? '#1e293b' : wrong ? '#dc2626' : '#1d4ed8';
+        // embossed digit: light underlay 1px below, then the ink on top
+        ctx.fillStyle = 'rgba(255,255,255,0.65)';
+        ctx.fillText(String(v), cx, cy + 2);
+        ctx.fillStyle = main;
         ctx.fillText(String(v), cx, cy + 1);
       } else if (s.notes[i].length > 0) {
         ctx.font = `600 ${Math.round(cell * 0.24)}px 'Plus Jakarta Sans','Inter',system-ui,sans-serif`;
@@ -665,12 +709,12 @@ const styles: Record<string, React.CSSProperties> = {
   padArea: { padding: '6px 12px 12px' },
   padGrid: { display: 'grid', gridTemplateColumns: 'repeat(9, 1fr)', gap: 5, marginBottom: 8 },
   padBtn: {
-    height: 46, borderRadius: 10, border: '1px solid #cbd5e1', background: '#ffffff',
+    height: 46, borderRadius: 10,
     fontSize: 20, fontWeight: 800, color: '#1d4ed8', cursor: 'pointer',
   },
   toolRow: { display: 'flex', gap: 8 },
   toolBtn: {
-    height: 44, borderRadius: 10, border: '1px solid #cbd5e1', background: '#ffffff',
+    height: 44, borderRadius: 10,
     fontSize: 13, fontWeight: 700, color: '#1e293b', cursor: 'pointer',
   },
   overlay: {
@@ -687,7 +731,7 @@ const styles: Record<string, React.CSSProperties> = {
   cardText: { fontSize: 14, color: '#334155', lineHeight: 1.55, margin: '6px 0' },
   diffGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 },
   diffBtn: {
-    borderRadius: 14, border: '2px solid #e2e8f0', background: '#f8fafc',
+    borderRadius: 14,
     padding: '12px 6px', cursor: 'pointer', display: 'flex',
     flexDirection: 'column', alignItems: 'center', gap: 3,
   },

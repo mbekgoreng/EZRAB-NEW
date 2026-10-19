@@ -275,3 +275,45 @@ Semua game: tutorial overlay, pause, mute, best score, juice (partikel/shake/sfx
 4. **Performa HP low-end** belum diukur FPS (DPR cap 2, partikel pooled).
 5. Full-project `tsc`/`vite build` tidak dijalankan (pre-existing OOM & canvg).
 6. File game: 10 folder × 3 file + engine2d (11 file + README). Semua uncommitted — menunggu push oleh parent.
+
+## 11. OVERHAUL MENDALAM — 10 game diperbaiki seperti gamer (2026-10-19)
+
+**Konteks:** user (gamer) menilai 10 game 2D "terlalu aneh". Parent play-test sendiri 2 game via Playwright, temuan:
+1. **Lari Proyek 2D**: dunia kosong & datar, karakter kecil, tidak ada rasa kecepatan → user minta diganti 3D ala Subway Surfers.
+2. **Flappy Mandor FATAL**: burung langsung jatuh saat mulai, mati (Gate 0) sebelum sempat bereaksi.
+
+**Proses & insiden:** 5 worker paralel (metodologi wajib: Playwright harness + baca screenshot + iterasi). Daemon restart 2× menewaskan 4 worker tanpa hasil recoverable; kerjaan pulih dari disk (file utuh), 4 worker pengganti di-spawn, lalu restart kedua menewaskan lagi — koordinator menyelesaikan langsung. Worker E (puzzle) selamat & selesai penuh. Tambahan arah user di tengah jalan: (a) visual "sedetail mungkin seperti render 3D game profesional" (prosedural, 60fps), (b) Bongkar Rumah dialihkan ke 3D destruksi berlapis, (c) benchmark repo `/tmp/ref-games` (50 game, bar rendah) untuk dilampaui di 4 sumbu — JANGAN copy code.
+
+### 11.1 Per game: temuan → fix → hasil
+
+| Game | Temuan | Fix | Test |
+|------|--------|-----|------|
+| **lari-proyek** (REBUILD 3D) | Dunia 2D kosong/datar, karakter kecil, tanpa rasa kecepatan (temuan parent) | Three.js third-person runner: 3 lajur (lerp halus), lompat/roll/swipe, rintangan (barier/balok gantung/barikade/zona bata ber-telegraph), helm magnetis, mandor multi-primitive (helm ber-brim, rompi stripe emissive, kaki/lengan bersendi), gedung ber-jendela + balkon + AC + tandon, crane (jib+kabel+hook), jalan bertexture (marka/manhole/retak), sun+shadow+hemisphere+fog, langit gradien + awan billboard, debu, world recycle, grace 2 dtk, quip lucu | 34/34 |
+| **bongkar-rumah** (REBUILD 3D) | Versi 2D "aneh"; user minta 3D | Destruksi berlapis: (1) fasad (dinding+kaca+atap) → puing, (2) interior terlihat (sekat, lantai kayu, kolom, perabot, tangga), (3) struktur (kolom/balok beton) → runtuh berantai + rubble. Raycast klik, HP/blok, kamera isometric (drag+zoom), 4 level, PBR + texture prosedural + shadow + tone mapping | 22/22 |
+| **bongkar-rumah** BUG KOORDINATOR | **Victory langsung saat load!** `progress([])` return 1 → engine kirim 'win' sebelum level di-load (screenshot bukti) | `progress([])` → 0 + regression test | 22/22 |
+| **flappy-mandor** | FATAL: mati Gate 0 sebelum bereaksi (temuan parent) | State "KETUK UNTUK MULAI": hover bobbing tengah, tap pertama = flap + mulai, grace 1 dtk. Terverifikasi: screenshot ready + state machine (ready→play→grace). Crane kuning bertekstur, popup +1, bulu flap | 25/25 |
+| **ketapel-konstruksi** | Trajectory & topple "aneh" | Trajectory dots = simulasi fisika aktual; topple believable (rotasi/jatuh); bintang 1-3 adil; 10 level | 26/26 |
+| **tebas-material** | Trail patah, dinamit tak jelas | Trail <50ms (pointermove langsung + interpolasi); dinamit berkedip + bunyi sumbu + tengkorak; kombo x2/x3 + slow-mo; grace 2 dtk tanpa dinamit | 26/26 |
+| **selamatkan-mandor** | Garis kasar, ink tak adil | Smoothing garis; ink meter rebalance per 15 level (playtest); telegraph bayangan + siulan; tanpa benda di atas mandor 2 dtk pertama | 22/22 |
+| **head-soccer-mandor** | Fisika/AI "aneh" | Fisika bola (gravitasi, restitusi, spin); AI adil 5 level (tuning per level); gol = confetti + slow-mo + "GOOOL!"; tombol besar + buffer 100ms | 32/32 |
+| **sudoku-tukang** | — (nol bug logika) | Sweep 32 puzzle: 32/32 solusi unik; mistake/hint/notes tepat; keypad 3D CSS, blueprint grid | 35/35 |
+| **sambung-kata** | Tombol ✓/⌫ overlap di 390px | Fix layout (budget lebar + sidePad); **60/60 level solvable terverifikasi programatik**; node berlapis | 88/88 |
+| **gabung-blok** | **Undo belum ada** | Undo ditambahkan (LIFO immutable, cap 40, rescue game-over); stress 150 game × ~18rb gerakan: 0 pelanggaran, 150/150 game-over tepat; tekstur per tier + merge pop | 30/30 |
+
+**Total: 340/340 hijau** (bertambah 1 regression test bongkar). `tsc` scoped (logic 7 game): 0 error.
+
+### 11.2 Standar yang diterapkan
+
+- **Grafik**: 3D — PBR + texture prosedural + shadow + fog + tone mapping, karakter/objek multi-part beranimasi. 2D — vector art berlapis (base+gradient+highlight+shadow+detail: baut, serat, mortar), min 3 lapis/objek, parallax 2-3 lapis berdetail.
+- **Gameplay**: difficulty curve adil, juice (hit-stop 60ms, shake, partikel, popup, SFX WebAudio tiap aksi penting), input buffer 100ms, tutorial 1 kalimat + visual, **tidak ada kematian di 2 detik pertama** (grace period, diverifikasi).
+- **Benchmark** (`/tmp/ref-games`, tak copy code): dilampaui di 4 sumbu — visual hidup, juice, konten (level+bintang+best+tutorial), identitas konstruksi + humor estimator.
+- **Batasan jujur**: 100% prosedural (tanpa download aset); 60fps = DPR cap 2 + partikel pooled (belum diukur di HP fisik).
+
+### 11.3 Yang belum terverifikasi / catatan
+
+1. Screenshot interaktif tebas/selamatkan/soccer/ketapel pasca-overhaul (screenshot worker hilang saat /tmp ter-wipe; re-run terhalang CDP headless yang hang di environment ini) — logika & state machine terverifikasi via test.
+2. FPS aktual di HP mid-range/low-end (hanya analisis budget).
+3. SFX di perangkat nyata; touch di HP fisik; jalur chat-penuh-di-browser (pre-existing).
+4. Full-project tsc/vite build (pre-existing OOM & canvg).
+5. `src/game-space/games/arcade/` (maze-drag, memory-card + art) adalah milik channel lain — TIDAK disentuh.
+6. Semua perubahan uncommitted — menunggu push oleh parent.

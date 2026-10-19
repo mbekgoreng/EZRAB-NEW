@@ -1,27 +1,43 @@
 /**
- * Lari Proyek — pure endless-runner logic (side-scroll).
- * NO DOM / window / Math.random. RNG disuntik (mulberry32) agar test deterministik.
+ * Lari Proyek 3D — pure endless-runner logic (Subway-Surfers style).
+ * NO DOM / window / Math.random / three.js. RNG disuntik (mulberry32)
+ * agar test deterministik.
  *
- * Satuan: design px, world 900x700, ground y = 560.
- * Pemain di x tetap (PLAYER_X); dunia (rintangan) bergerak ke kiri.
+ * Satuan: meter. 3 lajur: LANES = [-2, 0, 2] (sumbu x).
+ * Pemain di z = 0 (kamera di belakang, di +z); dunia bergerak +z
+ * (rintangan spawn di z = SPAWN_Z negatif, mendekati pemain).
  */
 
-export const WORLD_W = 900;
-export const WORLD_H = 700;
-export const GROUND_Y = 560;
-export const PLAYER_X = 190;
+export const LANES = [-2, 0, 2] as const;
+export const LANE_COUNT = 3;
 
-export const GRAV = 2300;
-export const JUMP_V = 830;
-export const SLIDE_T = 0.6;
+export const GRAV = 26;
+export const JUMP_V = 8.2;
+/** Input buffer lompat: lompatan yang ditekan <= 100ms sebelum mendarat tetap jalan. */
+export const JUMP_BUFFER_T = 0.1;
+/** Roll (guling) 0.6 dtk — sesuai spek. */
+export const ROLL_T = 0.6;
+/** Kecepatan lerp pindah lajur (~0.15 dtk terasa responsif). */
+export const LANE_DAMP = 14;
+/** Slam: tekan roll saat di udara = jatuh cepat + roll saat mendarat. */
+export const FAST_FALL_V = 22;
 
-export const STAND_W = 46;
-export const STAND_H = 98;
-export const SLIDE_W = 66;
-export const SLIDE_H = 48;
+/** Tinggi pemain berdiri / roll (meter). */
+export const STAND_H = 1.7;
+export const ROLL_H = 0.9;
+export const PLAYER_HALF_W = 0.35;
+export const PLAYER_HALF_D = 0.3;
 
-export const BATA_WARN_T = 0.8;
-export const BATA_FALL_T = 0.34;
+/** Jarak spawn & buang rintangan (sumbu z). */
+export const SPAWN_Z = -75;
+export const DESPAWN_Z = 10;
+/** Bata mulai telegraph saat z >= -WARN_AHEAD; bata mendarat tepat di z ~= 0. */
+export const WARN_AHEAD = 24;
+export const BATA_FALL_T = 0.35;
+export const BATA_HOVER_Y = 6;
+
+/** Grace period: JANGAN PERNAH bunuh pemain di 2 detik pertama. */
+export const GRACE_T = 2.0;
 
 /** RNG deterministik (mulberry32). */
 export function mulberry32(seed: number): () => number {
@@ -34,80 +50,56 @@ export function mulberry32(seed: number): () => number {
   };
 }
 
-export type ObKind = 'barier' | 'balok' | 'lubang' | 'bata' | 'helm';
+export type ObKind = 'barier' | 'balok' | 'barikade' | 'bata' | 'helm';
 
 export interface Obstacle {
   kind: ObKind;
-  x: number; // kiri (design px), bergerak ke kiri
-  w: number;
-  h: number;
-  /** untuk 'balok': jarak bawah balok dari tanah. untuk 'helm': tinggi melayang. */
+  /** indeks lajur 0..2 */
+  lane: number;
+  /** posisi z dunia; bertambah seiring dunia bergerak (+z menuju pemain). */
+  z: number;
+  w: number; // lebar (x)
+  h: number; // tinggi (y)
+  d: number; // kedalaman (z)
+  /** untuk 'balok': jarak bawah balok dari tanah. untuk 'helm': tengah melayang. */
   yOff: number;
   /** fase khusus 'bata': approach -> warn -> fall -> rubble */
   phase?: 'approach' | 'warn' | 'fall' | 'rubble';
-  t?: number; // timer fase
-  lockX?: number; // x target jatuh (bata)
-  brickY?: number; // y bata saat jatuh (negatif = di langit)
+  t?: number;
+  /** y bata saat jatuh (BATA_HOVER_Y di langit -> 0 di tanah) */
+  brickY?: number;
   dead: boolean;
-  scored?: boolean;
 }
 
 export interface Player {
-  /** tinggi kaki di atas tanah (0 = napak) */
+  /** indeks lajur logika 0..2 */
+  lane: number;
+  /** posisi x visual (lerp menuju LANES[lane]) */
+  laneX: number;
+  /** tinggi kaki di atas tanah */
   y: number;
   vy: number;
   grounded: boolean;
-  sliding: boolean;
-  slideT: number;
+  rolling: boolean;
+  rollT: number;
+  /** roll tertunda (ditekan saat di udara -> jalan saat mendarat) */
+  pendingRoll: boolean;
+  /** sisa waktu input buffer lompat */
+  bufferT: number;
   dead: boolean;
 }
 
 export function createPlayer(): Player {
-  return { y: 0, vy: 0, grounded: true, sliding: false, slideT: 0, dead: false };
+  return {
+    lane: 1, laneX: LANES[1],
+    y: 0, vy: 0, grounded: true,
+    rolling: false, rollT: 0, pendingRoll: false,
+    bufferT: 0, dead: false,
+  };
 }
 
-export function playerRect(p: Player): { x: number; y: number; w: number; h: number } {
-  const w = p.sliding ? SLIDE_W : STAND_W;
-  const h = p.sliding ? SLIDE_H : STAND_H;
-  return { x: PLAYER_X - w / 2, y: GROUND_Y - p.y - h, w, h };
-}
-
-/**
- * Step pemain. jump/slide adalah edge-trigger dari tsx (sekali tekan).
- * Kembalikan event untuk sfx.
- */
-export function stepPlayer(
-  p: Player,
-  dt: number,
-  jump: boolean,
-  slide: boolean,
-): string[] {
-  const ev: string[] = [];
-  if (jump && p.grounded && !p.dead) {
-    p.vy = -JUMP_V;
-    p.grounded = false;
-    p.sliding = false;
-    p.slideT = 0;
-    ev.push('jump');
-  }
-  if (slide && p.grounded && !p.dead) {
-    p.sliding = true;
-    p.slideT = SLIDE_T;
-    ev.push('slide');
-  }
-  if (!p.grounded) {
-    p.vy += GRAV * dt;
-    p.y += -p.vy * dt;
-    if (p.y <= 0) {
-      p.y = 0; p.vy = 0; p.grounded = true;
-      ev.push('land');
-    }
-  }
-  if (p.sliding) {
-    p.slideT -= dt;
-    if (p.slideT <= 0) { p.sliding = false; p.slideT = 0; }
-  }
-  return ev;
+export function playerHeight(p: Player): number {
+  return p.rolling ? ROLL_H : STAND_H;
 }
 
 /** Tinggi lompatan maksimum teoritis (vy^2 / 2g). */
@@ -115,175 +107,287 @@ export function jumpHeight(): number {
   return (JUMP_V * JUMP_V) / (2 * GRAV);
 }
 
-/** Kecepatan dunia (px/s) dari jarak tempuh (px). */
-export function speedFor(distancePx: number): number {
-  return Math.min(700, 260 + distancePx * 0.004);
+export type PlayerEvent = 'jump' | 'land' | 'roll' | 'lane' | 'slam';
+
+/**
+ * Step pemain. left/right/jump/roll adalah edge-trigger (sekali tekan).
+ * Kembalikan event untuk sfx/juice.
+ */
+export function stepPlayer(
+  p: Player,
+  dt: number,
+  input: { left: boolean; right: boolean; jump: boolean; roll: boolean },
+): PlayerEvent[] {
+  const ev: PlayerEvent[] = [];
+  if (p.dead) return ev;
+
+  if (input.left && p.lane > 0) { p.lane -= 1; ev.push('lane'); }
+  if (input.right && p.lane < LANE_COUNT - 1) { p.lane += 1; ev.push('lane'); }
+  // lerp visual menuju lajur logika (~0.15 dtk, bukan teleport)
+  const targetX = LANES[p.lane];
+  p.laneX += (targetX - p.laneX) * (1 - Math.exp(-LANE_DAMP * dt));
+  if (Math.abs(targetX - p.laneX) < 0.001) p.laneX = targetX;
+
+  if (input.jump) {
+    if (p.grounded) {
+      p.vy = JUMP_V;
+      p.grounded = false;
+      p.rolling = false; p.rollT = 0; p.pendingRoll = false;
+      p.bufferT = 0;
+      ev.push('jump');
+    } else {
+      p.bufferT = JUMP_BUFFER_T; // buffer 100ms
+    }
+  }
+  if (input.roll) {
+    if (p.grounded) {
+      p.rolling = true; p.rollT = ROLL_T; p.pendingRoll = false;
+      ev.push('roll');
+    } else {
+      // slam: jatuh cepat, roll otomatis saat mendarat
+      p.vy = Math.min(p.vy, -FAST_FALL_V);
+      p.pendingRoll = true;
+      ev.push('slam');
+    }
+  }
+
+  if (!p.grounded) {
+    p.vy -= GRAV * dt;
+    p.y += p.vy * dt;
+    if (p.y <= 0) {
+      p.y = 0; p.vy = 0; p.grounded = true;
+      ev.push('land');
+      if (p.bufferT > 0) {
+        // buffered jump: langsung lompat lagi
+        p.bufferT = 0;
+        p.vy = JUMP_V;
+        p.grounded = false;
+        p.rolling = false; p.rollT = 0; p.pendingRoll = false;
+        ev.push('jump');
+      } else if (p.pendingRoll) {
+        p.pendingRoll = false;
+        p.rolling = true; p.rollT = ROLL_T;
+        ev.push('roll');
+      }
+    }
+  }
+  // buffer lompat kedaluwarsa 100ms setelah ditekan, di udara maupun di tanah
+  if (p.bufferT > 0) p.bufferT = Math.max(0, p.bufferT - dt);
+
+  if (p.rolling) {
+    p.rollT -= dt;
+    if (p.rollT <= 0) { p.rolling = false; p.rollT = 0; }
+  }
+  return ev;
 }
 
-/** Gap antar rintangan (px dunia) — menyempit saat cepat. */
-export function gapFor(speed: number, rng: () => number): number {
-  const base = Math.max(380, Math.min(800, 1100 - speed * 0.8));
-  return base + rng() * 180;
+/** Kecepatan lari (m/s) dari jarak tempuh (m): 8 -> 22, kurva adil. */
+export function speedFor(distanceM: number): number {
+  return Math.min(22, 8 + distanceM * 0.012);
 }
 
 /**
- * Spawn satu rintangan di x = spawnX. Pemilihan jenis via rng.
- * 'bata' kadang mengunci di dekat pemain (harus lompat saat jatuh),
- * kadang di depan (aman, jadi puing yang harus dilompati).
+ * Gap antar baris rintangan (meter). Menyempit saat cepat, longgar di awal.
+ * Dijamin >= 14m (waktu reaksi cukup di kecepatan maks).
  */
-export function spawnObstacle(rng: () => number, speed: number, spawnX: number): Obstacle {
+export function gapFor(speed: number, distanceM: number, rng: () => number): number {
+  const base = Math.max(14, Math.min(30, 34 - speed * 0.9));
+  const early = distanceM < 150 ? 12 : 0;
+  return base + early + rng() * 8;
+}
+
+function shuffledLanes(rng: () => number): number[] {
+  const lanes = [0, 1, 2];
+  for (let i = lanes.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [lanes[i], lanes[j]] = [lanes[j], lanes[i]];
+  }
+  return lanes;
+}
+
+const mkBarier = (lane: number): Obstacle =>
+  ({ kind: 'barier', lane, z: SPAWN_Z, w: 1.7, h: 0.95, d: 0.5, yOff: 0, dead: false });
+const mkBalok = (lane: number): Obstacle =>
+  ({ kind: 'balok', lane, z: SPAWN_Z, w: 1.8, h: 0.7, d: 0.5, yOff: 1.05, dead: false });
+const mkBarikade = (lane: number): Obstacle =>
+  ({ kind: 'barikade', lane, z: SPAWN_Z, w: 1.8, h: 2.4, d: 0.6, yOff: 0, dead: false });
+const mkBata = (lane: number): Obstacle =>
+  ({ kind: 'bata', lane, z: SPAWN_Z, w: 1.0, h: 0.4, d: 1.0, yOff: 0, phase: 'approach', t: 0, brickY: BATA_HOVER_Y, dead: false });
+const mkHelm = (lane: number, z: number): Obstacle =>
+  ({ kind: 'helm', lane, z, w: 0.6, h: 0.6, d: 0.6, yOff: 1.1, dead: false });
+
+export interface SpawnCtx {
+  rng: () => number;
+  distanceM: number;
+  /** true bila baris sebelumnya "berat" (>=2 lajur terisi) — paksa baris ringan. */
+  lastHard: boolean;
+}
+
+/**
+ * Spawn SATU BARIS rintangan di z = SPAWN_Z.
+ * Jaminan keadilan:
+ * - 'barikade' (wajib pindah lajur) maksimal di 2 lajur -> selalu ada lajur lolos.
+ * - Setelah baris berat, baris berikutnya ringan (1 rintangan).
+ * - Kurva kesulitan: barikade baru muncul > 150m, bata > 300m.
+ */
+export function spawnRow(ctx: SpawnCtx): { obstacles: Obstacle[]; hard: boolean } {
+  const { rng, distanceM, lastHard } = ctx;
+  const lanes = shuffledLanes(rng);
+  const obs: Obstacle[] = [];
+  let hard = false;
   const r = rng();
-  if (r < 0.30) {
-    return { kind: 'barier', x: spawnX, w: 34, h: 66, yOff: 0, dead: false };
+
+  const canBarikade = distanceM > 150;
+  const canBata = distanceM > 300;
+
+  if (lastHard) {
+    // baris ringan: 1 rintangan sederhana
+    obs.push(r < 0.5 ? mkBarier(lanes[0]) : mkBalok(lanes[0]));
+    return { obstacles: obs, hard: false };
   }
-  if (r < 0.55) {
-    // balok gantung: bawah balok 78px dari tanah
-    return { kind: 'balok', x: spawnX, w: 64, h: 34, yOff: 78, dead: false };
+
+  if (r < 0.26) {
+    obs.push(mkBarier(lanes[0]));
+    if (rng() < 0.35) obs.push(mkBarier(lanes[1])); // lompat ganda
+  } else if (r < 0.44) {
+    obs.push(mkBalok(lanes[0]));
+    if (rng() < 0.3) obs.push(mkBalok(lanes[1])); // roll ganda
+  } else if (r < 0.58 && canBarikade) {
+    // barikade di 2 lajur — 1 lajur SELALU lolos
+    obs.push(mkBarikade(lanes[0]), mkBarikade(lanes[1]));
+    hard = true;
+  } else if (r < 0.72) {
+    obs.push(mkBarier(lanes[0]));
+    obs.push(mkBalok(lanes[1]));
+    hard = true;
+  } else if (r < 0.84 && canBata) {
+    obs.push(mkBata(lanes[0]));
+    if (rng() < 0.4) obs.push(mkBarier(lanes[1])); // bata + barier di lajur lain
+  } else if (r < 0.92 && canBarikade) {
+    obs.push(mkBarikade(lanes[0]));
+    obs.push(rng() < 0.5 ? mkBarier(lanes[1]) : mkBalok(lanes[1]));
+    hard = true;
+  } else {
+    obs.push(mkBarier(lanes[0]));
   }
-  if (r < 0.75) {
-    return { kind: 'lubang', x: spawnX, w: 70 + rng() * 35, h: 0, yOff: 0, dead: false };
-  }
-  if (r < 0.90) {
-    const danger = rng() < 0.55;
-    const lockX = danger
-      ? PLAYER_X + (rng() * 30 - 15) // tepat di atas pemain: harus lompat saat bata jatuh
-      : PLAYER_X + 120 + rng() * 110; // mendarat di depan: jadi puing, lompat seperti biasa
-    return {
-      kind: 'bata', x: spawnX, w: 56, h: 40, yOff: 0,
-      phase: 'approach', t: 0, lockX, brickY: -170, dead: false,
-    };
-  }
-  // helm proyek: melayang, diambil = +50
-  return { kind: 'helm', x: spawnX, w: 36, h: 30, yOff: 60 + rng() * 70, dead: false };
+  return { obstacles: obs, hard };
 }
 
-/** Rect rintangan untuk AABB (bata rubble & helm ikut; lubang ditangani khusus). */
-export function obstacleRect(o: Obstacle): { x: number; y: number; w: number; h: number } | null {
-  if (o.kind === 'lubang') return null;
-  if (o.kind === 'bata') {
-    if (o.phase === 'rubble') {
-      return { x: o.x, y: GROUND_Y - 30, w: o.w, h: 30 };
-    }
-    return null; // warn/fall: hit hanya saat mendarat (checkBataLanding)
-  }
-  if (o.kind === 'helm') {
-    return { x: o.x, y: GROUND_Y - o.yOff - o.h, w: o.w, h: o.h };
-  }
-  if (o.kind === 'balok') {
-    return { x: o.x, y: GROUND_Y - o.yOff - o.h, w: o.w, h: o.h };
-  }
-  return { x: o.x, y: GROUND_Y - o.h, w: o.w, h: o.h }; // barier
+/** Baris bonus helm: 3 helm segaris di satu lajur. */
+export function spawnHelmRow(rng: () => number): Obstacle[] {
+  const lane = Math.floor(rng() * 3);
+  return [0, 1, 2].map((i) => mkHelm(lane, SPAWN_Z - i * 2.5));
 }
 
-export function rectsOverlap(
-  a: { x: number; y: number; w: number; h: number },
-  b: { x: number; y: number; w: number; h: number },
-): boolean {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+export interface Box { x0: number; y0: number; z0: number; x1: number; y1: number; z1: number }
+
+export function playerBox(p: Player): Box {
+  const h = playerHeight(p);
+  return {
+    x0: p.laneX - PLAYER_HALF_W, x1: p.laneX + PLAYER_HALF_W,
+    y0: p.y, y1: p.y + h,
+    z0: -PLAYER_HALF_D, z1: PLAYER_HALF_D,
+  };
 }
 
-export interface HitResult {
-  kind: 'hit' | 'helm' | 'ketiban';
-  obstacle: Obstacle;
+export function obstacleBox(o: Obstacle): Box | null {
+  if (o.kind === 'bata' && o.phase !== 'rubble') return null; // bahaya via landing, bukan AABB
+  const cx = LANES[o.lane];
+  const yBase = o.kind === 'balok' ? o.yOff : o.kind === 'helm' ? o.yOff - o.h / 2 : 0;
+  return {
+    x0: cx - o.w / 2, x1: cx + o.w / 2,
+    y0: yBase, y1: yBase + o.h,
+    z0: o.z - o.d / 2, z1: o.z + o.d / 2,
+  };
 }
+
+export function boxesOverlap(a: Box, b: Box): boolean {
+  // sedikit pemaaf di x (0.06m tiap sisi) agar terasa adil
+  const fx = 0.06;
+  return a.x0 + fx < b.x1 && a.x1 - fx > b.x0
+    && a.y0 < b.y1 && a.y1 > b.y0
+    && a.z0 < b.z1 && a.z1 > b.z0;
+}
+
+export type HitKind = 'hit' | 'helm' | 'ketiban';
+export interface HitResult { kind: HitKind; obstacle: Obstacle }
 
 /**
  * Cek tabrakan pemain vs rintangan.
- * - 'helm': overlap -> collected (dead=true), bukan game over.
- * - 'lubang': pemain napak & kaki di atas lubang -> jatuh (hit).
- * - 'bata' rubble: overlap -> hit.
+ * runTime < GRACE_T -> selalu null (JANGAN PERNAH bunuh di 2 detik pertama).
  */
-export function checkHits(p: Player, obstacles: Obstacle[]): HitResult | null {
-  const pr = playerRect(p);
-  const pcx = PLAYER_X;
+export function checkHits(p: Player, obstacles: Obstacle[], runTime: number): HitResult | null {
+  if (p.dead || runTime < GRACE_T) return null;
+  const pb = playerBox(p);
   for (const o of obstacles) {
     if (o.dead) continue;
     if (o.kind === 'helm') {
-      const r = obstacleRect(o)!;
-      if (rectsOverlap(pr, r)) {
-        o.dead = true;
-        return { kind: 'helm', obstacle: o };
+      // magnet ringan: helm di lajur sama & dekat -> ketarik & keambil
+      if (o.lane === p.lane && Math.abs(o.z) < 2.6) {
+        o.z += (0 - o.z) * 0.35; // ketarik ke pemain
+        if (Math.abs(o.z) < 0.9) {
+          o.dead = true;
+          return { kind: 'helm', obstacle: o };
+        }
       }
       continue;
     }
-    if (o.kind === 'lubang') {
-      if (p.grounded && pcx > o.x + 8 && pcx < o.x + o.w - 8) {
-        return { kind: 'hit', obstacle: o };
-      }
-      continue;
-    }
-    const r = obstacleRect(o);
-    if (r && rectsOverlap(pr, r)) {
-      return { kind: 'hit', obstacle: o };
-    }
+    const b = obstacleBox(o);
+    if (b && boxesOverlap(pb, b)) return { kind: 'hit', obstacle: o };
   }
   return null;
 }
 
+export interface WorldEvent { kind: 'bataWarn' | 'bataLand'; obstacle: Obstacle }
+
 /**
- * Step rintangan: gerak ke kiri; logika fase bata.
- * Kembalikan event: 'bataLand' bila bata mendarat (untuk cek ketiban & sfx).
+ * Step dunia: rintangan bergerak +z; fase bata; despawn di belakang.
+ * Kembalikan event (untuk sfx/telegraph).
  */
-export function stepObstacles(
+export function stepWorld(
   obstacles: Obstacle[],
   dt: number,
   speed: number,
-  worldW: number,
-): { kind: 'bataLand'; obstacle: Obstacle }[] {
-  const ev: { kind: 'bataLand'; obstacle: Obstacle }[] = [];
+): WorldEvent[] {
+  const ev: WorldEvent[] = [];
   for (const o of obstacles) {
     if (o.dead) continue;
-    if (o.kind === 'bata' && o.phase) {
-      const lockX = o.lockX ?? o.x;
+    o.z += speed * dt;
+    if (o.kind === 'bata' && o.phase && o.phase !== 'rubble') {
       if (o.phase === 'approach') {
-        o.x -= speed * dt;
-        if (o.x <= lockX + speed * 0.02) {
-          o.x = lockX;
+        if (o.z >= -WARN_AHEAD) {
           o.phase = 'warn';
-          o.t = BATA_WARN_T;
+          // bata mendarat tepat saat z ~= 0 -> telegraph adil di semua kecepatan
+          o.t = Math.max(0.45, (-o.z) / speed - BATA_FALL_T);
+          o.brickY = BATA_HOVER_Y;
+          ev.push({ kind: 'bataWarn', obstacle: o });
         }
       } else if (o.phase === 'warn') {
         o.t = (o.t ?? 0) - dt;
-        if ((o.t ?? 0) <= 0) {
-          o.phase = 'fall';
-          o.t = BATA_FALL_T;
-        }
+        if ((o.t ?? 0) <= 0) { o.phase = 'fall'; o.t = BATA_FALL_T; }
       } else if (o.phase === 'fall') {
         const t = (o.t ?? BATA_FALL_T) - dt;
         o.t = t;
-        const k = 1 - Math.max(0, t) / BATA_FALL_T; // 0 -> 1
-        o.brickY = -170 + 170 * k * k;
+        const k = 1 - Math.max(0, t) / BATA_FALL_T;
+        o.brickY = BATA_HOVER_Y * (1 - k * k);
         if (t <= 0) {
           o.phase = 'rubble';
-          o.x = lockX;
+          o.brickY = 0;
           ev.push({ kind: 'bataLand', obstacle: o });
         }
-      } else {
-        // rubble ikut arus dunia
-        o.x -= speed * dt;
       }
-    } else {
-      o.x -= speed * dt;
     }
-    if (o.x + o.w < -80) o.dead = true;
+    if (o.z - o.d / 2 > DESPAWN_Z) o.dead = true;
   }
   return ev;
 }
 
 /**
- * Saat bata mendarat: pemain ketiban bila kakinya di zona jatuh & sedang napak.
- * Zona = [lockX - 14, lockX + w + 14].
+ * Saat bata mendarat (event bataLand): pemain ketiban bila di lajur yang sama
+ * dan sedang napak (berdiri/roll). Melompat = selamat.
  */
 export function checkBataLanding(p: Player, o: Obstacle): boolean {
-  if (o.kind !== 'bata') return false;
-  const zx0 = (o.lockX ?? o.x) - 14;
-  const zx1 = (o.lockX ?? o.x) + o.w + 14;
-  return p.grounded && PLAYER_X > zx0 && PLAYER_X < zx1;
-}
-
-/** Fase langit 0=siang, 1=senja, 2=malam — siklus tiap 1200 m. */
-export function skyPhase(meters: number): number {
-  return (meters / 400) % 3;
+  return o.kind === 'bata' && p.grounded && !p.dead && o.lane === p.lane;
 }
 
 /** Skor: meter + helm*50. */

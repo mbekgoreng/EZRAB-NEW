@@ -10,7 +10,11 @@ export const SUDDEN_DEATH_TIME = 30;
 export const GOAL_FREEZE = 1.2;
 
 export interface Ball {
-  x: number; y: number; vx: number; vy: number; r: number; spin: number;
+  x: number; y: number; vx: number; vy: number; r: number;
+  /** spin fisik: dibelokkan Magnus; di-set saat tendangan, meluruh pelan */
+  spin: number;
+  /** sudut visual untuk gambar jahitan bola */
+  rot: number;
 }
 
 export interface Player {
@@ -38,7 +42,7 @@ export const KICK_RANGE = 46;
 export const KICK_COOLDOWN = 0.5;
 
 export function makeBall(field: Field): Ball {
-  return { x: field.w / 2, y: field.groundY - 60, vx: 0, vy: 0, r: 14, spin: 0 };
+  return { x: field.w / 2, y: field.groundY - 60, vx: 0, vy: 0, r: 14, spin: 0, rot: 0 };
 }
 
 export function makePlayer(x: number, groundY: number, facing: 1 | -1): Player {
@@ -47,12 +51,24 @@ export function makePlayer(x: number, groundY: number, facing: 1 | -1): Player {
 
 /* ---------------- bola ---------------- */
 
-/** Satu langkah fisika bola: gravitasi, pantul tanah 0.65, pantul dinding & tiang. */
+/**
+ * Konstanta Magnus: seberapa kuat spin membelokkan bola.
+ * a = MAGNUS * spin × v. Dengan spin tendangan (±9) & laju 560 px/s,
+ * lengkungan ≈ 300 px/s² — terasa, tapi tak mendominasi gravitasi.
+ */
+export const MAGNUS = 0.06;
+
+/** Satu langkah fisika bola: gravitasi, efek Magnus (spin), pantul. */
 export function stepBall(b: Ball, dt: number, f: Field): void {
   b.vy += f.gravity * dt;
+  // Magnus: spin memengaruhi arah — topspin menukik, backspin mengapung
+  b.vx += -b.spin * b.vy * MAGNUS * dt;
+  b.vy += b.spin * b.vx * MAGNUS * dt;
+  // spin meluruh pelan; rotasi visual mengikuti laju + spin
+  b.spin *= Math.max(0, 1 - 0.35 * dt);
+  b.rot += (b.vx * 0.05 + b.spin * 0.9) * dt;
   b.x += b.vx * dt;
   b.y += b.vy * dt;
-  b.spin += b.vx * dt * 0.05;
 
   const mouthTop = f.groundY - f.goalH;
 
@@ -82,13 +98,15 @@ export function stepBall(b: Ball, dt: number, f: Field): void {
   if (b.x < -f.goalDepth) { b.x = -f.goalDepth; b.vx = Math.abs(b.vx) * 0.5; }
   if (b.x > f.w + f.goalDepth) { b.x = f.w + f.goalDepth; b.vx = -Math.abs(b.vx) * 0.5; }
 
-  // Tanah
+  // Tanah — spin memengaruhi pantul: topspin melesat maju, backspin tertahan
   if (b.y + b.r > f.groundY) {
     b.y = f.groundY - b.r;
     if (b.vy > 0) {
       b.vy = -b.vy * 0.65;
       if (Math.abs(b.vy) < 30) b.vy = 0;
       b.vx *= 0.92;
+      b.vx += b.spin * 4;
+      b.spin *= 0.7;
     }
   }
   // Langit-langit
@@ -149,9 +167,11 @@ export function kick(p: Player, b: Ball, power: number): boolean {
 /** Tabrakan pemain-bola: dorong bola keluar + transfer sebagian velocity. */
 export function collidePlayerBall(p: Player, b: Ball): boolean {
   // Pemain dianggap lingkaran kepala besar di atas + badan: pakai 2 lingkaran.
+  // Kepala meredam (e≈0.45) — sundulan menjinakkan bola, bukan meledakkannya;
+  // power datang dari tendangan (kick).
   const circles = [
-    { x: p.x, y: p.y - p.h * 0.78, r: p.w * 0.52 }, // kepala
-    { x: p.x, y: p.y - p.h * 0.32, r: p.w * 0.36 }, // badan
+    { x: p.x, y: p.y - p.h * 0.78, r: p.w * 0.52, e: 0.45 }, // kepala
+    { x: p.x, y: p.y - p.h * 0.32, r: p.w * 0.36, e: 0.6 }, // badan
   ];
   let hit = false;
   for (const c of circles) {
@@ -168,8 +188,8 @@ export function collidePlayerBall(p: Player, b: Ball): boolean {
       const relVy = b.vy - p.vy;
       const dot = relVx * nx + relVy * ny;
       if (dot < 0) {
-        b.vx -= 1.6 * dot * nx;
-        b.vy -= 1.6 * dot * ny;
+        b.vx -= (1 + c.e) * dot * nx;
+        b.vy -= (1 + c.e) * dot * ny;
         // transfer sebagian momentum pemain
         b.vx += p.vx * 0.35;
         b.vy += p.vy * 0.15;
@@ -190,14 +210,21 @@ export interface AiLevel {
   kickPower: number;
   /** jeda berpikir (detik) — makin kecil makin reaktif */
   thinkInterval: number;
+  /**
+   * Positioning bertahan: 0 = nempel gawang, 1 = nempel bola.
+   * Target jaga = anchor + (bola - anchor) * defendBias.
+   */
+  defendBias: number;
+  /** jarak (px) bola-AI saat bertahan yg memicu tackle langsung */
+  tackleRange: number;
 }
 
 export const AI_LEVELS: AiLevel[] = [
-  { name: 'Magang',          speed: 170, jumpReact: 60,  kickPower: 480, thinkInterval: 0.55 },
-  { name: 'Tukang',          speed: 210, jumpReact: 80,  kickPower: 540, thinkInterval: 0.42 },
-  { name: 'Mandor',          speed: 250, jumpReact: 100, kickPower: 600, thinkInterval: 0.32 },
-  { name: 'Pengawas',        speed: 285, jumpReact: 120, kickPower: 660, thinkInterval: 0.24 },
-  { name: 'Konsultan Galak', speed: 315, jumpReact: 145, kickPower: 730, thinkInterval: 0.16 },
+  { name: 'Magang',          speed: 165, jumpReact: 60,  kickPower: 430, thinkInterval: 0.60, defendBias: 0.25, tackleRange: 80 },
+  { name: 'Tukang',          speed: 215, jumpReact: 90,  kickPower: 530, thinkInterval: 0.38, defendBias: 0.38, tackleRange: 105 },
+  { name: 'Mandor',          speed: 250, jumpReact: 110, kickPower: 590, thinkInterval: 0.28, defendBias: 0.46, tackleRange: 120 },
+  { name: 'Pengawas',        speed: 280, jumpReact: 130, kickPower: 640, thinkInterval: 0.20, defendBias: 0.54, tackleRange: 135 },
+  { name: 'Konsultan Galak', speed: 300, jumpReact: 150, kickPower: 660, thinkInterval: 0.15, defendBias: 0.55, tackleRange: 145 },
 ];
 
 /** Otak AI: menyimpan keputusan terakhir + timer berpikir. */
@@ -210,25 +237,45 @@ export function makeBrain(): AiBrain {
   return { reactT: 0, left: false, right: false, jump: false, kick: false };
 }
 
+function clampN(v: number, lo: number, hi: number): number {
+  return v < lo ? lo : v > hi ? hi : v;
+}
+
 /**
- * AI: kejar bola, lompat bila bola di atas & dekat, tendang ke gawang
- * pemain (kiri) saat dalam jangkauan + cooldown.
+ * AI v2: bukan sekadar kejar bola.
+ * - Bola di wilayah lawan (x < 45% lapangan) → menyerang: kejar bola.
+ * - Bola di wilayah sendiri → bertahan: jaga depan gawang, condong ke
+ *   arah bola sebesar defendBias; tackle bila bola masuk tackleRange.
+ * - Lompat untuk duel udara / blok; tendang clearance ke gawang pemain.
  */
 export function aiDecide(
-  brain: AiBrain, ai: Player, b: Ball, level: AiLevel, dt: number,
+  brain: AiBrain, ai: Player, b: Ball, level: AiLevel, dt: number, f: Field,
 ): void {
   brain.reactT -= dt;
   if (brain.reactT > 0) return;
   brain.reactT = level.thinkInterval;
 
-  const dx = b.x - ai.x;
+  const attacking = b.x < f.w * 0.45;
+  let targetX: number;
+  if (attacking) {
+    targetX = b.x;
+  } else {
+    const anchor = f.w - 95; // depan gawang sendiri
+    targetX = anchor + (b.x - anchor) * level.defendBias;
+    targetX = clampN(targetX, f.w * 0.5, f.w - 45);
+    // tackle: bola dekat & rendah → rebut langsung
+    if (Math.abs(b.x - ai.x) < level.tackleRange && b.y > f.groundY - 170) {
+      targetX = b.x;
+    }
+  }
+
   const dead = 12;
-  brain.left = dx < -dead;
-  brain.right = dx > dead;
+  brain.left = targetX < ai.x - dead;
+  brain.right = targetX > ai.x + dead;
 
   // Lompat: bola melayang di atas kepala & cukup dekat horizontal
   const headY = ai.y - ai.h * 0.78;
-  brain.jump = b.y < headY - 30 && Math.abs(dx) < level.jumpReact && b.vy > -50;
+  brain.jump = b.y < headY - 30 && Math.abs(b.x - ai.x) < level.jumpReact && b.vy > -50;
 
   // Tendang ke gawang kiri (gawang pemain)
   ai.facing = -1;

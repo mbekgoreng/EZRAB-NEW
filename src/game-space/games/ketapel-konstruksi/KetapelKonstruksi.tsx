@@ -9,7 +9,7 @@ import { popText } from '../../engine2d/juice2d';
 import {
   LEVELS, WORLD_W, WORLD_H, GROUND_Y, BALL_R, DRAG_MAX,
   predict, launchVel, createState, updateState,
-  starFor, leftoverBonus, MAT_SCORE,
+  starFor, leftoverBonus, MAT_SCORE, allBerkasDead,
   type KState, type Mat,
 } from './logic';
 
@@ -239,6 +239,13 @@ export default function KetapelKonstruksi({ onExit }: { onExit: () => void }) {
       s.phase = 'flying';
       api.sfx.whoosh();
       api.shake.add(0.12);
+    };
+
+    // Hook baca-state untuk harness playtest Playwright (no-op di produksi).
+    (window as unknown as { __kkDbg?: unknown }).__kkDbg = {
+      get: () => sRef.current,
+      allBerkasDead,
+      levels: LEVELS,
     };
 
     return () => { apiRef.current = null; };
