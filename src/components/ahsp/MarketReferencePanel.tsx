@@ -18,6 +18,15 @@ import type {
   MarketSourceType,
 } from '../../engine/pricing/market/types';
 import { aiPriceSearchService } from '../../services/aiPriceSearchService';
+import { enrichMaterialPrice, acceptCandidateAsReference } from '../../engine/pricing/market/autoEnrichment';
+import { marketSearchRegistry } from '../../engine/pricing/market/searchProvider';
+import { ApiMarketSearchProvider } from '../../engine/pricing/market/apiSearchProvider';
+
+// Daftarkan provider API (server-side) bila belum ada provider live.
+// Tanpa SERPER_API_KEY di server, provider mengembalikan hasil kosong yang jujur.
+if (!marketSearchRegistry.isLiveAvailable()) {
+  marketSearchRegistry.register(new ApiMarketSearchProvider());
+}
 import { assumptionStore } from '../../engine/pricing/assumption/assumptionStore';
 import { useRole } from '../../auth/RoleContext';
 import { AiPriceEstimatePanel } from './AiPriceEstimatePanel';
@@ -174,6 +183,54 @@ export const MarketReferencePanel: React.FC<Props> = ({
     }
   };
 
+  // Auto-enrichment (Fase 6): pipeline pencarian → normalisasi → matching.
+  // Menggunakan provider yang terdaftar; bila belum ada provider live,
+  // hasil jujur melaporkan keterbatasan (tidak ada data tiruan).
+  const [enrichBusy, setEnrichBusy] = useState(false);
+  const [enrichMsg, setEnrichMsg] = useState<string | null>(null);
+  const handleAutoEnrich = async () => {
+    setEnrichBusy(true);
+    setEnrichMsg(null);
+    try {
+      const spec = extractSpec(componentName) ?? {
+        category: 'lainnya', keyAttributes: {}, extraAttributes: {},
+      };
+      const result = await enrichMaterialPrice(componentName, spec, componentUnit, 'Indonesia');
+      // Bedakan status: belum dikonfigurasi vs rate limit vs timeout vs tidak ada hasil
+      if (result.accepted.length === 0) {
+        if (!result.wasLiveSearch) {
+          const msg = result.errorCode === 'AUTH_ERROR'
+            ? 'Kunci API pencarian tidak valid. Hubungi administrator.'
+            : result.errorCode === 'RATE_LIMIT'
+            ? 'Kuota pencarian habis. Coba lagi nanti atau tambahkan manual.'
+            : result.errorCode === 'TIMEOUT'
+            ? 'Pencarian timeout. Coba lagi atau tambahkan manual.'
+            : 'Pencarian pasar belum dikonfigurasi di server. Tambahkan referensi manual dengan URL bukti.';
+          setEnrichMsg(msg);
+        } else {
+          setEnrichMsg('Tidak ada kandidat sebanding ditemukan. Coba kata kunci lain atau tambahkan manual.');
+        }
+        return;
+      }
+      const need = { canonicalName: componentName, spec, normalizedUnit: componentUnit };
+      let added = 0;
+      for (const scored of result.accepted) {
+        acceptCandidateAsReference(scored, need, 'auto-enrich');
+        added++;
+      }
+      setEnrichMsg(
+        `${added} kandidat auto-enrichment ditambahkan sebagai PERLU TINJAU. ` +
+        `Median: Rp${(result.stats?.median ?? 0).toLocaleString('id-ID')}/${componentUnit}. ` +
+        `${result.rejected.length} ditolak (tidak sebanding).`
+      );
+      refresh();
+    } catch (e: any) {
+      setEnrichMsg(`Auto-enrichment gagal: ${e?.message || 'gangguan'}.`);
+    } finally {
+      setEnrichBusy(false);
+    }
+  };
+
   const handleApprove = (id: string) => {
     if (!canVerify) { setAiMsg('Anda tidak memiliki wewenang verifikasi harga.'); return; }
     const d = marketReviewStore.approve(id, 'estimator', componentCode);
@@ -322,7 +379,20 @@ export const MarketReferencePanel: React.FC<Props> = ({
           >
             {aiBusy ? 'Mencari…' : '✨ Minta Saran AI'}
           </button>
+          <button
+            onClick={handleAutoEnrich}
+            disabled={enrichBusy}
+            style={{ flex: 1, minWidth: '180px', height: '40px', borderRadius: '10px', border: 'none', background: enrichBusy ? '#94a3b8' : '#0ea5e9', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: enrichBusy ? 'not-allowed' : 'pointer' }}
+            title="Auto-enrichment: cari → normalisasi → matching. Hasil selalu perlu tinjau manual."
+          >
+            {enrichBusy ? 'Memproses…' : '🔍 Cari Harga Pasar (Auto)'}
+          </button>
         </div>
+        {enrichMsg && (
+          <div style={{ marginTop: '8px', padding: '10px 12px', borderRadius: '8px', background: '#f0f9ff', border: '1px solid #bae6fd', fontSize: '12.5px', color: '#0c4a6e' }}>
+            {enrichMsg}
+          </div>
+        )}
 
         {showForm ? (
           <div style={{ border: '1px solid var(--ez-color-border-soft)', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc' }}>
