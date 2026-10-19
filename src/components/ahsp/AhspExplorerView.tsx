@@ -272,7 +272,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
     // Total kerja = Biaya Langsung (D); Biaya Umum & Keuntungan dinonaktifkan.
     // Komposisi augmented: komponen ber-harga-pasar-terverifikasi ikut terhitung.
     const comp = addToRabAugmented;
-    const gate = canFinalizeAhsp(comp);
+    const gate = canFinalizeAhsp(comp, selectedAhsp ? { code: selectedAhsp.code, name: selectedAhsp.name } : null);
     if (!gate.ok) {
       showToast(`Tidak dapat ditambahkan: ${gate.reason}`);
       return;
@@ -320,7 +320,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
     const comp = priceResolver2026.resolveAhspUnitPrice(item);
     // AHSP parsial tidak disimpan sebagai AHSP lengkap (termasuk overlay pasar).
     const augmented = applyMarketOverlay(comp);
-    const gate = canFinalizeAhsp(augmented);
+    const gate = canFinalizeAhsp(augmented, item ? { code: item.code, name: item.name } : null);
     if (!gate.ok) {
       showToast(`Tidak dapat disimpan: ${gate.reason}`);
       return;

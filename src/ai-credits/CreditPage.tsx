@@ -3,8 +3,8 @@
  * Dibuka via widget saldo di TopBar / Chat AI / DED AI / AI Document.
  * TIDAK ada di sidebar (keputusan: sidebar tetap 3 item AI).
  */
-import React, { useState } from 'react';
-import { ArrowLeft, Plus, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Plus, RotateCcw, Activity } from 'lucide-react';
 import './ai-credits.css';
 import { useCreditSimulation } from './useCreditSimulation';
 import { CREDIT_CONFIG_NOTE, FEATURE_LABELS, PLAN_CREDITS, TOPUP_OFFER } from './config';
@@ -14,6 +14,97 @@ import { CreditTopUpModal } from './components/CreditTopUpModal';
 import { CreditUsageHistory } from './components/CreditUsageHistory';
 import { CreditUsageSummary } from './components/CreditUsageSummary';
 import { CreditLowBalanceNotice } from './components/CreditLowBalanceNotice';
+
+/**
+ * Seksi Usage Meter (Phase 3): riwayat pemakaian AI aktual dari backend.
+ * Jika backend belum aktif → tampil jujur "menunggu backend", bukan data palsu.
+ */
+const UsageMeterSection: React.FC = () => {
+  const [state, setState] = useState<'loading' | 'empty' | 'data' | 'unavailable'>('loading');
+  const [items, setItems] = useState<any[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/credits/usage?limit=20')
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d) => {
+        if (cancelled) return;
+        if (d.success && Array.isArray(d.usage) && d.usage.length > 0) {
+          setItems(d.usage);
+          setState('data');
+        } else {
+          setState('empty');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setState('unavailable');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const statusLabel = (s: string) => {
+    if (s === 'actual') return 'Aktual terverifikasi';
+    if (s === 'estimated') return 'Estimasi';
+    if (s === 'failed') return 'Gagal';
+    return 'Menunggu rekonsiliasi';
+  };
+
+  return (
+    <div className="aic-card">
+      <div className="aic-k" style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <Activity size={14} /> Pemakaian AI (usage meter)
+      </div>
+      {state === 'loading' && (
+        <div style={{ fontSize: 13, color: 'var(--ez-color-text-faint)' }}>Memuat…</div>
+      )}
+      {state === 'unavailable' && (
+        <div style={{ fontSize: 13, color: 'var(--ez-color-text-faint)', lineHeight: 1.6 }}>
+          Backend usage meter belum aktif. Data pemakaian aktual akan tampil di sini
+          setelah backend Phase 3 di-deploy. Tidak ada data simulasi yang ditampilkan
+          sebagai data nyata.
+        </div>
+      )}
+      {state === 'empty' && (
+        <div style={{ fontSize: 13, color: 'var(--ez-color-text-faint)' }}>
+          Belum ada pemakaian AI yang tercatat.
+        </div>
+      )}
+      {state === 'data' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {items.map((u: any) => (
+            <div
+              key={u.id}
+              style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '10px 12px', borderRadius: 10,
+                background: 'var(--ez-color-surface-secondary)',
+                fontSize: 12.5,
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 700 }}>{u.feature || 'AI'}</div>
+                <div style={{ color: 'var(--ez-color-text-faint)', fontSize: 11.5 }}>
+                  {u.model || '?'} · {u.tokens_in != null ? `${u.tokens_in} in / ${u.tokens_out} out` : 'token tidak tersedia'}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontWeight: 800 }}>
+                  {u.credits_charged != null ? `${u.credits_charged} kredit` : '—'}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--ez-color-text-faint)' }}>
+                  {statusLabel(u.status)}
+                  {u.cost_status === 'UNDETERMINED' ? ' · biaya provider belum dapat ditentukan' : ''}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface Props {
   onBack: () => void;
@@ -121,6 +212,8 @@ export const CreditPage: React.FC<Props> = ({ onBack }) => {
         <div className="aic-k" style={{ marginBottom: 12 }}>Riwayat transaksi &amp; pemakaian</div>
         <CreditUsageHistory entries={ledger} />
       </div>
+
+      <UsageMeterSection />
 
       <div style={{ fontSize: 12, color: 'var(--ez-color-text-faint)', lineHeight: 1.6 }}>
         <strong>Catatan kalibrasi:</strong> {CREDIT_CONFIG_NOTE} Detail tarif per fitur:{' '}

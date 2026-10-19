@@ -72,12 +72,12 @@ export const calculateAhspUnitPrice = (resources: AhspResource[]): number => {
 export const calculateRabTotals = (items: RabItem[]) => {
   try {
     // Phase 2I.2: track unpriced items so the total can be labeled partial.
-    // An item is unpriced when amount is null/undefined (not when it is 0 —
-    // explicit zero is a valid resolved price).
+    // Factory contract: PRICE_UNRESOLVED items carry amount 0 (sentinel),
+    // so priceStatus — not amount==null — is the source of truth.
     let unpricedCount = 0;
     const subtotal = items.reduce((acc, item) => {
       const amt = (item as any).amount;
-      if (amt == null) {
+      if (amt == null || (item as any).priceStatus === 'PRICE_UNRESOLVED') {
         unpricedCount++;
         return acc;
       }

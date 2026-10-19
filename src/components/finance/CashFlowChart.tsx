@@ -12,7 +12,7 @@ interface CashFlowChartProps {
   futureLowestCumulative?: number;
 }
 
-type SeriesKey = 'in' | 'out' | 'cum' | 'fc';
+type SeriesKey = 'in' | 'out' | 'net' | 'cum' | 'fc';
 
 export const CashFlowChart: React.FC<CashFlowChartProps> = ({
   points,
@@ -22,7 +22,12 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
   futureLowestCumulative,
 }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [hidden, setHidden] = useState<Set<SeriesKey>>(new Set());
+  // "Pinned" via tap/klik/Enter: tooltip tetap tampil walau mouseleave sintetis
+  // dari touch (browser menembakkan mouseover ke <html> setelah tap).
+  const [pinnedIndex, setPinnedIndex] = useState<number | null>(null);
+  const activeIndex = hoveredIndex ?? pinnedIndex;
+  // Seri "net" default tersembunyi agar chart tidak padat; user dapat mengaktifkannya via legenda.
+  const [hidden, setHidden] = useState<Set<SeriesKey>>(() => new Set(['net']));
 
   if (!points || points.length === 0) {
     return (
@@ -93,6 +98,25 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
     });
   }
 
+  // Arus Kas Bersih (net) per periode — garis tipis, dipisah aktual/proyeksi.
+  // Data dari model (p.netCashFlow), bukan karangan.
+  let netActualPath = '';
+  actualPoints.forEach((p, i) => {
+    const x = getX(i);
+    const y = getY(p.netCashFlow);
+    netActualPath += (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
+  });
+  let netForecastPath = '';
+  if (forecastPoints.length > 0) {
+    const startIndex = actualPoints.length > 0 ? actualPoints.length - 1 : 0;
+    const startPoint = points[startIndex];
+    netForecastPath = `M ${getX(startIndex)} ${getY(startPoint.netCashFlow)}`;
+    forecastPoints.forEach((p, i) => {
+      const idx = actualPoints.length + i;
+      netForecastPath += ` L ${getX(idx)} ${getY(p.netCashFlow)}`;
+    });
+  }
+
   // Titik defisit terdalam — murni turunan data engine, bukan karangan
   const forecastWithIdx = points
     .map((p, i) => ({ p, i }))
@@ -105,6 +129,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
 
   const showIn = !hidden.has('in');
   const showOut = !hidden.has('out');
+  const showNet = !hidden.has('net');
   const showCum = !hidden.has('cum');
   const showFc = !hidden.has('fc');
 
@@ -117,12 +142,12 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
     });
   };
 
-  const hoveredPoint = hoveredIndex !== null ? points[hoveredIndex] : null;
+  const hoveredPoint = activeIndex !== null ? points[activeIndex] : null;
   // Kurangi kepadatan label di layar kecil / banyak periode (data tetap utuh)
   const labelEvery = points.length > 14 ? 2 : 1;
 
   // Posisi tooltip mengikuti titik (persentase thd dimensi SVG), flip di tepi kanan
-  const tipX = hoveredIndex !== null ? getX(hoveredIndex) : 0;
+  const tipX = activeIndex !== null ? getX(activeIndex) : 0;
   const tipY = hoveredPoint ? getY(hoveredPoint.cumulativeCashFlow) : 0;
   const flipX = tipX > svgWidth * 0.58;
   const tipTopPct = Math.min(Math.max((tipY / svgHeight) * 100, 20), 80);
@@ -137,6 +162,11 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
       key: 'out',
       label: 'Kas Keluar (Outflow)',
       swatch: <span style={{ width: '10px', height: '10px', backgroundColor: '#EF4444', borderRadius: '2px' }} />,
+    },
+    {
+      key: 'net',
+      label: 'Arus Kas Bersih',
+      swatch: <span style={{ width: '14px', height: '2px', backgroundColor: '#0EA5E9', borderRadius: '1px' }} />,
     },
     {
       key: 'cum',
@@ -231,7 +261,10 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
             style={{ width: '100%', height: 'auto', display: 'block' }}
             role="img"
             aria-label={`Grafik arus kas: ${points.length} periode, ${forecastPoints.length} periode proyeksi`}
-            onClick={() => setHoveredIndex(null)}
+            onClick={() => {
+              setPinnedIndex(null);
+              setHoveredIndex(null);
+            }}
           >
             {/* Grid Lines */}
             <g className="cf-anim-grid">
@@ -295,11 +328,11 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
             )}
 
             {/* Vertical crosshair pada titik hover */}
-            {hoveredIndex !== null && (
+            {activeIndex !== null && (
               <line
-                x1={getX(hoveredIndex)}
+                x1={getX(activeIndex)}
                 y1={paddingTop}
-                x2={getX(hoveredIndex)}
+                x2={getX(activeIndex)}
                 y2={svgHeight - paddingBottom}
                 stroke="var(--ez-color-text-faint)"
                 strokeWidth={1}
@@ -314,7 +347,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
               const barWidth = Math.max(6, Math.min(22, stepX * 0.35));
               const inHeight = Math.max(0, zeroY - getY(p.cashIn));
               const outHeight = Math.max(0, zeroY - getY(p.cashOut));
-              const dimmed = hoveredIndex !== null && hoveredIndex !== idx;
+              const dimmed = activeIndex !== null && activeIndex !== idx;
               const showLabel = idx % labelEvery === 0;
 
               return (
@@ -330,13 +363,16 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
                   onBlur={() => setHoveredIndex(null)}
                   onClick={(e) => {
                     e.stopPropagation();
+                    setPinnedIndex(idx);
                     setHoveredIndex(idx);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
+                      setPinnedIndex(idx);
                       setHoveredIndex(idx);
                     } else if (e.key === 'Escape') {
+                      setPinnedIndex(null);
                       setHoveredIndex(null);
                     }
                   }}
@@ -392,7 +428,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
             {showCum && cumulativeActualPath && (
               <path
                 className="cf-anim-line cf-dim"
-                style={{ opacity: hoveredIndex !== null ? 0.45 : 1 } as React.CSSProperties}
+                style={{ opacity: activeIndex !== null ? 0.45 : 1 } as React.CSSProperties}
                 d={cumulativeActualPath}
                 pathLength={1}
                 fill="none"
@@ -407,7 +443,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
             {showFc && cumulativeForecastPath && (
               <path
                 className="cf-anim-fade cf-dim"
-                style={{ animationDelay: '700ms', opacity: hoveredIndex !== null ? 0.45 : 1 }}
+                style={{ animationDelay: '700ms', opacity: activeIndex !== null ? 0.45 : 1 }}
                 d={cumulativeForecastPath}
                 fill="none"
                 stroke="#8B5CF6"
@@ -415,6 +451,35 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
                 strokeDasharray="5 4"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+              />
+            )}
+
+            {/* Arus Kas Bersih: aktual solid tipis + proyeksi dashed (toggleable via legenda) */}
+            {showNet && netActualPath && (
+              <path
+                className="cf-anim-line cf-dim"
+                style={{ opacity: activeIndex !== null ? 0.45 : 1 } as React.CSSProperties}
+                d={netActualPath}
+                pathLength={1}
+                fill="none"
+                stroke="#0EA5E9"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            )}
+            {showNet && netForecastPath && (
+              <path
+                className="cf-anim-fade cf-dim"
+                style={{ animationDelay: '750ms', opacity: activeIndex !== null ? 0.45 : 1 }}
+                d={netForecastPath}
+                fill="none"
+                stroke="#0EA5E9"
+                strokeWidth="2"
+                strokeDasharray="5 4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity={0.85}
               />
             )}
 
@@ -457,8 +522,8 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
               if (p.isForecast ? !showFc : !showCum) return null;
               const x = getX(idx);
               const y = getY(p.cumulativeCashFlow);
-              const isHovered = hoveredIndex === idx;
-              const dimmed = hoveredIndex !== null && !isHovered;
+              const isHovered = activeIndex === idx;
+              const dimmed = activeIndex !== null && !isHovered;
 
               return (
                 <circle
@@ -477,7 +542,7 @@ export const CashFlowChart: React.FC<CashFlowChartProps> = ({
           </svg>
 
           {/* Floating Tooltip — premium putih, mengikuti titik */}
-          {hoveredPoint && hoveredIndex !== null && (
+          {hoveredPoint && activeIndex !== null && (
             <div
               style={{
                 position: 'absolute',

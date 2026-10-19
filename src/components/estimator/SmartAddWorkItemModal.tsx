@@ -220,8 +220,10 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
 
     try {
       const comp = priceResolver2026.resolveAhspUnitPrice(selectedAhspItem);
-      const effectiveUnitPrice = ahspCustomPrice > 0 ? ahspCustomPrice : (comp.unitPrice || 0);
-      const amount = Math.round(ahspCustomVolume * effectiveUnitPrice);
+      // Integrity: jangan ubah null menjadi 0. Factory akan menetapkan
+      // PRICE_UNRESOLVED + NEEDS_VERIFICATION untuk harga null.
+      const effectiveUnitPrice = ahspCustomPrice > 0 ? ahspCustomPrice : comp.unitPrice;
+      const amount = effectiveUnitPrice != null ? Math.round(ahspCustomVolume * effectiveUnitPrice) : 0;
       await onAddItem({
         no: existingItems.length + 1,
         sectionName: targetCategory,
@@ -238,7 +240,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
         totalPrice: amount,
         volumeSource: 'AHSP 2026' as any,
         ahspCode: selectedAhspItem.code,
-        verificationStatus: 'VERIFIED',
+        // verificationStatus: biarkan factory yang menentukan dari priceStatus
       });
       onClose();
     } catch (err: any) {
@@ -260,8 +262,9 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
 
       selectedAhspList.forEach((ahsp, idx) => {
         const comp = priceResolver2026.resolveAhspUnitPrice(ahsp);
-        const up = comp.unitPrice || 0;
-        const amt = up * 1;
+        // Integrity: jangan ubah null menjadi 0. Factory menetapkan status yang benar.
+        const up = comp.unitPrice;
+        const amt = up != null ? up * 1 : 0;
         itemsToInsert.push({
           no: existingItems.length + idx + 1,
           sectionName: targetCategory,
@@ -278,7 +281,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
           totalPrice: amt,
           volumeSource: 'AHSP 2026' as any,
           ahspCode: ahsp.code,
-          verificationStatus: 'VERIFIED',
+          // verificationStatus: biarkan factory yang menentukan dari priceStatus
         });
       });
 

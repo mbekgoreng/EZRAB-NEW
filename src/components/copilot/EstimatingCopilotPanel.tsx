@@ -495,10 +495,14 @@ export const EstimatingCopilotPanel: React.FC<EstimatingCopilotPanelProps> = ({
     // 6. READ: EXPLAIN SELECTED WORK ITEM OR AHSP
     if (lower.includes('jelaskan') || lower.includes('explain') || lower.includes('analisa item') || lower.includes('rincian')) {
       if (selectedItem) {
+        // P0: Jangan tampilkan Rp0 untuk harga unresolved
+        const _isUnresolved = selectedItem.priceStatus === 'PRICE_UNRESOLVED' || selectedItem.unitPrice == null;
+        const _priceLabel = _isUnresolved ? 'Belum tersedia (bukan Rp0)' : `${formatCurrencyIDR(selectedItem.unitPrice)} / ${selectedItem.unit}`;
+        const _totalLabel = _isUnresolved ? 'Belum tersedia' : formatCurrencyIDR(selectedItem.amount || selectedItem.totalPrice || 0);
         return {
           id: `ai-${Date.now()}`,
           sender: 'ai',
-          text: `📋 **Penjelasan Teknis Item Terpilih:**\n\n- **Kode:** \`${selectedItem.code || selectedItem.ahspCode || 'P-01'}\`\n- **Pekerjaan:** **${selectedItem.description}**\n- **Volume:** ${selectedItem.volume} ${selectedItem.unit}\n- **Harga Satuan:** ${formatCurrencyIDR(selectedItem.unitPrice || 0)} / ${selectedItem.unit}\n- **Total Nilai:** ${formatCurrencyIDR(selectedItem.amount || selectedItem.totalPrice || 0)}\n\n**Rekomendasi Spesifikasi:**\nPekerjaan ini mengacu pada standar PUPR No. 1/2022. Pastikan koefisien tenaga kerja mandor (0.015 OH) dan tukang batu (0.100 OH) telah disesuaikan dengan produktivitas tim lapangan.`,
+          text: `📋 **Penjelasan Teknis Item Terpilih:**\n\n- **Kode:** \`${selectedItem.code || selectedItem.ahspCode || 'P-01'}\`\n- **Pekerjaan:** **${selectedItem.description}**\n- **Volume:** ${selectedItem.volume} ${selectedItem.unit}\n- **Harga Satuan:** ${_priceLabel}\n- **Total Nilai:** ${_totalLabel}\n\n**Rekomendasi Spesifikasi:**\nPekerjaan ini mengacu pada standar PUPR No. 1/2022. Pastikan koefisien tenaga kerja mandor (0.015 OH) dan tukang batu (0.100 OH) telah disesuaikan dengan produktivitas tim lapangan.`,
           quickActions: [
             { label: '🔍 Buka Inspector & AHSP', prompt: 'Buka AHSP item terpilih' },
             { label: '💡 Cek Harga Pasar Material', prompt: `Cek perbandingan harga material untuk ${selectedItem.description}` },

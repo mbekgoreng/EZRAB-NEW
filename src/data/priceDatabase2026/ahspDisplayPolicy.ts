@@ -40,14 +40,52 @@ export function getAhspDirectPrice(
 }
 
 /**
+ * Apakah identitas item AHSP cukup aman untuk dipilih ke RAB?
+ * Menolak: kode kosong, nama kosong/sangat pendek, fragmen parsing,
+ * dan artefak kode berupa angka (mis. "1.000").
+ * Menggunakan mekanisme gate yang sudah ada (bukan status baru).
+ */
+export function checkAhspIdentitySafety(
+  item: { code?: string | null; name?: string | null } | null | undefined
+): { safe: boolean; reason: string } {
+  if (!item) return { safe: false, reason: 'Data item AHSP tidak tersedia.' };
+  const code = String(item.code || '').trim();
+  const name = String(item.name || '').trim();
+  if (!code) return { safe: false, reason: 'Kode AHSP kosong — identitas tidak aman.' };
+  // Artefak parsing: kode berupa angka desimal (mis. "1.000", "1.250")
+  if (/^\d{1,3}(\.\d{3})+$/.test(code)) {
+    return { safe: false, reason: `Kode "${code}" terindikasi artefak parsing, bukan kode AHSP valid.` };
+  }
+  if (!name) return { safe: false, reason: `Item ${code}: nama kosong — identitas tidak aman.` };
+  if (name.length < 8) {
+    return { safe: false, reason: `Item ${code}: nama terlalu pendek ("${name}") — kemungkinan fragmen parsing.` };
+  }
+  if (/^\(?(no name|satu|dua|tiga)\)?$/i.test(name)) {
+    return { safe: false, reason: `Item ${code}: nama "${name}" terindikasi fragmen parsing.` };
+  }
+  if (/\)\.\s*$/.test(name)) {
+    return { safe: false, reason: `Item ${code}: nama terpotong ("${name.slice(0, 40)}…") — fragmen parsing.` };
+  }
+  return { safe: true, reason: '' };
+}
+
+/**
  * Apakah komposisi AHSP boleh difinalisasi (masuk RAB / disimpan ke proyek
- * sebagai harga final)? Hanya pricingStatus FULL yang lolos.
+ * sebagai harga final)? Hanya pricingStatus FULL yang lolos, DAN identitas
+ * item harus aman (bila item disediakan).
  */
 export function canFinalizeAhsp(
-  comp: FinalizableComposition | null | undefined
+  comp: FinalizableComposition | null | undefined,
+  item?: { code?: string | null; name?: string | null } | null
 ): { ok: boolean; reason: string } {
   if (!comp) {
     return { ok: false, reason: 'Komposisi AHSP tidak tersedia.' };
+  }
+  if (item) {
+    const idCheck = checkAhspIdentitySafety(item);
+    if (!idCheck.safe) {
+      return { ok: false, reason: idCheck.reason + ' Item diblokir dari RAB.' };
+    }
   }
   if (comp.pricingStatus !== 'FULL') {
     return {

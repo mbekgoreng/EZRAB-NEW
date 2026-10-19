@@ -561,9 +561,12 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
   const unpricedItemsCount = useMemo(() => {
     return projectRabItems.filter(
       (item: any) =>
-        item.amount == null &&
-        item.totalPrice == null &&
-        (item.unitPrice == null || item.priceStatus === 'PRICE_UNRESOLVED')
+        // Factory contract: PRICE_UNRESOLVED items carry amount 0 (sentinel),
+        // so status — not amount==null — is the source of truth.
+        item.priceStatus === 'PRICE_UNRESOLVED' ||
+        (item.amount == null &&
+          item.totalPrice == null &&
+          item.unitPrice == null)
     ).length;
   }, [projectRabItems]);
 

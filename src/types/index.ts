@@ -900,6 +900,15 @@ export interface RabItem {
   priceSourceLabel?: string;
   /** Explanation of price provenance (e.g. assumption ID, basis). */
   priceSourceExplanation?: string;
+  /**
+   * AHSP identity safety (audit 2026-10-18). Set by rabItemFactory when
+   * ahspCode is present. 'UNSAFE' = parsing fragment / artefak / identitas
+   * ambigu — item tidak boleh diperlakukan sebagai AHSP valid.
+   * undefined = bukan item AHSP atau belum diperiksa (backward compat).
+   */
+  ahspIdentityStatus?: 'SAFE' | 'UNSAFE';
+  /** Alasan ketidakamanan identitas (bila UNSAFE). */
+  ahspIdentityReason?: string;
 }
 
 export interface AhspResource {

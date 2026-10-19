@@ -13,6 +13,7 @@ import type { RabItem, VolumeSourceType } from '../../types';
 import { SafeDecimalEngine } from '../safeDecimalEngine';
 import { resolvePriceStatus } from '../pricing/priceStatus';
 import type { PriceStatus } from '../../types';
+import { checkAhspIdentitySafety } from '../../data/priceDatabase2026/ahspDisplayPolicy';
 
 export interface RabItemInput extends Partial<RabItem> {
   description: string;
@@ -44,13 +45,31 @@ export function createRabItemRecord(
     `rab-${Date.now().toString().slice(-6)}${idx !== undefined ? `-${idx}` : ''}-${randomSuffix()}`;
 
   const vol = Number(itemData.volume) || 0;
+  // AHSP identity safety (audit 2026-10-18): item yang mengklaim sumber AHSP
+  // (ahspCode terisi) diperiksa identitasnya di boundary engine, sehingga
+  // semua jalur masuk RAB (UI, QTO, AI, template, impor) tidak bisa melewati.
+  // UNSAFE = tidak boleh diperlakukan sebagai AHSP valid; data tidak diubah.
+  let ahspIdentityStatus: 'SAFE' | 'UNSAFE' | undefined;
+  let ahspIdentityReason: string | undefined;
+  const claimedAhspCode = itemData.ahspCode || '';
+  if (claimedAhspCode) {
+    const idCheck = checkAhspIdentitySafety({
+      code: claimedAhspCode,
+      name: itemData.description || '',
+    });
+    ahspIdentityStatus = idCheck.safe ? 'SAFE' : 'UNSAFE';
+    if (!idCheck.safe) ahspIdentityReason = idCheck.reason;
+  }
   // Fase 4A: caller yang mengetahui kebenaran (mis. duplikat dari item yang
   // memang belum ada harganya, atau baris kosong baru) boleh meneruskan
   // priceStatus eksplisit. Jika tidak, turunkan dari nilai unitPrice.
   // NaN = "tidak ada harga valid yang dimasukkan" -> PRICE_UNRESOLVED.
   const explicitStatus = (itemData as { priceStatus?: PriceStatus }).priceStatus;
   const priceStatus = explicitStatus || resolvePriceStatus((itemData as { unitPrice?: unknown }).unitPrice);
-  const up = priceStatus === 'PRICE_RESOLVED' ? Number(itemData.unitPrice) : 0;
+  // Bug fix (audit 2026-10-18): harga manual/estimasi/asumsi harus dipertahankan.
+  // Hanya PRICE_UNRESOLVED yang di-nol-kan (tidak ada harga valid).
+  const rawPrice = Number(itemData.unitPrice);
+  const up = priceStatus === 'PRICE_UNRESOLVED' ? 0 : (Number.isFinite(rawPrice) ? rawPrice : 0);
   const amt = SafeDecimalEngine.safeMultiply(vol, up, 0);
 
   return {
@@ -76,5 +95,6 @@ export function createRabItemRecord(
     verificationStatus:
       itemData.verificationStatus ||
       (priceStatus === 'PRICE_UNRESOLVED' ? 'NEEDS_VERIFICATION' : 'VERIFIED'),
+    ...(ahspIdentityStatus ? { ahspIdentityStatus, ahspIdentityReason } : {}),
   };
 }

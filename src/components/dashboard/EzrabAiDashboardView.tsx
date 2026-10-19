@@ -388,8 +388,8 @@ className="ezdb-anim"
             className="ezdb-hero-annot"
             style={{
               position: 'absolute',
-              top: '36%',
-              left: '-181px',
+              top: '18%',
+              left: '-70px',
               transform: 'translateY(-50%)',
               width: '220px',
               height: '138px',

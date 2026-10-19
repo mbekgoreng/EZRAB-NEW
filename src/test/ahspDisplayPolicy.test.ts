@@ -22,6 +22,7 @@ import {
   getAhspDirectPrice,
   canFinalizeAhsp,
   ahspCompletenessNote,
+  checkAhspIdentitySafety,
 } from '../data/priceDatabase2026/ahspDisplayPolicy';
 
 const FAKE = (suffix: string) => `ZZZ_TIDAK_ADA_${suffix}_999`;
@@ -177,5 +178,34 @@ describe('AHSP display policy — harga kosong & overhead nonaktif', () => {
     expect(comp.unitPrice).toBe(null);
     expect(comp.subtotalPerUnit).toBe(null);
     expect(c.pricingStatus).toBe('PARTIAL');
+  });
+});
+
+describe('identity safety gate (audit 2026-10-18)', () => {
+  it('11. nama kosong → tidak aman', () => {
+    expect(checkAhspIdentitySafety({ code: 'SEDANG-1', name: '' }).safe).toBe(false);
+    expect(checkAhspIdentitySafety({ code: 'SEDANG-1', name: null }).safe).toBe(false);
+  });
+
+  it('12. fragmen parsing → tidak aman', () => {
+    expect(checkAhspIdentitySafety({ code: 'SEDANG-1', name: '(satu)' }).safe).toBe(false);
+    expect(checkAhspIdentitySafety({ code: 'SEDANG-12', name: 'prosedur).' }).safe).toBe(false);
+    expect(checkAhspIdentitySafety({ code: 'X', name: 'abc' }).safe).toBe(false);
+  });
+
+  it('13. artefak kode angka → tidak aman', () => {
+    expect(checkAhspIdentitySafety({ code: '1.000', name: 'USGPM' }).safe).toBe(false);
+    expect(checkAhspIdentitySafety({ code: '1.250', name: 'USGPM' }).safe).toBe(false);
+  });
+
+  it('14. item valid → aman', () => {
+    expect(checkAhspIdentitySafety({ code: 'A.1.1', name: 'Pekerjaan galian tanah biasa' }).safe).toBe(true);
+  });
+
+  it('15. canFinalizeAhsp memblokir identitas tidak aman walau FULL', () => {
+    const full = { pricingStatus: 'FULL', totalComponents: 1, missingComponents: 0, unitPrice: 100000 };
+    const gate = canFinalizeAhsp(full, { code: 'SEDANG-1', name: '' });
+    expect(gate.ok).toBe(false);
+    expect(gate.reason).toContain('diblokir');
   });
 });

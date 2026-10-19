@@ -25,6 +25,8 @@ import { CONSTRUCTION_CALCULATORS, getCalculatorById } from '../engine/construct
 import { SafeDecimalEngine } from '../engine/safeDecimalEngine';
 import { createRabItemRecord } from '../engine/rab/rabItemFactory';
 import { resolveQtoSyncPrice, resolveQtoSyncCode } from '../lib/qtoSyncPricing';
+import { checkAhspIdentitySafety } from '../data/priceDatabase2026/ahspDisplayPolicy';
+import { resolvePriceStatus } from '../engine/pricing/priceStatus';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
 import { projectPriceEngine } from '../engine/pricing/projectPriceEngine';
 import { resolveInitialProjects } from '../lib/demoSeed';
@@ -1119,32 +1121,37 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (options.unitPrice === undefined || !Number.isFinite(options.unitPrice) || options.unitPrice < 0) {
           throw new Error('AHSP/pricing context wajib disediakan sebelum sinkronisasi RAB.');
         }
-        const rabId = `RAB-${Date.now().toString().slice(-6)}`;
-        const newRab: RabItem = {
-          id: rabId,
-          projectId: currentProjectId,
-          no: projectRabItems.length + 1,
-          code: options?.ahspCode || '',
-          category:
-            options?.targetSectionName ||
-            (spec.category === 'persiapan' ? 'Pekerjaan Persiapan' : 'Pekerjaan Struktur'),
-          description: spec.title,
-          volume: result.primaryQuantity,
-          unit: spec.primaryUnit,
-          unitPrice: options.unitPrice,
-          amount: SafeDecimalEngine.safeMultiply(result.primaryQuantity, options.unitPrice, 0),
-          ahspCode: options?.ahspCode || '',
-          volumeSource: 'CALCULATOR',
-          qtoItemId: qtoToReturn.id,
-          calculationRunId: calcRunId,
-          calculatorId,
-        };
+        // P1 fix (audit 2026-10-18): QTO auto-sync WAJIB lewat factory resmi.
+        // Sebelumnya: object literal mentah tanpa priceStatus, tanpa
+        // verificationStatus, tanpa identity-safety gate — melanggar aturan
+        // "semua jalur masuk RAB lewat factory".
+        const newRab: RabItem = createRabItemRecord(
+          {
+            id: `RAB-${Date.now().toString().slice(-6)}`,
+            no: projectRabItems.length + 1,
+            code: options?.ahspCode || '',
+            category:
+              options?.targetSectionName ||
+              (spec.category === 'persiapan' ? 'Pekerjaan Persiapan' : 'Pekerjaan Struktur'),
+            description: spec.title,
+            volume: result.primaryQuantity,
+            unit: spec.primaryUnit,
+            unitPrice: options.unitPrice,
+            ahspCode: options?.ahspCode || '',
+            volumeSource: 'CALCULATOR' as const,
+            qtoItemId: qtoToReturn.id,
+            calculationRunId: calcRunId,
+            calculatorId,
+          },
+          currentProjectId,
+          { defaultVolumeSource: 'CALCULATOR' as const }
+        );
 
         const newMap: QTOItemRABMapping = {
           id: `MAP-${Date.now().toString().slice(-6)}`,
           projectId: currentProjectId,
           qtoItemId: qtoToReturn.id,
-          rabItemId: rabId,
+          rabItemId: newRab.id,
           quantitySource: 'CALCULATOR',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -1189,13 +1196,31 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const existingRab = allRabItems.find((r) => r.id === existingMap.rabItemId);
         if (existingRab) {
           const unitPrice = customUnitPrice !== undefined ? customUnitPrice : existingRab.unitPrice;
+          // Bug fix (audit 2026-10-18): sinkronkan priceStatus saat harga berubah.
+          // Sebelumnya status tidak dihitung ulang → UNRESOLVED dengan harga valid.
+          const priceStatus = customUnitPrice !== undefined
+            ? resolvePriceStatus(customUnitPrice)
+            : existingRab.priceStatus;
+          const newAhspCode = ahspCode || existingRab.ahspCode || '';
+          // Identity safety: periksa bila ahspCode berubah/diset
+          let ahspIdentityStatus = existingRab.ahspIdentityStatus;
+          let ahspIdentityReason = existingRab.ahspIdentityReason;
+          if (ahspCode && ahspCode !== existingRab.ahspCode) {
+            const idCheck = checkAhspIdentitySafety({ code: ahspCode, name: qto.uraian || '' });
+            ahspIdentityStatus = idCheck.safe ? 'SAFE' : 'UNSAFE';
+            ahspIdentityReason = idCheck.safe ? undefined : idCheck.reason;
+          }
           const updatedRab: RabItem = {
             ...existingRab,
             volume: qto.quantity,
             unitPrice,
+            priceStatus,
+            verificationStatus: priceStatus === 'PRICE_UNRESOLVED' ? 'NEEDS_VERIFICATION' : existingRab.verificationStatus,
             amount: unitPrice == null ? null : SafeDecimalEngine.safeMultiply(qto.quantity, unitPrice, 0),
             category: targetSectionName || existingRab.category,
             code: ahspCode || existingRab.code,
+            ahspCode: newAhspCode,
+            ...(ahspIdentityStatus ? { ahspIdentityStatus, ahspIdentityReason } : {}),
           };
           setAllRabItems((prev) => {
             const next = prev.map((r) => (r.id === existingRab.id ? updatedRab : r));
@@ -1213,6 +1238,11 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const priceRes = resolveQtoSyncPrice(customUnitPrice);
       const unitPrice = priceRes.unitPrice;
       const rabId = `RAB-${Date.now().toString().slice(-6)}`;
+      const syncAhspCode = ahspCode || qto.kode;
+      // Identity safety (audit 2026-10-18): QTO sync juga diperiksa
+      const syncIdCheck = syncAhspCode
+        ? checkAhspIdentitySafety({ code: syncAhspCode, name: qto.uraian || '' })
+        : null;
       const newRabItem: RabItem = {
         id: rabId,
         projectId: currentProjectId,
@@ -1227,7 +1257,11 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         priceStatus: priceRes.priceStatus,
         verificationStatus: priceRes.verificationStatus,
         notes: priceRes.notes,
-        ahspCode: ahspCode || qto.kode,
+        ahspCode: syncAhspCode,
+        ...(syncIdCheck ? {
+          ahspIdentityStatus: (syncIdCheck.safe ? 'SAFE' : 'UNSAFE') as 'SAFE' | 'UNSAFE',
+          ahspIdentityReason: syncIdCheck.safe ? undefined : syncIdCheck.reason,
+        } : {}),
         volumeSource: qto.source === 'CALCULATOR' ? 'CALCULATOR' : 'MANUAL',
         qtoItemId: qto.id,
         calculationRunId: qto.calculationRunId,

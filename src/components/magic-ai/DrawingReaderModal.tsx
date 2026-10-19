@@ -827,7 +827,7 @@ export const DrawingReaderModal: React.FC<DrawingReaderModalProps> = ({
                               {item.unit}
                             </td>
                             <td style={{ padding: '10px 14px', textAlign: 'right', color: 'var(--ez-color-text-primary)' }}>
-                              {formatCurrencyIDR(item.unitPrice || 0)}
+                              {item.unitPrice == null ? 'Belum tersedia' : formatCurrencyIDR(item.unitPrice)}
                             </td>
                             <td style={{ padding: '10px 14px', color: 'var(--ez-color-text-muted)', fontSize: '11.5px' }}>
                               {item.source}
