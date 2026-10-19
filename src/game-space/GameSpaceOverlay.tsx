@@ -7,10 +7,50 @@
  * "Main". Closing the overlay unmounts everything.
  */
 
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { X, Gamepad2, ChevronRight, ArrowLeft, Loader2 } from 'lucide-react';
 import './game-space.css';
 import { ARCADE_GAMES } from './games/arcade/manifest';
+
+/**
+ * Ukuran desain acuan semua game (px). Stage mengecil/membesar agar game
+ * selalu pas di ruang yang tersedia — tidak ada lagi yang ke-crop di
+ * layar pendek.
+ */
+const STAGE_W = 390;
+const STAGE_H = 700;
+const STAGE_MAX_SCALE = 1.3;
+
+/** Pembungkus game aktif: ukur ruang, skala stage agar pas, tanpa crop. */
+const GameStage: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const measRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const el = measRef.current;
+    if (!el) return;
+    const update = (): void => {
+      const w = el.clientWidth - 16; // kurangi padding .gs-stage
+      const h = el.clientHeight - 16;
+      if (w > 0 && h > 0) {
+        setScale(Math.min(w / STAGE_W, h / STAGE_H, STAGE_MAX_SCALE));
+      }
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={measRef} className="gs-stage">
+      <div
+        className="gs-stage-box"
+        style={{ width: Math.floor(STAGE_W * scale), height: Math.floor(STAGE_H * scale) }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+};
 
 // Lazy: each game splits into its own chunk (2D canvas, no three.js).
 const BongkarRumah = React.lazy(() => import('./games/bongkar-rumah/BongkarRumah'));
@@ -292,16 +332,18 @@ export const GameSpaceOverlay: React.FC<Props> = ({ onClose }) => {
             <p className="gs-menu-note">🎮 Berjalan 100% lokal di perangkatmu — tanpa AI, tanpa kuota.</p>
           </div>
         ) : (
-          <Suspense
-            fallback={
-              <div className="gs-loading">
-                <Loader2 size={28} className="spin" />
-                <p>Memuat game…</p>
-              </div>
-            }
-          >
-            <activeGame.component onExit={() => setActiveGame(null)} />
-          </Suspense>
+          <GameStage>
+            <Suspense
+              fallback={
+                <div className="gs-loading">
+                  <Loader2 size={28} className="spin" />
+                  <p>Memuat game…</p>
+                </div>
+              }
+            >
+              <activeGame.component onExit={() => setActiveGame(null)} />
+            </Suspense>
+          </GameStage>
         )}
       </div>
     </div>

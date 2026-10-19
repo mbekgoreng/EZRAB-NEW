@@ -81,7 +81,7 @@ test('konstanta grace & slow-mo', () => {
 test('miss material = -1 nyawa; miss dinamit = 0 (beruntung)', () => {
   assert.equal(missLivesLost('bata'), 1);
   assert.equal(missLivesLost('kayu'), 1);
-  assert.equal(missLivesLost('semangka'), 1);
+  assert.equal(missLivesLost('bambu'), 1);
   assert.equal(missLivesLost('beton'), 1);
   assert.equal(missLivesLost('dinamit'), 0);
 });
@@ -206,7 +206,7 @@ test('konstanta nyawa awal = 3', () => {
   assert.equal(START_LIVES, 3);
 });
 test('SPLASH punya palet untuk semua kind', () => {
-  for (const k of ['bata', 'kayu', 'semangka', 'beton', 'dinamit'] as const) {
+  for (const k of ['bata', 'kayu', 'bambu', 'beton', 'dinamit'] as const) {
     assert.ok(SPLASH[k].length >= 3, `palet ${k} kurang`);
   }
 });

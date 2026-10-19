@@ -7,7 +7,7 @@
 
 import { distToSegment } from '../../engine2d/helpers';
 
-export type ItemKind = 'bata' | 'kayu' | 'semangka' | 'beton' | 'dinamit';
+export type ItemKind = 'bata' | 'kayu' | 'bambu' | 'beton' | 'dinamit';
 
 export interface Rng {
   (): number;
@@ -61,7 +61,7 @@ export const GRACE_NO_DYNAMITE_T = 2.0;
 
 /** Particle splash palette per material kind. */
 export const SPLASH: Record<ItemKind, string[]> = {
-  semangka: ['#ef4444', '#f87171', '#fca5a5', '#166534', '#bbf7d0'],
+  bambu: ['#16a34a', '#4ade80', '#86efac', '#14532d', '#d9f99d'],
   kayu: ['#b45309', '#d4a373', '#8b5a2b', '#fbbf24'],
   bata: ['#ea580c', '#f97316', '#c2410c', '#fdba74'],
   beton: ['#9ca3af', '#6b7280', '#d1d5db', '#e5e7eb'],
@@ -71,7 +71,7 @@ export const SPLASH: Record<ItemKind, string[]> = {
 const KIND_TABLE: Array<{ kind: ItemKind; weight: number }> = [
   { kind: 'bata', weight: 26 },
   { kind: 'kayu', weight: 24 },
-  { kind: 'semangka', weight: 22 },
+  { kind: 'bambu', weight: 22 },
   { kind: 'beton', weight: 16 },
   { kind: 'dinamit', weight: 12 },
 ];

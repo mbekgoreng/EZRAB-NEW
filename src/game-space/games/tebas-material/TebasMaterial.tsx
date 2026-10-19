@@ -328,36 +328,39 @@ function drawBody(ctx: CanvasRenderingContext2D, kind: ItemKind, r: number, id: 
     ctx.fillStyle = 'rgba(255,240,210,0.3)';
     rr(ctx, -w / 2 + 5, -h / 2 + 4, w - 10, 7, 3.5);
     ctx.fill();
-  } else if (kind === 'semangka') {
-    const g = ctx.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.2, 0, 0, r * 1.15);
-    g.addColorStop(0, '#2ea44d');
-    g.addColorStop(1, '#14622a');
+  } else if (kind === 'bambu') {
+    // ruas bambu: silinder hijau beruas-ruas
+    const w = 2.1 * r;
+    const h = 1.5 * r;
+    const g = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
+    g.addColorStop(0, '#4ade80');
+    g.addColorStop(0.5, '#22c55e');
+    g.addColorStop(1, '#15803d');
     ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, TAU);
+    rr(ctx, -w / 2, -h / 2, w, h, 10);
     ctx.fill();
     ctx.lineWidth = 2.5;
-    ctx.strokeStyle = '#0d3f1c';
+    ctx.strokeStyle = '#14532d';
     ctx.stroke();
-    // loreng
-    ctx.strokeStyle = 'rgba(13,63,28,0.8)';
-    ctx.lineWidth = 5;
-    for (const fx of [-0.55, -0.18, 0.18, 0.55]) {
+    // buku-buku ruas
+    ctx.strokeStyle = 'rgba(20,83,45,0.9)';
+    ctx.lineWidth = 4;
+    for (const fx of [-0.33, 0.33]) {
       ctx.beginPath();
-      ctx.ellipse(fx * r, 0, r * 0.13, r * 0.92, 0, 0, TAU);
+      ctx.moveTo(fx * w, -h / 2 + 2);
+      ctx.lineTo(fx * w, h / 2 - 2);
       ctx.stroke();
     }
-    // kilau
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    // highlight serat memanjang
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.ellipse(-r * 0.34, -r * 0.42, r * 0.30, r * 0.16, -0.6, 0, TAU);
+    ctx.moveTo(-w * 0.28, -h / 2 + 6);
+    ctx.lineTo(-w * 0.28, h / 2 - 6);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    rr(ctx, -w / 2 + 5, -h / 2 + 5, w - 10, 7, 3.5);
     ctx.fill();
-    // tangkai
-    ctx.fillStyle = '#6b4a1f';
-    rr(ctx, -3.5, -r - 7, 7, 12, 3);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.2)';
-    ctx.fillRect(-3.5, -r - 7, 2.5, 12);
   } else if (kind === 'beton') {
     const w = 1.9 * r;
     const h = 1.28 * r;
@@ -406,32 +409,25 @@ function drawCutFace(ctx: CanvasRenderingContext2D, kind: ItemKind, r: number, i
   ctx.beginPath();
   ctx.arc(0, 0, r, 0, TAU);
   ctx.clip();
-  if (kind === 'semangka') {
+  if (kind === 'bambu') {
+    // penampang bambu: cincin hijau, daging krem, lubang tengah
     const g = ctx.createRadialGradient(0, 0, r * 0.1, 0, 0, r);
-    g.addColorStop(0, '#fca5a5');
-    g.addColorStop(0.6, '#f87171');
-    g.addColorStop(1, '#dc2626');
+    g.addColorStop(0, '#3f3f2a');
+    g.addColorStop(0.35, '#fef9c3');
+    g.addColorStop(0.7, '#d9f99d');
+    g.addColorStop(0.88, '#4ade80');
+    g.addColorStop(1, '#15803d');
     ctx.fillStyle = g;
     ctx.fillRect(-r, -r, r * 2, r * 2);
-    // biji
-    ctx.fillStyle = '#3f1d1d';
-    for (let i = 0; i < 7; i += 1) {
+    // lubang tengah
+    ctx.fillStyle = '#292524';
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.22, 0, TAU); ctx.fill();
+    // serat
+    ctx.fillStyle = 'rgba(20,83,45,0.5)';
+    for (let i = 0; i < 8; i += 1) {
       const a = hash(id * 11 + i * 17) * TAU;
-      const d = r * (0.25 + hash(id + i * 31) * 0.45);
-      ctx.save();
-      ctx.translate(Math.cos(a) * d, Math.sin(a) * d);
-      ctx.rotate(a);
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 3.2, 4.6, 0, 0, TAU);
-      ctx.fill();
-      ctx.restore();
-    }
-    // tetes jus
-    ctx.fillStyle = 'rgba(220,38,38,0.55)';
-    for (let i = 0; i < 5; i += 1) {
-      ctx.beginPath();
-      ctx.arc((hash(id + i * 3) - 0.5) * r * 1.4, (hash(id * 2 + i * 7) - 0.5) * r * 1.4, 2.4, 0, TAU);
-      ctx.fill();
+      const d = r * (0.45 + hash(id + i * 31) * 0.3);
+      ctx.beginPath(); ctx.arc(Math.cos(a) * d, Math.sin(a) * d, 2.2, 0, TAU); ctx.fill();
     }
   } else if (kind === 'kayu') {
     const g = ctx.createRadialGradient(0, 0, 2, 0, 0, r);
@@ -831,10 +827,10 @@ export default function TebasMaterial({ onExit }: { onExit: () => void }): React
           count: 24, colors: SPLASH[it.kind], speed: [90, 400],
           life: [0.35, 0.85], size: [2, 6.5], gravity: 750, shape: 'rect', rotation: true,
         });
-        // tetesan jus untuk semangka
-        if (it.kind === 'semangka') {
+        // serat bambu beterbangan
+        if (it.kind === 'bambu') {
           api.particles.spawn(it.x, it.y, {
-            count: 10, colors: ['#ef4444', '#dc2626', '#fca5a5'], speed: [60, 260],
+            count: 10, colors: ['#16a34a', '#4ade80', '#d9f99d'], speed: [60, 260],
             life: [0.4, 0.9], size: [2.5, 5], gravity: 1100, shape: 'circle',
           });
         }
@@ -1164,7 +1160,7 @@ export default function TebasMaterial({ onExit }: { onExit: () => void }): React
       {/* HUD */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', zIndex: 5, pointerEvents: 'none' }}>
         <div style={{ pointerEvents: 'auto', background: 'rgba(10,18,32,0.55)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 14, padding: '8px 12px', color: '#fff', backdropFilter: 'blur(6px)' }}>
-          <div style={{ fontWeight: 900, fontSize: 20, lineHeight: 1 }}>🍉 {hud.score}</div>
+          <div style={{ fontWeight: 900, fontSize: 20, lineHeight: 1 }}>🎋 {hud.score}</div>
           <div style={{ fontSize: 11, opacity: 0.75, marginTop: 3 }}>Terbaik: {hud.best}</div>
           <div style={{ fontSize: 17, marginTop: 2, letterSpacing: 2 }} aria-label={`${hud.lives} nyawa`}>
             {[0, 1, 2].map((i) => (
@@ -1184,7 +1180,7 @@ export default function TebasMaterial({ onExit }: { onExit: () => void }): React
       {screen === 'tutorial' && (
         <div style={card}>
           <div style={panel}>
-            <div style={{ fontSize: 40 }}>🍉⚔️</div>
+            <div style={{ fontSize: 40 }}>🎋⚔️</div>
             <h2 style={{ margin: '8px 0 4px', fontWeight: 900, fontSize: 24, color: '#fde047' }}>TEBAS MATERIAL</h2>
             {/* Tutorial 1 kalimat + visual (panah swipe animasi di canvas) */}
             <p style={{ fontSize: 14.5, lineHeight: 1.6, opacity: 0.95, margin: '6px 0 4px' }}>

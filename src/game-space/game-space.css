@@ -394,3 +394,30 @@
 }
 .gs-empty { text-align: center; color: rgba(255,255,255,0.6); padding: 24px 0; font-size: 13.5px; }
 .gs-card-arcade { background: linear-gradient(135deg, #1e2a4a 0%, #16213a 100%); }
+
+/* ---- Game stage: skala otomatis agar game pas di layar, anti-crop ---- */
+.gs-stage {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #0b1020;
+  padding: 8px;
+  box-sizing: border-box;
+}
+.gs-stage-box {
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #0b1020;
+}
+/* Netralkan min-height paksa di root game agar tidak meluber dari stage */
+.gs-stage-box > * {
+  min-height: 0 !important;
+  min-width: 0 !important;
+}

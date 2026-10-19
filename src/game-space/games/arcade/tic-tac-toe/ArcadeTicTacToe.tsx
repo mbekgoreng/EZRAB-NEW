@@ -204,7 +204,7 @@ export default function ArcadeTicTacToe({ onExit }: { onExit: () => void }): Rea
       ctx.save();
       ctx.globalAlpha = 0.5;
       for (let i = 0; i < 3; i += 1) {
-        const sx = 26 + i * 8; const sy = H - 40 - i * 26;
+        const sx = 48 + i * 8; const sy = H - 40 - i * 26;
         const sg = ctx.createLinearGradient(sx, sy - 22, sx, sy);
         sg.addColorStop(0, '#d6d3d1'); sg.addColorStop(1, '#78716c');
         ctx.fillStyle = sg;
