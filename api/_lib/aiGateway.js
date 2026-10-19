@@ -259,9 +259,12 @@ export async function executeAI(o, onAttempt) {
       return { ok: false, error: 'Vision PDF membutuhkan GEMINI_API_KEY_* — tidak ada key Gemini terkonfigurasi', requestId, attempts: [] };
     }
   } else if (mode === 'advanced') {
+    // Advanced: ZyRouter (gemini 3.8) dulu, fallback ke Gemini flash lite
     if (zk) attempts.push(zyrouterCall());
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
   } else {
+    // Fast: River deepseek 4.1 flash -> Gemini flash lite -> Dahl -> ZyRouter
+    rk.forEach((k) => attempts.push(riverVisionCall(k)));
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
     if (zk) attempts.push(zyrouterCall());
   }

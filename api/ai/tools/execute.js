@@ -7,7 +7,9 @@
 import { handleAiRequest } from '../../_lib/aiGateway.js';
 
 function productIdToMode(pid) {
-  return pid === 'DED_AI_DETAIL' || pid === 'DOKUMEN_AI' ? 'advanced' : 'fast';
+  // DOKUMEN_AI pakai fast (deepseek 4.1 flash + gemini flash lite)
+  // Hanya DED_AI_DETAIL yang pakai advanced (zyrouter + gemini 3.8)
+  return pid === 'DED_AI_DETAIL' ? 'advanced' : 'fast';
 }
 
 export default async function handler(req, res) {

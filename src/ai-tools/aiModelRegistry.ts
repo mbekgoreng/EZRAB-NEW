@@ -4,10 +4,10 @@
  * Single source of truth for which model each AI product must send to the provider.
  * BRANDED GATE: `requestedModel === actuallySentModel`. No silent substitution.
  *
- * Model decisions (from the master prompt):
- * - DED AI Estimate FAST   → gemini-3.5-flash-lite (native Google)
+ * Model decisions (user 2026-10-20):
+ * - DED AI Estimate FAST   → deepseek-ai/DeepSeek-V4.1-Flash (River) + gemini-3.5-flash-lite fallback
  * - DED AI Estimate DETAIL → geminiflash-3.8 (ZyRouter gateway id, NOT native)
- * - Dokumen AI             → from env (repository shares provider)
+ * - Dokumen AI             → deepseek-ai/DeepSeek-V4.1-Flash (River) + gemini-3.5-flash-lite fallback
  * - EZRAB AI              → from env via helper
  */
 
@@ -47,7 +47,9 @@ function envFirst(...names: string[]): string {
   return '';
 }
 
-const DED_AI_FAST = 'gemini-3.5-flash-lite';
+const DED_AI_FAST = 'deepseek-ai/DeepSeek-V4.1-Flash';
+const DED_AI_FAST_FALLBACK = 'gemini-3.5-flash-lite';
+const DED_AI_FAST_PROVIDER = 'river';
 const DED_AI_DETAIL = 'geminiflash-3.8';
 const DED_AI_DETAIL_PROVIDER = 'zyrouter';
 
@@ -58,11 +60,11 @@ function normaliseModelId(raw: string): string {
 export function getModelTarget(productId: AIProductId): ModelTarget {
   switch (productId) {
     case 'DED_AI_FAST': {
-      const source = envFirst('DED_FAST_MODEL', 'GEMINI_FAST_MODEL', 'GEMINI_MODEL_FLASH_LITE');
+      const source = envFirst('DED_FAST_MODEL', 'RIVER_MODEL', 'DEEPSEEK_MODEL');
       const fallback = source || DED_AI_FAST;
       return {
         productId: 'DED_AI_FAST',
-        provider: 'gemini',
+        provider: DED_AI_FAST_PROVIDER,
         model: normaliseModelId(fallback),
         label: 'EZRAB Fast Engine',
         resolveSource: source ? 'env(FAST_GROUP)' : 'registry-default',
@@ -81,14 +83,14 @@ export function getModelTarget(productId: AIProductId): ModelTarget {
       };
     }
     case 'DOKUMEN_AI': {
-      const docSource = envFirst('DED_DETAIL_MODEL', 'DED_SCAN_AI_MODEL', 'ZYROUTER_MODEL', 'GEMINI_MODEL_FLASH');
-      const model = normaliseModelId(docSource || DED_AI_DETAIL);
+      const docSource = envFirst('DOKUMEN_MODEL', 'RIVER_MODEL', 'DEEPSEEK_MODEL');
+      const model = normaliseModelId(docSource || DED_AI_FAST);
       return {
         productId: 'DOKUMEN_AI',
-        provider: 'zyrouter',
+        provider: 'river',
         model,
         label: 'EZRAB Dokumen AI',
-        resolveSource: docSource ? 'env(DED_DETAIL_MODEL|DED_SCAN_AI_MODEL|ZYROUTER_MODEL|GEMINI_MODEL_FLASH)' : 'registry-default',
+        resolveSource: docSource ? 'env(DOKUMEN_MODEL|RIVER_MODEL|DEEPSEEK_MODEL)' : 'registry-default',
       };
     }
     case 'DOKUMEN_AI_EXTRACT_PLAIN':
