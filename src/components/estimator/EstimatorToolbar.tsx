@@ -55,6 +55,10 @@ interface EstimatorToolbarProps {
   onOpenDocumentReview?: () => void;
   onMoreActions?: () => void;
   onRefreshData?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
   onImportExcel?: () => void;
   onExportPackage?: () => void;
   onValidateIntegrity?: () => void;
@@ -64,10 +68,6 @@ interface EstimatorToolbarProps {
   onOpenVersionHistory?: () => void;
   totalMatchedItems?: number;
   totalItems?: number;
-  canUndo?: boolean;
-  canRedo?: boolean;
-  onUndo?: () => void;
-  onRedo?: () => void;
 }
 
 export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
@@ -88,6 +88,10 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
   onToggleSortModal,
   onToggleColumnsModal,
   onAddItem,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
   onOpenDocumentReview,
   onRefreshData,
   onImportExcel,
@@ -99,10 +103,6 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
   onOpenVersionHistory,
   totalMatchedItems,
   totalItems,
-  canUndo = false,
-  canRedo = false,
-  onUndo,
-  onRedo,
 }) => {
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -258,6 +258,7 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
           >
             <option value="ALL">Semua Sumber</option>
             <option value="AHSP 2024">AHSP 2024</option>
+            <option value="AHSP 2026">AHSP 2026</option>
             <option value="MANUAL">MANUAL</option>
             <option value="CALCULATOR">CALCULATOR (AI)</option>
             <option value="IMPORT">IMPORT</option>
@@ -457,6 +458,45 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
 
       {/* Right controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+        {/* Undo/Redo buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <button
+            type="button"
+            onClick={onUndo}
+            disabled={!canUndo}
+            title="Urungkan (Ctrl+Z)"
+            aria-label="Urungkan"
+            style={{
+              width: '34px', height: '34px', borderRadius: '8px',
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-color-border-line)',
+              color: canUndo ? 'var(--ez-color-text-primary)' : 'var(--ez-color-text-disabled)',
+              cursor: canUndo ? 'pointer' : 'not-allowed',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              opacity: canUndo ? 1 : 0.5,
+            }}
+          >
+            <Undo2 size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={onRedo}
+            disabled={!canRedo}
+            title="Ulangi (Ctrl+Y)"
+            aria-label="Ulangi"
+            style={{
+              width: '34px', height: '34px', borderRadius: '8px',
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-color-border-line)',
+              color: canRedo ? 'var(--ez-color-text-primary)' : 'var(--ez-color-text-disabled)',
+              cursor: canRedo ? 'pointer' : 'not-allowed',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              opacity: canRedo ? 1 : 0.5,
+            }}
+          >
+            <Redo2 size={16} />
+          </button>
+        </div>
         {/* Phase 10: SPLIT BUTTON [ + Tambah Item | ▼ ] */}
         <div ref={addMenuRef} style={{ display: 'inline-flex', position: 'relative', zIndex: 10 }}>
           {/* Main Smart Add Action */}

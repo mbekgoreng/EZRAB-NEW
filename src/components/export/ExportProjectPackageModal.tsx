@@ -340,7 +340,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
-                  Export Paket Dokumen Proyek
+                  Ekspor Dokumen Proyek
                 </h3>
                 <span
                   style={{
@@ -365,17 +365,17 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
           {/* P0-B: peringatan jujur bila identitas perusahaan belum diisi —
               dokumen resmi tidak boleh memakai nama/NPWP contoh. */}
           {!effectiveCompany.name && (
-            <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '10px', background: '#FFFBEB', border: '1px solid #FDE68A', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '12.5px', color: '#92400E', flex: 1 }}>
-                Identitas perusahaan belum diisi — kop dokumen akan menampilkan strip (-).
-                Lengkapi di Branding agar dokumen resmi valid.
+            <div style={{ marginTop: '10px', padding: '8px 12px', borderRadius: '8px', background: 'var(--ez-hue-amber-bg)', border: '1px solid var(--ez-hue-amber-border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Info size={14} color="var(--ez-hue-amber-text)" />
+              <span style={{ fontSize: '12px', color: 'var(--ez-hue-amber-text)', flex: 1 }}>
+                Lengkapi identitas perusahaan agar kop dokumen valid.
               </span>
               <button
                 type="button"
                 onClick={() => setBrandingModalOpen(true)}
-                style={{ height: '30px', padding: '0 12px', borderRadius: '6px', border: '1px solid #F59E0B', background: '#fff', color: '#92400E', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-primary)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
               >
-                Lengkapi Branding
+                Lengkapi
               </button>
             </div>
           )}
@@ -406,7 +406,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
             2. MODAL BODY (Scrollable)
            =================================================================== */}
         <div style={{ flexGrow: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          
+
           {/* SECTION A: QUICK PRESETS */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -497,13 +497,13 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               }}
             >
               <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 750, color: 'var(--ez-color-text-body)', marginBottom: '8px' }}>
-                FORMAT DOKUMEN EXPORT
+                Format Dokumen
               </label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {[
-                  { id: 'excel', label: 'Excel (.xlsx)', icon: FileSpreadsheet, desc: 'Live Formula & 15 Sheet' },
-                  { id: 'pdf', label: 'PDF Resmi (.pdf)', icon: FileText, desc: 'Print-Ready Siap Cetak' },
-                  { id: 'both', label: 'Excel + PDF', icon: FolderArchive, desc: 'Paket Lengkap Terpadu' },
+                  { id: 'excel', label: 'Excel', icon: FileSpreadsheet, desc: 'File .xlsx dengan formula aktif, dapat diedit' },
+                  { id: 'pdf', label: 'PDF', icon: FileText, desc: 'Dokumen siap cetak dengan kop resmi' },
+                  { id: 'both', label: 'Excel + PDF', icon: FolderArchive, desc: 'Kedua format dalam satu paket' },
                 ].map(({ id, label, icon: Icon, desc }) => (
                   <button
                     key={id}
@@ -542,7 +542,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               }}
             >
               <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 750, color: 'var(--ez-color-text-body)', marginBottom: '8px' }}>
-                PERUNTUKAN DOKUMEN (RECIPIENT)
+                Peruntukan Dokumen
               </label>
               <select
                 value={selectedAudience}
@@ -729,9 +729,6 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
                     />
                     <div style={{ flexGrow: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-primary)' }}>
-                          {sheet.code}
-                        </span>
                         {isBoqMc0 && (
                           <span
                             style={{
@@ -1014,30 +1011,24 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
               type="button"
               onClick={handleDirectPdfExport}
               disabled={isExporting}
+              title="Langsung unduh PDF tanpa memilih sheet"
               style={{
                 height: '38px',
-                padding: '0 16px',
+                padding: '0 14px',
                 borderRadius: '8px',
-                background: 'var(--ez-hue-green-bg)',
-                border: '1px solid #86EFAC',
+                background: 'transparent',
+                border: '1px solid var(--ez-color-border-line)',
                 fontSize: '12.5px',
-                fontWeight: 700,
-                color: 'var(--ez-hue-green-text)',
+                fontWeight: 600,
+                color: 'var(--ez-color-text-muted)',
                 cursor: isExporting ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => {
-                if (!isExporting) e.currentTarget.style.backgroundColor = 'var(--ez-hue-green-bg-deep)';
-              }}
-              onMouseLeave={(e) => {
-                if (!isExporting) e.currentTarget.style.backgroundColor = 'var(--ez-hue-green-bg)';
               }}
             >
-              <FileText size={14} color="var(--ez-hue-green-text)" />
-              <span>Unduh PDF Langsung</span>
+              <FileText size={14} />
+              <span>PDF Cepat</span>
             </button>
 
             <button
@@ -1069,7 +1060,7 @@ export const ExportProjectPackageModal: React.FC<ExportProjectPackageModalProps>
             >
               <Download size={15} color="#FFFFFF" />
               <span>
-                {isExporting ? 'Membuat Dokumen...' : `Export Dokumen (${activeSheetCount} Sheet)`}
+                {isExporting ? 'Membuat Dokumen...' : `Ekspor (${activeSheetCount} Lembar)`}
               </span>
             </button>
           </div>

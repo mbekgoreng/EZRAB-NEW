@@ -138,7 +138,7 @@ export const PondasiDiagram: React.FC<DiagramProps> = ({ activeParam, onSelectPa
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
       <svg viewBox="0 0 460 270" style={{ width: '100%', height: 'auto', maxHeight: '250px' }}>
         <rect width="460" height="270" rx="12" fill="#0B132B" />
-        
+
         {/* Soil Background Hatch */}
         <path d="M 40 70 L 420 70 L 420 240 L 40 240 Z" fill="#1E293B" opacity="0.5" />
         <line x1="40" y1="70" x2="420" y2="70" stroke="#64748B" strokeWidth="2" strokeDasharray="4 2" />
@@ -472,7 +472,7 @@ export const AtapBajaRinganDiagram: React.FC<DiagramProps> = ({ activeParam, onS
 
         {/* Roof Truss Structure (Kuda-kuda Baja Ringan) */}
         <polygon points="230,50 390,170 70,170" fill="rgba(56, 189, 248, 0.15)" stroke="#38BDF8" strokeWidth="2.5" />
-        
+
         {/* Internal Truss Webs */}
         <line x1="230" y1="50" x2="230" y2="170" stroke="#60A5FA" strokeWidth="1.5" />
         <line x1="150" y1="110" x2="230" y2="170" stroke="#60A5FA" strokeWidth="1.5" />
@@ -538,7 +538,17 @@ export const FinishingDiagram: React.FC<DiagramProps & { title: string; category
         {category === 'lantai' && (
           <g transform="translate(140, 90)">
             <rect x="0" y="0" width="180" height="100" fill="#3B82F6" opacity="0.4" stroke="#60A5FA" strokeWidth="2" />
-            <text x="90" y="55" fill="#FFFFFF" fontSize="12" fontWeight="800" textAnchor="middle">POLA KERAMIK / GRANIT</text>
+            <text x="90" y="45" fill="#FFFFFF" fontSize="11" fontWeight="800" textAnchor="middle">POLA KERAMIK / GRANIT</text>
+            {/* P - Panjang */}
+            <line x1="0" y1="115" x2="180" y2="115" stroke="#F59E0B" strokeWidth="1.5" />
+            <line x1="0" y1="110" x2="0" y2="120" stroke="#F59E0B" strokeWidth="1.5" />
+            <line x1="180" y1="110" x2="180" y2="120" stroke="#F59E0B" strokeWidth="1.5" />
+            <text x="90" y="130" fill="#F59E0B" fontSize="11" fontWeight="700" textAnchor="middle">P</text>
+            {/* L - Lebar */}
+            <line x1="195" y1="0" x2="195" y2="100" stroke="#F59E0B" strokeWidth="1.5" />
+            <line x1="190" y1="0" x2="200" y2="0" stroke="#F59E0B" strokeWidth="1.5" />
+            <line x1="190" y1="100" x2="200" y2="100" stroke="#F59E0B" strokeWidth="1.5" />
+            <text x="210" y="55" fill="#F59E0B" fontSize="11" fontWeight="700" textAnchor="middle">L</text>
           </g>
         )}
 

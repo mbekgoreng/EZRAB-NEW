@@ -43,6 +43,7 @@ import { DokumenAiView } from '../../ai-tools/document-ai/view';
 import { CreditPage } from '../../ai-credits/CreditPage';
 import '../../ai-credits/ai-credits.css';
 import { MagicAiSuperView } from '../magic-ai/MagicAiSuperView';
+import { RabGeneratorModal } from '../magic-ai/RabGeneratorModal';
 import { ProjectsView } from '../projects/ProjectsView';
 import { FirstProjectChecklist } from '../onboarding/FirstProjectChecklist';
 import { RabEstimasiView } from '../rab/RabEstimasiView';
@@ -118,6 +119,10 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
 
   // Sidebar Layout State (collapsible to 72px)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // RAB Generator Modal state
+  const [rabGeneratorOpen, setRabGeneratorOpen] = useState(false);
+  const [rabGeneratorPrompt, setRabGeneratorPrompt] = useState('');
 
   // Grouped Submenu Expand/Collapse States
   const [proyekSubmenuOpen, setProyekSubmenuOpen] = useState(true);
@@ -235,7 +240,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
   const totalRab = projects.reduce((acc, p) => acc + (p.totalRab || 0), 0);
   const completedProjects = projects.filter((p) => p.status === 'completed' || p.status === 'approved').length;
   const activeProjects = projects.filter((p) => p.status === 'in_progress').length;
-  
+
   // Latest project for the showcase card
   const latestProject = currentProject || (projects.length > 0 ? projects[0] : null);
 
@@ -748,9 +753,23 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
         }}
         onNavigateToTab={(tab, projId) => setActiveMenu(tab, projId)}
         onOpenMagicAiWithPrompt={(prompt) => {
-          setActiveMenu('magic-ai');
+          setRabGeneratorPrompt(prompt);
+          setRabGeneratorOpen(true);
         }}
       />
+
+      {rabGeneratorOpen && (
+        <RabGeneratorModal
+          initialPrompt={rabGeneratorPrompt}
+          projectId={currentProject?.id || ''}
+          onClose={() => setRabGeneratorOpen(false)}
+          onAddItems={async (items) => {
+            // Use bulkAddRabItems from context
+            await bulkAddRabItems(items, currentProject?.id);
+            setActiveMenu('estimate');
+          }}
+        />
+      )}
 
       {/* =========================================================================
           LIGHTWEIGHT ONBOARDING TOUR MODAL (DISMISSIBLE / RE-TRIGGERABLE)

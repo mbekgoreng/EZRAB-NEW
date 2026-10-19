@@ -118,6 +118,7 @@ export const EstimatorAdvancedFilterModal: React.FC<EstimatorAdvancedFilterModal
               <option value="ALL">Semua Sumber</option>
               <option value="MANUAL">MANUAL</option>
               <option value="AHSP 2024">AHSP 2024</option>
+              <option value="AHSP 2026">AHSP 2026</option>
               <option value="CALCULATOR">CALCULATOR (AI)</option>
               <option value="IMPORT">IMPORT (Excel)</option>
             </select>

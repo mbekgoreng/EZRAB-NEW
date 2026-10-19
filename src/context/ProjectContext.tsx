@@ -244,12 +244,11 @@ export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = [
     location: 'Bandung',
     buildingType: 'Gedung Kantor',
     status: 'in_progress',
-    progress: 35,
+    progress: 0,
     totalRab: 0,
     createdAt: '2026-09-18T08:00:00.000Z',
     updatedAt: '2026-09-18T14:12:00.000Z',
-    itemsCount: 14,
-    sections: [],
+        itemsCount: 0, sections: [],
     costSummary: {
       directCost: 8054054054,
       overheadPercent: 5,
@@ -424,7 +423,7 @@ const DEFAULT_FLAGSHIP_RAB_ITEMS: RabItem[] = [
     amount: 230000000,
     totalPrice: 230000000,
     ahspCode: 'A.4.1.1.5',
-    volumeSource: 'AHSP 2024' as any,
+    volumeSource: 'AHSP 2026' as any,
   },
   {
     id: 'RAB-TROPIS-04',
@@ -440,7 +439,7 @@ const DEFAULT_FLAGSHIP_RAB_ITEMS: RabItem[] = [
     amount: 258552000,
     totalPrice: 258552000,
     ahspCode: 'A.4.1.1.17',
-    volumeSource: 'AHSP 2024' as any,
+    volumeSource: 'AHSP 2026' as any,
   },
   {
     id: 'RAB-TROPIS-05',

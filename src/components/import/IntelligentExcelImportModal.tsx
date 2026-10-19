@@ -207,12 +207,11 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
         <div
           style={{
             padding: '16px 24px',
-            background: '#0F172A',
-            color: '#FFFFFF',
+            background: 'var(--ez-color-surface)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            borderBottom: '1px solid #1E293B',
+            borderBottom: '1px solid var(--ez-color-border-line)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -221,36 +220,21 @@ export const IntelligentExcelImportModal: React.FC<IntelligentExcelImportModalPr
                 width: '36px',
                 height: '36px',
                 borderRadius: '10px',
-                background: 'linear-gradient(135deg, #10B981, #2563EB)',
+                background: 'var(--ez-hue-blue-bg)',
+                border: '1px solid var(--ez-hue-blue-border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 0 14px rgba(16, 185, 129, 0.4)',
               }}
             >
-              <FileSpreadsheet size={20} color="#FFFFFF" />
+              <FileSpreadsheet size={20} color="var(--ez-color-primary)" />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '0.02em' }}>
-                  INTELLIGENT EXCEL IMPORT
-                </span>
-                <span
-                  style={{
-                    fontSize: '10px',
-                    fontWeight: 800,
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    background: 'rgba(37, 99, 235, 0.2)',
-                    color: '#60A5FA',
-                    border: '1px solid rgba(37, 99, 235, 0.4)',
-                  }}
-                >
-                  INDONESIAN RAB ENGINE
-                </span>
+              <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
+                Impor File Excel RAB
               </div>
-              <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px' }}>
-                Pengenalan otomatis struktur WBS, kolom harga, satuan standar, dan eliminasi baris subtotal ganda
+              <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                Unggah file Excel untuk dikenali otomatis sebagai item RAB
               </div>
             </div>
           </div>

@@ -425,9 +425,10 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             tabIndex={0}
             style={{
               height: '96px',
-              background: 'var(--ez-color-surface)',
+              background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
+              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(37,99,235,0.04) 19px, rgba(37,99,235,0.04) 20px), repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(37,99,235,0.04) 19px, rgba(37,99,235,0.04) 20px)',
               borderRadius: '22px',
-              border: '1px solid var(--ez-color-border)',
+              border: '1px solid #BFDBFE',
               padding: '16px 18px',
               display: 'flex',
               alignItems: 'center',
@@ -479,9 +480,10 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             tabIndex={0}
             style={{
               height: '96px',
-              background: 'var(--ez-color-surface)',
+              background: 'linear-gradient(135deg, #FFF7ED 0%, #FED7AA 100%)',
+              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 14px, rgba(249,115,22,0.05) 14px, rgba(249,115,22,0.05) 16px)',
               borderRadius: '22px',
-              border: '1px solid var(--ez-color-border)',
+              border: '1px solid #FDBA74',
               padding: '16px 18px',
               display: 'flex',
               alignItems: 'center',
@@ -533,9 +535,11 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             tabIndex={0}
             style={{
               height: '96px',
-              background: 'var(--ez-color-surface)',
+              background: 'linear-gradient(135deg, #F0FDF4 0%, #BBF7D0 100%)',
+              backgroundImage: 'radial-gradient(circle, rgba(22,163,74,0.06) 1.5px, transparent 1.5px)',
+              backgroundSize: '18px 18px',
               borderRadius: '22px',
-              border: '1px solid var(--ez-color-border)',
+              border: '1px solid #86EFAC',
               padding: '16px 18px',
               display: 'flex',
               alignItems: 'center',
@@ -587,9 +591,10 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             tabIndex={0}
             style={{
               height: '96px',
-              background: 'var(--ez-color-surface)',
+              background: 'linear-gradient(135deg, #FAF5FF 0%, #E9D5FF 100%)',
+              backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 12px, rgba(147,51,234,0.04) 12px, rgba(147,51,234,0.04) 14px)',
               borderRadius: '22px',
-              border: '1px solid var(--ez-color-border)',
+              border: '1px solid #D8B4FE',
               padding: '16px 18px',
               display: 'flex',
               alignItems: 'center',
@@ -679,9 +684,10 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           {/* Card 1: Total Proyek */}
           <div
             style={{
-              background: 'var(--ez-color-surface)',
+              background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
+              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(37,99,235,0.05) 19px, rgba(37,99,235,0.05) 20px)',
               borderRadius: '22px',
-              border: '1px solid var(--ez-color-border)',
+              border: '1px solid #BFDBFE',
               padding: '18px 20px',
               boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
               display: 'flex',
@@ -716,9 +722,10 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           {/* Card 2: Sedang Dikerjakan */}
           <div
             style={{
-              background: 'var(--ez-color-surface)',
+              background: 'linear-gradient(135deg, #FFFBEB 0%, #FDE68A 100%)',
+              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 14px, rgba(245,158,11,0.06) 14px, rgba(245,158,11,0.06) 16px)',
               borderRadius: '22px',
-              border: '1px solid var(--ez-color-border)',
+              border: '1px solid #FCD34D',
               padding: '18px 20px',
               boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
               display: 'flex',
@@ -753,9 +760,11 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           {/* Card 3: Selesai */}
           <div
             style={{
-              background: 'var(--ez-color-surface)',
+              background: 'linear-gradient(135deg, #F0FDF4 0%, #BBF7D0 100%)',
+              backgroundImage: 'radial-gradient(circle, rgba(22,163,74,0.07) 1.5px, transparent 1.5px)',
+              backgroundSize: '16px 16px',
               borderRadius: '22px',
-              border: '1px solid var(--ez-color-border)',
+              border: '1px solid #86EFAC',
               padding: '18px 20px',
               boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
               display: 'flex',
@@ -790,9 +799,10 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           {/* Card 4: Draft */}
           <div
             style={{
-              background: 'var(--ez-color-surface)',
+              background: 'linear-gradient(135deg, #FFF7ED 0%, #FED7AA 100%)',
+              backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 12px, rgba(249,115,22,0.05) 12px, rgba(249,115,22,0.05) 14px)',
               borderRadius: '22px',
-              border: '1px solid var(--ez-color-border)',
+              border: '1px solid #FDBA74',
               padding: '18px 20px',
               boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
               display: 'flex',

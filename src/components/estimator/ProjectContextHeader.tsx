@@ -7,7 +7,7 @@ import {
   Database,
   Upload,
   Download,
-  MoreHorizontal,
+
   ChevronDown,
   GitBranch,
 } from 'lucide-react';
@@ -325,27 +325,6 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
             <ChevronDown size={13} color="#FFFFFF" />
           </button>
 
-          {/* More actions button */}
-          <button
-            aria-label="Aksi lainnya"
-            style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '8px',
-              background: 'var(--ez-color-surface)',
-              border: '1px solid var(--ez-hue-slate-border)',
-              color: 'var(--ez-color-text-muted)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-secondary)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface)')}
-          >
-            <MoreHorizontal size={16} />
-          </button>
         </div>
       </div>
     </div>

@@ -392,6 +392,19 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
           </div>
         </div>
 
+        {projectScheduleTasks.length === 0 && (
+          <div style={{
+            padding: '24px', borderRadius: '12px', background: 'var(--ez-hue-blue-bg)',
+            border: '1px solid var(--ez-hue-blue-border)', marginBottom: '16px',
+            display: 'flex', alignItems: 'center', gap: '12px',
+          }}>
+            <div style={{ fontSize: '13px', color: 'var(--ez-color-text-primary)' }}>
+              <strong>Belum ada jadwal tahapan.</strong> Klik "Tambah Tahapan" untuk membuat jadwal proyek,
+              atau tambah item RAB terlebih dahulu agar Kurva S dapat dihitung otomatis.
+            </div>
+          </div>
+        )}
+
         {/* Dynamic SVG Curve Display — animated, smooth, gradient */}
         <style>{`
           @keyframes scurve-draw { to { stroke-dashoffset: 0; } }

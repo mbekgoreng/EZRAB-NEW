@@ -636,6 +636,11 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
 
   useEffect(() => {
     const handleGlobalKeys = (e: KeyboardEvent) => {
+      // Jangan ganggu undo bawaan input/textarea/contenteditable
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
         if (e.shiftKey) {
           e.preventDefault();
@@ -933,6 +938,10 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
               onToggleSortModal={handleCycleSort}
               onToggleColumnsModal={() => setIsColumnsModalOpen(true)}
               onAddItem={(mode) => handleOpenSmartAdd(mode || 'selector')}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
+              canUndo={canUndo}
+              canRedo={canRedo}
               onOpenDocumentReview={() => setIsDocumentReviewModalOpen(true)}
               onRefreshData={handleRefreshData}
               onImportExcel={() => setImportExcelModalOpen(true)}
@@ -944,10 +953,6 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
               onOpenVersionHistory={() => setIsVersionModalOpen(true)}
               totalMatchedItems={filteredItems.length}
               totalItems={totalItemsCount}
-              canUndo={canUndo}
-              canRedo={canRedo}
-              onUndo={handleUndo}
-              onRedo={handleRedo}
             />
 
             {/* 3C. ESTIMATOR SPREADSHEET GRID */}

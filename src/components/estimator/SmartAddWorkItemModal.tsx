@@ -345,7 +345,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
   // ---------------------------------------------------------------------------
   // HANDLERS: AI Workflow
   // ---------------------------------------------------------------------------
-  const handleGenerateAiItem = () => {
+  const handleGenerateAiItem = async () => {
     if (!aiPrompt.trim()) {
       setErrorMessage('Tuliskan kebutuhan pekerjaan yang ingin diestimasi AI.');
       return;
@@ -353,69 +353,56 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
     setErrorMessage(null);
     setAiIsGenerating(true);
 
-    setTimeout(() => {
-      const p = aiPrompt.toLowerCase();
-      let genCat = targetCategory;
-      let genDesc = aiPrompt.trim();
-      let genUnit = 'm²';
-      let genVol = 10;
-      let genPrice = 175000;
-      let genNotes = 'Dianalisis berdasarkan parameter konstruksi standar SNI.';
+    try {
+      const { AiToolsProviderClient } = await import('../../ai-tools/providerClient');
+      const client = new AiToolsProviderClient();
 
-      const numMatch = p.match(/(\d+([\.,]\d+)?)\s*(m2|m3|m1|m|kg|unit|titik|ttk|bh)/i);
-      if (numMatch) {
-        genVol = parseFloat(numMatch[1].replace(',', '.')) || 10;
-        const u = numMatch[3].toLowerCase();
-        if (u === 'm2' || u === 'm²') genUnit = 'm²';
-        else if (u === 'm3' || u === 'm³') genUnit = 'm³';
-        else if (u === 'm1' || u === 'm') genUnit = 'm¹';
-        else if (u === 'titik' || u === 'ttk') genUnit = 'ttk';
-        else if (u === 'kg') genUnit = 'kg';
+      const systemPrompt = `Anda adalah estimator konstruksi Indonesia. Analisis permintaan pekerjaan dan kembalikan JSON:
+{
+  "description": "nama pekerjaan lengkap",
+  "category": "kategori pekerjaan",
+  "volume": number,
+  "unit": "m2|m3|kg|titik|ls|bh",
+  "unitPrice": number|null,
+  "notes": "catatan spesifikasi"
+}
+Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga.`;
+
+      const result = await client.execute({
+        productId: 'EZRAB_AI',
+        prompt: aiPrompt.trim(),
+        systemPrompt,
+        jsonMode: true,
+        temperature: 0.3,
+        maxTokens: 1000,
+      });
+
+      if (!result.success) {
+        throw new Error(result.message || 'AI tidak dapat memproses permintaan.');
       }
 
-      if (p.includes('waterproofing') || p.includes('kamar mandi') || p.includes('bocor') || p.includes('aquaproof')) {
-        genCat = 'Pekerjaan Finishing & Eksterior';
-        genDesc = 'Pekerjaan Waterproofing Coating Elastomeric 2 Lapis (Area Basah & Toilet)';
-        genUnit = 'm²';
-        genPrice = 85000;
-        genNotes = 'Termasuk pembersihan permukaan, aplikasi primer pelapis kedap air, dan 2x lapisan elastomeric membrane.';
-      } else if (p.includes('kanopi') || p.includes('atap') || p.includes('spandek') || p.includes('baja ringan')) {
-        genCat = 'Pekerjaan Atap & Rangka Baja Ringan';
-        genDesc = 'Pemasangan Kanopi Rangka Baja Ringan + Atap Spandek Pasir 0.35mm';
-        genUnit = 'm²';
-        genPrice = 285000;
-        genNotes = 'Termasuk profil hollow baja ringan 40x40, atap spandek lapis pasir, dynabolt, dan ongkos pasang.';
-      } else if (p.includes('cat') || p.includes('pengecatan') || p.includes('dinding')) {
-        genCat = 'Pekerjaan Pengecatan';
-        genDesc = 'Pengecatan Dinding Interior 3 Lapis (Plamir + Dasar + 2x Cat Akhir Akrilik)';
-        genUnit = 'm²';
-        genPrice = 38500;
-        genNotes = 'Termasuk pengamplasan dinding, plamir dasar, dan 2x lapis finishing cat akrilik emulsion.';
-      } else if (p.includes('keramik') || p.includes('lantai') || p.includes('granit')) {
-        genCat = 'Pekerjaan Lantai & Keramik';
-        genDesc = 'Pasang Lantai Granit Tile 60x60 cm Polish Homogeneous';
-        genUnit = 'm²';
-        genPrice = 245000;
-        genNotes = 'Termasuk semen perekat instan, nat epoksi warna senada, dan upah pasang.';
-      } else if (p.includes('lampu') || p.includes('stop kontak') || p.includes('listrik')) {
-        genCat = 'Pekerjaan Instalasi Elektrikal';
-        genDesc = 'Instalasi Titik Lampu Downlight LED Inbow + Kabel NYM 3x2.5mm';
-        genUnit = 'ttk';
-        genPrice = 185000;
-        genNotes = 'Termasuk kabel Supreme NYM 3x2.5mm, pipa konduit clipsal, fitting downlight, dan LED Philips.';
+      let parsed: any = null;
+      try {
+        const jsonMatch = result.content.match(/\{[\s\S]*\}/);
+        parsed = JSON.parse(jsonMatch ? jsonMatch[0] : result.content);
+      } catch {
+        throw new Error('Respons AI tidak valid.');
       }
 
       setAiGeneratedItem({
         code: `AI.${(existingItems.length + 1).toString().padStart(2, '0')}`,
-        description: genDesc,
-        category: genCat,
-        volume: genVol,
-        unit: genUnit,
-        unitPrice: genPrice,
-        notes: genNotes,
+        description: parsed.description || aiPrompt.trim(),
+        category: parsed.category || targetCategory,
+        volume: typeof parsed.volume === 'number' ? parsed.volume : 1,
+        unit: parsed.unit || 'm²',
+        unitPrice: typeof parsed.unitPrice === 'number' ? parsed.unitPrice : null,
+        notes: parsed.notes || 'Dianalisis oleh EZRAB AI.',
       });
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Gagal menganalisis dengan AI. Coba lagi.');
+    } finally {
       setAiIsGenerating(false);
-    }, 450);
+    }
   };
 
   const handleSaveAiItem = async () => {
@@ -478,7 +465,7 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
             unitPrice: estPrice,
             amount,
             totalPrice: amount,
-            volumeSource: 'AHSP 2024' as any,
+            volumeSource: 'AHSP 2026' as any,
             ahspCode: item.defaultAhspCode || '',
             verificationStatus: 'VERIFIED',
             priceStatus: estPrice == null ? 'PRICE_UNRESOLVED' : 'PRICE_RESOLVED',
