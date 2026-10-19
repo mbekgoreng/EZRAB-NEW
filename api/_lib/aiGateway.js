@@ -40,9 +40,13 @@ import {
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const ZYROUTER_BASE = 'https://api.zyrouter.com/v1';
 const ATRIA_BASE = 'https://api.atria-asi.ai/v1';
+const DAHL_BASE = 'https://inference.dahl.global/v1';
+const GEMINI_OAI_BASE = 'https://generativelanguage.googleapis.com/v1beta/openai';
 const FAST_MODEL = 'gemini-3.5-flash-lite';
 const ADVANCED_MODEL = 'geminiflash-3.8';
 const ATRIA_MODEL = 'Atria-Dawn-Preview';
+const DAHL_MODEL = 'deepseek-ai/DeepSeek-V4-Flash-0731';
+const GEMINI_OAI_MODEL = 'gemini-3.8-flash';
 const ATTEMPT_TIMEOUT_MS = 55000;
 
 // ---------------------------------------------------------------------------
@@ -228,11 +232,15 @@ export async function executeAI(o, onAttempt) {
   const gk = envKeys('GEMINI_API_KEY', 6);
   const zk = zyrouterKey();
   const ak = envKeys('ATRIA_API_KEY', 14);
+  const dk = envKeys('DAHL_API_KEY', 80);
+  const gok = envKeys('GEMINI_OAI_KEY', 12);
 
   const attempts = [];
   const geminiCall = (k, model) => () => callGemini(k, model, message, systemPrompt, temperature, maxTokens, jsonMode, media);
   const zyrouterCall = () => () => callOAI(ZYROUTER_BASE, zk, ADVANCED_MODEL, 'zyrouter', message, systemPrompt, temperature, maxTokens, jsonMode, media);
   const atriaCall = (k) => () => callOAI(ATRIA_BASE, k, ATRIA_MODEL, 'atria', message, systemPrompt, temperature, maxTokens, jsonMode, media);
+  const dahlCall = (k) => () => callOAI(DAHL_BASE, k, DAHL_MODEL, 'dahl', message, systemPrompt, temperature, maxTokens, jsonMode, media);
+  const geminiOaiCall = (k) => () => callOAI(GEMINI_OAI_BASE, k, GEMINI_OAI_MODEL, 'gemini-oai', message, systemPrompt, temperature, maxTokens, jsonMode, media);
 
   if (mode === 'vision') {
     // Vision: Gemini dulu (native inlineData gambar+PDF), lalu ZyRouter/Atria
@@ -251,6 +259,9 @@ export async function executeAI(o, onAttempt) {
     if (zk) attempts.push(zyrouterCall());
   }
   if (mode !== 'vision') ak.forEach((k) => attempts.push(atriaCall(k)));
+  // Dahl & Gemini-OAI: OpenAI-compatible, ditambahkan ke chain non-vision
+  if (mode !== 'vision') dk.forEach((k) => attempts.push(dahlCall(k)));
+  if (mode !== 'vision') gok.forEach((k) => attempts.push(geminiOaiCall(k)));
 
   if (attempts.length === 0) {
     return { ok: false, error: 'No AI provider keys configured', requestId, attempts: [] };
