@@ -135,7 +135,16 @@ async function callGemini(key, model, message, systemPrompt, temperature, maxTok
     const d = await r.json();
     const text = (((d.candidates || [])[0] || {}).content?.parts || []).map((p) => p.text || '').join('') || '';
     if (!text) return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: 'Empty' };
-    return { ok: true, content: text, model, provider: 'gemini', ms: Date.now() - started };
+    // Usage meter (Phase 3): tangkap usageMetadata resmi Gemini.
+    const um = d.usageMetadata || {};
+    const usage = {
+      inputTokens: typeof um.promptTokenCount === 'number' ? um.promptTokenCount : null,
+      outputTokens: typeof um.candidatesTokenCount === 'number' ? um.candidatesTokenCount : null,
+      totalTokens: typeof um.totalTokenCount === 'number' ? um.totalTokenCount : null,
+      cachedTokens: typeof um.cachedContentTokenCount === 'number' ? um.cachedContentTokenCount : null,
+      source: 'gemini_usageMetadata',
+    };
+    return { ok: true, content: text, model, provider: 'gemini', ms: Date.now() - started, usage };
   } catch (e) {
     clearTimeout(t);
     return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: String((e && e.message) || e) };
@@ -177,7 +186,20 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
     const d = await r.json();
     const text = (((d.choices || [])[0] || {}).message || {}).content || '';
     if (!text) return { ok: false, provider, model, ms: Date.now() - started, error: 'Empty' };
-    return { ok: true, content: text, model, provider, ms: Date.now() - started };
+    // Usage meter (Phase 3): tangkap usage resmi OpenAI-compatible.
+    // Hindari double-counting: cached/reasoning sudah termasuk dalam total provider.
+    const u = d.usage || {};
+    const details = u.prompt_tokens_details || {};
+    const compDetails = u.completion_tokens_details || {};
+    const usage = {
+      inputTokens: typeof u.prompt_tokens === 'number' ? u.prompt_tokens : null,
+      outputTokens: typeof u.completion_tokens === 'number' ? u.completion_tokens : null,
+      totalTokens: typeof u.total_tokens === 'number' ? u.total_tokens : null,
+      cachedTokens: typeof details.cached_tokens === 'number' ? details.cached_tokens : null,
+      reasoningTokens: typeof compDetails.reasoning_tokens === 'number' ? compDetails.reasoning_tokens : null,
+      source: 'oai_usage',
+    };
+    return { ok: true, content: text, model, provider, ms: Date.now() - started, usage };
   } catch (e) {
     clearTimeout(t);
     return { ok: false, provider, model, ms: Date.now() - started, error: String((e && e.message) || e) };
@@ -237,11 +259,11 @@ export async function executeAI(o, onAttempt) {
   const outcomes = [];
   for (const a of attempts) {
     const r = await a();
-    outcomes.push({ provider: r.provider, model: r.model, ok: r.ok, ms: r.ms, error: r.ok ? undefined : r.error });
+    outcomes.push({ provider: r.provider, model: r.model, ok: r.ok, ms: r.ms, error: r.ok ? undefined : r.error, usage: r.ok ? r.usage || null : null });
     if (typeof onAttempt === 'function') {
       try { onAttempt(outcomes[outcomes.length - 1]); } catch { /* never break on logging */ }
     }
-    if (r.ok) return { ok: true, content: r.content, model: r.model, provider: r.provider, requestId, attempts: outcomes };
+    if (r.ok) return { ok: true, content: r.content, model: r.model, provider: r.provider, requestId, attempts: outcomes, usage: r.usage || null };
   }
   return {
     ok: false,
@@ -329,6 +351,39 @@ export async function handleAiRequest(req, res, opts = {}) {
   const attemptLog = [];
   const r = await executeAI({ ...input, mode, requestId }, (a) => attemptLog.push(a));
   const durationMs = Date.now() - started;
+
+  // 6b. Usage meter (Phase 3) — best-effort, tidak pernah menggagalkan request.
+  // Feature dipetakan dari productId agar konsisten dengan tarif kredit.
+  const featureForMeter = (() => {
+    const pid = input.productId || '';
+    if (pid === 'DED_AI_FAST' || pid === 'DED_AI_DETAIL') return 'ded-ai';
+    if (pid === 'DOKUMEN_AI') return 'ai-document';
+    return mode === 'advanced' ? 'chat-ai/advanced' : 'chat-ai/fast';
+  })();
+  try {
+    const { createUsageMeter } = await import('./usageMeter.js');
+    const meter = createUsageMeter(null); // adapter null → no-op storage, tetap hitung
+    const failures = attemptLog.filter((a) => !a.ok).map((a) => ({ provider: a.provider, model: a.model, error: a.error, ms: a.ms }));
+    await meter.record({
+      jobId: input.jobId || null,
+      requestId,
+      idempotencyKey: 'um_' + requestId,
+      userId: auth.user ? auth.user.id : null,
+      feature: featureForMeter,
+      provider: r.ok ? r.provider : (attemptLog[attemptLog.length - 1] || {}).provider || null,
+      model: r.ok ? r.model : (attemptLog[attemptLog.length - 1] || {}).model || null,
+      usage: r.ok ? r.usage || null : null,
+      attempts: attemptLog.length,
+      failures: failures.length ? failures : null,
+      durationMs,
+      status: r.ok ? 'actual' : 'failed',
+      error: r.ok ? null : r.error,
+      approvedMaxCredits: input.approvedMaxCredits != null ? input.approvedMaxCredits : null,
+    });
+  } catch (e) {
+    try { console.error('[usage-meter] hook failed:', (e && e.message) || e); } catch {}
+  }
+
   logAiUsage({
     requestId,
     event: 'ai_request',
