@@ -262,6 +262,12 @@ export async function executeAI(o, onAttempt) {
     // Advanced: ZyRouter (gemini 3.8) dulu, fallback ke Gemini flash lite
     if (zk) attempts.push(zyrouterCall());
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
+  } else if (mode === 'chat') {
+    // Chat AI: nvidia -> deepseek -> zyrouter (user 2026-10-20)
+    rk.forEach((k) => attempts.push(riverTextCall(k)));
+    rk.forEach((k) => attempts.push(riverVisionCall(k)));
+    dk.forEach((k) => attempts.push(dahlCall(k)));
+    if (zk) attempts.push(zyrouterCall());
   } else {
     // Fast: River deepseek 4.1 flash -> Gemini flash lite -> Dahl -> ZyRouter
     rk.forEach((k) => attempts.push(riverVisionCall(k)));

@@ -8,5 +8,8 @@
 import { handleAiRequest } from '../_lib/aiGateway.js';
 
 export default async function handler(req, res) {
-  return handleAiRequest(req, res, {});
+  // Chat AI pakai mode 'chat': nvidia -> deepseek -> zyrouter
+  return handleAiRequest(req, res, {
+    productIdToMode: () => 'chat',
+  });
 }

@@ -8,7 +8,7 @@
  * - DED AI Estimate FAST   → deepseek-ai/DeepSeek-V4.1-Flash (River) + gemini-3.5-flash-lite fallback
  * - DED AI Estimate DETAIL → geminiflash-3.8 (ZyRouter gateway id, NOT native)
  * - Dokumen AI             → deepseek-ai/DeepSeek-V4.1-Flash (River) + gemini-3.5-flash-lite fallback
- * - EZRAB AI              → from env via helper
+ * - EZRAB AI (Chat)        → nvidia Nemotron-3.5-Super-VL (River), fallback deepseek, zyrouter
  */
 
 export type AIProductId =
@@ -103,13 +103,12 @@ export function getModelTarget(productId: AIProductId): ModelTarget {
       };
     case 'EZRAB_AI':
     default: {
-      const source = envFirst('DED_ADVANCED_MODEL', 'DED_DETAIL_MODEL', 'AI_ORCHESTRATOR_MODEL', 'GEMINI_MODEL_PRO');
-      const providerSource = envFirst('AI_ORCHESTRATOR_PROVIDER', 'DED_AI_PROVIDER');
-      const provider = providerSource || (source.includes('geminiflash') ? 'zyrouter' : source.includes('/') ? 'external' : 'gemini');
-      const model = normaliseModelId(source || 'gemini-3.8-flash');
+      // User 2026-10-20: Chat AI pakai nvidia, fallback deepseek, lalu zyrouter
+      const source = envFirst('EZRAB_AI_MODEL', 'RIVER_TEXT_MODEL', 'AI_ORCHESTRATOR_MODEL');
+      const model = normaliseModelId(source || 'nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4');
       return {
         productId: 'EZRAB_AI',
-        provider,
+        provider: 'river',
         model,
         label: 'EZRAB AI Pro',
         resolveSource: source ? 'env(EZRAB_AI_MODEL_GROUP)' : 'registry-default',
