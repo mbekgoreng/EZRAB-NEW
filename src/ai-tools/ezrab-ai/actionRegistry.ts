@@ -39,6 +39,13 @@ export interface ChatActionContext {
   } | null;
 }
 
+export interface ChatActionButton {
+  /** Label tombol */
+  label: string;
+  /** Aksi: navigasi ke menu, atau intent untuk diproses ulang */
+  action: { kind: 'navigate'; menu: string } | { kind: 'intent'; intent: string; param?: string };
+}
+
 export interface ActionResult {
   ok: boolean;
   /** Message to show in chat (already in Indonesian) */
@@ -47,6 +54,14 @@ export interface ActionResult {
   navigated?: boolean;
   /** Whether the chat should open the Game Space overlay panel */
   openGameSpace?: boolean;
+  /** Interactive action buttons (Command Center P0) */
+  actions?: ChatActionButton[];
+  /** Whether to open the RAB Wizard overlay */
+  openRabWizard?: boolean;
+  /** Whether to open the AI Design Studio overlay */
+  openDesignStudio?: boolean;
+  /** Prefill prompt untuk design studio */
+  designPrompt?: string;
 }
 
 const MENU_LABELS: Record<string, string> = {
@@ -107,6 +122,37 @@ export function executeIntent(
         ok: true,
         message: 'Membuka Daftar Proyek — klik "Proyek Baru" untuk membuat proyek.',
         navigated: true,
+      };
+
+    case 'START_RAB_WIZARD':
+      return {
+        ok: true,
+        message: 'Baik! Saya bantu buatkan RAB rumah lewat wizard interaktif. Silakan pilih tipe rumah dan spesifikasi.',
+        openRabWizard: true,
+        actions: [
+          { label: '🏠 Mulai Wizard RAB', action: { kind: 'intent', intent: 'START_RAB_WIZARD' } },
+          { label: '📐 Desain Rumah AI', action: { kind: 'intent', intent: 'START_HOUSE_DESIGN' } },
+        ],
+      };
+
+    case 'START_HOUSE_DESIGN': {
+      // Ekstrak prompt desain dari param atau gunakan default
+      const designPrompt = param || 'Buatkan rumah 1 lantai luas bangunan 90 m², ukuran 6 × 15 m, 3 kamar tidur, 2 kamar mandi, ruang tamu, dapur, dan carport.';
+      return {
+        ok: true,
+        message: 'Membuka AI Design Studio — prompt → denah 2D → 3D → spreadsheet → QTO/RAB.',
+        openDesignStudio: true,
+        designPrompt,
+      };
+    }
+
+    case 'OPEN_SPREADSHEET':
+      return {
+        ok: true,
+        message: 'Spreadsheet RAB tersedia di menu RAB & Estimasi. Membuka…',
+        actions: [
+          { label: '📊 Buka RAB & Spreadsheet', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+        ],
       };
 
     case 'QUERY_PROJECT_LIST': {

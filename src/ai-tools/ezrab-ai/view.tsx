@@ -17,7 +17,7 @@ import { ezrabAiService } from './service';
 import { renderMarkdown } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { consumePendingAiEntry } from '../aiNavigation';
-import { executeIntent, ChatActionContext } from './actionRegistry';
+import { executeIntent, ChatActionContext, ChatActionButton } from './actionRegistry';
 import { notificationBus } from '../../notifications/notificationBus';
 import { EZRABMascot3D } from '../../components/mascot/EZRABMascot3D';
 import { useProject } from '../../context/ProjectContext';
@@ -34,6 +34,9 @@ import { CreditTopUpModal } from '../../ai-credits/components/CreditTopUpModal';
 // Game Space is lazy-loaded: three.js + game code split into their own chunk,
 // only fetched when the user opens it via the `game` command.
 const GameSpaceOverlay = lazy(() => import('../../game-space/GameSpaceOverlay'));
+// P0/P1/P2: lazy overlays untuk Command Center
+const DesignWizardFlowLazy = lazy(() => import('../../ai-design/DesignWizardFlow').then(m => ({ default: m.DesignWizardFlow })));
+const DesignStudioLazy = lazy(() => import('../../ai-design/AiDesignStudio').then(m => ({ default: m.AiDesignStudio })));
 
 interface ChatEntry {
   role: 'user' | 'assistant';
@@ -45,6 +48,8 @@ interface ChatEntry {
   imageName?: string;
   /** Kredit simulasi yang dipakai untuk respons ini (hanya AI). */
   creditsUsed?: number;
+  /** Tombol aksi interaktif (Command Center P0) */
+  actions?: ChatActionButton[];
 }
 
 /* ---- Tipe minimal Web Speech API (Chrome: webkitSpeechRecognition) ---- */
@@ -126,6 +131,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [listening, setListening] = useState(false);
   /** Game Space overlay — opened by the `game` command, closed back to chat. */
   const [gameSpaceOpen, setGameSpaceOpen] = useState(false);
+  // P0 Command Center: wizard & design studio overlays
+  const [rabWizardOpen, setRabWizardOpen] = useState(false);
+  const [designStudioOpen, setDesignStudioOpen] = useState(false);
+  const [designPrompt, setDesignPrompt] = useState<string | undefined>(undefined);
 
   /* ---- FASE 5A: project grounding + conversation persistence ---- */
   const { currentProject, projectRabItems } = useProject();
@@ -300,6 +309,17 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           reply = res.message;
           // Game Space opens as an in-chat panel — fully local, no AI call.
           if (res.openGameSpace) setGameSpaceOpen(true);
+          // P0 Command Center: wizard & design overlays
+          if (res.openRabWizard) setRabWizardOpen(true);
+          if (res.openDesignStudio) {
+            if (res.designPrompt) setDesignPrompt(res.designPrompt);
+            setDesignStudioOpen(true);
+          }
+          // Action buttons — attached to the assistant message
+          const entryActions = res.actions && res.actions.length > 0 ? res.actions : undefined;
+          setMessages((prev) => [...prev, { role: 'assistant', content: reply, ts: Date.now(), actions: entryActions }]);
+          persistMessage('assistant', reply);
+          return;
         }
         setMessages((prev) => [...prev, { role: 'assistant', content: reply, ts: Date.now() }]);
         persistMessage('assistant', reply);
@@ -408,6 +428,32 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     navigator.clipboard?.writeText(text).catch(() => {});
     setCopiedIdx(idx);
     setTimeout(() => setCopiedIdx(null), 1500);
+  };
+
+  /* ---------- P0 Command Center: action button handler ---------- */
+  const handleActionButton = (btn: ChatActionButton) => {
+    if (btn.action.kind === 'navigate') {
+      navigateChat(btn.action.menu);
+    } else if (btn.action.intent === 'START_RAB_WIZARD') {
+      setRabWizardOpen(true);
+    } else if (btn.action.intent === 'START_HOUSE_DESIGN') {
+      if (btn.action.param) setDesignPrompt(btn.action.param);
+      setDesignStudioOpen(true);
+    } else {
+      // Fallback: kirim sebagai pesan
+      submit(btn.label);
+    }
+  };
+
+  // Navigasi chat → menu workspace (menggunakan navigateTo dari routing)
+  const navigateChat = (menu: string) => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { navigateTo, routeForMenu } = require('../../routing/routes');
+      navigateTo(routeForMenu(menu as never, null));
+    } catch {
+      setMessages((prev) => [...prev, { role: 'assistant', content: `Tidak dapat membuka menu "${menu}" saat ini.`, isError: true, ts: Date.now() }]);
+    }
   };
 
   const onKey = (e: React.KeyboardEvent) => {
@@ -642,6 +688,22 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 <div className="ezchat2-col">
                   <div className="ezchat2-bubble ai">
                     <div className="ezchat2-text md-body">{renderMarkdown(m.content)}</div>
+                    {/* P0 Command Center: action buttons */}
+                    {m.actions && m.actions.length > 0 && (
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+                        {m.actions.map((btn, bi) => (
+                          <button key={bi}
+                            onClick={() => handleActionButton(btn)}
+                            style={{
+                              padding: '8px 14px', borderRadius: 8, border: '1px solid #0EA5E9',
+                              background: '#EFF6FF', color: '#1E3A5F', fontWeight: 600,
+                              fontSize: 13, cursor: 'pointer',
+                            }}>
+                            {btn.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <div className="ezchat2-meta">
                       {m.model && <span className="ezchat2-model"><Sparkles size={11} /> {m.model}</span>}
                       {m.creditsUsed !== undefined && (
@@ -706,6 +768,49 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       {gameSpaceOpen && (
         <Suspense fallback={null}>
           <GameSpaceOverlay onClose={() => setGameSpaceOpen(false)} />
+        </Suspense>
+      )}
+
+      {/* ===== P0/P1/P2: Wizard → Design Studio flow ===== */}
+      {rabWizardOpen && (
+        <Suspense fallback={null}>
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(15,23,42,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+          }}>
+            <div style={{ maxWidth: 1150, width: '100%', maxHeight: '92vh', overflowY: 'auto', background: '#F8FAFC', borderRadius: 16 }}
+              onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 12px 0' }}>
+                <button onClick={() => setRabWizardOpen(false)}
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #E2E8F0', background: '#FFF', cursor: 'pointer' }}>
+                  ✕ Tutup
+                </button>
+              </div>
+              <DesignWizardFlowLazy
+                onClose={() => setRabWizardOpen(false)}
+              />
+            </div>
+          </div>
+        </Suspense>
+      )}
+
+      {/* ===== P2: AI Design Studio overlay ===== */}
+      {designStudioOpen && (
+        <Suspense fallback={null}>
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(15,23,42,0.75)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+          }}>
+            <div style={{ maxWidth: 1150, width: '100%', maxHeight: '92vh', overflowY: 'auto', background: '#F8FAFC', borderRadius: 16, padding: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 8px 0' }}>
+                <button onClick={() => setDesignStudioOpen(false)}
+                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #E2E8F0', background: '#FFF', cursor: 'pointer' }}>
+                  ✕ Tutup
+                </button>
+              </div>
+              <DesignStudioLazy initialPrompt={designPrompt} />
+            </div>
+          </div>
         </Suspense>
       )}
     </div>

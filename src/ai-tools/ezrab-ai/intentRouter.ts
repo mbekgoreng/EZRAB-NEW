@@ -24,6 +24,9 @@ export type ChatIntent =
   | 'OPEN_SETTINGS'
   | 'OPEN_DASHBOARD'
   | 'OPEN_GAME_SPACE'
+  | 'OPEN_SPREADSHEET'
+  | 'START_RAB_WIZARD'
+  | 'START_HOUSE_DESIGN'
   | 'SEARCH_AHSP'
   | 'QUERY_PROJECT_TOTAL'
   | 'QUERY_PROJECT_LIST'
@@ -90,6 +93,12 @@ const PATTERNS: Pattern[] = [
   { intent: 'OPEN_REPORTS', re: /\b(buka|bukain|tampilkan|tampilin|lihat|liatin)\b.*\b(laporan|report)\b/ },
   { intent: 'OPEN_AI_DOCUMENTS', re: /\b(buka|bukain|tampilkan|tampilin)\b.*\b(dokumen|document)\b/ },
   { intent: 'OPEN_DED_ESTIMATE', re: /\b(buka|bukain|tampilkan|tampilin)\b.*\bded\b/ },
+  // Command Center P0 — wizard & design (must come before generic OPEN_RAB)
+  { intent: 'START_RAB_WIZARD', re: /\b(buatkan|buatin|bikin| Bikinkan|buat)\b.*\brab\b.*\brumah\b/ },
+  { intent: 'START_RAB_WIZARD', re: /\brab\b.*\brumah\b.*\b(baru|wizard|panduan)\b/ },
+  { intent: 'START_HOUSE_DESIGN', re: /\b(buat|bikin|desain|design)\b.*\b(desain|design)\b.*\brumah\b/ },
+  { intent: 'START_HOUSE_DESIGN', re: /\b(buatkan|buatin)\b.*\brumah\b.*\b(\d+)\s*m/ },
+  { intent: 'OPEN_SPREADSHEET', re: /\b(buka|bukain|tampilkan|tampilin)\b.*\bspreadsheet\b/ },
   { intent: 'OPEN_DASHBOARD', re: /\b(buka|kembali|ke)\b.*\bdashboard\b/ },
 
   // AHSP search without keyword → clarification (never silently Rp0)
