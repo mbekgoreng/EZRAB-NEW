@@ -4,7 +4,7 @@
  * TIDAK ada di sidebar (keputusan: sidebar tetap 3 item AI).
  */
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, RotateCcw, Activity } from 'lucide-react';
+import { ArrowLeft, Plus, RotateCcw, Activity, Wallet, Repeat, PiggyBank, Gift } from 'lucide-react';
 import './ai-credits.css';
 import { useCreditSimulation } from './useCreditSimulation';
 import { CREDIT_CONFIG_NOTE, FEATURE_LABELS, PLAN_CREDITS, TOPUP_OFFER } from './config';
@@ -138,27 +138,35 @@ export const CreditPage: React.FC<Props> = ({ onBack }) => {
 
       <div className="aic-cards">
         <div className="aic-card hero">
-          <div className="aic-k">Saldo tersedia</div>
+          <div className="aic-k">
+            <span className="aic-ic"><Wallet size={16} /></span> Saldo tersedia
+          </div>
           <div className="aic-v">{balance.total.toLocaleString('id-ID')}</div>
           <div className="aic-s">kredit · paket {planLabel}</div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button type="button" className="aic-btn-primary" style={{ height: 36, fontSize: 13 }} onClick={() => setTopUpOpen(true)}>
-              <Plus size={14} style={{ verticalAlign: -2, marginRight: 4 }} /> Top-up
+          <div style={{ marginTop: 14 }}>
+            <button type="button" className="aic-btn-hero" onClick={() => setTopUpOpen(true)}>
+              <Plus size={15} /> Top-up Kredit
             </button>
           </div>
         </div>
-        <div className="aic-card">
-          <div className="aic-k">Kredit langganan</div>
+        <div className="aic-card tone-blue">
+          <div className="aic-k">
+            <span className="aic-ic"><Repeat size={16} /></span> Kredit langganan
+          </div>
           <div className="aic-v">{balance.subscription.toLocaleString('id-ID')}</div>
           <div className="aic-s">jatah paket {planLabel} per periode</div>
         </div>
-        <div className="aic-card">
-          <div className="aic-k">Kredit top-up</div>
+        <div className="aic-card tone-green">
+          <div className="aic-k">
+            <span className="aic-ic"><PiggyBank size={16} /></span> Kredit top-up
+          </div>
           <div className="aic-v">{balance.topup.toLocaleString('id-ID')}</div>
           <div className="aic-s">dari pembelian simulasi</div>
         </div>
-        <div className="aic-card">
-          <div className="aic-k">Kredit bonus</div>
+        <div className="aic-card tone-purple">
+          <div className="aic-k">
+            <span className="aic-ic"><Gift size={16} /></span> Kredit bonus
+          </div>
           <div className="aic-v">{balance.bonus.toLocaleString('id-ID')}</div>
           <div className="aic-s">bonus 20% tiap top-up</div>
         </div>
@@ -180,12 +188,7 @@ export const CreditPage: React.FC<Props> = ({ onBack }) => {
             <button
               key={p}
               type="button"
-              className="aic-btn-ghost"
-              style={{
-                height: 32, fontSize: 12.5,
-                borderColor: balance.plan === p ? 'var(--ez-color-primary)' : undefined,
-                fontWeight: balance.plan === p ? 800 : 600,
-              }}
+              className={`aic-plan-btn${balance.plan === p ? ' active' : ''}`}
               onClick={() => setPlan(p)}
             >
               {p === 'free' ? 'Gratis' : p === 'starter' ? 'Starter' : 'Pro'}
@@ -193,12 +196,11 @@ export const CreditPage: React.FC<Props> = ({ onBack }) => {
           ))}
           <button
             type="button"
-            className="aic-btn-ghost"
-            style={{ height: 32, fontSize: 12.5 }}
+            className="aic-plan-btn"
             onClick={() => { if (window.confirm('Reset seluruh simulasi kredit ke awal?')) reset(); }}
             title="Reset simulasi"
           >
-            <RotateCcw size={13} style={{ verticalAlign: -2, marginRight: 4 }} /> Reset
+            <RotateCcw size={13} /> Reset
           </button>
         </div>
         <div style={{ fontSize: 12, color: 'var(--ez-color-text-faint)', marginTop: 10 }}>
