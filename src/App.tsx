@@ -22,6 +22,7 @@ import { WelcomeSlotGuard } from './components/onboarding/tutorials/WelcomeSlotG
 import { isAppPath, navigateTo, parseWorkspaceRoute, paths, routeForMenu, routeLabel } from './routing/routes';
 import { useBrowserLocation } from './routing/useBrowserLocation';
 import { resolveAuthMode, type AuthMode } from './auth/authMode';
+import { PasscodeGate } from './auth/PasscodeGate';
 
 // Login dinonaktifkan sementara (perintah user 2026-10-12): seluruh pintu
 // masuk login disembunyikan — CTA "Masuk/Daftar" langsung ke dashboard
@@ -132,6 +133,7 @@ export const App: React.FC = () => {
   const location = useBrowserLocation();
   const workspaceRoute = parseWorkspaceRoute(location.pathname, location.search);
   const isWorkspace = isAppPath(location.pathname);
+  const isAccess = location.pathname === '/access';
   const isAbout = location.pathname === '/about' || location.hash === '#tentang';
   const isFeatures = location.pathname === '/fitur';
   const isAdvantages = location.pathname === '/keunggulan';
@@ -154,6 +156,7 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     if (isWorkspace) document.title = workspaceRoute.status === 'not-found' ? 'Halaman Tidak Ditemukan — EZRAB' : `${routeLabel(workspaceRoute)} — EZRAB`;
+    else if (isAccess) document.title = 'Akses Dashboard — EZRAB';
     else if (isAbout) document.title = 'Tentang EZRAB';
     else if (isFeatures) document.title = 'Kenali EZRAB — Fitur Lengkap';
     else if (isAdvantages) document.title = 'Keunggulan EZRAB — Mengapa Memilih EZRAB';
@@ -240,15 +243,26 @@ export const App: React.FC = () => {
 
   let content: React.ReactNode = null;
 
-  if (isWorkspace) {
+  if (isAccess) {
+    // Halaman gerbang akses (target redirect middleware untuk /app/* tanpa
+    // sesi). Validasi kode sepenuhnya di server — lihat src/auth/passcode.ts.
     content = (
-      <ProjectProvider>
-        <WorkspaceView
-          route={workspaceRoute}
-          onBackToLanding={handleReturnToLanding}
-          onNavigateMenu={(menu, projectId) => navigateTo(routeForMenu(menu, projectId))}
-        />
-      </ProjectProvider>
+      <PasscodeGate enabled={AUTH_MODE !== 'real-login'} standalone />
+    );
+  } else if (isWorkspace) {
+    // KUNCI SEMENTARA (user 2026-10-20): seluruh /app/* digerbang kode
+    // akses selama login dimatikan; validasi di server (bukan client).
+    // Nonaktif otomatis saat AUTH_MODE menjadi 'real-login'.
+    content = (
+      <PasscodeGate enabled={AUTH_MODE !== 'real-login'}>
+        <ProjectProvider>
+          <WorkspaceView
+            route={workspaceRoute}
+            onBackToLanding={handleReturnToLanding}
+            onNavigateMenu={(menu, projectId) => navigateTo(routeForMenu(menu, projectId))}
+          />
+        </ProjectProvider>
+      </PasscodeGate>
     );
   } else if (isAbout) {
     content = (
