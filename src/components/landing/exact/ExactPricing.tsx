@@ -337,20 +337,20 @@ export const ExactPricing: React.FC<ExactPricingProps> = ({ onSelectPlan }) => {
         {/* Optional Trust Elements below cards */}
         <div className="ez-pricing-trust-strip">
           <p className="ez-trust-caption">
-            Tanpa kontrak. Batalkan kapan saja.
+            Lebih terencana. Lebih efisien. Lebih terkendali.
           </p>
           <div className="ez-trust-chips-row">
             <div className="ez-trust-chip">
               <CheckCircle2 size={13} className="ez-trust-check" />
-              <span>Aman & Terpercaya</span>
+              <span>Data proyek tersusun rapi</span>
             </div>
             <div className="ez-trust-chip">
               <CheckCircle2 size={13} className="ez-trust-check" />
-              <span>Fleksibel Sesuai Kebutuhan</span>
+              <span>Proses estimasi lebih efisien</span>
             </div>
             <div className="ez-trust-chip">
               <CheckCircle2 size={13} className="ez-trust-check" />
-              <span>Upgrade / Downgrade Kapan Saja</span>
+              <span>Fleksibel untuk setiap kebutuhan</span>
             </div>
           </div>
         </div>
