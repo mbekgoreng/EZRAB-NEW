@@ -33,6 +33,9 @@ ATURAN WAJIB:
       "quantity": 45.5,
       "quantityFormula": "rumus/dimensi yang mendasari mis. 10m x 0.15m x 0.3m",
       "dimensions": "10m x 0.15m x 0.3m",
+      "quantitySource": "DED_EXPLICIT|DED_GEOMETRIC|AI_INFERENCE|ASSUMPTION|UNRESOLVED",
+      "sourcePages": [1, 2],
+      "sourceEvidence": "bukti singkat dari halaman DED (notasi/tabel/dimensi)",
       "specification": "spesifikasi ringkas",
       "confidence": "HIGH|MEDIUM|LOW",
       "estimatedUnitPrice": 950000,
@@ -54,6 +57,10 @@ CATATAN DERIVATION (opsional tapi dianjurkan untuk item compound):
 - Untuk plester: sertakan luas bidang dan jumlah sisi sebagai inputs terpisah.
 - Source: "DED" (dari dokumen), "ASSUMPTION" (asumsi), "USER" (input pengguna).
 - Jika inputs tidak lengkap, JANGAN sertakan derivation — biarkan quantity=null.
+
+CHECKLIST CAKUPAN — periksa SETIAP kelompok berikut terhadap isi DED, dan masukkan item HANYA bila didukung teks/bukti DED (jangan mengarang kelompok yang tidak ada):
+persiapan & pekerjaan tanah; pondasi; struktur (sloof, kolom, balok, pelat, ring balk); dinding, plesteran, acian; lantai & finishing; kusen, pintu, jendela; atap, plafon, talang; instalasi listrik; plumbing, sanitair, sanitasi; pengecatan; pembersihan akhir.
+Untuk setiap item WAJIB isi quantitySource (DED_EXPLICIT bila angka tertulis di DED; DED_GEOMETRIC bila dihitung dari dimensi DED; AI_INFERENCE/ASSUMPTION bila estimasi), sourcePages (nomor halaman bukti), dan sourceEvidence.
 
 ATURAN PENDEKATAN KUANTITAS:
 - Prioritas 1: Pakai angka eksplisit dari DED (tabel BOQ, dimensi tertulis).
@@ -138,6 +145,9 @@ export interface DedFastOutput {
     category: string;
     units: string;
     quantity: number | null;
+    quantitySource?: 'DED_EXPLICIT' | 'DED_GEOMETRIC' | 'AI_INFERENCE' | 'ASSUMPTION' | 'UNRESOLVED';
+    sourcePages?: number[];
+    sourceEvidence?: string;
     quantityFormula?: string;
     dimensions?: string;
     specification?: string;

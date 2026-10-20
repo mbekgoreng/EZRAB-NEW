@@ -46,6 +46,10 @@ ATURAN WAJIB:
   ]
 }
 
+CHECKLIST CAKUPAN — periksa SETIAP kelompok berikut terhadap isi DED, dan masukkan item HANYA bila didukung teks/bukti DED (jangan mengarang kelompok yang tidak ada):
+persiapan & pekerjaan tanah; pondasi; struktur (sloof, kolom, balok, pelat, ring balk); dinding, plesteran, acian; lantai & finishing; kusen, pintu, jendela; atap, plafon, talang; instalasi listrik; plumbing, sanitair, sanitasi; pengecatan; pembersihan akhir.
+Untuk setiap item WAJIB isi quantitySource, sourcePages (nomor halaman bukti), dan sourceEvidence.
+
 ATURAN KUANTITAS & HARGA:
 - quantity = null SAAT TIDAK ADA dasar yang dapat kamu yakini. BUKAN 0.
 - estimatedUnitPrice: WAJIB diisi untuk semua item umum. Jangan biarkan kosong untuk item standar.

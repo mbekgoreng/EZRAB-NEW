@@ -256,75 +256,95 @@ export class DedAiEstimateService {
       totalPages: parsed.pages.length,
     });
 
-    // Batasi total teks agar prompt tidak melebihi limit API (20000 karakter).
-    // Prioritaskan halaman awal; potong teks per halaman jika perlu.
-    const MAX_PROMPT_CHARS = 15000;
-    const MAX_PAGE_TEXT = 2000;
-    let totalChars = 0;
-    const pageSummaries = [];
-    for (const p of parsed.pages) {
-      if (totalChars >= MAX_PROMPT_CHARS) break;
-      const text = (p.text || '').slice(0, MAX_PAGE_TEXT);
-      totalChars += text.length;
-      pageSummaries.push({ page: p.page, title: p.title, text });
+    // === Seleksi halaman berbasis jenis halaman (patch kelengkapan 2026-10-21) ===
+    // Cara lama memotong teks global 15.000 karakter dari halaman pertama,
+    // sehingga hanya ±8 dari 32 halaman yang pernah sampai ke model.
+    // Sekarang: halaman dipilih menurut prioritas jenisnya (denah & struktur
+    // lebih dulu; MEP/kusen/atap tidak lagi terbuang), budget jauh lebih
+    // besar, lalu dianalisis per kelompok (multi-pass) dan digabung.
+    const PAGE_TYPE_PRIORITY: Record<string, number> = {
+      DENAH: 0, STRUKTUR: 1, POTONGAN: 2, JADWAL_KUSEN: 3, MEP: 4,
+      ATAP: 5, TAMPAK: 6, SPESIFIKASI: 7, SITUASI: 8, HALAMAN: 9,
+    };
+    const TOTAL_TEXT_BUDGET = mode === 'FAST' ? 45000 : 90000;
+    const PER_PAGE_TEXT = mode === 'FAST' ? 3000 : 4500;
+    const byPriority = [...parsed.pages].sort((a, b) =>
+      (PAGE_TYPE_PRIORITY[a.pageType] ?? 9) - (PAGE_TYPE_PRIORITY[b.pageType] ?? 9) || a.page - b.page);
+    const pageSummaries: Array<{ page: number; title: string; text: string; pageType: string }> = [];
+    let usedChars = 0;
+    for (const p of byPriority) {
+      const text = (p.text || '').slice(0, PER_PAGE_TEXT);
+      if (usedChars + text.length > TOTAL_TEXT_BUDGET && pageSummaries.length >= 4) break;
+      usedChars += text.length;
+      pageSummaries.push({ page: p.page, title: p.title, text, pageType: p.pageType });
     }
     const buildingType = options.projectType;
 
-    let systemPrompt: string;
-    let prompt: string;
-    if (mode === 'FAST') {
-      const built = buildFastPrompt({ projectType, buildingType, pageSummaries });
-      systemPrompt = built.system;
-      prompt = built.prompt;
-    } else {
-      const built = buildDetailPrompt({ projectType, buildingType, pageSummaries });
-      systemPrompt = built.system;
-      prompt = built.prompt;
+    // === Analisis multi-pass per kelompok jenis halaman ===
+    // Satu panggilan dengan plafon token kecil memotong daftar pekerjaan;
+    // per kelompok, setiap panggilan punya budget sendiri (FAST 8.000 /
+    // DETAIL 12.000 token) dan hasilnya digabung dengan dedup.
+    const CLUSTERS: string[][] = [
+      ['DENAH', 'SITUASI'],
+      ['STRUKTUR', 'POTONGAN'],
+      ['ATAP', 'TAMPAK'],
+      ['JADWAL_KUSEN', 'MEP'],
+      ['SPESIFIKASI', 'HALAMAN'],
+    ];
+    let groups: Array<typeof pageSummaries> = CLUSTERS
+      .map(types => pageSummaries.filter(s => types.includes(s.pageType)))
+      .filter(g => g.length > 0);
+    // Dokumen kecil cukup satu pass (hindari latensi/biaya berlipat).
+    if (pageSummaries.length <= 10 || groups.length <= 1) groups = [pageSummaries];
+
+    const maxTokens = mode === 'FAST' ? 8000 : 12000;
+    const rawItems: any[] = [];
+    let lastAiError: any = null;
+
+    for (let gi = 0; gi < groups.length; gi++) {
+      const built = mode === 'FAST'
+        ? buildFastPrompt({ projectType, buildingType, pageSummaries: groups[gi] })
+        : buildDetailPrompt({ projectType, buildingType, pageSummaries: groups[gi] });
+
+      notify('ANALYZE', mode === 'FAST' ? 'Menganalisis DED' : 'Analisis mendalam',
+        50 + Math.round((gi / groups.length) * 25),
+        groups.length > 1
+          ? `Mengirim kelompok halaman ${gi + 1}/${groups.length} ke model AI…`
+          : 'Mengirim prompt ke model AI untuk analisis…',
+        { pagesRead: parsed.pages.length, totalPages: parsed.pages.length });
+
+      const aiResult: AiToolsResult = await aiToolsProviderClient.execute({
+        productId: mode === 'FAST' ? 'DED_AI_FAST' : 'DED_AI_DETAIL',
+        prompt: built.prompt,
+        systemPrompt: built.system,
+        jsonMode: true,
+        maxTokens,
+        timeoutMs: mode === 'FAST' ? 120000 : 180000,
+      });
+
+      if (!aiResult.success) { lastAiError = aiResult; continue; }
+
+      let parsedAi: DedFastOutput | DedDetailOutput | null = null;
+      try {
+        parsedAi =
+          (aiResult.structured as any) ??
+          (mode === 'FAST'
+            ? aiToolsProviderClient.extractJson<DedFastOutput>(aiResult.content)
+            : aiToolsProviderClient.extractJson<DedDetailOutput>(aiResult.content));
+      } catch { parsedAi = null; }
+      if (parsedAi && Array.isArray(parsedAi.workItems)) rawItems.push(...parsedAi.workItems);
     }
 
-    notify('ANALYZE', mode === 'FAST' ? 'Menganalisis DED' : 'Analisis mendalam', 50, 'Mengirim prompt ke model AI untuk analisis…', {
-      pagesRead: parsed.pages.length,
-      totalPages: parsed.pages.length,
-    });
-
-    const aiResult: AiToolsResult = await aiToolsProviderClient.execute({
-      productId: mode === 'FAST' ? 'DED_AI_FAST' : 'DED_AI_DETAIL',
-      prompt,
-      systemPrompt,
-      jsonMode: true,
-      maxTokens: mode === 'FAST' ? 4000 : 9000,
-      timeoutMs: mode === 'FAST' ? 120000 : 180000,
-    });
-
-    if (!aiResult.success) {
-      return {
-        success: false,
-        errorCode: aiResult.errorCode,
-        stage: aiResult.stage,
-        message: aiResult.message,
-        retryable: aiResult.retryable,
-      };
-    }
-
-    // Parse the JSON contract with robustness.
-    let parsedAi: DedFastOutput | DedDetailOutput | null = null;
-    try {
-      parsedAi =
-        (aiResult.structured as any) ??
-        (mode === 'FAST'
-          ? aiToolsProviderClient.extractJson<DedFastOutput>(aiResult.content)
-          : aiToolsProviderClient.extractJson<DedDetailOutput>(aiResult.content));
-    } catch {
-      return {
-        success: false,
-        errorCode: 'MALFORMED_JSON',
-        stage: 'parse-ai',
-        message: 'Model mengembalikan JSON yang tidak dapat dibaca.',
-        retryable: true,
-      };
-    }
-
-    if (!parsedAi || !Array.isArray(parsedAi.workItems) || parsedAi.workItems.length === 0) {
+    if (rawItems.length === 0) {
+      if (lastAiError) {
+        return {
+          success: false,
+          errorCode: lastAiError.errorCode,
+          stage: lastAiError.stage,
+          message: lastAiError.message,
+          retryable: lastAiError.retryable,
+        };
+      }
       return {
         success: false,
         errorCode: 'NO_DATA',
@@ -334,7 +354,15 @@ export class DedAiEstimateService {
       };
     }
 
-    const items: DedAiItem[] = parsedAi.workItems.map((raw, idx) => convertAiItem(idx, raw, mode));
+    // Gabung + dedup antar-pass: kunci nama ternormalisasi + satuan;
+    // bila duplikat, utamakan item yang kuantitasnya terisi.
+    const merged = new Map<string, any>();
+    for (const raw of rawItems) {
+      const key = `${String(raw.name || '').toLowerCase().replace(/\s+/g, ' ').trim()}|${String(raw.units || raw.unit || '').toLowerCase()}`;
+      const prev = merged.get(key);
+      if (!prev || (prev.quantity == null && typeof raw.quantity === 'number')) merged.set(key, raw);
+    }
+    const items: DedAiItem[] = [...merged.values()].map((raw, idx) => convertAiItem(idx, raw, mode));
 
     const output = DedAiCalculator.buildOutput({
       jobId,

@@ -334,9 +334,13 @@ export class AiEstimatePipeline {
     // STEP 1: Membaca DED (Fast key sheet selection)
     notify('READING_PAGES', 'Membaca DED', 15, `Memindai ${totalPages} lembar dokumen untuk lembar arsitektur & struktur utama...`, { totalPages });
 
-    // Select key sheets: denah, tampak, potongan, pondasi/struktur
+    // Select key sheets: denah, tampak, potongan, pondasi/struktur, plus
+    // lembar kusen/MEP/plafon/detail (patch kelengkapan 2026-10-21: kata kunci
+    // lama mengecualikan kategori-kategori itu sehingga pekerjaannya hilang).
     const keyPages: DedPageInfo[] = [];
-    const keywords = ['denah', 'tampak', 'potongan', 'pondasi', 'sloof', 'struktur', 'atap', 'lantai'];
+    const keywords = ['denah', 'tampak', 'potongan', 'pondasi', 'sloof', 'struktur', 'atap', 'lantai',
+      'mep', 'listrik', 'instalasi', 'sanitair', 'kusen', 'pintu', 'jendela', 'plafon', 'jadwal', 'detail',
+      'septic', 'plumbing', 'air bersih', 'air kotor', 'drainase'];
 
     for (const p of rawPages) {
       const titleLower = (p.drawingTitle || '').toLowerCase();
@@ -345,10 +349,14 @@ export class AiEstimatePipeline {
       if (isKey || keyPages.length < 4) {
         keyPages.push(p);
       }
-      if (keyPages.length >= 8) break; // Limit to key sheets for speed
+      if (keyPages.length >= 14) break; // Key-sheet cap (naik dari 8; DETAIL tetap membaca semua)
     }
 
     const pagesToRead = keyPages.length > 0 ? keyPages : rawPages.slice(0, 6);
+    if (rawPages.length > pagesToRead.length) {
+      const skipped = rawPages.filter(p => !pagesToRead.includes(p)).map(p => p.pageNumber);
+      console.info(`[AI-ESTIMATE-TRACE] FAST key-sheet selection: read=${pagesToRead.map(p => p.pageNumber).join(',')} skipped=${skipped.join(',')}`);
+    }
     const context: DedContextMemory = dedDocumentReader.createEmptyContext(projectId, projectName, totalPages);
 
     for (let i = 0; i < pagesToRead.length; i++) {

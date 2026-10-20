@@ -34,7 +34,7 @@ export class DedWorkInventoryEngine {
       .join('\n');
 
     const elementsOverview = context.drawings
-      .slice(0, 40)
+      .slice(0, 120)
       .map((e) => `- Hal ${e.pageNumber}: [${e.category}] ${e.tagOrLabel} — ${e.description}`)
       .join('\n');
 
@@ -97,6 +97,9 @@ KEMBALIKAN HANYA ARRAY JSON DARI WORK ITEMS DENGAN STRUKTUR:
         systemPrompt: 'You are EZRAB Chief Construction Estimator. Derive a complete, realistic construction inventory from the DED.',
         jsonMode: true,
         temperature: 0.1,
+        // Eksplisit (patch kelengkapan 2026-10-21): default klien 4.000 token
+        // memotong daftar inventaris di ±10-16 item.
+        maxTokens: 12000,
       });
 
       const rawItems = Array.isArray(resp.data) ? resp.data : [];
