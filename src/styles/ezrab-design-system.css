@@ -27,6 +27,15 @@
   --ez-color-sidebar-active: #FFFFFF;
   --ez-color-sidebar-hover: #DCE7F5;
 
+  /* ---- Sidebar AI items — identitas ungu, beda dari nav biru (user 2026-10-21) ---- */
+  --ez-ai-surface: #F2ECFE;
+  --ez-ai-surface-hover: #E9DFFD;
+  --ez-ai-surface-active: linear-gradient(135deg, #7C3AED 0%, #6366F1 100%);
+  --ez-ai-text: #5B21B6;
+  --ez-ai-border: #DECFFB;
+  --ez-ai-chip: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+  --ez-ai-badge: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+
   /* ---- Text ---- */
   --ez-color-text-primary: #0F172A;
   --ez-color-text: var(--ez-color-text-primary);
@@ -173,6 +182,14 @@
   --ez-color-sidebar-text: #9AA8BF;
   --ez-color-sidebar-active: #243252;
   --ez-color-sidebar-hover: #223052;
+  /* ---- Sidebar AI items (dark): tint ungu transparan di atas canvas gelap ---- */
+  --ez-ai-surface: rgba(139, 92, 246, 0.13);
+  --ez-ai-surface-hover: rgba(139, 92, 246, 0.22);
+  --ez-ai-surface-active: linear-gradient(135deg, #6D28D9 0%, #4338CA 100%);
+  --ez-ai-text: #C4B5FD;
+  --ez-ai-border: rgba(167, 139, 250, 0.32);
+  --ez-ai-chip: linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%);
+  --ez-ai-badge: linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%);
   --ez-color-text-primary: #E6ECF5;
   --ez-color-text: var(--ez-color-text-primary);
   --ez-color-text-secondary: #9AA8BF;

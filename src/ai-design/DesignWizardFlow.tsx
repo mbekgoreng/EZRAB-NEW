@@ -54,7 +54,11 @@ export const DesignWizardFlow: React.FC<DesignWizardFlowProps> = ({
         <div>
           <button
             onClick={() => setPhase('wizard')}
-            style={{ marginBottom: 12, padding: '6px 12px', borderRadius: 8, border: '1px solid #E2E8F0', background: '#FFF', cursor: 'pointer', fontSize: 13 }}
+            style={{
+              marginBottom: 12, padding: '7px 14px', borderRadius: 10,
+              border: '1px solid var(--ez-color-border)', background: 'var(--ez-color-surface)',
+              color: 'var(--ez-color-text-secondary)', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+            }}
           >
             ← Ubah Spesifikasi Wizard
           </button>

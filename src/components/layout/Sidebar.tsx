@@ -56,6 +56,8 @@ interface NavItemDef {
   icon: React.ComponentType<{ size?: number; color?: string; className?: string }>;
   badge?: string | number;
   badgeType?: 'primary' | 'success' | 'neutral';
+  /** Item AI: render dengan identitas ungu khusus (token --ez-ai-*). */
+  ai?: boolean;
   matchMenu?: (active: string) => boolean;
 }
 
@@ -225,6 +227,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: Sparkles,
       badge: 'AI',
       badgeType: 'primary',
+      ai: true,
       matchMenu: (menu) => menu === 'ezrab-ai' || menu === 'ai-assistant',
     },
     {
@@ -233,6 +236,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: FileCheck,
       badge: 'AI',
       badgeType: 'primary',
+      ai: true,
       matchMenu: (menu) => menu === 'ded-ai' || menu === 'ded-rab' || menu === 'magic-ai',
     },
     {
@@ -241,6 +245,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: FileText,
       badge: 'AI',
       badgeType: 'primary',
+      ai: true,
       matchMenu: (menu) => menu === 'dokumen-ai',
     },
     {
@@ -899,10 +904,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {mainNavItems.slice(1).map((item) => {
               const active = isItemActive(item);
               const IconComp = item.icon;
+              const isAi = !!item.ai;
               return (
                 <React.Fragment key={item.id}>
                   {item.id === 'ezrab-ai' && (!sidebarCollapsed || isMobile) && (
-                    <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', fontWeight: 800, color: 'var(--ez-ai-text)', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '12px 12px 3px 12px' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--ez-ai-chip)', flexShrink: 0 }} />
                       {t('nav.group_ai')}
                     </div>
                   )}
@@ -924,11 +931,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     alignItems: 'center',
                     justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'space-between',
                     padding: sidebarCollapsed && !isMobile ? '0' : '0 12px',
-                    borderRadius: '8px',
+                    borderRadius: isAi ? '10px' : '8px',
                     fontSize: '13px',
-                    fontWeight: active ? 650 : 500,
-                    color: active ? 'var(--ez-color-primary)' : 'var(--ez-color-sidebar-text)',
-                    background: active ? 'var(--ez-color-sidebar-active)' : hoveredItemId === item.id ? 'var(--ez-color-sidebar-hover)' : 'transparent',
+                    fontWeight: isAi ? (active ? 700 : 600) : active ? 650 : 500,
+                    color: isAi
+                      ? active ? '#FFFFFF' : 'var(--ez-ai-text)'
+                      : active ? 'var(--ez-color-primary)' : 'var(--ez-color-sidebar-text)',
+                    background: isAi
+                      ? active ? 'var(--ez-ai-surface-active)' : hoveredItemId === item.id ? 'var(--ez-ai-surface-hover)' : 'var(--ez-ai-surface)'
+                      : active ? 'var(--ez-color-sidebar-active)' : hoveredItemId === item.id ? 'var(--ez-color-sidebar-hover)' : 'transparent',
+                    boxShadow: isAi
+                      ? active ? '0 4px 12px rgba(124, 58, 237, 0.35)' : 'inset 0 0 0 1px var(--ez-ai-border)'
+                      : undefined,
                     border: 'none',
                     cursor: 'pointer',
                     textAlign: 'left',
@@ -938,20 +952,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <IconComp size={17} color={active ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
+                    {isAi ? (
+                      <span style={{ width: '24px', height: '24px', borderRadius: '8px', background: 'var(--ez-ai-chip)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 6px rgba(124, 58, 237, 0.35)' }}>
+                        <IconComp size={14} color="#FFFFFF" />
+                      </span>
+                    ) : (
+                      <IconComp size={17} color={active ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)'} />
+                    )}
                     {(!sidebarCollapsed || isMobile) && <span>{item.label}</span>}
                   </div>
 
                   {(!sidebarCollapsed || isMobile) && item.badge && (
-                    <span
-                      style={{
-                        fontSize: '10px',
-                        fontWeight: 650,
-                        color: item.badgeType === 'primary' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
-                      }}
-                    >
-                      {item.badge}
-                    </span>
+                    isAi ? (
+                      <span
+                        style={{
+                          fontSize: '9.5px',
+                          fontWeight: 800,
+                          letterSpacing: '0.05em',
+                          color: '#FFFFFF',
+                          background: active ? 'rgba(255, 255, 255, 0.25)' : 'var(--ez-ai-badge)',
+                          padding: '2px 7px',
+                          borderRadius: '999px',
+                        }}
+                      >
+                        {item.badge}
+                      </span>
+                    ) : (
+                      <span
+                        style={{
+                          fontSize: '10px',
+                          fontWeight: 650,
+                          color: item.badgeType === 'primary' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
+                        }}
+                      >
+                        {item.badge}
+                      </span>
+                    )
                   )}
                 </button>
 

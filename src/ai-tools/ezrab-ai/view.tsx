@@ -778,11 +778,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(15,23,42,0.6)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
           }}>
-            <div style={{ maxWidth: 1150, width: '100%', maxHeight: '92vh', overflowY: 'auto', background: '#F8FAFC', borderRadius: 16 }}
+            <div style={{ maxWidth: 1150, width: '100%', maxHeight: '92vh', overflowY: 'auto', background: 'var(--ez-color-background)', borderRadius: 16 }}
               onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 12px 0' }}>
                 <button onClick={() => setRabWizardOpen(false)}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #E2E8F0', background: '#FFF', cursor: 'pointer' }}>
+                  style={{ padding: '7px 14px', borderRadius: 10, border: '1px solid var(--ez-color-border)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-secondary)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
                   ✕ Tutup
                 </button>
               </div>
@@ -801,10 +801,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(15,23,42,0.75)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
           }}>
-            <div style={{ maxWidth: 1150, width: '100%', maxHeight: '92vh', overflowY: 'auto', background: '#F8FAFC', borderRadius: 16, padding: 8 }}>
+            <div style={{ maxWidth: 1150, width: '100%', maxHeight: '92vh', overflowY: 'auto', background: 'var(--ez-color-background)', borderRadius: 16, padding: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 8px 0' }}>
                 <button onClick={() => setDesignStudioOpen(false)}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid #E2E8F0', background: '#FFF', cursor: 'pointer' }}>
+                  style={{ padding: '7px 14px', borderRadius: 10, border: '1px solid var(--ez-color-border)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-secondary)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
                   ✕ Tutup
                 </button>
               </div>

@@ -432,7 +432,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
               initialFilter={projectFilter}
               onFilterChange={(f) => setProjectFilter(f)}
               onCreateProject={() => setCreateModalOpen(true)}
-              onOpenMagicAi={() => setActiveMenu('magic-ai')}
+              onOpenMagicAi={() => setActiveMenu('ezrab-ai')}
               onNavigateToTab={(tab) => setActiveMenu(tab)}
               onOpenProject={(projectId, menu = 'manajemen-proyek') => {
                 setCurrentProjectId(projectId);
@@ -515,7 +515,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
                   ? 'pengaturan'
                   : 'spreadsheet'
               }
-              onOpenMagicAi={() => setActiveMenu('magic-ai')}
+              onOpenMagicAi={() => setActiveMenu('ezrab-ai')}
               onNavigateToTab={(tab) => setActiveMenu(tab)}
             />
           </main>
@@ -710,7 +710,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           </main>
         ) : activeMenu === 'subscription' ? (
           <main style={{ padding: isNarrowMobile ? '16px 14px' : '24px 28px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>
-            <PricingSection onSelectPlan={() => setActiveMenu('magic-ai')} />
+            <PricingSection onSelectPlan={() => setActiveMenu('ezrab-ai')} />
           </main>
         ) : activeMenu === 'blog-admin' ? (
           // CMS blog — internal, tidak ada di sidebar. Gate capability di BlogAdminPage.
@@ -730,10 +730,12 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
                 setActiveMenu('proyek', null);
               }}
               onOpenMagicAi={(mode?: 'chat' | 'ded-rab') => {
-                if (mode) {
+                if (mode === 'ded-rab') {
+                  // Pintu DED eksplisit (kartu Upload DED) — tetap ke Analisis DED.
                   navigateTo(routeForMenu('magic-ai', currentProjectId, mode));
                 } else {
-                  setActiveMenu('magic-ai');
+                  // Pintu AI generik -> Ezrab Chat AI (bukan Analisis DED).
+                  setActiveMenu('ezrab-ai');
                 }
               }}
               onOpenSubscription={() => setActiveMenu('subscription')}
@@ -806,7 +808,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           <button
             type="button"
             className="ezrab-bottom-nav-ai-btn"
-            onClick={() => setActiveMenu('magic-ai')}
+            onClick={() => setActiveMenu('ezrab-ai')}
             title={t('nav.bottom_magic_ai')}
             aria-label={t('nav.bottom_magic_ai')}
           >
@@ -864,7 +866,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             onAddRabItemDirect={createRabItemDirect}
             onOpenSuperView={() => {
               setCoAssistantMode('closed');
-              setActiveMenu('magic-ai');
+              setActiveMenu('ezrab-ai');
             }}
           />
         </>
