@@ -124,14 +124,59 @@ export function executeIntent(
         navigated: true,
       };
 
+    case 'CAPABILITIES':
+      // Jawaban produk deterministik: keunggulan EZRAB yang nyata + tombol
+      // untuk langsung mencoba. Angka template/AHSP sesuai data produk.
+      return {
+        ok: true,
+        message:
+          'Saya Ezrab Chat AI — asisten estimasi konstruksi yang menjawab dari data EZRAB sendiri, bukan karangan model. Ini yang bisa saya bantu:\n\n' +
+          'MEMBUAT RAB\n' +
+          '• Wizard RAB rumah — 5 langkah, RAB terbentuk dari tipe & ukuran rumah\n' +
+          '• Desain Rumah AI — dari deskripsi teks menjadi spesifikasi & daftar pekerjaan\n' +
+          '• Estimasi dari DED — unggah gambar kerja, draft estimasinya disusun otomatis\n' +
+          '• 52 template RAB siap pakai untuk berbagai jenis proyek\n\n' +
+          'DATA & HITUNGAN YANG BISA DIPERCAYA\n' +
+          '• AHSP 2026 resmi (5.801 analisa) — cari dan pakai langsung di RAB\n' +
+          '• Database harga material, upah, dan peralatan 2026\n' +
+          '• Volume & subtotal dihitung engine deterministik; harga yang belum ada data resminya ditandai jelas, tidak pernah dikarang\n' +
+          '• Tanya langsung di sini: total proyek, item termahal/termurah, cari AHSP\n\n' +
+          'Coba salah satu:',
+        actions: [
+          { label: 'Buat RAB', action: { kind: 'intent', intent: 'CREATE_RAB_CLARIFY' } },
+          { label: 'Desain rumah dengan AI', action: { kind: 'intent', intent: 'START_HOUSE_DESIGN' } },
+          { label: 'Estimasi dari DED', action: { kind: 'navigate', menu: 'ded-ai' } },
+          { label: 'Lihat template RAB', action: { kind: 'navigate', menu: 'template-rab' } },
+        ],
+      };
+
+    case 'CREATE_RAB_CLARIFY':
+      // "buatkan rab" tanpa objek: tanya balik + tombol jalur, JANGAN
+      // menumpahkan daftar template ke chat. Lokal penuh, tanpa kredit AI.
+      return {
+        ok: true,
+        message:
+          'Siap, saya bantu buatkan RAB. RAB-nya untuk apa? Pilih jalurnya:\n' +
+          '• Rumah tinggal — lewat wizard (pilih tipe, ukuran, ruangan)\n' +
+          '• Dari gambar DED — estimasi dari file gambar kerja Anda\n' +
+          '• Pakai template — mulai dari template RAB yang sudah jadi\n' +
+          '• Manual — RAB kosong, isi item sendiri\n' +
+          'Atau tulis langsung, misalnya "buatkan rab rumah 2 lantai".',
+        actions: [
+          { label: 'Rumah tinggal', action: { kind: 'intent', intent: 'START_RAB_WIZARD' } },
+          { label: 'Dari gambar DED', action: { kind: 'navigate', menu: 'ded-ai' } },
+          { label: 'Pakai template', action: { kind: 'navigate', menu: 'template-rab' } },
+          { label: 'Manual / kosong', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+        ],
+      };
+
     case 'START_RAB_WIZARD':
       return {
         ok: true,
         message: 'Baik! Saya bantu buatkan RAB rumah lewat wizard interaktif. Silakan pilih tipe rumah dan spesifikasi.',
         openRabWizard: true,
         actions: [
-          { label: '🏠 Mulai Wizard RAB', action: { kind: 'intent', intent: 'START_RAB_WIZARD' } },
-          { label: '📐 Desain Rumah AI', action: { kind: 'intent', intent: 'START_HOUSE_DESIGN' } },
+          { label: 'Desain rumah dengan AI', action: { kind: 'intent', intent: 'START_HOUSE_DESIGN' } },
         ],
       };
 
@@ -140,7 +185,7 @@ export function executeIntent(
       const designPrompt = param || 'Buatkan rumah 1 lantai luas bangunan 90 m², ukuran 6 × 15 m, 3 kamar tidur, 2 kamar mandi, ruang tamu, dapur, dan carport.';
       return {
         ok: true,
-        message: 'Membuka AI Design Studio — prompt → denah 2D → 3D → spreadsheet → QTO/RAB.',
+        message: 'Membuka AI Design Studio — dari deskripsi menjadi spesifikasi, spreadsheet, lalu QTO/RAB.',
         openDesignStudio: true,
         designPrompt,
       };
@@ -151,7 +196,7 @@ export function executeIntent(
         ok: true,
         message: 'Spreadsheet RAB tersedia di menu RAB & Estimasi. Membuka…',
         actions: [
-          { label: '📊 Buka RAB & Spreadsheet', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+          { label: 'Buka RAB & Spreadsheet', action: { kind: 'navigate', menu: 'rab-estimasi' } },
         ],
       };
 

@@ -27,6 +27,8 @@ export type ChatIntent =
   | 'OPEN_SPREADSHEET'
   | 'START_RAB_WIZARD'
   | 'START_HOUSE_DESIGN'
+  | 'CREATE_RAB_CLARIFY'
+  | 'CAPABILITIES'
   | 'SEARCH_AHSP'
   | 'QUERY_PROJECT_TOTAL'
   | 'QUERY_PROJECT_LIST'
@@ -80,7 +82,18 @@ interface Pattern {
 const PATTERNS: Pattern[] = [
   // Greeting — must come before others to avoid false positives
   { intent: 'GREETING', re: /^(halo+|hai+|hello+|hi+|hei+|pagi|sore|malam|assalamualaikum)[\s!.,]*$/ },
-  { intent: 'HELP', re: /\b(bantuan|help|tolong|panduan|cara pakai|perintah)\b/ },
+  // "tolong" tidak memicu HELP bila diikuti objek kerja (rab/proyek/ahsp) —
+  // "tolong buatkan rab" adalah perintah kerja, bukan minta bantuan.
+  { intent: 'HELP', re: /\b(bantuan|help|panduan|cara pakai|perintah)\b|\btolong\b(?!.*\b(rab|proyek|ahsp)\b)/ },
+
+  // "kamu bisa apa?" -> jawaban produk deterministik (keunggulan EZRAB),
+  // bukan jawaban umum model AI. Pola mensyaratkan konteks kamu/ezrab agar
+  // pertanyaan teknis (mis. "apa keunggulan bata merah") tidak tertangkap.
+  { intent: 'CAPABILITIES', re: /\bkamu\b.*\b(bisa|dapat|mampu)\b.*\bapa\b/ },
+  { intent: 'CAPABILITIES', re: /\b(bisa apa|bisa ngapain|ngapain aja)\b/ },
+  { intent: 'CAPABILITIES', re: /\b(apa|sebutkan|jelaskan|tampilkan)\b.*\b(fitur|kemampuan|keunggulan|kelebihan)\b.*\b(kamu|ezrab|aplikasi ini)\b/ },
+  { intent: 'CAPABILITIES', re: /\b(fitur|kemampuan|keunggulan|kelebihan)\b.*\b(ezrab|kamu)\b/ },
+  { intent: 'CAPABILITIES', re: /\bezrab\b.*\b(bisa|fitur|keunggulan|kelebihan)\b/ },
 
   // Navigation — require explicit navigation verbs to avoid aggressive matching
   // (includes informal variants: bukain, tampilin, liatin)
@@ -98,6 +111,11 @@ const PATTERNS: Pattern[] = [
   { intent: 'START_RAB_WIZARD', re: /\brab\b.*\brumah\b.*\b(baru|wizard|panduan)\b/ },
   { intent: 'START_HOUSE_DESIGN', re: /\b(buat|bikin|desain|design)\b.*\b(desain|design)\b.*\brumah\b/ },
   { intent: 'START_HOUSE_DESIGN', re: /\b(buatkan|buatin)\b.*\brumah\b.*\b(\d+)\s*m/ },
+  // "buatkan rab" tanpa objek spesifik -> tanya balik (jangan tumpahkan daftar
+  // template). Pola spesifik (rumah/dll) sudah tertangkap di atas; pola umum
+  // ini HARUS tetap setelahnya. \brab\b tidak menangkap "rabat beton".
+  { intent: 'CREATE_RAB_CLARIFY', re: /\b(buatkan|buatin|bikin|buat|mau buat|ingin buat|pengen buat)\b.*\brab\b/ },
+  { intent: 'CREATE_RAB_CLARIFY', re: /^\s*rab\s+baru\s*$/ },
   { intent: 'OPEN_SPREADSHEET', re: /\b(buka|bukain|tampilkan|tampilin)\b.*\bspreadsheet\b/ },
   { intent: 'OPEN_DASHBOARD', re: /\b(buka|kembali|ke)\b.*\bdashboard\b/ },
 

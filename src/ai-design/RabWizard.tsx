@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ArrowLeft, ArrowRight, Check, AlertTriangle } from 'lucide-react';
 
 export interface RabWizardData {
   tipe: '36' | '45' | '60' | '90' | 'custom';
@@ -36,6 +37,7 @@ const STEPS = ['Tipe Rumah', 'Dimensi', 'Ruangan', 'Lokasi & Kualitas', 'Konfirm
  *
  * Tipe rumah adalah label awal yang perlu dikonfirmasi, bukan standar
  * dimensi universal. Semua nilai dapat disesuaikan.
+ * Presentasi: bahasa desain dashboard EZRAB (token --ez-*), aman mode gelap.
  */
 export const RabWizard: React.FC<RabWizardProps> = ({ onComplete, onCancel }) => {
   const [step, setStep] = useState(0);
@@ -81,44 +83,78 @@ export const RabWizard: React.FC<RabWizardProps> = ({ onComplete, onCancel }) =>
       `ukuran ${data.bangunanLebar} × ${data.bangunanPanjang} m, ${rooms.join(', ')}. ` +
       `Lokasi: ${data.lokasi}. Kualitas: ${data.kualitas}.`;
   };
+  void buildPrompt; // prompt dibangun pemanggil dari data hasil onComplete
+
+  const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--ez-color-text-muted)' };
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', background: '#FFF', borderRadius: 16, padding: 24, border: '1px solid #E2E8F0' }}>
+    <div style={{
+      maxWidth: 620, margin: '0 auto', padding: 26,
+      background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border)',
+      borderRadius: 18, boxShadow: '0 8px 30px rgba(15, 23, 42, 0.10)',
+      color: 'var(--ez-color-text-primary)',
+    }}>
       {/* Progress */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20 }}>
+      <div style={{ display: 'flex', gap: 5, marginBottom: 18 }}>
         {STEPS.map((s, i) => (
-          <div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= step ? '#1E3A5F' : '#E2E8F0' }} />
+          <div key={s} style={{
+            flex: 1, height: 5, borderRadius: 999,
+            background: i <= step ? 'var(--ez-color-primary)' : 'var(--ez-color-border-soft)',
+            transition: 'background 0.2s ease',
+          }} />
         ))}
       </div>
-      <h3 style={{ margin: '0 0 4px', color: '#1E3A5F' }}>{STEPS[step]}</h3>
-      <p style={{ fontSize: 13, color: '#64748B', margin: '0 0 16px' }}>
+      <h3 style={{ margin: '0 0 3px', fontSize: 17, fontWeight: 800 }}>{STEPS[step]}</h3>
+      <p style={{ fontSize: 12.5, color: 'var(--ez-color-text-muted)', margin: '0 0 18px' }}>
         Langkah {step + 1} dari {STEPS.length}
       </p>
 
       {/* Step 0: Tipe */}
       {step === 0 && (
         <div>
-          <p style={{ fontSize: 13, color: '#64748B', marginBottom: 12 }}>
+          <p style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--ez-color-text-secondary)', margin: '0 0 14px' }}>
             Tipe rumah adalah label awal — bukan standar dimensi universal. Anda dapat menyesuaikan semua ukuran di langkah berikutnya.
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 8 }}>
-            {Object.entries(TIPE_PRESETS).map(([key, p]) => (
-              <button key={key} onClick={() => selectTipe(key as RabWizardData['tipe'])}
-                style={{
-                  padding: 16, borderRadius: 12, border: data.tipe === key ? '2px solid #1E3A5F' : '1px solid #E2E8F0',
-                  background: data.tipe === key ? '#EFF6FF' : '#FFF', cursor: 'pointer',
-                }}>
-                <div style={{ fontWeight: 700, color: '#1E3A5F' }}>{p.label}</div>
-                <div style={{ fontSize: 12, color: '#64748B' }}>{p.luas > 0 ? `${p.luas} m²` : 'Bebas'}</div>
-              </button>
-            ))}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 9 }}>
+            {Object.entries(TIPE_PRESETS).map(([key, p]) => {
+              const active = data.tipe === key;
+              return (
+                <button key={key} onClick={() => selectTipe(key as RabWizardData['tipe'])}
+                  style={{
+                    position: 'relative', padding: '15px 10px 13px', borderRadius: 14, cursor: 'pointer',
+                    border: active ? '1.5px solid var(--ez-color-primary)' : '1px solid var(--ez-color-border)',
+                    background: active ? 'var(--ez-color-primary-soft)' : 'var(--ez-color-surface)',
+                    transition: 'all 0.15s ease',
+                  }}>
+                  {active && (
+                    <span style={{
+                      position: 'absolute', top: 7, right: 7, width: 16, height: 16, borderRadius: '50%',
+                      background: 'var(--ez-color-primary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Check size={10} color="#FFF" strokeWidth={3.5} />
+                    </span>
+                  )}
+                  <div style={{ fontWeight: 800, fontSize: 14.5, color: 'var(--ez-color-text-primary)' }}>{p.label}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', marginTop: 2 }}>{p.luas > 0 ? `${p.luas} m²` : 'Bebas'}</div>
+                </button>
+              );
+            })}
           </div>
-          <div style={{ marginTop: 12 }}>
-            <label style={{ fontSize: 13, fontWeight: 600 }}>Jumlah Lantai</label>
-            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+          <div style={{ marginTop: 18 }}>
+            <div style={labelStyle}>Jumlah Lantai</div>
+            <div style={{
+              display: 'inline-flex', gap: 4, marginTop: 8, padding: 4, borderRadius: 12,
+              background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-soft)',
+            }}>
               {[1, 2, 3].map(n => (
                 <button key={n} onClick={() => set('lantai', n)}
-                  style={{ padding: '8px 20px', borderRadius: 8, border: data.lantai === n ? '2px solid #1E3A5F' : '1px solid #E2E8F0', background: data.lantai === n ? '#EFF6FF' : '#FFF', cursor: 'pointer', fontWeight: 600 }}>
+                  style={{
+                    padding: '7px 22px', borderRadius: 9, border: 'none', cursor: 'pointer',
+                    background: data.lantai === n ? 'var(--ez-color-surface)' : 'transparent',
+                    color: data.lantai === n ? 'var(--ez-color-text-primary)' : 'var(--ez-color-text-secondary)',
+                    fontWeight: data.lantai === n ? 800 : 550, fontSize: 13.5,
+                    boxShadow: data.lantai === n ? '0 1px 3px rgba(15, 23, 42, 0.10)' : 'none',
+                  }}>
                   {n}
                 </button>
               ))}
@@ -129,61 +165,89 @@ export const RabWizard: React.FC<RabWizardProps> = ({ onComplete, onCancel }) =>
 
       {/* Step 1: Dimensi */}
       {step === 1 && (
-        <div style={{ display: 'grid', gap: 12 }}>
+        <div style={{ display: 'grid', gap: 16 }}>
           <div>
-            <label style={{ fontSize: 13, fontWeight: 600 }}>Tanah (lebar × panjang, meter)</label>
-            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <div style={labelStyle}>Tanah (lebar × panjang, meter)</div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 7, alignItems: 'center' }}>
               <input type="number" value={data.tanahLebar} onChange={e => set('tanahLebar', +e.target.value)} style={inputStyle} />
+              <span style={{ color: 'var(--ez-color-text-faint)', fontWeight: 700 }}>×</span>
               <input type="number" value={data.tanahPanjang} onChange={e => set('tanahPanjang', +e.target.value)} style={inputStyle} />
             </div>
           </div>
           <div>
-            <label style={{ fontSize: 13, fontWeight: 600 }}>Bangunan (lebar × panjang, meter)</label>
-            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <div style={labelStyle}>Bangunan (lebar × panjang, meter)</div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 7, alignItems: 'center' }}>
               <input type="number" value={data.bangunanLebar} onChange={e => set('bangunanLebar', +e.target.value)} style={inputStyle} />
+              <span style={{ color: 'var(--ez-color-text-faint)', fontWeight: 700 }}>×</span>
               <input type="number" value={data.bangunanPanjang} onChange={e => set('bangunanPanjang', +e.target.value)} style={inputStyle} />
             </div>
-            <div style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>Luas bangunan: {luasBangunan.toFixed(1)} m²</div>
+            <div style={{ fontSize: 12.5, color: 'var(--ez-color-text-muted)', marginTop: 7 }}>
+              Luas bangunan: <strong style={{ color: 'var(--ez-color-text-primary)' }}>{luasBangunan.toFixed(1)} m²</strong>
+            </div>
           </div>
         </div>
       )}
 
       {/* Step 2: Ruangan */}
       {step === 2 && (
-        <div style={{ display: 'grid', gap: 12 }}>
-          <div style={{ display: 'flex', gap: 16 }}>
+        <div style={{ display: 'grid', gap: 16 }}>
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
             <div>
-              <label style={{ fontSize: 13, fontWeight: 600 }}>Kamar Tidur</label>
-              <input type="number" min={1} max={10} value={data.kamarTidur} onChange={e => set('kamarTidur', +e.target.value)} style={inputStyle} />
+              <div style={labelStyle}>Kamar Tidur</div>
+              <input type="number" min={1} max={10} value={data.kamarTidur} onChange={e => set('kamarTidur', +e.target.value)} style={{ ...inputStyle, marginTop: 7 }} />
             </div>
             <div>
-              <label style={{ fontSize: 13, fontWeight: 600 }}>Kamar Mandi</label>
-              <input type="number" min={1} max={10} value={data.kamarMandi} onChange={e => set('kamarMandi', +e.target.value)} style={inputStyle} />
+              <div style={labelStyle}>Kamar Mandi</div>
+              <input type="number" min={1} max={10} value={data.kamarMandi} onChange={e => set('kamarMandi', +e.target.value)} style={{ ...inputStyle, marginTop: 7 }} />
             </div>
           </div>
-          {([['ruangTamu', 'Ruang Tamu'], ['dapur', 'Dapur'], ['carport', 'Carport']] as const).map(([key, label]) => (
-            <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer' }}>
-              <input type="checkbox" checked={data[key]} onChange={e => set(key, e.target.checked)} />
-              {label}
-            </label>
-          ))}
+          <div>
+            <div style={labelStyle}>Ruang Tambahan</div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+              {([['ruangTamu', 'Ruang Tamu'], ['dapur', 'Dapur'], ['carport', 'Carport']] as const).map(([key, label]) => {
+                const active = data[key];
+                return (
+                  <button key={key} onClick={() => set(key, !active)}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 7,
+                      padding: '8px 14px', borderRadius: 999, cursor: 'pointer', fontSize: 13, fontWeight: 650,
+                      border: active ? '1.5px solid var(--ez-color-primary)' : '1px solid var(--ez-color-border)',
+                      background: active ? 'var(--ez-color-primary-soft)' : 'var(--ez-color-surface)',
+                      color: 'var(--ez-color-text-primary)',
+                    }}>
+                    {active && <Check size={13} strokeWidth={3.5} color="var(--ez-color-primary)" />}
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
       {/* Step 3: Lokasi & Kualitas */}
       {step === 3 && (
-        <div style={{ display: 'grid', gap: 12 }}>
+        <div style={{ display: 'grid', gap: 16 }}>
           <div>
-            <label style={{ fontSize: 13, fontWeight: 600 }}>Lokasi Proyek *</label>
+            <div style={labelStyle}>Lokasi Proyek *</div>
             <input value={data.lokasi} onChange={e => set('lokasi', e.target.value)}
-              placeholder="Contoh: Jakarta Selatan" style={{ ...inputStyle, width: '100%', marginTop: 4 }} />
+              placeholder="Contoh: Jakarta Selatan" style={{ ...inputStyle, width: '100%', marginTop: 7, textAlign: 'left' }} />
           </div>
           <div>
-            <label style={{ fontSize: 13, fontWeight: 600 }}>Kualitas / Spesifikasi</label>
-            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+            <div style={labelStyle}>Kualitas / Spesifikasi</div>
+            <div style={{
+              display: 'inline-flex', gap: 4, marginTop: 8, padding: 4, borderRadius: 12,
+              background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-soft)',
+            }}>
               {(['standar', 'menengah', 'mewah'] as const).map(q => (
                 <button key={q} onClick={() => set('kualitas', q)}
-                  style={{ padding: '8px 16px', borderRadius: 8, border: data.kualitas === q ? '2px solid #1E3A5F' : '1px solid #E2E8F0', background: data.kualitas === q ? '#EFF6FF' : '#FFF', cursor: 'pointer', textTransform: 'capitalize' }}>
+                  style={{
+                    padding: '7px 16px', borderRadius: 9, border: 'none', cursor: 'pointer', textTransform: 'capitalize',
+                    background: data.kualitas === q ? 'var(--ez-color-surface)' : 'transparent',
+                    color: data.kualitas === q ? 'var(--ez-color-text-primary)' : 'var(--ez-color-text-secondary)',
+                    fontWeight: data.kualitas === q ? 800 : 550, fontSize: 13,
+                    boxShadow: data.kualitas === q ? '0 1px 3px rgba(15, 23, 42, 0.10)' : 'none',
+                  }}>
                   {q}
                 </button>
               ))}
@@ -195,36 +259,77 @@ export const RabWizard: React.FC<RabWizardProps> = ({ onComplete, onCancel }) =>
       {/* Step 4: Konfirmasi */}
       {step === 4 && (
         <div>
-          <div style={{ background: '#F8FAFC', borderRadius: 8, padding: 16, fontSize: 13 }}>
-            <div><strong>Tipe:</strong> {TIPE_PRESETS[data.tipe].label} ({data.lantai} lantai)</div>
-            <div><strong>Bangunan:</strong> {data.bangunanLebar} × {data.bangunanPanjang} m = {luasBangunan.toFixed(1)} m²</div>
-            <div><strong>Ruang:</strong> {data.kamarTidur} KT, {data.kamarMandi} KM{data.ruangTamu ? ', RT' : ''}{data.dapur ? ', Dapur' : ''}{data.carport ? ', Carport' : ''}</div>
-            <div><strong>Lokasi:</strong> {data.lokasi}</div>
-            <div><strong>Kualitas:</strong> {data.kualitas}</div>
+          <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-soft)', borderRadius: 14, padding: '6px 16px' }}>
+            {[
+              ['Tipe', `${TIPE_PRESETS[data.tipe].label} (${data.lantai} lantai)`],
+              ['Bangunan', `${data.bangunanLebar} × ${data.bangunanPanjang} m = ${luasBangunan.toFixed(1)} m²`],
+              ['Ruang', `${data.kamarTidur} KT, ${data.kamarMandi} KM${data.ruangTamu ? ', RT' : ''}${data.dapur ? ', Dapur' : ''}${data.carport ? ', Carport' : ''}`],
+              ['Lokasi', data.lokasi],
+              ['Kualitas', data.kualitas],
+            ].map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', gap: 12, padding: '9px 0', borderBottom: '1px solid var(--ez-color-border-soft)', fontSize: 13.5 }}>
+                <span style={{ width: 84, flexShrink: 0, fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>{k}</span>
+                <span style={{ color: 'var(--ez-color-text-primary)', textTransform: k === 'Kualitas' ? 'capitalize' : 'none' }}>{v}</span>
+              </div>
+            ))}
           </div>
-          <p style={{ fontSize: 12, color: '#92400E', marginTop: 12 }}>
-            ⚠ Data ini akan menjadi dasar desain AI. Tipe rumah adalah estimasi awal — denah dan RAB final perlu ditinjau sebelum dipakai.
-          </p>
+          <div style={{
+            display: 'flex', gap: 9, alignItems: 'flex-start', marginTop: 14, padding: '11px 13px',
+            background: 'rgba(245, 158, 11, 0.10)', border: '1px solid rgba(245, 158, 11, 0.28)', borderRadius: 12,
+          }}>
+            <AlertTriangle size={15} color="#D97706" style={{ flexShrink: 0, marginTop: 1 }} />
+            <span style={{ fontSize: 12.5, lineHeight: 1.55, color: 'var(--ez-color-text-body)' }}>
+              Data ini akan menjadi dasar desain AI. Tipe rumah adalah estimasi awal — denah dan RAB final perlu ditinjau sebelum dipakai.
+            </span>
+          </div>
         </div>
       )}
 
       {/* Nav */}
-      <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+      <div style={{ display: 'flex', gap: 8, marginTop: 22, alignItems: 'center' }}>
         <button onClick={onCancel} style={btnSecondary}>Batal</button>
-        {step > 0 && <button onClick={() => setStep(step - 1)} style={btnSecondary}>← Kembali</button>}
+        {step > 0 && (
+          <button onClick={() => setStep(step - 1)} style={btnSecondary}>
+            <ArrowLeft size={14} /> Kembali
+          </button>
+        )}
         <div style={{ flex: 1 }} />
         {step < STEPS.length - 1 ? (
-          <button onClick={() => canNext && setStep(step + 1)} disabled={!canNext} style={btnPrimary}>Lanjut →</button>
+          <button onClick={() => canNext && setStep(step + 1)} disabled={!canNext}
+            style={{ ...btnPrimary, opacity: canNext ? 1 : 0.5, cursor: canNext ? 'pointer' : 'default' }}>
+            Lanjut <ArrowRight size={14} />
+          </button>
         ) : (
-          <button onClick={() => onComplete({ ...data })} style={btnPrimary}>✅ Buat Desain & RAB</button>
+          <button onClick={() => onComplete({ ...data })}
+            style={{
+              ...btnPrimary,
+              background: 'var(--ez-ai-surface-active)',
+              boxShadow: '0 4px 14px rgba(124, 58, 237, 0.30)',
+            }}>
+            <Check size={15} strokeWidth={3} /> Buat Desain & RAB
+          </button>
         )}
       </div>
     </div>
   );
 };
 
-const inputStyle: React.CSSProperties = { padding: '8px 12px', borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 14, width: 100 };
-const btnPrimary: React.CSSProperties = { padding: '10px 20px', borderRadius: 8, border: 'none', background: '#1E3A5F', color: '#FFF', fontWeight: 700, cursor: 'pointer' };
-const btnSecondary: React.CSSProperties = { padding: '10px 20px', borderRadius: 8, border: '1px solid #E2E8F0', background: '#FFF', color: '#1E3A5F', fontWeight: 600, cursor: 'pointer' };
+const inputStyle: React.CSSProperties = {
+  padding: '9px 12px', borderRadius: 10, width: 110,
+  border: '1px solid var(--ez-color-border)', background: 'var(--ez-color-surface)',
+  color: 'var(--ez-color-text-primary)', fontSize: 14, outline: 'none', textAlign: 'center',
+};
+const btnPrimary: React.CSSProperties = {
+  padding: '10px 20px', borderRadius: 10, border: 'none',
+  background: 'var(--ez-color-primary)', color: '#FFF',
+  fontWeight: 700, fontSize: 13.5, cursor: 'pointer',
+  display: 'inline-flex', alignItems: 'center', gap: 7,
+};
+const btnSecondary: React.CSSProperties = {
+  padding: '10px 16px', borderRadius: 10,
+  border: '1px solid var(--ez-color-border)', background: 'var(--ez-color-surface)',
+  color: 'var(--ez-color-text-secondary)', fontWeight: 600, fontSize: 13.5, cursor: 'pointer',
+  display: 'inline-flex', alignItems: 'center', gap: 7,
+};
 
 export default RabWizard;

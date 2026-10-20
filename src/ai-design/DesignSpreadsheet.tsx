@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import type { HouseSpec, RoomSpec } from './specEngine';
-import { downloadDesignExcel } from './designExcelExport';
 
 export interface SpreadsheetRow {
   id: string;
@@ -20,7 +19,6 @@ export interface SpreadsheetRow {
 
 interface DesignSpreadsheetProps {
   spec: HouseSpec;
-  onExportCSV?: (csv: string) => void;
 }
 
 /**
@@ -131,8 +129,11 @@ export function downloadFile(content: string, filename: string, mime: string): v
 
 /**
  * Spreadsheet editable untuk desain rumah AI.
+ * Bahasa desain dashboard EZRAB (token --ez-*): header terang, status pill,
+ * tanpa tombol ekspor (keputusan owner 2026-10-21 — buat simple).
+ * Helper rowsToCSV/downloadFile tetap diekspor untuk test & pemakaian lain.
  */
-export const DesignSpreadsheet: React.FC<DesignSpreadsheetProps> = ({ spec, onExportCSV }) => {
+export const DesignSpreadsheet: React.FC<DesignSpreadsheetProps> = ({ spec }) => {
   const initialRows = useMemo(() => specToSpreadsheetRows(spec), [spec]);
   const [rows, setRows] = useState<SpreadsheetRow[]>(initialRows);
   const [activeTab, setActiveTab] = useState<'ruang' | 'pekerjaan' | 'semua'>('semua');
@@ -165,86 +166,83 @@ export const DesignSpreadsheet: React.FC<DesignSpreadsheetProps> = ({ spec, onEx
     activeTab === 'ruang' ? r.kategori === 'RUANG' : r.kategori === 'PEKERJAAN'
   );
 
-  const handleExportCSV = () => {
-    const csv = rowsToCSV(rows);
-    if (onExportCSV) onExportCSV(csv);
-    else downloadFile(csv, `desain-rumah-${Date.now()}.csv`, 'text/csv');
-  };
+  const statusPill = (s: SpreadsheetRow['status']): React.CSSProperties => ({
+    display: 'inline-block', padding: '2px 9px', borderRadius: 999, fontSize: 10.5, fontWeight: 700, whiteSpace: 'nowrap',
+    color: s === 'TERHITUNG' ? '#059669' : s === 'ASUMSI' ? '#D97706' : '#DC2626',
+    background: s === 'TERHITUNG' ? 'rgba(16,185,129,0.12)' : s === 'ASUMSI' ? 'rgba(245,158,11,0.14)' : 'rgba(239,68,68,0.10)',
+  });
 
-  const [exportingXlsx, setExportingXlsx] = useState(false);
-  const handleExportXLSX = async () => {
-    setExportingXlsx(true);
-    try {
-      await downloadDesignExcel(spec);
-    } finally {
-      setExportingXlsx(false);
-    }
+  const cellInput: React.CSSProperties = {
+    border: '1px solid transparent', borderRadius: 7, padding: '4px 6px', width: '100%',
+    fontSize: 12.5, background: 'transparent', color: 'var(--ez-color-text-primary)', outline: 'none',
   };
-
-  const statusColor = (s: SpreadsheetRow['status']) =>
-    s === 'TERHITUNG' ? '#10B981' : s === 'ASUMSI' ? '#F59E0B' : '#EF4444';
+  const numInput: React.CSSProperties = { ...cellInput, width: 58, textAlign: 'right' };
 
   return (
     <div className="ai-design-spreadsheet">
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+      {/* Filter — segmented control (selaras tab studio) */}
+      <div style={{
+        display: 'inline-flex', gap: 4, marginBottom: 14, flexWrap: 'wrap',
+        background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-soft)',
+        borderRadius: 12, padding: 4,
+      }}>
         {(['semua', 'ruang', 'pekerjaan'] as const).map(tab => (
           <button key={tab}
             onClick={() => setActiveTab(tab)}
             style={{
-              padding: '6px 14px', borderRadius: 8, border: '1px solid #E2E8F0',
-              background: activeTab === tab ? '#1E3A5F' : '#FFF',
-              color: activeTab === tab ? '#FFF' : '#1E3A5F',
-              fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              padding: '6px 14px', borderRadius: 9, border: 'none',
+              background: activeTab === tab ? 'var(--ez-color-surface)' : 'transparent',
+              color: activeTab === tab ? 'var(--ez-color-text-primary)' : 'var(--ez-color-text-secondary)',
+              fontWeight: activeTab === tab ? 700 : 550, fontSize: 12.5, cursor: 'pointer',
+              boxShadow: activeTab === tab ? '0 1px 3px rgba(15, 23, 42, 0.10)' : 'none',
+              transition: 'all 0.15s ease',
             }}>
             {tab === 'semua' ? 'Semua' : tab === 'ruang' ? 'Daftar Ruang' : 'Pekerjaan'}
           </button>
         ))}
-        <button onClick={handleExportCSV}
-          style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: '#10B981', color: '#FFF', fontSize: 13, fontWeight: 600, cursor: 'pointer', marginLeft: 'auto' }}>
-          ⬇ Export CSV
-        </button>
-        <button onClick={handleExportXLSX} disabled={exportingXlsx}
-          style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: '#217346', color: '#FFF', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: exportingXlsx ? 0.6 : 1 }}>
-          {exportingXlsx ? '⏳ XLSX...' : '📊 Export XLSX'}
-        </button>
       </div>
-      <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid #E2E8F0' }}>
-        <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse', minWidth: 900 }}>
+      <div style={{
+        overflowX: 'auto', borderRadius: 16, border: '1px solid var(--ez-color-border)',
+        background: 'var(--ez-color-surface)', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05)',
+      }}>
+        <table style={{ width: '100%', fontSize: 12.5, borderCollapse: 'collapse', minWidth: 900 }}>
           <thead>
-            <tr style={{ background: '#1E3A5F', color: '#FFF' }}>
+            <tr style={{ background: 'var(--ez-color-surface-secondary)' }}>
               {['Kategori', 'Kode', 'Uraian', 'Pjg', 'Lbr', 'Tgi', 'Jml', 'Sat', 'Volume', 'Sumber', 'Status'].map(h => (
-                <th key={h} style={{ padding: '8px 6px', textAlign: 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                <th key={h} style={{
+                  padding: '10px 8px', textAlign: 'left', whiteSpace: 'nowrap',
+                  fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em',
+                  color: 'var(--ez-color-text-muted)', borderBottom: '1px solid var(--ez-color-border-soft)',
+                }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {filtered.map(r => (
-              <tr key={r.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                <td style={{ padding: '6px' }}>{r.kategori}</td>
-                <td style={{ padding: '6px', fontFamily: 'monospace' }}>{r.kode}</td>
-                <td style={{ padding: '6px' }}>
-                  <input value={r.uraian} onChange={e => updateCell(r.id, 'uraian', e.target.value)}
-                    style={{ border: '1px solid #E2E8F0', borderRadius: 4, padding: 4, width: '100%', fontSize: 12 }} />
+              <tr key={r.id} style={{ borderBottom: '1px solid var(--ez-color-border-soft)' }}>
+                <td style={{ padding: '5px 8px', color: 'var(--ez-color-text-secondary)', fontWeight: 600 }}>{r.kategori}</td>
+                <td style={{ padding: '5px 8px', fontFamily: 'monospace', fontSize: 11.5, color: 'var(--ez-color-text-muted)' }}>{r.kode}</td>
+                <td style={{ padding: '5px 4px', minWidth: 170 }}>
+                  <input value={r.uraian} onChange={e => updateCell(r.id, 'uraian', e.target.value)} style={cellInput} />
                 </td>
                 {(['panjang', 'lebar', 'tinggi', 'jumlah'] as const).map(f => (
-                  <td key={f} style={{ padding: '6px' }}>
-                    <input type="number" value={r[f]} onChange={e => updateCell(r.id, f, parseFloat(e.target.value) || 0)}
-                      style={{ border: '1px solid #E2E8F0', borderRadius: 4, padding: 4, width: 60, fontSize: 12 }} />
+                  <td key={f} style={{ padding: '5px 4px' }}>
+                    <input type="number" value={r[f]} onChange={e => updateCell(r.id, f, parseFloat(e.target.value) || 0)} style={numInput} />
                   </td>
                 ))}
-                <td style={{ padding: '6px' }}>{r.satuan}</td>
-                <td style={{ padding: '6px', fontWeight: 600 }}>{r.volume}</td>
-                <td style={{ padding: '6px', fontSize: 11, color: '#64748B' }}>{r.sumber}</td>
-                <td style={{ padding: '6px' }}>
-                  <span style={{ color: statusColor(r.status), fontWeight: 600, fontSize: 11 }}>{r.status}</span>
+                <td style={{ padding: '5px 8px', color: 'var(--ez-color-text-secondary)' }}>{r.satuan}</td>
+                <td style={{ padding: '5px 8px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{r.volume}</td>
+                <td style={{ padding: '5px 8px', fontSize: 11.5, color: 'var(--ez-color-text-muted)' }}>{r.sumber}</td>
+                <td style={{ padding: '5px 8px' }}>
+                  <span style={statusPill(r.status)}>{r.status === 'PERLU_REVIEW' ? 'PERLU REVIEW' : r.status}</span>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <div style={{ marginTop: 8, fontSize: 12, color: '#64748B' }}>
-        {rows.length} baris · Edit sel untuk mengubah · Volume dihitung otomatis dari dimensi
+      <div style={{ marginTop: 10, fontSize: 12, color: 'var(--ez-color-text-muted)' }}>
+        {filtered.length} dari {rows.length} baris · Edit sel untuk mengubah · Volume dihitung otomatis dari dimensi
       </div>
     </div>
   );

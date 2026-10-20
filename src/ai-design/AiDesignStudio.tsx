@@ -1,8 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Sparkles, Save, FolderOpen, Check, Send, AlertTriangle, Info } from 'lucide-react';
-import { parseHousePrompt, validateSpec, type HouseSpec, type RoomSpec } from './specEngine';
-import { FloorPlan2D } from './FloorPlan2D';
-import { HouseViewer3D } from './HouseViewer3D';
+import { parseHousePrompt, validateSpec, type HouseSpec } from './specEngine';
 import { DesignSpreadsheet, specToSpreadsheetRows } from './DesignSpreadsheet';
 import { spreadsheetToWorkItems, validateWorkItemsForRab, buildApprovalSummary } from './designToRabBridge';
 import { useProject } from '../context/ProjectContext';
@@ -11,7 +9,7 @@ import { saveDesign, listDesigns, getDesign, type SavedDesign } from './designSt
 import { AhspCandidatePicker, findAhspCandidates } from './AhspCandidatePicker';
 import type { NationalAHSPItem } from '../data/nationalCostDatabase/types';
 
-type ViewTab = 'spec' | 'plan2d' | 'view3d' | 'spreadsheet' | 'review';
+type ViewTab = 'spec' | 'spreadsheet' | 'review';
 
 interface AiDesignStudioProps {
   initialPrompt?: string;
@@ -56,17 +54,17 @@ const BTN_PRIMARY: React.CSSProperties = {
 };
 
 /**
- * AI Design Studio — prompt → spec → denah 2D → 3D → spreadsheet → review → QTO/RAB.
+ * AI Design Studio — prompt → spesifikasi → spreadsheet → review → QTO/RAB.
  *
- * Alur: pengguna mengetik prompt → spec tervalidasi → eksplorasi visual →
+ * Alur: pengguna mengetik prompt → spec tervalidasi → periksa spreadsheet →
  *       setujui → data diteruskan ke QTO/RAB (via onApprove).
+ * (Tab Denah 2D & 3D dihapus 2026-10-21 atas keputusan owner: buat simple.)
  */
 export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, onApprove }) => {
   const [prompt, setPrompt] = useState(initialPrompt || DEFAULT_PROMPT);
   const [spec, setSpec] = useState<HouseSpec | null>(() => parseHousePrompt(initialPrompt || DEFAULT_PROMPT).spec);
   const [clarifications, setClarifications] = useState<string[]>(() => parseHousePrompt(initialPrompt || DEFAULT_PROMPT).needsClarification);
   const [activeTab, setActiveTab] = useState<ViewTab>('spec');
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [approved, setApproved] = useState(false);
   // P0: ProjectContext integration
   const { currentProject, bulkAddRabItems, projectRabItems } = useProject();
@@ -85,20 +83,9 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
     const result = parseHousePrompt(prompt);
     setSpec(result.spec);
     setClarifications(result.needsClarification);
-    setSelectedRoomId(null);
     setApproved(false);
     if (result.spec) setActiveTab('spec');
   }, [prompt]);
-
-  const handleRoomUpdate = useCallback((roomId: string, updates: Partial<RoomSpec>) => {
-    setSpec(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        rooms: prev.rooms.map(r => r.id === roomId ? { ...r, ...updates, areaM2: (updates.widthM ?? r.widthM) * (updates.lengthM ?? r.lengthM) } : r),
-      };
-    });
-  }, []);
 
   const validation = useMemo(() => spec ? validateSpec(spec) : null, [spec]);
   const workItems = useMemo(() => spec ? spreadsheetToWorkItems(specToSpreadsheetRows(spec)) : [], [spec]);
@@ -213,8 +200,6 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
 
   const tabs: Array<{ id: ViewTab; label: string }> = [
     { id: 'spec', label: 'Spesifikasi' },
-    { id: 'plan2d', label: 'Denah 2D' },
-    { id: 'view3d', label: '3D' },
     { id: 'spreadsheet', label: 'Spreadsheet' },
     { id: 'review', label: 'Review & Setujui' },
   ];
@@ -390,16 +375,6 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
                 </div>
               </div>
             </div>
-          )}
-
-          {/* 2D tab */}
-          {activeTab === 'plan2d' && (
-            <FloorPlan2D spec={spec} onRoomUpdate={handleRoomUpdate} onRoomSelect={setSelectedRoomId} selectedRoomId={selectedRoomId} />
-          )}
-
-          {/* 3D tab */}
-          {activeTab === 'view3d' && (
-            <HouseViewer3D spec={spec} selectedRoomId={selectedRoomId} onRoomSelect={setSelectedRoomId} />
           )}
 
           {/* Spreadsheet tab */}

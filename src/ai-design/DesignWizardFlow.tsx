@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { RabWizard, type RabWizardData } from './RabWizard';
 import { AiDesignStudio } from './AiDesignStudio';
 import type { HouseSpec } from './specEngine';
@@ -17,7 +18,7 @@ type Phase = 'wizard' | 'design';
  *
  * 1. Pengguna mengisi wizard (tipe, dimensi, ruang, lokasi, kualitas).
  * 2. Data wizard diubah menjadi prompt desain.
- * 3. AI Design Studio menampilkan spec → denah 2D → 3D → spreadsheet.
+ * 3. AI Design Studio menampilkan spec → spreadsheet → review.
  * 4. Pengguna menyetujui → data siap ke QTO/RAB.
  */
 export const DesignWizardFlow: React.FC<DesignWizardFlowProps> = ({
@@ -58,9 +59,10 @@ export const DesignWizardFlow: React.FC<DesignWizardFlowProps> = ({
               marginBottom: 12, padding: '7px 14px', borderRadius: 10,
               border: '1px solid var(--ez-color-border)', background: 'var(--ez-color-surface)',
               color: 'var(--ez-color-text-secondary)', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+              display: 'inline-flex', alignItems: 'center', gap: 7,
             }}
           >
-            ← Ubah Spesifikasi Wizard
+            <ArrowLeft size={14} /> Ubah Spesifikasi Wizard
           </button>
           <AiDesignStudio
             initialPrompt={designPrompt}
