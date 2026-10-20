@@ -9,6 +9,7 @@ interface DashboardViewSwitcherProps {
   onCreateProject: () => void;
   onSelectProject: (projectId: string, menu?: string) => void;
   onNavigateToTab: (tab: string, projId?: string | null) => void;
+  onNavigateToProjects?: (filter: string) => void;
   onOpenMagicAi: (mode?: 'chat' | 'ded-rab') => void;
   onOpenSubscription: () => void;
   onResetData?: () => void;

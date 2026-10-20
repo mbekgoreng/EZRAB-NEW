@@ -657,11 +657,11 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga.`;
         <div style={{ display: 'flex', background: 'var(--ez-color-surface-tertiary)', borderBottom: '1px solid var(--ez-color-border-line)', padding: '4px 12px', gap: '6px', overflowX: 'auto' }}>
           {[
             { id: 'selector', label: 'Pilih Metode', icon: Layers },
-            { id: 'ahsp', label: '📚 Dari AHSP', icon: BookOpen },
-            { id: 'manual', label: '✏️ Manual', icon: PenTool },
-            { id: 'ai', label: '🤖 Dengan AI', icon: Sparkles },
-            { id: 'template', label: '📋 Dari Template', icon: LayoutTemplate },
-            { id: 'duplicate', label: '📑 Duplikasi', icon: Copy },
+            { id: 'ahsp', label: 'Dari AHSP', icon: BookOpen },
+            { id: 'manual', label: 'Manual', icon: PenTool },
+            { id: 'ai', label: 'Dengan AI', icon: Sparkles },
+            { id: 'template', label: 'Dari Template', icon: LayoutTemplate },
+            { id: 'duplicate', label: 'Duplikasi', icon: Copy },
           ].map((tab) => {
             const isActive = activeMode === tab.id;
             return (
@@ -690,6 +690,7 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga.`;
                   whiteSpace: 'nowrap',
                 }}
               >
+                <tab.icon size={13} strokeWidth={2.2} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -760,10 +761,10 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga.`;
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '20px',
+                        color: 'var(--ez-color-primary)',
                       }}
                     >
-                      📚
+                      <BookOpen size={20} strokeWidth={2} />
                     </div>
                     <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-blue-bg-deep)', color: 'var(--ez-hue-blue-text-deep)' }}>
                       PUPR 2026
@@ -823,7 +824,7 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga.`;
                         fontSize: '20px',
                       }}
                     >
-                      ✏️
+                      <PenTool size={20} strokeWidth={2} color="#059669" />
                     </div>
                     <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: '#D1FAE5', color: 'var(--ez-hue-green-text-deep)' }}>
                       Fleksibel
@@ -883,7 +884,7 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga.`;
                         fontSize: '20px',
                       }}
                     >
-                      🤖
+                      <Sparkles size={20} strokeWidth={2} color="#4F46E5" />
                     </div>
                     <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-indigo-bg)', color: '#3730A3' }}>
                       Magic AI
@@ -943,7 +944,7 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga.`;
                         fontSize: '20px',
                       }}
                     >
-                      📋
+                      <LayoutTemplate size={20} strokeWidth={2} color="#D97706" />
                     </div>
                     <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text-dark)' }}>
                       Paket WBS
@@ -1003,7 +1004,7 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga.`;
                         fontSize: '20px',
                       }}
                     >
-                      📑
+                      <Copy size={20} strokeWidth={2} color="#0891B2" />
                     </div>
                     <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: '#CFFAFE', color: '#155E75' }}>
                       Cepat

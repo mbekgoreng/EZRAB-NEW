@@ -63,6 +63,12 @@
   --ez-pastel-peach: #ffe9d6;
   --ez-pastel-sky: #e3eefb;
 
+  /* ---- Stat card fills — pekat (user 2026-10-20), identik di light & dark ---- */
+  --ez-stat-cream: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
+  --ez-stat-mint: linear-gradient(135deg, #4ADE80 0%, #22C55E 100%);
+  --ez-stat-peach: linear-gradient(135deg, #FB923C 0%, #F97316 100%);
+  --ez-stat-sky: linear-gradient(135deg, #60A5FA 0%, #2563EB 100%);
+
   /* ---- Hue tints: badges, soft fills, selected states ----
      Light values are pixel-identical to the hexes previously hardcoded in
      components. Dark values are desaturated translucent tints over the dark
@@ -195,6 +201,10 @@
   --ez-pastel-mint: rgba(226, 244, 216, 0.17);
   --ez-pastel-peach: rgba(255, 233, 214, 0.17);
   --ez-pastel-sky: rgba(227, 238, 251, 0.18);
+  --ez-stat-cream: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
+  --ez-stat-mint: linear-gradient(135deg, #4ADE80 0%, #22C55E 100%);
+  --ez-stat-peach: linear-gradient(135deg, #FB923C 0%, #F97316 100%);
+  --ez-stat-sky: linear-gradient(135deg, #60A5FA 0%, #2563EB 100%);
   --ez-hue-blue-bg: rgba(96, 165, 250, 0.28);
   --ez-hue-blue-border: rgba(96, 165, 250, 0.38);
   --ez-hue-green-bg: rgba(52, 211, 153, 0.28);
@@ -288,7 +298,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(38, 54, 75, 0.07) 1.2px, transparent 1.2px);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1.2px, transparent 1.2px);
   background-size: 18px 18px;
   pointer-events: none;
 }
@@ -298,7 +308,7 @@
   width: 180px;
   height: 180px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.18);
   top: -70px;
   right: -50px;
   pointer-events: none;
@@ -307,10 +317,10 @@
   position: relative;
   z-index: 1;
 }
-.ez-stat-cream { background: var(--ez-pastel-cream); }
-.ez-stat-mint { background: var(--ez-pastel-mint); }
-.ez-stat-peach { background: var(--ez-pastel-peach); }
-.ez-stat-sky { background: var(--ez-pastel-sky); }
+.ez-stat-cream { background: var(--ez-stat-cream); }
+.ez-stat-mint { background: var(--ez-stat-mint); }
+.ez-stat-peach { background: var(--ez-stat-peach); }
+.ez-stat-sky { background: var(--ez-stat-sky); }
 .ez-stat .ez-stat-label {
   font-size: 12px;
   font-weight: 600;

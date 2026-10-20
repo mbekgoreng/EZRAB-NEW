@@ -133,17 +133,17 @@ const StatCard: React.FC<{
   subColor?: string;
   onClick?: () => void;
   delay?: string;
-}> = ({ bgClass, label, value, sub, subColor = 'var(--ez-color-text-muted)', onClick, delay = '0s' }) => (
+}> = ({ bgClass, label, value, sub, subColor, onClick, delay = '0s' }) => (
   <div
     className={`ezdb-anim ez-stat ${bgClass}`}
     style={{ cursor: onClick ? 'pointer' : 'default', animation: `ezdb-rise 0.6s ${delay} both` }}
     onClick={onClick}
   >
-    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: 8 }}>{label}</div>
-    <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+    <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)', marginBottom: 8 }}>{label}</div>
+    <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
       {value}
     </div>
-    <div style={{ fontSize: 12, color: subColor, marginTop: 6 }}>{sub}</div>
+    <div style={{ fontSize: 12, color: subColor || 'rgba(255,255,255,0.85)', marginTop: 6 }}>{sub}</div>
   </div>
 );
 
@@ -354,7 +354,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
           bgClass="ez-stat-sky"
           label={t('proj.all.stat_attention')} value={String(overdueList.length)}
           sub={overdueList.length > 0 ? t('proj.all.stat_attention_sub') : t('proj.all.stat_attention_ok')}
-          subColor={overdueList.length > 0 ? 'var(--ez-color-danger)' : 'var(--ez-color-text-muted)'} delay="0.26s"
+          subColor={overdueList.length > 0 ? '#FFFFFF' : undefined} delay="0.26s"
         />
       </div>
 
@@ -382,7 +382,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
         <StatCard
           bgClass="ez-stat-peach"
           label={t('proj.all.stat_late')} value={String(overdueList.length)}
-          sub={t('proj.all.stat_late_sub')} subColor="var(--ez-color-danger)" delay="0.38s"
+          sub={t('proj.all.stat_late_sub')} subColor="#FFFFFF" delay="0.38s"
         />
         <div className="ezdb-anim" style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: 4, animation: 'ezdb-rise 0.6s 0.42s both' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

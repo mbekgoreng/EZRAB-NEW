@@ -22,6 +22,7 @@ interface EzrabAiDashboardViewProps {
   onCreateProject: () => void;
   onSelectProject: (projectId: string, menu?: string) => void;
   onNavigateToTab: (tab: string, projectId?: string | null) => void;
+  onNavigateToProjects?: (filter: string) => void;
   onOpenMagicAi: (mode?: 'chat' | 'ded-rab') => void;
   onOpenSubscription: () => void;
   onResetData?: () => void;
@@ -94,8 +95,15 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
   onCreateProject,
   onSelectProject,
   onNavigateToTab,
+  onNavigateToProjects,
   onOpenMagicAi,
 }) => {
+  // Navigasi ke menu Proyek dengan filter status tertentu (fallback: tab proyek).
+  const goProjects = (filter: string) => {
+    if (onNavigateToProjects) onNavigateToProjects(filter);
+    else onNavigateToTab('proyek');
+  };
+
   const { currentProject, setCurrentProjectId } = useProject();
 const { t, lang } = useI18n();
 
@@ -507,7 +515,7 @@ className="ezdb-anim"
           </div>
           <button
             type="button"
-            onClick={() => onNavigateToTab('proyek')}
+            onClick={() => goProjects('Semua Proyek')}
             style={{
               fontSize: '12.5px',
               fontWeight: 650,
@@ -529,14 +537,18 @@ className="ezdb-anim"
           style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '18px' }}
         >
           {[
-            { bg: 'var(--ez-color-primary-soft)', icon: Folder, iconColor: 'var(--ez-color-primary)', value: totalProjects, label: t('dash.stat_total'), sub: `${draftProjects} ${t('dash.stat_draft_word')}`, delay: '0.05s' },
-            { bg: 'var(--ez-pastel-cream)', icon: Clock, iconColor: 'var(--ez-color-warning)', value: inProgressProjects, label: t('dash.stat_aktif'), sub: t('dash.stat_aktif_sub'), delay: '0.12s' },
-            { bg: 'var(--ez-pastel-mint)', icon: CheckCircle2, iconColor: 'var(--ez-color-success)', value: completedProjects, label: t('dash.stat_selesai'), sub: t('dash.stat_selesai_sub'), delay: '0.19s' },
-            { bg: 'var(--ez-pastel-peach)', icon: FileText, iconColor: 'var(--ez-color-warning)', value: draftProjects, label: t('dash.stat_draft'), sub: t('dash.stat_draft_sub'), delay: '0.26s' },
+            { bg: 'var(--ez-stat-sky)', icon: Folder, iconColor: 'var(--ez-color-primary)', value: totalProjects, label: t('dash.stat_total'), sub: `${draftProjects} ${t('dash.stat_draft_word')}`, delay: '0.05s', filter: 'Semua Proyek' },
+            { bg: 'var(--ez-stat-cream)', icon: Clock, iconColor: 'var(--ez-color-warning)', value: inProgressProjects, label: t('dash.stat_aktif'), sub: t('dash.stat_aktif_sub'), delay: '0.12s', filter: 'Sedang Dikerjakan' },
+            { bg: 'var(--ez-stat-mint)', icon: CheckCircle2, iconColor: 'var(--ez-color-success)', value: completedProjects, label: t('dash.stat_selesai'), sub: t('dash.stat_selesai_sub'), delay: '0.19s', filter: 'Selesai' },
+            { bg: 'var(--ez-stat-peach)', icon: FileText, iconColor: 'var(--ez-color-warning)', value: draftProjects, label: t('dash.stat_draft'), sub: t('dash.stat_draft_sub'), delay: '0.26s', filter: 'Draft' },
           ].map((c) => (
             <div
               key={c.label}
               className="ezdb-anim"
+              role="button"
+              tabIndex={0}
+              onClick={() => goProjects(c.filter)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goProjects(c.filter); } }}
               style={{
                 background: c.bg,
                 borderRadius: '22px',
@@ -546,16 +558,17 @@ className="ezdb-anim"
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 animation: `ezdb-rise 0.6s ${c.delay} both`,
+                cursor: 'pointer',
               }}
             >
               <div>
-                <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)', lineHeight: 1.1 }}>
+                <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF', lineHeight: 1.1 }}>
                   {c.value}
                 </div>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-secondary)', marginTop: '6px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.9)', marginTop: '6px' }}>
                   {c.label}
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', marginTop: '2px' }}>
                   {c.sub}
                 </div>
               </div>
@@ -780,7 +793,7 @@ className="ezdb-split"
         </h2>
         <button
           type="button"
-          onClick={() => onNavigateToTab('proyek')}
+          onClick={() => goProjects('Semua Proyek')}
           style={{
             fontSize: '12.5px',
             fontWeight: 650,

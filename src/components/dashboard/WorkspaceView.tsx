@@ -725,6 +725,10 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
                 setActiveMenu(menu, projectId);
               }}
               onNavigateToTab={(tab, projId) => setActiveMenu(tab, projId)}
+              onNavigateToProjects={(filter) => {
+                setProjectFilter(filter);
+                setActiveMenu('proyek', null);
+              }}
               onOpenMagicAi={(mode?: 'chat' | 'ded-rab') => {
                 if (mode) {
                   navigateTo(routeForMenu('magic-ai', currentProjectId, mode));
@@ -766,7 +770,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           onAddItems={async (items) => {
             // Use bulkAddRabItems from context
             await bulkAddRabItems(items, currentProject?.id);
-            setActiveMenu('estimate');
+            setActiveMenu('rab-estimasi');
           }}
         />
       )}

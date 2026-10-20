@@ -21,6 +21,7 @@ interface EzrabAiDashboardViewClassicProps {
   onCreateProject: () => void;
   onSelectProject: (projectId: string, menu?: string) => void;
   onNavigateToTab: (tab: string, projectId?: string | null) => void;
+  onNavigateToProjects?: (filter: string) => void;
   onOpenMagicAi: (mode?: 'chat' | 'ded-rab') => void;
   onOpenSubscription: () => void;
   onResetData?: () => void;
@@ -54,8 +55,15 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
   onCreateProject,
   onSelectProject,
   onNavigateToTab,
+  onNavigateToProjects,
   onOpenMagicAi,
 }) => {
+  // Navigasi ke menu Proyek dengan filter status tertentu (fallback: tab proyek).
+  const goProjects = (filter: string) => {
+    if (onNavigateToProjects) onNavigateToProjects(filter);
+    else onNavigateToTab('proyek');
+  };
+
   const { currentProject, setCurrentProjectId } = useProject();
   const { t, lang } = useI18n();
 
@@ -480,10 +488,10 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             tabIndex={0}
             style={{
               height: '96px',
-              background: 'linear-gradient(135deg, #FFF7ED 0%, #FED7AA 100%)',
+              background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
               backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 14px, rgba(249,115,22,0.05) 14px, rgba(249,115,22,0.05) 16px)',
               borderRadius: '22px',
-              border: '1px solid #FDBA74',
+              border: '1px solid #EA580C',
               padding: '16px 18px',
               display: 'flex',
               alignItems: 'center',
@@ -535,11 +543,11 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             tabIndex={0}
             style={{
               height: '96px',
-              background: 'linear-gradient(135deg, #F0FDF4 0%, #BBF7D0 100%)',
+              background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
               backgroundImage: 'radial-gradient(circle, rgba(22,163,74,0.06) 1.5px, transparent 1.5px)',
               backgroundSize: '18px 18px',
               borderRadius: '22px',
-              border: '1px solid #86EFAC',
+              border: '1px solid #16A34A',
               padding: '16px 18px',
               display: 'flex',
               alignItems: 'center',
@@ -656,7 +664,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           </div>
           <button
             type="button"
-            onClick={() => onNavigateToTab('proyek')}
+            onClick={() => goProjects('Semua Proyek')}
             style={{
               fontSize: '12.5px',
               fontWeight: 650,
@@ -684,22 +692,27 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           {/* Card 1: Total Proyek */}
           <div
             style={{
-              background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
-              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(37,99,235,0.05) 19px, rgba(37,99,235,0.05) 20px)',
+              cursor: 'pointer',
+              background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(255,255,255,0.07) 19px, rgba(255,255,255,0.07) 20px)',
               borderRadius: '22px',
-              border: '1px solid #BFDBFE',
+              border: '1px solid #1D4ED8',
               padding: '18px 20px',
               boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
             }}
+            role="button"
+            tabIndex={0}
+            onClick={() => goProjects('Semua Proyek')}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goProjects('Semua Proyek'); } }}
           >
             <div>
-              <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ez-color-text-primary)', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '26px', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.1 }}>
                 {totalProjects}
               </div>
-              <div style={{ fontSize: '12px', fontWeight: 550, color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 550, color: 'rgba(255,255,255,0.85)', marginTop: '4px' }}>
                 {t('dash.stat_total')}
               </div>
             </div>
@@ -708,8 +721,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 width: '38px',
                 height: '38px',
                 borderRadius: '8px',
-                background: 'var(--ez-color-primary-soft)',
-                color: 'var(--ez-color-primary)',
+                background: 'rgba(255,255,255,0.22)',
+                color: '#FFFFFF',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -722,22 +735,27 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           {/* Card 2: Sedang Dikerjakan */}
           <div
             style={{
-              background: 'linear-gradient(135deg, #FFFBEB 0%, #FDE68A 100%)',
-              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 14px, rgba(245,158,11,0.06) 14px, rgba(245,158,11,0.06) 16px)',
+              cursor: 'pointer',
+              background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 14px, rgba(255,255,255,0.08) 14px, rgba(255,255,255,0.08) 16px)',
               borderRadius: '22px',
-              border: '1px solid #FCD34D',
+              border: '1px solid #D97706',
               padding: '18px 20px',
               boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
             }}
+            role="button"
+            tabIndex={0}
+            onClick={() => goProjects('Sedang Dikerjakan')}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goProjects('Sedang Dikerjakan'); } }}
           >
             <div>
-              <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ez-color-primary)', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '26px', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.1 }}>
                 {inProgressProjects}
               </div>
-              <div style={{ fontSize: '12px', fontWeight: 550, color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 550, color: 'rgba(255,255,255,0.85)', marginTop: '4px' }}>
                 {t('dash.stat_aktif')}
               </div>
             </div>
@@ -746,8 +764,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 width: '38px',
                 height: '38px',
                 borderRadius: '8px',
-                background: 'var(--ez-color-primary-soft)',
-                color: 'var(--ez-color-primary)',
+                background: 'rgba(255,255,255,0.22)',
+                color: '#FFFFFF',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -760,23 +778,28 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           {/* Card 3: Selesai */}
           <div
             style={{
-              background: 'linear-gradient(135deg, #F0FDF4 0%, #BBF7D0 100%)',
+              cursor: 'pointer',
+              background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
               backgroundImage: 'radial-gradient(circle, rgba(22,163,74,0.07) 1.5px, transparent 1.5px)',
               backgroundSize: '16px 16px',
               borderRadius: '22px',
-              border: '1px solid #86EFAC',
+              border: '1px solid #16A34A',
               padding: '18px 20px',
               boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
             }}
+            role="button"
+            tabIndex={0}
+            onClick={() => goProjects('Selesai')}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goProjects('Selesai'); } }}
           >
             <div>
-              <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ez-color-success)', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '26px', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.1 }}>
                 {completedProjects}
               </div>
-              <div style={{ fontSize: '12px', fontWeight: 550, color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 550, color: 'rgba(255,255,255,0.85)', marginTop: '4px' }}>
                 {t('dash.stat_selesai')}
               </div>
             </div>
@@ -785,8 +808,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 width: '38px',
                 height: '38px',
                 borderRadius: '8px',
-                background: 'var(--ez-color-success-soft)',
-                color: 'var(--ez-color-success)',
+                background: 'rgba(255,255,255,0.22)',
+                color: '#FFFFFF',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -799,22 +822,27 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           {/* Card 4: Draft */}
           <div
             style={{
-              background: 'linear-gradient(135deg, #FFF7ED 0%, #FED7AA 100%)',
+              cursor: 'pointer',
+              background: 'linear-gradient(135deg, #F97316 0%, #EA580C 100%)',
               backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 12px, rgba(249,115,22,0.05) 12px, rgba(249,115,22,0.05) 14px)',
               borderRadius: '22px',
-              border: '1px solid #FDBA74',
+              border: '1px solid #EA580C',
               padding: '18px 20px',
               boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
             }}
+            role="button"
+            tabIndex={0}
+            onClick={() => goProjects('Draft')}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goProjects('Draft'); } }}
           >
             <div>
-              <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ez-color-warning)', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '26px', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.1 }}>
                 {draftProjects}
               </div>
-              <div style={{ fontSize: '12px', fontWeight: 550, color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 550, color: 'rgba(255,255,255,0.85)', marginTop: '4px' }}>
                 {t('dash.stat_draft')}
               </div>
             </div>
@@ -823,8 +851,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 width: '38px',
                 height: '38px',
                 borderRadius: '8px',
-                background: 'var(--ez-color-warning-soft)',
-                color: 'var(--ez-color-warning)',
+                background: 'rgba(255,255,255,0.22)',
+                color: '#FFFFFF',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1104,7 +1132,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
         </h2>
         <button
           type="button"
-          onClick={() => onNavigateToTab('proyek')}
+          onClick={() => goProjects('Semua Proyek')}
           style={{
             fontSize: '12.5px',
             fontWeight: 650,
