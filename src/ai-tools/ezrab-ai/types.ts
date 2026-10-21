@@ -41,6 +41,9 @@ export interface EzrabAiResponse {
   reply: string;
   rawContent: string;
   requestId: string;
+  /** Machine-readable failure kind on success=false (e.g. AUTH_REQUIRED,
+   *  DEMO_RESTRICTED, MODEL_ERROR) so the UI can react honestly. */
+  errorCode?: string;
   toolCalls?: EzrabAiToolCall[];
   toolResults?: EzrabAiToolResult[];
 }

@@ -26,6 +26,8 @@ export type AIToolsErrorCode =
   | 'NO_CALCULABLE_ITEMS'
   | 'PROJECT_TYPE_UNSUPPORTED'
   | 'MODEL_MISMATCH'
+  | 'AUTH_REQUIRED'
+  | 'DEMO_RESTRICTED'
   | 'INTERNAL';
 
 export interface AIToolsStructuredError {

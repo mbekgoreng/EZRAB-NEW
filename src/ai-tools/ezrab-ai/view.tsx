@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { ezrabAiService } from './service';
 import { debitChatCreditOnSuccess } from './chatCreditDebit';
+import { deriveAiStatus, outcomeFromErrorCode, type GatewayReach, type LastOutcome } from './aiStatus';
+import { resolveAuthKind, type AuthKind } from '../../lib/demoSession';
 import { renderMarkdown } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { consumePendingAiEntry, requestAiEntry } from '../aiNavigation';
@@ -122,6 +124,19 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [messages, setMessages] = useState<ChatEntry[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  // Honest AI status (Fase 3B): derived only from observed signals —
+  // gateway reachability (free diagnostic), held identity, last outcome.
+  const [gatewayReach, setGatewayReach] = useState<GatewayReach>('unknown');
+  const [authKind, setAuthKind] = useState<AuthKind>('none');
+  const [lastOutcome, setLastOutcome] = useState<LastOutcome>('none');
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/ai/engine-status')
+      .then((r) => { if (!cancelled) setGatewayReach(r.ok ? 'reachable' : 'unreachable'); })
+      .catch(() => { if (!cancelled) setGatewayReach('unreachable'); });
+    resolveAuthKind().then((k) => { if (!cancelled) setAuthKind(k); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
   const [mode, setMode] = useState<'fast' | 'advanced'>('fast');
   const [greeting] = useState(() => GREETINGS[Math.floor(Math.random() * GREETINGS.length)]);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
@@ -375,6 +390,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           model: mode === 'fast' ? 'FAST' : 'ADVANCED',
         }),
       );
+      setLastOutcome(res.success ? 'success' : outcomeFromErrorCode(res.errorCode));
       const assistantEntry: ChatEntry = {
         role: 'assistant',
         content: res.reply,
@@ -392,6 +408,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         link: 'ezrab-ai',
       });
     } catch (err: any) {
+      setLastOutcome('failure');
       const errMsg = err?.message || 'Ups! Ada gangguan. Coba lagi ya 🥺';
       setMessages((prev) => [...prev, { role: 'assistant', content: errMsg, isError: true, ts: Date.now() }]);
       notificationBus.publish({
@@ -672,7 +689,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           <div className="ezchat2-name">Ezrab Chat AI</div>
           <div className="ezchat2-status">
             <span className={`ezdot ${busy ? 'busy' : ''}`} />
-            {busy ? 'Sedang berpikir…' : 'Online — menjawab dari AHSP 2026 & data EZRAB'}
+            {deriveAiStatus({ gateway: gatewayReach, authKind, lastOutcome, busy }).label}
           </div>
         </div>
         <div className="ezchat2-actions">

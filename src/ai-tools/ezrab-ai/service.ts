@@ -60,7 +60,7 @@ Kemudian lanjutkan jawabanmu. Kamu harus menjawab dalam Bahasa Indonesia.`;
     });
 
     if (!result.success) {
-      return { success: false, reply: result.message, rawContent: '', requestId: '' };
+      return { success: false, reply: result.message, rawContent: '', requestId: '', errorCode: result.errorCode };
     }
 
     const toolCalls: EzrabAiToolCall[] = [];

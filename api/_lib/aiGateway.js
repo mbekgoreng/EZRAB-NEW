@@ -351,10 +351,15 @@ export async function handleAiRequest(req, res, opts = {}) {
     });
   }
   const authEnforced = auth.method !== 'none';
+  // Demo identities (Supabase Anonymous Auth) are real verified users, but
+  // they run under a separate, stricter policy (see step 5b below).
+  const isDemo = Boolean(auth.user && auth.user.isAnonymous);
 
   // 3. Rate limiting — per verified user when JWT, else per IP.
-  //    Stricter when no auth is enforced (degraded mode).
-  const limit = Number(process.env.AI_RATE_LIMIT_PER_MIN || (authEnforced ? 60 : 20));
+  //    Stricter when no auth is enforced (degraded mode), strictest for demo.
+  const limit = isDemo
+    ? Number(process.env.AI_DEMO_RATE_LIMIT_PER_MIN || 10)
+    : Number(process.env.AI_RATE_LIMIT_PER_MIN || (authEnforced ? 60 : 20));
   const rl = rateLimit(req, { limit, key: 'rl:' + rateLimitIdentity(req, auth) });
   res.setHeader('X-RateLimit-Limit', String(limit));
   res.setHeader('X-RateLimit-Remaining', String(rl.remaining));
@@ -386,6 +391,28 @@ export async function handleAiRequest(req, res, opts = {}) {
   }
   const mode =
     opts.productIdToMode && input.productId ? opts.productIdToMode(input.productId, input.mode) : input.mode;
+
+  // 5b. Demo policy — anonymous-auth identities may ONLY use the public
+  //     Chat AI product in its fast chat chain, with a hard output cap.
+  //     Everything else (other products, the advanced chain, endpoints
+  //     without a product id such as the Copilot wrapper) is denied BEFORE
+  //     any provider is called, so a denied demo request costs nothing.
+  //     Registered users are unaffected. Demo usage is metered under the
+  //     demo user's own id (step 6b) and rate-limited harder (step 3);
+  //     demo never touches the credit ledger.
+  if (isDemo) {
+    const DEMO_MAX_TOKENS = 2000;
+    if (input.productId !== 'EZRAB_AI' || (mode !== 'chat' && mode !== 'fast')) {
+      logAiUsage({ requestId, event: 'demo_restricted', userId: auth.user.id, productId: input.productId || null, mode, ipHash: ipHash(req) });
+      return res.status(403).json({
+        success: false,
+        error: 'Mode demo hanya mengizinkan Chat AI mode Cepat.',
+        errorCode: 'DEMO_RESTRICTED',
+        requestId,
+      });
+    }
+    if (input.maxTokens > DEMO_MAX_TOKENS) input.maxTokens = DEMO_MAX_TOKENS;
+  }
 
   // 6. Execute with structured, secret-free logging
   const attemptLog = [];

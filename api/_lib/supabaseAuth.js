@@ -62,7 +62,11 @@ export async function verifySupabaseJwt(token, verifier) {
           user: {
             id: data.user.id,
             email: data.user.email || null,
+            // Supabase Anonymous Auth users carry is_anonymous=true. This is
+            // NOT a role claim — it only marks HOW the identity was issued,
+            // and the gateway uses it to apply the restricted demo policy.
             // NOTE: role/org come from OUR membership tables, never from token claims.
+            isAnonymous: Boolean(data.user.is_anonymous),
           },
         };
       } catch {

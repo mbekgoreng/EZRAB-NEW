@@ -12,6 +12,7 @@
  * verified JWT only.
  */
 import { getSupabaseClient, isSupabaseAuthEnabled } from '../lib/supabase';
+import { getDemoAccessToken } from '../lib/demoSession';
 
 export async function aiGatewayAuthHeaders(): Promise<Record<string, string>> {
   try {
@@ -20,8 +21,13 @@ export async function aiGatewayAuthHeaders(): Promise<Record<string, string>> {
     if (!sb) return {};
     const { data } = await sb.auth.getSession();
     const token = data.session?.access_token;
-    if (!token) return {};
-    return { Authorization: `Bearer ${token}` };
+    if (token) return { Authorization: `Bearer ${token}` };
+    // No registered session: fall back to the public demo identity when
+    // demo is enabled (Supabase Anonymous Auth — a real, server-verified
+    // JWT the gateway restricts via its demo policy). Inert otherwise.
+    const demoToken = await getDemoAccessToken();
+    if (demoToken) return { Authorization: `Bearer ${demoToken}` };
+    return {};
   } catch {
     return {};
   }

@@ -5,7 +5,7 @@
  * belum dikonfigurasi (frontend tetap memakai mock Phase 1).
  */
 import { createCreditEngine, createMemoryAdapter } from '../_lib/creditEngine.js';
-import { applyCors, authenticateRequest } from '../_lib/security.js';
+import { applyCors, authenticateRequest, evaluateCreditAccess } from '../_lib/security.js';
 
 function getAdapter() {
   // Supabase adapter menyusul setelah migration di-apply + koneksi terverifikasi.
@@ -31,6 +31,10 @@ export default async function handler(req, res) {
   }
 
   const auth = await authenticateRequest(req);
+  const access = evaluateCreditAccess(auth);
+  if (!access.allow) {
+    return res.status(access.status).json({ success: false, error: access.error, errorCode: access.errorCode });
+  }
   const userId = auth.user ? auth.user.id : 'anonymous';
   const engine = createCreditEngine(adapter);
   const balance = await engine.getBalance(userId);

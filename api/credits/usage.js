@@ -5,7 +5,7 @@
  * Estimasi / Aktual terverifikasi / Menunggu rekonsiliasi / Data tidak tersedia.
  */
 import { createUsageMeter } from '../_lib/usageMeter.js';
-import { applyCors, authenticateRequest } from '../_lib/security.js';
+import { applyCors, authenticateRequest, evaluateCreditAccess } from '../_lib/security.js';
 
 export default async function handler(req, res) {
   if (!applyCors(req, res)) return res.status(403).json({ success: false, error: 'Origin tidak diizinkan' });
@@ -21,6 +21,10 @@ export default async function handler(req, res) {
   }
 
   const auth = await authenticateRequest(req);
+  const access = evaluateCreditAccess(auth);
+  if (!access.allow) {
+    return res.status(access.status).json({ success: false, error: access.error, errorCode: access.errorCode });
+  }
   const userId = auth.user ? auth.user.id : 'anonymous';
   const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit || '50'), 10) || 50));
   const meter = createUsageMeter(null);

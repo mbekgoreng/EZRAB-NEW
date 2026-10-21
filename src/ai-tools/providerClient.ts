@@ -37,6 +37,42 @@ export type AiToolsResult<T = unknown> = AiToolsSuccess<T> | AIToolsStructuredEr
 
 const MAX_TIMEOUT_MS = 180_000;
 
+/**
+ * Map a gateway HTTP failure onto a user-facing error (Fase 3B).
+ * Pure + exported for tests. The server's errorCode distinguishes an AUTH
+ * rejection (401 — session ended / not signed in) and a DEMO restriction
+ * (403 DEMO_RESTRICTED) from an origin rejection (403) — three causes that
+ * used to collapse into one generic message.
+ */
+export function mapGatewayHttpError(
+  status: number,
+  serverErrorCode: string,
+): { code: AIToolsErrorCode; message: string; retryable: boolean } {
+  if (status === 401 || serverErrorCode === 'AUTH_REQUIRED') {
+    return {
+      code: 'AUTH_REQUIRED',
+      message: 'Sesi berakhir atau belum login. Silakan login kembali untuk memakai AI Online.',
+      retryable: false,
+    };
+  }
+  if (serverErrorCode === 'DEMO_RESTRICTED') {
+    return {
+      code: 'DEMO_RESTRICTED',
+      message: 'Mode Demo tidak mengizinkan permintaan ini. Login untuk akses penuh.',
+      retryable: false,
+    };
+  }
+  const message =
+    status === 403
+      ? 'AI Online sementara tidak dapat diakses. Silakan coba lagi nanti.'
+      : status === 429
+        ? 'Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.'
+        : status >= 500
+          ? 'Layanan AI sedang gangguan. Silakan coba lagi nanti.'
+          : 'Layanan AI gagal memproses permintaan.';
+  return { code: 'MODEL_ERROR', message, retryable: status >= 500 || status === 429 };
+}
+
 export class AiToolsProviderClient {
   public async execute<T = unknown>(request: AiToolsRequest): Promise<AiToolsResult<T>> {
     const target = getModelTarget(request.productId);
@@ -113,17 +149,21 @@ export class AiToolsProviderClient {
 
       if (!resp.ok) {
         /* Phase 3: jangan bocorkan raw JSON / detail internal ke user.
-         * Pesan ramah; detail diagnostik tetap di log server via requestId. */
-        const friendlyHttpMsg =
-          resp.status === 403
-            ? 'AI Online sementara tidak dapat diakses. Silakan coba lagi nanti.'
-            : resp.status === 429
-              ? 'Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.'
-              : resp.status >= 500
-                ? 'Layanan AI sedang gangguan. Silakan coba lagi nanti.'
-                : 'Layanan AI gagal memproses permintaan.';
-        return aiToolsError('MODEL_ERROR', `${stage}:http`, friendlyHttpMsg, {
-          retryable: resp.status >= 500 || resp.status === 429,
+         * Pesan ramah; detail diagnostik tetap di log server via requestId.
+         * Fase 3B: errorCode server dibaca untuk membedakan penolakan AUTH
+         * (401 — sesi berakhir/belum login) dan DEMO (403 DEMO_RESTRICTED)
+         * dari penolakan origin (403) — ketiganya tadinya melebur jadi satu
+         * pesan generik sehingga penyebab asli tak terlihat oleh pengguna. */
+        let serverErrorCode = '';
+        try {
+          const errJson = await resp.json();
+          serverErrorCode = String(errJson?.errorCode || '');
+        } catch {
+          /* body bukan JSON — lanjutkan dengan pemetaan status */
+        }
+        const mapped = mapGatewayHttpError(resp.status, serverErrorCode);
+        return aiToolsError(mapped.code, `${stage}:http`, mapped.message, {
+          retryable: mapped.retryable,
         });
       }
       const json = await resp.json();
