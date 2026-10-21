@@ -38,10 +38,16 @@ export function FirstProjectChecklist() {
   const [dismissed, setDismissed] = useState(isDismissed);
   const [minimized, setMinimized] = useState(() => {
     try {
-      return window.localStorage.getItem(CHECKLIST_MINIMIZED_KEY) === '1';
+      const stored = window.localStorage.getItem(CHECKLIST_MINIMIZED_KEY);
+      if (stored !== null) return stored === '1';
     } catch {
-      return false;
+      /* abaikan */
     }
+    // Belum ada preferensi tersimpan: di viewport mobile mulai minimized agar
+    // kartu tidak menutupi konten/composer (pill tetap terlihat + bisa dibuka).
+    // Desktop mempertahankan perilaku lama (expanded). Preferensi user yang
+    // tersimpan selalu menang atas default ini.
+    return typeof window !== 'undefined' && window.innerWidth < 768;
   });
 
   const hasProjects = projects.length > 0;

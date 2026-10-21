@@ -1090,7 +1090,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
         >
           {/* Row 1: Search Input & Right Actions */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-            <div ref={searchContainerRef} style={{ flex: 1, minWidth: '300px' }}>
+            <div ref={searchContainerRef} style={{ flex: '1 1 220px', minWidth: 0 }}>
               <div
                 style={{
                   display: 'flex',

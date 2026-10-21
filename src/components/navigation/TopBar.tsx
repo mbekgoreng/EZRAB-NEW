@@ -294,8 +294,8 @@ const handleNotificationItemClick = (item: NotificationItem) => {
             aria-label="Buka Menu Navigasi"
             className="ezrab-touch-target"
             style={{
-              width: '32px',
-              height: '32px',
+              width: '40px',
+              height: '40px',
               borderRadius: '7px',
               background: 'var(--ez-color-surface-secondary)',
               border: '1px solid var(--ez-color-border-line)',

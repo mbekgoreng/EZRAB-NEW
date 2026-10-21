@@ -982,6 +982,11 @@
   .ch-stage-frame { transform: none; animation: none; }
   .ch-stage-frame::after { display: none; }
   .ch-stage-orbit { display: none; }
+  /* Scene chip gets its own band at the top of the screen: the scene
+     layers start below it, so the chip no longer covers the mock
+     topbar and its search field (placeholder was clipped at 360-390px). */
+  .ch-scene-layer { top: 40px; }
+  .ch-scene-chip { top: 5px; left: 8px; }
   .ch-feature-icons { gap: 12px 16px; margin-top: 22px; }
   .ch-dash-sidebar { display: none; }
   .ch-dash-topbar-title { display: inline; }

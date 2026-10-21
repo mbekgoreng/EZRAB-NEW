@@ -375,11 +375,29 @@
 
 @media (max-width: 374px) {
   :root { --ez-mobile-gutter: 16px; }
-  .ez-nav-actions .ez-btn-primary-pill { display: none; }
+  /* Primary CTA stays visible on small phones — compact instead of hidden.
+     Brand lockup and nav padding shrink slightly to make room for it. */
+  .ez-nav-inner { padding: 0 8px 0 10px !important; }
+  .ez-nav-brand-logo { width: 92px; }
+  .ez-nav-logo-text { margin-left: 7px !important; font-size: 15.5px; }
+  .ez-nav-actions .ez-btn-primary-pill {
+    display: inline-flex;
+    min-height: 38px;
+    padding: 7px 12px !important;
+    font-size: 12.5px !important;
+    white-space: nowrap;
+  }
   .ez-hero-actions { display: grid; grid-template-columns: 1fr; }
   .ez-hero-actions .ez-btn-primary-pill,
   .ez-hero-actions .ez-btn-outline-pill { width: 100%; }
   .ez-minimal-footer-nav-groups { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 340px) {
+  /* Very small phones: drop the brand wordmark text so logo image, CTA
+     and hamburger still fit on one row without overflow. */
+  .ez-nav-logo-text { display: none; }
+  .ez-nav-brand-logo { width: 104px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

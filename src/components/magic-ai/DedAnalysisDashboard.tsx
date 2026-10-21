@@ -404,11 +404,96 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
 
   return (
     <div className="w-full min-h-screen bg-[var(--ez-hue-slate-bg)] text-[var(--ez-color-text-primary)] flex flex-col" style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
+      {/* R-01 fix: layout utilities used below are absent from the compiled
+          src/styles/magic-ai.css snapshot (no Tailwind build), so their layout
+          is provided by these scoped classes (deddash-x*) with Tailwind values. */}
+      <style hidden>{`
+/* deddash-x1 <- py-4 */
+.deddash-x1 { padding-top: 1rem; padding-bottom: 1rem; }
+/* deddash-x2 <- max-w-[1440px] sm:flex-row sm:items-center */
+.deddash-x2 { max-width: 1440px; }
+@media (min-width: 640px) { .deddash-x2 { flex-direction: row; align-items: center; } }
+/* deddash-x3 <- mt-0.5 */
+.deddash-x3 { margin-top: 0.125rem; }
+/* deddash-x4 <- py-0.2 */
+.deddash-x4 { padding-top: 0.05rem; padding-bottom: 0.05rem; }
+/* deddash-x5 <- max-w-[1440px] p-6 space-y-6 */
+.deddash-x5 { max-width: 1440px; padding: 1.5rem; }
+.deddash-x5 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.5rem; }
+/* deddash-x6 <- sm:flex-row */
+@media (min-width: 640px) { .deddash-x6 { flex-direction: row; } }
+/* deddash-x7 <- gap-3.5 */
+.deddash-x7 { gap: 0.875rem; }
+/* deddash-x8 <- mt-0.5 */
+.deddash-x8 { margin-top: 0.125rem; }
+/* deddash-x9 <- gap-2.5 */
+.deddash-x9 { gap: 0.625rem; }
+/* deddash-x10 <- mb-1.5 */
+.deddash-x10 { margin-bottom: 0.375rem; }
+/* deddash-x11 <- pt-1 */
+.deddash-x11 { padding-top: 0.25rem; }
+/* deddash-x12 <- h-[3px] */
+.deddash-x12 { height: 3px; }
+/* deddash-x13 <- gap-6 lg:grid-cols-12 */
+.deddash-x13 { gap: 1.5rem; }
+@media (min-width: 1024px) { .deddash-x13 { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
+/* deddash-x14 <- lg:col-span-7 */
+@media (min-width: 1024px) { .deddash-x14 { grid-column: span 7 / span 7; } }
+/* deddash-x15 <- lg:col-span-5 min-h-[620px] */
+.deddash-x15 { min-height: 620px; }
+@media (min-width: 1024px) { .deddash-x15 { grid-column: span 5 / span 5; } }
+/* deddash-x16 <- pb-3 */
+.deddash-x16 { padding-bottom: 0.75rem; }
+/* deddash-x17 <- mt-0.5 */
+.deddash-x17 { margin-top: 0.125rem; }
+/* deddash-x18 <- p-3.5 */
+.deddash-x18 { padding: 0.875rem; }
+/* deddash-x19 <- gap-2.5 */
+.deddash-x19 { gap: 0.625rem; }
+/* deddash-x20 <- mt-0.5 */
+.deddash-x20 { margin-top: 0.125rem; }
+/* deddash-x21 <- mb-1 */
+.deddash-x21 { margin-bottom: 0.25rem; }
+/* deddash-x22 <- pt-3 */
+.deddash-x22 { padding-top: 0.75rem; }
+/* deddash-x23 <- pt-4 space-y-6 */
+.deddash-x23 { padding-top: 1rem; }
+.deddash-x23 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.5rem; }
+/* deddash-x24 <- p-6 */
+.deddash-x24 { padding: 1.5rem; }
+/* deddash-x25 <- md:flex-row md:items-center pb-5 */
+.deddash-x25 { padding-bottom: 1.25rem; }
+@media (min-width: 768px) { .deddash-x25 { flex-direction: row; align-items: center; } }
+/* deddash-x26 <- gap-2.5 */
+.deddash-x26 { gap: 0.625rem; }
+/* deddash-x27 <- px-3.5 */
+.deddash-x27 { padding-left: 0.875rem; padding-right: 0.875rem; }
+/* deddash-x28 <- pt-5 */
+.deddash-x28 { padding-top: 1.25rem; }
+/* deddash-x29 <- p-6 */
+.deddash-x29 { padding: 1.5rem; }
+/* deddash-x30 <- sm:flex-row */
+@media (min-width: 640px) { .deddash-x30 { flex-direction: row; } }
+/* deddash-x31 <- sm:w-[320px] */
+@media (min-width: 640px) { .deddash-x31 { width: 320px; } }
+/* deddash-x32 <- pl-9 pr-3 */
+.deddash-x32 { padding-left: 2.25rem; padding-right: 0.75rem; }
+/* deddash-x33 <- sm:w-auto */
+@media (min-width: 640px) { .deddash-x33 { width: auto; } }
+/* deddash-x34 <- w-[40px] */
+.deddash-x34 { width: 40px; }
+/* deddash-x35 <- py-8 */
+.deddash-x35 { padding-top: 2rem; padding-bottom: 2rem; }
+/* deddash-x36 <- mt-0.5 */
+.deddash-x36 { margin-top: 0.125rem; }
+/* deddash-x37 <- mt-0.5 */
+.deddash-x37 { margin-top: 0.125rem; }
+      `}</style>
       {/* =========================================================================
           PAGE HEADER (Section 7)
          ========================================================================= */}
-      <div className="ez-bg-surface border-b border-[var(--ez-color-border-line)] px-6 py-4 sticky top-0 z-20 shadow-2xs">
-        <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="ez-bg-surface border-b border-[var(--ez-color-border-line)] px-6 sticky top-0 z-20 shadow-2xs deddash-x1">
+        <div className="mx-auto flex flex-col justify-between gap-4 deddash-x2">
           {/* Left: Back & Title */}
           <div className="flex items-center gap-3">
             <button
@@ -442,7 +527,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                   </span>
                 )}
               </div>
-              <p className="text-[13px] text-[#64748B] mt-0.5 font-normal">
+              <p className="text-[13px] text-[#64748B] font-normal deddash-x3">
                 AI membaca gambar kerja dan menyusun estimasi biaya proyek.
               </p>
             </div>
@@ -463,7 +548,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
               >
                 <Zap size={13} className={selectedMode === 'FAST' ? 'text-[var(--ez-hue-blue-text)]' : ''} />
                 <span>Estimasi Cepat</span>
-                <span className="text-[10px] font-mono text-[#64748B] bg-[var(--ez-hue-slate-bg)] px-1.5 py-0.2 rounded border border-[var(--ez-color-border-line)]">
+                <span className="text-[10px] font-mono text-[#64748B] bg-[var(--ez-hue-slate-bg)] px-1.5 rounded border border-[var(--ez-color-border-line)] deddash-x4">
                   Gemini 3.5 Flash-Lite
                 </span>
               </button>
@@ -479,7 +564,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
               >
                 <Sliders size={13} className={selectedMode === 'DETAIL' ? 'text-[var(--ez-hue-blue-text)]' : ''} />
                 <span>Estimasi Detail</span>
-                <span className="text-[10px] font-mono text-[#64748B] bg-[var(--ez-hue-slate-bg)] px-1.5 py-0.2 rounded border border-[var(--ez-color-border-line)]">
+                <span className="text-[10px] font-mono text-[#64748B] bg-[var(--ez-hue-slate-bg)] px-1.5 rounded border border-[var(--ez-color-border-line)] deddash-x4">
                   Gemini 3.8 Flash
                 </span>
               </button>
@@ -491,11 +576,11 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
       {/* =========================================================================
           MAIN CONTAINER
          ========================================================================= */}
-      <div className="max-w-[1440px] w-full mx-auto p-6 space-y-6 flex-1">
+      <div className="w-full mx-auto flex-1 deddash-x5">
         {/* =========================================================================
             SECTION 8: DOCUMENT SUMMARY (Compact Horizontal Card)
            ========================================================================= */}
-        <div className="ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
+        <div className="ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] p-4 flex flex-col items-center justify-between gap-4 shadow-2xs deddash-x6">
           <input
             ref={fileInputRef}
             type="file"
@@ -504,7 +589,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
             onChange={handleFileChange}
           />
 
-          <div className="flex items-center gap-3.5 min-w-0">
+          <div className="flex items-center min-w-0 deddash-x7">
             <div className="w-10 h-10 rounded-[10px] bg-[var(--ez-hue-red-bg)] text-[var(--ez-hue-rose-text)] flex items-center justify-center shrink-0 border border-[var(--ez-hue-rose-border)]">
               <FileText size={20} />
             </div>
@@ -512,7 +597,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
               <div className="text-[13.5px] font-bold text-[var(--ez-color-text-primary)] truncate">
                 {selectedFile ? selectedFile.name : 'Belum ada dokumen DED dipilih'}
               </div>
-              <div className="text-[12px] text-[#64748B] flex items-center gap-1.5 mt-0.5">
+              <div className="text-[12px] text-[#64748B] flex items-center gap-1.5 deddash-x8">
                 <span>
                   {selectedFile ? `${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB` : '3.01 MB'}
                 </span>
@@ -524,7 +609,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center shrink-0 deddash-x9">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
@@ -570,7 +655,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                     : 'border-transparent bg-transparent opacity-60'
                 }`}
               >
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center justify-between deddash-x10">
                   <div className="flex items-center gap-1.5">
                     <span className="font-mono text-[11px] font-bold text-[#64748B]">{st.number}</span>
                     <span className="text-[13px] font-bold text-[var(--ez-color-text-primary)]">{st.title}</span>
@@ -599,12 +684,12 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
           </div>
 
           {/* Thin Progress Bar (Height 3px) */}
-          <div className="space-y-1.5 pt-1">
+          <div className="space-y-1.5 deddash-x11">
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-[#64748B] font-medium">{statusMessage}</span>
               <span className="font-mono font-bold text-[var(--ez-hue-blue-text)]">{analysisProgress}%</span>
             </div>
-            <div className="w-full h-[3px] bg-[var(--ez-color-border-line)] rounded-full overflow-hidden">
+            <div className="w-full bg-[var(--ez-color-border-line)] rounded-full overflow-hidden deddash-x12">
               <div
                 className="h-full bg-[#2563EB] transition-all duration-300 rounded-full"
                 style={{ width: `${analysisProgress}%` }}
@@ -616,9 +701,9 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
         {/* =========================================================================
             SECTION 10 & 11: MAIN ANALYSIS AREA (2 Columns: 60% Left / 40% Right)
            ========================================================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 items-start deddash-x13">
           {/* LEFT COLUMN: DOCUMENT PREVIEW (~60% => col-span-7) */}
-          <div className="lg:col-span-7 space-y-4">
+          <div className="space-y-4 deddash-x14">
             <DocumentViewer
               file={selectedFile}
               fileBuffer={fileBuffer}
@@ -631,13 +716,13 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
           </div>
 
           {/* RIGHT COLUMN: ANALYSIS PROCESS PANEL (~40% => col-span-5) */}
-          <div className="lg:col-span-5 ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] p-5 shadow-2xs space-y-4 flex flex-col justify-between min-h-[620px]">
+          <div className="ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] p-5 shadow-2xs space-y-4 flex flex-col justify-between deddash-x15">
             <div className="space-y-4">
               {/* Header */}
-              <div className="border-b border-[var(--ez-color-border-line)] pb-3 flex items-center justify-between">
+              <div className="border-b border-[var(--ez-color-border-line)] flex items-center justify-between deddash-x16">
                 <div>
                   <h2 className="text-[15px] font-bold text-[var(--ez-color-text-primary)]">Proses Analisis</h2>
-                  <p className="text-[11.5px] text-[#64748B] mt-0.5">
+                  <p className="text-[11.5px] text-[#64748B] deddash-x17">
                     Status engine ekstraksi gambar dan perhitungan biaya proyek
                   </p>
                 </div>
@@ -655,17 +740,17 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                   return (
                     <div
                       key={st.id}
-                      className={`p-3.5 rounded-[10px] border transition-all ${
+                      className={`rounded-[10px] border transition-all ${
                         isProcessing
                           ? 'border-[var(--ez-hue-blue-border)] bg-[var(--ez-hue-blue-bg)]'
                           : isSuccess
                           ? 'border-[var(--ez-color-border-line)] ez-bg-surface'
                           : 'border-[var(--ez-color-surface-tertiary)] bg-[var(--ez-hue-slate-bg)] opacity-70'
-                      }`}
+                      } deddash-x18`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2.5">
-                          <div className="mt-0.5">
+                        <div className="flex items-start deddash-x19">
+                          <div className="deddash-x20">
                             {isSuccess ? (
                               <div className="w-5 h-5 rounded-full bg-[var(--ez-hue-green-bg-deep)] text-[var(--ez-hue-green-text-bright)] flex items-center justify-center">
                                 <Check size={12} strokeWidth={3} />
@@ -682,7 +767,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                           </div>
                           <div>
                             <div className="text-[13px] font-bold text-[var(--ez-color-text-primary)]">{st.title}</div>
-                            <div className="text-[11.5px] text-[#64748B] mt-0.5">{st.detail}</div>
+                            <div className="text-[11.5px] text-[#64748B] deddash-x17">{st.detail}</div>
                           </div>
                         </div>
 
@@ -706,7 +791,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
 
               {/* Live Status Description */}
               <div className="bg-[var(--ez-hue-slate-bg)] border border-[var(--ez-color-border-line)] rounded-[8px] p-3 text-[12px] text-[var(--ez-color-text-slate)] leading-relaxed">
-                <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1">
+                <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider deddash-x21">
                   Engine Status
                 </div>
                 {isAnalyzing ? (
@@ -726,7 +811,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
             </div>
 
             {/* Bottom Actions in Process Panel */}
-            <div className="pt-3 border-t border-[var(--ez-color-border-line)] flex items-center justify-between text-[11.5px] text-[#64748B]">
+            <div className="border-t border-[var(--ez-color-border-line)] flex items-center justify-between text-[11.5px] text-[#64748B] deddash-x22">
               <div className="flex items-center gap-1.5">
                 <ShieldCheck size={14} className="text-[var(--ez-hue-green-text-bright)]" />
                 <span>Deterministic Sanity Gate Active</span>
@@ -742,10 +827,10 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
             SECTION 25: AFTER ANALYSIS RESULTS & RAB TABLE
            ========================================================================= */}
         {outputResult && (
-          <div className="space-y-6 pt-4 border-t border-[var(--ez-color-border-line)]">
+          <div className="border-t border-[var(--ez-color-border-line)] deddash-x23">
             {/* 1. Header Summary */}
-            <div className="ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] p-6 shadow-2xs">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--ez-color-border-line)] pb-5">
+            <div className="ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] shadow-2xs deddash-x24">
+              <div className="flex flex-col justify-between gap-4 border-b border-[var(--ez-color-border-line)] deddash-x25">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#16A34A]" />
@@ -759,11 +844,11 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center deddash-x26">
                   <button
                     type="button"
                     onClick={handleExportCsv}
-                    className="px-3.5 py-2 ez-bg-surface border border-[var(--ez-hue-slate-border)] hover:bg-[var(--ez-hue-slate-bg)] text-[var(--ez-color-text-primary)] text-[12px] font-semibold rounded-[8px] transition flex items-center gap-1.5"
+                    className="py-2 ez-bg-surface border border-[var(--ez-hue-slate-border)] hover:bg-[var(--ez-hue-slate-bg)] text-[var(--ez-color-text-primary)] text-[12px] font-semibold rounded-[8px] transition flex items-center gap-1.5 deddash-x27"
                   >
                     <Download size={14} />
                     <span>Ekspor CSV</span>
@@ -785,7 +870,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
               </div>
 
               {/* 2. Four Key Metric Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 deddash-x28">
                 {/* Total Estimasi */}
                 <div className="p-4 rounded-[10px] bg-[var(--ez-hue-slate-bg)] border border-[var(--ez-color-border-line)]">
                   <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">
@@ -839,21 +924,21 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
             </div>
 
             {/* 3. RAB / Estimate Table */}
-            <div className="ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] p-6 shadow-2xs space-y-4">
+            <div className="ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] shadow-2xs space-y-4 deddash-x29">
               {/* Filter & Search Bar */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="relative w-full sm:w-[320px]">
+              <div className="flex flex-col items-center justify-between gap-3 deddash-x30">
+                <div className="relative w-full deddash-x31">
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Cari item pekerjaan atau spesifikasi..."
-                    className="w-full pl-9 pr-3 py-1.5 text-[12.5px] rounded-[8px] border border-[var(--ez-hue-slate-border)] focus:outline-hidden focus:border-[#2563EB] text-[var(--ez-color-text-primary)]"
+                    className="w-full py-1.5 text-[12.5px] rounded-[8px] border border-[var(--ez-hue-slate-border)] focus:outline-hidden focus:border-[#2563EB] text-[var(--ez-color-text-primary)] deddash-x32"
                   />
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center gap-2 w-full deddash-x33">
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
@@ -887,7 +972,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                 <table className="w-full text-left border-collapse text-[12.5px]">
                   <thead>
                     <tr className="bg-[var(--ez-hue-slate-bg)] border-b border-[var(--ez-color-border-line)] text-[#64748B] text-[11px] font-bold uppercase tracking-wider">
-                      <th className="py-2.5 px-3 w-[40px] text-center">No</th>
+                      <th className="py-2.5 px-3 text-center deddash-x34">No</th>
                       <th className="py-2.5 px-3">Pekerjaan</th>
                       <th className="py-2.5 px-3">Kategori</th>
                       <th className="py-2.5 px-3 text-right">Volume</th>
@@ -901,7 +986,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                   <tbody className="divide-y divide-[var(--ez-color-border-line)]">
                     {filteredItems.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="py-8 text-center text-[#94A3B8]">
+                        <td colSpan={9} className="text-center text-[#94A3B8] deddash-x35">
                           Tidak ada pekerjaan yang sesuai kriteria pencarian.
                         </td>
                       </tr>
@@ -919,10 +1004,10 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                             <td className="py-2.5 px-3">
                               <div className="font-bold text-[var(--ez-color-text-primary)]">{it.item || it.workName}</div>
                               {it.specification && (
-                                <div className="text-[11px] text-[#64748B] mt-0.5">{it.specification}</div>
+                                <div className="text-[11px] text-[#64748B] deddash-x36">{it.specification}</div>
                               )}
                               {(it as any).ahspCode && (
-                                <div className="text-[10px] text-[var(--ez-hue-blue-text)] font-mono mt-0.5">
+                                <div className="text-[10px] text-[var(--ez-hue-blue-text)] font-mono deddash-x37">
                                   AHSP: {(it as any).ahspCode}
                                 </div>
                               )}

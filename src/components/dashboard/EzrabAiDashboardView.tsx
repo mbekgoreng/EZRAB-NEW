@@ -266,11 +266,19 @@ return { label: t('dashboard.status_aktif'), bg: 'var(--ez-color-primary-soft)',
         @media (max-width: 640px) {
           .ezdb-stats { grid-template-columns: 1fr !important; }
         }
+        @media (max-width: 767px) {
+          /* Hero mobile: tumpuk vertikal — tanpa ini maskot flexShrink:0 (min 280px)
+             memakan kolom teks hingga tombol terlipat & maskot terpotong tepi. */
+          .ezdb-hero { flex-direction: column !important; align-items: stretch !important; padding: 24px 20px !important; min-height: 0 !important; gap: 8px !important; }
+          .ezdb-hero-text { max-width: 100% !important; }
+          .ezdb-hero-mascot { width: min(220px, 64vw) !important; height: 190px !important; margin: 0 auto !important; }
+          .ezdb-hero button { white-space: nowrap; }
+        }
       `}</style>
 
       {/* ============ 1. HERO — greeting + mascot ============ */}
       <section
-className="ezdb-anim"
+className="ezdb-anim ezdb-hero"
         style={{
           background: 'var(--ez-color-primary-soft)',
           borderRadius: '22px',
@@ -286,7 +294,7 @@ className="ezdb-anim"
           animation: 'ezdb-rise 0.6s 0s both',
         }}
       >
-<div style={{ flex: 1, maxWidth: '580px', position: 'relative', zIndex: 2 }}>
+<div className="ezdb-hero-text" style={{ flex: 1, maxWidth: '580px', position: 'relative', zIndex: 2 }}>
           <div style={{ fontSize: '13.5px', fontWeight: 700, letterSpacing: '0.01em', marginBottom: '10px' }}>
             <span style={{ color: 'var(--ez-color-text-primary)' }}>{getLocalizedGreeting()}, </span>
             <span style={{ color: 'var(--ez-color-primary)' }}>Ahmad</span>
@@ -379,6 +387,7 @@ className="ezdb-anim"
 
         {/* Mascot + handwritten annotation */}
         <div
+          className="ezdb-hero-mascot"
           style={{
             position: 'relative',
             display: 'flex',

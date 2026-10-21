@@ -521,7 +521,9 @@ img, svg {
   right: 0;
   height: calc(58px + var(--ezrab-safe-bottom));
   padding-bottom: var(--ezrab-safe-bottom);
-  background: rgba(255, 255, 255, 0.96);
+  /* Theme-aware: 96% of the surface token (= rgba(255,255,255,0.96) in light,
+     dark surface in dark mode) so the bar no longer stays white in dark mode. */
+  background: color-mix(in srgb, var(--ez-color-surface) 96%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--ez-color-border-line);
@@ -568,7 +570,7 @@ img, svg {
   justify-content: center;
   box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
   margin-top: -14px;
-  border: 3px solid #ffffff;
+  border: 3px solid var(--ez-color-surface);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

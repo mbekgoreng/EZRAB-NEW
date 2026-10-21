@@ -98,8 +98,161 @@ export const EntityResolutionReviewView: React.FC<EntityResolutionReviewViewProp
 
   return (
     <div className="flex flex-col h-full bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+      {/* R-01 fix: layout utilities used in this component are absent from the compiled
+          src/styles/magic-ai.css snapshot (no Tailwind build), so their layout
+          is provided by these scoped classes (err-x*) with Tailwind values. */}
+      <style hidden>{`
+/* err-x1 <- flex-wrap */
+.err-x1 { flex-wrap: wrap; }
+/* err-x2 <- mt-0.5 */
+.err-x2 { margin-top: 0.125rem; }
+/* err-x3 <- gap-2.5 */
+.err-x3 { gap: 0.625rem; }
+/* err-x4 <- grid-cols-12 */
+.err-x4 { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+/* err-x5 <- col-span-12 md:col-span-5 */
+.err-x5 { grid-column: span 12 / span 12; }
+@media (min-width: 768px) { .err-x5 { grid-column: span 5 / span 5; } }
+/* err-x6 <- top-2.5 */
+.err-x6 { top: 0.625rem; }
+/* err-x7 <- pl-9 pr-3 */
+.err-x7 { padding-left: 2.25rem; padding-right: 0.75rem; }
+/* err-x8 <- pb-1 */
+.err-x8 { padding-bottom: 0.25rem; }
+/* err-x9 <- mt-0.5 */
+.err-x9 { margin-top: 0.125rem; }
+/* err-x10 <- pt-1 */
+.err-x10 { padding-top: 0.25rem; }
+/* err-x11 <- max-w-[200px] */
+.err-x11 { max-width: 200px; }
+/* err-x12 <- col-span-12 md:col-span-7 */
+.err-x12 { grid-column: span 12 / span 12; }
+@media (min-width: 768px) { .err-x12 { grid-column: span 7 / span 7; } }
+/* err-x13 <- space-y-3 */
+.err-x13 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.75rem; }
+/* err-x14 <- flex-wrap */
+.err-x14 { flex-wrap: wrap; }
+/* err-x15 <- block */
+.err-x15 { display: block; }
+/* err-x16 <- flex-wrap pt-2 */
+.err-x16 { flex-wrap: wrap; padding-top: 0.5rem; }
+/* err-x17 <- pt-2 */
+.err-x17 { padding-top: 0.5rem; }
+/* err-x18 <- flex-wrap pt-0.5 */
+.err-x18 { flex-wrap: wrap; padding-top: 0.125rem; }
+/* err-x19 <- p-10 */
+.err-x19 { padding: 2.5rem; }
+      
+/* --- Stage 2A color fix: token warna di bawah ini tidak ada di snapshot
+   src/styles/magic-ai.css sehingga sebelumnya tidak menghasilkan CSS.
+   Nilai memakai token --ez-* (otomatis light/dark) atau hex literal
+   warna authored untuk zona selalu-gelap (banner gradien, scrim,
+   panel terminal/konsol). */
+/* bg-amber-500/20 <- literal authored (bg-amber-500/20) */
+.bg-amber-500\/20 { background-color: rgba(245, 158, 11, 0.2); }
+/* bg-blue-500/20 <- literal authored (bg-blue-500/20) */
+.bg-blue-500\/20 { background-color: rgba(59, 130, 246, 0.2); }
+/* bg-emerald-500/10 <- literal authored (bg-emerald-500/10) */
+.bg-emerald-500\/10 { background-color: rgba(16, 185, 129, 0.1); }
+/* bg-emerald-500/20 <- literal authored (bg-emerald-500/20) */
+.bg-emerald-500\/20 { background-color: rgba(16, 185, 129, 0.2); }
+/* bg-emerald-600 <- literal authored (bg-emerald-600) */
+.bg-emerald-600 { background-color: #059669; }
+/* bg-emerald-600/15 <- literal authored (bg-emerald-600/15) */
+.bg-emerald-600\/15 { background-color: rgba(5, 150, 105, 0.15); }
+/* bg-indigo-500/20 <- literal authored (bg-indigo-500/20) */
+.bg-indigo-500\/20 { background-color: rgba(99, 102, 241, 0.2); }
+/* bg-red-500/10 <- literal authored (bg-red-500/10) */
+.bg-red-500\/10 { background-color: rgba(239, 68, 68, 0.1); }
+/* bg-red-500/20 <- literal authored (bg-red-500/20) */
+.bg-red-500\/20 { background-color: rgba(239, 68, 68, 0.2); }
+/* bg-red-600 <- literal authored (bg-red-600) */
+.bg-red-600 { background-color: #DC2626; }
+/* bg-slate-700 <- literal authored (bg-slate-700) */
+.bg-slate-700 { background-color: #334155; }
+/* bg-slate-800 <- literal authored (bg-slate-800) */
+.bg-slate-800 { background-color: #1E293B; }
+/* bg-slate-800/80 <- literal authored (bg-slate-800/80) */
+.bg-slate-800\/80 { background-color: rgba(30, 41, 59, 0.8); }
+/* bg-slate-900 <- literal authored (bg-slate-900) */
+.bg-slate-900 { background-color: #0F172A; }
+/* bg-slate-900/70 <- literal authored (bg-slate-900/70) */
+.bg-slate-900\/70 { background-color: rgba(15, 23, 42, 0.7); }
+/* bg-slate-950 <- literal authored (bg-slate-950) */
+.bg-slate-950 { background-color: #020617; }
+/* bg-slate-950/40 <- literal authored (bg-slate-950/40) */
+.bg-slate-950\/40 { background-color: rgba(2, 6, 23, 0.4); }
+/* bg-slate-950/90 <- literal authored (bg-slate-950/90) */
+.bg-slate-950\/90 { background-color: rgba(2, 6, 23, 0.9); }
+/* border-amber-500/30 <- literal authored (border-amber-500/30) */
+.border-amber-500\/30 { border-color: rgba(245, 158, 11, 0.3); }
+/* border-blue-500/30 <- literal authored (border-blue-500/30) */
+.border-blue-500\/30 { border-color: rgba(59, 130, 246, 0.3); }
+/* border-emerald-500/20 <- literal authored (border-emerald-500/20) */
+.border-emerald-500\/20 { border-color: rgba(16, 185, 129, 0.2); }
+/* border-emerald-500/30 <- literal authored (border-emerald-500/30) */
+.border-emerald-500\/30 { border-color: rgba(16, 185, 129, 0.3); }
+/* border-emerald-500/50 <- literal authored (border-emerald-500/50) */
+.border-emerald-500\/50 { border-color: rgba(16, 185, 129, 0.5); }
+/* border-indigo-500/30 <- literal authored (border-indigo-500/30) */
+.border-indigo-500\/30 { border-color: rgba(99, 102, 241, 0.3); }
+/* border-red-500/30 <- literal authored (border-red-500/30) */
+.border-red-500\/30 { border-color: rgba(239, 68, 68, 0.3); }
+/* border-slate-700 <- literal authored (border-slate-700) */
+.border-slate-700 { border-color: #334155; }
+/* border-slate-700/60 <- literal authored (border-slate-700/60) */
+.border-slate-700\/60 { border-color: rgba(51, 65, 85, 0.6); }
+/* border-slate-800 <- literal authored (border-slate-800) */
+.border-slate-800 { border-color: #1E293B; }
+/* border-slate-800/60 <- literal authored (border-slate-800/60) */
+.border-slate-800\/60 { border-color: rgba(30, 41, 59, 0.6); }
+/* border-slate-800/80 <- literal authored (border-slate-800/80) */
+.border-slate-800\/80 { border-color: rgba(30, 41, 59, 0.8); }
+/* divide-slate-800/60 <- literal authored (divide-slate-800/60) */
+.divide-slate-800\/60 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(30, 41, 59, 0.6); }
+/* focus:border-emerald-500 <- literal authored (border-emerald-500) */
+.focus\:border-emerald-500:focus { border-color: #10B981; }
+/* hover:bg-red-500 <- literal authored (bg-red-500) */
+.hover\:bg-red-500:hover { background-color: #EF4444; }
+/* hover:bg-slate-850 <- slate-850 tidak ada di palet Tailwind -> #273549 (satu tingkat di atas slate-800, peran hover) */
+.hover\:bg-slate-850:hover { background-color: #273549; }
+/* hover:bg-slate-900/50 <- literal authored (bg-slate-900/50) */
+.hover\:bg-slate-900\/50:hover { background-color: rgba(15, 23, 42, 0.5); }
+/* hover:text-slate-200 <- literal authored (text-slate-200) */
+.hover\:text-slate-200:hover { color: #E2E8F0; }
+/* placeholder-slate-500 <- literal authored (placeholder-slate-500) */
+.placeholder-slate-500::placeholder { color: #64748B; }
+/* text-amber-400 <- literal authored (text-amber-400) */
+.text-amber-400 { color: #FBBF24; }
+/* text-blue-400 <- literal authored (text-blue-400) */
+.text-blue-400 { color: #60A5FA; }
+/* text-cyan-400 <- literal authored (text-cyan-400) */
+.text-cyan-400 { color: #22D3EE; }
+/* text-emerald-300 <- literal authored (text-emerald-300) */
+.text-emerald-300 { color: #6EE7B7; }
+/* text-emerald-400 <- literal authored (text-emerald-400) */
+.text-emerald-400 { color: #34D399; }
+/* text-indigo-300 <- literal authored (text-indigo-300) */
+.text-indigo-300 { color: #A5B4FC; }
+/* text-indigo-400 <- literal authored (text-indigo-400) */
+.text-indigo-400 { color: #818CF8; }
+/* text-red-300 <- literal authored (text-red-300) */
+.text-red-300 { color: #FCA5A5; }
+/* text-red-400 <- literal authored (text-red-400) */
+.text-red-400 { color: #F87171; }
+/* text-slate-200 <- literal authored (text-slate-200) */
+.text-slate-200 { color: #E2E8F0; }
+/* text-slate-300 <- literal authored (text-slate-300) */
+.text-slate-300 { color: #CBD5E1; }
+/* text-slate-400 <- literal authored (text-slate-400) */
+.text-slate-400 { color: #94A3B8; }
+/* text-slate-500 <- literal authored (text-slate-500) */
+.text-slate-500 { color: #64748B; }
+/* text-slate-600 <- literal authored (text-slate-600) */
+.text-slate-600 { color: #475569; }
+`}</style>
       {/* Top Header & Summary Stats */}
-      <div className="bg-slate-950/90 p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-slate-950/90 p-4 border-b border-slate-800 flex items-center justify-between gap-4 err-x1">
         <div>
           <div className="flex items-center gap-2">
             <span className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
@@ -112,13 +265,13 @@ export const EntityResolutionReviewView: React.FC<EntityResolutionReviewViewProp
               Phase 6.3
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-400 err-x2">
             Prinsip: <strong>RAW EXTRACTION &ne; PHYSICAL ENTITY</strong> &bull; Mencegah double-counting elemen antar lembar gambar
           </p>
         </div>
 
         {/* Global Metric Counters */}
-        <div className="flex items-center gap-2.5 text-xs">
+        <div className="flex items-center text-xs err-x3">
           <div className="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-300 flex items-center gap-1.5">
             <FileText className="w-3.5 h-3.5 text-indigo-400" />
             <span>Raw Evidence: <strong>{summary.totalRawEvidence}</strong></span>
@@ -139,23 +292,23 @@ export const EntityResolutionReviewView: React.FC<EntityResolutionReviewViewProp
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-12 flex-1 overflow-hidden">
+      <div className="grid flex-1 overflow-hidden err-x4">
         {/* Left Column: Entity List (5 cols) */}
-        <div className="col-span-12 md:col-span-5 border-r border-slate-800 flex flex-col bg-slate-950/40">
+        <div className="border-r border-slate-800 flex flex-col bg-slate-950/40 err-x5">
           {/* Filters & Search */}
           <div className="p-3 border-b border-slate-800 space-y-2">
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+              <Search className="w-4 h-4 absolute left-3 text-slate-400 err-x6" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 placeholder="Cari entitas, kode (K1, B1), atau lantai..."
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                className="w-full py-1.5 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 err-x7"
               />
             </div>
 
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
+            <div className="flex items-center gap-1.5 overflow-x-auto text-xs no-scrollbar err-x8">
               <button
                 onClick={() => setStatusFilter('ALL')}
                 className={`px-2 py-0.5 rounded text-xs whitespace-nowrap ${
@@ -204,7 +357,7 @@ export const EntityResolutionReviewView: React.FC<EntityResolutionReviewViewProp
                         <span className="font-mono text-emerald-300">{ent.identifier}</span>
                         <span>{ent.name}</span>
                       </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2">
+                      <div className="text-[11px] text-slate-400 flex items-center gap-2 err-x9">
                         <span>{ent.location.building}</span>
                         <span>&bull;</span>
                         <span className="text-slate-300 font-medium">{ent.location.floor}</span>
@@ -221,8 +374,8 @@ export const EntityResolutionReviewView: React.FC<EntityResolutionReviewViewProp
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-800/60 text-[10px]">
-                    <span className="text-slate-400 truncate max-w-[200px]">
+                  <div className="flex items-center justify-between mt-2 border-t border-slate-800/60 text-[10px] err-x10">
+                    <span className="text-slate-400 truncate err-x11">
                       Drawings: {ent.drawingReferences.join(', ')}
                     </span>
                     {getStatusBadge(ent.resolutionStatus)}
@@ -234,12 +387,12 @@ export const EntityResolutionReviewView: React.FC<EntityResolutionReviewViewProp
         </div>
 
         {/* Right Column: Selected Entity Evidence Inspector & Candidate Table (7 cols) */}
-        <div className="col-span-12 md:col-span-7 flex flex-col bg-slate-900 overflow-y-auto p-5 space-y-5">
+        <div className="flex flex-col bg-slate-900 overflow-y-auto p-5 space-y-5 err-x12">
           {selectedEntity ? (
             <div className="space-y-5">
               {/* Entity Overview Card */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 err-x13">
+                <div className="flex items-start justify-between gap-2 err-x14">
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-xl font-mono font-bold text-emerald-400">
@@ -257,7 +410,7 @@ export const EntityResolutionReviewView: React.FC<EntityResolutionReviewViewProp
                   </div>
 
                   <div className="text-right bg-slate-900 px-3 py-2 rounded-lg border border-slate-800">
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider err-x15">
                       Canonical Quantity
                     </span>
                     <span className="text-lg font-mono font-extrabold text-emerald-300">
@@ -267,7 +420,7 @@ export const EntityResolutionReviewView: React.FC<EntityResolutionReviewViewProp
                 </div>
 
                 {/* Specs / Parameters */}
-                <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-800/80 text-xs">
+                <div className="flex gap-2 border-t border-slate-800/80 text-xs err-x16">
                   {selectedEntity.dimensions && (
                     <div className="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-300">
                       Dimensi: <strong>{selectedEntity.dimensions}</strong>
@@ -299,7 +452,7 @@ export const EntityResolutionReviewView: React.FC<EntityResolutionReviewViewProp
                   <p>{selectedEntity.conflictDescription}</p>
 
                   {onResolveConflict && (
-                    <div className="pt-2 flex items-center gap-2">
+                    <div className="flex items-center gap-2 err-x17">
                       <span className="text-slate-400">Pilih Kuantitas Final:</span>
                       {selectedEntity.quantityCandidates.map(c => (
                         <button
@@ -316,7 +469,7 @@ export const EntityResolutionReviewView: React.FC<EntityResolutionReviewViewProp
               )}
 
               {/* Evidence Inspector: "Column K1 appears on pages..." */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 err-x13">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
                     <FileText className="w-4 h-4 text-indigo-400" />
@@ -352,7 +505,7 @@ export const EntityResolutionReviewView: React.FC<EntityResolutionReviewViewProp
                       </div>
 
                       {/* Extracted value details */}
-                      <div className="flex flex-wrap gap-2 text-[10px] text-slate-400 pt-0.5">
+                      <div className="flex gap-2 text-[10px] text-slate-400 err-x18">
                         {ev.extractedValue.dimensions && <span>Dimensi: <strong className="text-slate-200">{ev.extractedValue.dimensions}</strong></span>}
                         {ev.extractedValue.material && <span>Material: <strong className="text-slate-200">{ev.extractedValue.material}</strong></span>}
                         {ev.extractedValue.rebar && <span>Pembesian: <strong className="text-slate-200">{ev.extractedValue.rebar}</strong></span>}
@@ -364,7 +517,7 @@ export const EntityResolutionReviewView: React.FC<EntityResolutionReviewViewProp
               </div>
 
               {/* Quantity Deduplication Proof Table */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 err-x13">
                 <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
                   <Hash className="w-4 h-4 text-cyan-400" />
                   <span>Deduplication & Canonical Synthesis Proof</span>
@@ -405,7 +558,7 @@ export const EntityResolutionReviewView: React.FC<EntityResolutionReviewViewProp
               </div>
             </div>
           ) : (
-            <div className="p-10 text-center text-slate-500 text-xs flex flex-col items-center justify-center h-full">
+            <div className="text-center text-slate-500 text-xs flex flex-col items-center justify-center h-full err-x19">
               <Layers className="w-10 h-10 text-slate-600 mb-2" />
               <span>Pilih entitas di sebelah kiri untuk meninjau bukti multi-halaman dan hasil deduplikasi.</span>
             </div>

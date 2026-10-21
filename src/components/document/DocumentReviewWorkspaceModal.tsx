@@ -213,11 +213,256 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
   const highFindingsCount = findings.filter(f => f.severity === 'HIGH' && f.status === 'OPEN').length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/75 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in duration-200">
-      <div className="ez-bg-surface rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-7xl max-h-[92vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 flex items-center justify-center bg-slate-900/75 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in duration-200 drwm-x1">
+      {/* R-01 fix: layout utilities used in this component are absent from the compiled
+          src/styles/magic-ai.css snapshot (no Tailwind build), so their layout
+          is provided by these scoped classes (drwm-x*) with Tailwind values. */}
+      <style hidden>{`
+/* drwm-x1 <- z-50 */
+.drwm-x1 { z-index: 50; }
+/* drwm-x2 <- max-h-[92vh] max-w-7xl */
+.drwm-x2 { max-width: 80rem; max-height: 92vh; }
+/* drwm-x3 <- py-4 */
+.drwm-x3 { padding-top: 1rem; padding-bottom: 1rem; }
+/* drwm-x4 <- px-8 py-16 */
+.drwm-x4 { padding-left: 2rem; padding-right: 2rem; padding-top: 4rem; padding-bottom: 4rem; }
+/* drwm-x5 <- h-16 mb-5 w-16 */
+.drwm-x5 { width: 4rem; height: 4rem; margin-bottom: 1.25rem; }
+/* drwm-x6 <- max-w-md mb-6 */
+.drwm-x6 { max-width: 28rem; margin-bottom: 1.5rem; }
+/* drwm-x7 <- px-5 */
+.drwm-x7 { padding-left: 1.25rem; padding-right: 1.25rem; }
+/* drwm-x8 <- py-0.2 */
+.drwm-x8 { padding-top: 0.05rem; padding-bottom: 0.05rem; }
+/* drwm-x9 <- p-6 */
+.drwm-x9 { padding: 1.5rem; }
+/* drwm-x10 <- gap-6 lg:grid-cols-12 */
+.drwm-x10 { gap: 1.5rem; }
+@media (min-width: 1024px) { .drwm-x10 { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
+/* drwm-x11 <- lg:col-span-5 space-y-3 */
+.drwm-x11 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.75rem; }
+@media (min-width: 1024px) { .drwm-x11 { grid-column: span 5 / span 5; } }
+/* drwm-x12 <- max-h-[500px] pr-1 */
+.drwm-x12 { max-height: 500px; padding-right: 0.25rem; }
+/* drwm-x13 <- p-3.5 */
+.drwm-x13 { padding: 0.875rem; }
+/* drwm-x14 <- lg:col-span-7 */
+@media (min-width: 1024px) { .drwm-x14 { grid-column: span 7 / span 7; } }
+/* drwm-x15 <- pb-3 */
+.drwm-x15 { padding-bottom: 0.75rem; }
+/* drwm-x16 <- p-3.5 */
+.drwm-x16 { padding: 0.875rem; }
+/* drwm-x17 <- mb-1 */
+.drwm-x17 { margin-bottom: 0.25rem; }
+/* drwm-x18 <- p-8 */
+.drwm-x18 { padding: 2rem; }
+/* drwm-x19 <- space-y-3 */
+.drwm-x19 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.75rem; }
+/* drwm-x20 <- p-8 */
+.drwm-x20 { padding: 2rem; }
+/* drwm-x21 <- p-2.5 */
+.drwm-x21 { padding: 0.625rem; }
+/* drwm-x22 <- lg:col-span-4 */
+@media (min-width: 1024px) { .drwm-x22 { grid-column: span 4 / span 4; } }
+/* drwm-x23 <- lg:col-span-8 */
+@media (min-width: 1024px) { .drwm-x23 { grid-column: span 8 / span 8; } }
+/* drwm-x24 <- max-h-[350px] */
+.drwm-x24 { max-height: 350px; }
+/* drwm-x25 <- pb-2 */
+.drwm-x25 { padding-bottom: 0.5rem; }
+/* drwm-x26 <- py-4 */
+.drwm-x26 { padding-top: 1rem; padding-bottom: 1rem; }
+/* drwm-x27 <- px-5 */
+.drwm-x27 { padding-left: 1.25rem; padding-right: 1.25rem; }
+      
+/* --- Stage 2A color fix: token warna di bawah ini tidak ada di snapshot
+   src/styles/magic-ai.css sehingga sebelumnya tidak menghasilkan CSS.
+   Nilai memakai token --ez-* (otomatis light/dark) atau hex literal
+   warna authored untuk zona selalu-gelap (banner gradien, scrim,
+   panel terminal/konsol). */
+/* bg-amber-100 <- token EZ (bg-amber-100) */
+.bg-amber-100 { background-color: var(--ez-color-warning-soft); }
+/* bg-blue-100 <- token EZ (bg-blue-100) */
+.bg-blue-100 { background-color: var(--ez-color-primary-soft); }
+/* bg-blue-50 <- token EZ (bg-blue-50) */
+.bg-blue-50 { background-color: var(--ez-color-info-soft); }
+/* bg-blue-50/60 <- token EZ (bg-blue-50/60) */
+.bg-blue-50\/60 { background-color: color-mix(in srgb, var(--ez-color-info-soft) 60%, transparent); }
+/* bg-blue-50/80 <- token EZ (bg-blue-50/80) */
+.bg-blue-50\/80 { background-color: color-mix(in srgb, var(--ez-color-info-soft) 80%, transparent); }
+/* bg-emerald-100 <- token EZ (bg-emerald-100) */
+.bg-emerald-100 { background-color: var(--ez-color-success-soft); }
+/* bg-emerald-600 <- token EZ (bg-emerald-600) */
+.bg-emerald-600 { background-color: #059669; }
+/* bg-gradient-to-r <- gradient direction <- bg-gradient-to-r */
+.bg-gradient-to-r { background-image: linear-gradient(to right, var(--tw-gradient-stops)); }
+/* bg-indigo-50 <- token EZ (bg-indigo-50) */
+.bg-indigo-50 { background-color: var(--ez-ai-surface); }
+/* bg-red-100 <- token EZ (bg-red-100) */
+.bg-red-100 { background-color: var(--ez-color-danger-soft); }
+/* bg-slate-100 <- token EZ (bg-slate-100) */
+.bg-slate-100 { background-color: var(--ez-color-border); }
+/* bg-slate-50 <- token EZ (bg-slate-50) */
+.bg-slate-50 { background-color: var(--ez-color-border-soft); }
+/* bg-slate-50/50 <- token EZ (bg-slate-50/50) */
+.bg-slate-50\/50 { background-color: color-mix(in srgb, var(--ez-color-border-soft) 50%, transparent); }
+/* bg-slate-900/75 <- literal authored (bg-slate-900/75) — zona selalu-gelap/scrim */
+.bg-slate-900\/75 { background-color: rgba(15, 23, 42, 0.75); }
+/* bg-slate-950 <- literal authored (bg-slate-950) — zona selalu-gelap/scrim */
+.bg-slate-950 { background-color: #020617; }
+/* border-blue-100 <- token EZ (border-blue-100) */
+.border-blue-100 { border-color: color-mix(in srgb, var(--ez-color-primary) 18%, var(--ez-color-surface)); }
+/* border-blue-200 <- token EZ (border-blue-200) */
+.border-blue-200 { border-color: color-mix(in srgb, var(--ez-color-primary) 32%, var(--ez-color-surface)); }
+/* border-blue-300 <- token EZ (border-blue-300) */
+.border-blue-300 { border-color: color-mix(in srgb, var(--ez-color-primary) 48%, var(--ez-color-surface)); }
+/* border-indigo-200 <- token EZ (border-indigo-200) */
+.border-indigo-200 { border-color: color-mix(in srgb, var(--ez-hue-indigo-text) 32%, var(--ez-color-surface)); }
+/* border-slate-100 <- token EZ (border-slate-100) */
+.border-slate-100 { border-color: var(--ez-color-border-soft); }
+/* border-slate-200 <- token EZ (border-slate-200) */
+.border-slate-200 { border-color: var(--ez-color-border); }
+/* border-slate-800 <- literal authored (border-slate-800) — zona selalu-gelap/scrim */
+.border-slate-800 { border-color: #1E293B; }
+/* dark:bg-amber-950 <- dark: -> token EZ (bg-amber-950) */
+[data-theme="dark"] .dark\:bg-amber-950 { background-color: var(--ez-color-warning-soft); }
+/* dark:bg-blue-900/40 <- dark: -> token EZ (bg-blue-900/40) */
+[data-theme="dark"] .dark\:bg-blue-900\/40 { background-color: var(--ez-color-primary-soft); }
+/* dark:bg-blue-950/30 <- dark: -> token EZ (bg-blue-950/30) */
+[data-theme="dark"] .dark\:bg-blue-950\/30 { background-color: color-mix(in srgb, var(--ez-color-primary) 12%, transparent); }
+/* dark:bg-blue-950/40 <- dark: -> token EZ (bg-blue-950/40) */
+[data-theme="dark"] .dark\:bg-blue-950\/40 { background-color: var(--ez-color-primary-soft); }
+/* dark:bg-blue-950/50 <- dark: -> token EZ (bg-blue-950/50) */
+[data-theme="dark"] .dark\:bg-blue-950\/50 { background-color: var(--ez-color-primary-soft); }
+/* dark:bg-emerald-950 <- dark: -> token EZ (bg-emerald-950) */
+[data-theme="dark"] .dark\:bg-emerald-950 { background-color: var(--ez-color-success-soft); }
+/* dark:bg-indigo-950/50 <- dark: -> token EZ (bg-indigo-950/50) */
+[data-theme="dark"] .dark\:bg-indigo-950\/50 { background-color: var(--ez-ai-surface); }
+/* dark:bg-red-950 <- dark: -> token EZ (bg-red-950) */
+[data-theme="dark"] .dark\:bg-red-950 { background-color: var(--ez-color-danger-soft); }
+/* dark:bg-slate-800 <- dark: -> token EZ (bg-slate-800) */
+[data-theme="dark"] .dark\:bg-slate-800 { background-color: var(--ez-color-surface-tertiary); }
+/* dark:bg-slate-800/60 <- dark: -> token EZ (bg-slate-800/60) */
+[data-theme="dark"] .dark\:bg-slate-800\/60 { background-color: color-mix(in srgb, var(--ez-color-surface-tertiary) 60%, transparent); }
+/* dark:bg-slate-900/50 <- dark: -> token EZ (bg-slate-900/50) */
+[data-theme="dark"] .dark\:bg-slate-900\/50 { background-color: color-mix(in srgb, var(--ez-color-background) 50%, transparent); }
+/* dark:bg-slate-950/40 <- dark: -> token EZ (bg-slate-950/40) */
+[data-theme="dark"] .dark\:bg-slate-950\/40 { background-color: color-mix(in srgb, var(--ez-color-background) 40%, transparent); }
+/* dark:bg-slate-950/60 <- dark: -> token EZ (bg-slate-950/60) */
+[data-theme="dark"] .dark\:bg-slate-950\/60 { background-color: color-mix(in srgb, var(--ez-color-background) 60%, transparent); }
+/* dark:border-blue-700 <- dark: -> token EZ (border-blue-700) */
+[data-theme="dark"] .dark\:border-blue-700 { border-color: color-mix(in srgb, var(--ez-color-primary) 55%, transparent); }
+/* dark:border-blue-800 <- dark: -> token EZ (border-blue-800) */
+[data-theme="dark"] .dark\:border-blue-800 { border-color: color-mix(in srgb, var(--ez-color-primary) 55%, transparent); }
+/* dark:border-blue-900/40 <- dark: -> token EZ (border-blue-900/40) */
+[data-theme="dark"] .dark\:border-blue-900\/40 { border-color: color-mix(in srgb, var(--ez-color-primary) 40%, transparent); }
+/* dark:border-indigo-800 <- dark: -> token EZ (border-indigo-800) */
+[data-theme="dark"] .dark\:border-indigo-800 { border-color: color-mix(in srgb, var(--ez-hue-indigo-text) 45%, transparent); }
+/* dark:border-slate-700/60 <- dark: -> token EZ (border-slate-700/60) */
+[data-theme="dark"] .dark\:border-slate-700\/60 { border-color: color-mix(in srgb, var(--ez-color-border-strong) 60%, transparent); }
+/* dark:border-slate-800 <- dark: -> token EZ (border-slate-800) */
+[data-theme="dark"] .dark\:border-slate-800 { border-color: var(--ez-color-border); }
+/* dark:divide-slate-800 <- dark: -> token EZ (divide-slate-800) */
+[data-theme="dark"] .dark\:divide-slate-800 > :not([hidden]) ~ :not([hidden]) { border-color: var(--ez-color-border); }
+/* dark:hover:bg-slate-800 <- dark: -> token EZ (bg-slate-800) */
+[data-theme="dark"] .dark\:hover\:bg-slate-800:hover { background-color: var(--ez-color-surface-tertiary); }
+/* dark:hover:bg-slate-800/50 <- dark: -> token EZ (bg-slate-800/50) */
+[data-theme="dark"] .dark\:hover\:bg-slate-800\/50:hover { background-color: color-mix(in srgb, var(--ez-color-surface-tertiary) 50%, transparent); }
+/* dark:hover:border-slate-700 <- dark: -> token EZ (border-slate-700) */
+[data-theme="dark"] .dark\:hover\:border-slate-700:hover { border-color: var(--ez-color-border-strong); }
+/* dark:hover:text-slate-300 <- dark: -> token EZ (text-slate-300) */
+[data-theme="dark"] .dark\:hover\:text-slate-300:hover { color: var(--ez-color-text-body); }
+/* dark:text-amber-400 <- dark: -> token EZ (text-amber-400) */
+[data-theme="dark"] .dark\:text-amber-400 { color: var(--ez-hue-amber-text); }
+/* dark:text-blue-300 <- dark: -> token EZ (text-blue-300) */
+[data-theme="dark"] .dark\:text-blue-300 { color: var(--ez-hue-blue-text); }
+/* dark:text-blue-400 <- dark: -> token EZ (text-blue-400) */
+[data-theme="dark"] .dark\:text-blue-400 { color: var(--ez-hue-blue-text); }
+/* dark:text-emerald-400 <- dark: -> token EZ (text-emerald-400) */
+[data-theme="dark"] .dark\:text-emerald-400 { color: var(--ez-hue-green-text); }
+/* dark:text-indigo-400 <- dark: -> token EZ (text-indigo-400) */
+[data-theme="dark"] .dark\:text-indigo-400 { color: var(--ez-hue-indigo-text); }
+/* dark:text-red-400 <- dark: -> token EZ (text-red-400) */
+[data-theme="dark"] .dark\:text-red-400 { color: var(--ez-color-danger); }
+/* dark:text-slate-200 <- dark: -> token EZ (text-slate-200) */
+[data-theme="dark"] .dark\:text-slate-200 { color: var(--ez-color-text-primary); }
+/* dark:text-slate-300 <- dark: -> token EZ (text-slate-300) */
+[data-theme="dark"] .dark\:text-slate-300 { color: var(--ez-color-text-body); }
+/* dark:text-slate-400 <- dark: -> token EZ (text-slate-400) */
+[data-theme="dark"] .dark\:text-slate-400 { color: var(--ez-color-text-muted); }
+/* dark:text-white <- dark: -> token EZ (text-white) */
+[data-theme="dark"] .dark\:text-white { color: var(--ez-color-text-primary); }
+/* divide-slate-100 <- token EZ (divide-slate-100) */
+.divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: var(--ez-color-border-soft); }
+/* from-blue-600 <- gradient stop <- from-blue-600 */
+.from-blue-600 { --tw-gradient-from: var(--ez-color-primary) var(--tw-gradient-from-position); --tw-gradient-to: transparent var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+/* from-indigo-500 <- gradient stop <- from-indigo-500 */
+.from-indigo-500 { --tw-gradient-from: #6366F1 var(--tw-gradient-from-position); --tw-gradient-to: rgba(99, 102, 241, 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+/* hover:bg-slate-100 <- token EZ (bg-slate-100) */
+.hover\:bg-slate-100:hover { background-color: var(--ez-color-border); }
+/* hover:bg-slate-50/50 <- token EZ (bg-slate-50/50) */
+.hover\:bg-slate-50\/50:hover { background-color: color-mix(in srgb, var(--ez-color-border-soft) 50%, transparent); }
+/* hover:border-slate-300 <- token EZ (border-slate-300) */
+.hover\:border-slate-300:hover { border-color: color-mix(in srgb, var(--ez-color-border) 60%, var(--ez-color-text-muted)); }
+/* hover:from-blue-700 <- gradient stop <- hover:from-blue-700 */
+.hover\:from-blue-700:hover { --tw-gradient-from: var(--ez-color-primary-hover) var(--tw-gradient-from-position); --tw-gradient-to: transparent var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+/* hover:text-slate-600 <- token EZ (text-slate-600) */
+.hover\:text-slate-600:hover { color: var(--ez-color-text-slate); }
+/* hover:to-indigo-700 <- gradient stop <- hover:to-indigo-700 */
+.hover\:to-indigo-700:hover { --tw-gradient-to: #4338CA var(--tw-gradient-to-position); }
+/* shadow-blue-500/20 <- shadow color <- shadow-blue-500/20 */
+.shadow-blue-500\/20 { --tw-shadow-color: rgba(59, 130, 246, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+/* shadow-emerald-500/20 <- shadow color <- shadow-emerald-500/20 */
+.shadow-emerald-500\/20 { --tw-shadow-color: rgba(16, 185, 129, 0.2); --tw-shadow: var(--tw-shadow-colored); }
+/* text-amber-500 <- token EZ (text-amber-500) */
+.text-amber-500 { color: var(--ez-color-warning); }
+/* text-amber-800 <- token EZ (text-amber-800) */
+.text-amber-800 { color: var(--ez-hue-amber-text-dark); }
+/* text-blue-400 <- literal authored (text-blue-400) — zona selalu-gelap/scrim */
+.text-blue-400 { color: #60A5FA; }
+/* text-blue-500 <- token EZ (text-blue-500) */
+.text-blue-500 { color: var(--ez-color-primary); }
+/* text-blue-600 <- token EZ (text-blue-600) */
+.text-blue-600 { color: var(--ez-color-primary); }
+/* text-blue-700 <- token EZ (text-blue-700) */
+.text-blue-700 { color: var(--ez-color-primary-hover); }
+/* text-blue-800 <- token EZ (text-blue-800) */
+.text-blue-800 { color: var(--ez-hue-blue-text-deep); }
+/* text-blue-900 <- token EZ (text-blue-900) */
+.text-blue-900 { color: var(--ez-hue-blue-text-deep); }
+/* text-emerald-500 <- token EZ (text-emerald-500) */
+.text-emerald-500 { color: var(--ez-color-success); }
+/* text-emerald-800 <- token EZ (text-emerald-800) */
+.text-emerald-800 { color: var(--ez-hue-green-text-deep); }
+/* text-indigo-500 <- token EZ (text-indigo-500) */
+.text-indigo-500 { color: var(--ez-hue-indigo-text); }
+/* text-indigo-700 <- token EZ (text-indigo-700) */
+.text-indigo-700 { color: var(--ez-hue-indigo-text); }
+/* text-red-700 <- token EZ (text-red-700) */
+.text-red-700 { color: var(--ez-color-danger); }
+/* text-red-800 <- token EZ (text-red-800) */
+.text-red-800 { color: var(--ez-hue-red-text); }
+/* text-slate-100 <- literal authored (text-slate-100) — zona selalu-gelap/scrim */
+.text-slate-100 { color: #F1F5F9; }
+/* text-slate-300 <- literal authored (text-slate-300) — zona selalu-gelap/scrim */
+.text-slate-300 { color: #CBD5E1; }
+/* text-slate-400 <- token EZ (text-slate-400) */
+.text-slate-400 { color: var(--ez-color-text-muted); }
+/* text-slate-500 <- token EZ (text-slate-500) */
+.text-slate-500 { color: var(--ez-color-text-muted); }
+/* text-slate-600 <- token EZ (text-slate-600) */
+.text-slate-600 { color: var(--ez-color-text-slate); }
+/* text-slate-700 <- token EZ (text-slate-700) */
+.text-slate-700 { color: var(--ez-color-text-body); }
+/* to-blue-600 <- gradient stop <- to-blue-600 */
+.to-blue-600 { --tw-gradient-to: var(--ez-color-primary) var(--tw-gradient-to-position); }
+/* to-indigo-600 <- gradient stop <- to-indigo-600 */
+.to-indigo-600 { --tw-gradient-to: #4F46E5 var(--tw-gradient-to-position); }
+`}</style>
+      <div className="ez-bg-surface rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full flex flex-col overflow-hidden drwm-x2">
         
         {/* TOP HEADER */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+        <div className="px-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 drwm-x3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
               <Cpu className="w-5 h-5" />
@@ -251,21 +496,21 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
           /* Empty state jujur: belum ada dokumen DED.
              JANGAN memfabrikasi dokumen/entitas/QTO/draf RAB — tidak ada
              data turunan yang boleh lahir dari dokumen fiktif. */
-          <div className="flex-1 flex flex-col items-center justify-center px-8 py-16 text-center">
+          <div className="flex-1 flex flex-col items-center justify-center text-center drwm-x4">
             <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5"
+              className="rounded-2xl flex items-center justify-center drwm-x5"
               style={{ background: 'var(--ez-hue-blue-bg)' }}
             >
               <FileText className="w-8 h-8" color="var(--ez-color-primary)" />
             </div>
             <h3 className="text-base font-bold ez-text-primary mb-2">Belum ada dokumen DED</h3>
-            <p className="text-sm ez-text-slate max-w-md mb-6" style={{ lineHeight: 1.6 }}>
+            <p className="text-sm ez-text-slate drwm-x6" style={{ lineHeight: 1.6 }}>
               Unggah dokumen DED (gambar kerja atau foto dokumen) untuk memulai analisis AI:
               ekstraksi entitas konstruksi, perhitungan QTO, draf RAB, dan audit temuan.
             </p>
             <button
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/20 transition-all"
+              className="py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/20 transition-all drwm-x7"
             >
               Tutup
             </button>
@@ -358,7 +603,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
               <AlertTriangle className={`w-4 h-4 ${highFindingsCount > 0 ? 'text-amber-500' : ''}`} />
               <span>Temuan & Audit ({findings.length})</span>
               {highFindingsCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400">
+                <span className="px-1.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400 drwm-x8">
                   {highFindingsCount}
                 </span>
               )}
@@ -385,7 +630,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
         </div>
 
         {/* WORKSPACE CONTENT BODY */}
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-950/40">
+        <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950/40 drwm-x9">
           
           {/* TAB -1: DRAWING GRAPH & RELATIONSHIPS */}
           {activeTab === 'drawing_graph' && activeDrawingGraph && (
@@ -407,9 +652,9 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
             canonicalResolutionSummary ? (
               <EntityResolutionReviewView summary={canonicalResolutionSummary} />
             ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 drwm-x10">
               {/* Entity List */}
-              <div className="lg:col-span-5 space-y-3">
+              <div className="drwm-x11">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-bold ez-text-primary dark:text-white">
                     Daftar Entitas Terdeteksi ({entities.length})
@@ -417,16 +662,16 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                   <span className="text-xs text-slate-500">Pilih untuk melihat detail</span>
                 </div>
 
-                <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                <div className="space-y-2 overflow-y-auto drwm-x12">
                   {entities.map(ent => (
                     <div
                       key={ent.entityId}
                       onClick={() => setSelectedEntity(ent)}
-                      className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                      className={`rounded-xl border cursor-pointer transition-all ${
                         selectedEntity?.entityId === ent.entityId
                           ? 'bg-blue-50/80 border-blue-300 dark:bg-blue-950/40 dark:border-blue-700 shadow-sm'
                           : 'ez-bg-surface border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                      }`}
+                      } drwm-x13`}
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -460,10 +705,10 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
               </div>
 
               {/* Entity Detail / Inspector */}
-              <div className="lg:col-span-7">
+              <div className="drwm-x14">
                 {selectedEntity ? (
                   <div className="ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 drwm-x15">
                       <div>
                         <h4 className="text-base font-bold ez-text-primary dark:text-white">
                           {selectedEntity.name}
@@ -507,8 +752,8 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                     </div>
 
                     {/* Provenance & Source Snippet */}
-                    <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs">
-                      <div className="flex items-center gap-2 font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    <div className="rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs drwm-x16">
+                      <div className="flex items-center gap-2 font-semibold text-slate-700 dark:text-slate-300 drwm-x17">
                         <Compass className="w-4 h-4 text-blue-500" />
                         <span>Keterangan Dokumen Sumber</span>
                       </div>
@@ -521,7 +766,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                     </div>
                   </div>
                 ) : (
-                  <div className="h-full flex items-center justify-center p-8 ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800 text-slate-400 text-xs">
+                  <div className="h-full flex items-center justify-center ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800 text-slate-400 text-xs drwm-x18">
                     Pilih salah satu entitas di sebelah kiri untuk melihat rincian parameter.
                   </div>
                 )}
@@ -680,9 +925,9 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="drwm-x19">
                 {findings.length === 0 ? (
-                  <div className="p-8 text-center ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800">
+                  <div className="text-center ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800 drwm-x20">
                     <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
                     <h4 className="text-sm font-bold ez-text-primary dark:text-white">Semua Pekerjaan Sesuai DED</h4>
                     <p className="text-xs text-slate-500 mt-1">Tidak ditemukan anomali atau deviasi material pada RAB ini.</p>
@@ -711,7 +956,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
 
                       <p className="text-xs ez-text-slate dark:text-slate-300">{fnd.description}</p>
                       
-                      <div className="p-2.5 rounded-lg bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 text-xs text-blue-900 dark:text-blue-300">
+                      <div className="rounded-lg bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 text-xs text-blue-900 dark:text-blue-300 drwm-x21">
                         <strong>Rekomendasi AI:</strong> {fnd.suggestedAction}
                       </div>
                     </div>
@@ -723,9 +968,9 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
 
           {/* TAB 5: DOCUMENT PREVIEW */}
           {activeTab === 'doc_preview' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 drwm-x10">
               {/* Document List */}
-              <div className="lg:col-span-4 space-y-2">
+              <div className="space-y-2 drwm-x22">
                 <h4 className="text-xs font-bold ez-text-body dark:text-slate-300 uppercase tracking-wider mb-2">
                   Daftar Dokumen Proyek
                 </h4>
@@ -752,8 +997,8 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
               </div>
 
               {/* Document Content View */}
-              <div className="lg:col-span-8 ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="ez-bg-surface rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4 drwm-x23">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 drwm-x15">
                   <div>
                     <h4 className="text-sm font-bold ez-text-primary dark:text-white">{selectedDocument?.fileName}</h4>
                     <p className="text-xs text-slate-500">Versi: {selectedDocument?.currentVersion} • Total Chunks: {selectedDocument?.parsedChunks.length}</p>
@@ -764,9 +1009,9 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                   </span>
                 </div>
 
-                <div className="bg-slate-950 text-slate-100 rounded-xl p-4 font-mono text-xs max-h-[350px] overflow-y-auto space-y-2">
+                <div className="bg-slate-950 text-slate-100 rounded-xl p-4 font-mono text-xs overflow-y-auto space-y-2 drwm-x24">
                   {selectedDocument?.parsedChunks.map((chk, i) => (
-                    <div key={chk.chunkId} className="border-b border-slate-800 pb-2">
+                    <div key={chk.chunkId} className="border-b border-slate-800 drwm-x25">
                       <div className="text-blue-400 text-[10px]">[Halaman {chk.pageNumber}]</div>
                       <p className="text-slate-300">{chk.content}</p>
                     </div>
@@ -779,7 +1024,7 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
         </div>
 
         {/* WORKSPACE FOOTER ACTIONS */}
-        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 ez-bg-surface flex items-center justify-between">
+        <div className="px-6 border-t border-slate-200 dark:border-slate-800 ez-bg-surface flex items-center justify-between drwm-x26">
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
             <span>Semua formula & harga diverifikasi oleh EZRAB SafeDecimal Engine.</span>
@@ -796,11 +1041,11 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
             <button
               onClick={handleCommit}
               disabled={isCommitting || committedSuccess}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold text-white flex items-center gap-2 shadow-lg transition-all ${
+              className={`py-2.5 rounded-xl text-xs font-bold text-white flex items-center gap-2 shadow-lg transition-all ${
                 committedSuccess
                   ? 'bg-emerald-600 shadow-emerald-500/20'
                   : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/20'
-              }`}
+              } drwm-x27`}
             >
               {isCommitting ? (
                 <>

@@ -689,6 +689,13 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
   // Stepper Header Component
   const renderHorizontalStepper = () => (
     <div style={{ marginBottom: '28px' }}>
+      {/* R-01 fix: layout utilities used in this component are absent from the compiled
+          src/styles/magic-ai.css snapshot (no Tailwind build), so their layout
+          is provided by these scoped classes (drw-x*) with Tailwind values. */}
+      <style hidden>{`
+/* drw-x1 <- sm:hidden (element also has inline display:flex, hence !important) */
+@media (min-width: 640px) { .drw-x1 { display: none !important; } }
+      `}</style>
       {/* Desktop & Tablet Stepper */}
       <div
         style={{
@@ -785,7 +792,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
           border: '1px solid var(--ez-color-border-line)',
           padding: '12px 16px',
         }}
-        className="sm:hidden"
+        className="drw-x1"
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-primary)' }}>

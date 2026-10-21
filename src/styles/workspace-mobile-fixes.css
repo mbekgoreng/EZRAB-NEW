@@ -30,7 +30,13 @@
   .ezrab-dashboard-split {
     grid-template-columns: minmax(0, 1fr) !important;
   }
+}
 
+/* The slide-over drawer itself is active below 1024px (Sidebar.tsx), so its
+   notch-safe height/padding must cover the full drawer range — including
+   tablet portrait 768–1023px — not just phones. Same declarations as before,
+   only the range is wider; behavior at <=767px is unchanged. */
+@media (max-width: 1023px) {
   /* --- Sidebar slide-over drawer: notch-safe + dynamic viewport height -- */
   .ezrab-workspace-sidebar {
     height: 100dvh !important;
