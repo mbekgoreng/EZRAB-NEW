@@ -393,7 +393,24 @@ export class PriceResolver2026 {
 
     if (unit) {
       const unitFiltered = candidates.filter((r) => r.unit === unit);
-      if (unitFiltered.length > 0) candidates = unitFiltered;
+      if (unitFiltered.length > 0) {
+        candidates = unitFiltered;
+      } else {
+        // UNIT GATE (F-016, 2026-10-20): kandidat DITEMUKAN tetapi TIDAK ADA yang
+        // satuannya cocok dengan satuan komponen AHSP. Memakai record beda satuan
+        // secara diam-diam menghasilkan harga satuan yang salah dimensi
+        // (kasus terbukti: koefisien 1009 kg x harga Rp 352.300/m3 batu split
+        // -> Rp 356 jt/m3 beton). Perlakukan sebagai TIDAK DITEMUKAN agar
+        // komponen masuk daftar missing dan komposisi berstatus PARTIAL,
+        // BUKAN dikalikan dengan harga satuan yang tidak kompatibel.
+        const availableUnits = [...new Set(candidates.map((r) => r.unit))].join(', ');
+        return {
+          ...base,
+          explanation:
+            `${base.explanation} UNIT_MISMATCH: candidates exist in unit(s) [${availableUnits}] ` +
+            `but the component requires [${unit}]; refusing to price across incompatible units.`,
+        };
+      }
     }
     if (query.resourceType && query.resourceType !== 'unknown') {
       const typeFiltered = candidates.filter((r) => r.resourceType === query.resourceType || r.resourceType === 'unknown');

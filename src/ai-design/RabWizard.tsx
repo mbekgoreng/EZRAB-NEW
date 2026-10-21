@@ -20,6 +20,10 @@ export interface RabWizardData {
 interface RabWizardProps {
   onComplete: (data: RabWizardData) => void;
   onCancel: () => void;
+  /** Data awal (draft yang dipertahankan pemanggil) — formulir tidak mulai dari nol. */
+  initialData?: Partial<RabWizardData>;
+  /** Dilaporkan setiap data berubah agar pemanggil dapat mempertahankan draft. */
+  onDataChange?: (data: RabWizardData) => void;
 }
 
 const TIPE_PRESETS: Record<string, { label: string; luas: number; kt: number; km: number }> = {
@@ -39,7 +43,7 @@ const STEPS = ['Tipe Rumah', 'Dimensi', 'Ruangan', 'Lokasi & Kualitas', 'Konfirm
  * dimensi universal. Semua nilai dapat disesuaikan.
  * Presentasi: bahasa desain dashboard EZRAB (token --ez-*), aman mode gelap.
  */
-export const RabWizard: React.FC<RabWizardProps> = ({ onComplete, onCancel }) => {
+export const RabWizard: React.FC<RabWizardProps> = ({ onComplete, onCancel, initialData, onDataChange }) => {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<RabWizardData>({
     tipe: '90', lantai: 1,
@@ -48,10 +52,13 @@ export const RabWizard: React.FC<RabWizardProps> = ({ onComplete, onCancel }) =>
     kamarTidur: 3, kamarMandi: 2,
     ruangTamu: true, dapur: true, carport: true,
     lokasi: '', kualitas: 'standar',
+    ...initialData,
   });
 
   const set = <K extends keyof RabWizardData>(k: K, v: RabWizardData[K]) =>
     setData(prev => ({ ...prev, [k]: v }));
+
+  React.useEffect(() => { onDataChange?.(data); }, [data, onDataChange]);
 
   const selectTipe = (tipe: RabWizardData['tipe']) => {
     const preset = TIPE_PRESETS[tipe];

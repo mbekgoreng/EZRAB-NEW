@@ -224,12 +224,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
     latencyMs?: number;
     message?: string;
     lastChecked?: string;
-  } | null>({
-    connected: true,
-    latencyMs: 142,
-    message: 'Semua engine EZRAB AI terverifikasi aktif & operasional.',
-    lastChecked: 'Hari ini',
-  });
+  } | null>(null);
 
   const handleRunAiAudit = async () => {
     setIsAuditingAi(true);
@@ -238,25 +233,29 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       const res = await fetch('/api/ai/engine-status');
       if (res.ok) {
         const data = await res.json();
+        // Kontrak nyata endpoint: status 'ready' | 'no_keys' (BUKAN 'CONNECTED').
+        const ready = data.status === 'ready';
         setAiAuditResult({
-          connected: data.status === 'CONNECTED',
+          connected: ready,
           latencyMs: Date.now() - start,
-          message: data.message || 'EZRAB AI Engine terhubung dan siap digunakan.',
+          message: ready
+            ? 'EZRAB AI Engine terhubung dan siap digunakan.'
+            : 'Server terjangkau, tetapi tidak ada kunci provider AI yang terkonfigurasi.',
           lastChecked: new Date().toLocaleTimeString('id-ID'),
         });
       } else {
         setAiAuditResult({
-          connected: true,
+          connected: false,
           latencyMs: Date.now() - start,
-          message: 'EZRAB AI Engine aktif via cloud cluster terisolasi.',
+          message: `Server AI membalas HTTP ${res.status} — engine tidak dapat diverifikasi.`,
           lastChecked: new Date().toLocaleTimeString('id-ID'),
         });
       }
     } catch {
       setAiAuditResult({
-        connected: true,
+        connected: false,
         latencyMs: Date.now() - start,
-        message: 'Koneksi EZRAB AI aktif & siap menerima permintaan estimasi.',
+        message: 'Tidak dapat menjangkau server AI — periksa koneksi atau status deployment.',
         lastChecked: new Date().toLocaleTimeString('id-ID'),
       });
     } finally {
@@ -1968,7 +1967,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                           <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>Audit EZRAB AI Engine</span>
                           <span style={{ fontSize: '11px', fontWeight: 750, color: 'var(--ez-hue-green-text)', background: 'var(--ez-hue-green-bg-deep)', border: '1px solid #86EFAC', padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                             <CheckCircle2 size={12} />
-                            {aiAuditResult?.connected ? 'Terhubung & Aktif' : 'Memeriksa...'}
+                            {aiAuditResult == null ? 'Belum diperiksa' : aiAuditResult.connected ? 'Terhubung & Aktif' : 'Tidak Terhubung'}
                           </span>
                         </div>
                         <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
@@ -2031,7 +2030,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--ez-color-surface-secondary)', border: '1px solid #EEF1F6' }}>
                       <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Latensi Respons</div>
                       <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '4px' }}>
-                        {aiAuditResult?.latencyMs ? `${aiAuditResult.latencyMs} ms` : '142 ms'}
+                        {aiAuditResult?.latencyMs ? `${aiAuditResult.latencyMs} ms` : '—'}
                       </div>
                       <div style={{ fontSize: '10.5px', color: 'var(--ez-hue-green-text)', marginTop: '2px' }}>● Sangat Cepat & Stabil</div>
                     </div>

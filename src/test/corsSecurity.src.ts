@@ -43,6 +43,16 @@ check('Other project preview allowed', 'https://ezrab-new-abc123-yf-arch.vercel.
 check('Production allowed', 'https://ezrab-site.vercel.app', true);
 check('Production www allowed', 'https://www.ezrab-site.vercel.app', true);
 
+// 2b. Production CUSTOM domain (Fase 3A regression — root cause of the
+// production Chat AI 403: ezrab.site was missing from the allowlist while
+// every test defined "production" as the vercel.app alias).
+check('Production custom domain allowed', 'https://ezrab.site', true);
+check('Production custom domain www allowed', 'https://www.ezrab.site', true);
+check('Custom domain suffix trick denied', 'https://ezrab.site.evil.com', false);
+check('Custom domain attacker subdomain denied', 'https://ezrab.site.attacker.example', false);
+check('Custom domain http scheme denied', 'http://ezrab.site', false);
+check('Custom domain subdomain NOT auto-allowed (no wildcard)', 'https://blog.ezrab.site', false);
+
 // 3. Foreign origins - should be DENIED
 check('Attacker domain denied', 'https://attacker.example', false);
 check('Random domain denied', 'https://evil.com', false);

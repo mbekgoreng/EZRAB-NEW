@@ -10,6 +10,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { parseIdNumber } from './parse';
 
 const ROOT = process.cwd();
 const VAL = path.join(ROOT, 'data', 'ahsp2026', 'validated');
@@ -291,6 +292,30 @@ check('Test 20 — needs-review buckets and duplicate classification exist', () 
   assert(dc.total_groups > 0, 'no duplicate groups classified');
   const sum = Object.values(dc.by_classification).reduce((a: number, b: any) => a + Number(b), 0);
   assert(sum === dc.total_groups, `duplicate classification total ${sum} != ${dc.total_groups}`);
+});
+
+/* Test 21 — F-018 regression: Indonesian number parsing + the verified
+   thousand-separator erratum. Source evidence: SE DJBK 47/2026 Lampiran VI
+   p.263 prints "Kerikil kg 1.009" ('.' = thousand separator; labour on the
+   same page uses comma decimals "1,650") and p.265 prints the identical
+   coefficient for 2.2.1.4.5 as "1009". Both items must carry 1009. */
+check('Test 21 — F-018: parseIdNumber separator rules + item 2.2.1.4.1 coefficient', () => {
+  assert(parseIdNumber('1.009') === 1009, `"1.009" (titik ribuan) harus 1009, dapat ${parseIdNumber('1.009')}`);
+  assert(parseIdNumber('1009') === 1009, '"1009" harus 1009');
+  assert(parseIdNumber('1009.0') === 1009, '"1009.0" harus 1009');
+  assert(parseIdNumber('1,650') === 1.65, `"1,650" (koma desimal) harus 1.65, dapat ${parseIdNumber('1,650')}`);
+  assert(parseIdNumber('0,150') === 0.15, '"0,150" harus 0.15');
+  assert(parseIdNumber('1.009,5') === 1009.5, '"1.009,5" harus 1009.5');
+  assert(parseIdNumber('1.5') === 1.5, '"1.5" (titik bukan grup ribuan) harus 1.5');
+  assert(parseIdNumber('bukan-angka') === null, 'token non-numerik harus null (fail-safe, bukan tebakan)');
+  assert(parseIdNumber('') === null, 'token kosong harus null');
+  for (const code of ['2.2.1.4.1', '2.2.1.4.5']) {
+    const it = items.find((i: any) => i.code === code);
+    assert(it, `item ${code} tidak ditemukan di master`);
+    const mats = (it.components?.materials || []).filter((c: any) => /split|kerikil/i.test(c.resource_name || ''));
+    assert(mats.length > 0, `${code}: komponen batu split/kerikil tidak ditemukan`);
+    assert(mats[0].coefficient === 1009, `${code}: koefisien batu split harus 1009, dapat ${mats[0].coefficient} (F-018)`);
+  }
 });
 
 console.log('');

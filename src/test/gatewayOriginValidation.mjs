@@ -9,6 +9,8 @@
  *  4. Spoofed origin cannot bypass (suffix/prefix tricks)
  *  5. Preflight headers set correctly for allowed origins
  *  6. Requests without Origin header pass through (same-origin/curl)
+ *  8. Production CUSTOM domain ezrab.site (+www) accepted via defaults, spoofed
+ *     variants and http rejected, OPTIONS preflight gated correctly (Fase 3A)
  *  7. Broken wildcard '*.yf-arch.vercel.app' does NOT match hyphenated preview URLs
  *     (regression: this was the real 403 cause — Vercel team URLs embed the
  *     team slug with hyphens, not as a separate DNS label)
@@ -54,6 +56,20 @@ test('2: production origin accepted via defaults', () => {
   });
 });
 
+// 2b. Fase 3A regression: production CUSTOM domain accepted via defaults.
+// (Root cause of the production Chat AI 403 — ezrab.site was not allowlisted;
+// the old suite only ever tested the vercel.app alias as "production".)
+test('2b: custom domain https://ezrab.site accepted via defaults', () => {
+  withEnv('', () => {
+    ok(applyCors(mkReq('https://ezrab.site'), mkRes()) === true, 'should allow');
+  });
+});
+test('2c: custom domain https://www.ezrab.site accepted via defaults', () => {
+  withEnv('', () => {
+    ok(applyCors(mkReq('https://www.ezrab.site'), mkRes()) === true, 'should allow');
+  });
+});
+
 // 3. Unknown origin rejected
 test('3: unknown origin rejected', () => {
   withEnv(PREVIEW, () => {
@@ -70,6 +86,21 @@ test('4a: suffix trick rejected (ezrab-site.vercel.app.evil.com)', () => {
 test('4b: prefix trick rejected (evil-ezrab-site.vercel.app)', () => {
   withEnv('', () => {
     ok(applyCors(mkReq('https://evil-ezrab-site.vercel.app'), mkRes()) === false, 'should reject');
+  });
+});
+test('4a2: custom domain suffix trick rejected (ezrab.site.evil.com)', () => {
+  withEnv('', () => {
+    ok(applyCors(mkReq('https://ezrab.site.evil.com'), mkRes()) === false, 'should reject');
+  });
+});
+test('4a3: custom domain attacker subdomain rejected (ezrab.site.attacker.example)', () => {
+  withEnv('', () => {
+    ok(applyCors(mkReq('https://ezrab.site.attacker.example'), mkRes()) === false, 'should reject');
+  });
+});
+test('4a4: custom domain over http rejected (https only)', () => {
+  withEnv('', () => {
+    ok(applyCors(mkReq('http://ezrab.site'), mkRes()) === false, 'should reject');
   });
 });
 test('4c: hyphenated preview URL matched by hyphen-wildcard', () => {
@@ -96,6 +127,26 @@ test('5: CORS headers set for allowed origin', () => {
     ok(res.headers['access-control-allow-origin'] === PREVIEW, 'echo exact origin, not *');
     ok((res.headers['access-control-allow-methods'] || '').includes('POST'), 'POST allowed');
     ok((res.headers['access-control-allow-methods'] || '').includes('OPTIONS'), 'OPTIONS allowed');
+  });
+});
+// 5a2. Fase 3A: OPTIONS preflight from the production custom domain passes
+// the CORS gate and echoes the exact origin (handlers answer OPTIONS 200
+// only after applyCors returns true — the production preflight got 403).
+test('5a2: preflight OPTIONS from ezrab.site allowed, exact origin echoed', () => {
+  withEnv('', () => {
+    const res = mkRes();
+    const req = { headers: { origin: 'https://ezrab.site' }, method: 'OPTIONS' };
+    ok(applyCors(req, res) === true, 'preflight should pass the gate');
+    ok(res.headers['access-control-allow-origin'] === 'https://ezrab.site', 'echo exact origin, not *');
+    ok((res.headers['access-control-allow-methods'] || '').includes('OPTIONS'), 'OPTIONS allowed');
+  });
+});
+test('5a3: preflight OPTIONS from spoofed ezrab.site origin rejected', () => {
+  withEnv('', () => {
+    const res = mkRes();
+    const req = { headers: { origin: 'https://ezrab.site.evil.com' }, method: 'OPTIONS' };
+    ok(applyCors(req, res) === false, 'preflight should be rejected');
+    ok(!res.headers['access-control-allow-origin'], 'must not echo attacker origin');
   });
 });
 test('5b: no Allow-Origin header leaked for rejected origin', () => {

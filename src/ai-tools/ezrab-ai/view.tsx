@@ -14,11 +14,14 @@ import {
   Copy, Check, Mic, Paperclip, X, Plus, ImagePlus,
 } from 'lucide-react';
 import { ezrabAiService } from './service';
+import { debitChatCreditOnSuccess } from './chatCreditDebit';
 import { renderMarkdown } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
-import { consumePendingAiEntry } from '../aiNavigation';
-import { executeIntent, ChatActionContext, ChatActionButton } from './actionRegistry';
+import { consumePendingAiEntry, requestAiEntry } from '../aiNavigation';
+import { executeIntent, continueRabNeeds, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
+import { looksLikeNeedsAnswer } from './rabNeeds';
 import { notificationBus } from '../../notifications/notificationBus';
+import { navigateTo, routeForMenu } from '../../routing/routes';
 import { EZRABMascot3D } from '../../components/mascot/EZRABMascot3D';
 import { useProject } from '../../context/ProjectContext';
 import { buildProjectSnapshot, ProjectSnapshot } from './projectContext';
@@ -131,6 +134,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [listening, setListening] = useState(false);
   /** Game Space overlay — opened by the `game` command, closed back to chat. */
   const [gameSpaceOpen, setGameSpaceOpen] = useState(false);
+  /** Chat-to-RAB Fase 2: menunggu jawaban "Lengkapi kebutuhan" dari pengguna */
+  const [awaitingNeeds, setAwaitingNeeds] = useState(false);
   // P0 Command Center: wizard & design studio overlays
   const [rabWizardOpen, setRabWizardOpen] = useState(false);
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
@@ -278,12 +283,30 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     setMessages(next);
     persistMessage('user', entry.content);
     setBusy(true);
+    /* ---- Chat-to-RAB Fase 2: jawaban atas "Lengkapi kebutuhan" ----
+     * Bila chat sedang menunggu kelengkapan dan pesan ini berbentuk jawaban
+     * (lantai/dimensi/kamar), gabungkan ke ringkasan — jangan lempar ke AI. */
+    if (awaitingNeeds) {
+      setAwaitingNeeds(false);
+      if (looksLikeNeedsAnswer(msg)) {
+        try {
+          const res = continueRabNeeds(msg);
+          const acts = res.actions && res.actions.length > 0 ? res.actions : undefined;
+          setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: acts }]);
+          persistMessage('assistant', res.message);
+        } finally {
+          setBusy(false);
+        }
+        return;
+      }
+    }
     /* ---- Phase 1: local intent router runs BEFORE any AI provider call ---- */
     const routed = routeIntent(msg);
     if (routed.localOnly && routed.intent !== 'UNKNOWN') {
       try {
         const ctx: ChatActionContext = {
           navigate: onNavigate ?? (() => {}),
+          rawText: msg,
           currentMenu,
           activeProject,
           projects,
@@ -315,6 +338,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             if (res.designPrompt) setDesignPrompt(res.designPrompt);
             setDesignStudioOpen(true);
           }
+          if (res.awaitRabNeeds) setAwaitingNeeds(true);
           // Action buttons — attached to the assistant message
           const entryActions = res.actions && res.actions.length > 0 ? res.actions : undefined;
           setMessages((prev) => [...prev, { role: 'assistant', content: reply, ts: Date.now(), actions: entryActions }]);
@@ -341,10 +365,16 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         projectSnapshot,
       } as any);
       // --- AI Credits: catat pemakaian SIMULASI (batas atas estimasi, transparan) ---
+      // FASE 1 RECOVERY (P1-2): debit HANYA bila send() sukses tegas
+      // (res.success === true) — kegagalan gateway/HTTP/timeout/respons
+      // tidak valid tidak boleh mengurangi saldo. Gerbang tunggal:
+      // debitChatCreditOnSuccess (chatCreditDebit.ts, teruji regresi).
       const simUsed = chatEstimate.max;
-      consume('chat-ai', simUsed, `Chat AI (${mode === 'fast' ? 'Cepat' : 'Mendalam'}): ${msg.slice(0, 60)}`, {
-        model: mode === 'fast' ? 'FAST' : 'ADVANCED',
-      });
+      debitChatCreditOnSuccess(res, () =>
+        consume('chat-ai', simUsed, `Chat AI (${mode === 'fast' ? 'Cepat' : 'Mendalam'}): ${msg.slice(0, 60)}`, {
+          model: mode === 'fast' ? 'FAST' : 'ADVANCED',
+        }),
+      );
       const assistantEntry: ChatEntry = {
         role: 'assistant',
         content: res.reply,
@@ -435,22 +465,47 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     if (btn.action.kind === 'navigate') {
       navigateChat(btn.action.menu);
     } else if (btn.action.intent === 'START_RAB_WIZARD') {
-      setRabWizardOpen(true);
-    } else if (btn.action.intent === 'START_HOUSE_DESIGN') {
-      if (btn.action.param) setDesignPrompt(btn.action.param);
-      setDesignStudioOpen(true);
+      // Chat-to-RAB Fase 2: tombol "Rumah tinggal" TIDAK lagi membuka wizard
+      // langsung — tampilkan ringkasan kebutuhan dulu (lewat router).
+      void submit('buatkan RAB rumah tinggal');
+    } else if (btn.action.intent === 'OPEN_DESIGN_WORKSPACE' || btn.action.intent === 'START_HOUSE_DESIGN') {
+      // Klik tombol ini = persetujuan pengguna. Fase 3: buka HALAMAN workspace
+      // penuh (bukan overlay) — prompt dari ringkasan diteruskan via entry
+      // navigasi AI sekali-pakai, konteks chat tetap utuh untuk kembali.
+      const prompt = btn.action.param ?? getLastRabDesignPrompt() ?? undefined;
+      requestAiEntry('design_workspace', {
+        projectId: effProject?.id ?? null,
+        initialPrompt: prompt,
+        sourceMenu: currentMenu,
+      });
+      navigateChat('desain-rab');
+    } else if (btn.action.intent === 'RAB_NEEDS_REFINE') {
+      const res = executeIntent('RAB_NEEDS_REFINE', undefined, {
+        navigate: onNavigate ?? (() => {}),
+        currentMenu,
+        activeProject,
+        projects,
+        projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
+        projectItems: projectSnapshot?.items ?? null,
+      });
+      setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now() }]);
+      persistMessage('assistant', res.message);
+      if (res.awaitRabNeeds) setAwaitingNeeds(true);
     } else {
       // Fallback: kirim sebagai pesan
       submit(btn.label);
     }
   };
 
-  // Navigasi chat → menu workspace (menggunakan navigateTo dari routing)
+  // Navigasi chat → menu workspace (menggunakan navigateTo dari routing).
+  // PENTING: jangan pakai require() di sini — bundle browser Vite adalah ESM murni,
+  // require tidak terdefinisi sehingga SELALU melempar dan semua tombol navigasi
+  // chat gagal dengan "Tidak dapat membuka menu" (bug terbukti di Preview 2026-10-21).
+  // Proyek aktif diteruskan agar menu bermuatan proyek (ded-ai, rab-estimasi)
+  // membuka varian di dalam proyek, bukan keluar ke halaman global.
   const navigateChat = (menu: string) => {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { navigateTo, routeForMenu } = require('../../routing/routes');
-      navigateTo(routeForMenu(menu as never, null));
+      navigateTo(routeForMenu(menu as never, effProject?.id ?? null));
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', content: `Tidak dapat membuka menu "${menu}" saat ini.`, isError: true, ts: Date.now() }]);
     }

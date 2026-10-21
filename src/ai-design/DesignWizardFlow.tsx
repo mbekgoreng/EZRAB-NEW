@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { RabWizard, type RabWizardData } from './RabWizard';
 import { AiDesignStudio } from './AiDesignStudio';
@@ -9,6 +9,14 @@ interface DesignWizardFlowProps {
   initialPrompt?: string;
   onComplete?: (spec: HouseSpec, items: ReturnType<typeof spreadsheetToWorkItems>) => void;
   onClose?: () => void;
+  /** Fase workspace saat ini (untuk progress Chat-to-RAB Workspace). */
+  onPhaseChange?: (phase: 'wizard' | 'design') => void;
+  /** Tab studio aktif (Spesifikasi/Spreadsheet/Review) untuk progress. */
+  onStudioTabChange?: (tab: 'spec' | 'spreadsheet' | 'review') => void;
+  /** Draft wizard awal (dipulihkan pemanggil dari sesi sebelumnya). */
+  initialWizardData?: RabWizardData;
+  /** Draft wizard dilaporkan keluar agar dapat dipertahankan pemanggil. */
+  onWizardDataChange?: (data: RabWizardData) => void;
 }
 
 type Phase = 'wizard' | 'design';
@@ -20,12 +28,24 @@ type Phase = 'wizard' | 'design';
  * 2. Data wizard diubah menjadi prompt desain.
  * 3. AI Design Studio menampilkan spec → spreadsheet → review.
  * 4. Pengguna menyetujui → data siap ke QTO/RAB.
+ *
+ * Draft wizard DIPERTAHANKAN di komponen ini (Fase 4 Chat-to-RAB): kembali
+ * dari studio ke wizard tidak menghapus isian pengguna.
  */
 export const DesignWizardFlow: React.FC<DesignWizardFlowProps> = ({
-  initialPrompt, onComplete, onClose,
+  initialPrompt, onComplete, onClose, onPhaseChange, onStudioTabChange,
+  initialWizardData, onWizardDataChange,
 }) => {
   const [phase, setPhase] = useState<Phase>(initialPrompt ? 'design' : 'wizard');
   const [designPrompt, setDesignPrompt] = useState(initialPrompt || '');
+  const [wizardData, setWizardDataState] = useState<RabWizardData | undefined>(initialWizardData);
+
+  useEffect(() => { onPhaseChange?.(phase); }, [phase, onPhaseChange]);
+
+  const setWizardData = useCallback((data: RabWizardData) => {
+    setWizardDataState(data);
+    onWizardDataChange?.(data);
+  }, [onWizardDataChange]);
 
   const wizardToPrompt = useCallback((data: RabWizardData): string => {
     const rooms: string[] = [];
@@ -40,6 +60,7 @@ export const DesignWizardFlow: React.FC<DesignWizardFlowProps> = ({
   }, []);
 
   const handleWizardComplete = useCallback((data: RabWizardData) => {
+    setWizardData(data);
     setDesignPrompt(wizardToPrompt(data));
     setPhase('design');
   }, [wizardToPrompt]);
@@ -48,6 +69,8 @@ export const DesignWizardFlow: React.FC<DesignWizardFlowProps> = ({
     <div>
       {phase === 'wizard' ? (
         <RabWizard
+          initialData={wizardData}
+          onDataChange={setWizardData}
           onComplete={handleWizardComplete}
           onCancel={() => onClose?.()}
         />
@@ -62,11 +85,12 @@ export const DesignWizardFlow: React.FC<DesignWizardFlowProps> = ({
               display: 'inline-flex', alignItems: 'center', gap: 7,
             }}
           >
-            <ArrowLeft size={14} /> Ubah Spesifikasi Wizard
+            <ArrowLeft size={14} /> Ubah Kebutuhan (Wizard)
           </button>
           <AiDesignStudio
             initialPrompt={designPrompt}
             onApprove={(spec, items) => onComplete?.(spec, items)}
+            onTabChange={onStudioTabChange}
           />
         </div>
       )}

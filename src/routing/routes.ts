@@ -36,6 +36,8 @@ export const paths = {
   magicAi: (mode?: 'chat' | 'ded-rab' | 'dokumen-ai') => `${APP_PREFIX}/magic-ai${mode ? `?mode=${mode}` : ''}`,
   ezrabAi: () => `${APP_PREFIX}/ezrab-ai`,
   dedAiEstimate: () => `${APP_PREFIX}/ded-ai`,
+  // Chat-to-RAB Workspace (Fase 3): halaman penuh desain → QTO → RAB.
+  desainRab: () => `${APP_PREFIX}/desain-rab`,
   dokumenAi: () => `${APP_PREFIX}/dokumen-ai`,
   kreditAi: () => `${APP_PREFIX}/kredit-ai`,
   volumeCalculation: () => `${APP_PREFIX}/volume-calculation`,
@@ -72,6 +74,7 @@ export const paths = {
     ai: (projectId: string, mode?: 'chat' | 'ded-rab' | 'dokumen-ai') => `${projectRoot(projectId)}/ai${mode ? `?mode=${mode}` : ''}`,
     ezrabAi: (projectId: string) => `${projectRoot(projectId)}/ezrab-ai`,
     dedAiEstimate: (projectId: string) => `${projectRoot(projectId)}/ded-ai`,
+    desainRab: (projectId: string) => `${projectRoot(projectId)}/desain-rab`,
     dokumenAi: (projectId: string) => `${projectRoot(projectId)}/dokumen-ai`,
   },
 } as const;
@@ -101,6 +104,7 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
       case 'rab-catatan': return paths.estimate('catatan');
       case 'rab-pengaturan': return paths.estimate('pengaturan');
       case 'ezrab-ai': return paths.ezrabAi();
+      case 'desain-rab': return paths.desainRab();
       case 'ded-ai': return paths.dedAiEstimate();
       case 'dokumen-ai': return paths.dokumenAi();
       case 'kredit-ai': return paths.kreditAi();
@@ -194,6 +198,7 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
     case 'magic-ai':
     case 'ai-assistant': return paths.project.ai(project, mode);
     case 'ezrab-ai': return paths.project.ezrabAi(project);
+    case 'desain-rab': return paths.project.desainRab(project);
     case 'ded-ai': return paths.project.dedAiEstimate(project);
     case 'dokumen-ai': return paths.project.dokumenAi(project);
     case 'subscription': return paths.subscription();
@@ -234,6 +239,7 @@ export const parseWorkspaceRoute = (pathname: string, search: string = ''): Work
   if (path === `${APP_PREFIX}/estimate`) return { scope: 'global', menu: estimateTabToMenu(query.get('tab')), status: 'ok' };
   if (path === `${APP_PREFIX}/magic-ai` || path === `${APP_PREFIX}/ai`) return { scope: 'global', menu: 'magic-ai', mode, status: 'ok' };
   if (path === `${APP_PREFIX}/ezrab-ai`) return { scope: 'global', menu: 'ezrab-ai', status: 'ok' };
+  if (path === `${APP_PREFIX}/desain-rab`) return { scope: 'global', menu: 'desain-rab', status: 'ok' };
   if (path === `${APP_PREFIX}/ded-ai`) return { scope: 'global', menu: 'ded-ai', status: 'ok' };
   if (path === `${APP_PREFIX}/dokumen-ai`) return { scope: 'global', menu: 'dokumen-ai', status: 'ok' };
   // /app/kredit-ai: halaman Kredit AI (Phase 1 frontend — simulasi, tanpa sidebar).
@@ -314,6 +320,7 @@ export const parseWorkspaceRoute = (pathname: string, search: string = ''): Work
   if (module === 'ai' || module === 'magic-ai') return { ...base, menu: 'magic-ai', mode };
   if (module === 'ai-assistant' || module === 'copilot') return { ...base, menu: 'ai-assistant', mode };
   if (module === 'ezrab-ai') return { ...base, menu: 'ezrab-ai' };
+  if (module === 'desain-rab') return { ...base, menu: 'desain-rab' };
   if (module === 'ded-ai') return { ...base, menu: 'ded-ai' };
   if (module === 'dokumen-ai') return { ...base, menu: 'dokumen-ai' };
   if (module === 'reports/rab' || module === 'reports') return { ...base, menu: 'laporan' };

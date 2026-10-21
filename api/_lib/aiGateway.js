@@ -43,6 +43,7 @@ const ATRIA_BASE = 'https://api.atria-asi.ai/v1';
 const DAHL_BASE = 'https://inference.dahl.global/v1';
 const GEMINI_OAI_BASE = 'https://generativelanguage.googleapis.com/v1beta/openai';
 const RIVER_BASE = 'https://api.river.ai/v1';
+const ATMO_BASE = 'https://atmorouter.dev/v1';
 const FAST_MODEL = 'gemini-3.5-flash-lite';
 const ADVANCED_MODEL = 'geminiflash-3.8';
 const ATRIA_MODEL = 'Atria-Dawn-Preview';
@@ -50,6 +51,11 @@ const DAHL_MODEL = 'deepseek-ai/DeepSeek-V4-Flash-0731';
 const GEMINI_OAI_MODEL = 'gemini-3.8-flash';
 const RIVER_TEXT_MODEL = 'nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4';
 const RIVER_VISION_MODEL = 'deepseek-ai/DeepSeek-V4.1-Flash';
+// Chat AI via AtmoRouter (user 2026-10-21): posisi rantai setelah River+Dahl,
+// sebelum ZyRouter — atmo/deepseek-v4.1-flash, fallback ali/deepseek-v4.1-flash
+// (provider/key sama).
+const ATMO_CHAT_MODEL = 'atmo/deepseek-v4.1-flash';
+const ATMO_CHAT_FALLBACK_MODEL = 'ali/deepseek-v4.1-flash';
 const ATTEMPT_TIMEOUT_MS = 55000;
 
 // ---------------------------------------------------------------------------
@@ -238,6 +244,8 @@ export async function executeAI(o, onAttempt) {
   const dk = envKeys('DAHL_API_KEY', 80);
   const gok = envKeys('GEMINI_OAI_KEY', 12);
   const rk = envKeys('RIVER_API_KEY', 10);
+  // AtmoRouter: satu key utama (ATMO_API_KEY) + opsional ATMO_API_KEY_1..4.
+  const atmoKeys = [String(process.env.ATMO_API_KEY || '').trim(), ...envKeys('ATMO_API_KEY', 4)].filter(Boolean);
 
   const attempts = [];
   const geminiCall = (k, model) => () => callGemini(k, model, message, systemPrompt, temperature, maxTokens, jsonMode, media);
@@ -247,6 +255,7 @@ export async function executeAI(o, onAttempt) {
   const geminiOaiCall = (k) => () => callOAI(GEMINI_OAI_BASE, k, GEMINI_OAI_MODEL, 'gemini-oai', message, systemPrompt, temperature, maxTokens, jsonMode, media);
   const riverTextCall = (k) => () => callOAI(RIVER_BASE, k, RIVER_TEXT_MODEL, 'river-text', message, systemPrompt, temperature, maxTokens, jsonMode, media);
   const riverVisionCall = (k) => () => callOAI(RIVER_BASE, k, RIVER_VISION_MODEL, 'river-vision', message, systemPrompt, temperature, maxTokens, jsonMode, media);
+  const atmoCall = (k, model) => () => callOAI(ATMO_BASE, k, model, 'atmorouter', message, systemPrompt, temperature, maxTokens, jsonMode, media);
 
   if (mode === 'vision') {
     // Vision: Gemini dulu (native inlineData gambar+PDF), lalu ZyRouter/Atria
@@ -263,10 +272,13 @@ export async function executeAI(o, onAttempt) {
     if (zk) attempts.push(zyrouterCall());
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
   } else if (mode === 'chat') {
-    // Chat AI: nvidia -> deepseek -> zyrouter (user 2026-10-20)
+    // Chat AI (urutan user 2026-10-21): River -> Dahl -> AtmoRouter
+    // (atmo/deepseek-v4.1-flash, fallback ali/deepseek-v4.1-flash) -> ZyRouter.
     rk.forEach((k) => attempts.push(riverTextCall(k)));
     rk.forEach((k) => attempts.push(riverVisionCall(k)));
     dk.forEach((k) => attempts.push(dahlCall(k)));
+    atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_CHAT_MODEL)));
+    atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_CHAT_FALLBACK_MODEL)));
     if (zk) attempts.push(zyrouterCall());
   } else {
     // Fast: River deepseek 4.1 flash -> Gemini flash lite -> Dahl -> ZyRouter
@@ -373,7 +385,7 @@ export async function handleAiRequest(req, res, opts = {}) {
     return res.status(400).json({ success: false, error: errors.join('; '), requestId });
   }
   const mode =
-    opts.productIdToMode && input.productId ? opts.productIdToMode(input.productId) : input.mode;
+    opts.productIdToMode && input.productId ? opts.productIdToMode(input.productId, input.mode) : input.mode;
 
   // 6. Execute with structured, secret-free logging
   const attemptLog = [];

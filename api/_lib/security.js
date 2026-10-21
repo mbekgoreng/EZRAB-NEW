@@ -22,6 +22,11 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 // its own /api/...) do not need CORS at all. If a preview deployment genuinely
 // needs cross-origin access, allowlist its exact origin via CORS_ALLOWED_ORIGINS.
 const DEFAULT_ALLOWED_ORIGINS = [
+  // Production custom domain (Fase 3A recovery): the public app is served
+  // from ezrab.site — without these exact entries every browser API call
+  // from production was rejected 403 at this gate while previews passed.
+  'https://ezrab.site',
+  'https://www.ezrab.site',
   'https://ezrab-site.vercel.app',
   'https://www.ezrab-site.vercel.app',
   // Preview deployments under the verified yf-arch team.

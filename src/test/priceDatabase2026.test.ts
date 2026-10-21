@@ -363,6 +363,33 @@ export function runPriceDatabaseTestSuite(): PriceTestResult {
   }
 
   // -------------------------------------------------------------------------
+  log('\n[TEST 15] UNIT GATE (F-016 regression): cross-unit records are NEVER multiplied');
+  // -------------------------------------------------------------------------
+  {
+    // Kasus terbukti 2026-10-20: komponen "Batu split" berkoefisien 1009 kg
+    // dikalikan harga record Rp 352.300 per M3 -> beton f'c 20 menjadi
+    // Rp 356.412.075/m3 dengan status FULL. Gate satuan wajib mencegahnya.
+    const split = priceResolver2026.resolveResourcePrice({ resourceName: 'Batu split 2/3', unit: 'kg' } as any);
+    assert(
+      split.status !== 'RESOLVED' || split.unit === 'kg',
+      `batu split per kg tidak boleh resolved ke record satuan lain (got status=${split.status}, unit=${split.unit})`
+    );
+    const item: any = (AHSP_2026_CANONICAL as any[]).find((i) => i.code === '2.2.1.4.5');
+    assert(!!item, 'item 2.2.1.4.5 ada di canonical');
+    if (item) {
+      const comp: any = priceResolver2026.resolveAhspUnitPrice(item);
+      assert(
+        typeof comp.unitPrice === 'number' && comp.unitPrice < 5_000_000,
+        `beton f'c 20 (2.2.1.4.5) berharga wajar, BUKAN ratusan juta (got ${comp.unitPrice})`
+      );
+      assert(
+        comp.pricingStatus === 'PARTIAL',
+        `komponen beda satuan masuk missing -> status PARTIAL, bukan FULL (got ${comp.pricingStatus})`
+      );
+    }
+  }
+
+  // -------------------------------------------------------------------------
   log('\n============================================================');
   log(`PRICE DATABASE TESTS: ${passed} PASSED, ${failed} FAILED`);
   log('============================================================');

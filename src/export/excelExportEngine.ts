@@ -1557,7 +1557,7 @@ export async function exportRABToProfessionalExcel(
       dRow.getCell(4).value = secTotal;
       dRow.getCell(4).numFmt = NUMBER_FORMATS.CURRENCY;
       if (useLiveFormulas) {
-        dRow.getCell(5).value = { formula: `=IFERROR(D${curDivRow}/$D$${totalSchedRow}, 0)`, result: secTotal / (directCost || 1) };
+        dRow.getCell(5).value = { formula: `IFERROR(D${curDivRow}/$D$${totalSchedRow}, 0)`, result: secTotal / (directCost || 1) };
       } else {
         dRow.getCell(5).value = secTotal / (directCost || 1);
       }
@@ -1585,7 +1585,7 @@ export async function exportRABToProfessionalExcel(
         r.getCell(4).numFmt = NUMBER_FORMATS.CURRENCY;
 
         if (useLiveFormulas) {
-          r.getCell(5).value = { formula: `=IFERROR(D${curR}/$D$${totalSchedRow}, 0)`, result: itmWeight };
+          r.getCell(5).value = { formula: `IFERROR(D${curR}/$D$${totalSchedRow}, 0)`, result: itmWeight };
         } else {
           r.getCell(5).value = itmWeight;
         }
@@ -1648,8 +1648,8 @@ export async function exportRABToProfessionalExcel(
 
     if (useLiveFormulas) {
       const itemPriceSumFormula = itemRowIndices.length > 0 ? itemRowIndices.map((i) => `D${i}`).join('+') : `0`;
-      tRow.getCell(4).value = { formula: `=IFERROR(${itemPriceSumFormula}, ${directCost})`, result: directCost };
-      tRow.getCell(5).value = { formula: `=IFERROR(D${totalSchedRow}/D${totalSchedRow}, 1.0)`, result: 1.0 };
+      tRow.getCell(4).value = { formula: `IFERROR(${itemPriceSumFormula}, ${directCost})`, result: directCost };
+      tRow.getCell(5).value = { formula: `IFERROR(D${totalSchedRow}/D${totalSchedRow}, 1.0)`, result: 1.0 };
     } else {
       tRow.getCell(4).value = directCost;
       tRow.getCell(5).value = 1.0;
@@ -1679,7 +1679,7 @@ export async function exportRABToProfessionalExcel(
       if (useLiveFormulas && itemRowIndices.length > 0) {
         // Formula SUM of all Gantt bar cells in this column
         const sumColFormula = `SUM(${colLetter}${itemRowIndices[0]}:${colLetter}${itemRowIndices[itemRowIndices.length - 1]})`;
-        cell.value = { formula: `=IFERROR(${sumColFormula}, ${plannedWeekVal})`, result: plannedWeekVal };
+        cell.value = { formula: `IFERROR(${sumColFormula}, ${plannedWeekVal})`, result: plannedWeekVal };
       } else {
         cell.value = plannedWeekVal;
       }
@@ -1707,10 +1707,10 @@ export async function exportRABToProfessionalExcel(
 
       if (useLiveFormulas) {
         if (wIdx === 0) {
-          cell.value = { formula: `=IFERROR(${colLetter}${planWeeklyRow}, ${cumVal})`, result: cumVal };
+          cell.value = { formula: `IFERROR(${colLetter}${planWeeklyRow}, ${cumVal})`, result: cumVal };
         } else {
           const prevColLetter = wsSched.getColumn(weekColumnsMeta[wIdx - 1].colIdx).letter;
-          cell.value = { formula: `=IFERROR(${prevColLetter}${planCumRow}+${colLetter}${planWeeklyRow}, ${cumVal})`, result: cumVal };
+          cell.value = { formula: `IFERROR(${prevColLetter}${planCumRow}+${colLetter}${planWeeklyRow}, ${cumVal})`, result: cumVal };
         }
       } else {
         cell.value = cumVal;
@@ -1817,18 +1817,18 @@ export async function exportRABToProfessionalExcel(
 
       if (useLiveFormulas) {
         if (idx === 0) {
-          r.getCell(6).value = { formula: `=IFERROR(E${rowNum}, 0)`, result: (dp.cumulativePlannedPercent || 0) / 100 };
-          r.getCell(8).value = { formula: `=IFERROR(G${rowNum}, 0)`, result: cumulativeActualPercent };
-          r.getCell(9).value = { formula: `=IFERROR(F${rowNum}*${grandTotal}, 0)`, result: cumulativePlannedCost };
-          r.getCell(10).value = { formula: `=IFERROR(H${rowNum}*${grandTotal}, 0)`, result: Math.round(cumulativeActualPercent * grandTotal) };
+          r.getCell(6).value = { formula: `IFERROR(E${rowNum}, 0)`, result: (dp.cumulativePlannedPercent || 0) / 100 };
+          r.getCell(8).value = { formula: `IFERROR(G${rowNum}, 0)`, result: cumulativeActualPercent };
+          r.getCell(9).value = { formula: `IFERROR(F${rowNum}*${grandTotal}, 0)`, result: cumulativePlannedCost };
+          r.getCell(10).value = { formula: `IFERROR(H${rowNum}*${grandTotal}, 0)`, result: Math.round(cumulativeActualPercent * grandTotal) };
         } else {
-          r.getCell(6).value = { formula: `=IFERROR(F${rowNum - 1}+E${rowNum}, 0)`, result: (dp.cumulativePlannedPercent || 0) / 100 };
-          r.getCell(8).value = { formula: `=IFERROR(H${rowNum - 1}+G${rowNum}, 0)`, result: cumulativeActualPercent };
-          r.getCell(9).value = { formula: `=IFERROR(F${rowNum}*${grandTotal}, 0)`, result: cumulativePlannedCost };
-          r.getCell(10).value = { formula: `=IFERROR(H${rowNum}*${grandTotal}, 0)`, result: Math.round(cumulativeActualPercent * grandTotal) };
+          r.getCell(6).value = { formula: `IFERROR(F${rowNum - 1}+E${rowNum}, 0)`, result: (dp.cumulativePlannedPercent || 0) / 100 };
+          r.getCell(8).value = { formula: `IFERROR(H${rowNum - 1}+G${rowNum}, 0)`, result: cumulativeActualPercent };
+          r.getCell(9).value = { formula: `IFERROR(F${rowNum}*${grandTotal}, 0)`, result: cumulativePlannedCost };
+          r.getCell(10).value = { formula: `IFERROR(H${rowNum}*${grandTotal}, 0)`, result: Math.round(cumulativeActualPercent * grandTotal) };
         }
-        r.getCell(11).value = { formula: `=IFERROR(H${rowNum}-F${rowNum}, 0)`, result: cumulativeActualPercent - ((dp.cumulativePlannedPercent || 0) / 100) };
-        r.getCell(12).value = { formula: `=IFERROR(J${rowNum}-I${rowNum}, 0)`, result: Math.round(cumulativeActualPercent * grandTotal) - cumulativePlannedCost };
+        r.getCell(11).value = { formula: `IFERROR(H${rowNum}-F${rowNum}, 0)`, result: cumulativeActualPercent - ((dp.cumulativePlannedPercent || 0) / 100) };
+        r.getCell(12).value = { formula: `IFERROR(J${rowNum}-I${rowNum}, 0)`, result: Math.round(cumulativeActualPercent * grandTotal) - cumulativePlannedCost };
       } else {
         r.getCell(6).value = (dp.cumulativePlannedPercent || 0) / 100;
         r.getCell(8).value = cumulativeActualPercent;
@@ -1920,7 +1920,7 @@ export async function exportRABToProfessionalExcel(
       r.getCell(4).numFmt = NUMBER_FORMATS.CURRENCY;
 
       if (useLiveFormulas) {
-        r.getCell(5).value = { formula: `=IFERROR(B${rowNum}-C${rowNum}-D${rowNum}, 0)`, result: dp.netWeekly };
+        r.getCell(5).value = { formula: `IFERROR(B${rowNum}-C${rowNum}-D${rowNum}, 0)`, result: dp.netWeekly };
       } else {
         r.getCell(5).value = dp.netWeekly;
       }

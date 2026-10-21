@@ -417,7 +417,8 @@ export class EZRABProjectCopilotOrchestrator {
       const reply = unifiedConversationStore.appendMessage(conversationId, projectId, {
         role: 'assistant',
         badge: localResult.badge,
-        content: localResult.content,
+        // F-001: fallback lokal WAJIB terungkap — bukan jawaban model AI online.
+        content: `⚠️ **Mode lokal** — server AI tidak terjangkau. Jawaban berikut dihasilkan mesin lokal dari data proyek Anda, bukan model AI online.\n\n${localResult.content}`,
         stats: localResult.stats,
         table: localResult.table,
         actionProposal: proposal,

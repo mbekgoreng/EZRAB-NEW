@@ -20,6 +20,8 @@ export interface CoAssistantMessage {
   quickActionResponse?: any;
   followUpSuggestions?: string[];
   isError?: boolean;
+  /** Provenance jawaban: 'server' = gateway AI online; 'local-fallback' = mesin lokal (F-001). */
+  source?: 'server' | 'local-fallback';
   table?: {
     headers: string[];
     rows: string[][];
@@ -363,7 +365,10 @@ class CoAssistantService {
         const fallbackMsg: CoAssistantMessage = {
           id: `ai-core-${Date.now()}`,
           role: 'ai',
-          text: localResult.content,
+          // F-001: fallback lokal WAJIB terungkap ke pengguna — jawaban ini BUKAN
+          // dari model AI online, melainkan mesin lokal berbasis data proyek.
+          source: 'local-fallback',
+          text: `⚠️ **Mode lokal** — server AI tidak terjangkau. Jawaban berikut dihasilkan mesin lokal dari data proyek Anda, bukan model AI online.\n\n${localResult.content}`,
           timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
           intent: localResult.intent,
           wizardResponse: localResult.wizardResponse,

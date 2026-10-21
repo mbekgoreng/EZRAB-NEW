@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, Suspense, lazy } from 'react';
 import {
   LayoutDashboard,
   FolderGit2,
@@ -38,6 +38,10 @@ import {
 } from 'lucide-react';
 import { Project, RabItem } from '../../types';
 import { EzrabAiView } from '../../ai-tools/ezrab-ai/view';
+// Chat-to-RAB Workspace (Fase 3): lazy agar three.js/studio tidak memuat awal.
+const ChatToRabWorkspaceLazy = lazy(() =>
+  import('../../ai-design/ChatToRabWorkspace').then(m => ({ default: m.ChatToRabWorkspace })),
+);
 import { DedAiEstimateView } from '../../ai-tools/ded-ai-estimate/view';
 import { DokumenAiView } from '../../ai-tools/document-ai/view';
 import { CreditPage } from '../../ai-credits/CreditPage';
@@ -478,6 +482,12 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
         ) : activeMenu === 'ezrab-ai' ? (
           <main style={{ minHeight: 'calc(100vh - 64px)', background: 'var(--ez-color-background)' }}>
             <EzrabAiView />
+          </main>
+        ) : activeMenu === 'desain-rab' ? (
+          <main style={{ minHeight: 'calc(100vh - 64px)', background: 'var(--ez-color-background)' }}>
+            <Suspense fallback={null}>
+              <ChatToRabWorkspaceLazy />
+            </Suspense>
           </main>
         ) : activeMenu === 'ded-ai' ? (
           <main style={{ minHeight: 'calc(100vh - 64px)', background: 'var(--ez-color-background)' }}>

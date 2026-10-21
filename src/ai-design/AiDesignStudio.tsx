@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Sparkles, Save, FolderOpen, Check, Send, AlertTriangle, Info } from 'lucide-react';
 import { parseHousePrompt, validateSpec, type HouseSpec } from './specEngine';
 import { DesignSpreadsheet, specToSpreadsheetRows } from './DesignSpreadsheet';
@@ -14,6 +14,8 @@ type ViewTab = 'spec' | 'spreadsheet' | 'review';
 interface AiDesignStudioProps {
   initialPrompt?: string;
   onApprove?: (spec: HouseSpec, workItems: ReturnType<typeof spreadsheetToWorkItems>) => void;
+  /** Tab aktif dilaporkan ke pemanggil (progress Chat-to-RAB Workspace). */
+  onTabChange?: (tab: ViewTab) => void;
 }
 
 const DEFAULT_PROMPT = 'Buatkan rumah 1 lantai luas bangunan 90 m², ukuran 6 × 15 m, 3 kamar tidur, 2 kamar mandi, ruang tamu, dapur, dan carport.';
@@ -60,7 +62,7 @@ const BTN_PRIMARY: React.CSSProperties = {
  *       setujui → data diteruskan ke QTO/RAB (via onApprove).
  * (Tab Denah 2D & 3D dihapus 2026-10-21 atas keputusan owner: buat simple.)
  */
-export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, onApprove }) => {
+export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, onApprove, onTabChange }) => {
   const [prompt, setPrompt] = useState(initialPrompt || DEFAULT_PROMPT);
   const [spec, setSpec] = useState<HouseSpec | null>(() => parseHousePrompt(initialPrompt || DEFAULT_PROMPT).spec);
   const [clarifications, setClarifications] = useState<string[]>(() => parseHousePrompt(initialPrompt || DEFAULT_PROMPT).needsClarification);
@@ -78,6 +80,10 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
   // P1: Manual AHSP mapping (user memilih kandidat secara eksplisit)
   const [ahspMappings, setAhspMappings] = useState<Record<string, string>>({});
   const [pickerFor, setPickerFor] = useState<string | null>(null);
+  // Fase 6: penolakan persetujuan ditampilkan inline (bukan alert()).
+  const [approveNote, setApproveNote] = useState<string | null>(null);
+
+  useEffect(() => { onTabChange?.(activeTab); }, [activeTab, onTabChange]);
 
   const handleGenerate = useCallback(() => {
     const result = parseHousePrompt(prompt);
@@ -90,14 +96,41 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
   const validation = useMemo(() => spec ? validateSpec(spec) : null, [spec]);
   const workItems = useMemo(() => spec ? spreadsheetToWorkItems(specToSpreadsheetRows(spec)) : [], [spec]);
   const approval = useMemo(() => spec ? buildApprovalSummary(spec, workItems) : null, [spec, workItems]);
+  // Fase 5: status validasi TIGA tingkat. VALID hanya bila tidak ada issues,
+  // tidak ada warnings (overlap/keluar tapak), tidak ada asumsi, dan tidak ada
+  // klarifikasi menggantung — status tidak boleh menutupi konflik geometri.
+  const designStatus = useMemo(() => {
+    if (!spec || !validation) return null;
+    if (validation.issues.length > 0) {
+      return { tier: 'BLOCKED' as const, label: 'TERBLOKIR', color: '#DC2626', bg: 'rgba(220, 38, 38, 0.08)',
+        detail: `${validation.issues.length} masalah kritis harus diselesaikan sebelum desain dapat disetujui.` };
+    }
+    const reviewBits: string[] = [];
+    if (validation.warnings.length > 0) reviewBits.push(`${validation.warnings.length} peringatan geometri (overlap/batas tapak)`);
+    if (spec.assumptions.length > 0) reviewBits.push(`${spec.assumptions.length} asumsi`);
+    if (clarifications.length > 0) reviewBits.push(`${clarifications.length} hal perlu klarifikasi`);
+    if (reviewBits.length > 0) {
+      return { tier: 'NEEDS_REVIEW' as const, label: 'PERLU REVIEW', color: '#D97706', bg: 'rgba(217, 119, 6, 0.08)',
+        detail: `${reviewBits.join(', ')} — periksa dan putuskan sebelum menyetujui. Denah ini konseptual, bukan gambar siap konstruksi.` };
+    }
+    return { tier: 'VALID' as const, label: 'VALID', color: '#059669', bg: 'rgba(5, 150, 105, 0.08)',
+      detail: 'Lolos seluruh pemeriksaan yang dijalankan: dimensi, luas minimum ruang, batas tapak, overlap, dan kelengkapan spesifikasi. Tetap konseptual — bukan gambar siap konstruksi.' };
+  }, [spec, validation, clarifications]);
+  // Fase 6: gerbang kirim ke RAB — hitungan lolos / terblokir selalu terlihat.
+  const rabGate = useMemo(() => validateWorkItemsForRab(workItems), [workItems]);
 
   const handleApprove = useCallback(() => {
     if (!spec || !validation?.valid) return;
     const { valid, rejected } = validateWorkItemsForRab(workItems);
     if (rejected.length > 0) {
-      alert(`${rejected.length} item ditolak:\n${rejected.map(r => `- ${r.item.description}: ${r.reason}`).join('\n')}`);
+      setApproveNote(
+        `${rejected.length} item terblokir dan tidak ikut disetujui: ` +
+        rejected.map(r => `${r.item.description} (${r.reason})`).join('; ') +
+        '. Perbaiki di tab Spreadsheet sebelum mengirim ke RAB.',
+      );
       return;
     }
+    setApproveNote(null);
     setApproved(true);
     onApprove?.(spec, valid);
   }, [spec, validation, workItems, onApprove]);
@@ -325,6 +358,15 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
               <h3 style={{ margin: '0 0 16px', fontSize: 17, fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
                 {spec.buildingType} — {spec.buildingWidthM} × {spec.buildingLengthM} m ({spec.buildingAreaM2.toFixed(1)} m²)
               </h3>
+              {designStatus && (
+                <div role="status" style={{ background: designStatus.bg, border: `1px solid ${designStatus.color}`, borderRadius: 12, padding: '11px 14px', marginBottom: 16, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  {designStatus.tier === 'VALID' ? <Check size={16} color={designStatus.color} style={{ flexShrink: 0, marginTop: 1 }} /> : <AlertTriangle size={16} color={designStatus.color} style={{ flexShrink: 0, marginTop: 1 }} />}
+                  <div style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--ez-color-text-body)' }}>
+                    <strong style={{ color: designStatus.color, letterSpacing: '0.03em' }}>STATUS: {designStatus.label}</strong>
+                    {' — '}{designStatus.detail}
+                  </div>
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 18 }}>
                 {stats.map(s => (
                   <div key={s.label} style={{ background: 'var(--ez-color-surface-faint)', borderRadius: 12, padding: '10px 12px' }}>
@@ -391,6 +433,28 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
                   <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid var(--ez-color-border-soft)', fontSize: 13.5, color: 'var(--ez-color-text-body)' }}>{line}</div>
                 ))}
               </div>
+              {/* Fase 6: ringkasan gerbang RAB — lolos / perlu review / terblokir / harga */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginTop: 14 }}>
+                {[
+                  { label: 'Lolos ke RAB', value: rabGate.valid.length, color: '#059669' },
+                  { label: 'Perlu review', value: workItems.filter(i => i.needsReview).length, color: '#D97706' },
+                  { label: 'Terblokir', value: rabGate.rejected.length, color: '#DC2626' },
+                  { label: 'Belum ada harga', value: workItems.length, color: 'var(--ez-color-text-primary)' },
+                ].map(s => (
+                  <div key={s.label} style={{ background: 'var(--ez-color-surface-faint)', borderRadius: 12, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--ez-color-text-muted)', marginBottom: 4 }}>{s.label}</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: s.color }}>{s.value} item</div>
+                  </div>
+                ))}
+              </div>
+              {rabGate.rejected.length > 0 && (
+                <div style={{ ...ERROR_PANEL, padding: '11px 14px', marginTop: 12, fontSize: 13, lineHeight: 1.55 }}>
+                  <strong style={{ color: '#DC2626' }}>Item terblokir (tidak akan dikirim):</strong>
+                  <ul style={{ margin: '6px 0 0', paddingLeft: 20, color: 'var(--ez-color-text-body)' }}>
+                    {rabGate.rejected.map((r, i) => <li key={i}>{r.item.description} — {r.reason}</li>)}
+                  </ul>
+                </div>
+              )}
               <div style={{ ...WARN_PANEL, padding: '12px 14px', marginTop: 14, display: 'flex', gap: 9, alignItems: 'flex-start' }}>
                 <AlertTriangle size={15} color="#D97706" style={{ flexShrink: 0, marginTop: 1 }} />
                 <span style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--ez-color-text-body)' }}>
@@ -442,6 +506,11 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
                     onSelect={(ahsp) => handleAhspSelect(pickerFor, ahsp)}
                     onCancel={() => setPickerFor(null)}
                   />
+                </div>
+              )}
+              {approveNote && (
+                <div style={{ ...ERROR_PANEL, padding: '11px 14px', marginTop: 14, fontSize: 13, lineHeight: 1.55, color: 'var(--ez-color-text-body)' }}>
+                  {approveNote}
                 </div>
               )}
               <button onClick={handleApprove} disabled={!validation?.valid || approved}

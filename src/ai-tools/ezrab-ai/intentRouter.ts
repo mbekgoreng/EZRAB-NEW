@@ -28,6 +28,9 @@ export type ChatIntent =
   | 'START_RAB_WIZARD'
   | 'START_HOUSE_DESIGN'
   | 'CREATE_RAB_CLARIFY'
+  | 'CREATE_RAB_SUMMARY'
+  | 'RAB_NEEDS_REFINE'
+  | 'OPEN_DESIGN_WORKSPACE'
   | 'CAPABILITIES'
   | 'SEARCH_AHSP'
   | 'QUERY_PROJECT_TOTAL'
@@ -106,11 +109,17 @@ const PATTERNS: Pattern[] = [
   { intent: 'OPEN_REPORTS', re: /\b(buka|bukain|tampilkan|tampilin|lihat|liatin)\b.*\b(laporan|report)\b/ },
   { intent: 'OPEN_AI_DOCUMENTS', re: /\b(buka|bukain|tampilkan|tampilin)\b.*\b(dokumen|document)\b/ },
   { intent: 'OPEN_DED_ESTIMATE', re: /\b(buka|bukain|tampilkan|tampilin)\b.*\bded\b/ },
-  // Command Center P0 — wizard & design (must come before generic OPEN_RAB)
-  { intent: 'START_RAB_WIZARD', re: /\b(buatkan|buatin|bikin| Bikinkan|buat)\b.*\brab\b.*\brumah\b/ },
-  { intent: 'START_RAB_WIZARD', re: /\brab\b.*\brumah\b.*\b(baru|wizard|panduan)\b/ },
-  { intent: 'START_HOUSE_DESIGN', re: /\b(buat|bikin|desain|design)\b.*\b(desain|design)\b.*\brumah\b/ },
-  { intent: 'START_HOUSE_DESIGN', re: /\b(buatkan|buatin)\b.*\brumah\b.*\b(\d+)\s*m/ },
+  // Chat-to-RAB (Fase 2): permintaan RAB/desain yang DITULIS pengguna TIDAK
+  // lagi membuka wizard/studio otomatis. Router mengarah ke CREATE_RAB_SUMMARY:
+  // chat menampilkan ringkasan kebutuhan yang terekstrak + tombol eksplisit
+  // "Buka Workspace Desain & RAB". Wizard/studio hanya terbuka oleh klik tombol
+  // tersebut (persetujuan pengguna), bukan oleh teks perintah.
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin| Bikinkan|buat)\b.*\brab\b.*\brumah\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\brab\b.*\brumah\b.*\b(baru|wizard|panduan)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buat|bikin|desain|design)\b.*\b(desain|design)\b.*\brumah\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin)\b.*\brumah\b.*\b(\d+)\s*m/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(gedung|ruko|villa|gudang|kantor|jalan|drainase|saluran|paving|renovasi)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(ded|gambar kerja)\b/ },
   // "buatkan rab" tanpa objek spesifik -> tanya balik (jangan tumpahkan daftar
   // template). Pola spesifik (rumah/dll) sudah tertangkap di atas; pola umum
   // ini HARUS tetap setelahnya. \brab\b tidak menangkap "rabat beton".

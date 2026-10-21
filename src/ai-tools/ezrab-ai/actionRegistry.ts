@@ -9,10 +9,15 @@
 
 import { ChatIntent } from './intentRouter';
 import { EZRAB_AI_TOOLS } from './tools';
+import {
+  RabNeeds, extractRabNeeds, missingNeeds, buildDesignPrompt, summarizeRabNeeds,
+} from './rabNeeds';
 
 export interface ChatActionContext {
   /** Navigate to a menu id (WorkspaceView.setActiveMenu) */
   navigate: (menu: string) => void;
+  /** Teks mentah pesan pengguna saat ini (untuk ekstraksi kebutuhan RAB) */
+  rawText?: string;
   /** Current route/menu id, for contextual responses */
   currentMenu: string;
   /** Active project snapshot (null if none) */
@@ -62,6 +67,8 @@ export interface ActionResult {
   openDesignStudio?: boolean;
   /** Prefill prompt untuk design studio */
   designPrompt?: string;
+  /** Chat menunggu jawaban kelengkapan kebutuhan RAB dari pengguna */
+  awaitRabNeeds?: boolean;
 }
 
 const MENU_LABELS: Record<string, string> = {
@@ -92,6 +99,66 @@ const INTENT_TO_MENU: Partial<Record<ChatIntent, string>> = {
 
 function fmtIDR(n: number): string {
   return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+}
+
+/* ------------------------------------------------------------------ */
+/* Chat-to-RAB (Fase 2): state ringkasan kebutuhan sesi ini.           */
+/* Wizard/studio TIDAK dibuka dari teks perintah — hanya dari klik    */
+/* tombol "Buka Workspace Desain & RAB" pada ringkasan (persetujuan).  */
+/* ------------------------------------------------------------------ */
+let lastRabNeeds: RabNeeds | null = null;
+let lastRabRaw = '';
+
+export function getLastRabDesignPrompt(): string | null {
+  if (!lastRabNeeds) return null;
+  return buildDesignPrompt(lastRabNeeds, lastRabRaw);
+}
+
+function rabSummaryResult(raw: string, base?: RabNeeds): ActionResult {
+  const needs = extractRabNeeds(raw, base);
+  lastRabNeeds = needs;
+  if (raw) lastRabRaw = raw;
+  const missing = missingNeeds(needs);
+  const summary = summarizeRabNeeds(needs, missing);
+
+  if (needs.kind === 'ded') {
+    return {
+      ok: true,
+      message: `${summary}\n\nUntuk dokumen DED, jalur yang tepat adalah DED Estimate AI — unggah gambar kerja di sana, bukan lewat wizard rumah.`,
+      actions: [
+        { label: 'Buka DED Estimate AI', action: { kind: 'navigate', menu: 'ded-ai' } },
+        { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+      ],
+    };
+  }
+  if (needs.kind === 'rumah' || needs.kind === 'gedung' || needs.kind === 'renovasi' || needs.kind === null) {
+    return {
+      ok: true,
+      message: summary,
+      actions: [
+        { label: 'Buka Workspace Desain & RAB', action: { kind: 'intent', intent: 'OPEN_DESIGN_WORKSPACE' } },
+        { label: 'Lengkapi kebutuhan', action: { kind: 'intent', intent: 'RAB_NEEDS_REFINE' } },
+        { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+      ],
+    };
+  }
+  // Non-bangunan (jalan, drainase, dll.): JANGAN paksa ke wizard/desain rumah.
+  return {
+    ok: true,
+    message:
+      `${summary}\n\nCatatan jujur: AI Design Studio saat ini khusus bangunan (rumah/gedung). ` +
+      `Untuk pekerjaan ${needs.kindLabel ?? 'ini'}, jalur yang tersedia adalah template RAB, estimasi dari DED, atau mulai manual — tidak saya arahkan ke wizard rumah.`,
+    actions: [
+      { label: 'Pakai template', action: { kind: 'navigate', menu: 'template-rab' } },
+      { label: 'Dari gambar DED', action: { kind: 'navigate', menu: 'ded-ai' } },
+      { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+    ],
+  };
+}
+
+/** Lanjutan "Lengkapi kebutuhan": gabungkan jawaban pengguna ke ringkasan. */
+export function continueRabNeeds(text: string): ActionResult {
+  return rabSummaryResult(text, lastRabNeeds ?? undefined);
 }
 
 export function executeIntent(
@@ -170,19 +237,43 @@ export function executeIntent(
         ],
       };
 
-    case 'START_RAB_WIZARD':
+    case 'CREATE_RAB_SUMMARY':
+      // Fase 2: ringkasan kebutuhan dulu — TIDAK membuka wizard/studio.
+      return rabSummaryResult(ctx.rawText ?? param ?? '');
+
+    case 'RAB_NEEDS_REFINE': {
+      const missing = lastRabNeeds ? missingNeeds(lastRabNeeds) : [];
       return {
         ok: true,
-        message: 'Baik! Saya bantu buatkan RAB rumah lewat wizard interaktif. Silakan pilih tipe rumah dan spesifikasi.',
-        openRabWizard: true,
+        message: missing.length
+          ? `Siap — data yang masih kurang: ${missing.join('; ')}.\nTulis jawabannya dalam satu pesan, contoh: "2 lantai, 6x15, 3 kamar tidur, 2 kamar mandi, ada carport". Ringkasan di atas akan saya perbarui — belum ada yang dibuka otomatis.`
+          : 'Datanya sudah lengkap. Klik "Buka Workspace Desain & RAB" pada ringkasan di atas untuk mulai, atau koreksi langsung di chat.',
+        awaitRabNeeds: missing.length > 0,
+      };
+    }
+
+    case 'OPEN_DESIGN_WORKSPACE': {
+      // Jalur utama ditangani view (klik tombol → requestAiEntry +
+      // navigateChat('desain-rab')). Case ini adalah fallback defensif:
+      // arahkan ke halaman workspace, JANGAN buka overlay dari registry.
+      return {
+        ok: true,
+        message: 'Workspace Desain & RAB sekarang berupa halaman penuh: kebutuhan → desain → validasi → QTO → AHSP & harga → review.',
         actions: [
-          { label: 'Desain rumah dengan AI', action: { kind: 'intent', intent: 'START_HOUSE_DESIGN' } },
+          { label: 'Buka Workspace Desain & RAB', action: { kind: 'navigate', menu: 'desain-rab' } },
         ],
       };
+    }
+
+    case 'START_RAB_WIZARD':
+      // Kompatibilitas: jalur lama tidak lagi membuka wizard langsung dari
+      // registry — tampilkan ringkasan kebutuhan terlebih dahulu.
+      return rabSummaryResult(ctx.rawText ?? 'buatkan rab rumah tinggal');
 
     case 'START_HOUSE_DESIGN': {
-      // Ekstrak prompt desain dari param atau gunakan default
-      const designPrompt = param || 'Buatkan rumah 1 lantai luas bangunan 90 m², ukuran 6 × 15 m, 3 kamar tidur, 2 kamar mandi, ruang tamu, dapur, dan carport.';
+      // Hanya tercapai lewat KLIK tombol (persetujuan eksplisit). Teks ketikan
+      // pengguna kini diarahkan router ke CREATE_RAB_SUMMARY.
+      const designPrompt = param || getLastRabDesignPrompt() || 'Buatkan rumah 1 lantai luas bangunan 90 m², ukuran 6 × 15 m, 3 kamar tidur, 2 kamar mandi, ruang tamu, dapur, dan carport.';
       return {
         ok: true,
         message: 'Membuka AI Design Studio — dari deskripsi menjadi spesifikasi, spreadsheet, lalu QTO/RAB.',

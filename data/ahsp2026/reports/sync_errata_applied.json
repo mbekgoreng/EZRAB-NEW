@@ -1,0 +1,16 @@
+{
+  "generator": "scripts/ahsp2026/syncCiptaKaryaMaster.py",
+  "finding": "F-018",
+  "applied": [
+    {
+      "code": "2.2.1.4.1",
+      "resource": "Batu split 2/3",
+      "unit": "kg",
+      "from": 1.009,
+      "to": 1009.0,
+      "source_page": 263,
+      "citation": "SE DJBK 47/2026 Lampiran VI hal. 263: 'Kerikil kg 1.009' (titik=pemisah ribuan); hal. 265: 2.2.1.4.5 'Kerikil kg 1009'"
+    }
+  ],
+  "applied_count": 1
+}

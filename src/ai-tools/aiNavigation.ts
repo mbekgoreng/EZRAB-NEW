@@ -14,7 +14,7 @@
  */
 import { navigateTo, routeForMenu } from '../routing/routes';
 
-export type AiDestination = 'chat_agent' | 'ded_rab_ai' | 'document_ai';
+export type AiDestination = 'chat_agent' | 'ded_rab_ai' | 'document_ai' | 'design_workspace';
 
 export interface AiEntryContext {
   projectId?: string | null;
@@ -38,14 +38,16 @@ export interface AiEntryContext {
   sendMode?: 'prefill' | 'autosend';
 }
 
-const DESTINATION_MENU: Record<AiDestination, 'ezrab-ai' | 'ded-ai' | 'dokumen-ai'> = {
+const DESTINATION_MENU: Record<AiDestination, 'ezrab-ai' | 'ded-ai' | 'dokumen-ai' | 'desain-rab'> = {
   chat_agent: 'ezrab-ai',
   ded_rab_ai: 'ded-ai',
   document_ai: 'dokumen-ai',
+  // Chat-to-RAB Workspace (Fase 3): halaman penuh desain → QTO → RAB.
+  design_workspace: 'desain-rab',
 };
 
 /** Menu workspace untuk sebuah tujuan AI. */
-export function aiMenuFor(dest: AiDestination): 'ezrab-ai' | 'ded-ai' | 'dokumen-ai' {
+export function aiMenuFor(dest: AiDestination): 'ezrab-ai' | 'ded-ai' | 'dokumen-ai' | 'desain-rab' {
   return DESTINATION_MENU[dest];
 }
 

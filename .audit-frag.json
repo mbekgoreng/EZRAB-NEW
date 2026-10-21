@@ -1,0 +1,155 @@
+[
+ {
+  "id": "AHSP-2026-SMKK-000060",
+  "code": "SEDANG-12",
+  "name": "prosedur).",
+  "domain": "SMKK",
+  "unit": "",
+  "sourcePage": 40,
+  "status": "NEEDS_REVIEW"
+ },
+ {
+  "id": "AHSP-2026-SMKK-000066",
+  "code": "SEDANG-2",
+  "name": "",
+  "domain": "SMKK",
+  "unit": "buah",
+  "sourcePage": 42,
+  "status": "NEEDS_REVIEW"
+ },
+ {
+  "id": "AHSP-2026-SMKK-000067",
+  "code": "SEDANG-4",
+  "name": "",
+  "domain": "SMKK",
+  "unit": "buah",
+  "sourcePage": 42,
+  "status": "NEEDS_REVIEW"
+ },
+ {
+  "id": "AHSP-2026-SMKK-000077",
+  "code": "SEDANG-1",
+  "name": "",
+  "domain": "SMKK",
+  "unit": "buah",
+  "sourcePage": 44,
+  "status": "NEEDS_REVIEW"
+ },
+ {
+  "id": "AHSP-2026-SMKK-000086",
+  "code": "SEDANG-2",
+  "name": "",
+  "domain": "SMKK",
+  "unit": "buah",
+  "sourcePage": 46,
+  "status": "NEEDS_REVIEW"
+ },
+ {
+  "id": "AHSP-2026-SMKK-000114",
+  "code": "SEDANG-10",
+  "name": "",
+  "domain": "SMKK",
+  "unit": "m",
+  "sourcePage": 53,
+  "status": "NEEDS_REVIEW"
+ },
+ {
+  "id": "AHSP-2026-SMKK-000124",
+  "code": "SEDANG-1",
+  "name": "(satu)",
+  "domain": "SMKK",
+  "unit": "orang",
+  "sourcePage": 56,
+  "status": "NEEDS_REVIEW"
+ },
+ {
+  "id": "AHSP-2026-SMKK-000130",
+  "code": "SEDANG-12",
+  "name": "",
+  "domain": "SMKK",
+  "unit": "orang",
+  "sourcePage": 57,
+  "status": "NEEDS_REVIEW"
+ },
+ {
+  "id": "AHSP-2026-SMKK-000152",
+  "code": "SEDANG-7.f.96",
+  "name": "",
+  "domain": "SMKK",
+  "unit": "buah",
+  "sourcePage": 64,
+  "status": "NEEDS_REVIEW"
+ },
+ {
+  "id": "AHSP-2026-SMKK-000157",
+  "code": "SEDANG-7.j.20",
+  "name": "",
+  "domain": "SMKK",
+  "unit": "buah",
+  "sourcePage": 65,
+  "status": "NEEDS_REVIEW"
+ },
+ {
+  "id": "AHSP-2026-SDA-000393",
+  "code": "A.1.04.9",
+  "name": "Pengoperasian per-jam pompa air (D) dengan daya 30 KW dengan suction head maksimal 3 m dan discharge head maksimal 10 m’ (kapasitas 100 L/s pada suction head 1m dan discharge head 10 m).",
+  "domain": "SUMBER_DAYA_AIR",
+  "unit": "jam",
+  "sourcePage": 723,
+  "status": "VERIFIED"
+ },
+ {
+  "id": "AHSP-2026-BINA_MARGA-000234",
+  "code": "5.5.(3)",
+  "name": "Lapis Fondasi Daur Ulang Agregat Semen (Cement Treated Recycling Base, CTRB).",
+  "domain": "BINA_MARGA",
+  "unit": "m3",
+  "sourcePage": 740,
+  "status": "VERIFIED"
+ },
+ {
+  "id": "AHSP-2026-BINA_MARGA-000235",
+  "code": "5.5.(4)",
+  "name": "Lapis Fondasi Daur Ulang Agregat Semen (Cement Treated Recycling Base, CTRB) dengan Mesin Gilas Pemadatan Cerdas (IC).",
+  "domain": "BINA_MARGA",
+  "unit": "m3",
+  "sourcePage": 744,
+  "status": "VERIFIED"
+ },
+ {
+  "id": "AHSP-2026-BINA_MARGA-000236",
+  "code": "5.5.(5)",
+  "name": "Semen untuk Lapis Fondasi Daur Ulang Agregat Semen (Cement Treated Recycling Base, CTRB).",
+  "domain": "BINA_MARGA",
+  "unit": "ton",
+  "sourcePage": 747,
+  "status": "VERIFIED"
+ },
+ {
+  "id": "AHSP-2026-BINA_MARGA-000613",
+  "code": "9.1.(1)",
+  "name": "Mandor",
+  "domain": "BINA_MARGA",
+  "unit": "jam",
+  "sourcePage": 1734,
+  "status": "VERIFIED"
+ },
+ {
+  "id": "AHSP-2026-CIPTA_KARYA-002855",
+  "code": "1.000",
+  "name": "USGPM",
+  "domain": "CIPTA_KARYA",
+  "unit": "",
+  "sourcePage": 1106,
+  "status": "NEEDS_REVIEW"
+ },
+ {
+  "id": "AHSP-2026-CIPTA_KARYA-002856",
+  "code": "1.250",
+  "name": "USGPM",
+  "domain": "CIPTA_KARYA",
+  "unit": "",
+  "sourcePage": 1107,
+  "status": "NEEDS_REVIEW"
+ }
+]

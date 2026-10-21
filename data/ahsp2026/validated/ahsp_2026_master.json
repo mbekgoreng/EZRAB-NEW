@@ -315276,10 +315276,10 @@
             "resource_name": "Batu split 2/3",
             "resource_type": "material",
             "unit": "kg",
-            "coefficient": 1.009,
-            "coefficient_raw": "1.009",
+            "coefficient": 1009.0,
+            "coefficient_raw": "1009.0",
             "source_page": 263,
-            "raw": "Batu split 2/3 kg 1.009"
+            "raw": "Batu split 2/3 kg 1009.0"
           },
           {
             "resource_code": "",

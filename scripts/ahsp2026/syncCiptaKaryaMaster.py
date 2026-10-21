@@ -15,6 +15,53 @@ DHSP_PATH = os.path.join("data", "ahsp2026", "excel_extracted", "dhsp_items.json
 UPAH_BAHAN_PATH = os.path.join("data", "ahsp2026", "excel_extracted", "upah_bahan.json")
 
 print("Loading data files...")
+
+# ---------------------------------------------------------------------------
+# SOURCE-VERIFIED ERRATA (F-018) — koreksi transkripsi yang TERBUKTI dari
+# dokumen sumber resmi, diterapkan pada tahap generator ini (BUKAN edit
+# manual pada canonical). Setiap entri wajib punya bukti sumber.
+#
+# Entri 1 — Item 2.2.1.4.1, komponen Kerikil/Batu split 2/3 (kg):
+#   SE DJBK 47/2026 Lampiran VI hal. 263 mencetak "Kerikil kg 1.009" —
+#   titik di sana adalah pemisah RIBUAN (koefisien tenaga di halaman yang
+#   sama memakai koma desimal: "1,650", "0,275"). Hal. 265 mencetak
+#   koefisien identik untuk 2.2.1.4.5 sebagai "1009" polos. Workbook Excel
+#   perantara menyimpan token "1.009" sebagai angka desimal 1.009 sehingga
+#   ekstraksi menghasilkan 1.009 — nilai yang benar adalah 1009.
+#   Bukti mentah: data/ahsp2026/raw/ciptakarya_raw.jsonl (hal. 263 & 265).
+# Perilaku fail-safe: errata hanya diterapkan bila nilai analisis PERSIS
+# sama dengan `misparsed_value`; nilai lain apa pun -> peringatan, tidak
+# ditebak/dimodifikasi.
+# ---------------------------------------------------------------------------
+SOURCE_ERRATA = [
+    {
+        "code": "2.2.1.4.1",
+        "resource_match": "batu split",
+        "unit": "kg",
+        "misparsed_value": 1.009,
+        "corrected_value": 1009.0,
+        "citation": "SE DJBK 47/2026 Lampiran VI hal. 263: 'Kerikil kg 1.009' (titik=pemisah ribuan); hal. 265: 2.2.1.4.5 'Kerikil kg 1009'",
+    },
+]
+
+errata_applied = []
+
+def apply_errata(code, r_name, r_unit, coeff, page):
+    """Terapkan errata terverifikasi-sumber. Kembalikan koefisien final."""
+    for e in SOURCE_ERRATA:
+        if code == e["code"] and e["resource_match"] in r_name.lower() and r_unit == e["unit"]:
+            if coeff == e["misparsed_value"]:
+                errata_applied.append({
+                    "code": code, "resource": r_name, "unit": r_unit,
+                    "from": coeff, "to": e["corrected_value"],
+                    "source_page": page, "citation": e["citation"],
+                })
+                print(f"  [ERRATA F-018] {code} {r_name}: {coeff} -> {e['corrected_value']} (sumber hal. {page})")
+                return e["corrected_value"]
+            elif coeff != e["corrected_value"]:
+                print(f"  [ERRATA WARNING] {code} {r_name}: nilai {coeff} tidak cocok pola errata "
+                      f"(misparsed={e['misparsed_value']}, corrected={e['corrected_value']}) — TIDAK diubah, perlu review manual.")
+    return coeff
 with open(MASTER_PATH, "r", encoding="utf-8") as f:
     master_doc = json.load(f)
 
@@ -175,6 +222,7 @@ for item in master_doc["items"]:
             r_name = clean_text(m["name"])
             r_unit = m.get("unit", "").strip()
             r_code = m.get("code", "").strip()
+            coeff = apply_errata(code, r_name, r_unit, coeff, page)
             new_materials.append({
                 "resource_code": r_code,
                 "resource_name": r_name,
@@ -192,6 +240,7 @@ for item in master_doc["items"]:
             r_name = clean_text(l["name"])
             r_unit = l.get("unit", "").strip()
             r_code = l.get("code", "").strip()
+            coeff = apply_errata(code, r_name, r_unit, coeff, page)
             new_labor.append({
                 "resource_code": r_code,
                 "resource_name": r_name,
@@ -209,6 +258,7 @@ for item in master_doc["items"]:
             r_name = clean_text(e["name"])
             r_unit = e.get("unit", "").strip()
             r_code = e.get("code", "").strip()
+            coeff = apply_errata(code, r_name, r_unit, coeff, page)
             new_equipment.append({
                 "resource_code": r_code,
                 "resource_name": r_name,
@@ -317,3 +367,14 @@ with open(RES_PATH, "w", encoding="utf-8") as f:
     json.dump(resources_doc, f, indent=2, ensure_ascii=False)
 
 print("Saved master, components, and resources successfully!")
+
+# Laporan errata F-018 yang diterapkan pada run ini (artefak audit generator).
+ERRATA_REPORT_PATH = os.path.join("data", "ahsp2026", "reports", "sync_errata_applied.json")
+with open(ERRATA_REPORT_PATH, "w", encoding="utf-8") as f:
+    json.dump({
+        "generator": "scripts/ahsp2026/syncCiptaKaryaMaster.py",
+        "finding": "F-018",
+        "applied": errata_applied,
+        "applied_count": len(errata_applied),
+    }, f, indent=2, ensure_ascii=False)
+print(f"Errata diterapkan: {len(errata_applied)} (laporan: {ERRATA_REPORT_PATH})")
