@@ -11,6 +11,8 @@ import {
   Clock,
   CheckCircle2,
   TrendingUp,
+  Pencil,
+  Archive,
 } from 'lucide-react';
 import { Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
@@ -27,6 +29,7 @@ interface EzrabAiDashboardViewProps {
   onOpenSubscription: () => void;
   onResetData?: () => void;
   onOpenOnboarding?: () => void;
+  activities?: Array<{ text: string; time: string; type: string }>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -97,6 +100,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
   onNavigateToTab,
   onNavigateToProjects,
   onOpenMagicAi,
+  activities,
 }) => {
   // Navigasi ke menu Proyek dengan filter status tertentu (fallback: tab proyek).
   const goProjects = (filter: string) => {
@@ -459,7 +463,7 @@ className="ezdb-anim ezdb-hero"
               tabIndex={0}
               aria-label={a.title}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') a.onClick(); }}
-              className="ezdb-anim"
+              className="ezdb-anim ez-mini"
               style={{
                 height: '96px',
                 background: 'var(--ez-color-surface)',
@@ -547,13 +551,13 @@ className="ezdb-anim ezdb-hero"
         >
           {[
             { bg: 'var(--ez-stat-sky)', icon: Folder, iconColor: 'var(--ez-color-primary)', value: totalProjects, label: t('dash.stat_total'), sub: `${draftProjects} ${t('dash.stat_draft_word')}`, delay: '0.05s', filter: 'Semua Proyek' },
-            { bg: 'var(--ez-stat-cream)', icon: Clock, iconColor: 'var(--ez-color-warning)', value: inProgressProjects, label: t('dash.stat_aktif'), sub: t('dash.stat_aktif_sub'), delay: '0.12s', filter: 'Sedang Dikerjakan' },
+            { bg: 'var(--ez-stat-cyan)', icon: Clock, iconColor: '#0E7490', value: inProgressProjects, label: t('dash.stat_aktif'), sub: t('dash.stat_aktif_sub'), delay: '0.12s', filter: 'Sedang Dikerjakan' },
             { bg: 'var(--ez-stat-mint)', icon: CheckCircle2, iconColor: 'var(--ez-color-success)', value: completedProjects, label: t('dash.stat_selesai'), sub: t('dash.stat_selesai_sub'), delay: '0.19s', filter: 'Selesai' },
             { bg: 'var(--ez-stat-peach)', icon: FileText, iconColor: 'var(--ez-color-warning)', value: draftProjects, label: t('dash.stat_draft'), sub: t('dash.stat_draft_sub'), delay: '0.26s', filter: 'Draft' },
           ].map((c) => (
             <div
               key={c.label}
-              className="ezdb-anim"
+              className="ezdb-anim ez-stat"
               role="button"
               tabIndex={0}
               onClick={() => goProjects(c.filter)}
@@ -719,7 +723,7 @@ className="ezdb-split"
 
         {/* RIGHT: EZRAB Insight */}
         <div
-          className="ezdb-anim"
+          className="ezdb-anim ez-mini"
           style={{
             background: 'var(--ez-pastel-cream)',
             borderRadius: '22px',
@@ -796,28 +800,96 @@ className="ezdb-split"
       </section>
 
       {/* ============ 5. AKTIVITAS TERBARU ============ */}
-      <section style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0 24px 0' }}>
-        <h2 style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
-          {t('dash.aktivitas_terbaru')}
-        </h2>
-        <button
-          type="button"
-          onClick={() => goProjects('Semua Proyek')}
+      <section style={{ paddingBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0 14px 0' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
+            {t('dash.aktivitas_terbaru')}
+          </h2>
+          <button
+            type="button"
+            onClick={() => goProjects('Semua Proyek')}
+            style={{
+              fontSize: '12.5px',
+              fontWeight: 650,
+              color: 'var(--ez-color-primary)',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            <span>{t('dashboard.lihat_semua')}</span>
+            <ChevronRight size={14} />
+          </button>
+        </div>
+        <div
+          className="ezdb-anim"
           style={{
-            fontSize: '12.5px',
-            fontWeight: 650,
-            color: 'var(--ez-color-primary)',
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
+            background: 'var(--ez-color-surface)',
+            borderRadius: '22px',
+            border: '1px solid var(--ez-color-border-soft)',
+            boxShadow: CARD_SHADOW,
+            padding: '6px 24px',
+            animation: 'ezdb-rise 0.6s 0.42s both',
           }}
         >
-          <span>{t('dashboard.lihat_semua')}</span>
-          <ChevronRight size={14} />
-        </button>
+          {activities && activities.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {activities.slice(0, 5).map((a, i, arr) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    gap: '12px',
+                    alignItems: 'flex-start',
+                    padding: '11px 0',
+                    borderBottom: i < arr.length - 1 ? '1px solid var(--ez-color-border-soft)' : 'none',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '10px',
+                      flexShrink: 0,
+                      background:
+                        a.type === 'create'
+                          ? 'var(--ez-pastel-sky)'
+                          : a.type === 'done'
+                            ? 'var(--ez-pastel-mint)'
+                            : a.type === 'archive'
+                              ? 'var(--ez-color-surface-tertiary)'
+                              : 'var(--ez-pastel-cream)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {a.type === 'create' ? (
+                      <Plus size={15} color="var(--ez-pill-run-text)" />
+                    ) : a.type === 'done' ? (
+                      <CheckCircle2 size={15} color="var(--ez-pill-ok-text)" />
+                    ) : a.type === 'archive' ? (
+                      <Archive size={15} color="var(--ez-color-text-muted)" />
+                    ) : (
+                      <Pencil size={14} color="var(--ez-pill-wait-text)" />
+                    )}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-primary)', lineHeight: 1.45 }}>{a.text}</div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>{a.time}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', textAlign: 'center', padding: '18px 8px' }}>
+              {t('proj.all.activity_empty')}
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );

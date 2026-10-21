@@ -121,63 +121,62 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
         }}
       >
         {/* KPI 1: Proyek Aktif */}
-        <div className="ezdb-anim ez-stat ez-stat-sky" style={{ animation: 'ezdb-rise 0.6s 0.05s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
+        <div className="ezdb-anim ez-stat ez-stat-cyan" style={{ animation: 'ezdb-rise 0.6s 0.05s both' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.88)', marginBottom: '8px' }}>
             {t('proj.active.kpi1_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {inProgressProjects.length}{' '}
-            <span style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi1_u')}</span>
+            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi1_u')}</span>
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', marginTop: '6px' }}>
             {formatRupiah(totalActiveValue)}
           </div>
         </div>
 
         {/* KPI 2: On Schedule */}
         <div className="ezdb-anim ez-stat ez-stat-mint" style={{ animation: 'ezdb-rise 0.6s 0.12s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.88)', marginBottom: '8px' }}>
             {t('proj.active.kpi2_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {onTrackCount}{' '}
-            <span style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi2_u')}</span>
+            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi2_u')}</span>
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', marginTop: '6px' }}>
             {t('proj.active.kpi2_s')}
           </div>
         </div>
 
         {/* KPI 3: Terlambat / Butuh Percepatan */}
         <div
-          className="ezdb-anim ez-stat"
+          className="ezdb-anim ez-stat ez-stat-rose"
           style={{
             animation: 'ezdb-rise 0.6s 0.19s both',
-            background: '#FCE9E9',
           }}
         >
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.88)', marginBottom: '8px' }}>
             {t('proj.active.kpi3_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-hue-rose-text)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {behindCount}{' '}
-            <span style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi3_u')}</span>
+            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi3_u')}</span>
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--ez-hue-rose-text)', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', marginTop: '6px' }}>
             {t('proj.active.kpi3_s')}
           </div>
         </div>
 
         {/* KPI 4: Rata-rata Progres Realisasi */}
         <div className="ezdb-anim ez-stat ez-stat-cream" style={{ animation: 'ezdb-rise 0.6s 0.26s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.88)', marginBottom: '8px' }}>
             {t('proj.active.kpi4_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {avgActiveProgress}%
           </div>
-          <div style={{ width: '100%', height: '6px', background: 'rgba(20,20,18,0.08)', borderRadius: 'var(--ez-radius-pill)', overflow: 'hidden', marginTop: '10px' }}>
-            <div style={{ width: `${avgActiveProgress}%`, height: '100%', background: 'var(--ez-color-primary)', borderRadius: 'var(--ez-radius-pill)' }} />
+          <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.35)', borderRadius: 'var(--ez-radius-pill)', overflow: 'hidden', marginTop: '10px' }}>
+            <div style={{ width: `${avgActiveProgress}%`, height: '100%', background: '#FFFFFF', borderRadius: 'var(--ez-radius-pill)' }} />
           </div>
         </div>
       </div>

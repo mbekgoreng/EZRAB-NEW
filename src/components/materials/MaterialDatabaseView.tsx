@@ -1003,7 +1003,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           <div
             className="ez-stat mat-kpi-card"
             style={{
-              backgroundColor: 'var(--ez-pastel-cream)',
+              backgroundColor: 'var(--ez-pastel-lilac)',
               padding: '18px',
               borderRadius: 'var(--ez-radius-card)',
               display: 'flex',
@@ -1018,7 +1018,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   <path
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     fill="none"
-                    stroke="var(--ez-color-border-line)"
+                    stroke="var(--ez-color-border)"
                     strokeWidth="3.5"
                   />
                   <path
@@ -1472,7 +1472,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           </div>
 
           {/* Row 3: Sector Pills Bar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', paddingTop: '4px', paddingBottom: '2px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', paddingTop: '4px', paddingBottom: '2px' }}>
             <button
               onClick={() => setSelectedSector('ALL')}
               style={{
@@ -1589,7 +1589,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           </div>
 
           {/* Row 4: Active Filter Chips */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', paddingTop: '8px', borderTop: '1px solid var(--ez-color-surface-tertiary)', fontSize: '11px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', paddingTop: '8px', borderTop: '1px solid var(--ez-color-border-line)', fontSize: '11px' }}>
             <span style={{ color: 'var(--ez-color-text-faint)', fontWeight: 600 }}>Filter Aktif:</span>
 
             <span

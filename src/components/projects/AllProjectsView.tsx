@@ -335,7 +335,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
       {/* ============ BARIS 1: 4 kartu statistik ============ */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 18 }}>
         <StatCard
-          bgClass="ez-stat-cream"
+          bgClass="ez-stat-sky"
           label={t('proj.all.stat_total')} value={String(totalProjects)}
           sub={t('proj.all.stat_total_sub')} delay="0.05s"
         />
@@ -345,13 +345,13 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
           sub={t('proj.all.stat_value_sub')} delay="0.12s"
         />
         <StatCard
-          bgClass="ez-stat-peach"
+          bgClass="ez-stat-cyan"
           label={t('proj.all.stat_running')} value={String(countBy.berjalan)}
           sub={t('proj.all.stat_running_sub')}
           onClick={() => { setStatusFilter('berjalan'); setPage(0); }} delay="0.19s"
         />
         <StatCard
-          bgClass="ez-stat-sky"
+          bgClass="ez-stat-violet"
           label={t('proj.all.stat_attention')} value={String(overdueList.length)}
           sub={overdueList.length > 0 ? t('proj.all.stat_attention_sub') : t('proj.all.stat_attention_ok')}
           subColor={overdueList.length > 0 ? '#FFFFFF' : undefined} delay="0.26s"
@@ -365,7 +365,7 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
           label={t('proj.all.stat_avg')} value={formatRpCompact(avgValue)}
           sub={totalProjects > 0 ? `${t('proj.all.stat_avg_sub_a')} ${totalProjects} ${t('proj.all.stat_avg_sub_b')}` : t('proj.all.stat_avg_empty')} delay="0.3s"
         />
-        <div className="ezdb-anim" style={{ ...cardStyle, animation: 'ezdb-rise 0.6s 0.34s both' }}>
+        <div className="ezdb-anim ez-mini" style={{ ...cardStyle, animation: 'ezdb-rise 0.6s 0.34s both' }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: 8 }}>{t('proj.all.progress_title')}</div>
           <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--ez-color-text-primary)', letterSpacing: '-1px' }}>
             {avgProgress}%{avgPlanned != null && <span style={{ color: 'var(--ez-color-text-muted)', fontWeight: 600 }}> / {avgPlanned}%</span>}
@@ -380,11 +380,11 @@ export const AllProjectsView: React.FC<AllProjectsViewProps> = ({
           </div>
         </div>
         <StatCard
-          bgClass="ez-stat-peach"
+          bgClass="ez-stat-rose"
           label={t('proj.all.stat_late')} value={String(overdueList.length)}
           sub={t('proj.all.stat_late_sub')} subColor="#FFFFFF" delay="0.38s"
         />
-        <div className="ezdb-anim" style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: 4, animation: 'ezdb-rise 0.6s 0.42s both' }}>
+        <div className="ezdb-anim ez-mini" style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: 4, animation: 'ezdb-rise 0.6s 0.42s both' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>{t('proj.all.donut_title')}</span>
           </div>

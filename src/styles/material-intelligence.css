@@ -238,3 +238,24 @@
   background: var(--ez-hue-slate-border);
   border-radius: 3px;
 }
+
+/* =========================================================================
+   UI POLISH 2026-10-22 — dark/light border parity (Material & Harga)
+   Light mode: --ez-color-border-line & friends are cyclic self-references in
+   ezrab-design-system.css :root, so they compute to nothing and this page
+   renders borderless. Dark mode assigns them real values, which is why every
+   card / panel / filter suddenly showed a hairline. Give dark mode the same
+   borderless treatment, scoped to this workspace only (premium themes keep
+   their deliberate borders). Panel separation in dark mode still comes from
+   surface contrast: page bg surface-secondary vs surface cards.
+   ========================================================================= */
+html[data-theme="dark"]:not([data-premium-theme]) .mat-workspace-root {
+  --ez-color-border-line: transparent;
+  --ez-color-border-strong: transparent;
+  --ez-hue-blue-border: transparent;
+  --ez-hue-green-border: transparent;
+  --ez-hue-green-border-deep: transparent;
+  --ez-hue-amber-border: transparent;
+  --ez-hue-purple-border: transparent;
+  --ez-hue-rose-border: transparent;
+}

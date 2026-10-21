@@ -14,6 +14,7 @@ interface DashboardViewSwitcherProps {
   onOpenSubscription: () => void;
   onResetData?: () => void;
   onOpenOnboarding?: () => void;
+  activities?: Array<{ text: string; time: string; type: string }>;
 }
 
 const STORAGE_KEY = 'ezrab_dashboard_view';

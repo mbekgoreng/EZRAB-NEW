@@ -71,12 +71,17 @@
   --ez-pastel-mint: #e2f4d8;
   --ez-pastel-peach: #ffe9d6;
   --ez-pastel-sky: #e3eefb;
+  --ez-pastel-lilac: #ece7fb;
 
   /* ---- Stat card fills — pekat (user 2026-10-20), identik di light & dark ---- */
   --ez-stat-cream: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
   --ez-stat-mint: linear-gradient(135deg, #4ADE80 0%, #22C55E 100%);
   --ez-stat-peach: linear-gradient(135deg, #FB923C 0%, #F97316 100%);
   --ez-stat-sky: linear-gradient(135deg, #60A5FA 0%, #2563EB 100%);
+  --ez-stat-cyan: linear-gradient(135deg, #22D3EE 0%, #0891B2 100%);
+  --ez-stat-violet: linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%);
+  --ez-stat-rose: linear-gradient(135deg, #FB7185 0%, #E11D48 100%);
+  --ez-stat-indigo: linear-gradient(135deg, #818CF8 0%, #4F46E5 100%);
 
   /* ---- Hue tints: badges, soft fills, selected states ----
      Light values are pixel-identical to the hexes previously hardcoded in
@@ -218,10 +223,15 @@
   --ez-pastel-mint: rgba(226, 244, 216, 0.17);
   --ez-pastel-peach: rgba(255, 233, 214, 0.17);
   --ez-pastel-sky: rgba(227, 238, 251, 0.18);
+  --ez-pastel-lilac: rgba(196, 181, 253, 0.18);
   --ez-stat-cream: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
   --ez-stat-mint: linear-gradient(135deg, #4ADE80 0%, #22C55E 100%);
   --ez-stat-peach: linear-gradient(135deg, #FB923C 0%, #F97316 100%);
   --ez-stat-sky: linear-gradient(135deg, #60A5FA 0%, #2563EB 100%);
+  --ez-stat-cyan: linear-gradient(135deg, #22D3EE 0%, #0891B2 100%);
+  --ez-stat-violet: linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%);
+  --ez-stat-rose: linear-gradient(135deg, #FB7185 0%, #E11D48 100%);
+  --ez-stat-indigo: linear-gradient(135deg, #818CF8 0%, #4F46E5 100%);
   --ez-hue-blue-bg: rgba(96, 165, 250, 0.28);
   --ez-hue-blue-border: rgba(96, 165, 250, 0.38);
   --ez-hue-green-bg: rgba(52, 211, 153, 0.28);
@@ -294,10 +304,6 @@
 [data-theme="dark"] .ez-mini::before {
   background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
 }
-[data-theme="dark"] .ez-stat .ez-stat-label,
-[data-theme="dark"] .ez-stat .ez-stat-sub {
-  color: var(--ez-color-text-secondary);
-}
 
 /* =========================================================================
    Reusable classes — stat cards with prototype's subtle patterns
@@ -338,21 +344,25 @@
 .ez-stat-mint { background: var(--ez-stat-mint); }
 .ez-stat-peach { background: var(--ez-stat-peach); }
 .ez-stat-sky { background: var(--ez-stat-sky); }
+.ez-stat-cyan { background: var(--ez-stat-cyan); }
+.ez-stat-violet { background: var(--ez-stat-violet); }
+.ez-stat-rose { background: var(--ez-stat-rose); }
+.ez-stat-indigo { background: var(--ez-stat-indigo); }
 .ez-stat .ez-stat-label {
   font-size: 12px;
   font-weight: 600;
-  color: #6b6b64;
+  color: rgba(255, 255, 255, 0.88);
   margin-bottom: 8px;
 }
 .ez-stat .ez-stat-value {
   font-size: 32px;
   font-weight: 800;
   letter-spacing: -1px;
-  color: var(--ez-color-text-primary);
+  color: #FFFFFF;
 }
 .ez-stat .ez-stat-sub {
   font-size: 12px;
-  color: #6b6b64;
+  color: rgba(255, 255, 255, 0.8);
   margin-top: 6px;
 }
 

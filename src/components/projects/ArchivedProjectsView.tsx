@@ -97,53 +97,53 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
       >
         {/* KPI 1: Total Proyek Diarsipkan */}
         <div className="ezdb-anim ez-stat ez-stat-sky" style={{ animation: 'ezdb-rise 0.6s 0.05s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.88)', marginBottom: '8px' }}>
             {t('proj.arch.kpi1_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {archivedProjects.length}{' '}
-            <span style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.arch.kpi1_u')}</span>
+            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.arch.kpi1_u')}</span>
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', marginTop: '6px' }}>
             {t('proj.arch.kpi1_s')}
           </div>
         </div>
 
         {/* KPI 2: Total Nilai Historis */}
         <div className="ezdb-anim ez-stat ez-stat-cream" style={{ animation: 'ezdb-rise 0.6s 0.12s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.88)', marginBottom: '8px' }}>
             {t('proj.arch.kpi2_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {totalArchivedValue === 0 ? 'Rp 0' : formatRupiah(totalArchivedValue)}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', marginTop: '6px' }}>
             {t('proj.arch.kpi2_s')}
           </div>
         </div>
 
         {/* KPI 3: Benchmark Database Referensi */}
-        <div className="ezdb-anim ez-stat ez-stat-mint" style={{ animation: 'ezdb-rise 0.6s 0.19s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
+        <div className="ezdb-anim ez-stat ez-stat-indigo" style={{ animation: 'ezdb-rise 0.6s 0.19s both' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.88)', marginBottom: '8px' }}>
             {t('proj.arch.kpi3_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-pill-ok-text)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {t('proj.arch.kpi3_v')}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', marginTop: '6px' }}>
             {t('proj.arch.kpi3_s')}
           </div>
         </div>
 
         {/* KPI 4: Status Keamanan Vault */}
         <div className="ezdb-anim ez-stat ez-stat-peach" style={{ animation: 'ezdb-rise 0.6s 0.26s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255,255,255,0.88)', marginBottom: '8px' }}>
             {t('proj.arch.kpi4_t')}
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {t('proj.arch.kpi4_v')}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', marginTop: '6px' }}>
             {t('proj.arch.kpi4_s')}
           </div>
         </div>

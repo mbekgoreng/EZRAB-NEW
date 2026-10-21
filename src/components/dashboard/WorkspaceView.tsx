@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, Suspense, lazy } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, Suspense, lazy } from 'react';
 import {
   LayoutDashboard,
   FolderGit2,
@@ -111,6 +111,23 @@ interface WorkspaceViewProps {
   route: WorkspaceRoute;
   onNavigateMenu: (menu: string, projectId?: string | null) => void;
 }
+
+
+/** Waktu relatif Bahasa Indonesia untuk feed aktivitas (dari timestamp nyata). */
+const formatRelativeId = (iso: string): string => {
+  const then = new Date(iso).getTime();
+  if (isNaN(then)) return '';
+  const diffMs = Date.now() - then;
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return 'Baru saja';
+  if (minutes < 60) return `${minutes} menit lalu`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} jam lalu`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Kemarin';
+  if (days < 30) return `${days} hari lalu`;
+  return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+};
 
 export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, route, onNavigateMenu }) => {
   // Navigation active tab (Default: 'dashboard' as requested)
@@ -247,6 +264,40 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
 
   // Latest project for the showcase card
   const latestProject = currentProject || (projects.length > 0 ? projects[0] : null);
+
+  // Feed "Aktivitas Terbaru" — derivasi jujur dari timestamp proyek nyata
+  // (createdAt / updatedAt / archivedAt). Aplikasi belum memiliki event log
+  // per-aksi; log lama di localStorage hanya terisi saat proyek dibuat dan
+  // waktunya membeku di 'Baru saja', jadi feed diturunkan dari data proyek
+  // itu sendiri: dibuat / diperbarui / selesai / diarsipkan.
+  const derivedActivities = useMemo(() => {
+    type Ev = { text: string; time: string; type: string; ts: number };
+    const events: Ev[] = [];
+    for (const p of projects) {
+      const createdTs = p.createdAt ? Date.parse(p.createdAt) : NaN;
+      if (!isNaN(createdTs)) {
+        events.push({ text: `Proyek "${p.name}" dibuat`, time: formatRelativeId(p.createdAt), type: 'create', ts: createdTs });
+      }
+      const updatedTs = p.updatedAt ? Date.parse(p.updatedAt) : NaN;
+      if (!isNaN(updatedTs) && p.updatedAt !== p.createdAt) {
+        const isDone = p.status === 'completed' || p.status === 'approved' || p.status === 'COMPLETED';
+        events.push({
+          text: isDone ? `Proyek "${p.name}" selesai` : `Proyek "${p.name}" diperbarui`,
+          time: formatRelativeId(p.updatedAt as string),
+          type: isDone ? 'done' : 'update',
+          ts: updatedTs,
+        });
+      }
+      const archivedTs = p.archivedAt ? Date.parse(p.archivedAt) : NaN;
+      if (!isNaN(archivedTs) && (p.isArchived || p.status === 'archived')) {
+        events.push({ text: `Proyek "${p.name}" diarsipkan`, time: formatRelativeId(p.archivedAt as string), type: 'archive', ts: archivedTs });
+      }
+    }
+    return events
+      .sort((a, b) => b.ts - a.ts)
+      .slice(0, 8)
+      .map(({ text, time, type }) => ({ text, time, type }));
+  }, [projects]);
 
   // Total RAB from real items
   const totalRabDetail = projectRabItems.reduce((acc, item) => acc + (item.amount || 0), 0);
@@ -433,6 +484,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           <main style={{ padding: '20px 24px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>
             <ProjectsView
               projects={projects}
+              activities={derivedActivities}
               initialFilter={projectFilter}
               onFilterChange={(f) => setProjectFilter(f)}
               onCreateProject={() => setCreateModalOpen(true)}
@@ -729,6 +781,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           <main data-tour="dashboard" style={{ padding: isNarrowMobile ? '16px 14px' : '24px 28px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <DashboardViewSwitcher
               projects={projects}
+              activities={derivedActivities}
               onCreateProject={() => setCreateModalOpen(true)}
               onSelectProject={(projectId, menu = 'manajemen-proyek') => {
                 setCurrentProjectId(projectId);

@@ -322,6 +322,8 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
     <div
       style={{
         maxWidth: '1600px',
+        width: '100%',
+        boxSizing: 'border-box',
         margin: '0 auto',
         padding: '16px 20px',
         fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
@@ -335,7 +337,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
         style={{
           background: 'var(--ez-color-surface)',
           borderRadius: 'var(--ez-radius-card)',
-          border: '1px solid #EEF1F6',
+          border: '1px solid var(--ez-color-border)',
           padding: '18px 24px',
           display: 'flex',
           alignItems: 'center',
@@ -453,7 +455,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
         style={{
           background: 'var(--ez-color-surface)',
           borderRadius: 'var(--ez-radius-card)',
-          border: '1px solid #EEF1F6',
+          border: '1px solid var(--ez-color-border)',
           padding: '10px 16px',
           display: 'flex',
           alignItems: 'center',
@@ -504,7 +506,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
         </div>
 
         {/* Global Universal Detail Level Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Tingkat Detail:
           </span>
@@ -540,7 +542,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
         </div>
 
         {/* Source Filter & Sort Dropdown */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             {[
               { id: 'ALL', label: 'Semua' },
@@ -591,16 +593,23 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
       </div>
 
       {/* 3. TWO-COLUMN LAYOUT: SIDEBAR (240px) + CONTENT GRID */}
-      <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+      <style>{`
+        @media (max-width: 900px) {
+          .tpl-rab-layout { flex-direction: column !important; }
+          .tpl-rab-sidebar { width: 100% !important; box-sizing: border-box; }
+        }
+      `}</style>
+      <div className="tpl-rab-layout" style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', width: '100%', boxSizing: 'border-box' }}>
         
         {/* Left Category Sidebar (240px) */}
         <div
+          className="tpl-rab-sidebar"
           style={{
             width: '240px',
             flexShrink: 0,
             background: 'var(--ez-color-surface)',
             borderRadius: 'var(--ez-radius-card)',
-            border: '1px solid #EEF1F6',
+            border: '1px solid var(--ez-color-border)',
             padding: '12px',
             display: 'flex',
             flexDirection: 'column',
@@ -692,7 +701,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
         </div>
 
         {/* Right Content Area: Template Grid */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
           
           {/* Active Category Heading & Stats */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
@@ -717,9 +726,8 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                overflowX: 'auto',
-                padding: '4px 2px 8px',
-                scrollbarWidth: 'thin'
+                flexWrap: 'wrap',
+                padding: '4px 2px 8px'
               }}
             >
               <button
@@ -799,7 +807,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
               style={{
                 background: 'var(--ez-color-surface)',
                 borderRadius: 'var(--ez-radius-card)',
-                border: '1px solid #EEF1F6',
+                border: '1px solid var(--ez-color-border)',
                 padding: '48px 24px',
                 textAlign: 'center'
               }}
@@ -831,7 +839,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(min(290px, 100%), 1fr))',
                 gap: '12px'
               }}
             >
