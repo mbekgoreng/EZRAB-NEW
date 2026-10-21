@@ -1071,6 +1071,36 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                 </div>
               </div>
 
+              {/* Katalog 180 (Fase F.8): REVIEW SUMBER HARGA sebelum terapkan.
+                  Angka dari priceSummary generate nyata — bukan label kosmetik. */}
+              {previewResult?.priceSummary && (
+                <div style={{ background: 'var(--ez-color-surface)', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11.5px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-color-text-body)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Review Sumber Harga
+                  </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
+                    <span>Harga Resmi AHSP 2026:</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-hue-green-text)' }}>{previewResult.priceSummary.officialCount} item</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
+                    <span>Harga Referensi:</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{previewResult.priceSummary.referenceCount + previewResult.priceSummary.manualCount} item</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
+                    <span>Belum Terpetakan ke AHSP:</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{previewResult.priceSummary.mappingFailedCount} item</span>
+                  </div>
+                  {previewResult.priceSummary.unpricedCount > 0 && (
+                    <div style={{ background: 'var(--ez-hue-amber-bg-deep)', border: '1px solid var(--ez-hue-amber-border)', borderRadius: '6px', padding: '6px 8px', color: 'var(--ez-hue-amber-text-dark)', fontWeight: 650 }}>
+                      {previewResult.priceSummary.unpricedCount} item belum memiliki harga — total di atas bersifat PARSIAL. Item tanpa harga diterapkan dengan harga kosong (bukan Rp0) agar dapat dilengkapi manual.
+                    </div>
+                  )}
+                  <div style={{ color: 'var(--ez-color-text-muted)', fontSize: '11px', lineHeight: 1.5 }}>
+                    Harga resmi adalah DHSP yang sudah termasuk overhead &amp; profit (SE DJBK No. 47/SE/Dk/2026). Pengaturan Estimasi Global (overhead/profit/PPN/waste) tidak diterapkan otomatis oleh alur template ini — jangan menambahkan markup yang sama dua kali pada item berharga resmi.
+                  </div>
+                </div>
+              )}
+
               {/* WORK CATEGORY SUMMARY BREAKDOWN */}
               {previewResult && (
                 <div style={{ background: 'var(--ez-color-surface)', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)', overflow: 'hidden' }}>

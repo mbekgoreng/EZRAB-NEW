@@ -19,15 +19,32 @@ import {
   ConstructionComponentTemplate,
   GeneratedTemplateRabResult,
   DetailLevel,
-  TraceabilityRecord
+  TraceabilityRecord,
+  AhspMappingStatus,
+  TemplatePriceSummary,
+  TemplateMappingReadiness
 } from '../types/rabTemplate';
 import { RabItem } from '../types';
 import { SafeDecimalEngine } from '../engine/safeDecimalEngine';
 import { MaterialLibraryService } from './materialLibraryService';
+import { officialAhspRepository } from '../data/nationalCostDatabase/officialAhspRepository';
+import { priceResolver2026 } from '../data/priceDatabase2026/resolver';
+import { unitsCompatible } from '../data/priceDatabase2026/normalize';
+import { CATALOG_180_TEMPLATES } from '../data/templateCatalog180';
 
 const STORAGE_KEY_CUSTOM_TEMPLATES = 'ezrab_custom_rab_templates';
 
-// Verified PUPR AHSP Baseline Price Reference
+/**
+ * Tabel harga historis template (era AHSP 2022 / kode non-kanonis).
+ *
+ * KOREKSI KEJUJURAN (Katalog 180, Fase F): nama lama "Verified PUPR AHSP"
+ * TIDAK terbukti — audit 2026-10-22 menunjukkan 0 dari 78 kode unik template
+ * legacy ditemukan di katalog AHSP 2026 kanonis (officialAhspRepository)
+ * maupun peta DHSP resmi. Tabel ini dipertahankan hanya sebagai arsip
+ * dokumentasi nilai referensi lama dan TIDAK LAGI dipakai sebagai sumber
+ * harga saat generate. Harga komponen template diperlakukan sebagai
+ * REFERENCE_PRICE; harga resmi hanya datang dari resolver resmi.
+ */
 const VERIFIED_AHSP_PRICES: Record<string, { code: string; name: string; unit: string; price: number }> = {
   // 01. Persiapan
   'A.2.2.1.1': { code: 'A.2.2.1.1', name: 'Pembersihan dan Perataan Lapangan Kerja Proyek', unit: 'm2', price: 18500 },
@@ -114,6 +131,20 @@ export class RabTemplateService {
 
   private constructor() {
     this.seedOfficialTemplates();
+    this.registerCatalog180Templates();
+  }
+
+  /**
+   * Katalog 180 (Fase B): daftarkan 128 template sektor baru dari modul data
+   * `src/data/templateCatalog180`. ID yang sudah ada TIDAK pernah ditimpa —
+   * identitas 52 template legacy terlindungi.
+   */
+  private registerCatalog180Templates(): void {
+    for (const tpl of CATALOG_180_TEMPLATES) {
+      if (!this.officialTemplates.has(tpl.id)) {
+        this.officialTemplates.set(tpl.id, tpl);
+      }
+    }
   }
 
   public static getInstance(): RabTemplateService {
@@ -1461,7 +1492,13 @@ export class RabTemplateService {
   ): GeneratedTemplateRabResult {
     // 1. Merge default parameter values with user parameters
     const evaluatedParams: Record<string, any> = {};
+    // Fase E: parameter wajib tanpa nilai pengguna DAN tanpa default dinyatakan
+    // hilang secara eksplisit — tidak diisi dimensi karangan.
+    const missingRequiredParams: string[] = [];
     for (const p of template.parameters) {
+      if (p.required && userParams[p.key] === undefined && p.defaultValue === undefined) {
+        missingRequiredParams.push(p.key);
+      }
       const val = userParams[p.key] !== undefined && userParams[p.key] !== ''
         ? userParams[p.key]
         : (p.defaultValue !== undefined ? p.defaultValue : 0);
@@ -1510,12 +1547,48 @@ export class RabTemplateService {
     const categorySummaries: Record<string, number> = {};
     const traceability: TraceabilityRecord[] = [];
 
+    // Fase F.8: akumulasi ringkasan kejujuran harga.
+    const priceSummary: TemplatePriceSummary = {
+      totalItems: finalItems.length,
+      officialCount: 0,
+      referenceCount: 0,
+      manualCount: 0,
+      unpricedCount: 0,
+      mappingFailedCount: 0,
+      totalStatus: 'COMPLETE'
+    };
+    const isUserTemplate = template.metadata.source === 'USER_TEMPLATE';
+
     for (const item of finalItems) {
       // Aturan Phase 2J: null price → null amount (audit trail, bukan 0).
       const amt = item.unitPrice == null ? null : SafeDecimalEngine.safeMultiply(item.volume, item.unitPrice, 0);
       totalEstimate = SafeDecimalEngine.safeAdd(totalEstimate, amt ?? 0);
       const cat = item.category || '01. PEKERJAAN PERSIAPAN';
       categorySummaries[cat] = SafeDecimalEngine.safeAdd(categorySummaries[cat] || 0, amt);
+
+      // Label sumber harga HARUS berasal dari resolusi nyata di item —
+      // bukan dari sekadar adanya ahspCode (perilaku lama yang menyesatkan).
+      let tracePriceSource: string;
+      if (item.priceSourceKind === 'OFFICIAL_AHSP') {
+        tracePriceSource = 'OFFICIAL_AHSP';
+        priceSummary.officialCount++;
+      } else if (item.unitPrice == null) {
+        tracePriceSource = 'UNPRICED';
+        priceSummary.unpricedCount++;
+      } else if (isUserTemplate) {
+        tracePriceSource = 'REFERENCE_PRICE';
+        priceSummary.manualCount++;
+      } else {
+        tracePriceSource = 'REFERENCE_PRICE';
+        priceSummary.referenceCount++;
+      }
+      if (
+        item.ahspMappingStatus === 'NEEDS_MAPPING' ||
+        item.ahspMappingStatus === 'UNIT_MISMATCH' ||
+        item.ahspMappingStatus === 'MAPPED_UNPRICED'
+      ) {
+        priceSummary.mappingFailedCount++;
+      }
 
       traceability.push({
         itemId: item.id,
@@ -1528,9 +1601,13 @@ export class RabTemplateService {
         ahspCode: item.ahspCode,
         unitPrice: item.unitPrice,
         amount: amt,
-        priceSource: item.ahspCode ? 'OFFICIAL_AHSP' : 'REFERENCE_PRICE'
+        priceSource: tracePriceSource,
+        mappingStatus: item.ahspMappingStatus,
+        validationStatus: item.notes && item.notes.includes('Volume: INVALID') ? 'INVALID' : 'VALID',
+        priceSourceName: item.priceSourceName ?? null
       });
     }
+    priceSummary.totalStatus = priceSummary.unpricedCount > 0 ? 'PARTIAL' : 'COMPLETE';
 
     return {
       templateId: template.id,
@@ -1544,7 +1621,10 @@ export class RabTemplateService {
       itemCount: finalItems.length,
       categorySummaries,
       traceability,
-      generatedAt: new Date().toISOString()
+      generatedAt: new Date().toISOString(),
+      priceSummary,
+      generationStatus: missingRequiredParams.length > 0 ? 'INCOMPLETE_MISSING_PARAMS' : 'COMPLETE',
+      missingRequiredParams
     };
   }
 
@@ -1625,6 +1705,7 @@ export class RabTemplateService {
       // 4. DETERMINISTIC VOLUME EVALUATION
       let volume = 1.0;
       let formulaUsed = comp.calculationRule;
+      let volumeValid = true;
 
       try {
         if (!comp.calculationRule || comp.calculationRule.trim() === '') {
@@ -1636,12 +1717,26 @@ export class RabTemplateService {
         volume = 1.0;
       }
 
-      // Safe rounding to 2 decimal places
-      volume = SafeDecimalEngine.safeRound(Math.max(0.01, volume), 2);
+      // Fase E guard: NaN/Infinity/negatif tidak pernah lolos sebagai volume.
+      // Nilai tak valid ditandai INVALID dan volumenya dinolkan secara terlihat
+      // (bukan diklem diam-diam menjadi angka karangan).
+      if (!Number.isFinite(volume) || volume < 0) {
+        volumeValid = false;
+        volume = 0;
+      } else {
+        // Safe rounding to 2 decimal places
+        volume = SafeDecimalEngine.safeRound(Math.max(0.01, volume), 2);
+      }
 
-      // 5. HONEST AHSP & MATERIAL PRICING RESOLUTION
-      let ahspCode = comp.ahspCode || '';
-      let unitPrice = comp.unitPrice || 0;
+      // 5. HONEST AHSP & MATERIAL PRICING RESOLUTION (Katalog 180, Fase F)
+      // Urutan resolusi yang jujur:
+      //   a) Resolver resmi AHSP 2026 — hanya bila kode ada di katalog kanonis,
+      //      satuan lolos unit-gate, dan komposisi resolver FULL.
+      //   b) Harga material tertaut (ekosistem material) — REFERENCE_PRICE.
+      //   c) Harga bawaan komponen template — REFERENCE_PRICE (tidak pernah
+      //      dilabeli resmi; termasuk seluruh harga seed legacy).
+      //   d) Tidak ada sumber → unitPrice null (BUKAN 0, BUKAN angka fallback).
+      const ahspCode = comp.ahspCode || '';
       let materialName = '';
 
       // Check Material Linkage
@@ -1656,28 +1751,23 @@ export class RabTemplateService {
         targetMaterialId = projectSpec.itemOverrides[comp.id].materialId;
       }
 
+      let materialReferencePrice: number | null = null;
       if (targetMaterialId) {
         const mat = materialService.getMaterialById(targetMaterialId);
         if (mat) {
           materialName = mat.name;
-          // If component price is not explicitly set, resolve from material ecosystem
           if (!comp.unitPrice) {
             const matPriceRes = materialService.getMaterialPrice(targetMaterialId);
             if (matPriceRes.unitPrice > 0) {
-              unitPrice = matPriceRes.unitPrice;
+              materialReferencePrice = matPriceRes.unitPrice;
             }
           }
         }
       }
 
-      if (ahspCode && VERIFIED_AHSP_PRICES[ahspCode]) {
-        const ref = VERIFIED_AHSP_PRICES[ahspCode];
-        unitPrice = unitPrice || ref.price;
-      } else if (!unitPrice) {
-        unitPrice = 150000; // Baseline fallback without fake AHSP
-      }
-
-      const total = SafeDecimalEngine.safeMultiply(volume, unitPrice, 0);
+      const resolution = this.resolveTemplateComponentPrice(comp, materialReferencePrice);
+      const unitPrice = resolution.unitPrice;
+      const total = unitPrice == null ? null : SafeDecimalEngine.safeMultiply(volume, unitPrice, 0);
 
       rabItems.push({
         id: `rab-${Date.now()}-${itemIndex}`,
@@ -1689,20 +1779,159 @@ export class RabTemplateService {
         description: comp.name,
         volume,
         unit: comp.unit,
-        materialPrice: Math.round(unitPrice * 0.7),
-        laborPrice: Math.round(unitPrice * 0.25),
-        equipmentPrice: Math.round(unitPrice * 0.05),
+        materialPrice: unitPrice == null ? undefined : (resolution.splits ? Math.round(resolution.splits.material) : Math.round(unitPrice * 0.7)),
+        laborPrice: unitPrice == null ? undefined : (resolution.splits ? Math.round(resolution.splits.labor) : Math.round(unitPrice * 0.25)),
+        equipmentPrice: unitPrice == null ? undefined : (resolution.splits ? Math.round(resolution.splits.equipment) : Math.round(unitPrice * 0.05)),
         unitPrice,
         amount: total,
         totalPrice: total,
+        priceStatus: unitPrice == null ? 'PRICE_UNRESOLVED' : 'PRICE_RESOLVED',
+        priceSourceKind: resolution.kind,
+        priceSourceLabel: resolution.label,
+        priceSourceExplanation: resolution.explanation,
+        priceSourceName: resolution.sourceName,
+        ahspMappingStatus: resolution.mappingStatus,
         ahspCode: ahspCode || undefined,
-        notes: `Rule: ${formulaUsed} | Detail: ${compLevel}${materialName ? ` | Material: ${materialName}` : ''}`
+        notes: `Rule: ${formulaUsed} | Detail: ${compLevel}${materialName ? ` | Material: ${materialName}` : ''} | Harga: ${resolution.label}${volumeValid ? '' : ' | Volume: INVALID (formula menghasilkan nilai tak valid)'}`
       });
 
       itemIndex++;
     }
 
     return rabItems;
+  }
+
+  /**
+   * Katalog 180 (Fase F) — Resolusi harga satu komponen template.
+   *
+   * Gerbang resmi (satu-satunya jalan menuju label OFFICIAL_AHSP):
+   *   1. Kode harus ada di katalog AHSP 2026 kanonis (officialAhspRepository,
+   *      alias-aware, quarantine-aware).
+   *   2. Satuan komponen harus kompatibel dengan satuan resmi (unit-gate
+   *      `unitsCompatible` — fail-safe, tidak pernah dikalikan diam-diam).
+   *   3. priceResolver2026.resolveAhspUnitPrice harus menghasilkan komposisi
+   *      FULL dengan hspPrice > 0. Harga resmi adalah harga DHSP (sudah
+   *      termasuk overhead & profit menurut SE DJBK No. 47/SE/Dk/2026) —
+   *      lihat catatan Fase G di laporan: JANGAN ditambah overhead/profit
+   *      global lagi untuk item OFFICIAL_AHSP.
+   * Gagal di gerbang mana pun → harga referensi komponen (REFERENCE_PRICE)
+   * atau null. Tidak ada fallback angka karangan.
+   */
+  private resolveTemplateComponentPrice(
+    comp: ConstructionComponentTemplate,
+    materialReferencePrice: number | null
+  ): {
+    unitPrice: number | null;
+    kind: 'OFFICIAL_AHSP' | 'MARKET_REFERENCE' | 'UNRESOLVED';
+    label: string;
+    explanation: string;
+    sourceName: string | null;
+    mappingStatus: AhspMappingStatus;
+    splits?: { labor: number; material: number; equipment: number };
+  } {
+    let mappingStatus: AhspMappingStatus = comp.ahspCode ? 'NEEDS_MAPPING' : 'NOT_APPLICABLE';
+
+    if (comp.ahspCode) {
+      try {
+        const canonical = officialAhspRepository.getOfficialAhsp(comp.ahspCode);
+        if (canonical) {
+          const unitOk =
+            !!canonical.unit && !!comp.unit && unitsCompatible(canonical.unit, comp.unit);
+          if (!unitOk) {
+            mappingStatus = 'UNIT_MISMATCH';
+          } else {
+            const composition = priceResolver2026.resolveAhspUnitPrice(canonical);
+            if (composition.pricingStatus === 'FULL' && composition.hspPrice != null && composition.hspPrice > 0) {
+              return {
+                unitPrice: composition.hspPrice,
+                kind: 'OFFICIAL_AHSP',
+                label: 'Harga Resmi AHSP 2026',
+                explanation: `Kode ${comp.ahspCode} terverifikasi di katalog AHSP 2026 kanonis; komposisi resolver FULL (${composition.resolvedComponents}/${composition.totalComponents} komponen). Harga DHSP termasuk overhead & profit (SE DJBK No. 47/SE/Dk/2026).`,
+                sourceName: composition.provenanceSource || 'SE DJBK No. 47/SE/Dk/2026',
+                mappingStatus: 'VERIFIED',
+                splits: {
+                  labor: composition.labor.subtotalPerUnit,
+                  material: composition.material.subtotalPerUnit,
+                  equipment: composition.equipment.subtotalPerUnit
+                }
+              };
+            }
+            mappingStatus = 'MAPPED_UNPRICED';
+          }
+        }
+      } catch {
+        // Resolver/katalog gagal dibaca → perlakukan sebagai belum terpetakan.
+        mappingStatus = comp.ahspCode ? 'NEEDS_MAPPING' : 'NOT_APPLICABLE';
+      }
+    }
+
+    if (materialReferencePrice != null && materialReferencePrice > 0) {
+      return {
+        unitPrice: materialReferencePrice,
+        kind: 'MARKET_REFERENCE',
+        label: 'Harga Referensi Material',
+        explanation: 'Harga dari ekosistem material tertaut komponen — harga referensi, bukan harga resmi AHSP.',
+        sourceName: null,
+        mappingStatus
+      };
+    }
+
+    if (comp.unitPrice != null && Number.isFinite(comp.unitPrice) && comp.unitPrice > 0) {
+      return {
+        unitPrice: comp.unitPrice,
+        kind: 'MARKET_REFERENCE',
+        label: 'Harga Referensi',
+        explanation: comp.ahspCode
+          ? `Kode ${comp.ahspCode} belum terpetakan ke katalog AHSP 2026 kanonis (status: ${mappingStatus}); harga yang dipakai adalah harga referensi template, BUKAN harga resmi AHSP.`
+          : 'Komponen tanpa kode AHSP; harga referensi template, bukan harga resmi AHSP.',
+        sourceName: null,
+        mappingStatus
+      };
+    }
+
+    return {
+      unitPrice: null,
+      kind: 'UNRESOLVED',
+      label: 'Harga Belum Tersedia',
+      explanation: comp.ahspCode
+        ? `Kode ${comp.ahspCode} berstatus ${mappingStatus} dan komponen tidak memiliki harga referensi — harga dibiarkan kosong (null), bukan Rp0.`
+        : 'Komponen tidak memiliki kode AHSP maupun harga referensi — harga dibiarkan kosong (null), bukan Rp0.',
+      sourceName: null,
+      mappingStatus
+    };
+  }
+
+  /**
+   * Katalog 180 (Fase H) — Kesiapan pemetaan AHSP satu template, dihitung dari
+   * katalog kanonis (lookup kode + unit-gate saja; tanpa komposisi harga,
+   * sehingga murah untuk dirender di katalog). "Terverifikasi" di sini berarti
+   * kode ditemukan di katalog AHSP 2026 kanonis dan satuannya kompatibel —
+   * status harga final tetap ditentukan saat generate.
+   */
+  public getTemplateMappingReadiness(template: RabTemplate): TemplateMappingReadiness {
+    const components = template.components || [];
+    let verifiedCodeCount = 0;
+    let needsMappingCount = 0;
+    let noCodeCount = 0;
+    for (const comp of components) {
+      if (!comp.ahspCode) {
+        noCodeCount++;
+        continue;
+      }
+      const canonical = officialAhspRepository.getOfficialAhsp(comp.ahspCode);
+      if (canonical && canonical.unit && comp.unit && unitsCompatible(canonical.unit, comp.unit)) {
+        verifiedCodeCount++;
+      } else {
+        needsMappingCount++;
+      }
+    }
+    return {
+      totalComponents: components.length,
+      verifiedCodeCount,
+      needsMappingCount,
+      noCodeCount,
+      readinessPercent: components.length === 0 ? 0 : Math.round((verifiedCodeCount / components.length) * 100)
+    };
   }
 
   /**

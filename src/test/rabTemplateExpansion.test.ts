@@ -350,7 +350,14 @@ async function runUniversalTemplateRabTests() {
   assert.ok(traceRigid, 'Trace for rigid concrete must exist');
   assert.strictEqual(traceRigid.volume, 1200);
   assert.strictEqual(traceRigid.ahspCode, 'BM.7.1.1');
-  assert.strictEqual(traceRigid.priceSource, 'OFFICIAL_AHSP');
+  // KOREKSI Katalog 180 (Fase F — integritas harga): ekspektasi lama
+  // 'OFFICIAL_AHSP' mengkodekan perilaku yang tidak jujur — label resmi hanya
+  // karena komponen memiliki ahspCode, padahal kode BM.7.1.1 TIDAK ada di
+  // katalog AHSP 2026 kanonis (0 dari 78 pasangan kode+satuan legacy ditemukan
+  // di sana; lihat docs/audit/TEMPLATE_CATALOG_180_REPORT.md). Harga seed
+  // legacy adalah harga REFERENSI dan sekarang dilabeli dengan jujur.
+  // Asersi volume, kode, dan seluruh total pada suite ini TIDAK berubah.
+  assert.strictEqual(traceRigid.priceSource, 'REFERENCE_PRICE');
   console.log(`  ✓ PASSED: Traceability verified: Item "${traceRigid.description}" -> ${traceRigid.volume} ${traceRigid.unit} | AHSP ${traceRigid.ahspCode} | Price Source: ${traceRigid.priceSource}`);
 
   // -------------------------------------------------------------------------

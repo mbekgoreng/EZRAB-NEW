@@ -30,7 +30,73 @@ export type TemplateCategory =
   | 'LANDSCAPE_SITE'
   | 'MEP_SYSTEM'
   | 'RENOVASI_MAINTENANCE'
-  | 'TEMPLATE_SAYA';
+  | 'TEMPLATE_SAYA'
+  // --- Katalog 180 (Fase B): kategori sektor baru, ditambahkan secara aditif ---
+  | 'PONDASI_GEOTEKNIK'
+  | 'JEMBATAN_STRUKTUR'
+  | 'DRAINASE_SANITASI'
+  | 'PEKERJAAN_TANAH'
+  | 'STRUKTUR_BETON_BAJA'
+  | 'FINISHING_INTERIOR'
+  | 'ATAP_WATERPROOFING'
+  | 'PERTANIAN_PERKEBUNAN'
+  | 'PELABUHAN_PESISIR'
+  | 'FASILITAS_OLAHRAGA'
+  | 'DEMOLISI_REKONSTRUKSI';
+
+/**
+ * Status pemetaan AHSP sebuah komponen terhadap katalog AHSP 2026 kanonis
+ * (officialAhspRepository). Dihitung pada saat generate — bukan klaim statis:
+ * - VERIFIED        : kode ada di katalog kanonis, satuan lolos unit-gate, dan
+ *                     resolver resmi menghasilkan komposisi FULL.
+ * - MAPPED_UNPRICED : kode ada di katalog kanonis tetapi harga resmi belum
+ *                     dapat dikomposisi penuh (PARTIAL/MISSING).
+ * - UNIT_MISMATCH   : kode ada tetapi satuan komponen tidak kompatibel dengan
+ *                     satuan resmi (fail-safe: harga resmi TIDAK dipakai).
+ * - NEEDS_MAPPING   : kode tidak ditemukan di katalog kanonis AHSP 2026.
+ * - NOT_APPLICABLE  : komponen memang tidak membawa kode AHSP.
+ */
+export type AhspMappingStatus =
+  | 'VERIFIED'
+  | 'MAPPED_UNPRICED'
+  | 'UNIT_MISMATCH'
+  | 'NEEDS_MAPPING'
+  | 'NOT_APPLICABLE';
+
+/** Ringkasan kejujuran harga satu hasil generate (Fase F.8). */
+export interface TemplatePriceSummary {
+  totalItems: number;
+  /** Item berharga dari resolver resmi AHSP 2026 (komposisi FULL + unit-gate lolos). */
+  officialCount: number;
+  /** Item berharga referensi (seed template / material) — BUKAN harga resmi. */
+  referenceCount: number;
+  /** Item berharga dari template kustom pengguna. */
+  manualCount: number;
+  /** Item tanpa harga (unitPrice null — tidak pernah Rp0 karangan). */
+  unpricedCount: number;
+  /** Item berkode AHSP yang gagal gerbang resmi (NEEDS_MAPPING / UNIT_MISMATCH / MAPPED_UNPRICED). */
+  mappingFailedCount: number;
+  /** COMPLETE bila semua item berharga; PARTIAL bila ada item tanpa harga. */
+  totalStatus: 'COMPLETE' | 'PARTIAL';
+}
+
+/** Kesiapan pemetaan AHSP satu template (dihitung dari katalog kanonis, tanpa komposisi harga). */
+export interface TemplateMappingReadiness {
+  totalComponents: number;
+  verifiedCodeCount: number;
+  needsMappingCount: number;
+  noCodeCount: number;
+  /** Persentase komponen yang kodenya terverifikasi kanonis + satuan kompatibel. */
+  readinessPercent: number;
+}
+
+export interface TemplateValidationRule {
+  id: string;
+  description: string;
+  /** Ekspresi kondisi sederhana atas parameter, mis. "road_width >= 3". */
+  expression?: string;
+  severity: 'ERROR' | 'WARNING';
+}
 
 export interface WorkPackage {
   id: string;
@@ -169,6 +235,14 @@ export interface ConstructionComponentTemplate {
   defaultMaterialId?: string; // Default material link
   dependencies?: string[];
   overrides?: UserOverrideRecord[];
+  /**
+   * Katalog 180 (Fase D/F): status pemetaan yang DIDEKLARASIKAN saat authoring.
+   * Status otoritatif selalu dihitung ulang saat generate terhadap katalog
+   * kanonis; deklarasi ini hanya dokumentasi maksud author.
+   */
+  mappingStatus?: AhspMappingStatus;
+  /** Catatan asal harga referensi (wajib jujur bila unitPrice bukan harga resmi). */
+  priceNote?: string;
 }
 
 export interface CalculationRule {
@@ -214,6 +288,15 @@ export interface RabTemplate {
   calculationRules?: CalculationRule[];
   ahspMappings?: AhspMapping[];
   metadata: TemplateMetadata;
+  // --- Katalog 180 (Fase D): skema komprehensif, semuanya opsional/aditif ---
+  /** Asumsi yang melekat pada template (default parameter adalah asumsi, bukan fakta). */
+  assumptions?: string[];
+  /** Pekerjaan yang secara eksplisit TIDAK termasuk dalam lingkup template. */
+  exclusions?: string[];
+  /** Aturan validasi parameter/lingkup yang didokumentasikan untuk template ini. */
+  validationRules?: TemplateValidationRule[];
+  /** Versi skema formula perhitungan (terpisah dari metadata.version konten). */
+  formulaVersion?: string;
   // Optional built-in generator function if available in code
   generateRabItems?: (params: Record<string, any>, detailLevel?: DetailLevel, optionalItemIds?: string[]) => RabItem[];
 }
@@ -232,6 +315,12 @@ export interface TraceabilityRecord {
   unitPrice: number | null;
   amount: number | null;
   priceSource: string;
+  /** Katalog 180 (Fase E/F): status pemetaan AHSP hasil gerbang resmi saat generate. */
+  mappingStatus?: AhspMappingStatus;
+  /** Katalog 180 (Fase E): status validasi volume (INVALID bila formula menghasilkan nilai tak hingga/negatif). */
+  validationStatus?: 'VALID' | 'INVALID';
+  /** Katalog 180 (Fase F): nama/dokumen sumber harga resmi bila OFFICIAL_AHSP. */
+  priceSourceName?: string | null;
 }
 
 export interface GeneratedTemplateRabResult {
@@ -248,4 +337,10 @@ export interface GeneratedTemplateRabResult {
   materialSpecifications?: Record<string, string>;
   traceability?: TraceabilityRecord[];
   generatedAt: string;
+  /** Katalog 180 (Fase F.8): ringkasan sumber harga hasil generate. */
+  priceSummary?: TemplatePriceSummary;
+  /** Katalog 180 (Fase E): INCOMPLETE_MISSING_PARAMS bila parameter wajib tanpa nilai & tanpa default. */
+  generationStatus?: 'COMPLETE' | 'INCOMPLETE_MISSING_PARAMS';
+  /** Katalog 180 (Fase E): kunci parameter wajib yang hilang (tanpa nilai pengguna & tanpa default). */
+  missingRequiredParams?: string[];
 }

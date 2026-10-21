@@ -60,6 +60,17 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
     }
   }, [template, detailLevel, tplService]);
 
+  // Katalog 180 (Fase H): kesiapan pemetaan AHSP dihitung dari katalog
+  // kanonis (lookup kode + unit-gate), bukan label kosmetik.
+  const mappingReadiness = useMemo(() => {
+    if (!template) return null;
+    try {
+      return tplService.getTemplateMappingReadiness(template);
+    } catch {
+      return null;
+    }
+  }, [template, tplService]);
+
   // Group items by category (Work Package)
   const workPackages = useMemo(() => {
     if (!previewData || !previewData.items) return [];
@@ -216,6 +227,70 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Katalog 180 (Fase H): komposisi komponen, kesiapan pemetaan AHSP,
+              kejujuran sumber harga, asumsi & eksklusi template. */}
+          <div
+            style={{
+              background: 'var(--ez-color-surface-secondary)',
+              border: '1px solid var(--ez-color-border-line)',
+              borderRadius: '10px',
+              padding: '12px 14px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px'
+            }}
+          >
+            <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Sumber Harga & Pemetaan AHSP
+            </span>
+            <div style={{ fontSize: '12px', color: 'var(--ez-color-text-body)', lineHeight: 1.55 }}>
+              {(template.components || []).length} komponen pekerjaan
+              {' · '}
+              {(template.components || []).filter(c => !c.isOptional).length} wajib
+              {' · '}
+              {(template.components || []).filter(c => c.isOptional).length} opsional
+              {mappingReadiness && (
+                <>
+                  {' · '}Pemetaan AHSP: <strong>{mappingReadiness.readinessPercent}%</strong> terverifikasi
+                  ({mappingReadiness.verifiedCodeCount} kode, {mappingReadiness.needsMappingCount} belum terpetakan, {mappingReadiness.noCodeCount} tanpa kode)
+                </>
+              )}
+            </div>
+            {previewData?.priceSummary && (
+              <div style={{ fontSize: '12px', color: 'var(--ez-color-text-body)', lineHeight: 1.55 }}>
+                Pada level {detailLevel}: <strong>{previewData.priceSummary.officialCount}</strong> harga resmi AHSP 2026
+                {' · '}<strong>{previewData.priceSummary.referenceCount + previewData.priceSummary.manualCount}</strong> harga referensi
+                {' · '}<strong>{previewData.priceSummary.unpricedCount}</strong> belum ada harga
+                {previewData.priceSummary.totalStatus === 'PARTIAL' && (
+                  <span style={{ color: 'var(--ez-hue-amber-text-dark)', fontWeight: 700 }}> — total bersifat PARSIAL (ada item tanpa harga; tidak dihitung Rp0).</span>
+                )}
+                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                  Harga resmi adalah DHSP yang sudah termasuk overhead &amp; profit (SE DJBK No. 47/SE/Dk/2026) — jangan ditambah markup global lagi untuk item tersebut.
+                </div>
+              </div>
+            )}
+            {((template.assumptions && template.assumptions.length > 0) || (template.exclusions && template.exclusions.length > 0)) && (
+              <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-slate)', lineHeight: 1.5 }}>
+                {template.assumptions && template.assumptions.length > 0 && (
+                  <div>
+                    <strong>Asumsi:</strong>
+                    <ul style={{ margin: '2px 0 4px 0', paddingLeft: '16px' }}>
+                      {template.assumptions.map((a, i) => <li key={i}>{a}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {template.exclusions && template.exclusions.length > 0 && (
+                  <div>
+                    <strong>Tidak termasuk:</strong>
+                    <ul style={{ margin: '2px 0 0 0', paddingLeft: '16px' }}>
+                      {template.exclusions.map((a, i) => <li key={i}>{a}</li>)}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Optional Components Availability Notice */}

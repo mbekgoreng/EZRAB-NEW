@@ -26,10 +26,23 @@ import {
   FileSpreadsheet,
   Trees,
   Cpu,
-  RefreshCw
+  RefreshCw,
+  Anchor,
+  Construction,
+  Droplet,
+  Mountain,
+  Hammer,
+  PaintRoller,
+  Umbrella,
+  Tractor,
+  Ship,
+  Trophy,
+  Wrench,
+  ShieldCheck,
+  ShieldAlert
 } from 'lucide-react';
 import { Project } from '../../types';
-import { RabTemplate, TemplateCategory, DetailLevel } from '../../types/rabTemplate';
+import { RabTemplate, TemplateCategory, DetailLevel, TemplateMappingReadiness } from '../../types/rabTemplate';
 import { RabTemplateService } from '../../services/rabTemplateService';
 import { CustomTemplateBuilderModal } from './CustomTemplateBuilderModal';
 import { ApplyTemplateModal } from './ApplyTemplateModal';
@@ -75,6 +88,18 @@ const CATEGORY_ITEMS: Array<{
   { id: 'LANDSCAPE_SITE', label: 'Landscape & Kawasan', icon: Trees },
   { id: 'MEP_SYSTEM', label: 'MEP & Utilitas Sistem', icon: Cpu },
   { id: 'RENOVASI_MAINTENANCE', label: 'Renovasi & Maintenance', icon: RefreshCw },
+  // Katalog 180 (Fase B/H): 11 kategori sektor baru.
+  { id: 'PONDASI_GEOTEKNIK', label: 'Pondasi & Geoteknik', icon: Anchor },
+  { id: 'JEMBATAN_STRUKTUR', label: 'Jembatan & Struktur Khusus', icon: Construction },
+  { id: 'DRAINASE_SANITASI', label: 'Drainase & Sanitasi', icon: Droplet },
+  { id: 'PEKERJAAN_TANAH', label: 'Pekerjaan Tanah', icon: Mountain },
+  { id: 'STRUKTUR_BETON_BAJA', label: 'Struktur Beton & Baja', icon: Hammer },
+  { id: 'FINISHING_INTERIOR', label: 'Finishing & Interior', icon: PaintRoller },
+  { id: 'ATAP_WATERPROOFING', label: 'Atap & Waterproofing', icon: Umbrella },
+  { id: 'PERTANIAN_PERKEBUNAN', label: 'Pertanian & Perkebunan', icon: Tractor },
+  { id: 'PELABUHAN_PESISIR', label: 'Pelabuhan & Pesisir', icon: Ship },
+  { id: 'FASILITAS_OLAHRAGA', label: 'Fasilitas Olahraga', icon: Trophy },
+  { id: 'DEMOLISI_REKONSTRUKSI', label: 'Demolisi & Rekonstruksi', icon: Wrench },
   { id: 'TEMPLATE_SAYA', label: 'Template Saya', icon: Sparkles }
 ];
 
@@ -314,6 +339,18 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
       case 'LANDSCAPE_SITE': return Trees;
       case 'MEP_SYSTEM': return Cpu;
       case 'RENOVASI_MAINTENANCE': return RefreshCw;
+      // Katalog 180: ikon 11 kategori sektor baru.
+      case 'PONDASI_GEOTEKNIK': return Anchor;
+      case 'JEMBATAN_STRUKTUR': return Construction;
+      case 'DRAINASE_SANITASI': return Droplet;
+      case 'PEKERJAAN_TANAH': return Mountain;
+      case 'STRUKTUR_BETON_BAJA': return Hammer;
+      case 'FINISHING_INTERIOR': return PaintRoller;
+      case 'ATAP_WATERPROOFING': return Umbrella;
+      case 'PERTANIAN_PERKEBUNAN': return Tractor;
+      case 'PELABUHAN_PESISIR': return Ship;
+      case 'FASILITAS_OLAHRAGA': return Trophy;
+      case 'DEMOLISI_REKONSTRUKSI': return Wrench;
       default: return Layers;
     }
   };
@@ -857,13 +894,20 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                   previewRes = tplService.generateRabFromTemplate(tpl, defaultParams, undefined, globalDetailLevel);
                 } catch {}
 
+                // Katalog 180 (Fase H): kesiapan pemetaan AHSP dihitung dari
+                // katalog kanonis (bukan kosmetik) — murah: lookup kode+satuan.
+                let readiness: TemplateMappingReadiness | null = null;
+                try {
+                  if (!isUser) readiness = tplService.getTemplateMappingReadiness(tpl);
+                } catch {}
+
                 return (
                   <div
                     key={tpl.id}
                     style={{
                       background: 'var(--ez-color-surface)',
                       borderRadius: 'var(--ez-radius-card)',
-                      border: isUser ? '1px solid var(--ez-hue-blue-border)' : '1px solid #EEF1F6',
+                      border: isUser ? '1px solid var(--ez-hue-blue-border)' : '1px solid var(--ez-color-border)',
                       padding: '14px 16px',
                       display: 'flex',
                       flexDirection: 'column',
@@ -1045,6 +1089,36 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                               {previewRes.itemCount} Item
                             </span>
                           </div>
+                        </div>
+                      )}
+
+                      {/* Katalog 180 (Fase F/H): strip kejujuran sumber harga —
+                          angka berasal dari priceSummary hasil generate nyata. */}
+                      {previewRes?.priceSummary && !isUser && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '10px' }}>
+                          {previewRes.priceSummary.officialCount > 0 && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text)' }}>
+                              <ShieldCheck size={11} /> {previewRes.priceSummary.officialCount} Harga Resmi AHSP
+                            </span>
+                          )}
+                          {previewRes.priceSummary.referenceCount > 0 && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '10px', fontWeight: 650, padding: '2px 6px', borderRadius: '4px', background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-slate)' }}>
+                              {previewRes.priceSummary.referenceCount} Harga Referensi
+                            </span>
+                          )}
+                          {previewRes.priceSummary.unpricedCount > 0 && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text)' }}>
+                              <ShieldAlert size={11} /> {previewRes.priceSummary.unpricedCount} Belum Ada Harga — Total Parsial
+                            </span>
+                          )}
+                          {readiness && (
+                            <span
+                              title="Komponen yang kodenya ditemukan di katalog AHSP 2026 kanonis dan satuannya kompatibel"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '10px', fontWeight: 650, padding: '2px 6px', borderRadius: '4px', background: 'var(--ez-hue-blue-bg)', color: 'var(--ez-color-primary)' }}
+                            >
+                              Pemetaan AHSP {readiness.readinessPercent}%
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>

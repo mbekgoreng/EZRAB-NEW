@@ -900,6 +900,10 @@ export interface RabItem {
   priceSourceLabel?: string;
   /** Explanation of price provenance (e.g. assumption ID, basis). */
   priceSourceExplanation?: string;
+  /** Katalog 180: status pemetaan AHSP terhadap katalog kanonis 2026 (diisi generator template). */
+  ahspMappingStatus?: 'VERIFIED' | 'MAPPED_UNPRICED' | 'UNIT_MISMATCH' | 'NEEDS_MAPPING' | 'NOT_APPLICABLE';
+  /** Katalog 180: nama/dokumen sumber harga resmi bila priceSourceKind = OFFICIAL_AHSP. */
+  priceSourceName?: string | null;
   /**
    * AHSP identity safety (audit 2026-10-18). Set by rabItemFactory when
    * ahspCode is present. 'UNSAFE' = parsing fragment / artefak / identitas
