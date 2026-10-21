@@ -5,7 +5,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
   UploadCloud, Search, FileText, FileSpreadsheet, FileType, Trash2,
-  Eye, Download, Loader2, AlertTriangle, FolderOpen, X,
+  FileSearch, Download, Loader2, AlertTriangle, FolderOpen, X,
 } from 'lucide-react';
 import { parseDocument } from '../parser';
 import type { DocRecord, DocStatus } from '../view';
@@ -192,7 +192,7 @@ export const DocLibrary: React.FC<{
                   <td>{formatDate(d.updatedAt)}</td>
                   <td>
                     <div className="docai-actions">
-                      <button title={t('ai.doc.lib.title_analyze')} disabled={d.status !== 'ready'} onClick={() => onAnalyze(d)}><Eye size={15} /></button>
+                      <button className="docai-btn-analyze" title={t('ai.doc.lib.title_analyze')} disabled={d.status !== 'ready'} onClick={() => onAnalyze(d)}><FileSearch size={15} /> {t('ai.doc.lib.title_analyze')}</button>
                       <button title={t('ai.doc.lib.title_download')} onClick={() => handleDownload(d)}><Download size={15} /></button>
                       {confirmDelete === d.id ? (
                         <>

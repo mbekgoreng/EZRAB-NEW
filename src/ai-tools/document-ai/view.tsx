@@ -74,6 +74,15 @@ export interface DraftRecord {
   templateName: string;
   title: string;
   content: string;
+  /**
+   * Format isi `content`: 'plain' = teks polos (draf lama), 'html' = rich text
+   * dari editor Word-like. Record lama tidak punya field ini → dibaca 'plain'
+   * dan dikonversi saat dibuka di editor (lihat richText.ts).
+   */
+  contentFormat?: 'plain' | 'html';
+  /** Versi isi sebelumnya (disimpan saat buat ulang AI) agar bisa dipulihkan. */
+  previousContent?: string;
+  previousFormat?: 'plain' | 'html';
   projectId?: string;
   projectName?: string;
   status: 'draft' | 'reviewed';

@@ -51,6 +51,11 @@ export interface DraftRecord {
   templateName: string;
   title: string;
   content: string;
+  /** 'plain' (draf lama) atau 'html' (editor rich text). Tanpa field = 'plain'. */
+  contentFormat?: 'plain' | 'html';
+  /** Versi isi sebelumnya (saat buat ulang AI) agar bisa dipulihkan. */
+  previousContent?: string;
+  previousFormat?: 'plain' | 'html';
   projectId?: string;
   projectName?: string;
   status: 'draft' | 'reviewed';
