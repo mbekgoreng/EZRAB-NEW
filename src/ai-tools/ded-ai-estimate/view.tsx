@@ -6,6 +6,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { dedAiEstimateService, DedAiOutputEnvelope } from './service';
 import { DedAiCalculator } from './calculator';
+import { mergeAnalysisTraces, FileTraceInput } from './analysisTrace';
+import { buildDivisionCoverage } from './divisions';
+import { groupByWbs } from './wbsClassifier';
 import {
   DedAiItem, DedAiMode, DedAiOutput, DedAiProjectType,
 } from './types';
@@ -239,6 +242,9 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     const mergedItems: DedAiItem[] = [];
     let totalPages = 0;
     const fileNames: string[] = [];
+    // FINAL REVIEW (Tugas A): jejak per file + bukti halaman untuk metadata gabungan.
+    const fileTraceInputs: FileTraceInput[] = [];
+    const evidencePages: Array<{ page: number; pageType: string }> = [];
 
     try {
       for (let fi = 0; fi < sess.files.length; fi += 1) {
@@ -300,6 +306,16 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         setPercent((fi / sess.files.length) * 100 + (100 / sess.files.length) * 0.85);
 
         const pageOffset = totalPages;
+        // FINAL REVIEW (Tugas A): simpan jejak file ini untuk digabung di akhir.
+        // Bukti halaman diambil dari jejak nyata file ini (semua halaman parser,
+        // sama seperti yang dipakai service) dengan offset global yang sama
+        // dengan sourcePages item.
+        fileTraceInputs.push({ fileName: f.file.name, pageOffset, trace: out.analysisTrace });
+        if (out.analysisTrace) {
+          for (const p of out.analysisTrace.pages) {
+            evidencePages.push({ page: p.page + pageOffset, pageType: p.pageType });
+          }
+        }
         out.items.forEach((it, idx) => {
           mergedItems.push({
             ...it,
@@ -322,6 +338,23 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         fileName: fileNames.join(', '),
         pageCount: totalPages,
         items: mergedItems,
+      });
+      // FINAL REVIEW (Tugas A): buildOutput tidak membawa metadata P0 — pulihkan
+      // dari hasil analisis yang benar-benar dijalankan:
+      // - analysisTrace = agregasi jejak nyata per file (mergeAnalysisTraces);
+      //   file tanpa jejak dicatat sebagai warning keterbatasan, bukan dikarang.
+      // - divisionCoverage = dihitung ulang dari item gabungan final dengan
+      //   builder yang sama persis seperti service (groupByWbs +
+      //   buildDivisionCoverage), sehingga itemIds cocok dengan id gabungan.
+      merged.analysisTrace = mergeAnalysisTraces(fileTraceInputs, totalPages);
+      const mergedWbs = groupByWbs(merged.items, sess.projectType);
+      merged.divisionCoverage = buildDivisionCoverage({
+        classifiedItems: [
+          ...mergedWbs.groups.flatMap((g) => g.items),
+          ...mergedWbs.unclassified,
+        ],
+        pages: evidencePages,
+        projectType: sess.projectType,
       });
       markUpTo('prepare', 'done');
       setPercent(100);

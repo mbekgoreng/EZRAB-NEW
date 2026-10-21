@@ -26,6 +26,46 @@ export interface WbsGroup {
 }
 
 /**
+ * FINAL REVIEW (Tugas B) — perangkat listrik tanpa kata "listrik".
+ *
+ * Item seperti "Instalasi Titik Lampu" tidak memuat kata "listrik"/
+ * "elektrikal" sehingga lolos dari keyword BGN-10-A. Pemetaan tambahan ini
+ * SENGAJA konservatif:
+ * - Frasa majemuk "titik lampu" / "stop kontak" / "saklar" adalah istilah
+ *   pekerjaan instalasi itu sendiri (sebuah "titik" = titik instalasi);
+ *   frasa ini memetakan ke BGN-10-A kecuali teksnya berkonteks NON-pekerjaan
+ *   (pengadaan/pembelian/sewa/katalog/dekorasi — produk, bukan pekerjaan).
+ * - Kata "lampu" sendirian TIDAK cukup: wajib ada kata konteks pekerjaan
+ *   instalasi (instalasi/pemasangan/listrik/elektrikal), bukan "lampu jalan"
+ *   (itu penerangan jalan — katalog JLN-07-B, bukan listrik bangunan).
+ * - Item yang sudah menang ke plumbing (BGN-10-B) tidak pernah dibajak.
+ * Hanya klasifikasi yang berubah — quantity/provenance/harga tidak disentuh.
+ */
+const ELECTRICAL_STRONG_TERMS = ['titik lampu', 'stop kontak', 'saklar'];
+const ELECTRICAL_WEAK_TERMS = ['lampu'];
+const ELECTRICAL_WORK_CONTEXT = ['instalasi', 'pemasangan', 'listrik', 'elektrikal'];
+const NON_WORK_CONTEXT = [
+  'pengadaan', 'pembelian', 'pengiriman', 'penyediaan material',
+  'sewa', 'katalog', 'brosur', 'dekorasi', 'hiasan', 'pajangan',
+];
+
+function electricalDeviceNode(
+  text: string,
+  catalog: WbsNode[],
+  currentBest: WbsNode | null
+): WbsNode | null {
+  if (currentBest?.code === 'BGN-10-B') return null; // plumbing menang — jangan dibajak
+  if (NON_WORK_CONTEXT.some((t) => text.includes(t))) return null;
+  const strong = ELECTRICAL_STRONG_TERMS.some((t) => text.includes(t));
+  const weakWithContext =
+    !text.includes('lampu jalan') &&
+    ELECTRICAL_WEAK_TERMS.some((t) => text.includes(t)) &&
+    ELECTRICAL_WORK_CONTEXT.some((t) => text.includes(t));
+  if (!strong && !weakWithContext) return null;
+  return catalog.find((n) => n.code === 'BGN-10-A') ?? null;
+}
+
+/**
  * Klasifikasikan satu item ke WBS.
  * Mengembalikan node dengan skor keyword tertinggi.
  */
@@ -62,6 +102,13 @@ export function classifyToWbs(
       bestScore = score;
       best = node;
     }
+  }
+
+  // Tugas B: perangkat listrik berkonteks instalasi → BGN-10-A, mengalahkan
+  // skor generik (termasuk "Lain-lain"/kelompok MEP generik), kecuali plumbing.
+  if (projectType === 'BANGUNAN' || projectType === 'GEDUNG') {
+    const electrical = electricalDeviceNode(text, catalog, best);
+    if (electrical) best = electrical;
   }
 
   // Tentukan status berdasarkan quantitySource

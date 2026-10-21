@@ -33,17 +33,77 @@ function toUint8Array(buffer: ArrayBuffer | Uint8Array | Buffer | string): Uint8
   return new Uint8Array(buffer);
 }
 
-function classifyPageTitle(text: string): string {
+/**
+ * Klasifikasi jenis halaman dari teks hasil ekstraksi pdfjs.
+ *
+ * FASE P0 (2026-10-21): urutan diperbaiki — frasa SPESIFIK pada judul
+ * diperiksa SEBELUM kata umum "denah". Cara lama memeriksa 'denah' lebih
+ * dulu sehingga DENAH KUSEN, DENAH INSTALASI, DENAH PLAFOND, DENAH KERAMIK,
+ * DENAH SLOOF/RINGBALK/PELAT semuanya jatuh ke DENAH (bukti fixture 32
+ * halaman: MEP 0, JADWAL_KUSEN 0, 16 halaman DENAH).
+ *
+ * Jenis baru (kompatibel tambahan, jenis lama tidak dihapus):
+ * DETAIL_KUSEN, PLAFOND, LANTAI, MEP_PLUMBING, MEP_ELECTRICAL, SANITAIR.
+ *
+ * Judul diambil dari frasa judul pertama di teks (pola yang sama dengan
+ * ekstraksi `title` di parseDedPdf) — teks CAD mentah menaruh judul di
+ * awal/akhir halaman, bukan selalu di karakter pertama.
+ */
+export function classifyPageTitle(text: string): string {
   const lower = text.toLowerCase();
+  const titleMatch = text.match(/(?:denah|tampak|potongan|detail|gambar|lembar|jadwal|daftar|skala)\s+[^,\n]{0,60}/i);
+  const t = (titleMatch ? titleMatch[0] : text.slice(0, 200)).toLowerCase().trim();
+
+  // === 1. Judul terjangkar: kata kunci utama di AWAL frasa judul ===
+  // Kualifikasi harus menempel pada kata kunci judul ("DENAH KUSEN",
+  // "DETAIL ATAP"). Kata yang sama di tengah jendela judul (label di dalam
+  // gambar potongan, catatan "Plafond +3.20") TIDAK boleh membajak jenis.
+  const instalasiType = (s: string): string => {
+    if (
+      s.includes('air bersih') || s.includes('air kotor') || s.includes('plambing') ||
+      s.includes('plumbing') || s.includes('sanitair') || s.includes('pipa')
+    ) return 'MEP_PLUMBING';
+    if (s.includes('listrik') || s.includes('elektrikal') || s.includes('penerangan') || s.includes('daya')) {
+      return 'MEP_ELECTRICAL';
+    }
+    return 'MEP';
+  };
+  if (/^detail\s+kusen/.test(t)) return 'DETAIL_KUSEN';
+  if (/^(jadwal|daftar)\s+kusen/.test(t)) return 'JADWAL_KUSEN';
+  if (/^denah\s+kusen/.test(t)) return 'JADWAL_KUSEN';
+  if (/^denah\s+instalasi/.test(t) || /^instalasi/.test(t)) return instalasiType(t);
+  if (/^denah\s+(plafond|plafon)/.test(t) || /^(plafond|plafon)/.test(t)) return 'PLAFOND';
+  if (/^denah\s+keramik/.test(t) || /^pola\s+lantai/.test(t)) return 'LANTAI';
+  if (/^denah\s+wc\b/.test(t) || /^sanitair/.test(t)) return 'SANITAIR';
+  if (
+    /^denah\s+(pondasi|sloof|kolom|ringbalk|ring balk|pelat|balok|footplat|pile cap|struktur)/.test(t) ||
+    /^(pondasi|sloof|kolom|ringbalk|ring balk|pelat|balok)/.test(t)
+  ) return 'STRUKTUR';
+  if (/^denah\s+atap/.test(t) || /^detail\s+atap/.test(t) || /^atap/.test(t)) return 'ATAP';
+  if (/^denah\s+situasi/.test(t)) return 'SITUASI';
+  if (/^gambar/.test(t) && (t.includes('mekanikal') || t.includes('elektrikal'))) return 'MEP';
+  if (/^gambar/.test(t) && t.includes('struktur')) return 'STRUKTUR';
+  if (/^tampak/.test(t)) return 'TAMPAK';
+  if (/^potongan/.test(t)) return 'POTONGAN';
+  if (/^denah/.test(t)) return 'DENAH';
+
+  // === 2. Aturan isi dokumen (perilaku lama, dipertahankan) ===
   if (lower.includes('rks') || lower.includes('spesifikasi') || lower.includes('rencana kerja')) return 'SPESIFIKASI';
+  if (lower.includes('detail kusen')) return 'DETAIL_KUSEN';
+  if (lower.includes('kusen')) return 'DETAIL_KUSEN';
   if (lower.includes('pondasi') || lower.includes('kolom') || lower.includes('balok') || lower.includes('struktur')) return 'STRUKTUR';
   if (lower.includes('potongan') || lower.includes('section')) return 'POTONGAN';
   if (lower.includes('tampak') || lower.includes('elevation')) return 'TAMPAK';
   if (lower.includes('atap') || lower.includes('roof')) return 'ATAP';
-  if (lower.includes('site') || lower.includes('situasi')) return 'SITUASI';
+  // 'situasi' saja — kata 'site' polos adalah jebakan substring ("arSITEktur").
+  if (lower.includes('situasi') || lower.includes('site plan')) return 'SITUASI';
   if (lower.includes('denah') || lower.includes('floor')) return 'DENAH';
-  if (lower.includes('detail kusen') || lower.includes('schedule')) return 'JADWAL_KUSEN';
-  if (lower.includes('mep') || lower.includes('instalasi') || lower.includes('listrik') || lower.includes('air')) return 'MEP';
+  if (lower.includes('jadwal kusen') || lower.includes('schedule')) return 'JADWAL_KUSEN';
+  if (lower.includes('instalasi air') || lower.includes('plambing') || lower.includes('plumbing')) return 'MEP_PLUMBING';
+  if (lower.includes('instalasi listrik')) return 'MEP_ELECTRICAL';
+  if (lower.includes('mep') || lower.includes('instalasi')) return 'MEP';
+  if (lower.includes('listrik') || lower.includes('elektrikal')) return 'MEP_ELECTRICAL';
+  if (lower.includes('mekanikal')) return 'MEP';
   return 'HALAMAN';
 }
 

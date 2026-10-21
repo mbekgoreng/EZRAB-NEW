@@ -110,6 +110,104 @@ export interface DedAiOutput {
     itemsFullyResolved: number;
     itemsUnresolved: number;
   };
+  /**
+   * FASE P0: cakupan 12 divisi rumah (diisi service untuk proyek
+   * BANGUNAN/GEDUNG; opsional agar konsumen lama tidak berubah).
+   */
+  divisionCoverage?: DedDivisionCoverage[];
+  /**
+   * FASE P0: jejak analisis per halaman & per pass — tidak ada halaman
+   * yang hilang diam-diam karena budget/kegagalan pass.
+   */
+  analysisTrace?: DedAnalysisTrace;
+}
+
+/**
+ * FASE P0 — Kontrak cakupan 12 divisi rumah.
+ * Status per divisi (enum tertutup, bukan string bebas):
+ * - IDENTIFIED: ada item dari DED (kuantitas terverifikasi/turunan deterministik).
+ * - ASSUMPTION_REQUIRES_CONFIRMATION: hanya ada item inferensi/asumsi, atau
+ *   divisi hanya didukung scaffold template (kandidat asumsi terlabel).
+ * - INSUFFICIENT_DATA: divisi relevan tetapi bukti DED tidak cukup
+ *   (mis. halaman ada, item tidak terekstrak; atau tidak ada scaffold).
+ * - NOT_APPLICABLE: divisi rumah tidak berlaku untuk tipe proyek ini.
+ */
+export type DedDivisionCoverageStatus =
+  | 'IDENTIFIED'
+  | 'ASSUMPTION_REQUIRES_CONFIRMATION'
+  | 'INSUFFICIENT_DATA'
+  | 'NOT_APPLICABLE';
+
+/** Kandidat asumsi dari scaffold template — TANPA volume/harga (tidak pernah difabrikasi). */
+export interface DedDivisionAssumptionCandidate {
+  name: string;
+  unit: string;
+  /** Kode WBS template asal (houseType36), mis. "10.01" — bukan kode AHSP. */
+  templateWbsCode: string;
+  source: 'TEMPLATE_RUMAH_TIPE36';
+  note: string;
+}
+
+export interface DedDivisionCoverage {
+  divisionCode: string; // "DIV-01" .. "DIV-12"
+  divisionName: string;
+  order: number;
+  status: DedDivisionCoverageStatus;
+  itemCount: number;
+  identifiedItemCount: number;
+  needsConfirmItemCount: number;
+  itemIds: string[];
+  /** Halaman yang jenisnya menjadi bukti pendukung divisi ini. */
+  evidencePages: number[];
+  assumptionCandidates: DedDivisionAssumptionCandidate[];
+  note: string;
+}
+
+/** FASE P0 — Jejak per halaman: dikirim / terlewat budget, selalu dengan alasan. */
+export interface DedPageTraceEntry {
+  page: number;
+  title: string;
+  pageType: string;
+  totalChars: number;
+  sentChars: number;
+  status: 'SENT' | 'SKIPPED_BUDGET';
+  reason?: string;
+  passIndex?: number;
+  clusterLabel?: string;
+  /**
+   * FINAL REVIEW (Tugas A) — nama file sumber pada hasil gabungan multi-file.
+   * Nomor `page` pada hasil gabungan sudah dioffset global; field ini membuat
+   * asal file setiap halaman/pass eksplisit, bukan tebakan.
+   */
+  sourceFile?: string;
+}
+
+/** FASE P0 — Jejak per pass analisis (kelompok halaman → satu panggilan model). */
+export interface DedPassTraceEntry {
+  passIndex: number;
+  clusterLabel: string;
+  pageTypes: string[];
+  pages: number[];
+  /** Produk gateway yang dipakai (DED_AI_FAST / DED_AI_DETAIL) — bukan nama model final. */
+  productId: string;
+  mode: DedAiMode;
+  maxTokens: number;
+  status: 'OK' | 'FAILED' | 'EMPTY_RESPONSE';
+  errorCode?: string;
+  itemCount: number;
+  /** FINAL REVIEW (Tugas A) — nama file sumber pada hasil gabungan multi-file. */
+  sourceFile?: string;
+}
+
+export interface DedAnalysisTrace {
+  totalPages: number;
+  selectedPageCount: number;
+  skippedPageCount: number;
+  totalCharsBudget: number;
+  totalCharsSent: number;
+  pages: DedPageTraceEntry[];
+  passes: DedPassTraceEntry[];
+  warnings: string[];
 }
 
 export type DedAiProgressEvent = {

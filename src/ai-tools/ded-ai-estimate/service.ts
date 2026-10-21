@@ -18,6 +18,9 @@ import { attemptQuantityFromDimensionString } from './quantity';
 import { applyAiEstimatePrice } from './pricing';
 import { DedAiCalculator } from './calculator';
 import { deriveKolomVolume, deriveDindingNetto, derivePlester, DerivationTrail } from './derivation';
+import { selectPagesWithTrace } from './analysisTrace';
+import { buildDivisionCoverage } from './divisions';
+import { groupByWbs } from './wbsClassifier';
 import {
   DedAiServiceOptions,
   DedAiOutput,
@@ -26,6 +29,7 @@ import {
   DedAiMode,
   DedAiQuantitySource,
   DedAiProgressEvent,
+  DedPassTraceEntry,
 } from './types';
 
 const PROJECT_TYPES: ReadonlyArray<string> = [
@@ -262,49 +266,58 @@ export class DedAiEstimateService {
     // Sekarang: halaman dipilih menurut prioritas jenisnya (denah & struktur
     // lebih dulu; MEP/kusen/atap tidak lagi terbuang), budget jauh lebih
     // besar, lalu dianalisis per kelompok (multi-pass) dan digabung.
-    const PAGE_TYPE_PRIORITY: Record<string, number> = {
-      DENAH: 0, STRUKTUR: 1, POTONGAN: 2, JADWAL_KUSEN: 3, MEP: 4,
-      ATAP: 5, TAMPAK: 6, SPESIFIKASI: 7, SITUASI: 8, HALAMAN: 9,
-    };
+    // FASE P0: seleksi kini menghasilkan JEJAK per halaman — halaman yang
+    // terlewat budget tercatat SKIPPED_BUDGET + alasan, tidak hilang diam-diam.
     const TOTAL_TEXT_BUDGET = mode === 'FAST' ? 45000 : 90000;
     const PER_PAGE_TEXT = mode === 'FAST' ? 3000 : 4500;
-    const byPriority = [...parsed.pages].sort((a, b) =>
-      (PAGE_TYPE_PRIORITY[a.pageType] ?? 9) - (PAGE_TYPE_PRIORITY[b.pageType] ?? 9) || a.page - b.page);
-    const pageSummaries: Array<{ page: number; title: string; text: string; pageType: string }> = [];
-    let usedChars = 0;
-    for (const p of byPriority) {
-      const text = (p.text || '').slice(0, PER_PAGE_TEXT);
-      if (usedChars + text.length > TOTAL_TEXT_BUDGET && pageSummaries.length >= 4) break;
-      usedChars += text.length;
-      pageSummaries.push({ page: p.page, title: p.title, text, pageType: p.pageType });
-    }
+    const selection = selectPagesWithTrace(parsed.pages, TOTAL_TEXT_BUDGET, PER_PAGE_TEXT);
+    const pageSummaries = selection.selected;
+    const pageTrace = selection.trace;
     const buildingType = options.projectType;
 
-    // === Analisis multi-pass per kelompok jenis halaman ===
+    // === Analisis multi-pass per kelompok pekerjaan (FASE P0) ===
     // Satu panggilan dengan plafon token kecil memotong daftar pekerjaan;
     // per kelompok, setiap panggilan punya budget sendiri (FAST 8.000 /
     // DETAIL 12.000 token) dan hasilnya digabung dengan dedup.
-    const CLUSTERS: string[][] = [
-      ['DENAH', 'SITUASI'],
-      ['STRUKTUR', 'POTONGAN'],
-      ['ATAP', 'TAMPAK'],
-      ['JADWAL_KUSEN', 'MEP'],
-      ['SPESIFIKASI', 'HALAMAN'],
+    // Kelompok mengikuti kelompok pekerjaan; satu halaman masuk satu pass,
+    // tetapi item hasilnya dapat memetakan ke beberapa divisi (klasifikasi
+    // WBS per item) dan duplikasi antar-pass dibuang oleh dedup di bawah.
+    const CLUSTERS: Array<{ label: string; types: string[] }> = [
+      { label: 'Arsitektur & Ruang', types: ['DENAH', 'SITUASI', 'TAMPAK'] },
+      { label: 'Struktur & Pondasi', types: ['STRUKTUR', 'POTONGAN'] },
+      { label: 'Atap', types: ['ATAP'] },
+      { label: 'Plafond & Lantai', types: ['PLAFOND', 'LANTAI'] },
+      { label: 'Kusen, Pintu & Jendela', types: ['JADWAL_KUSEN', 'DETAIL_KUSEN'] },
+      { label: 'Sanitair & Plambing', types: ['SANITAIR', 'MEP_PLUMBING'] },
+      { label: 'Instalasi Listrik', types: ['MEP_ELECTRICAL', 'MEP'] },
+      { label: 'Spesifikasi & Lainnya', types: ['SPESIFIKASI', 'HALAMAN'] },
     ];
-    let groups: Array<typeof pageSummaries> = CLUSTERS
-      .map(types => pageSummaries.filter(s => types.includes(s.pageType)))
-      .filter(g => g.length > 0);
+    let groups: Array<{ label: string; pages: typeof pageSummaries }> = CLUSTERS
+      .map(c => ({ label: c.label, pages: pageSummaries.filter(s => c.types.includes(s.pageType)) }))
+      .filter(g => g.pages.length > 0);
     // Dokumen kecil cukup satu pass (hindari latensi/biaya berlipat).
-    if (pageSummaries.length <= 10 || groups.length <= 1) groups = [pageSummaries];
+    if (pageSummaries.length <= 10 || groups.length <= 1) {
+      groups = [{ label: 'Semua Halaman', pages: pageSummaries }];
+    }
+    // Tautkan halaman terpilih ke pass-nya di jejak.
+    const traceByPage = new Map(pageTrace.map(t => [t.page, t]));
+    groups.forEach((g, gi) => {
+      for (const s of g.pages) {
+        const entry = traceByPage.get(s.page);
+        if (entry) { entry.passIndex = gi; entry.clusterLabel = g.label; }
+      }
+    });
 
     const maxTokens = mode === 'FAST' ? 8000 : 12000;
+    const productId = mode === 'FAST' ? 'DED_AI_FAST' : 'DED_AI_DETAIL';
     const rawItems: any[] = [];
+    const passTraces: DedPassTraceEntry[] = [];
     let lastAiError: any = null;
 
     for (let gi = 0; gi < groups.length; gi++) {
       const built = mode === 'FAST'
-        ? buildFastPrompt({ projectType, buildingType, pageSummaries: groups[gi] })
-        : buildDetailPrompt({ projectType, buildingType, pageSummaries: groups[gi] });
+        ? buildFastPrompt({ projectType, buildingType, pageSummaries: groups[gi].pages })
+        : buildDetailPrompt({ projectType, buildingType, pageSummaries: groups[gi].pages });
 
       notify('ANALYZE', mode === 'FAST' ? 'Menganalisis DED' : 'Analisis mendalam',
         50 + Math.round((gi / groups.length) * 25),
@@ -314,7 +327,7 @@ export class DedAiEstimateService {
         { pagesRead: parsed.pages.length, totalPages: parsed.pages.length });
 
       const aiResult: AiToolsResult = await aiToolsProviderClient.execute({
-        productId: mode === 'FAST' ? 'DED_AI_FAST' : 'DED_AI_DETAIL',
+        productId,
         prompt: built.prompt,
         systemPrompt: built.system,
         jsonMode: true,
@@ -322,7 +335,25 @@ export class DedAiEstimateService {
         timeoutMs: mode === 'FAST' ? 120000 : 180000,
       });
 
-      if (!aiResult.success) { lastAiError = aiResult; continue; }
+      const passTrace: DedPassTraceEntry = {
+        passIndex: gi,
+        clusterLabel: groups[gi].label,
+        pageTypes: [...new Set(groups[gi].pages.map(s => s.pageType))],
+        pages: groups[gi].pages.map(s => s.page),
+        productId,
+        mode,
+        maxTokens,
+        status: 'OK',
+        itemCount: 0,
+      };
+
+      if (!aiResult.success) {
+        lastAiError = aiResult;
+        passTrace.status = 'FAILED';
+        passTrace.errorCode = aiResult.errorCode;
+        passTraces.push(passTrace);
+        continue;
+      }
 
       let parsedAi: DedFastOutput | DedDetailOutput | null = null;
       try {
@@ -332,7 +363,14 @@ export class DedAiEstimateService {
             ? aiToolsProviderClient.extractJson<DedFastOutput>(aiResult.content)
             : aiToolsProviderClient.extractJson<DedDetailOutput>(aiResult.content));
       } catch { parsedAi = null; }
-      if (parsedAi && Array.isArray(parsedAi.workItems)) rawItems.push(...parsedAi.workItems);
+      if (parsedAi && Array.isArray(parsedAi.workItems)) {
+        rawItems.push(...parsedAi.workItems);
+        passTrace.itemCount = parsedAi.workItems.length;
+        passTrace.status = parsedAi.workItems.length > 0 ? 'OK' : 'EMPTY_RESPONSE';
+      } else {
+        passTrace.status = 'EMPTY_RESPONSE';
+      }
+      passTraces.push(passTrace);
     }
 
     if (rawItems.length === 0) {
@@ -373,6 +411,47 @@ export class DedAiEstimateService {
       pageCount: parsed.pages.length,
       items,
     });
+
+    // === FASE P0: cakupan 12 divisi + jejak analisis ===
+    // Coverage dihitung dari item yang sama yang masuk output (diklasifikasi
+    // WBS oleh classifier yang sudah ada) — bukan daftar terpisah.
+    const wbsGrouped = groupByWbs(output.items, projectType);
+    const classifiedItems = [
+      ...wbsGrouped.groups.flatMap(g => g.items),
+      ...wbsGrouped.unclassified,
+    ];
+    output.divisionCoverage = buildDivisionCoverage({
+      classifiedItems,
+      pages: parsed.pages.map(p => ({ page: p.page, pageType: p.pageType })),
+      projectType,
+    });
+    const traceWarnings: string[] = [];
+    if (selection.skippedCount > 0) {
+      traceWarnings.push(
+        `${selection.skippedCount} halaman tidak dikirim ke model karena budget teks ${mode} (${TOTAL_TEXT_BUDGET} karakter) — lihat analysisTrace.pages berstatus SKIPPED_BUDGET.`
+      );
+    }
+    for (const pt of passTraces) {
+      if (pt.status === 'FAILED') {
+        traceWarnings.push(
+          `Pass "${pt.clusterLabel}" (hal. ${pt.pages.join(', ')}) gagal diproses${pt.errorCode ? ` (${pt.errorCode})` : ''} — item dari kelompok ini mungkin tidak lengkap.`
+        );
+      } else if (pt.status === 'EMPTY_RESPONSE') {
+        traceWarnings.push(
+          `Pass "${pt.clusterLabel}" (hal. ${pt.pages.join(', ')}) tidak menghasilkan item.`
+        );
+      }
+    }
+    output.analysisTrace = {
+      totalPages: parsed.pages.length,
+      selectedPageCount: pageSummaries.length,
+      skippedPageCount: selection.skippedCount,
+      totalCharsBudget: TOTAL_TEXT_BUDGET,
+      totalCharsSent: selection.totalCharsSent,
+      pages: pageTrace,
+      passes: passTraces,
+      warnings: traceWarnings,
+    };
 
     if (output.coverage.itemsFullyResolved === 0 && output.coverage.totalItems > 0) {
       return {

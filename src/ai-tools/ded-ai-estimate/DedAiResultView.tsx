@@ -295,6 +295,49 @@ export const DedAiResultView: React.FC<Props> = ({
         </p>
       )}
 
+      {/* ---- FASE P0: Cakupan 12 Divisi & Jejak Analisis ---- */}
+      {output.divisionCoverage && output.divisionCoverage.length > 0 && (
+        <div className="aic-card" style={{ margin: '0 0 16px' }}>
+          <div className="aic-k">Cakupan 12 Divisi Rumah</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 8, marginTop: 8 }}>
+            {output.divisionCoverage.map((d) => (
+              <div key={d.divisionCode} style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: 8, padding: '8px 10px' }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700 }}>
+                  {d.order}. {d.divisionName}
+                </div>
+                <div style={{ fontSize: 11.5, marginTop: 2, fontWeight: 700, color:
+                  d.status === 'IDENTIFIED' ? '#059669'
+                  : d.status === 'ASSUMPTION_REQUIRES_CONFIRMATION' ? '#D97706'
+                  : d.status === 'NOT_APPLICABLE' ? 'var(--ez-color-text-faint)' : '#DC2626' }}>
+                  {d.status === 'IDENTIFIED' ? 'Teridentifikasi dari DED'
+                    : d.status === 'ASSUMPTION_REQUIRES_CONFIRMATION' ? 'Asumsi — perlu konfirmasi'
+                    : d.status === 'NOT_APPLICABLE' ? 'Tidak berlaku' : 'Data belum cukup'}
+                  {d.itemCount > 0 ? ` · ${d.itemCount} item` : ''}
+                </div>
+                <div style={{ fontSize: 11.5, color: 'var(--ez-color-text-faint)', marginTop: 2 }}>{d.note}</div>
+                {d.assumptionCandidates.length > 0 && (
+                  <div style={{ fontSize: 11.5, color: 'var(--ez-color-text-faint)', marginTop: 4 }}>
+                    Kandidat asumsi (tanpa volume/harga): {d.assumptionCandidates.map((c) => c.name).join('; ')}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          {output.analysisTrace && (
+            <div style={{ fontSize: 12, color: 'var(--ez-color-text-faint)', marginTop: 10 }}>
+              Jejak analisis: {output.analysisTrace.selectedPageCount} dari {output.analysisTrace.totalPages} halaman dikirim ke model
+              ({output.analysisTrace.totalCharsSent.toLocaleString('id-ID')} karakter), {output.analysisTrace.passes.length} pass.
+              {output.analysisTrace.skippedPageCount > 0 && (
+                <> Halaman terlewat budget: {output.analysisTrace.pages.filter((p) => p.status === 'SKIPPED_BUDGET').map((p) => `hal. ${p.page} (${p.pageType}${p.sourceFile ? `, ${p.sourceFile}` : ''})`).join(', ')}.</>
+              )}
+              {output.analysisTrace.warnings.map((w, i) => (
+                <div key={i} style={{ color: '#D97706', marginTop: 3 }}>⚠ {w}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ---- WBS Kelompok Pekerjaan ---- */}
       <div style={{ margin: '0 0 16px' }}>
         <button
