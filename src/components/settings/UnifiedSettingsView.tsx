@@ -60,6 +60,7 @@ import {
 } from 'lucide-react';
 import { ClientUserManagementService, WorkspaceMember } from '../../services/userManagementService';
 import { AddUserModal } from './AddUserModal';
+import { TeamInvitationsPanel } from './TeamInvitationsPanel';
 import { UserRole, Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
 import { useI18n, LANG_OPTIONS, type Lang } from '../../i18n';
@@ -1517,6 +1518,12 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   </tbody>
                 </table>
               </div>
+              {/* Secure Invitation (Fase E): panel undangan backend — aditif,
+                  tidak mengubah daftar anggota demo di atas. */}
+              <TeamInvitationsPanel
+                workspaceId={currentUser.workspaceId || 'ws-default'}
+                workspaceName={currentUser.company || 'PT Sinergi Konstruksi Nusantara'}
+              />
             </div>
           )}
 

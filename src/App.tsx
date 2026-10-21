@@ -5,6 +5,7 @@ import { AboutPage } from './components/about/AboutPage';
 import { FeaturesPage } from './components/landing/features/FeaturesPage';
 import { AdvantagesPage } from './components/landing/advantages/AdvantagesPage';
 import { AuthModal } from './components/auth/AuthModal';
+import { AcceptInvitationPage } from './components/auth/AcceptInvitationPage';
 import { WorkspaceView } from './components/dashboard/WorkspaceView';
 import { DemoModal } from './components/common/DemoModal';
 import { NotificationProvider } from './notifications/NotificationContext';
@@ -134,6 +135,10 @@ export const App: React.FC = () => {
   const workspaceRoute = parseWorkspaceRoute(location.pathname, location.search);
   const isWorkspace = isAppPath(location.pathname);
   const isAccess = location.pathname === '/access';
+  // Halaman publik penerimaan undangan: /accept-invitation/<token>
+  // Token hanya dipakai untuk pemanggilan API (body), tidak dirender.
+  const invitationMatch = location.pathname.match(/^\/accept-invitation\/([^/]+)\/?$/);
+  const invitationToken = invitationMatch ? decodeURIComponent(invitationMatch[1]) : null;
   const isAbout = location.pathname === '/about' || location.hash === '#tentang';
   const isFeatures = location.pathname === '/fitur';
   const isAdvantages = location.pathname === '/keunggulan';
@@ -157,6 +162,7 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (isWorkspace) document.title = workspaceRoute.status === 'not-found' ? 'Halaman Tidak Ditemukan — EZRAB' : `${routeLabel(workspaceRoute)} — EZRAB`;
     else if (isAccess) document.title = 'Akses Dashboard — EZRAB';
+    else if (invitationToken) document.title = 'Terima Undangan — EZRAB';
     else if (isAbout) document.title = 'Tentang EZRAB';
     else if (isFeatures) document.title = 'Kenali EZRAB — Fitur Lengkap';
     else if (isAdvantages) document.title = 'Keunggulan EZRAB — Mengapa Memilih EZRAB';
@@ -243,7 +249,12 @@ export const App: React.FC = () => {
 
   let content: React.ReactNode = null;
 
-  if (isAccess) {
+  if (invitationToken) {
+    // Penerimaan undangan bersifat publik (di luar shell workspace dan di
+    // luar PasscodeGate) — keamanan ditegakkan server-side oleh endpoint
+    // /api/invitations/* (validasi token + redeem atomik ber-JWT).
+    content = <AcceptInvitationPage token={invitationToken} />;
+  } else if (isAccess) {
     // Halaman gerbang akses (target redirect middleware untuk /app/* tanpa
     // sesi). Validasi kode sepenuhnya di server — lihat src/auth/passcode.ts.
     content = (
