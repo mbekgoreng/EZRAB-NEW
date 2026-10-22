@@ -61,6 +61,28 @@ export const AcceptInvitationPage: React.FC<{ token: string }> = ({ token }) => 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Pengerasan privasi (audit fast-track 2026-10-22): token undangan ada
+  // di URL halaman ini. Pasang <meta name="referrer" content="no-referrer">
+  // selama halaman tampil agar URL — dan token di dalamnya — tidak pernah
+  // terkirim sebagai header Referer ke tujuan mana pun. index.html tidak
+  // memasang meta referrer global, jadi elemen dibuat saat mount dan
+  // kondisi semula dipulihkan saat unmount (khusus halaman ini saja).
+  useEffect(() => {
+    const existing = document.querySelector<HTMLMetaElement>('meta[name="referrer"]');
+    const meta: HTMLMetaElement = existing ?? document.createElement('meta');
+    if (!existing) {
+      meta.setAttribute('name', 'referrer');
+      document.head.appendChild(meta);
+    }
+    const previous = meta.getAttribute('content');
+    meta.setAttribute('content', 'no-referrer');
+    return () => {
+      if (!existing) meta.remove();
+      else if (previous === null) meta.removeAttribute('content');
+      else meta.setAttribute('content', previous);
+    };
+  }, []);
+
   useEffect(() => {
     let alive = true;
     (async () => {

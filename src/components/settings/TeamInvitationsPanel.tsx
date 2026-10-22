@@ -19,7 +19,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   MailPlus, RefreshCw, Ban, Copy, Check, Loader2, TriangleAlert, MailCheck, MailX, MailQuestion,
 } from 'lucide-react';
-import { invitationClient, type InvitationAdminView } from '../../services/invitationClient';
+import { invitationClient, hasInvitationSession, type InvitationAdminView } from '../../services/invitationClient';
 
 const FILTERS = [
   { id: 'ALL', label: 'Semua' },
@@ -68,6 +68,11 @@ const fieldInput: React.CSSProperties = {
 };
 
 export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName: string }> = ({ workspaceId, workspaceName }) => {
+  // Konteks workspace panel ini berasal dari profil tampilan (demo lokal).
+  // hasSession membedakan label yang jujur: sesi Supabase nyata vs demo.
+  // Otorisasi TIDAK PERNAH berasal dari nilai workspaceId di sini — server
+  // memverifikasi membership SUPER_ADMIN dari database untuk setiap aksi.
+  const [hasSession, setHasSession] = useState<boolean | null>(null);
   const [filter, setFilter] = useState<string>('ALL');
   const [rows, setRows] = useState<InvitationAdminView[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,6 +111,12 @@ export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName
   }, [workspaceId]);
 
   useEffect(() => { void load(filter); }, [load, filter]);
+
+  useEffect(() => {
+    let alive = true;
+    void hasInvitationSession().then((v) => { if (alive) setHasSession(v); });
+    return () => { alive = false; };
+  }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,6 +188,24 @@ export const TeamInvitationsPanel: React.FC<{ workspaceId: string; workspaceName
         Undang anggota baru ke <strong>{workspaceName}</strong> melalui tautan rahasia sekali pakai (berlaku 24 jam).
         Penerima membuat kata sandinya sendiri. Role Super Admin tidak dapat diberikan melalui undangan.
       </p>
+
+      {hasSession === false && (
+        <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', background: 'var(--ez-color-warning-soft, #fef3c7)', borderRadius: 10, padding: '11px 13px', marginBottom: 16 }}>
+          <TriangleAlert size={16} color="var(--ez-color-warning, #b45309)" style={{ flexShrink: 0, marginTop: 1 }} />
+          <span style={{ fontSize: 12.5, lineHeight: 1.55, color: 'var(--ez-color-text-primary, #0f2a54)' }}>
+            <strong>Konteks demo:</strong> nama perusahaan &amp; workspace di panel ini berasal dari profil demo lokal,
+            bukan dari membership akun yang login (tidak ada sesi Supabase nyata terdeteksi). Konteks demo ini
+            <strong> tidak memberikan otorisasi apa pun</strong> — server hanya mengakui workspace dari membership
+            Super Admin akun yang login, diverifikasi dari database, dan menolak aksi undangan tanpa sesi nyata.
+          </span>
+        </div>
+      )}
+      {hasSession === true && (
+        <p style={{ margin: '0 0 16px', fontSize: 12, lineHeight: 1.55, color: 'var(--ez-color-text-muted, #7c8aa5)' }}>
+          Sesi login nyata terdeteksi. Otorisasi tidak berasal dari halaman ini: untuk setiap aksi, server
+          memverifikasi dari database bahwa akun Anda adalah Super Admin pada workspace target.
+        </p>
+      )}
 
       {notConfigured && (
         <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', background: 'var(--ez-color-warning-soft, #fef3c7)', borderRadius: 10, padding: '11px 13px', marginBottom: 16 }}>

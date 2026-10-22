@@ -48,6 +48,17 @@ async function accessToken(): Promise<string | null> {
   }
 }
 
+/**
+ * True bila ada sesi Supabase NYATA (access token tersedia). Dipakai UI
+ * untuk memberi label konteks yang jujur: tanpa sesi nyata, nama/workspace
+ * yang tampil di panel berasal dari profil demo lokal dan TIDAK memberi
+ * otorisasi apa pun — server menolak aksi undangan tanpa JWT (401/403)
+ * dan memverifikasi membership dari database, bukan dari konteks UI.
+ */
+export async function hasInvitationSession(): Promise<boolean> {
+  return (await accessToken()) !== null;
+}
+
 async function call<T>(path: string, init: RequestInit): Promise<InvitationApiResult<T>> {
   try {
     const token = await accessToken();

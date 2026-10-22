@@ -166,3 +166,10 @@ $$;
 revoke all on function public.accept_workspace_invitation(text, uuid, text) from public;
 revoke all on function public.accept_workspace_invitation(text, uuid, text) from authenticated;
 revoke all on function public.accept_workspace_invitation(text, uuid, text) from anon;
+
+-- Hak eksekusi diberikan secara EKSPLISIT hanya kepada service_role —
+-- satu-satunya pemanggil fungsi ini (repository backend memakai service
+-- key). Setelah REVOKE dari public di atas, tanpa GRANT ini model akses
+-- fungsi bergantung pada default privileges lingkungan; baris ini membuat
+-- berkas migration mandiri: service_role boleh, semua peran lain tidak.
+grant execute on function public.accept_workspace_invitation(text, uuid, text) to service_role;
