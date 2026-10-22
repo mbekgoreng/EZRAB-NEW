@@ -7,6 +7,7 @@ import { RabItem } from '../types';
 import { findKnowledgeBaseAutoAnswer } from '../data/knowledgeBaseData';
 import { masterBuildingTemplateRegistry } from '../data/buildingTemplates/masterTemplateRegistry';
 import { parametricVolumeEngine } from '../engine/parametricVolumeEngine/parametricVolumeEngine';
+import { resolveProvinceFromLocation, resolveRegionIndex } from '../data/indonesiaRegions';
 import { HOUSE_TYPE_CATALOG } from '../data/houseTypeCatalog';
 import { QUICK_ACTION_CONTRACTS } from '../data/quickActionContracts';
 import { LocalDocumentRepository } from '../document-engine/repository';
@@ -1522,7 +1523,13 @@ export class MockAiProvider implements AIProvider {
         if (onThinkingStep) onThinkingStep(`Menghitung volume & analisa AHSP 2026 untuk ${template.name}...`);
         await new Promise((r) => setTimeout(r, 120));
 
-        const province = (context.project as any)?.province || (context.project as any)?.location || 'DKI Jakarta';
+        // Lokasi proyek bisa berupa nama kabupaten/kota ("Bandung",
+        // "Tangerang Selatan") — resolusikan ke provinsi lewat basis data
+        // wilayah agar indeks harga engine mengenai provinsi yang benar,
+        // bukan jatuh ke pengali dasar. Tak teresolusi → perilaku lama.
+        const rawProvince = (context.project as any)?.province || (context.project as any)?.location || 'DKI Jakarta';
+        const resolvedProvince = resolveProvinceFromLocation(rawProvince);
+        const province = resolvedProvince ? resolveRegionIndex(resolvedProvince).region : rawProvince;
         const calcResult = parametricVolumeEngine.calculate({
           templateId: template.id,
           parameters: customParams,
