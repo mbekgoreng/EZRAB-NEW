@@ -12,6 +12,7 @@ import { EZRAB_AI_TOOLS } from './tools';
 import {
   RabNeeds, extractRabNeeds, missingNeeds, buildDesignPrompt, summarizeRabNeeds,
 } from './rabNeeds';
+import { buildDirectRab, formatDirectRabMessage } from './directRab';
 
 export interface ChatActionContext {
   /** Navigate to a menu id (WorkspaceView.setActiveMenu) */
@@ -48,7 +49,10 @@ export interface ChatActionButton {
   /** Label tombol */
   label: string;
   /** Aksi: navigasi ke menu, atau intent untuk diproses ulang */
-  action: { kind: 'navigate'; menu: string } | { kind: 'intent'; intent: string; param?: string };
+  action:
+    | { kind: 'navigate'; menu: string }
+    | { kind: 'intent'; intent: string; param?: string }
+    | { kind: 'push-rab' };
 }
 
 export interface ActionResult {
@@ -236,6 +240,25 @@ export function executeIntent(
           { label: 'Manual / kosong', action: { kind: 'navigate', menu: 'rab-estimasi' } },
         ],
       };
+
+    case 'CREATE_RAB_DIRECT': {
+      // Permintaan user 2026-10-21: RAB rumah bertipe dihitung LANGSUNG oleh
+      // mesin parametrik dan ditampilkan sebagai tabel detail di chat —
+      // bukan ringkasan kebutuhan, bukan menu template. Lokal penuh, tanpa
+      // kredit AI. Bila tipe tidak didukung template terdaftar, jatuh jujur
+      // ke ringkasan kebutuhan (tidak memaksa hasil karangan).
+      const built = buildDirectRab(ctx.rawText ?? param ?? '');
+      if (!built) return rabSummaryResult(ctx.rawText ?? param ?? '');
+      return {
+        ok: true,
+        message: formatDirectRabMessage(built),
+        actions: [
+          { label: 'Push ke Spreadsheet RAB', action: { kind: 'push-rab' } },
+          { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+          { label: 'Buka Workspace Desain & RAB', action: { kind: 'navigate', menu: 'desain-rab' } },
+        ],
+      };
+    }
 
     case 'CREATE_RAB_SUMMARY':
       // Fase 2: ringkasan kebutuhan dulu — TIDAK membuka wizard/studio.

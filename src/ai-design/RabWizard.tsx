@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, AlertTriangle, ChevronDown } from 'lucide-react';
+import {
+  listProvinces,
+  listRegencies,
+  formatLocation,
+  resolveRegionIndex,
+  resolveProvinceFromLocation,
+  parseFormattedLocation,
+} from '../data/indonesiaRegions';
 
 export interface RabWizardData {
   tipe: '36' | '45' | '60' | '90' | 'custom';
@@ -13,7 +21,13 @@ export interface RabWizardData {
   ruangTamu: boolean;
   dapur: boolean;
   carport: boolean;
+  /** String gabungan "Kabupaten/Kota X, Provinsi Y" (formatLocation) — tetap
+   *  menjadi sumber lokasi bagi ringkasan, draft sesi, dan prompt. */
   lokasi: string;
+  /** Nama provinsi terpilih dari basis data wilayah (kosong bila belum). */
+  provinsi?: string;
+  /** Nama kabupaten/kota terpilih (tanpa awalan Kabupaten/Kota). */
+  kabupatenKota?: string;
   kualitas: 'standar' | 'menengah' | 'mewah';
 }
 
@@ -43,16 +57,94 @@ const STEPS = ['Tipe Rumah', 'Dimensi', 'Ruangan', 'Lokasi & Kualitas', 'Konfirm
  * dimensi universal. Semua nilai dapat disesuaikan.
  * Presentasi: bahasa desain dashboard EZRAB (token --ez-*), aman mode gelap.
  */
+/**
+ * Pemilih yang bisa dicari (ketik untuk menyaring) — dipakai untuk
+ * provinsi (38 pilihan) dan kabupaten/kota (bergantung provinsi).
+ */
+const SearchableSelect: React.FC<{
+  value: string;
+  options: Array<{ value: string; label: string }>;
+  placeholder: string;
+  disabled?: boolean;
+  onPick: (value: string) => void;
+}> = ({ value, options, placeholder, disabled, onPick }) => {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? value;
+  const filtered = options
+    .filter((o) => o.label.toLowerCase().includes(query.trim().toLowerCase()))
+    .slice(0, 80);
+  return (
+    <div style={{ position: 'relative', marginTop: 7 }}>
+      <input
+        value={open ? query : selectedLabel}
+        placeholder={placeholder}
+        disabled={disabled}
+        onFocus={() => { setQuery(''); setOpen(true); }}
+        onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        style={{
+          ...inputStyle, width: '100%', textAlign: 'left', paddingRight: 30,
+          ...(disabled ? { opacity: 0.55, cursor: 'not-allowed' } : {}),
+        }}
+      />
+      <ChevronDown size={15} style={{ position: 'absolute', right: 10, top: 11, color: 'var(--ez-color-text-faint)', pointerEvents: 'none' }} />
+      {open && !disabled && (
+        <div style={{
+          position: 'absolute', left: 0, right: 0, top: 'calc(100% + 4px)', zIndex: 30,
+          maxHeight: 224, overflowY: 'auto', borderRadius: 12,
+          background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border)',
+          boxShadow: '0 12px 32px rgba(15, 23, 42, 0.16)',
+        }}>
+          {filtered.length === 0 && (
+            <div style={{ padding: '10px 13px', fontSize: 13, color: 'var(--ez-color-text-muted)' }}>
+              Tidak ada wilayah yang cocok.
+            </div>
+          )}
+          {filtered.map((o) => (
+            <button key={o.value} type="button"
+              onMouseDown={(e) => { e.preventDefault(); onPick(o.value); setOpen(false); }}
+              style={{
+                display: 'block', width: '100%', textAlign: 'left', padding: '9px 13px',
+                border: 'none', cursor: 'pointer', fontSize: 13.5,
+                background: o.value === value ? 'var(--ez-color-primary-soft)' : 'transparent',
+                color: 'var(--ez-color-text-primary)', fontWeight: o.value === value ? 700 : 500,
+              }}>
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const RabWizard: React.FC<RabWizardProps> = ({ onComplete, onCancel, initialData, onDataChange }) => {
   const [step, setStep] = useState(0);
-  const [data, setData] = useState<RabWizardData>({
-    tipe: '90', lantai: 1,
-    tanahLebar: 6, tanahPanjang: 15,
-    bangunanLebar: 6, bangunanPanjang: 15,
-    kamarTidur: 3, kamarMandi: 2,
-    ruangTamu: true, dapur: true, carport: true,
-    lokasi: '', kualitas: 'standar',
-    ...initialData,
+  const [data, setData] = useState<RabWizardData>(() => {
+    const base: RabWizardData = {
+      tipe: '90', lantai: 1,
+      tanahLebar: 6, tanahPanjang: 15,
+      bangunanLebar: 6, bangunanPanjang: 15,
+      kamarTidur: 3, kamarMandi: 2,
+      ruangTamu: true, dapur: true, carport: true,
+      lokasi: '', kualitas: 'standar',
+      ...initialData,
+    };
+    // Draf lama: lokasi bisa berupa string terstruktur formatLocation atau
+    // teks bebas. Pulihkan pilihan terstruktur sebisa mungkin; teks bebas
+    // yang tak terurai dibiarkan apa adanya di `lokasi` (tetap tampil di
+    // ringkasan konfirmasi) — tidak pernah mengosongkannya diam-diam.
+    if (!base.provinsi && base.lokasi) {
+      const parsed = parseFormattedLocation(base.lokasi);
+      if (parsed) {
+        base.provinsi = parsed.province;
+        base.kabupatenKota = parsed.regency.name;
+      } else {
+        base.provinsi = resolveProvinceFromLocation(base.lokasi) ?? undefined;
+      }
+    }
+    return base;
   });
 
   const set = <K extends keyof RabWizardData>(k: K, v: RabWizardData[K]) =>
@@ -72,6 +164,26 @@ export const RabWizard: React.FC<RabWizardProps> = ({ onComplete, onCancel, init
       } : {}),
     }));
   };
+
+  const pickProvince = (name: string) => {
+    setData(prev => (prev.provinsi === name
+      ? { ...prev, provinsi: name }
+      // Ganti provinsi → pilihan kabupaten/kota & string lokasi lama tidak
+      // lagi cocok; kosongkan agar pengguna memilih ulang secara sadar.
+      : { ...prev, provinsi: name, kabupatenKota: '', lokasi: '' }));
+  };
+
+  const pickRegency = (name: string) => {
+    if (!data.provinsi) return;
+    const reg = listRegencies(data.provinsi).find((r) => r.name === name);
+    setData(prev => ({
+      ...prev,
+      kabupatenKota: name,
+      lokasi: formatLocation(prev.provinsi ?? '', reg ?? name),
+    }));
+  };
+
+  const regionInfo = data.provinsi ? resolveRegionIndex(data.provinsi) : null;
 
   const luasBangunan = data.bangunanLebar * data.bangunanPanjang;
   const canNext = step === 0 || step === 4 ? true :
@@ -236,9 +348,43 @@ export const RabWizard: React.FC<RabWizardProps> = ({ onComplete, onCancel, init
       {step === 3 && (
         <div style={{ display: 'grid', gap: 16 }}>
           <div>
-            <div style={labelStyle}>Lokasi Proyek *</div>
-            <input value={data.lokasi} onChange={e => set('lokasi', e.target.value)}
-              placeholder="Contoh: Jakarta Selatan" style={{ ...inputStyle, width: '100%', marginTop: 7, textAlign: 'left' }} />
+            <div style={labelStyle}>Provinsi *</div>
+            <SearchableSelect
+              value={data.provinsi ?? ''}
+              options={listProvinces().map((name) => ({ value: name, label: name }))}
+              placeholder="Ketik untuk mencari provinsi…"
+              onPick={pickProvince}
+            />
+          </div>
+          <div>
+            <div style={labelStyle}>Kabupaten / Kota *</div>
+            <SearchableSelect
+              value={data.kabupatenKota ?? ''}
+              options={listRegencies(data.provinsi ?? '').map((r) => ({
+                value: r.name,
+                label: r.type === 'kota' ? `Kota ${r.name}` : r.name,
+              }))}
+              placeholder={data.provinsi ? 'Ketik untuk mencari kabupaten/kota…' : 'Pilih provinsi dulu'}
+              disabled={!data.provinsi}
+              onPick={pickRegency}
+            />
+            {data.lokasi && !data.kabupatenKota && (
+              <div style={{ fontSize: 12.5, color: 'var(--ez-color-text-muted)', marginTop: 7 }}>
+                Lokasi saat ini (teks bebas): <strong style={{ color: 'var(--ez-color-text-primary)' }}>{data.lokasi}</strong>
+                {' '}— pilih kabupaten/kota di atas agar harga menyesuaikan daerah.
+              </div>
+            )}
+            {regionInfo && (
+              <div style={{ fontSize: 12.5, color: 'var(--ez-color-text-muted)', marginTop: 7, lineHeight: 1.55 }}>
+                {regionInfo.isFallback ? (
+                  <>Provinsi ini belum memiliki indeks harga khusus — sementara memakai indeks dasar
+                    {' '}<strong style={{ color: 'var(--ez-color-text-primary)' }}>×{regionInfo.index.toLocaleString('id-ID', { minimumFractionDigits: 2 })}</strong> (DKI Jakarta).</>
+                ) : (
+                  <>Harga disesuaikan indeks wilayah <strong style={{ color: 'var(--ez-color-text-primary)' }}>{regionInfo.region} ×{regionInfo.index.toLocaleString('id-ID', { minimumFractionDigits: 2 })}</strong>
+                    {' '}— indeks berlaku level provinsi; kabupaten/kota mewarisi indeks provinsinya.</>
+                )}
+              </div>
+            )}
           </div>
           <div>
             <div style={labelStyle}>Kualitas / Spesifikasi</div>

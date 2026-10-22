@@ -28,6 +28,7 @@ export type ChatIntent =
   | 'START_RAB_WIZARD'
   | 'START_HOUSE_DESIGN'
   | 'CREATE_RAB_CLARIFY'
+  | 'CREATE_RAB_DIRECT'
   | 'CREATE_RAB_SUMMARY'
   | 'RAB_NEEDS_REFINE'
   | 'OPEN_DESIGN_WORKSPACE'
@@ -109,6 +110,13 @@ const PATTERNS: Pattern[] = [
   { intent: 'OPEN_REPORTS', re: /\b(buka|bukain|tampilkan|tampilin|lihat|liatin)\b.*\b(laporan|report)\b/ },
   { intent: 'OPEN_AI_DOCUMENTS', re: /\b(buka|bukain|tampilkan|tampilin)\b.*\b(dokumen|document)\b/ },
   { intent: 'OPEN_DED_ESTIMATE', re: /\b(buka|bukain|tampilkan|tampilin)\b.*\bded\b/ },
+  // RAB langsung (permintaan user 2026-10-21): perintah RAB rumah DENGAN tipe
+  // eksplisit ("buatkan rab rumah type 70 2 lantai") dihitung langsung oleh
+  // mesin parametrik dan ditampilkan sebagai tabel — bukan ringkasan/template.
+  // Pola ini HARUS sebelum pola CREATE_RAB_SUMMARY rumah di bawah.
+  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\brumah\b.*\b(type|tipe)\s*\d+/ },
+  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b.*\brumah\b.*\b(type|tipe)\s*\d+.*\brab\b/ },
+  { intent: 'CREATE_RAB_DIRECT', re: /\brab\b.*\brumah\b.*\b(type|tipe)\s*\d+/ },
   // Chat-to-RAB (Fase 2): permintaan RAB/desain yang DITULIS pengguna TIDAK
   // lagi membuka wizard/studio otomatis. Router mengarah ke CREATE_RAB_SUMMARY:
   // chat menampilkan ringkasan kebutuhan yang terekstrak + tombol eksplisit

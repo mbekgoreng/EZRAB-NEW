@@ -56,7 +56,10 @@ export const DesignWizardFlow: React.FC<DesignWizardFlowProps> = ({
     if (data.carport) rooms.push('carport');
     const luas = (data.bangunanLebar * data.bangunanPanjang).toFixed(0);
     return `Buatkan rumah ${data.lantai} lantai luas bangunan ${luas} m², ` +
-      `ukuran ${data.bangunanLebar} × ${data.bangunanPanjang} m, ${rooms.join(', ')}.`;
+      `ukuran ${data.bangunanLebar} × ${data.bangunanPanjang} m, ${rooms.join(', ')}.` +
+      // Lokasi terstruktur wizard (formatLocation) ikut diteruskan — sebelumnya
+      // lokasi gugur di sini sehingga penyesuaian harga daerah tak pernah sampai.
+      (data.lokasi ? ` Lokasi: ${data.lokasi}.` : '');
   }, []);
 
   const handleWizardComplete = useCallback((data: RabWizardData) => {

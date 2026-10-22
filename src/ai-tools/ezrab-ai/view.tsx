@@ -21,6 +21,7 @@ import { renderMarkdown } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { consumePendingAiEntry, requestAiEntry } from '../aiNavigation';
 import { executeIntent, continueRabNeeds, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
+import { getLastDirectRab } from './directRab';
 import { looksLikeNeedsAnswer } from './rabNeeds';
 import { notificationBus } from '../../notifications/notificationBus';
 import { navigateTo, routeForMenu } from '../../routing/routes';
@@ -157,7 +158,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [designPrompt, setDesignPrompt] = useState<string | undefined>(undefined);
 
   /* ---- FASE 5A: project grounding + conversation persistence ---- */
-  const { currentProject, projectRabItems } = useProject();
+  const { currentProject, projectRabItems, bulkAddRabItems } = useProject();
   // Prefer live context; fall back to props (keeps standalone usage working).
   const effProject = currentProject ?? activeProject;
   const projectSnapshot: ProjectSnapshot | null = buildProjectSnapshot(
@@ -478,8 +479,68 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   };
 
   /* ---------- P0 Command Center: action button handler ---------- */
+  /**
+   * Push hasil RAB langsung (directRab) ke Spreadsheet RAB proyek aktif.
+   * Pola sama dengan "Kirim ke RAB" di AiDesignStudio: konfirmasi implisit
+   * lewat klik tombol, cegah duplikat berdasarkan kode, provenance jelas.
+   */
+  const pushDirectRabToSpreadsheet = () => {
+    const appendMsg = (content: string, actions?: ChatActionButton[], isError = false) => {
+      const entry: ChatEntry = { role: 'assistant', content, ts: Date.now(), actions, isError };
+      setMessages((prev) => [...prev, entry]);
+      persistMessage('assistant', content);
+    };
+    const r = getLastDirectRab();
+    if (!r) {
+      appendMsg('Tidak ada hasil RAB langsung yang aktif untuk di-push. Buat dulu dengan perintah seperti "buatkan rab rumah type 70 2 lantai".', undefined, true);
+      return;
+    }
+    if (!effProject) {
+      appendMsg('Tidak ada proyek aktif. Buat atau buka proyek dulu di menu Proyek, lalu klik "Push ke Spreadsheet RAB" lagi.', undefined, true);
+      return;
+    }
+    const items = r.generation.workItems.filter((w) => Number.isFinite(w.quantity) && w.quantity > 0);
+    const existingCodes = new Set(
+      ((projectRabItems || []) as Array<{ code?: string }>).map((i) => i.code).filter(Boolean) as string[]
+    );
+    const payload = items.map((wi) => ({
+      description: `[Chat AI] ${wi.name}`,
+      volume: wi.quantity,
+      unit: wi.unit,
+      code: wi.ahspCode ?? wi.workItemId,
+      category: wi.category,
+      priceStatus: 'PRICE_UNRESOLVED' as const,
+      volumeSource: 'AI_GENERATED' as const,
+      ...(wi.ahspCode ? { ahspCode: wi.ahspCode } : {}),
+    }));
+    const newItems = payload.filter((p) => !existingCodes.has(p.code));
+    const dupCount = payload.length - newItems.length;
+    if (newItems.length === 0) {
+      appendMsg(`Semua ${payload.length} item RAB Type ${r.houseType} sudah ada di Spreadsheet RAB proyek "${effProject.name}" (duplikat dicegah).`, [
+        { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+      ]);
+      return;
+    }
+    try {
+      const added = bulkAddRabItems(newItems);
+      const unpriced = newItems.filter((p) => !p.ahspCode).length;
+      appendMsg(
+        `✅ ${added.length} item RAB Rumah Type ${r.houseType} (${r.floors} lantai) berhasil di-push ke Spreadsheet RAB proyek "${effProject.name}".` +
+          (dupCount > 0 ? ` ${dupCount} item dilewati karena sudah ada.` : '') +
+          (unpriced > 0
+            ? ` ${unpriced} item belum terhubung AHSP — harganya masih kosong (bukan Rp0); lengkapi lewat pencarian AHSP di spreadsheet.`
+            : ' Semua item terhubung ke kode AHSP.'),
+        [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }]
+      );
+    } catch (e) {
+      appendMsg(`Gagal mem-push ke Spreadsheet RAB: ${(e as Error).message}`, undefined, true);
+    }
+  };
+
   const handleActionButton = (btn: ChatActionButton) => {
-    if (btn.action.kind === 'navigate') {
+    if (btn.action.kind === 'push-rab') {
+      pushDirectRabToSpreadsheet();
+    } else if (btn.action.kind === 'navigate') {
       navigateChat(btn.action.menu);
     } else if (btn.action.intent === 'START_RAB_WIZARD') {
       // Chat-to-RAB Fase 2: tombol "Rumah tinggal" TIDAK lagi membuka wizard

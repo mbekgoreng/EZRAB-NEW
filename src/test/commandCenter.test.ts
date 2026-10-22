@@ -56,9 +56,38 @@ describe('P0: intent routing untuk command center', () => {
     const r = routeIntent('buatkan rab dari gambar DED');
     expect(r.intent).toBe('CREATE_RAB_SUMMARY');
   });
+
+  it('4e. "buatkan saya rab rumah type 70 2 lantai" → CREATE_RAB_DIRECT (permintaan user 2026-10-21)', () => {
+    const r = routeIntent('buatkan saya rab rumah type 70 2 lantai');
+    expect(r.intent).toBe('CREATE_RAB_DIRECT');
+  });
+
+  it('4f. "buatkan rab rumah tipe 36" → CREATE_RAB_DIRECT (varian "tipe")', () => {
+    const r = routeIntent('buatkan rab rumah tipe 36');
+    expect(r.intent).toBe('CREATE_RAB_DIRECT');
+  });
+
+  it('4g. "buatkan rab rumah 2 lantai" tanpa tipe tetap → CREATE_RAB_SUMMARY (tidak berubah)', () => {
+    const r = routeIntent('buatkan rab rumah 2 lantai');
+    expect(r.intent).toBe('CREATE_RAB_SUMMARY');
+  });
 });
 
 describe('P0: action registry', () => {
+  it('5a. CREATE_RAB_DIRECT: tabel RAB detail + tombol Push ke Spreadsheet (permintaan user 2026-10-21)', () => {
+    const ctx = { ...mockCtx, rawText: 'buatkan saya rab rumah type 70 2 lantai' } as never;
+    const res = executeIntent('CREATE_RAB_DIRECT', undefined, ctx);
+    expect(res.ok).toBe(true);
+    // Tabel detail langsung di chat — bukan ringkasan kebutuhan/template.
+    expect(res.message).toContain('| No | Uraian | Volume | Satuan | Harga Satuan | Jumlah |');
+    expect(res.message).toContain('Total RAB');
+    expect(res.message).not.toContain('ringkasan kebutuhan');
+    const kinds = (res.actions ?? []).map((a) => a.action.kind);
+    expect(kinds).toContain('push-rab');
+    const labels = (res.actions ?? []).map((a) => a.label);
+    expect(labels).toContain('Push ke Spreadsheet RAB');
+  });
+
   it('5. CREATE_RAB_SUMMARY: ringkasan + tombol workspace, TANPA membuka overlay apa pun', () => {
     const ctx = { ...mockCtx, rawText: 'buatkan rab rumah 2 lantai 6x15' } as never;
     const res = executeIntent('CREATE_RAB_SUMMARY', undefined, ctx);
