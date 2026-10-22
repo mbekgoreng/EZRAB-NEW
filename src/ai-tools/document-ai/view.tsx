@@ -68,6 +68,20 @@ export interface HistoryEntry {
   at: number;
 }
 
+/** Status dokumen AI Document (Fase B5). 'reviewed' = nilai lama, diperlakukan sama dengan 'review'. */
+export type DocDraftStatus = 'draft' | 'editing' | 'review' | 'reviewed' | 'final' | 'archived';
+
+/** Label status untuk UI (Indonesia). */
+export function docStatusLabel(s: DocDraftStatus | string): string {
+  switch (s) {
+    case 'editing': return 'Sedang Disunting';
+    case 'review': case 'reviewed': return 'Siap Ditinjau';
+    case 'final': return 'Final';
+    case 'archived': return 'Diarsipkan';
+    default: return 'Draft';
+  }
+}
+
 export interface DraftRecord {
   id: string;
   templateId: string;
@@ -85,7 +99,7 @@ export interface DraftRecord {
   previousFormat?: 'plain' | 'html';
   projectId?: string;
   projectName?: string;
-  status: 'draft' | 'reviewed';
+  status: DocDraftStatus;
   createdAt: number;
   updatedAt: number;
 }
@@ -146,9 +160,11 @@ type Tab = 'library' | 'analyze' | 'create' | 'history';
 interface DokumenAiViewProps {
   /** Dipanggil saat workspace analisis aktif/nonaktif — WorkspaceView memakai ini untuk menyembunyikan floating assistant. */
   onAnalysisActiveChange?: (active: boolean) => void;
+  /** Navigasi silang ke menu workspace lain (mis. 'dokumen-tender' = Dokumen Proyek). Konteks proyek aktif dipertahankan WorkspaceView. */
+  onNavigateToMenu?: (menu: string) => void;
 }
 
-export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveChange }) => {
+export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveChange, onNavigateToMenu }) => {
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>('library');
   const [activeDoc, setActiveDoc] = useState<DocRecord | null>(null);
@@ -233,7 +249,7 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
           <DocAnalyzer doc={activeDoc} docs={docs} onBack={() => setTab('library')} onAddHistory={addHistory} />
         )}
         {tab === 'create' && (
-          <DocCreator drafts={drafts} onUpsertDraft={upsertDraft} onAddHistory={addHistory} />
+          <DocCreator drafts={drafts} onUpsertDraft={upsertDraft} onAddHistory={addHistory} onNavigateToMenu={onNavigateToMenu} />
         )}
         {tab === 'history' && <DocHistory history={history} onRemoveHistory={removeHistory} />}
       </div>

@@ -1,0 +1,227 @@
+/**
+ * AI DOKUMEN — Identitas Perusahaan & Kop Surat (Fase B2 Paper System).
+ *
+ * Profil perusahaan terstruktur untuk kop dokumen AI Document. Penyimpanan
+ * LOKAL per perangkat (localStorage) — sama seperti draf: BUKAN database
+ * server, tidak ada isolasi antar-pengguna. Jangan diklaim sebaliknya.
+ *
+ * Aturan data (master prompt): tidak mengarang data perusahaan — field
+ * kosong tetap kosong; logo divalidasi dari isi file (magic bytes), bukan
+ * hanya ekstensi/MIME yang diklaim browser.
+ */
+
+export type KopLayout = 'left' | 'center' | 'minimal';
+
+export interface CompanyProfile {
+  id: string;
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  website: string;
+  /** Info tambahan bebas (mis. NPWP perusahaan bila pengguna mengisinya). */
+  extra: string;
+  logoDataUrl: string | null;
+  /** Lebar logo saat dirender di kop (mm). */
+  logoWidthMm: number;
+  layout: KopLayout;
+  accentColor: string;
+  isDefault: boolean;
+  updatedAt: number;
+}
+
+const LS_KEY = 'ezrab_docai_company_v1';
+export const MAX_LOGO_BYTES = 2 * 1024 * 1024;
+export const MAX_LOGO_DIMENSION = 4000;
+
+/* Penyimpanan: localStorage bila ada; fallback memori (tes/node). */
+const memoryStore = new Map<string, string>();
+function storageGet(key: string): string | null {
+  try {
+    if (typeof localStorage !== 'undefined') return localStorage.getItem(key);
+  } catch { /* abaikan */ }
+  return memoryStore.get(key) ?? null;
+}
+function storageSet(key: string, value: string): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(key, value);
+      return;
+    }
+  } catch { /* abaikan */ }
+  memoryStore.set(key, value);
+}
+
+export function emptyProfile(partial?: Partial<CompanyProfile>): CompanyProfile {
+  return {
+    id: `co_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`,
+    name: '',
+    address: '',
+    phone: '',
+    email: '',
+    website: '',
+    extra: '',
+    logoDataUrl: null,
+    logoWidthMm: 32,
+    layout: 'left',
+    accentColor: '#1d4ed8',
+    isDefault: false,
+    updatedAt: Date.now(),
+    ...partial,
+  };
+}
+
+export function listProfiles(): CompanyProfile[] {
+  try {
+    const raw = storageGet(LS_KEY);
+    const arr = raw ? (JSON.parse(raw) as CompanyProfile[]) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function persist(profiles: CompanyProfile[]): void {
+  storageSet(LS_KEY, JSON.stringify(profiles));
+}
+
+export function saveProfile(p: CompanyProfile): CompanyProfile[] {
+  const all = listProfiles();
+  const saved: CompanyProfile = { ...p, updatedAt: Date.now() };
+  if (saved.isDefault) {
+    for (const x of all) x.isDefault = false;
+  }
+  const i = all.findIndex((x) => x.id === saved.id);
+  if (i >= 0) all[i] = saved;
+  else all.push(saved);
+  // Profil pertama otomatis menjadi default agar dokumen berikutnya langsung memakainya.
+  if (all.length > 0 && !all.some((x) => x.isDefault)) all[0].isDefault = true;
+  persist(all);
+  return all;
+}
+
+export function deleteProfile(id: string): CompanyProfile[] {
+  const all = listProfiles().filter((x) => x.id !== id);
+  if (all.length > 0 && !all.some((x) => x.isDefault)) all[0].isDefault = true;
+  persist(all);
+  return all;
+}
+
+export function getDefaultProfile(): CompanyProfile | null {
+  const all = listProfiles();
+  return all.find((x) => x.isDefault) ?? all[0] ?? null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Validasi logo — periksa magic bytes, bukan klaim ekstensi/MIME      */
+/* ------------------------------------------------------------------ */
+
+export type LogoKind = 'png' | 'jpeg' | 'gif' | 'webp';
+
+export function detectLogoKind(bytes: Uint8Array): LogoKind | null {
+  if (bytes.length >= 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return 'png';
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'jpeg';
+  if (bytes.length >= 4 && bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) return 'gif';
+  if (
+    bytes.length >= 12 &&
+    bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+    bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
+  ) return 'webp';
+  return null;
+}
+
+export interface LogoValidation {
+  ok: boolean;
+  error?: string;
+  kind?: LogoKind;
+  dataUrl?: string;
+  width?: number;
+  height?: number;
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let bin = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(bin);
+}
+
+/**
+ * Validasi file logo dari pengguna. Async karena perlu membaca dimensi
+ * gambar asli lewat Image (browser). Di luar browser, dimensi dilewati
+ * dengan jujur (width/height kosong) — magic bytes & ukuran tetap diperiksa.
+ */
+export async function validateLogoFile(file: File): Promise<LogoValidation> {
+  if (file.size === 0) return { ok: false, error: 'File kosong.' };
+  if (file.size > MAX_LOGO_BYTES) {
+    return { ok: false, error: `Ukuran logo ${(file.size / 1024).toFixed(0)} KB melebihi batas 2 MB.` };
+  }
+  const buf = new Uint8Array(await file.arrayBuffer());
+  const kind = detectLogoKind(buf);
+  if (!kind) {
+    return { ok: false, error: 'File bukan gambar PNG/JPG/GIF/WebP yang valid (isi file tidak cocok).' };
+  }
+  const mime = kind === 'jpeg' ? 'image/jpeg' : `image/${kind}`;
+  const dataUrl = `data:${mime};base64,${bytesToBase64(buf)}`;
+
+  let width: number | undefined;
+  let height: number | undefined;
+  if (typeof Image !== 'undefined' && typeof URL !== 'undefined') {
+    try {
+      const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+        img.onerror = () => reject(new Error('gambar rusak'));
+        img.src = dataUrl;
+      });
+      width = dims.w;
+      height = dims.h;
+      if (width > MAX_LOGO_DIMENSION || height > MAX_LOGO_DIMENSION) {
+        return { ok: false, error: `Dimensi logo ${width}×${height}px melebihi batas ${MAX_LOGO_DIMENSION}px.` };
+      }
+    } catch {
+      return { ok: false, error: 'File gambar tidak dapat dibaca (kemungkinan rusak).' };
+    }
+  }
+  return { ok: true, kind, dataUrl, width, height };
+}
+
+/* ------------------------------------------------------------------ */
+/* Render kop surat (HTML) — satu sumber untuk pratinjau editor &      */
+/* cetak. Ekspor PDF/DOCX memakai data terstruktur profil yang sama.   */
+/* ------------------------------------------------------------------ */
+
+export function escapeHtml(s: string): string {
+  return (s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+export function kopContactLine(p: CompanyProfile): string {
+  return [p.address, p.phone, p.email, p.website, p.extra].filter((x) => x && x.trim()).join(' • ');
+}
+
+/** HTML kop untuk zona header lembar editor & cetak. Kosong bila profil kosong. */
+export function kopHtml(p: CompanyProfile | null): string {
+  if (!p || (!p.name.trim() && !p.logoDataUrl)) return '';
+  const contact = kopContactLine(p);
+  const logo = p.logoDataUrl
+    ? `<img class="docai-kop-logo" src="${p.logoDataUrl}" alt="" style="width:${Math.max(14, Math.min(70, p.logoWidthMm))}mm" />`
+    : '';
+  const name = p.name.trim() ? `<div class="docai-kop-name">${escapeHtml(p.name)}</div>` : '';
+  const contactHtml = contact ? `<div class="docai-kop-contact">${escapeHtml(contact)}</div>` : '';
+  const accent = escapeHtml(p.accentColor || '#1d4ed8');
+
+  if (p.layout === 'center') {
+    return `<div class="docai-kop docai-kop-center">${logo}${name}${contactHtml}<div class="docai-kop-rule" style="border-color:${accent}"></div></div>`;
+  }
+  if (p.layout === 'minimal') {
+    return `<div class="docai-kop docai-kop-minimal"><div class="docai-kop-minrow">${name}<span class="docai-kop-contact-inline">${escapeHtml(contact)}</span></div><div class="docai-kop-rule" style="border-color:${accent}"></div></div>`;
+  }
+  // left: logo kiri, identitas kanan
+  return `<div class="docai-kop docai-kop-left">${logo}<div class="docai-kop-text">${name}${contactHtml}</div><div class="docai-kop-rule" style="border-color:${accent}"></div></div>`;
+}

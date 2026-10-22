@@ -258,3 +258,108 @@
   .docai-tfont { max-width: 108px; }
   .docai-tstyle { max-width: 104px; }
 }
+
+/* ================================================================== */
+/* PAPER SYSTEM (Fase B1) — lembar A4 formal untuk AI Document.       */
+/* Ukuran berbasis mm agar konsisten dengan ekspor PDF/DOCX:          */
+/* A4 210mm, margin isi 20mm, font isi serif formal 12pt.             */
+/* ================================================================== */
+.docai-page {
+  max-width: 210mm;
+  padding: 16mm 20mm 20mm;
+  min-height: 297mm;
+}
+.docai-prose {
+  font-family: 'Liberation Serif', 'Times New Roman', 'Nimbus Roman', Times, serif;
+  font-size: 12pt;
+  line-height: 1.6;
+  min-height: 240mm;
+}
+.docai-prose h1 { font-family: inherit; font-size: 16pt; font-weight: 700; letter-spacing: 0; margin: 0 0 12px; line-height: 1.3; }
+.docai-prose h2 { font-family: inherit; font-size: 13.5pt; font-weight: 700; margin: 16px 0 8px; line-height: 1.35; }
+.docai-prose h3 { font-family: inherit; font-size: 12pt; font-weight: 700; margin: 14px 0 6px; }
+.docai-prose table { font-size: 11pt; }
+.docai-prose th, .docai-prose td { padding: 4px 8px; }
+/* Blok tanda tangan & judul bagian tidak terpotong antar-halaman */
+.docai-prose h1, .docai-prose h2, .docai-prose h3 { break-after: avoid; }
+.docai-prose tr { break-inside: avoid; }
+.docai-signature { break-inside: avoid; margin-top: 10mm; }
+
+/* Zona kop surat di atas isi (dirender dari profil perusahaan) */
+.docai-kop { margin-bottom: 6mm; }
+.docai-kop-logo { display: block; max-height: 24mm; object-fit: contain; }
+.docai-kop-name { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-size: 15pt; font-weight: 800; color: var(--ez-color-text-primary); line-height: 1.25; }
+.docai-kop-contact { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-size: 9pt; color: var(--ez-color-text-muted); margin-top: 2px; line-height: 1.5; }
+.docai-kop-rule { border-bottom: 2.5px solid #1d4ed8; margin-top: 3mm; }
+.docai-kop-left { display: flex; flex-wrap: wrap; align-items: center; column-gap: 6mm; }
+.docai-kop-left .docai-kop-text { flex: 1; min-width: 60mm; }
+.docai-kop-left .docai-kop-rule { flex-basis: 100%; }
+.docai-kop-center { text-align: center; }
+.docai-kop-center .docai-kop-logo { margin: 0 auto 2mm; }
+.docai-kop-minimal .docai-kop-minrow { display: flex; justify-content: space-between; align-items: baseline; gap: 6mm; flex-wrap: wrap; }
+.docai-kop-contact-inline { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-size: 8.5pt; color: var(--ez-color-text-muted); }
+
+/* Zona footer lembar (informasi cetak; nomor halaman asli dibuat saat cetak/ekspor) */
+.docai-pagefoot { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid var(--ez-color-border); font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-size: 8.5pt; color: var(--ez-color-text-muted); display: flex; justify-content: space-between; gap: 6mm; }
+
+/* Subnavigasi internal AI Document (Fase B5) */
+.docai-subnav { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 14px; }
+.docai-subbtn { border: 1.5px solid var(--ez-color-border); background: var(--ez-color-surface); color: var(--ez-color-text-primary); border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.docai-subbtn.active { background: var(--ez-color-primary, #1d4ed8); border-color: var(--ez-color-primary, #1d4ed8); color: #fff; }
+
+/* Panel identitas perusahaan */
+.docai-kop-preview { background: #fff; border: 1.5px solid var(--ez-color-border); border-radius: 8px; padding: 10mm 12mm; }
+.docai-kop-preview .docai-prose { min-height: 0; font-size: 11pt; }
+
+/* Cetak: PORTAL cetak — klon lembar (.docai-page) ditempatkan sebagai anak
+   langsung <body> oleh doPrint() agar bebas dari kontainer overflow/tinggi
+   tetap milik layout aplikasi (teknik lama position:absolute TERBUKTI
+   memotong dokumen multipage menjadi 1 halaman — QA Gate 2026-10-22). */
+#docai-print-root { display: none; }
+@media print {
+  body.docai-printing > *:not(#docai-print-root) { display: none !important; }
+  body.docai-printing #docai-print-root {
+    display: block !important; width: 100%; max-width: none;
+    box-shadow: none; border-radius: 0; margin: 0; min-height: 0;
+    /* Margin halaman diatur @page saja — padding lembar layar dimatikan
+       agar konsisten dengan ekspor PDF/DOCX (margin ±20mm). */
+    padding: 0;
+  }
+  /* Wadah isi editor mempunyai min-height 240mm untuk kenyamanan menyunting
+     di layar; saat cetak tinggi itu WAJIB dilepas — bila tidak, dokumen
+     pendek selalu tumpah ke halaman berikutnya (temuan QA Tahap 2 pada
+     build final 2026-10-22: surat 2 paragraf tercetak 2 halaman). */
+  body.docai-printing #docai-print-root .docai-prose {
+    min-height: 0 !important; height: auto !important;
+  }
+  body.docai-printing .docai-pagefoot { display: none; }
+}
+@page {
+  size: A4;
+  margin: 16mm 18mm 18mm;
+  @bottom-center { content: "Halaman " counter(page) " dari " counter(pages); font-size: 9pt; color: #666; }
+}
+
+/* Label form panel Paper System */
+.docai-label { display: block; font-size: 12px; font-weight: 700; color: var(--ez-color-text-muted); margin-bottom: 5px; letter-spacing: .02em; }
+
+/* Grid field dinamis template (Fase B4) */
+.docai-fieldgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-bottom: 6px; text-align: left; }
+@media (max-width: 720px) { .docai-fieldgrid { grid-template-columns: 1fr; } }
+.docai-fielditem { display: block; }
+
+/* Tautan silang AI Document ↔ Dokumen Proyek (koneksi v1) */
+.docai-xlink { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 18px; padding: 16px 18px; border: 1.5px solid var(--ez-color-border); border-radius: var(--ez-radius-control); background: var(--ez-color-surface); text-align: left; }
+.docai-xlink-t { font-size: 14.5px; font-weight: 800; color: var(--ez-color-text-primary); }
+.docai-xlink-d { font-size: 13px; color: var(--ez-color-text-muted); line-height: 1.55; margin-top: 2px; }
+.docai-linkbtn { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: none; background: none; color: var(--ez-color-primary); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.docai-linkbtn:hover { color: var(--ez-color-primary-hover); text-decoration: underline; }
+
+/* Pratinjau contoh dokumen profesional (data dummy bertanda CONTOH) */
+.docai-samplepreview { margin-top: 10px; max-height: 520px; overflow: auto; padding: 18px 20px; border: 1px solid var(--ez-color-border); border-radius: var(--ez-radius-control); background: #fff; color: #1f2430; font-family: 'Liberation Serif', 'Times New Roman', serif; font-size: 12.5px; line-height: 1.55; text-align: left; }
+.docai-samplepreview h1 { font-size: 16px; margin: 10px 0 6px; }
+.docai-samplepreview h2 { font-size: 13.5px; margin: 12px 0 4px; }
+.docai-samplepreview p { margin: 4px 0; }
+.docai-samplepreview table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 11.5px; }
+.docai-samplepreview th, .docai-samplepreview td { border: 1px solid #b9bec9; padding: 4px 6px; vertical-align: top; text-align: left; }
+.docai-samplepreview th { background: #eef1f6; }

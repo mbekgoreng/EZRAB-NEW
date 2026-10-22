@@ -45,6 +45,20 @@ export interface HistoryEntry {
   at: number;
 }
 
+/** Status dokumen AI Document (Fase B5). 'reviewed' = nilai lama, diperlakukan sama dengan 'review'. */
+export type DocDraftStatus = 'draft' | 'editing' | 'review' | 'reviewed' | 'final' | 'archived';
+
+/** Label status untuk UI (Indonesia). */
+export function docStatusLabel(s: DocDraftStatus | string): string {
+  switch (s) {
+    case 'editing': return 'Sedang Disunting';
+    case 'review': case 'reviewed': return 'Siap Ditinjau';
+    case 'final': return 'Final';
+    case 'archived': return 'Diarsipkan';
+    default: return 'Draft';
+  }
+}
+
 export interface DraftRecord {
   id: string;
   templateId: string;
@@ -58,7 +72,7 @@ export interface DraftRecord {
   previousFormat?: 'plain' | 'html';
   projectId?: string;
   projectName?: string;
-  status: 'draft' | 'reviewed';
+  status: DocDraftStatus;
   createdAt: number;
   updatedAt: number;
 }

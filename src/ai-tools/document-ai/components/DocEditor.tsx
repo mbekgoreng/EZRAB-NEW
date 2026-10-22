@@ -132,9 +132,13 @@ interface DocEditorProps {
   onChange: (html: string) => void;
   onEditorReady?: (editor: Editor) => void;
   t: (key: string) => string;
+  /** HTML kop surat (dari profil perusahaan) — dirender di dalam lembar, bukan bagian isi yang bisa disunting. */
+  headerHtml?: string;
+  /** Teks footer lembar (nama perusahaan • judul dokumen). */
+  footerText?: string;
 }
 
-export const DocEditor: React.FC<DocEditorProps> = ({ initialHtml, onChange, onEditorReady, t }) => {
+export const DocEditor: React.FC<DocEditorProps> = ({ initialHtml, onChange, onEditorReady, t, headerHtml, footerText }) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
@@ -168,7 +172,14 @@ export const DocEditor: React.FC<DocEditorProps> = ({ initialHtml, onChange, onE
       <DocToolbar editor={editor} t={t} />
       <div className="docai-canvas">
         <div className="docai-page">
+          {headerHtml ? <div dangerouslySetInnerHTML={{ __html: headerHtml }} /> : null}
           <EditorContent editor={editor} />
+          {footerText ? (
+            <div className="docai-pagefoot">
+              <span>{footerText}</span>
+              <span>Nomor halaman otomatis saat dicetak / diekspor</span>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

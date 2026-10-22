@@ -20,7 +20,18 @@ import React, { Suspense, lazy, useMemo, useRef, useState } from 'react';
 import {
   Loader2, Save, Download, AlertTriangle, FilePlus2, Check, MoreHorizontal,
   RefreshCw, History as HistoryIcon, Focus, ListTree, FilePlus, X, CloudOff,
+  Printer, LayoutTemplate, ArrowRight, Briefcase,
 } from 'lucide-react';
+import { getDefaultProfile, kopHtml } from '../companyProfile';
+import {
+  TEMPLATE_META, EXTRA_BUILTIN_TEMPLATES, buildFieldBlock, missingRequiredFields,
+  resolveTemplate, subtypeLabel, referenceStatusLabel,
+  listUserTemplates, saveUserTemplate, newUserTemplate, type UserTemplate,
+} from '../docTemplates';
+import { htmlToPaperBlocks } from '../paperModel';
+import { exportPaperPdf, exportPaperDocx } from '../paperExport';
+import { CompanyIdentityPanel, MyTemplatesPanel, SavedDocsPanel } from './DocPanels';
+import { docStatusLabel, type DocDraftStatus } from '../view';
 import type { Editor } from '@tiptap/react';
 import { dokumenAiService } from '../service';
 import type { DraftRecord, HistoryEntry } from '../view';
@@ -87,9 +98,28 @@ export const DocCreator: React.FC<{
   drafts: DraftRecord[];
   onUpsertDraft: (d: DraftRecord) => void;
   onAddHistory: (e: Omit<HistoryEntry, 'id' | 'at'>) => void;
-}> = ({ drafts, onUpsertDraft, onAddHistory }) => {
+  /** Navigasi silang ke menu lain (Dokumen Proyek & Tender = 'dokumen-tender'). Opsional: tanpa prop ini tautan silang tidak dirender. */
+  onNavigateToMenu?: (menu: string) => void;
+}> = ({ drafts, onUpsertDraft, onAddHistory, onNavigateToMenu }) => {
   const { t } = useI18n();
   const TEMPLATES = getTemplates(t);
+  /* Paper System (Fase B): subnavigasi + template tambahan + profil perusahaan */
+  const [subView, setSubView] = useState<'buat' | 'tersimpan' | 'template' | 'identitas'>('buat');
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [subtypeId, setSubtypeId] = useState('');
+  const [showSample, setShowSample] = useState(false);
+  const [userTplVersion, setUserTplVersion] = useState(0);
+  const [profileVersion, setProfileVersion] = useState(0);
+  const [exporting, setExporting] = useState<'pdf' | 'docx' | null>(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const userTemplates = useMemo(() => listUserTemplates(false), [userTplVersion]);
+  const ALL_TEMPLATES = [
+    ...TEMPLATES,
+    ...EXTRA_BUILTIN_TEMPLATES,
+    ...userTemplates.map((u) => ({ id: u.id, name: u.name, desc: u.desc || 'Template saya' })),
+  ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const defaultProfile = useMemo(() => getDefaultProfile(), [profileVersion]);
   const { currentProject, projects } = useProject();
 
   const [templateId, setTemplateId] = useState('berita-acara');
@@ -111,7 +141,19 @@ export const DocCreator: React.FC<{
   const editorRef = useRef<Editor | null>(null);
   const loadingRef = useRef(false);
 
-  const template = TEMPLATES.find((x) => x.id === templateId) ?? TEMPLATES[0];
+  const template = ALL_TEMPLATES.find((x) => x.id === templateId) ?? ALL_TEMPLATES[0];
+  const selectedUserTpl: UserTemplate | undefined = userTemplates.find((u) => u.id === templateId);
+  const baseMeta = TEMPLATE_META[selectedUserTpl ? selectedUserTpl.baseTemplateId : templateId];
+  const resolvedMeta = baseMeta ? resolveTemplate(baseMeta, subtypeId || undefined) : undefined;
+  const effectiveMeta = resolvedMeta
+    ? { ...resolvedMeta, scaffold: selectedUserTpl?.scaffold?.trim() ? selectedUserTpl.scaffold : resolvedMeta.scaffold }
+    : undefined;
+  const activeSubtypeLabel = baseMeta ? subtypeLabel(baseMeta, subtypeId || undefined) : '';
+  const chooseTemplate = (id: string) => {
+    setTemplateId(id);
+    setSubtypeId(TEMPLATE_META[id]?.subtypes?.[0]?.id ?? '');
+    setShowSample(false);
+  };
   const project = projects.find((p) => p.id === projectId) || currentProject;
 
   const outline = useMemo<OutlineItem[]>(() => {
@@ -163,7 +205,7 @@ export const DocCreator: React.FC<{
         title: draft.title,
         content: html,
         contentFormat: 'html',
-        status: 'reviewed',
+        status: 'review',
         projectId: draft.projectId,
         projectName: draft.projectName,
       }),
@@ -196,6 +238,11 @@ export const DocCreator: React.FC<{
   /* ---------------- generate (AI) ---------------- */
 
   const runGenerate = async (isRegen: boolean) => {
+    const missing = missingRequiredFields(effectiveMeta, fieldValues);
+    if (missing.length) {
+      setError(`Field wajib belum diisi: ${missing.join(', ')}.`);
+      return;
+    }
     setBusy(true);
     setError(null);
     setPending(null);
@@ -203,8 +250,10 @@ export const DocCreator: React.FC<{
       const projInfo = project
         ? `Proyek: ${project.name}\nLokasi: ${project.location || '-'}\nKlien: ${project.clientName || '-'}`
         : 'Proyek: (tidak dipilih)';
+      const fieldBlock = buildFieldBlock(effectiveMeta, fieldValues);
+      const docName = activeSubtypeLabel ? `${template.name} — ${activeSubtypeLabel}` : template.name;
       const prompt =
-        `Buatkan ${template.name}.\n${projInfo}\n\nDetail/instruksi pengguna:\n${instruction || '(tidak ada detail tambahan)'}` +
+        `Buatkan ${docName}.\n${projInfo}\n${fieldBlock ? `\n${fieldBlock}\n` : ''}\nDetail/instruksi pengguna:\n${instruction || '(tidak ada detail tambahan)'}` +
         `\n\nAturan: gunakan HANYA informasi yang diberikan; jangan mengarang nomor surat, nama pihak, ` +
         `nilai kontrak, tanggal, atau persetujuan. Tandai bagian yang perlu dilengkapi pengguna dengan ` +
         `[ISI: ...]. Hasilkan draf yang jelas berstatus DRAF.`;
@@ -304,6 +353,106 @@ export const DocCreator: React.FC<{
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   };
 
+  /* ---------------- template pengguna ---------------- */
+
+  const handleUseUserTemplate = (ut: UserTemplate) => {
+    if (ut.sampleHtml) {
+      const rec: DraftRecord = {
+        id: newId('draft'),
+        templateId: ut.baseTemplateId,
+        templateName: ut.name,
+        title: `${ut.name} — ${project?.name || t('ai.doc.create.no_project')}`,
+        content: ut.sampleHtml,
+        contentFormat: 'html',
+        projectId: project?.id,
+        projectName: project?.name,
+        status: 'draft',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      onUpsertDraft(rec);
+      setSubView('buat');
+      loadIntoEditor(rec);
+      return;
+    }
+    setTemplateId(ut.id);
+    setSubView('buat');
+    setMode('empty');
+    setDraft(null);
+    setHtml('');
+  };
+
+  /* ---------------- buat dari contoh (tanpa AI) ---------------- */
+
+  const createFromSample = () => {
+    const sample = effectiveMeta?.sampleHtml;
+    if (!sample) return;
+    const docName = activeSubtypeLabel ? `${template.name} — ${activeSubtypeLabel}` : template.name;
+    const rec: DraftRecord = {
+      id: newId('draft'),
+      templateId,
+      templateName: docName,
+      title: `${docName} — ${project?.name || t('ai.doc.create.no_project')}`,
+      content: sample,
+      contentFormat: 'html',
+      projectId: project?.id,
+      projectName: project?.name,
+      status: 'draft',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    onUpsertDraft(rec);
+    loadIntoEditor(rec);
+  };
+
+  /* ---------------- ekspor kertas & cetak (Fase B3) ---------------- */
+
+  const doExport = async (kind: 'pdf' | 'docx') => {
+    if (!draft || exporting) return;
+    setExporting(kind);
+    setError(null);
+    try {
+      const input = { title: draft.title, blocks: htmlToPaperBlocks(html), profile: getDefaultProfile() };
+      if (kind === 'pdf') await exportPaperPdf(input);
+      else await exportPaperDocx(input);
+    } catch (e) {
+      setError(`Ekspor ${kind.toUpperCase()} gagal: ${e instanceof Error ? e.message : 'kesalahan tak dikenal'}`);
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const doPrint = () => {
+    // Portal cetak: klon lembar aktif menjadi anak langsung <body> supaya
+    // dokumen multipage tidak terpotong kontainer layout aplikasi.
+    const sheet = document.querySelector('.docai-edmain .docai-page');
+    if (!sheet) {
+      window.print();
+      return;
+    }
+    document.getElementById('docai-print-root')?.remove();
+    const clone = sheet.cloneNode(true) as HTMLElement;
+    clone.id = 'docai-print-root';
+    document.body.appendChild(clone);
+    document.body.classList.add('docai-printing');
+    const cleanup = () => {
+      document.body.classList.remove('docai-printing');
+      clone.remove();
+    };
+    window.addEventListener('afterprint', cleanup, { once: true });
+    window.print();
+    // Pengaman kebocoran DOM saja — TIDAK boleh lebih cepat dari dialog
+    // cetak pengguna (pembersihan utama lewat afterprint).
+    setTimeout(cleanup, 60000);
+  };
+
+  const changeDraftStatus = (st: DocDraftStatus) => {
+    if (!draft) return;
+    const rec = { ...draft, status: st, updatedAt: Date.now() };
+    setDraft(rec);
+    onUpsertDraft(rec);
+  };
+
   /* ---------------- outline ---------------- */
 
   const jumpToHeading = (item: OutlineItem) => {
@@ -335,7 +484,7 @@ export const DocCreator: React.FC<{
             <div>
               <strong>{d.title}</strong>
               <span className="docai-draftst">
-                {d.status === 'draft' ? t('ai.doc.create.st_draft') : t('ai.doc.create.st_reviewed')}
+                {docStatusLabel(d.status)}
               </span>
             </div>
             <span>{formatDate(d.updatedAt)}</span>
@@ -380,14 +529,66 @@ export const DocCreator: React.FC<{
 
   /* ---------------- render: empty state ---------------- */
 
+  const subnav = (
+    <div className="docai-subnav" role="tablist" aria-label="AI Document">
+      <button className={`docai-subbtn ${subView === 'buat' ? 'active' : ''}`} onClick={() => setSubView('buat')}>Buat Dokumen</button>
+      <button className={`docai-subbtn ${subView === 'tersimpan' ? 'active' : ''}`} onClick={() => setSubView('tersimpan')}>Dokumen Tersimpan</button>
+      <button className={`docai-subbtn ${subView === 'template' ? 'active' : ''}`} onClick={() => setSubView('template')}>Template Saya</button>
+      <button className={`docai-subbtn ${subView === 'identitas' ? 'active' : ''}`} onClick={() => setSubView('identitas')}>Identitas Perusahaan</button>
+    </div>
+  );
+
+  if (mode === 'empty' && subView === 'identitas') {
+    return (
+      <div>
+        {subnav}
+        <CompanyIdentityPanel onChanged={() => setProfileVersion((v) => v + 1)} />
+        {onNavigateToMenu && (
+          <p className="docai-hint" style={{ marginTop: 14 }}>
+            Profil &amp; kop di halaman ini dipakai untuk dokumen bebas AI Document. Kop untuk dokumen
+            tender diatur terpisah di Dokumen Proyek — datanya berasal dari data perusahaan &amp; proyek.{' '}
+            <button type="button" className="docai-linkbtn" onClick={() => onNavigateToMenu('dokumen-tender')}>
+              Buka Dokumen Proyek <ArrowRight size={13} />
+            </button>
+          </p>
+        )}
+      </div>
+    );
+  }
+  if (mode === 'empty' && subView === 'template') {
+    return (
+      <div>
+        {subnav}
+        <MyTemplatesPanel
+          builtinNames={[...TEMPLATES, ...EXTRA_BUILTIN_TEMPLATES].map((x) => ({ id: x.id, name: x.name }))}
+          onUse={handleUseUserTemplate}
+        />
+      </div>
+    );
+  }
+  if (mode === 'empty' && subView === 'tersimpan') {
+    return (
+      <div>
+        {subnav}
+        <SavedDocsPanel
+          drafts={drafts}
+          onOpen={(d) => { setSubView('buat'); openDraft(d); }}
+          onStatus={(d, st) => onUpsertDraft({ ...d, status: st, updatedAt: Date.now() })}
+        />
+      </div>
+    );
+  }
+
   if (mode === 'empty') {
     return (
       <div className="docai-tab">
+        {subnav}
         <div className="docai-pagehead">
           <div>
             <div className="docai-crumb">{t('ai.doc.create.crumb')}</div>
             <h2>{t('ai.doc.create.ed_title')}</h2>
             <p>{t('ai.doc.create.sub')}</p>
+            <p className="docai-hint" style={{ marginTop: 2 }}>Dokumen bebas berbasis AI (surat, berita acara, laporan).</p>
           </div>
         </div>
 
@@ -398,11 +599,11 @@ export const DocCreator: React.FC<{
           <div className="docai-edform">
             <div className="docai-step" style={{ textAlign: 'left' }}>{t('ai.doc.create.step_1')}</div>
             <div className="docai-tmplgrid">
-              {TEMPLATES.map((tmpl) => (
+              {ALL_TEMPLATES.map((tmpl) => (
                 <button
                   key={tmpl.id}
                   className={`docai-tmpl ${templateId === tmpl.id ? 'active' : ''}`}
-                  onClick={() => setTemplateId(tmpl.id)}
+                  onClick={() => chooseTemplate(tmpl.id)}
                 >
                   <div className="docai-tmpl-n">{tmpl.name}</div>
                   <div className="docai-tmpl-d">{tmpl.desc}</div>
@@ -422,6 +623,68 @@ export const DocCreator: React.FC<{
                 </option>
               ))}
             </select>
+            {baseMeta?.subtypes && baseMeta.subtypes.length > 0 && (
+              <div className="docai-fieldgrid">
+                <label className="docai-fielditem">
+                  <span className="docai-label">Subjenis Dokumen *</span>
+                  <select
+                    className="docai-select"
+                    style={{ marginBottom: 0 }}
+                    value={baseMeta.subtypes.some((s) => s.id === subtypeId) ? subtypeId : baseMeta.subtypes[0].id}
+                    onChange={(e) => { setSubtypeId(e.target.value); setShowSample(false); }}
+                  >
+                    {baseMeta.subtypes.map((s) => (
+                      <option key={s.id} value={s.id}>{s.label}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
+            {effectiveMeta && effectiveMeta.fields.length > 0 && (
+              <div className="docai-fieldgrid">
+                {effectiveMeta.fields.map((f) => (
+                  <label key={f.key} className="docai-fielditem">
+                    <span className="docai-label">{f.label}{f.required ? ' *' : ''}</span>
+                    {f.type === 'date' ? (
+                      <input type="date" className="docai-input" style={{ marginBottom: 0 }} value={fieldValues[f.key] || ''} onChange={(e) => setFieldValues((v) => ({ ...v, [f.key]: e.target.value }))} />
+                    ) : f.type === 'textarea' ? (
+                      <textarea className="docai-textarea" style={{ marginBottom: 0 }} rows={2} value={fieldValues[f.key] || ''} placeholder={f.placeholder} onChange={(e) => setFieldValues((v) => ({ ...v, [f.key]: e.target.value }))} />
+                    ) : f.type === 'select' ? (
+                      <select className="docai-select" style={{ marginBottom: 0 }} value={fieldValues[f.key] || ''} onChange={(e) => setFieldValues((v) => ({ ...v, [f.key]: e.target.value }))}>
+                        <option value="">— Pilih —</option>
+                        {(f.options ?? []).map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input className="docai-input" style={{ marginBottom: 0 }} value={fieldValues[f.key] || ''} placeholder={f.placeholder} onChange={(e) => setFieldValues((v) => ({ ...v, [f.key]: e.target.value }))} />
+                    )}
+                  </label>
+                ))}
+              </div>
+            )}
+            {effectiveMeta?.reference && (
+              <p className="docai-hint" style={{ textAlign: 'left' }}>
+                Acuan: {effectiveMeta.reference.sourceName}
+                {effectiveMeta.reference.sourceRef ? ` (${effectiveMeta.reference.sourceRef})` : ''} · Status:{' '}
+                {referenceStatusLabel(effectiveMeta.reference.verification)} · {effectiveMeta.reference.scope}
+              </p>
+            )}
+            {effectiveMeta?.sampleHtml && (
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button type="button" className="docai-btn-ghost" onClick={() => setShowSample((v) => !v)}>
+                    {showSample ? 'Sembunyikan Contoh' : 'Lihat Contoh Dokumen'}
+                  </button>
+                  <button type="button" className="docai-btn-ghost" onClick={createFromSample}>
+                    Buat dari Contoh (tanpa AI)
+                  </button>
+                </div>
+                {showSample && (
+                  <div className="docai-samplepreview" dangerouslySetInnerHTML={{ __html: effectiveMeta.sampleHtml }} />
+                )}
+              </div>
+            )}
             <textarea
               className="docai-textarea"
               rows={4}
@@ -447,6 +710,22 @@ export const DocCreator: React.FC<{
             )}
           </div>
         </div>
+
+        {onNavigateToMenu && (
+          <div className="docai-xlink">
+            <Briefcase size={22} style={{ color: 'var(--ez-color-primary)', flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div className="docai-xlink-t">Dokumen Proyek &amp; Tender</div>
+              <div className="docai-xlink-d">
+                Paket dokumen resmi{project ? <> proyek <strong>{project.name}</strong></> : ' proyek ini'} — surat
+                penawaran, kontrak, dan administrasi tender yang disusun dari data proyek &amp; RAB.
+              </div>
+            </div>
+            <button type="button" className="docai-btn-ghost" onClick={() => onNavigateToMenu('dokumen-tender')}>
+              Buka Dokumen Proyek <ArrowRight size={14} />
+            </button>
+          </div>
+        )}
 
         {draftList}
       </div>
@@ -493,6 +772,23 @@ export const DocCreator: React.FC<{
           />
           <div className="docai-edmeta">
             {draft?.projectName || t('ai.doc.create.no_project')} · {draft?.templateName}
+            {draft && (
+              <>
+                {' · '}
+                <select
+                  aria-label="Status dokumen"
+                  value={draft.status === 'reviewed' ? 'review' : draft.status}
+                  onChange={(e) => changeDraftStatus(e.target.value as DocDraftStatus)}
+                  style={{ font: 'inherit', fontSize: 12 }}
+                >
+                  <option value="draft">Draft</option>
+                  <option value="editing">Sedang Disunting</option>
+                  <option value="review">Siap Ditinjau</option>
+                  <option value="final">Final</option>
+                  <option value="archived">Diarsipkan</option>
+                </select>
+              </>
+            )}
           </div>
         </div>
         <div className="docai-edactions">
@@ -502,6 +798,12 @@ export const DocCreator: React.FC<{
           </button>
           <button className="docai-btn-ghost" onClick={downloadDraft} disabled={!draft}>
             <Download size={15} /> {t('ai.doc.create.unduh')}
+          </button>
+          <button className="docai-btn-ghost" onClick={() => void doExport('pdf')} disabled={!draft || exporting !== null}>
+            {exporting === 'pdf' ? <Loader2 size={15} className="spin" /> : <Download size={15} />} PDF
+          </button>
+          <button className="docai-btn-ghost" onClick={() => void doExport('docx')} disabled={!draft || exporting !== null}>
+            {exporting === 'docx' ? <Loader2 size={15} className="spin" /> : <Download size={15} />} DOCX
           </button>
           <div className="docai-menuwrap">
             <button
@@ -547,6 +849,33 @@ export const DocCreator: React.FC<{
                   }}
                 >
                   <Focus size={14} /> {t('ai.doc.create.ed_focus')}
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    doPrint();
+                  }}
+                >
+                  <Printer size={14} /> Cetak / Print PDF
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    if (!draft) return;
+                    const name = window.prompt('Nama template pribadi:', draft.title);
+                    if (!name?.trim()) return;
+                    saveUserTemplate(newUserTemplate({
+                      name: name.trim(),
+                      baseTemplateId: draft.templateId,
+                      scaffold: '',
+                      sampleHtml: html,
+                    }));
+                    setUserTplVersion((v) => v + 1);
+                  }}
+                >
+                  <LayoutTemplate size={14} /> Simpan sebagai Template
                 </button>
                 <button
                   role="menuitem"
@@ -616,6 +945,8 @@ export const DocCreator: React.FC<{
             <DocEditor
               key={`${draft?.id ?? 'new'}-${editorKey}`}
               initialHtml={html}
+              headerHtml={kopHtml(defaultProfile) || undefined}
+              footerText={draft ? `${defaultProfile?.name?.trim() ? `${defaultProfile.name} • ` : ''}${draft.title}` : undefined}
               t={t}
               onEditorReady={(ed) => {
                 editorRef.current = ed;

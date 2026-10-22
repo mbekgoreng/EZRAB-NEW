@@ -547,7 +547,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           </main>
         ) : activeMenu === 'dokumen-ai' ? (
           <main style={{ minHeight: 'calc(100vh - 64px)', background: 'var(--ez-color-background)' }}>
-            <DokumenAiView />
+            <DokumenAiView onNavigateToMenu={(menu) => setActiveMenu(menu)} />
           </main>
         ) : activeMenu === 'kredit-ai' ? (
           <main style={{ minHeight: 'calc(100vh - 64px)', background: 'var(--ez-color-background)' }}>
@@ -702,6 +702,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
         ) : activeMenu === 'dokumen-tender' ? (
           <main style={{ padding: '20px 24px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>
             <TenderDocumentsView
+              onNavigateToTab={(tab) => setActiveMenu(tab)}
               currentProject={currentProject}
               rabItems={projectRabItems}
               scheduleTasks={projectScheduleTasks}

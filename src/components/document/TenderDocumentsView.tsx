@@ -31,6 +31,8 @@ const workflows: { id: Workflow; icon: React.ComponentType<{ size?: number; styl
 ];
 
 export interface TenderDocumentsViewProps {
+  /** Navigasi silang ke menu workspace lain (mis. 'dokumen-ai' = AI Document). Opsional: tanpa prop ini tombol tautan silang tidak dirender. */
+  onNavigateToTab?: (tab: string) => void;
   currentProject?: Project | null;
   projects?: Project[];
   onSelectProject?: (project: Project) => void;
@@ -40,6 +42,7 @@ export interface TenderDocumentsViewProps {
 }
 
 export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
+  onNavigateToTab,
   currentProject,
   projects,
   onSelectProject,
@@ -447,6 +450,9 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
           <p style={{ margin: '4px 0 0', color: 'var(--ez-color-text-muted)', fontSize: 13.5 }}>
             Proyek: <strong style={{ color: 'var(--ez-color-text-primary)' }}>{masterData.projectName}</strong> • {activeRecords.length} Dokumen Aktif ({overallProgress}% Selesai)
           </p>
+          <p style={{ margin: '2px 0 0', color: 'var(--ez-color-text-muted)', fontSize: 12.5 }}>
+            Paket dokumen resmi proyek &amp; tender dari data proyek/RAB.
+          </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -495,6 +501,29 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
           >
             <Plus size={15} /> + Dokumen Manual
           </button>
+
+          {onNavigateToTab && (
+            <button
+              onClick={() => onNavigateToTab('dokumen-ai')}
+              title="Dokumen bebas memakai profil kop AI Document — terpisah dari kop dokumen tender di sini."
+              style={{
+                background: 'var(--ez-color-surface)',
+                color: 'var(--ez-color-text-body)',
+                border: '1px solid var(--ez-hue-slate-border)',
+                borderRadius: 9,
+                padding: '10px 16px',
+                fontWeight: 650,
+                fontSize: 13,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <FileText size={15} /> Buat Dokumen Bebas dengan AI
+            </button>
+          )}
         </div>
       </div>
 
