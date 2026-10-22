@@ -64,6 +64,18 @@ export type BuildingType =
   | 'Landscape & Kawasan'
   | 'Renovasi & Maintenance'
   | 'MEP & Sistem'
+  // --- Katalog 180: tipe proyek untuk 11 kategori template baru (aditif) ---
+  | 'Pondasi & Geoteknik'
+  | 'Jembatan & Struktur Khusus'
+  | 'Drainase & Sanitasi'
+  | 'Pekerjaan Tanah'
+  | 'Struktur Beton & Baja'
+  | 'Finishing & Interior'
+  | 'Atap & Waterproofing'
+  | 'Pertanian & Perkebunan'
+  | 'Pelabuhan & Pesisir'
+  | 'Fasilitas Olahraga'
+  | 'Demolisi & Rekonstruksi'
   | 'Custom';
 
 export type IndonesianRegion = 

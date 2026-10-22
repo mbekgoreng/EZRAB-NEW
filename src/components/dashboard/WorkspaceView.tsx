@@ -97,6 +97,7 @@ import { TopBar } from '../navigation/TopBar';
 import { TemplateRabCatalogView } from '../templates/TemplateRabCatalogView';
 import { HouseTypeCatalogItem } from '../../data/houseTypeCatalog';
 import { RabTemplateService } from '../../services/rabTemplateService';
+import { templateCategoryToBuildingType } from '../../services/rabTemplateCatalogAdapter';
 import { RabTemplate } from '../../types/rabTemplate';
 import { CreateProjectModal } from '../projects/CreateProjectModal';
 import { TenderDocumentsView } from '../document/TenderDocumentsView';
@@ -640,28 +641,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
                 if (!effectiveProjectId) {
                   const newProj = createProject({
                     name: newProjectMeta?.name || template.name,
-                    buildingType:
-                      template.category === 'RUMAH_TINGGAL'
-                        ? 'Rumah Tinggal'
-                        : template.category === 'JALAN_TRANSPORTASI' || template.category === 'PERKERASAN' || template.category === 'SDA_IRIGASI'
-                        ? 'Infrastruktur'
-                        : template.category === 'GEDUNG' || template.category === 'BANGUNAN_TINGGI'
-                        ? 'Gedung Kantor'
-                        : template.category === 'HOTEL_HOSPITALITY'
-                        ? 'Hotel & Resort'
-                        : template.category === 'KESEHATAN'
-                        ? 'Rumah Sakit / Klinik'
-                        : template.category === 'PENDIDIKAN'
-                        ? 'Sekolah / Kampus'
-                        : template.category === 'INDUSTRI'
-                        ? 'Gudang & Pabrik'
-                        : template.category === 'LANDSCAPE_SITE'
-                        ? 'Landscape & Kawasan'
-                        : template.category === 'MEP_SYSTEM'
-                        ? 'MEP & Sistem'
-                        : template.category === 'RENOVASI_MAINTENANCE'
-                        ? 'Renovasi & Maintenance'
-                        : 'Custom',
+                    buildingType: templateCategoryToBuildingType(template.category),
                     buildingArea: newProjectMeta?.buildingArea || 100,
                     landArea: (newProjectMeta?.buildingArea || 100) * 2,
                     floorCount: newProjectMeta?.floorCount || 1,

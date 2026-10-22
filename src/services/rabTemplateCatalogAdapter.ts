@@ -35,6 +35,7 @@
 
 import { RabTemplateService } from './rabTemplateService';
 import { RabTemplate, TemplateCategory } from '../types/rabTemplate';
+import { BuildingType } from '../types';
 import { masterBuildingTemplateRegistry } from '../data/buildingTemplates/masterTemplateRegistry';
 import { BuildingCategory, MasterBuildingTemplate } from '../data/buildingTemplates/schema/types';
 
@@ -146,9 +147,66 @@ export function listUnifiedTemplates(): UnifiedTemplateEntry[] {
   return entries;
 }
 
+/**
+ * Pemetaan kategori template katalog → `buildingType` proyek.
+ *
+ * Dipakai WorkspaceView saat proyek baru dibuat dari penerapan template.
+ * Nilai kategori lama dipertahankan PERSIS seperti ternary historis di
+ * WorkspaceView. 11 kategori Katalog 180 kini memiliki tipe proyeknya
+ * sendiri (label mengikuti label kategori pada katalog) agar proyek tidak
+ * lagi tercatat generik sebagai 'Custom'. Record lengkap atas
+ * TemplateCategory membuat tsc menolak kategori baru yang belum dipetakan.
+ *
+ * Tiga kategori TETAP 'Custom' — masing-masing dengan alasan model:
+ * - UTILITAS: 8 template resmi berisi pekerjaan utilitas yang heterogen
+ *   (jaringan & prasarana pendukung lintas jenis bangunan); model
+ *   `BuildingType` tidak memiliki tipe bangunan tunggal yang mewakili
+ *   semuanya, dan pemetaan historisnya memang 'Custom'.
+ * - CUSTOM: kategori penampung definisi bebas — kategorinya sendiri tidak
+ *   menyatakan jenis bangunan apa pun.
+ * - TEMPLATE_SAYA: template milik pengguna — asal kepemilikan, bukan
+ *   klasifikasi jenis bangunan; tipe proyek tidak dapat disimpulkan.
+ * Kunci oleh tes catalogBuildingType (grup 5): himpunan kategori yang
+ * terpetakan ke 'Custom' harus PERSIS ketiga ini — kategori lain yang
+ * jatuh ke 'Custom' berarti pemetaan hilang dan tes gagal.
+ */
+const TEMPLATE_CATEGORY_TO_BUILDING_TYPE: Record<TemplateCategory, BuildingType> = {
+  RUMAH_TINGGAL: 'Rumah Tinggal',
+  JALAN_TRANSPORTASI: 'Infrastruktur',
+  PERKERASAN: 'Infrastruktur',
+  SDA_IRIGASI: 'Infrastruktur',
+  GEDUNG: 'Gedung Kantor',
+  BANGUNAN_TINGGI: 'Gedung Kantor',
+  HOTEL_HOSPITALITY: 'Hotel & Resort',
+  KESEHATAN: 'Rumah Sakit / Klinik',
+  PENDIDIKAN: 'Sekolah / Kampus',
+  INDUSTRI: 'Gudang & Pabrik',
+  LANDSCAPE_SITE: 'Landscape & Kawasan',
+  MEP_SYSTEM: 'MEP & Sistem',
+  RENOVASI_MAINTENANCE: 'Renovasi & Maintenance',
+  UTILITAS: 'Custom',
+  CUSTOM: 'Custom',
+  TEMPLATE_SAYA: 'Custom',
+  // --- Katalog 180: 11 kategori baru ---
+  PONDASI_GEOTEKNIK: 'Pondasi & Geoteknik',
+  JEMBATAN_STRUKTUR: 'Jembatan & Struktur Khusus',
+  DRAINASE_SANITASI: 'Drainase & Sanitasi',
+  PEKERJAAN_TANAH: 'Pekerjaan Tanah',
+  STRUKTUR_BETON_BAJA: 'Struktur Beton & Baja',
+  FINISHING_INTERIOR: 'Finishing & Interior',
+  ATAP_WATERPROOFING: 'Atap & Waterproofing',
+  PERTANIAN_PERKEBUNAN: 'Pertanian & Perkebunan',
+  PELABUHAN_PESISIR: 'Pelabuhan & Pesisir',
+  FASILITAS_OLAHRAGA: 'Fasilitas Olahraga',
+  DEMOLISI_REKONSTRUKSI: 'Demolisi & Rekonstruksi'
+};
+
+export function templateCategoryToBuildingType(category: TemplateCategory): BuildingType {
+  return TEMPLATE_CATEGORY_TO_BUILDING_TYPE[category] ?? 'Custom';
+}
+
 /** Pencarian terpadu: katalog RAB didahulukan (kanonis), lalu master registry. */
-export function findUnifiedTemplate(idOrCode: string): UnifiedTemplateEntry | undefined {
-  const service = RabTemplateService.getInstance();
+export function findUnifiedTemplate(idOrCode: string): UnifiedTemplateEntry | undefined {  const service = RabTemplateService.getInstance();
   const catalogHit = service.getTemplateById(idOrCode);
   if (catalogHit && catalogHit.metadata.source === 'EZRAB_OFFICIAL') {
     const counterpartKey = KNOWN_COUNTERPARTS[catalogHit.id];
