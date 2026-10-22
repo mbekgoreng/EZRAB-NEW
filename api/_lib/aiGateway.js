@@ -56,6 +56,13 @@ const RIVER_VISION_MODEL = 'deepseek-ai/DeepSeek-V4.1-Flash';
 // (provider/key sama).
 const ATMO_CHAT_MODEL = 'atmo/deepseek-v4.1-flash';
 const ATMO_CHAT_FALLBACK_MODEL = 'ali/deepseek-v4.1-flash';
+// Advanced via AtmoRouter (user 2026-10-21): ag/gemini-3.8-flash-high,
+// fallback cx/gpt-6-luna (provider/key sama).
+const ATMO_ADVANCED_MODEL = 'ag/gemini-3.8-flash-high';
+const ATMO_ADVANCED_FALLBACK_MODEL = 'cx/gpt-6-luna';
+// Vision via AtmoRouter memakai model berbasis Gemini (vision-capable
+// lewat image_url OpenAI-compatible).
+const ATMO_VISION_MODEL = ATMO_ADVANCED_MODEL;
 const ATTEMPT_TIMEOUT_MS = 55000;
 
 // ---------------------------------------------------------------------------
@@ -258,19 +265,23 @@ export async function executeAI(o, onAttempt) {
   const atmoCall = (k, model) => () => callOAI(ATMO_BASE, k, model, 'atmorouter', message, systemPrompt, temperature, maxTokens, jsonMode, media);
 
   if (mode === 'vision') {
-    // Vision: Gemini dulu (native inlineData gambar+PDF), lalu ZyRouter/Atria
-    // via image_url (hanya gambar; PDF butuh Gemini).
+    // Vision (urutan user 2026-10-21): Gemini native dulu (inlineData
+    // gambar+PDF), lalu River DeepSeek V4.1, AtmoRouter (model vision),
+    // ZyRouter — ketiganya via image_url, hanya gambar; PDF butuh Gemini.
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
-    if (hasImage && zk) attempts.push(zyrouterCall());
-    if (hasImage) ak.forEach((k) => attempts.push(atriaCall(k)));
     if (hasImage) rk.forEach((k) => attempts.push(riverVisionCall(k)));
+    if (hasImage) atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_VISION_MODEL)));
+    if (hasImage && zk) attempts.push(zyrouterCall());
     if (hasPdf && gk.length === 0) {
       return { ok: false, error: 'Vision PDF membutuhkan GEMINI_API_KEY_* — tidak ada key Gemini terkonfigurasi', requestId, attempts: [] };
     }
   } else if (mode === 'advanced') {
-    // Advanced: ZyRouter (gemini 3.8) dulu, fallback ke Gemini flash lite
-    if (zk) attempts.push(zyrouterCall());
+    // Advanced (urutan user 2026-10-21): Gemini native -> AtmoRouter
+    // ag/gemini-3.8-flash-high -> AtmoRouter cx/gpt-6-luna -> ZyRouter.
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
+    atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_MODEL)));
+    atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_FALLBACK_MODEL)));
+    if (zk) attempts.push(zyrouterCall());
   } else if (mode === 'chat') {
     // Chat AI (urutan user 2026-10-21): River -> Dahl -> AtmoRouter
     // (atmo/deepseek-v4.1-flash, fallback ali/deepseek-v4.1-flash) -> ZyRouter.
@@ -281,16 +292,22 @@ export async function executeAI(o, onAttempt) {
     atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_CHAT_FALLBACK_MODEL)));
     if (zk) attempts.push(zyrouterCall());
   } else {
-    // Fast: River deepseek 4.1 flash -> Gemini flash lite -> Dahl -> ZyRouter
-    rk.forEach((k) => attempts.push(riverVisionCall(k)));
+    // Fast (urutan user 2026-10-21): Gemini native -> River DeepSeek V4.1
+    // -> AtmoRouter atmo/deepseek-v4.1-flash -> ali/deepseek-v4.1-flash.
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
-    if (zk) attempts.push(zyrouterCall());
+    rk.forEach((k) => attempts.push(riverVisionCall(k)));
+    atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_CHAT_MODEL)));
+    atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_CHAT_FALLBACK_MODEL)));
   }
-  if (mode !== 'vision') ak.forEach((k) => attempts.push(atriaCall(k)));
-  // Dahl & Gemini-OAI: OpenAI-compatible, ditambahkan ke chain non-vision
-  if (mode !== 'vision') dk.forEach((k) => attempts.push(dahlCall(k)));
-  if (mode !== 'vision') rk.forEach((k) => attempts.push(riverTextCall(k)));
-  if (mode !== 'vision') gok.forEach((k) => attempts.push(geminiOaiCall(k)));
+  // Ekor bersama (Atria -> Dahl -> River teks -> Gemini-OAI) HANYA untuk
+  // mode chat; fast/advanced/vision memakai persis rantai mereka di atas
+  // (urutan user 2026-10-21).
+  if (mode === 'chat') {
+    ak.forEach((k) => attempts.push(atriaCall(k)));
+    dk.forEach((k) => attempts.push(dahlCall(k)));
+    rk.forEach((k) => attempts.push(riverTextCall(k)));
+    gok.forEach((k) => attempts.push(geminiOaiCall(k)));
+  }
 
   if (attempts.length === 0) {
     return { ok: false, error: 'No AI provider keys configured', requestId, attempts: [] };
