@@ -3,9 +3,9 @@
  * Proxy pencarian harga pasar server-side (kredensial tidak ke browser).
  * Body: { materialName, spec, baseUnit, region?, limit? }
  */
-const { createMarketSearchProvider } = require('../_lib/marketSearch/serperProvider');
+import { createMarketSearchProvider } from '../_lib/marketSearch/serperProvider.js';
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'METHOD_NOT_ALLOWED' });
   }

@@ -12,21 +12,20 @@
  * - Snippet SERP bukan harga terverifikasi; selalu butuh buka halaman produk.
  * - Rate limit: 2.500 query gratis, lalu $1/1.000 (Serper, per 2026).
  * - Jangan mengklaim real-time; catat waktu pencarian.
+ *
+ * Catatan format modul: file ini JavaScript ESM murni (konsisten dengan
+ * seluruh api/ lain). Kontrak tipenya (MarketSearchProvider dkk.) hidup di
+ * src/engine/pricing/market/searchProvider.ts — anotasi tipe tidak dipakai
+ * di sini agar modul dapat diimpor loader ESM Node/tsx tanpa transpiler TS.
  */
 
-import type {
-  MarketSearchProvider,
-  MarketSearchQuery,
-  MarketSearchResult,
-  ProviderCapabilities,
-  RawMarketCandidate,
-} from '../../src/engine/pricing/market/searchProvider';
+import { UnavailableSearchProvider } from '../../../src/engine/pricing/market/searchProvider.ts';
 
 const SERPER_ENDPOINT = 'https://google.serper.dev/search';
 const TIMEOUT_MS = 15000;
 
 /** Ekstrak harga Rp dari teks snippet (best-effort, tidak dijamin). */
-function extractIdrPrice(text: string): number | null {
+function extractIdrPrice(text) {
   const m = text.replace(/\u00a0/g, ' ').match(/Rp\s?([\d.,]+)/i);
   if (!m) return null;
   const num = m[1].replace(/\./g, '').replace(/,(\d{2})$/, '.$1');
@@ -34,8 +33,8 @@ function extractIdrPrice(text: string): number | null {
   return Number.isFinite(v) && v > 0 ? v : null;
 }
 
-export class SerperSearchProvider implements MarketSearchProvider {
-  readonly capabilities: ProviderCapabilities = {
+export class SerperSearchProvider {
+  capabilities = {
     name: 'serper',
     supportsLiveSearch: true,
     regions: ['ID'],
@@ -47,14 +46,12 @@ export class SerperSearchProvider implements MarketSearchProvider {
     ],
   };
 
-  private apiKey: string;
-
-  constructor(apiKey: string) {
+  constructor(apiKey) {
     if (!apiKey) throw new Error('SERPER_API_KEY tidak dikonfigurasi.');
     this.apiKey = apiKey;
   }
 
-  async search(query: MarketSearchQuery): Promise<MarketSearchResult> {
+  async search(query) {
     const q = `${query.materialName} harga ${query.region || 'Indonesia'} beli`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -95,13 +92,13 @@ export class SerperSearchProvider implements MarketSearchProvider {
       }
 
       const data = await res.json();
-      const organic: any[] = data.organic || [];
-      const candidates: RawMarketCandidate[] = [];
+      const organic = data.organic || [];
+      const candidates = [];
 
       for (const r of organic) {
-        const title: string = r.title || '';
-        const link: string = r.link || '';
-        const snippet: string = r.snippet || '';
+        const title = r.title || '';
+        const link = r.link || '';
+        const snippet = r.snippet || '';
         // Filter: hanya halaman produk/toko (bukan artikel/blog)
         const isProductLike = /tokopedia\.com|shopee\.co\.id|bukalapak\.com|blibli\.com|mitra10|depobangunan|acehardware\.co\.id/i.test(link);
         if (!isProductLike) continue;
@@ -128,7 +125,7 @@ export class SerperSearchProvider implements MarketSearchProvider {
           ? 'Sebagian harga tidak terdeteksi di snippet; buka halaman produk untuk verifikasi.'
           : undefined,
       };
-    } catch (e: any) {
+    } catch (e) {
       const isTimeout = e?.name === 'AbortError';
       return {
         candidates: [], isLive: false, searchedAt: new Date().toISOString(),
@@ -141,9 +138,8 @@ export class SerperSearchProvider implements MarketSearchProvider {
 }
 
 /** Factory: kembalikan Serper bila key ada, selain itu Unavailable. */
-export function createMarketSearchProvider(): MarketSearchProvider {
+export function createMarketSearchProvider() {
   const key = process.env.SERPER_API_KEY;
   if (key) return new SerperSearchProvider(key);
-  const { UnavailableSearchProvider } = require('../../src/engine/pricing/market/searchProvider');
   return new UnavailableSearchProvider();
 }
