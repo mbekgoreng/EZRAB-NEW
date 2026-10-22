@@ -14,6 +14,8 @@ export interface DesignWorkItem {
   code: string;           // kode internal desain, mis. "DSN-W-001"
   description: string;
   category: string;
+  /** Kelompok WBS asal di spreadsheet desain (mis. '01 Persiapan'). */
+  group?: string;
   unit: string;
   volume: number;
   // Provenance
@@ -39,6 +41,7 @@ export function spreadsheetToWorkItems(rows: SpreadsheetRow[]): DesignWorkItem[]
       code: `DSN-${r.kode}`,
       description: r.uraian,
       category: 'AI_DESIGN',
+      group: r.kelompok,
       unit: r.satuan,
       volume: r.volume,
       source: 'AI_DESIGN_GEOMETRY' as const,

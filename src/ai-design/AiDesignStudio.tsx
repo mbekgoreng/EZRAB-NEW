@@ -221,12 +221,46 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
     setPickerFor(null);
   }, []);
 
-  // Keywords untuk pencarian kandidat berdasarkan deskripsi item
+  // Keywords untuk pencarian kandidat berdasarkan deskripsi item.
+  // Kandidat dicari dari katalog AHSP resmi (findAhspCandidates); bila tidak
+  // ada yang cocok, item tetap tanpa kode — tidak ada kode yang dikarang.
   const getKeywordsForItem = useCallback((description: string): string[] => {
     const lower = description.toLowerCase();
+    if (lower.includes('plint')) return ['plint'];
     if (lower.includes('keramik')) return ['keramik', 'lantai'];
     if (lower.includes('dinding') && lower.includes('bata')) return ['bata', 'merah'];
     if (lower.includes('pelat') || lower.includes('lantai dasar')) return ['beton'];
+    // Kelompok lengkap 01–12 (derivasi specToSpreadsheetRows)
+    if (lower.includes('bouwplank')) return ['bouwplank'];
+    if (lower.includes('pembersihan')) return ['pembersihan'];
+    if (lower.includes('galian')) return ['galian'];
+    if (lower.includes('urugan')) return lower.includes('pasir') ? ['pasir'] : ['tanah'];
+    if (lower.includes('pondasi')) return ['pondasi'];
+    if (lower.includes('aanstamping')) return ['batu'];
+    if (lower.includes('sloof')) return ['sloof'];
+    if (lower.includes('kolom')) return ['kolom'];
+    if (lower.includes('ringbalk')) return ['balok'];
+    if (lower.includes('tangga')) return ['tangga'];
+    if (lower.includes('plesteran')) return ['plesteran'];
+    if (lower.includes('acian')) return ['acian'];
+    if (lower.includes('baja ringan')) return ['baja ringan'];
+    if (lower.includes('genteng')) return ['genteng'];
+    if (lower.includes('lisplank')) return ['lisplank'];
+    if (lower.includes('talang')) return ['talang'];
+    if (lower.includes('pengecatan')) return ['pengecatan'];
+    if (lower.includes('plafond')) return ['plafond'];
+    if (lower.includes('pintu')) return ['pintu'];
+    if (lower.includes('jendela')) return ['jendela'];
+    if (lower.includes('titik lampu')) return ['titik lampu'];
+    if (lower.includes('stop kontak')) return ['stop kontak'];
+    if (lower.includes('saklar')) return ['saklar'];
+    if (lower.includes('panel')) return ['panel'];
+    if (lower.includes('kloset')) return ['kloset'];
+    if (lower.includes('wastafel')) return ['wastafel'];
+    if (lower.includes('floor drain')) return ['floor drain'];
+    if (lower.includes('shower') || lower.includes('kran')) return ['kran'];
+    if (lower.includes('bak cuci')) return ['bak cuci'];
+    if (lower.includes('pipa')) return ['pipa'];
     // Default: ambil 2 kata pertama yang bermakna
     return lower.split(' ').filter(w => w.length > 3).slice(0, 2);
   }, []);
@@ -539,12 +573,15 @@ export const AiDesignStudio: React.FC<AiDesignStudioProps> = ({ initialPrompt, o
                           <li key={item.code}>{item.description} — {item.volume} {item.unit} (harga: belum ada)</li>
                         ))}
                       </ul>
-                      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                         <button onClick={handleSendToRab} style={BTN_PRIMARY}>
                           Ya, Kirim ke RAB
                         </button>
                         <button onClick={() => setShowConfirm(false)} style={BTN_GHOST}>
                           Batal
+                        </button>
+                        <button onClick={handleGoToRab} style={BTN_GHOST}>
+                          Buka Spreadsheet RAB
                         </button>
                       </div>
                     </div>
