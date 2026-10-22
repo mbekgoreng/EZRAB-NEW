@@ -95,113 +95,13 @@ export class UnifiedProjectEngine {
     }
 
     if (rawItems.length === 0) {
-      const baseBudget = project.totalRab || project.costSummary?.grandTotal || 150000000;
-      return [
-        {
-          id: 'sec-div-01',
-          code: 'DIV-01',
-          name: 'Pekerjaan Persiapan & Pengukuran',
-          subtotal: Math.round(baseBudget * 0.08),
-          items: [
-            {
-              id: 'it-01-1',
-              sectionId: 'sec-div-01',
-              itemNumber: '1.1',
-              code: 'A.2.2.1.1',
-              description: 'Pengukuran dan Pemasangan Bowplank',
-              specification: 'Kayu 5/7 & papan 2/20 terpasang presisi',
-              volume: 85,
-              unit: 'm¹',
-              materialPrice: 32000,
-              laborPrice: 18000,
-              equipmentPrice: 0,
-              unitPrice: 50000,
-              totalPrice: 4250000,
-              verificationStatus: 'VERIFIED',
-            },
-            {
-              id: 'it-01-2',
-              sectionId: 'sec-div-01',
-              itemNumber: '1.2',
-              code: 'A.2.1.1.2',
-              description: 'Pembersihan Lahan & Perataan Lokasi',
-              specification: 'Pembersihan semak & puing sisa',
-              volume: 150,
-              unit: 'm²',
-              materialPrice: 0,
-              laborPrice: 25000,
-              equipmentPrice: 15000,
-              unitPrice: 40000,
-              totalPrice: 6000000,
-              verificationStatus: 'VERIFIED',
-            },
-          ],
-        },
-        {
-          id: 'sec-div-02',
-          code: 'DIV-02',
-          name: 'Pekerjaan Struktur & Pondasi',
-          subtotal: Math.round(baseBudget * 0.45),
-          items: [
-            {
-              id: 'it-02-1',
-              sectionId: 'sec-div-02',
-              itemNumber: '2.1',
-              code: 'A.2.3.1.1',
-              description: 'Galian Tanah Pondasi Footplat',
-              specification: 'Tanah biasa kedalaman s/d 2m',
-              volume: 48,
-              unit: 'm³',
-              materialPrice: 0,
-              laborPrice: 85000,
-              equipmentPrice: 0,
-              unitPrice: 85000,
-              totalPrice: 4080000,
-              verificationStatus: 'VERIFIED',
-            },
-            {
-              id: 'it-02-2',
-              sectionId: 'sec-div-02',
-              itemNumber: '2.2',
-              code: 'A.4.1.1.5',
-              description: 'Beton Bertulang Mutu K-300 (Footplat & Sloof)',
-              specification: 'Ready mix slump 12±2 cm, tulangan ulir fy 420',
-              volume: 32,
-              unit: 'm³',
-              materialPrice: 1150000,
-              laborPrice: 250000,
-              equipmentPrice: 50000,
-              unitPrice: 1450000,
-              totalPrice: 46400000,
-              verificationStatus: 'VERIFIED',
-            },
-          ],
-        },
-        {
-          id: 'sec-div-03',
-          code: 'DIV-03',
-          name: 'Pekerjaan Arsitektur & Finishing',
-          subtotal: Math.round(baseBudget * 0.47),
-          items: [
-            {
-              id: 'it-03-1',
-              sectionId: 'sec-div-03',
-              itemNumber: '3.1',
-              code: 'A.4.4.1.9',
-              description: 'Pasangan Dinding Bata Ringan (Hebel) t=10cm',
-              specification: 'Mortar perekat instan tebal 3mm',
-              volume: 210,
-              unit: 'm²',
-              materialPrice: 110000,
-              laborPrice: 35000,
-              equipmentPrice: 0,
-              unitPrice: 1450000,
-              totalPrice: 30450000,
-              verificationStatus: 'VERIFIED',
-            },
-          ],
-        },
-      ];
+      // JUJUR (Fase 4): proyek tanpa item RAB nyata TIDAK diberi seksi
+      // karangan. Implementasi sebelumnya mengarang divisi + item
+      // berharga status VERIFIED dari baseBudget fallback
+      // (totalRab proyek atau konstanta Rp150 juta) — fabrikasi itu menghapus
+      // perbedaan antara "proyek kosong" dan "proyek berisi", dan
+      // bocor ke ekspor PDF/Excel. Kini: kosong berarti kosong.
+      return [];
     }
 
     // Group flat items by category

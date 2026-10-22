@@ -1766,7 +1766,14 @@ export async function exportRABToProfessionalExcel(
     wsKurva.getCell('A2').font = FONT_HIERARCHY.SECTION_TITLE;
 
     wsKurva.mergeCells('A3:M3');
-    wsKurva.getCell('A3').value = `Baseline Terverifikasi: Rp ${grandTotal.toLocaleString('id-ID')} • Durasi: ${project.startDate || '-'} s/d ${project.targetDate || '-'} • Rev: ${project.currentVersion || 'Rev 00'}`;
+    // Label sumber JUJUR (Fase 4): baseline hanya boleh diklaim berasal dari
+    // jadwal bila tugas jadwal tersimpan benar-benar ada; tanpa tugas,
+    // distribusi di bawah adalah estimasi dari bobot seksi RAB — bukan
+    // "baseline terverifikasi".
+    const kurvaBasisLabel = Array.isArray((project as any).scheduleTasks) && (project as any).scheduleTasks.length > 0
+      ? 'Baseline dari tugas jadwal tersimpan'
+      : 'Baseline estimasi dari distribusi bobot seksi RAB (tugas jadwal belum tersimpan)';
+    wsKurva.getCell('A3').value = `${kurvaBasisLabel} • Total RAB: Rp ${grandTotal.toLocaleString('id-ID')} • Durasi: ${project.startDate || '-'} s/d ${project.targetDate || '-'} • Rev: ${project.currentVersion || 'Rev 00'}`;
     wsKurva.getCell('A3').font = FONT_HIERARCHY.DOC_SUBTITLE;
 
     const kHead = wsKurva.getRow(5);

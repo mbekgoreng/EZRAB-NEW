@@ -114,6 +114,8 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
   // Navigation & Filter States
   const [selectedCategory, setSelectedCategory] = useState<TemplateCategory | 'ALL'>('ALL');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('ALL');
+  // Minimalis: strip subkategori dilipat (maks 8 pill) secara default
+  const [subcatExpanded, setSubcatExpanded] = useState(false);
   const [sourceFilter, setSourceFilter] = useState<'ALL' | 'OFFICIAL' | 'USER'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'POPULAR' | 'NAME' | 'ITEMS'>('POPULAR');
@@ -130,6 +132,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
   // Reset subcategory selection when category changes
   useEffect(() => {
     setSelectedSubcategory('ALL');
+    setSubcatExpanded(false);
   }, [selectedCategory]);
 
   // Universal Global Detail Level
@@ -193,6 +196,26 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
     }
     return Array.from(subcats).sort();
   }, [templates, selectedCategory]);
+
+  // Minimalis: maks 8 pill subkategori tampil; sisanya di balik pengalih
+  // "+N lainnya". Subkategori yang sedang aktif selalu disisipkan ke daftar
+  // tampak walau berada di luar 8 pertama, agar filter aktif tak hilang visual.
+  const MAX_VISIBLE_SUBCATEGORIES = 8;
+  const visibleSubcategories = useMemo(() => {
+    if (subcatExpanded || availableSubcategories.length <= MAX_VISIBLE_SUBCATEGORIES) {
+      return availableSubcategories;
+    }
+    const first = availableSubcategories.slice(0, MAX_VISIBLE_SUBCATEGORIES);
+    if (
+      selectedSubcategory !== 'ALL' &&
+      availableSubcategories.includes(selectedSubcategory) &&
+      !first.includes(selectedSubcategory)
+    ) {
+      return [...first, selectedSubcategory];
+    }
+    return first;
+  }, [availableSubcategories, subcatExpanded, selectedSubcategory]);
+  const hiddenSubcategoryCount = availableSubcategories.length - visibleSubcategories.length;
 
   // Filtered & Sorted Templates
   const filteredTemplates = useMemo(() => {
@@ -785,7 +808,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
               >
                 Semua Subkategori ({selectedCategory === 'ALL' ? templates.length : (categoryCounts[selectedCategory] || 0)})
               </button>
-              {availableSubcategories.map(subcat => {
+              {visibleSubcategories.map(subcat => {
                 const subcatCount = templates.filter(t => {
                   if (selectedCategory !== 'ALL') {
                     if (selectedCategory === 'TEMPLATE_SAYA') {
@@ -835,6 +858,23 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
                   </button>
                 );
               })}
+              {availableSubcategories.length > MAX_VISIBLE_SUBCATEGORIES && (
+                <button
+                  onClick={() => setSubcatExpanded(prev => !prev)}
+                  style={{
+                    padding: '5px 6px',
+                    background: 'transparent',
+                    border: 'none',
+                    fontSize: '11.5px',
+                    fontWeight: 600,
+                    color: 'var(--ez-color-primary)',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {subcatExpanded ? 'Lebih sedikit' : `+${hiddenSubcategoryCount} lainnya`}
+                </button>
+              )}
             </div>
           )}
 

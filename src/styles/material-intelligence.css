@@ -240,22 +240,10 @@
 }
 
 /* =========================================================================
-   UI POLISH 2026-10-22 — dark/light border parity (Material & Harga)
-   Light mode: --ez-color-border-line & friends are cyclic self-references in
-   ezrab-design-system.css :root, so they compute to nothing and this page
-   renders borderless. Dark mode assigns them real values, which is why every
-   card / panel / filter suddenly showed a hairline. Give dark mode the same
-   borderless treatment, scoped to this workspace only (premium themes keep
-   their deliberate borders). Panel separation in dark mode still comes from
-   surface contrast: page bg surface-secondary vs surface cards.
+   UI POLISH 2026-10-22 — scoped dark-mode border suppression for this
+   workspace was REMOVED the same day by the DS-01 normalization in
+   ezrab-design-system.css: the :root border tokens are no longer cyclic,
+   so light mode now renders the same hairlines as dark mode and this page
+   deliberately uses the global border tokens like every other view.
+   Do not re-add a per-page transparent override here.
    ========================================================================= */
-html[data-theme="dark"]:not([data-premium-theme]) .mat-workspace-root {
-  --ez-color-border-line: transparent;
-  --ez-color-border-strong: transparent;
-  --ez-hue-blue-border: transparent;
-  --ez-hue-green-border: transparent;
-  --ez-hue-green-border-deep: transparent;
-  --ez-hue-amber-border: transparent;
-  --ez-hue-purple-border: transparent;
-  --ez-hue-rose-border: transparent;
-}

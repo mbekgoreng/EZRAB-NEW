@@ -252,7 +252,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 1: Nilai Kontrak */}
         <div className="ez-stat"
           style={{
-            backgroundColor: 'var(--ez-pastel-cream)',
+            background: 'var(--ez-stat-mint)',
             borderRadius: 'var(--ez-radius-card)',
             padding: '20px',
             display: 'flex',
@@ -262,24 +262,24 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Nilai Kontrak</span>
+            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)' }}>Nilai Kontrak</span>
             <span
               style={{
                 fontSize: '10px',
                 fontWeight: 700,
                 padding: '1px 6px',
                 borderRadius: '4px',
-                backgroundColor: kpiData.isContractAvailable ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-color-surface-tertiary)',
-                color: kpiData.isContractAvailable ? 'var(--ez-hue-green-text-deep)' : 'var(--ez-color-text-muted)',
+                backgroundColor: 'rgba(255, 255, 255, 0.22)',
+                color: '#FFFFFF',
               }}
             >
               {kpiData.isContractAvailable ? 'Available' : 'No Data'}
             </span>
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF' }}>
             {kpiData.isContractAvailable ? formatRupiah(kpiData.contractValue) : 'Belum Diatur'}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
+          <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>
             Sumber: Master Kontrak Proyek
           </div>
         </div>
@@ -287,7 +287,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 2: Total Budget / RAB */}
         <div className="ez-stat"
           style={{
-            backgroundColor: 'var(--ez-pastel-mint)',
+            background: 'var(--ez-stat-sky)',
             borderRadius: 'var(--ez-radius-card)',
             padding: '20px',
             display: 'flex',
@@ -297,24 +297,24 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Total Budget (RAB)</span>
+            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)' }}>Total Budget (RAB)</span>
             <span
               style={{
                 fontSize: '10px',
                 fontWeight: 700,
                 padding: '1px 6px',
                 borderRadius: '4px',
-                backgroundColor: kpiData.isBudgetAvailable ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-tertiary)',
-                color: kpiData.isBudgetAvailable ? 'var(--ez-hue-blue-text-deep)' : 'var(--ez-color-text-muted)',
+                backgroundColor: 'rgba(255, 255, 255, 0.22)',
+                color: '#FFFFFF',
               }}
             >
               {kpiData.isBudgetAvailable ? 'Approved RAB' : 'No Data'}
             </span>
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF' }}>
             {kpiData.isBudgetAvailable ? formatRupiah(kpiData.totalBudget) : 'Belum Ada RAB'}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
+          <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>
             Komitmen: {formatRupiah(kpiData.committedCost)}
           </div>
         </div>
@@ -322,7 +322,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 3: Actual Cost (Pengeluaran Riil) */}
         <div className="ez-stat"
           style={{
-            backgroundColor: 'var(--ez-pastel-peach)',
+            background: 'var(--ez-stat-peach)',
             borderRadius: 'var(--ez-radius-card)',
             padding: '20px',
             display: 'flex',
@@ -332,13 +332,13 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Actual Cost (Pengeluaran)</span>
+            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)' }}>Actual Cost (Pengeluaran)</span>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#EF4444' }} />
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-rose-text)' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF' }}>
             {expenses.length > 0 ? formatRupiah(kpiData.actualCost) : 'Rp 0'}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
+          <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>
             {expenses.length} Transaksi Terverifikasi
           </div>
         </div>
@@ -346,7 +346,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 4: Cash In (Penerimaan Riil) */}
         <div className="ez-stat"
           style={{
-            backgroundColor: 'var(--ez-pastel-sky)',
+            background: 'var(--ez-stat-cyan)',
             borderRadius: 'var(--ez-radius-card)',
             padding: '20px',
             display: 'flex',
@@ -356,13 +356,13 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Cash In (Penerimaan)</span>
+            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)' }}>Cash In (Penerimaan)</span>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10B981' }} />
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF' }}>
             {payments.length > 0 ? formatRupiah(kpiData.cashIn) : 'Rp 0'}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
+          <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>
             {payments.length} Pembayaran Diterima
           </div>
         </div>
@@ -370,7 +370,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 5: Outstanding Piutang */}
         <div className="ez-stat"
           style={{
-            backgroundColor: 'var(--ez-pastel-cream)',
+            background: 'var(--ez-stat-violet)',
             borderRadius: 'var(--ez-radius-card)',
             padding: '20px',
             display: 'flex',
@@ -380,17 +380,17 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Sisa Piutang (Receivable)</span>
+            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)' }}>Sisa Piutang (Receivable)</span>
             {receivablesData.totalOverdue > 0 && (
-              <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', backgroundColor: 'var(--ez-hue-red-bg)', color: 'var(--ez-hue-red-text)' }}>
+              <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', backgroundColor: 'rgba(255, 255, 255, 0.22)', color: '#FFFFFF' }}>
                 Overdue
               </span>
             )}
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: kpiData.receivableOutstanding > 0 ? 'var(--ez-hue-amber-text-deep)' : 'var(--ez-color-text)' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF' }}>
             {formatRupiah(kpiData.receivableOutstanding)}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
+          <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>
             Jatuh Tempo: {formatRupiah(receivablesData.totalOverdue)}
           </div>
         </div>
@@ -398,7 +398,7 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
         {/* KPI 6: Profit Sementara & Margin */}
         <div className="ez-stat"
           style={{
-            backgroundColor: 'var(--ez-pastel-mint)',
+            background: 'var(--ez-stat-indigo)',
             borderRadius: 'var(--ez-radius-card)',
             padding: '20px',
             display: 'flex',
@@ -408,15 +408,15 @@ export const FinanceOverviewTab: React.FC<FinanceOverviewTabProps> = ({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Gross Profit Sementara</span>
-            <span style={{ fontSize: '11px', fontWeight: 750, color: 'var(--ez-color-primary)' }}>
+            <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)' }}>Gross Profit Sementara</span>
+            <span style={{ fontSize: '11px', fontWeight: 750, color: 'rgba(255, 255, 255, 0.92)' }}>
               {kpiData.isContractAvailable ? `${kpiData.profitMarginPercent}%` : '-'}
             </span>
           </div>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: kpiData.currentProfit >= 0 ? 'var(--ez-color-primary)' : 'var(--ez-hue-rose-text)' }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: '#FFFFFF' }}>
             {kpiData.isContractAvailable ? formatRupiah(kpiData.currentProfit) : 'Belum Ada Kontrak'}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
+          <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>
             Proyeksi Akhir: {profitabilityData.projectedProfit !== null ? formatRupiah(profitabilityData.projectedProfit) : 'N/A'}
           </div>
         </div>

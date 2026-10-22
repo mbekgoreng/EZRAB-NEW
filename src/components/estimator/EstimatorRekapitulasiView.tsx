@@ -74,65 +74,65 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
       {/* 1. TOP STATS CARDS */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "14px" }}>
         {/* Card 1: Biaya Langsung */}
-        <div className="ez-stat" style={{ background: "var(--ez-pastel-sky)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
+        <div className="ez-stat" style={{ background: "var(--ez-stat-sky)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "#64748B" }}>Biaya Langsung (Real Cost)</span>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-blue-bg)", color: "var(--ez-hue-blue-text)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255, 255, 255, 0.88)" }}>Biaya Langsung (Real Cost)</span>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-color-surface)", color: "var(--ez-hue-blue-text)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Layers size={16} />
             </div>
           </div>
-          <div style={{ fontSize: "20px", fontWeight: 800, color: "var(--ez-color-text-primary)", fontVariantNumeric: "tabular-nums" }}>
+          <div style={{ fontSize: "20px", fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
             {formatCurrencyIDR(directCost)}
           </div>
-          <span style={{ fontSize: "11.5px", color: "#94A3B8", marginTop: "4px", display: "block" }}>
+          <span style={{ fontSize: "11.5px", color: "rgba(255, 255, 255, 0.8)", marginTop: "4px", display: "block" }}>
             Total dari {items.length} item pekerjaan
           </span>
         </div>
 
         {/* Card 2: Overhead & Profit */}
-        <div className="ez-stat" style={{ background: "var(--ez-pastel-mint)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
+        <div className="ez-stat" style={{ background: "var(--ez-stat-indigo)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-<span style={{ fontSize: "12px", fontWeight: 600, color: "#64748B" }}>Overhead & Keuntungan ({(currentProject as any)?.overheadPercent ?? 10}%)</span>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#F0FDF4", color: "#16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}>
+<span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255, 255, 255, 0.88)" }}>Overhead & Keuntungan ({(currentProject as any)?.overheadPercent ?? 10}%)</span>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-color-surface)", color: "#16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <TrendingUp size={16} />
             </div>
           </div>
-          <div style={{ fontSize: "20px", fontWeight: 800, color: "var(--ez-hue-green-text-bright)", fontVariantNumeric: "tabular-nums" }}>
+          <div style={{ fontSize: "20px", fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
             {formatCurrencyIDR(overheadNominal)}
           </div>
-          <span style={{ fontSize: "11.5px", color: "#94A3B8", marginTop: "4px", display: "block" }}>
+          <span style={{ fontSize: "11.5px", color: "rgba(255, 255, 255, 0.8)", marginTop: "4px", display: "block" }}>
             Margin jasa pelaksana & manajemen
           </span>
         </div>
 
         {/* Card 3: PPN 11% */}
-        <div className="ez-stat" style={{ background: "var(--ez-pastel-cream)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
+        <div className="ez-stat" style={{ background: "var(--ez-stat-cream)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "#64748B" }}>PPN 11%</span>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-amber-bg-deep)", color: "var(--ez-hue-amber-text)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255, 255, 255, 0.88)" }}>PPN 11%</span>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-color-surface)", color: "var(--ez-hue-amber-text)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <ShieldCheck size={16} />
             </div>
           </div>
-          <div style={{ fontSize: "20px", fontWeight: 800, color: "var(--ez-hue-amber-text)", fontVariantNumeric: "tabular-nums" }}>
+          <div style={{ fontSize: "20px", fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
             {formatCurrencyIDR(ppnNominal)}
           </div>
-          <span style={{ fontSize: "11.5px", color: "#94A3B8", marginTop: "4px", display: "block" }}>
+          <span style={{ fontSize: "11.5px", color: "rgba(255, 255, 255, 0.8)", marginTop: "4px", display: "block" }}>
             Pajak pertambahan nilai resmi
           </span>
         </div>
 
         {/* Card 4: Grand Total RAB */}
-        <div className="ez-stat" style={{ background: "var(--ez-pastel-peach)", color: "var(--ez-color-text-primary)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
+        <div className="ez-stat" style={{ background: "var(--ez-stat-mint)", color: "var(--ez-color-text-primary)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "#64748B" }}>Grand Total RAB Proyek</span>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-blue-bg)", color: "var(--ez-hue-blue-text)", border: "1px solid var(--ez-hue-blue-bg-deep)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255, 255, 255, 0.88)" }}>Grand Total RAB Proyek</span>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-color-surface)", color: "var(--ez-hue-blue-text)", border: "1px solid rgba(255,255,255,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <FileCheck size={16} />
             </div>
           </div>
-          <div style={{ fontSize: "21px", fontWeight: 800, color: "var(--ez-hue-blue-text)", fontVariantNumeric: "tabular-nums" }}>
+          <div style={{ fontSize: "21px", fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
             {formatCurrencyIDR(grandTotal)}
           </div>
-          <span style={{ fontSize: "11.5px", color: "#64748B", marginTop: "4px", display: "block" }}>
+          <span style={{ fontSize: "11.5px", color: "rgba(255, 255, 255, 0.8)", marginTop: "4px", display: "block" }}>
             Termasuk seluruh pajak & overhead
           </span>
         </div>

@@ -869,62 +869,62 @@ export const DedRabV2ReviewView: React.FC<DedRabV2ReviewViewProps> = ({
           gap: '12px',
         }}
       >
-        <div style={{ backgroundColor: 'var(--ez-hue-emerald-bg)', border: '1.5px solid var(--ez-hue-green-border-deep)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="ez-stat" style={{ background: 'var(--ez-stat-mint)', borderRadius: 'var(--ez-radius-card)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <span style={{ fontSize: '20px' }}>🟢</span>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-green-text)' }}>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: '#FFFFFF' }}>
               {currentProvenance.ezrabDatabase} Item
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--ez-hue-green-text-deep)', fontWeight: 600 }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 600 }}>
               EZRAB Database
             </div>
           </div>
         </div>
 
-        <div style={{ backgroundColor: 'var(--ez-hue-blue-bg)', border: '1.5px solid var(--ez-hue-blue-border)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="ez-stat" style={{ background: 'var(--ez-stat-sky)', borderRadius: 'var(--ez-radius-card)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <span style={{ fontSize: '20px' }}>🔵</span>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-primary-hover)' }}>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: '#FFFFFF' }}>
               {currentProvenance.marketReference} Item
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--ez-hue-blue-text-deep)', fontWeight: 600 }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 600 }}>
               Market Reference
             </div>
           </div>
         </div>
 
-        <div style={{ backgroundColor: 'var(--ez-hue-violet-bg)', border: '1.5px solid var(--ez-hue-violet-border)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="ez-stat" style={{ background: 'var(--ez-stat-violet)', borderRadius: 'var(--ez-radius-card)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <span style={{ fontSize: '20px' }}>🟣</span>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-violet-text)' }}>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: '#FFFFFF' }}>
               {currentProvenance.aiAssisted} Item
             </div>
-            <div style={{ fontSize: '11px', color: '#5B21B6', fontWeight: 600 }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 600 }}>
               AI Assisted
             </div>
           </div>
         </div>
 
-        <div style={{ backgroundColor: 'var(--ez-hue-amber-bg)', border: '1.5px solid var(--ez-hue-amber-border)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div className="ez-stat" style={{ background: 'var(--ez-stat-cream)', borderRadius: 'var(--ez-radius-card)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <span style={{ fontSize: '20px' }}>🟠</span>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-hue-amber-text)' }}>
+            <div style={{ fontSize: '15px', fontWeight: 800, color: '#FFFFFF' }}>
               {currentProvenance.aiEstimated} Item
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--ez-hue-amber-text-dark)', fontWeight: 600 }}>
+            <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 600 }}>
               AI Estimated
             </div>
           </div>
         </div>
 
         {currentConfidence.low > 0 && (
-          <div style={{ backgroundColor: 'var(--ez-hue-orange-bg-soft)', border: '1.5px solid var(--ez-hue-orange-bg-deep)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="ez-stat" style={{ background: 'var(--ez-stat-rose)', borderRadius: 'var(--ez-radius-card)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
             <span style={{ fontSize: '20px' }}>⚠</span>
             <div>
-              <div style={{ fontSize: '15px', fontWeight: 800, color: '#C2410C' }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#FFFFFF' }}>
                 {currentConfidence.low} Item
               </div>
-              <div style={{ fontSize: '11px', color: '#9A3412', fontWeight: 600 }}>
+              <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 600 }}>
                 Confidence Rendah
               </div>
             </div>

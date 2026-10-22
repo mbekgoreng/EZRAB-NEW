@@ -892,54 +892,54 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
          ========================================================================= */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
         {/* Card 1: Total Pekerjaan */}
-        <div className="ezdb-anim ez-stat" style={{ background: 'var(--ez-pastel-cream)', borderRadius: 'var(--ez-radius-card)', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.1s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-warm)', marginBottom: '8px' }}>
+        <div className="ezdb-anim ez-stat" style={{ background: 'var(--ez-stat-sky)', borderRadius: 'var(--ez-radius-card)', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.1s both' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)', marginBottom: '8px' }}>
             Total Pekerjaan
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {stats.total}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-warm)', marginTop: '6px' }}>
-            item terdaftar · <b style={{ color: 'var(--ez-color-text-primary)' }}>{stats.total > 0 ? `${stats.total} pekerjaan aktif` : 'belum ada pekerjaan'}</b>
+          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '6px' }}>
+            item terdaftar · <b style={{ color: '#FFFFFF' }}>{stats.total > 0 ? `${stats.total} pekerjaan aktif` : 'belum ada pekerjaan'}</b>
           </div>
         </div>
 
         {/* Card 2: Sudah Dihitung */}
-        <div className="ezdb-anim ez-stat" style={{ background: 'var(--ez-pastel-mint)', borderRadius: 'var(--ez-radius-card)', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.16s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-warm)', marginBottom: '8px' }}>
+        <div className="ezdb-anim ez-stat" style={{ background: 'var(--ez-stat-mint)', borderRadius: 'var(--ez-radius-card)', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.16s both' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)', marginBottom: '8px' }}>
             Sudah Dihitung
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {stats.sudahDihitung}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-warm)', marginTop: '6px' }}>
-            dari <b style={{ color: 'var(--ez-color-text-primary)' }}>{stats.total}</b> · {stats.total > 0 ? `${Math.round((stats.sudahDihitung / stats.total) * 100)}% memiliki volume` : '0% terhitung'}
+          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '6px' }}>
+            dari <b style={{ color: '#FFFFFF' }}>{stats.total}</b> · {stats.total > 0 ? `${Math.round((stats.sudahDihitung / stats.total) * 100)}% memiliki volume` : '0% terhitung'}
           </div>
         </div>
 
         {/* Card 3: Terhubung AHSP */}
-        <div className="ezdb-anim ez-stat" style={{ background: 'var(--ez-pastel-peach)', borderRadius: 'var(--ez-radius-card)', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.22s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-warm)', marginBottom: '8px' }}>
+        <div className="ezdb-anim ez-stat" style={{ background: 'var(--ez-stat-cyan)', borderRadius: 'var(--ez-radius-card)', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.22s both' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)', marginBottom: '8px' }}>
             Terhubung AHSP
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {stats.terhubungAhsp}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-warm)', marginTop: '6px' }}>
-            dari <b style={{ color: 'var(--ez-color-text-primary)' }}>{stats.total}</b> · {stats.total > 0 ? `${Math.round((stats.terhubungAhsp / stats.total) * 100)}% harga terpasang` : '0% terhubung'}
+          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '6px' }}>
+            dari <b style={{ color: '#FFFFFF' }}>{stats.total}</b> · {stats.total > 0 ? `${Math.round((stats.terhubungAhsp / stats.total) * 100)}% harga terpasang` : '0% terhubung'}
           </div>
         </div>
 
         {/* Card 4: Terhubung RAB */}
-        <div className="ezdb-anim ez-stat" style={{ background: 'var(--ez-pastel-sky)', borderRadius: 'var(--ez-radius-card)', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.28s both' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-warm)', marginBottom: '8px' }}>
+        <div className="ezdb-anim ez-stat" style={{ background: 'var(--ez-stat-violet)', borderRadius: 'var(--ez-radius-card)', padding: '22px', boxShadow: CARD_SHADOW, animation: 'ezdb-rise 0.6s 0.28s both' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)', marginBottom: '8px' }}>
             Terhubung RAB
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {stats.terhubungRab}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-warm)', marginTop: '6px' }}>
-            total nilai <b style={{ color: 'var(--ez-color-text-primary)' }}>{formatCurrencyIDR(stats.totalNilai)}</b>
+          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '6px' }}>
+            total nilai <b style={{ color: '#FFFFFF' }}>{formatCurrencyIDR(stats.totalNilai)}</b>
           </div>
         </div>
       </div>

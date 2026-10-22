@@ -49,8 +49,10 @@ import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { exportProjectToExcel } from '../../export/excelExportEngine';
 import { exportProjectToPDF } from '../../export/pdfExporter';
 import { brandingClient } from '../../services/brandingClient';
-import { checkKurvaSRequirements, generateKurvaSData } from '../../engine/kurvaSEngine';
-import { UnifiedProjectEngine } from '../../engine/unifiedProjectEngine';
+import { checkKurvaSRequirements } from '../../engine/kurvaSEngine';
+import { computeLaporanSummary, resolveItemAmount } from '../../lib/laporanSummary';
+import { buildLaporanKurvaS } from '../../lib/kurvaSHonesty';
+import { buildGanttTasks, formatScheduleDuration, resolveHonestCompany } from '../../lib/scheduleHonesty';
 import { MASTER_AHSP_DATABASE } from '../../data/indonesianAHSP';
 
 import { useProject } from '../../context/ProjectContext';
@@ -159,26 +161,35 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
   const [hoveredWeekIndex, setHoveredWeekIndex] = useState<number | null>(null);
 
   // Dynamically derived Rekapitulasi Categories from real RAB Items (empty if no items)
+  // Nilai kategori = jumlah amount item BERHARGA saja (resolveItemAmount);
+  // item tanpa harga tidak menyumbang dan tidak diubah jadi 0 — jumlahnya
+  // tercatat di pricedCount/itemCount agar sel dapat berlabel jujur.
   const rekapCategories = useMemo(() => {
     if (!initialRabItems || initialRabItems.length === 0) return [];
-    
-    const catMap = new Map<string, { no: number; id: string; name: string; value: number; color: string }>();
+
+    const catMap = new Map<string, { no: number; id: string; name: string; value: number; color: string; pricedCount: number; itemCount: number }>();
     const colors = ['var(--ez-color-primary)', '#F59E0B', '#10B981', '#EF4444', '#38BDF8', '#EC4899', '#F97316', '#8B5CF6', '#14B8A6', '#6366F1'];
-    
+
     initialRabItems.forEach((item) => {
       const catName = item.category || 'Pekerjaan Utama';
-      const amt = item.amount || ((item.volume || 0) * (item.unitPrice || 0)) || 0;
+      const amt = resolveItemAmount(item);
       const existing = catMap.get(catName);
       if (existing) {
-        existing.value += amt;
+        existing.itemCount += 1;
+        if (amt !== null) {
+          existing.value += amt;
+          existing.pricedCount += 1;
+        }
       } else {
         const no = catMap.size + 1;
         catMap.set(catName, {
           no,
           id: `cat-${no}`,
           name: catName,
-          value: amt,
+          value: amt ?? 0,
           color: colors[(no - 1) % colors.length],
+          pricedCount: amt !== null ? 1 : 0,
+          itemCount: 1,
         });
       }
     });
@@ -189,6 +200,20 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
   const totalRekapValue = useMemo(() => {
     return rekapCategories.reduce((acc, cat) => acc + cat.value, 0);
   }, [rekapCategories]);
+
+  // Ringkasan jujur untuk kartu KPI (definisi metrik: lib/laporanSummary).
+  // Field progress hanya diteruskan bila ada proyek nyata — objek fallback
+  // 'Proyek Baru' bukan proyek, progress-nya tidak boleh tampil sebagai fakta.
+  const hasRealProject = Boolean(currentProject || contextProjects[0]);
+  const laporanSummary = useMemo(
+    () =>
+      computeLaporanSummary(
+        initialRabItems ?? [],
+        projectScheduleTasks ?? [],
+        hasRealProject ? activeProject.progress : undefined
+      ),
+    [initialRabItems, projectScheduleTasks, activeProject.progress, hasRealProject]
+  );
 
   // BOQ Detailed Dataset derived from real items
   const boqData = useMemo(() => {
@@ -210,7 +235,14 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
         vol: item.volume,
         unit: item.unit,
         price: item.unitPrice,
-        amount: item.amount || ((item.volume || 0) * (item.unitPrice || 0)),
+        // null = harga belum tersedia (BUKAN 0) — sel dirender "Harga belum diisi".
+        amount: resolveItemAmount(item),
+        // Harga komponen & status verifikasi ASLI dari item (untuk ekspor);
+        // tidak lagi dipecah karangan 70/30 atau diklaim VERIFIED.
+        materialPrice: item.materialPrice,
+        laborPrice: item.laborPrice,
+        equipmentPrice: item.equipmentPrice,
+        verificationStatus: item.verificationStatus,
       });
     });
 
@@ -218,7 +250,8 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
   }, [initialRabItems]);
 
   const totalBoqAmount = useMemo(() => {
-    return boqData.reduce((sum, cat) => sum + cat.items.reduce((cSum: number, it: any) => cSum + it.amount, 0), 0);
+    // Hanya amount berharga yang dijumlahkan; amount null dilewati (bukan 0 terselubung).
+    return boqData.reduce((sum, cat) => sum + cat.items.reduce((cSum: number, it: any) => cSum + (it.amount ?? 0), 0), 0);
   }, [boqData]);
 
   // Standardized AHSP Item interface for LaporanView
@@ -329,10 +362,13 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
             return;
           }
 
-          // If no direct components, create standard transparent breakdown based on rItem prices
-          const matPrice = rItem.materialPrice || (rItem.unitPrice ? rItem.unitPrice * 0.6 : 0);
-          const labPrice = rItem.laborPrice || (rItem.unitPrice ? rItem.unitPrice * 0.3 : 0);
-          const eqPrice = rItem.equipmentPrice || (rItem.unitPrice ? rItem.unitPrice * 0.1 : 0);
+          // Tanpa komponen langsung: pakai HANYA harga komponen yang terekam
+          // di item. Sebelumnya kekurangan itu ditambal pecahan karangan
+          // 60/30/10 dari unitPrice — fabrikasi yang dihapus; komponen yang
+          // tidak terekam tampil sebagai seksi kosong yang jujur.
+          const matPrice = rItem.materialPrice ?? 0;
+          const labPrice = rItem.laborPrice ?? 0;
+          const eqPrice = rItem.equipmentPrice ?? 0;
           list.push({
             id: `proj-${rItem.id}`,
             code: itemCode,
@@ -446,92 +482,30 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
     return checkKurvaSRequirements(activeProject, projectScheduleTasks);
   }, [activeProject, projectScheduleTasks]);
 
-  // S-Curve Dataset derived from real tasks or normalized construction WBS
-  const sCurveWeeks: Array<{
-    week: string;
-    planWeekly: number;
-    planCum: number;
-    actWeekly: number | null;
-    actCum: number | null;
-    dev: number | null;
-  }> = useMemo(() => {
-    const normSections = UnifiedProjectEngine.normalizeSections(activeProject, initialRabItems);
-    const gTotal = totalRekapValue || activeProject.totalRab || 150000000;
-    const points = generateKurvaSData(normSections, gTotal, activeProject.startDate, activeProject.targetDate, projectScheduleTasks);
+  // S-Curve Dataset — HANYA kurva rencana dari tugas jadwal tersimpan
+  // (lib/kurvaSHonesty.buildLaporanKurvaS di atas projectKurvaSData).
+  // Implementasi sebelumnya mensintesis tiga hal yang tidak ada di data:
+  // (1) total biaya fallback karangan (konstanta Rp150 juta), (2) urutan konstruksi
+  // mingguan dari seksi RAB bila tugas tidak ada (generateKurvaSData CASE 2),
+  // (3) seri "realisasi" yang disebar mengikuti trajektori rencana sampai
+  // project.progress dengan deviasi dipaksa 0,00. Ketiganya dihapus: model
+  // data hanya menyimpan progres aktual TERKINI per tugas, bukan riwayat
+  // mingguan — jadi actWeekly/actCum/dev selalu null dan tab menampilkan
+  // status data-tidak-tersedia secara eksplisit bila rencana pun tak ada.
+  const laporanKurvaS = useMemo(
+    () => buildLaporanKurvaS(projectKurvaSData, projectScheduleTasks),
+    [projectKurvaSData, projectScheduleTasks]
+  );
+  const sCurveWeeks = laporanKurvaS.weeks;
 
-    if (!points || points.length === 0) {
-      return Array.from({ length: 8 }, (_, i) => ({
-        week: `W${i + 1}`,
-        planWeekly: 0,
-        planCum: 0,
-        actWeekly: null,
-        actCum: null,
-        dev: null,
-      }));
-    }
-
-    // Determine real or current progress threshold
-    const curProjectProgress = activeProject.progress || 0;
-    // Calculate cumulative actual progress matching real status up to current project progress
-    let runningAct = 0;
-
-    return points.map((p, idx) => {
-      let actWeekly: number | null = null;
-      let actCum: number | null = null;
-      let dev: number | null = null;
-
-      // If project has progress, populate actual points realistically along the planned trajectory up to current progress
-      if (curProjectProgress > 0) {
-        if (p.cumulativePlannedPercent <= curProjectProgress) {
-          actCum = p.cumulativePlannedPercent;
-          actWeekly = p.plannedWeeklyPercent;
-          dev = 0.00;
-        } else if (runningAct < curProjectProgress) {
-          actCum = curProjectProgress;
-          actWeekly = Math.max(0, Math.round((curProjectProgress - runningAct) * 100) / 100);
-          dev = Number((actCum - p.cumulativePlannedPercent).toFixed(2));
-          runningAct = curProjectProgress;
-        }
-      } else if (idx === 0) {
-        // Initial week benchmark
-        actWeekly = 0;
-        actCum = 0;
-        dev = 0;
-      }
-
-      if (actCum !== null) {
-        runningAct = actCum;
-      }
-
-      return {
-        week: p.weekLabel,
-        planWeekly: p.plannedWeeklyPercent,
-        planCum: p.cumulativePlannedPercent,
-        actWeekly,
-        actCum,
-        dev,
-      };
-    });
-  }, [activeProject, initialRabItems, totalRekapValue, projectScheduleTasks]);
-
-  // Gantt Schedule 12-Week Dataset (Empty when no items)
+  // Gantt Schedule Dataset — HANYA dari tugas jadwal tersimpan
+  // (lib/scheduleHonesty.buildGanttTasks). Sebelumnya dataset ini difabrikasi
+  // dari item RAB (durasi 14 hari, W1–W2, progress 0 untuk semua item);
+  // item RAB tidak memiliki data jadwal, jadi fabrikasi itu dihapus.
+  // Kosong bila proyek belum memiliki tugas jadwal → empty state jujur.
   const ganttTasks = useMemo(() => {
-    if (!initialRabItems || initialRabItems.length === 0) return [];
-    return initialRabItems.map((item, idx) => ({
-      id: idx + 1,
-      wbs: `${idx + 1}.0`,
-      name: item.description,
-      duration: 14,
-      start: 'W1',
-      end: 'W2',
-      startWeekIdx: 0,
-      weekSpan: 2,
-      weight: totalRekapValue > 0 ? Number(((item.amount || (item.volume * (item.unitPrice ?? 0))) / totalRekapValue * 100).toFixed(2)) : 0,
-      progress: 0,
-      status: 'Pending',
-      color: 'var(--ez-color-primary)',
-    }));
-  }, [initialRabItems, totalRekapValue]);
+    return buildGanttTasks(projectScheduleTasks);
+  }, [projectScheduleTasks]);
 
   // Handle Photo File Upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -562,16 +536,29 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
     setIsExportingPdf(true);
     try {
       const branding = await brandingClient.getBranding('ws-default-ezrab');
+      // Identitas perusahaan JUJUR (resolveHonestCompany): field yang belum
+      // diisi tetap kosong — tidak ada lagi fallback alamat/telepon/NPWP/
+      // nama contoh yang tercetak sebagai fakta di dokumen resmi.
+      const honestCompany = resolveHonestCompany({
+        name: branding.companyName,
+        address: branding.address,
+        phone: branding.phone,
+        email: branding.email,
+        website: branding.website,
+        taxNumber: branding.taxNumber,
+        directorName: branding.directorName,
+        leadEstimatorName: branding.leadEstimatorName,
+      });
       const company: Company = {
         id: 'comp-1',
-        name: branding.companyName || 'PT EZRAB KONSTRUKSI DIGITAL',
-        address: branding.address || 'SCBD District 8 Tower A Lt. 28, Jakarta Selatan',
-        phone: branding.phone || '021-5088-9900',
-        email: branding.email || 'info@ezrab.co.id',
-        website: branding.website || 'https://ezrab.co.id',
-        taxNumber: branding.taxNumber || '01.234.567.8-012.000',
-        directorName: branding.directorName || 'Ir. Ahmad Yusuf, M.T.',
-        leadEstimatorName: branding.leadEstimatorName || 'Ahmad Yusuf (Super Admin)',
+        name: honestCompany.name,
+        address: honestCompany.address,
+        phone: honestCompany.phone,
+        email: honestCompany.email,
+        website: honestCompany.website,
+        taxNumber: honestCompany.taxNumber,
+        directorName: honestCompany.directorName,
+        leadEstimatorName: honestCompany.leadEstimatorName,
         logo: branding.logoUrl || '',
         defaultOverheadPercent: 5,
         defaultProfitPercent: 5,
@@ -584,7 +571,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
             id: `sec-${b.categoryCode}`,
             code: b.categoryCode,
             name: b.categoryName,
-            subtotal: b.items.reduce((s, it) => s + it.amount, 0),
+            subtotal: b.items.reduce((s, it) => s + (it.amount ?? 0), 0),
             items: b.items.map((it) => ({
               id: `it-${it.no}`,
               sectionId: `sec-${b.categoryCode}`,
@@ -594,12 +581,14 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
               specification: it.desc,
               volume: it.vol,
               unit: it.unit,
-              materialPrice: Math.round(it.price * 0.7),
-              laborPrice: Math.round(it.price * 0.3),
-              equipmentPrice: 0,
+              // Harga komponen ASLI dari item (0 = tidak terekam); status
+              // verifikasi ASLI item — bukan pecahan 70/30 / klaim VERIFIED.
+              materialPrice: it.materialPrice ?? 0,
+              laborPrice: it.laborPrice ?? 0,
+              equipmentPrice: it.equipmentPrice ?? 0,
               unitPrice: it.price,
               totalPrice: it.amount,
-              verificationStatus: 'VERIFIED' as const,
+              verificationStatus: it.verificationStatus ?? 'NEEDS_VERIFICATION',
             })),
           }))
         : [];
@@ -870,16 +859,30 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
           <button
             onClick={async () => {
               try {
+                // Identitas perusahaan dari branding workspace (JUJUR —
+                // resolveHonestCompany; tanpa branding, field kosong).
+                // Sebelumnya blok ini meng-hardcode identitas contoh utuh.
+                const branding = await brandingClient.getBranding('ws-default-ezrab');
+                const honestCompany = resolveHonestCompany({
+                  name: branding.companyName,
+                  address: branding.address,
+                  phone: branding.phone,
+                  email: branding.email,
+                  website: branding.website,
+                  taxNumber: branding.taxNumber,
+                  directorName: branding.directorName,
+                  leadEstimatorName: branding.leadEstimatorName,
+                });
                 const company: Company = {
                   id: 'comp-1',
-                  name: 'PT EZRAB KONSTRUKSI DIGITAL',
-                  address: 'SCBD District 8 Tower A Lt. 28, Jakarta Selatan',
-                  phone: '021-5088-9900',
-                  email: 'info@ezrab.co.id',
-                  website: 'https://ezrab.co.id',
-                  taxNumber: '01.234.567.8-012.000',
-                  directorName: 'Ir. Ahmad Yusuf, M.T.',
-                  leadEstimatorName: 'Ahmad Yusuf (Super Admin)',
+                  name: honestCompany.name,
+                  address: honestCompany.address,
+                  phone: honestCompany.phone,
+                  email: honestCompany.email,
+                  website: honestCompany.website,
+                  taxNumber: honestCompany.taxNumber,
+                  directorName: honestCompany.directorName,
+                  leadEstimatorName: honestCompany.leadEstimatorName,
                   defaultOverheadPercent: 5,
                   defaultProfitPercent: 5,
                   defaultContingencyPercent: 0,
@@ -892,7 +895,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     id: `sec-${b.categoryCode}`,
                     code: b.categoryCode,
                     name: b.categoryName,
-                    subtotal: b.items.reduce((s, it) => s + it.amount, 0),
+                    subtotal: b.items.reduce((s, it) => s + (it.amount ?? 0), 0),
                     items: b.items.map((it, idx) => ({
                       id: `it-${it.no}`,
                       sectionId: `sec-${b.categoryCode}`,
@@ -902,12 +905,13 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       specification: it.desc,
                       volume: it.vol,
                       unit: it.unit,
-                      materialPrice: Math.round(it.price * 0.7),
-                      laborPrice: Math.round(it.price * 0.3),
-                      equipmentPrice: 0,
+                      // Harga komponen & status verifikasi ASLI dari item.
+                      materialPrice: it.materialPrice ?? 0,
+                      laborPrice: it.laborPrice ?? 0,
+                      equipmentPrice: it.equipmentPrice ?? 0,
                       unitPrice: it.price,
                       totalPrice: it.amount,
-                      verificationStatus: 'VERIFIED',
+                      verificationStatus: it.verificationStatus ?? 'NEEDS_VERIFICATION',
                     })),
                   })),
                   costSummary: {
@@ -927,7 +931,11 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     taxPercent: 11,
                     taxAmount: Math.round(totalBoqAmount * 0.11),
                     grandTotal: totalBoqAmount,
-                    costPerM2: Math.round(totalBoqAmount / 120),
+                    // Luas bangunan ASLI proyek; tanpa luas tercatat → 0
+                    // (tidak ada pembagi karangan 120 m²).
+                    costPerM2: activeProject.buildingArea && activeProject.buildingArea > 0
+                      ? Math.round(totalBoqAmount / activeProject.buildingArea)
+                      : 0,
                   },
                 };
 
@@ -946,7 +954,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   includeCashflow: true,
                 });
 
-                alert('Workbook Excel (.xlsx) 13-Sheets berhasil di-generate & diunduh!');
+                alert('Workbook Excel (.xlsx) 16-Sheets berhasil di-generate & diunduh!');
               } catch (err) {
                 console.error(err);
                 alert('Gagal mengunduh berkas Excel.');
@@ -1009,7 +1017,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 {/* Card 1: Total Nilai RAB */}
                 <div className="ez-stat"
                   style={{
-                    background: 'var(--ez-pastel-cream)',
+                    background: 'var(--ez-stat-mint)',
                     borderRadius: 'var(--ez-radius-card)',
                     padding: '20px',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
@@ -1019,21 +1027,29 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Total Nilai RAB</span>
-                    <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', letterSpacing: '-0.02em' }}>
-                      {totalRekapValue === 0 ? 'Rp 0' : formatCurrencyIDR(totalRekapValue)}
+                    <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)' }}>Total Nilai RAB</span>
+                    <div style={{ fontSize: laporanSummary.totalRabValue === null ? '15px' : '20px', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
+                      {laporanSummary.totalRabValue === null
+                        ? 'Belum dapat dihitung'
+                        : formatCurrencyIDR(laporanSummary.totalRabValue)}
                     </div>
-                    <span style={{ fontSize: '11px', color: '#94A3B8' }}>
-                      Terakumulasi 10 kategori
+                    <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>
+                      {laporanSummary.rabTotalState === 'EMPTY'
+                        ? 'Belum ada item RAB'
+                        : laporanSummary.rabTotalState === 'UNPRICED'
+                          ? `${laporanSummary.totalItems} item belum memiliki harga`
+                          : laporanSummary.rabTotalState === 'PARTIAL'
+                            ? `dari ${laporanSummary.pricedItemCount} dari ${laporanSummary.totalItems} item berharga`
+                            : `Terakumulasi ${laporanSummary.categoryCount} kategori`}
                     </span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
+                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--ez-color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
                       <FileText size={18} />
                     </div>
                     <svg viewBox="0 0 50 25" style={{ width: '50px', height: '25px', opacity: 0.7 }}>
-                      <path d="M 0 20 Q 15 10, 30 18 T 50 8" fill="none" stroke="#93C5FD" strokeWidth="2" />
+                      <path d="M 0 20 Q 15 10, 30 18 T 50 8" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2" />
                     </svg>
                   </div>
                 </div>
@@ -1041,7 +1057,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 {/* Card 2: Total Item Pekerjaan */}
                 <div className="ez-stat"
                   style={{
-                    background: 'var(--ez-pastel-mint)',
+                    background: 'var(--ez-stat-sky)',
                     borderRadius: 'var(--ez-radius-card)',
                     padding: '20px',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
@@ -1051,21 +1067,23 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Total Item Pekerjaan</span>
-                    <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', letterSpacing: '-0.02em' }}>
-                      19 Item
+                    <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)' }}>Total Item Pekerjaan</span>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
+                      {laporanSummary.totalItems === 0 ? '—' : `${laporanSummary.totalItems} Item`}
                     </div>
-                    <span style={{ fontSize: '11px', color: '#94A3B8' }}>
-                      5 Kategori aktif
+                    <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>
+                      {laporanSummary.totalItems === 0
+                        ? 'Belum ada data'
+                        : `${laporanSummary.categoryCount} Kategori aktif`}
                     </span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
+                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--ez-color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
                       <Layers size={18} />
                     </div>
                     <svg viewBox="0 0 50 25" style={{ width: '50px', height: '25px', opacity: 0.7 }}>
-                      <path d="M 0 18 Q 15 22, 30 12 T 50 15" fill="none" stroke="#93C5FD" strokeWidth="2" />
+                      <path d="M 0 18 Q 15 22, 30 12 T 50 15" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2" />
                     </svg>
                   </div>
                 </div>
@@ -1073,7 +1091,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 {/* Card 3: Total Volume */}
                 <div className="ez-stat"
                   style={{
-                    background: 'var(--ez-pastel-peach)',
+                    background: 'var(--ez-stat-cyan)',
                     borderRadius: 'var(--ez-radius-card)',
                     padding: '20px',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
@@ -1083,21 +1101,39 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Total Volume</span>
-                    <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', letterSpacing: '-0.02em' }}>
-                      124,00 <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>m³</span>
+                    <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)' }}>Total Volume</span>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
+                      {laporanSummary.volumeItemCount === 0 ? (
+                        '—'
+                      ) : (
+                        <>
+                          {laporanSummary.totalVolume.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
+                          <span style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.85)' }}>{laporanSummary.dominantVolumeUnit}</span>
+                        </>
+                      )}
                     </div>
-                    <span style={{ fontSize: '11px', color: '#94A3B8' }}>
-                      Akumulasi volume pekerjaan
+                    <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)' }}>
+                      {laporanSummary.volumeItemCount === 0
+                        ? 'Belum ada volume tercatat'
+                        : [
+                            laporanSummary.missingVolumeCount > 0
+                              ? `dari ${laporanSummary.volumeItemCount} dari ${laporanSummary.totalItems} item`
+                              : 'Akumulasi volume pekerjaan',
+                            laporanSummary.otherUnitItemCount > 0
+                              ? `${laporanSummary.otherUnitItemCount} item satuan lain tidak dijumlahkan`
+                              : null,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
                     </span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--ez-hue-blue-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
+                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--ez-color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-color-primary)' }}>
                       <Activity size={18} />
                     </div>
                     <svg viewBox="0 0 50 25" style={{ width: '50px', height: '25px', opacity: 0.7 }}>
-                      <path d="M 0 22 Q 20 8, 35 18 T 50 10" fill="none" stroke="#93C5FD" strokeWidth="2" />
+                      <path d="M 0 22 Q 20 8, 35 18 T 50 10" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2" />
                     </svg>
                   </div>
                 </div>
@@ -1105,7 +1141,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 {/* Card 4: Progress */}
                 <div className="ez-stat"
                   style={{
-                    background: 'var(--ez-pastel-sky)',
+                    background: 'var(--ez-stat-indigo)',
                     borderRadius: 'var(--ez-radius-card)',
                     padding: '20px',
                     boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
@@ -1115,21 +1151,27 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>Progress</span>
-                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#10B981', letterSpacing: '-0.02em' }}>
-                      {activeProject.progress || 35}%
+                    <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)' }}>Progress</span>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.02em' }}>
+                      {laporanSummary.progressPercent === null
+                        ? '—'
+                        : `${laporanSummary.progressPercent.toLocaleString('id-ID', { maximumFractionDigits: 1 })}%`}
                     </div>
-                    <span style={{ fontSize: '11px', color: 'var(--ez-hue-green-text-bright)', fontWeight: 600 }}>
-                      +3.94% Ahead schedule
+                    <span style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 600 }}>
+                      {laporanSummary.progressPercent === null
+                        ? 'Belum ada data progress'
+                        : laporanSummary.progressSource === 'SCHEDULE_TASKS'
+                          ? `Dari ${laporanSummary.scheduleTaskCount} tugas jadwal`
+                          : 'Progress tercatat proyek'}
                     </span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--ez-hue-green-bg-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ez-hue-green-text-bright)' }}>
+                    <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'var(--ez-color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16A34A' }}>
                       <TrendingUp size={18} />
                     </div>
                     <svg viewBox="0 0 50 25" style={{ width: '50px', height: '25px', opacity: 0.7 }}>
-                      <path d="M 0 15 Q 15 25, 30 10 T 50 20" fill="none" stroke="#86EFAC" strokeWidth="2" />
+                      <path d="M 0 15 Q 15 25, 30 10 T 50 20" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2" />
                     </svg>
                   </div>
                 </div>
@@ -1166,21 +1208,21 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       </thead>
                       <tbody>
                         {rekapCategories.map((cat) => {
-                          const pct = totalRekapValue > 0 ? ((cat.value / totalRekapValue) * 100).toFixed(2) : '0,00';
+                          const pct = totalRekapValue > 0 && cat.pricedCount > 0 ? ((cat.value / totalRekapValue) * 100).toFixed(2) : null;
                           return (
                             <tr key={cat.no} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                               <td style={{ padding: '6px 10px', textAlign: 'center', color: '#94A3B8' }}>{cat.no}</td>
                               <td style={{ padding: '6px 10px', fontWeight: 500, color: 'var(--ez-color-text-primary)' }}>{cat.name}</td>
-                              <td style={{ padding: '6px 10px', textAlign: 'right', color: 'var(--ez-color-text-primary)' }}>{cat.value.toLocaleString('id-ID')}</td>
-                              <td style={{ padding: '6px 10px', textAlign: 'right', color: 'var(--ez-color-text-muted)' }}>{pct}%</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right', color: 'var(--ez-color-text-primary)' }}>{cat.pricedCount === 0 ? 'Harga belum diisi' : cat.value.toLocaleString('id-ID')}</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right', color: 'var(--ez-color-text-muted)' }}>{pct === null ? '—' : `${pct}%`}</td>
                             </tr>
                           );
                         })}
                         {/* Total Row */}
                         <tr style={{ borderTop: '2px solid var(--ez-color-text-primary)', fontWeight: 800, background: 'var(--ez-color-surface-secondary)' }}>
                           <td colSpan={2} style={{ padding: '10px', textAlign: 'left' }}>Total</td>
-                          <td style={{ padding: '10px', textAlign: 'right', color: 'var(--ez-color-primary)' }}>{formatCurrencyIDR(totalRekapValue)}</td>
-                          <td style={{ padding: '10px', textAlign: 'right', color: 'var(--ez-color-primary)' }}>100,00%</td>
+                          <td style={{ padding: '10px', textAlign: 'right', color: 'var(--ez-color-primary)' }}>{laporanSummary.pricedItemCount === 0 ? 'Harga belum diisi' : formatCurrencyIDR(totalRekapValue)}</td>
+                          <td style={{ padding: '10px', textAlign: 'right', color: 'var(--ez-color-primary)' }}>{totalRekapValue > 0 ? '100,00%' : '—'}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -1199,7 +1241,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                         />
                         <path
                           stroke="#2563EB"
-                          strokeDasharray="45, 100"
+                          strokeDasharray={totalRekapValue > 0 ? '100, 100' : '0, 100'}
                           strokeWidth="3.8"
                           strokeLinecap="round"
                           fill="none"
@@ -1207,23 +1249,23 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                         />
                       </svg>
                       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-                        <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', lineHeight: 1 }}>100%</span>
+                        <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', lineHeight: 1 }}>{totalRekapValue > 0 ? '100%' : '—'}</span>
                         <span style={{ fontSize: '9px', color: '#94A3B8', marginTop: '2px' }}>Total Anggaran</span>
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--ez-color-primary)' }}>{formatCurrencyIDR(totalRekapValue)}</span>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--ez-color-primary)' }}>{laporanSummary.pricedItemCount === 0 ? 'Harga belum diisi' : formatCurrencyIDR(totalRekapValue)}</span>
                       </div>
                     </div>
 
                     {/* Categories Legend List */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexGrow: 1, fontSize: '11px' }}>
                       {rekapCategories.slice(0, 6).map((cat) => {
-                        const pct = totalRekapValue > 0 ? ((cat.value / totalRekapValue) * 100).toFixed(2) : '0,00';
+                        const pct = totalRekapValue > 0 && cat.pricedCount > 0 ? ((cat.value / totalRekapValue) * 100).toFixed(2) : null;
                         return (
                           <div key={cat.no} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
                               <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
                               <span style={{ color: 'var(--ez-color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.name}</span>
                             </div>
-                            <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', flexShrink: 0 }}>{pct}%</span>
+                            <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', flexShrink: 0 }}>{pct === null ? '—' : `${pct}%`}</span>
                           </div>
                         );
                       })}
@@ -1269,79 +1311,70 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       </tr>
                     </thead>
                     <tbody>
-                      {/* Category Header A */}
-                      <tr style={{ background: 'var(--ez-hue-blue-bg)', borderTop: '1px solid var(--ez-hue-blue-bg-deep)', borderBottom: '1px solid var(--ez-hue-blue-bg-deep)' }}>
-                        <td style={{ textAlign: 'center', padding: '6px' }}>
-                          <button
-                            onClick={() => toggleCategory('cat-A')}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ez-color-primary)', padding: 0 }}
-                          >
-                            {expandedCategories['cat-A'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                          </button>
-                        </td>
-                        <td style={{ fontWeight: 800, color: 'var(--ez-color-primary)', padding: '6px 10px' }}>A.</td>
-                        <td colSpan={5} style={{ fontWeight: 800, color: 'var(--ez-color-primary)', padding: '6px 12px' }}>
-                          PEKERJAAN PERSIAPAN
-                        </td>
-                      </tr>
+                      {/* Grup kategori + item ASLI dari data RAB proyek (boqData).
+                          Sebelumnya tabel ini berisi baris contoh hardcode
+                          (Pembersihan lahan dst. + subtotal Rp 10.500.000)
+                          yang tampil sebagai fakta untuk semua proyek. */}
+                      {boqData.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} style={{ padding: '16px 12px', textAlign: 'center', color: 'var(--ez-color-text-muted)', fontStyle: 'italic' }}>
+                            Belum ada item RAB pada proyek ini.
+                          </td>
+                        </tr>
+                      ) : (
+                        boqData.map((group) => {
+                          const toggleKey = `detail-${group.categoryName}`;
+                          const isOpen = expandedCategories[toggleKey] ?? false;
+                          const groupPricedCount = group.items.filter((it: any) => it.amount !== null && it.amount !== undefined).length;
+                          const groupTotal = group.items.reduce((s: number, it: any) => s + (it.amount ?? 0), 0);
+                          return (
+                            <React.Fragment key={toggleKey}>
+                              <tr style={{ background: 'var(--ez-hue-blue-bg)', borderTop: '1px solid var(--ez-hue-blue-bg-deep)', borderBottom: '1px solid var(--ez-hue-blue-bg-deep)' }}>
+                                <td style={{ textAlign: 'center', padding: '6px' }}>
+                                  <button
+                                    onClick={() => toggleCategory(toggleKey)}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ez-color-primary)', padding: 0 }}
+                                  >
+                                    {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                  </button>
+                                </td>
+                                <td style={{ fontWeight: 800, color: 'var(--ez-color-primary)', padding: '6px 10px' }}>{group.categoryCode}.</td>
+                                <td colSpan={5} style={{ fontWeight: 800, color: 'var(--ez-color-primary)', padding: '6px 12px' }}>
+                                  {group.categoryName}
+                                </td>
+                              </tr>
 
-                      {expandedCategories['cat-A'] && (
-                        <>
-                          <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
-                            <td style={{ textAlign: 'center', color: '#94A3B8', padding: '8px' }}>1</td>
-                            <td style={{ color: 'var(--ez-color-primary)', fontWeight: 600, padding: '8px 10px' }}>1.1.01</td>
-                            <td style={{ fontWeight: 500, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>Pembersihan lahan</td>
-                            <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>120,00</td>
-                            <td style={{ textAlign: 'center', color: 'var(--ez-color-text-muted)', padding: '8px 10px' }}>Ls</td>
-                            <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>25.000</td>
-                            <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>3.000.000</td>
-                          </tr>
-                          <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
-                            <td style={{ textAlign: 'center', color: '#94A3B8', padding: '8px' }}>2</td>
-                            <td style={{ color: 'var(--ez-color-primary)', fontWeight: 600, padding: '8px 10px' }}>1.1.02</td>
-                            <td style={{ fontWeight: 500, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>Pengukuran dan pasang bouwplank</td>
-                            <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>1,00</td>
-                            <td style={{ textAlign: 'center', color: 'var(--ez-color-text-muted)', padding: '8px 10px' }}>Ls</td>
-                            <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>500.000</td>
-                            <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>500.000</td>
-                          </tr>
-                          <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
-                            <td style={{ textAlign: 'center', color: '#94A3B8', padding: '8px' }}>3</td>
-                            <td style={{ color: 'var(--ez-color-primary)', fontWeight: 600, padding: '8px 10px' }}>1.1.03</td>
-                            <td style={{ fontWeight: 500, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>Direksi keet</td>
-                            <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>1,00</td>
-                            <td style={{ textAlign: 'center', color: 'var(--ez-color-text-muted)', padding: '8px 10px' }}>Ls</td>
-                            <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>3.000.000</td>
-                            <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>3.000.000</td>
-                          </tr>
-                          <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
-                            <td style={{ textAlign: 'center', color: '#94A3B8', padding: '8px' }}>4</td>
-                            <td style={{ color: 'var(--ez-color-primary)', fontWeight: 600, padding: '8px 10px' }}>1.1.04</td>
-                            <td style={{ fontWeight: 500, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>Mobilisasi alat</td>
-                            <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>1,00</td>
-                            <td style={{ textAlign: 'center', color: 'var(--ez-color-text-muted)', padding: '8px 10px' }}>Ls</td>
-                            <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>2.500.000</td>
-                            <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>2.500.000</td>
-                          </tr>
-                          <tr style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
-                            <td style={{ textAlign: 'center', color: '#94A3B8', padding: '8px' }}>5</td>
-                            <td style={{ color: 'var(--ez-color-primary)', fontWeight: 600, padding: '8px 10px' }}>1.1.05</td>
-                            <td style={{ fontWeight: 500, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>Pembuatan jalan kerja</td>
-                            <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>1,00</td>
-                            <td style={{ textAlign: 'center', color: 'var(--ez-color-text-muted)', padding: '8px 10px' }}>Ls</td>
-                            <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>1.500.000</td>
-                            <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>1.500.000</td>
-                          </tr>
-                          {/* Subtotal Category */}
-                          <tr style={{ background: 'var(--ez-color-surface-secondary)', fontWeight: 700 }}>
-                            <td colSpan={6} style={{ padding: '8px 12px', textAlign: 'left', color: 'var(--ez-color-text-primary)' }}>
-                              Total Pekerjaan Persiapan
-                            </td>
-                            <td style={{ padding: '8px 12px', textAlign: 'right', color: 'var(--ez-color-primary)' }}>
-                              Rp 10.500.000
-                            </td>
-                          </tr>
-                        </>
+                              {isOpen && (
+                                <>
+                                  {group.items.map((item: any, idx: number) => (
+                                    <tr key={`${toggleKey}-${idx}`} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
+                                      <td style={{ textAlign: 'center', color: '#94A3B8', padding: '8px' }}>{idx + 1}</td>
+                                      <td style={{ color: 'var(--ez-color-primary)', fontWeight: 600, padding: '8px 10px' }}>{item.no}</td>
+                                      <td style={{ fontWeight: 500, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>{item.desc}</td>
+                                      <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>
+                                        {typeof item.vol === 'number' && Number.isFinite(item.vol)
+                                          ? item.vol.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                          : '—'}
+                                      </td>
+                                      <td style={{ textAlign: 'center', color: 'var(--ez-color-text-muted)', padding: '8px 10px' }}>{item.unit}</td>
+                                      <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 10px' }}>{formatPriceCell(item.price)}</td>
+                                      <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>{formatPriceCell(item.amount)}</td>
+                                    </tr>
+                                  ))}
+                                  {/* Subtotal Category — jumlah amount berharga grup ini */}
+                                  <tr style={{ background: 'var(--ez-color-surface-secondary)', fontWeight: 700 }}>
+                                    <td colSpan={6} style={{ padding: '8px 12px', textAlign: 'left', color: 'var(--ez-color-text-primary)' }}>
+                                      Total {group.categoryName}
+                                    </td>
+                                    <td style={{ padding: '8px 12px', textAlign: 'right', color: 'var(--ez-color-primary)' }}>
+                                      {groupPricedCount === 0 ? 'Harga belum diisi' : formatCurrencyIDR(groupTotal)}
+                                    </td>
+                                  </tr>
+                                </>
+                              )}
+                            </React.Fragment>
+                          );
+                        })
                       )}
                     </tbody>
                   </table>
@@ -1389,21 +1422,21 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px' }}>
                   <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Total Akumulasi BOQ</div>
                   <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
-                    {formatCurrencyIDR(totalBoqAmount)}
+                    {laporanSummary.totalItems === 0 ? '—' : laporanSummary.pricedItemCount === 0 ? 'Harga belum diisi' : formatCurrencyIDR(totalBoqAmount)}
                   </div>
                 </div>
 
                 <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px' }}>
                   <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Kategori Pekerjaan</div>
                   <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-primary)', marginTop: '2px' }}>
-                    5 Divisi Utama
+                    {laporanSummary.categoryCount === 0 ? '—' : `${laporanSummary.categoryCount} Kategori`}
                   </div>
                 </div>
 
                 <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px' }}>
                   <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Total Item Pekerjaan</div>
                   <div style={{ fontSize: '18px', fontWeight: 800, color: '#10B981', marginTop: '2px' }}>
-                    19 Item Rinci
+                    {laporanSummary.totalItems === 0 ? '—' : `${laporanSummary.totalItems} Item Rinci`}
                   </div>
                 </div>
               </div>
@@ -1425,8 +1458,9 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   </thead>
                   <tbody>
                     {boqData.map((catGroup) => {
-                      const catTotal = catGroup.items.reduce((s, it) => s + it.amount, 0);
-                      const catBobot = ((catTotal / totalBoqAmount) * 100).toFixed(2);
+                      const catTotal = catGroup.items.reduce((s, it) => s + (it.amount ?? 0), 0);
+                      const catPricedCount = catGroup.items.filter((it) => it.amount !== null && it.amount !== undefined).length;
+                      const catBobot = totalBoqAmount > 0 && catPricedCount > 0 ? ((catTotal / totalBoqAmount) * 100).toFixed(2) : null;
                       const isExpanded = expandedCategories[`cat-${catGroup.categoryCode}`] ?? true;
 
                       return (
@@ -1446,17 +1480,17 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                               {catGroup.categoryName}
                             </td>
                             <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--ez-color-primary)', padding: '8px 14px' }}>
-                              {formatCurrencyIDR(catTotal)}
+                              {catPricedCount === 0 ? 'Harga belum diisi' : formatCurrencyIDR(catTotal)}
                             </td>
                             <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--ez-color-primary)', padding: '8px 12px' }}>
-                              {catBobot}%
+                              {catBobot === null ? '—' : `${catBobot}%`}
                             </td>
                           </tr>
 
                           {/* Category Items */}
                           {isExpanded &&
                             catGroup.items.map((item, idx) => {
-                              const itemBobot = ((item.amount / totalBoqAmount) * 100).toFixed(2);
+                              const itemBobot = totalBoqAmount > 0 && item.amount !== null && item.amount !== undefined ? ((item.amount / totalBoqAmount) * 100).toFixed(2) : null;
                               return (
                                 <tr key={item.no} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                                   <td style={{ textAlign: 'center', color: '#94A3B8', padding: '8px' }}>{idx + 1}</td>
@@ -1465,8 +1499,8 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                                   <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>{item.vol.toLocaleString('id-ID')}</td>
                                   <td style={{ textAlign: 'center', color: 'var(--ez-color-text-muted)', padding: '8px 10px' }}>{item.unit}</td>
                                   <td style={{ textAlign: 'right', color: 'var(--ez-color-text-primary)', padding: '8px 12px' }}>{formatPriceCell(item.price)}</td>
-                                  <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)', padding: '8px 14px' }}>{item.amount.toLocaleString('id-ID')}</td>
-                                  <td style={{ textAlign: 'right', color: 'var(--ez-color-text-muted)', padding: '8px 12px' }}>{itemBobot}%</td>
+                                  <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--ez-color-text-primary)', padding: '8px 14px' }}>{formatPriceCell(item.amount)}</td>
+                                  <td style={{ textAlign: 'right', color: 'var(--ez-color-text-muted)', padding: '8px 12px' }}>{itemBobot === null ? '—' : `${itemBobot}%`}</td>
                                 </tr>
                               );
                             })}
@@ -1483,10 +1517,10 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                         Akumulasi Keseluruhan
                       </td>
                       <td style={{ padding: '12px 14px', textAlign: 'right', color: 'var(--ez-color-primary)', fontSize: '13px' }}>
-                        {formatCurrencyIDR(totalBoqAmount)}
+                        {laporanSummary.pricedItemCount === 0 ? 'Harga belum diisi' : formatCurrencyIDR(totalBoqAmount)}
                       </td>
                       <td style={{ padding: '12px 12px', textAlign: 'right', color: 'var(--ez-color-primary)', fontSize: '13px' }}>
-                        100,00%
+                        {totalBoqAmount > 0 ? '100,00%' : '—'}
                       </td>
                     </tr>
                   </tbody>
@@ -1842,10 +1876,10 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', margin: '0 0 4px 0' }}>
-                    Kurva S Rencana vs Realisasi Progres
+                    Kurva S Rencana Progres
                   </h3>
                   <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                    Visualisasi perbandingan laju kemajuan biaya dan fisik proyek per minggu pelaksanaan.
+                    Kurva rencana diturunkan dari tugas jadwal tersimpan: bobot tiap tugas didistribusikan pada rentang minggunya. Riwayat realisasi per minggu tidak tersimpan di proyek ini — yang tersedia hanya progres aktual terkini per tugas, jadi seri realisasi dan deviasi tidak digambar.
                   </p>
                 </div>
 
@@ -1854,9 +1888,9 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--ez-color-primary)' }} />
                     Rencana (%)
                   </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', color: '#10B981', fontWeight: 700 }}>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10B981' }} />
-                    Realisasi (%)
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', color: 'var(--ez-color-text-muted)', fontWeight: 700 }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#94A3B8' }} />
+                    Realisasi (%) — data mingguan belum tersedia
                   </span>
                 </div>
               </div>
@@ -1907,14 +1941,63 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 </div>
               )}
 
-              {/* Summary Metric Cards for S-Curve */}
+              {/* Data Tidak Tersedia — kurva rencana butuh tugas jadwal
+                  tersimpan berbobot. Tanpa itu kurva TIDAK digambar
+                  (tidak ada sintesis dari progres/seksi RAB). */}
+              {!laporanKurvaS.available && (
+                <div
+                  style={{
+                    border: '1px dashed var(--ez-color-border-line)',
+                    borderRadius: 'var(--ez-radius-control)',
+                    padding: '28px 20px',
+                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  <TrendingUp size={28} color="var(--ez-color-text-muted)" />
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
+                    Data Kurva S Tidak Tersedia
+                  </div>
+                  <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', maxWidth: '560px', lineHeight: 1.6 }}>
+                    {laporanKurvaS.reason === 'NO_WEIGHTS'
+                      ? 'Tugas jadwal tersimpan ditemukan, tetapi total bobot rencana (weight %) masih nol. Kurva rencana memerlukan bobot tiap tugas agar distribusi mingguan dapat dihitung dari data nyata.'
+                      : 'Proyek ini belum memiliki tugas jadwal tersimpan dengan rentang minggu dan bobot, sehingga kurva rencana tidak dapat diturunkan dari data nyata. Kurva tidak digambar daripada mensintesis dari progres proyek atau urutan seksi RAB.'}
+                  </div>
+                  {onNavigateToTab && (
+                    <button
+                      onClick={() => onNavigateToTab('jadwal')}
+                      style={{
+                        background: 'var(--ez-color-primary)',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '7px 16px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        marginTop: '4px',
+                      }}
+                    >
+                      Lengkapi di Jadwal Proyek
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {laporanKurvaS.available && (
+              <>
+              {/* Summary Metric Cards for S-Curve — semua angka dari data
+                  tersimpan: durasi & rencana dari tugas jadwal; realisasi
+                  adalah SNAPSHOT progres terkini (bukan seri mingguan);
+                  deviasi tidak dihitung tanpa riwayat realisasi mingguan. */}
               {(() => {
                 const totalWeeksCount = sCurveWeeks.length;
-                const lastPlanned = sCurveWeeks[sCurveWeeks.length - 1]?.planCum || 100;
-                const currentWeekData = sCurveWeeks.find((w) => w.actCum !== null && w.actCum > 0) || sCurveWeeks[0];
-                const latestActCum = sCurveWeeks.reduce((max, w) => (w.actCum !== null ? Math.max(max, w.actCum) : max), 0);
-                const currentPlanAtAct = sCurveWeeks.find((w) => w.actCum !== null && w.actCum === latestActCum)?.planCum || 0;
-                const totalDev = latestActCum > 0 ? Number((latestActCum - currentPlanAtAct).toFixed(2)) : 0;
+                const lastPlanned = sCurveWeeks[sCurveWeeks.length - 1]?.planCum ?? 0;
+                const currentProgress = laporanSummary.progressPercent;
 
                 return (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
@@ -1923,32 +2006,38 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                       <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
                         {totalWeeksCount} Minggu
                       </div>
-                      <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px' }}>Target: {lastPlanned}% Selesai</div>
+                      <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px' }}>Berdasarkan rentang tugas jadwal tersimpan</div>
                     </div>
 
                     <div style={{ background: 'var(--ez-hue-blue-bg)', border: '1px solid var(--ez-hue-blue-bg-deep)', borderRadius: 'var(--ez-radius-control)', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '11px', color: 'var(--ez-color-primary-hover)', fontWeight: 600 }}>Progres Rencana</div>
+                      <div style={{ fontSize: '11px', color: 'var(--ez-color-primary-hover)', fontWeight: 600 }}>Progres Rencana (Akhir Periode)</div>
                       <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-primary)', marginTop: '2px' }}>
-                        {currentPlanAtAct > 0 ? `${currentPlanAtAct.toFixed(1)}%` : '0.0%'}
+                        {`${lastPlanned.toFixed(1)}%`}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#60A5FA', marginTop: '2px' }}>Kumulatif Baseline</div>
+                      <div style={{ fontSize: '11px', color: '#60A5FA', marginTop: '2px' }}>Kumulatif rencana minggu terakhir</div>
                     </div>
 
                     <div style={{ background: 'var(--ez-hue-emerald-bg)', border: '1px solid var(--ez-hue-green-border-deep)', borderRadius: 'var(--ez-radius-control)', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '11px', color: 'var(--ez-hue-green-text)', fontWeight: 600 }}>Progres Realisasi</div>
+                      <div style={{ fontSize: '11px', color: 'var(--ez-hue-green-text)', fontWeight: 600 }}>Progres Realisasi Saat Ini</div>
                       <div style={{ fontSize: '18px', fontWeight: 800, color: '#10B981', marginTop: '2px' }}>
-                        {latestActCum > 0 ? `${latestActCum.toFixed(1)}%` : '0.0%'}
+                        {currentProgress !== null ? `${currentProgress.toFixed(1)}%` : '—'}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#34D399', marginTop: '2px' }}>Fisik Lapangan</div>
+                      <div style={{ fontSize: '11px', color: '#34D399', marginTop: '2px' }}>
+                        {currentProgress === null
+                          ? 'Belum ada data progres aktual'
+                          : laporanSummary.progressSource === 'SCHEDULE_TASKS'
+                            ? 'Snapshot berbobot dari progres aktual tugas jadwal'
+                            : 'Snapshot dari field progres proyek'}
+                      </div>
                     </div>
 
-                    <div style={{ background: totalDev >= 0 ? 'var(--ez-hue-green-bg)' : 'var(--ez-hue-rose-bg)', border: totalDev >= 0 ? '1px solid var(--ez-hue-green-border)' : '1px solid var(--ez-hue-rose-border)', borderRadius: 'var(--ez-radius-control)', padding: '14px 16px' }}>
-                      <div style={{ fontSize: '11px', color: totalDev >= 0 ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-hue-rose-text)', fontWeight: 600 }}>Deviasi Waktu/Biaya</div>
-                      <div style={{ fontSize: '18px', fontWeight: 800, color: totalDev >= 0 ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-hue-rose-text)', marginTop: '2px' }}>
-                        {totalDev > 0 ? `+${totalDev.toFixed(2)}%` : `${totalDev.toFixed(2)}%`}
+                    <div style={{ background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', padding: '14px 16px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Deviasi Rencana vs Realisasi</div>
+                      <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>
+                        Belum dapat dihitung
                       </div>
-                      <div style={{ fontSize: '11px', color: totalDev >= 0 ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-red-text)', marginTop: '2px' }}>
-                        {totalDev > 0 ? 'Lebih Cepat (Ahead)' : totalDev === 0 ? 'Tepat Waktu (On Track)' : 'Terlambat (Behind)'}
+                      <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                        Riwayat realisasi per minggu tidak tersimpan pada proyek ini
                       </div>
                     </div>
                   </div>
@@ -2128,10 +2217,10 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                                 </text>
                                 <circle cx="14" cy="48" r="3.5" fill="#10B981" />
                                 <text x="22" y="51" fill="#FFFFFF" fontSize="10">
-                                  Realisasi: {curW.actCum !== null ? `${curW.actCum.toFixed(1)}%` : '-'}
+                                  Realisasi: {curW.actCum !== null ? `${curW.actCum.toFixed(1)}%` : 'Belum tersedia'}
                                 </text>
                                 <text x="10" y="66" fill={curW.dev !== null && curW.dev >= 0 ? '#4ADE80' : '#F87171'} fontSize="9.5" fontWeight="700">
-                                  Deviasi: {curW.dev !== null ? (curW.dev >= 0 ? `+${curW.dev.toFixed(2)}%` : `${curW.dev.toFixed(2)}%`) : 'Belum Mulai'}
+                                  Deviasi: {curW.dev !== null ? (curW.dev >= 0 ? `+${curW.dev.toFixed(2)}%` : `${curW.dev.toFixed(2)}%`) : 'Belum tersedia'}
                                 </text>
                               </g>
                             );
@@ -2185,7 +2274,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   <div>
                     <div style={{ fontSize: '10px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Status Jadwal & Kurva-S</div>
                     <div style={{ fontSize: '13px', fontWeight: 800, color: kurvaSRequirement.isComplete ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-hue-amber-text-deep)' }}>
-                      {kurvaSRequirement.isComplete ? 'Terverifikasi 100%' : 'Perlu Kelengkapan'}
+                      {kurvaSRequirement.isComplete ? 'Data jadwal tersedia' : 'Perlu Kelengkapan'}
                     </div>
                   </div>
                 </div>
@@ -2289,6 +2378,11 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   </tbody>
                 </table>
               </div>
+              <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', lineHeight: 1.6 }}>
+                Sumber rencana: tugas jadwal tersimpan (bobot tugas didistribusikan merata pada rentang minggunya). Kolom Realisasi dan Deviasi kosong (—) karena proyek tidak menyimpan riwayat progres per minggu; progres aktual terkini tampil sebagai snapshot pada kartu Progres Realisasi Saat Ini.
+              </div>
+              </>
+              )}
             </div>
           )}
 
@@ -2321,7 +2415,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-hue-green-text-bright)', background: 'var(--ez-hue-green-bg-deep)', border: '1px solid var(--ez-hue-green-border)', padding: '4px 10px', borderRadius: '8px' }}>
-                    Total Durasi: 90 Hari Kalender (12 Minggu)
+                    {formatScheduleDuration(projectScheduleTasks) ?? 'Belum ada jadwal tercatat'}
                   </span>
                 </div>
               </div>
@@ -2355,6 +2449,13 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                     </tr>
                   </thead>
                   <tbody>
+                    {ganttTasks.length === 0 && (
+                      <tr>
+                        <td colSpan={17} style={{ padding: '18px 14px', textAlign: 'center', color: 'var(--ez-color-text-muted)', fontStyle: 'italic' }}>
+                          Belum ada tugas jadwal untuk proyek ini — Gantt hanya menampilkan jadwal yang benar-benar tercatat.
+                        </td>
+                      </tr>
+                    )}
                     {ganttTasks.map((t) => (
                       <tr key={t.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                         <td style={{ color: 'var(--ez-color-primary)', fontWeight: 700, padding: '10px 12px' }}>{t.wbs}</td>
@@ -2368,8 +2469,8 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                               fontWeight: 700,
                               padding: '2px 6px',
                               borderRadius: '4px',
-                              background: t.status === 'Selesai' ? 'var(--ez-hue-green-bg-deep)' : t.status === 'On Progress' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface-tertiary)',
-                              color: t.status === 'Selesai' ? 'var(--ez-hue-green-text-bright)' : t.status === 'On Progress' ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
+                              background: t.status === 'Selesai' ? 'var(--ez-hue-green-bg-deep)' : t.status === 'On Progress' ? 'var(--ez-hue-blue-bg)' : t.status === 'Terlambat' ? 'var(--ez-hue-rose-bg)' : 'var(--ez-color-surface-tertiary)',
+                              color: t.status === 'Selesai' ? 'var(--ez-hue-green-text-bright)' : t.status === 'On Progress' ? 'var(--ez-color-primary)' : t.status === 'Terlambat' ? 'var(--ez-hue-rose-text)' : 'var(--ez-color-text-muted)',
                             }}
                           >
                             {t.status}
@@ -2495,39 +2596,52 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
             <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <strong style={{ fontSize: '13.5px', color: 'var(--ez-color-text-primary)' }}>{activeProject.name}</strong>
-                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: 'var(--ez-hue-green-bg-deep)', color: 'var(--ez-hue-green-text-bright)', border: '1px solid var(--ez-hue-green-border)' }}>
-                  Aktif
-                </span>
+                {(() => {
+                  // Status badge diturunkan dari status proyek nyata — bukan label statis.
+                  const statusLabel = activeProject.isArchived || activeProject.status === 'ARCHIVED' || activeProject.status === 'archived'
+                    ? 'Diarsipkan'
+                    : activeProject.status === 'COMPLETED' || activeProject.status === 'completed'
+                      ? 'Selesai'
+                      : activeProject.status === 'DRAFT' || activeProject.status === 'draft'
+                        ? 'Draft'
+                        : 'Aktif';
+                  const isMuted = statusLabel === 'Diarsipkan' || statusLabel === 'Draft';
+                  return (
+                    <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: 'var(--ez-radius-pill)', background: isMuted ? 'var(--ez-color-surface-tertiary)' : 'var(--ez-hue-green-bg-deep)', color: isMuted ? 'var(--ez-color-text-muted)' : 'var(--ez-hue-green-text-bright)', border: `1px solid ${isMuted ? 'var(--ez-hue-slate-border)' : 'var(--ez-hue-green-border)'}` }}>
+                      {statusLabel}
+                    </span>
+                  );
+                })()}
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ez-color-text-muted)' }}>
                 <MapPin size={13} color="#94A3B8" />
-                <span>{activeProject.location || 'Yogyakarta'}</span>
+                <span>{activeProject.location || '—'}</span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ez-color-text-muted)' }}>
                 <User size={13} color="#94A3B8" />
-                <span>Owner: <strong style={{ color: 'var(--ez-color-text-primary)' }}>{activeProject.client || 'Pribadi'}</strong></span>
+                <span>Owner: <strong style={{ color: 'var(--ez-color-text-primary)' }}>{activeProject.clientName || activeProject.client || '—'}</strong></span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ez-color-text-muted)' }}>
                 <FileText size={13} color="#94A3B8" />
-                <span>No. Proyek: <strong style={{ color: 'var(--ez-color-text-primary)' }}>EZR-001</strong></span>
+                <span>No. Proyek: <strong style={{ color: 'var(--ez-color-text-primary)' }}>{activeProject.projectNumber || '—'}</strong></span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ez-color-text-muted)' }}>
                 <Building size={13} color="#94A3B8" />
-                <span>Tipe: <strong style={{ color: 'var(--ez-color-text-primary)' }}>Rumah Tinggal</strong></span>
+                <span>Tipe: <strong style={{ color: 'var(--ez-color-text-primary)' }}>{activeProject.buildingType || activeProject.projectType || '—'}</strong></span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ez-color-text-muted)' }}>
                 <Layers size={13} color="#94A3B8" />
-                <span>Luas Bangunan: <strong style={{ color: 'var(--ez-color-text-primary)' }}>120 m²</strong></span>
+                <span>Luas Bangunan: <strong style={{ color: 'var(--ez-color-text-primary)' }}>{typeof activeProject.buildingArea === 'number' ? `${activeProject.buildingArea.toLocaleString('id-ID')} m²` : '—'}</strong></span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ez-color-text-muted)' }}>
                 <Building size={13} color="#94A3B8" />
-                <span>Jumlah Lantai: <strong style={{ color: 'var(--ez-color-text-primary)' }}>2</strong></span>
+                <span>Jumlah Lantai: <strong style={{ color: 'var(--ez-color-text-primary)' }}>{typeof activeProject.floorCount === 'number' ? activeProject.floorCount : '—'}</strong></span>
               </div>
             </div>
           </div>

@@ -651,20 +651,20 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
         <div
           className="ezdb-anim ez-stat"
           style={{
-            background: 'var(--ez-pastel-cream)',
+            background: 'var(--ez-stat-sky)',
             borderRadius: 'var(--ez-radius-card)',
             padding: '22px',
             boxShadow: CARD_SHADOW,
             animation: 'ezdb-rise 0.6s 0.08s both',
           }}
         >
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-warm)', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)', marginBottom: '8px' }}>
             Total Item
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {totalItemCount}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-warm)', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '6px' }}>
             item pekerjaan
           </div>
         </div>
@@ -673,20 +673,20 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
         <div
           className="ezdb-anim ez-stat"
           style={{
-            background: 'var(--ez-pastel-mint)',
+            background: 'var(--ez-stat-cyan)',
             borderRadius: 'var(--ez-radius-card)',
             padding: '22px',
             boxShadow: CARD_SHADOW,
             animation: 'ezdb-rise 0.6s 0.14s both',
           }}
         >
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-warm)', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)', marginBottom: '8px' }}>
             Total Volume
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {formatNumberId(totalVolumeSum, 2)}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-warm)', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '6px' }}>
             berbagai satuan
           </div>
         </div>
@@ -695,20 +695,20 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
         <div
           className="ezdb-anim ez-stat"
           style={{
-            background: 'var(--ez-pastel-peach)',
+            background: 'var(--ez-stat-cream)',
             borderRadius: 'var(--ez-radius-card)',
             padding: '22px',
             boxShadow: CARD_SHADOW,
             animation: 'ezdb-rise 0.6s 0.2s both',
           }}
         >
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-warm)', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)', marginBottom: '8px' }}>
             Calculator
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {distinctCalculators}
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-warm)', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '6px' }}>
             calculator terpakai
           </div>
         </div>
@@ -717,20 +717,20 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
         <div
           className="ezdb-anim ez-stat"
           style={{
-            background: 'var(--ez-pastel-sky)',
+            background: 'var(--ez-stat-mint)',
             borderRadius: 'var(--ez-radius-card)',
             padding: '22px',
             boxShadow: CARD_SHADOW,
             animation: 'ezdb-rise 0.6s 0.26s both',
           }}
         >
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-warm)', marginBottom: '8px' }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)', marginBottom: '8px' }}>
             Terverifikasi
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: 'var(--ez-color-text-primary)' }}>
+          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
             {verifiedPercentage}%
           </div>
-          <div style={{ fontSize: '12px', color: 'var(--ez-color-text-warm)', marginTop: '6px' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '6px' }}>
             item terhubung
           </div>
         </div>

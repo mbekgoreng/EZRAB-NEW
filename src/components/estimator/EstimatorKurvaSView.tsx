@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Project, RabItem } from "../../types";
 import { formatCurrencyIDR } from "../../calculations/decimalEngine";
+import { evaluateEstimatorKurvaS } from "../../lib/kurvaSHonesty";
 
 interface EstimatorKurvaSViewProps {
   currentProject: Project | null;
@@ -92,6 +93,12 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
 
     return { weeklyTotals: wTotals, cumulativePercentages: cumPct };
   }, [categorySchedule, totalWeeks]);
+
+  // Kejujuran data (lib/kurvaSHonesty.evaluateEstimatorKurvaS): tanpa item
+  // RAB, atau total biaya nol sehingga seluruh bobot kategori nol, kurva
+  // TIDAK digambar — panel "Data Kurva S Tidak Tersedia" ditampilkan,
+  // bukan kurva 0% datar + "Total Biaya Rencana: Rp0" seolah fakta.
+  const kurvaSAvailability = useMemo(() => evaluateEstimatorKurvaS(items), [items]);
 
   // SVG Chart Geometry
   const chartHeight = 220;
@@ -199,6 +206,36 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
         </div>
       </div>
 
+      {/* Data Tidak Tersedia — pola yang sama dengan Tab Kurva S
+          LaporanView: kurva butuh item RAB berharga sebagai basis bobot.
+          Tanpa itu kurva TIDAK digambar (tidak ada kurva 0% karangan). */}
+      {!kurvaSAvailability.available ? (
+        <div
+          style={{
+            background: "var(--ez-color-surface)",
+            border: "1px dashed var(--ez-color-border-line)",
+            borderRadius: "16px",
+            padding: "28px 20px",
+            textAlign: "center",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "8px",
+            boxShadow: "0 1px 3px rgba(15,23,42,0.04)",
+          }}
+        >
+          <TrendingUp size={28} color="var(--ez-color-text-muted)" />
+          <div style={{ fontSize: "14px", fontWeight: 800, color: "var(--ez-color-text-primary)" }}>
+            Data Kurva S Tidak Tersedia
+          </div>
+          <div style={{ fontSize: "12.5px", color: "var(--ez-color-text-muted)", maxWidth: "560px", lineHeight: 1.6 }}>
+            {kurvaSAvailability.reason === 'NO_WEIGHTS'
+              ? 'Item RAB ditemukan, tetapi total biaya rencana masih nol — belum ada item dengan biaya (volume × harga satuan) lebih dari nol, sehingga seluruh bobot kategori bernilai nol. Kurva rencana memerlukan item berharga agar distribusi mingguan dapat dihitung dari data nyata.'
+              : 'Proyek ini belum memiliki item RAB, sehingga distribusi bobot mingguan dan kurva rencana tidak dapat dihitung dari data nyata. Kurva tidak digambar daripada menampilkan kurva 0% datar dan total biaya Rp0 seolah-olah merupakan rencana.'}
+          </div>
+        </div>
+      ) : (
+      <>
       {/* 2. S-CURVE VISUAL CHART */}
       <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "16px", padding: "24px", boxShadow: "0 1px 4px rgba(15,23,42,0.04)" }}>
         <style>{`
@@ -402,6 +439,8 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
           </tfoot>
         </table>
       </div>
+      </>
+      )}
     </div>
   );
 };

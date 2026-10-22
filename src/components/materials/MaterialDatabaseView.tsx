@@ -859,7 +859,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           <div
             className="ez-stat mat-kpi-card"
             style={{
-              backgroundColor: 'var(--ez-pastel-cream)',
+              background: 'var(--ez-stat-sky)',
               padding: '18px',
               borderRadius: 'var(--ez-radius-card)',
               display: 'flex',
@@ -873,8 +873,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                backgroundColor: 'var(--ez-hue-blue-bg)',
-                border: '1px solid var(--ez-hue-blue-border)',
+                backgroundColor: 'var(--ez-color-surface)',
+                border: '1px solid rgba(255, 255, 255, 0.35)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -885,9 +885,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
               <Package size={20} />
             </div>
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>Material Terindeks</div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: 'var(--ez-color-text-primary)', lineHeight: 1.2 }}>6.164</div>
-              <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>10 Sektor Lengkap</div>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255, 255, 255, 0.88)' }}>Material Terindeks</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: '#FFFFFF', lineHeight: 1.2 }}>6.164</div>
+              <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: 500 }}>10 Sektor Lengkap</div>
             </div>
           </div>
 
@@ -895,7 +895,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           <div
             className="ez-stat mat-kpi-card"
             style={{
-              backgroundColor: 'var(--ez-pastel-mint)',
+              background: 'var(--ez-stat-cyan)',
               padding: '18px',
               borderRadius: 'var(--ez-radius-card)',
               display: 'flex',
@@ -909,8 +909,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                backgroundColor: 'var(--ez-hue-blue-bg)',
-                border: '1px solid var(--ez-hue-blue-border)',
+                backgroundColor: 'var(--ez-color-surface)',
+                border: '1px solid rgba(255, 255, 255, 0.35)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -921,9 +921,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
               <Tag size={20} />
             </div>
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>Price Records</div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: 'var(--ez-color-text-primary)', lineHeight: 1.2 }}>24.583</div>
-              <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>Update 2026</div>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255, 255, 255, 0.88)' }}>Price Records</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: '#FFFFFF', lineHeight: 1.2 }}>24.583</div>
+              <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: 500 }}>Update 2026</div>
             </div>
           </div>
 
@@ -931,7 +931,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           <div
             className="ez-stat mat-kpi-card"
             style={{
-              backgroundColor: 'var(--ez-pastel-peach)',
+              background: 'var(--ez-stat-cream)',
               padding: '18px',
               borderRadius: 'var(--ez-radius-card)',
               display: 'flex',
@@ -945,8 +945,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                backgroundColor: 'var(--ez-hue-blue-bg)',
-                border: '1px solid var(--ez-hue-blue-border)',
+                backgroundColor: 'var(--ez-color-surface)',
+                border: '1px solid rgba(255, 255, 255, 0.35)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -957,9 +957,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
               <Building size={20} />
             </div>
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>Merek & Produsen</div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: 'var(--ez-color-text-primary)', lineHeight: 1.2 }}>42</div>
-              <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>Canonical & Alias</div>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255, 255, 255, 0.88)' }}>Merek & Produsen</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: '#FFFFFF', lineHeight: 1.2 }}>42</div>
+              <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: 500 }}>Canonical & Alias</div>
             </div>
           </div>
 
@@ -967,7 +967,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           <div
             className="ez-stat mat-kpi-card"
             style={{
-              backgroundColor: 'var(--ez-pastel-sky)',
+              background: 'var(--ez-stat-peach)',
               padding: '18px',
               borderRadius: 'var(--ez-radius-card)',
               display: 'flex',
@@ -981,8 +981,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                backgroundColor: 'var(--ez-hue-blue-bg)',
-                border: '1px solid var(--ez-hue-blue-border)',
+                backgroundColor: 'var(--ez-color-surface)',
+                border: '1px solid rgba(255, 255, 255, 0.35)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -993,9 +993,9 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
               <MapPin size={20} />
             </div>
             <div>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>Cakupan Wilayah</div>
-              <div style={{ fontSize: '18px', fontWeight: 900, color: 'var(--ez-color-text-primary)', lineHeight: 1.2 }}>38 Provinsi</div>
-              <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>514 Kota & Kabupaten</div>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255, 255, 255, 0.88)' }}>Cakupan Wilayah</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: '#FFFFFF', lineHeight: 1.2 }}>38 Provinsi</div>
+              <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', fontWeight: 500 }}>514 Kota & Kabupaten</div>
             </div>
           </div>
 
@@ -1003,7 +1003,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
           <div
             className="ez-stat mat-kpi-card"
             style={{
-              backgroundColor: 'var(--ez-pastel-lilac)',
+              background: 'var(--ez-stat-violet)',
               padding: '18px',
               borderRadius: 'var(--ez-radius-card)',
               display: 'flex',
@@ -1018,13 +1018,13 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   <path
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     fill="none"
-                    stroke="var(--ez-color-border)"
+                    stroke="rgba(255,255,255,0.35)"
                     strokeWidth="3.5"
                   />
                   <path
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     fill="none"
-                    stroke="#10B981"
+                    stroke="#FFFFFF"
                     strokeWidth="3.5"
                     strokeDasharray="94, 100"
                     strokeLinecap="round"
@@ -1039,24 +1039,24 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                     justifyContent: 'center',
                     fontSize: '10.5px',
                     fontWeight: 900,
-                    color: 'var(--ez-color-text-primary)',
+                    color: '#FFFFFF',
                   }}
                 >
                   94%
                 </span>
               </div>
               <div>
-                <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-color-text-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <ShieldCheck size={12} color="var(--ez-hue-green-text)" />
+                <div style={{ fontSize: '11px', fontWeight: 800, color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <ShieldCheck size={12} color="#FFFFFF" />
                   Kualitas Data
                 </div>
-                <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-faint)' }}>Source Coverage</div>
+                <div style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.8)' }}>Source Coverage</div>
                 <button
                   onClick={() => setIsDataQualityModalOpen(true)}
                   style={{
                     fontSize: '11px',
                     fontWeight: 700,
-                    color: 'var(--ez-color-primary)',
+                    color: '#FFFFFF',
                     cursor: 'pointer',
                     background: 'transparent',
                     border: 'none',

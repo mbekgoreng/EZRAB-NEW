@@ -293,62 +293,62 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-        <div className="ez-stat" style={{ background: 'var(--ez-pastel-cream)', borderRadius: 'var(--ez-radius-card)', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: 'var(--ez-stat-sky)', borderRadius: 'var(--ez-radius-card)', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)', textTransform: 'uppercase' }}>
               Target Rencana
             </span>
-            <Clock size={15} color="var(--ez-hue-blue-text)" />
+            <Clock size={15} color="#FFFFFF" />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '6px' }}>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#FFFFFF', marginTop: '6px' }}>
             {projectScheduleTasks.length === 0 ? '0%' : '100%'}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
+          <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '4px' }}>
             {projectScheduleTasks.length === 0 ? 'Belum ada jadwal tahapan' : `${projectScheduleTasks.length} tahapan terjadwal`}
           </div>
         </div>
 
-        <div className="ez-stat" style={{ background: 'var(--ez-pastel-mint)', borderRadius: 'var(--ez-radius-card)', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: 'var(--ez-stat-indigo)', borderRadius: 'var(--ez-radius-card)', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)', textTransform: 'uppercase' }}>
               Realisasi Lapangan
             </span>
-            <CheckCircle2 size={15} color="var(--ez-hue-green-text-bright)" />
+            <CheckCircle2 size={15} color="#FFFFFF" />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', marginTop: '6px' }}>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#FFFFFF', marginTop: '6px' }}>
             {currentActualProgress}%
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
+          <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '4px' }}>
             Progres kumulatif bobot kerja aktual
           </div>
         </div>
 
-        <div className="ez-stat" style={{ background: 'var(--ez-pastel-peach)', borderRadius: 'var(--ez-radius-card)', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: 'var(--ez-stat-mint)', borderRadius: 'var(--ez-radius-card)', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)', textTransform: 'uppercase' }}>
               Total Nilai Proyek
             </span>
-            <TrendingUp size={15} color="var(--ez-hue-blue-text)" />
+            <TrendingUp size={15} color="#FFFFFF" />
           </div>
-          <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '6px' }}>
+          <div style={{ fontSize: '20px', fontWeight: 800, color: '#FFFFFF', marginTop: '6px' }}>
             {formatCurrencyIDR(currentProject.totalRab || 0)}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
+          <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '4px' }}>
             {projectRabItems.length} item pekerjaan RAB terhubung
           </div>
         </div>
 
-        <div className="ez-stat" style={{ background: 'var(--ez-pastel-sky)', borderRadius: 'var(--ez-radius-card)', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+        <div className="ez-stat" style={{ background: 'var(--ez-stat-cyan)', borderRadius: 'var(--ez-radius-card)', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--ez-color-text-muted)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)', textTransform: 'uppercase' }}>
               Status Pelaksanaan
             </span>
-            <ShieldCheck size={15} color="var(--ez-hue-blue-text)" />
+            <ShieldCheck size={15} color="#FFFFFF" />
           </div>
-          <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '6px' }}>
+          <div style={{ fontSize: '20px', fontWeight: 800, color: '#FFFFFF', marginTop: '6px' }}>
             {currentActualProgress >= 100 ? 'Selesai' : (currentActualProgress > 0 ? 'Berjalan' : 'Persiapan')}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
+          <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '4px' }}>
             {projectScheduleTasks.filter((t) => t.status === 'COMPLETED').length} dari {projectScheduleTasks.length} tahapan rampung
           </div>
         </div>

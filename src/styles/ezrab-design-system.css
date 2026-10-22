@@ -15,9 +15,16 @@
      Light-mode rendering of token consumers is unchanged/pixel-identical. */
   --ez-color-background: #F2F7FF;
   --ez-color-surface: #FFFFFF;
-  --ez-color-surface-secondary: var(--ez-hue-slate-bg);
-  --ez-color-surface-tertiary: var(--ez-color-surface-tertiary);
-  --ez-color-surface-faint: var(--ez-color-surface-faint);
+  /* DS-02 (2026-10-22): --ez-color-surface-tertiary and -faint were cyclic
+     self-references since b5c7307 (same breakage family as DS-01); their
+     light values are restored from 692d077/80a2920. --ez-color-surface-
+     secondary was a direct #F8FAFC in those same commits until b5c7307
+     re-pointed it at --ez-hue-slate-bg — a token that has never had a
+     light value — so its own proven hex is restored here in place of the
+     unresolvable alias. */
+  --ez-color-surface-secondary: #F8FAFC;
+  --ez-color-surface-tertiary: #F1F5F9;
+  --ez-color-surface-faint: #FAFAFA;
   --ez-color-on-primary: #FFFFFF;
 
   /* ---- Sidebar & navigation ---- */
@@ -53,10 +60,22 @@
   --ez-hue-amber-text-dark: #92400E;
   --ez-color-text-ink: #1E293B;
 
-  /* ---- Borders & dividers ---- */
+  /* ---- Borders & dividers ----
+     DS-01 NORMALIZATION (2026-10-22): --ez-color-border-line and the whole
+     --ez-hue-*-border family in :root were cyclic self-references
+     (--x: var(--x)) since b5c7307 replaced their light values — invalid at
+     computed-value time, so light mode rendered NO border wherever these
+     tokens are used, while dark mode (real values below) showed hairlines.
+     Light values restored from the last-known-good definitions in 692d077
+     (the commit that introduced this token family); rose-border and
+     green-border-deep (added later, never had light values) follow the
+     same Tailwind tint steps as their siblings (rose-200 / green-300).
+     --ez-color-border-strong keeps its var(--ez-hue-slate-border)
+     indirection, which now resolves to #CBD5E1 — identical to the direct
+     hex it carried in 692d077. */
   --ez-color-border: #DCE4EE;
   --ez-color-border-soft: #EDF1F7;
-  --ez-color-border-line: var(--ez-color-border-line);
+  --ez-color-border-line: #E2E8F0;
   --ez-color-border-strong: var(--ez-hue-slate-border);
   --ez-color-border-neutral: #E5E7EB;
 
@@ -87,29 +106,39 @@
      Light values are pixel-identical to the hexes previously hardcoded in
      components. Dark values are desaturated translucent tints over the dark
      canvas — never bright pastels on dark. */
-  --ez-hue-blue-bg: var(--ez-hue-blue-bg);
-  --ez-hue-blue-border: var(--ez-hue-blue-border);
-  --ez-hue-green-bg: var(--ez-hue-green-bg);
-  --ez-hue-green-border: var(--ez-hue-green-border);
+  /* DS-02 (2026-10-22): the *-bg tokens below were cyclic self-references
+     in :root since b5c7307. Restored ONLY where a light value is provable
+     in git history: blue/green/purple/amber/violet/red from 692d077,
+     rose (#FEF2F2) and green-bg-deep (#DCFCE7) from 80a2920. The extended
+     family added by b5c7307 itself (slate-bg, amber-bg-deep, pink-bg,
+     pink-bg-soft, indigo-bg, indigo-bg-soft, blue-bg-deep, purple-bg-deep,
+     purple-bg-soft, orange-bg, orange-bg-soft, orange-bg-deep, yellow-bg,
+     emerald-bg, sky-bg) NEVER had a light value in this file — they stay
+     self-referential (invalid in light mode) until design provides real
+     values; do NOT invent hexes for them. Their dark values are real. */
+  --ez-hue-blue-bg: #EFF6FF;
+  --ez-hue-blue-border: #BFDBFE;
+  --ez-hue-green-bg: #F0FDF4;
+  --ez-hue-green-border: #BBF7D0;
   --ez-hue-green-text: #15803D;
-  --ez-hue-purple-bg: var(--ez-hue-purple-bg);
-  --ez-hue-purple-border: var(--ez-hue-purple-border);
+  --ez-hue-purple-bg: #FAF5FF;
+  --ez-hue-purple-border: #E9D5FF;
   --ez-hue-purple-text: #7E22CE;
-  --ez-hue-amber-bg: var(--ez-hue-amber-bg);
-  --ez-hue-amber-border: var(--ez-hue-amber-border);
+  --ez-hue-amber-bg: #FFFBEB;
+  --ez-hue-amber-border: #FDE68A;
   --ez-hue-amber-text: #B45309;
-  --ez-hue-slate-border: var(--ez-hue-slate-border);
+  --ez-hue-slate-border: #CBD5E1;
   --ez-hue-slate-text: #475569;
-  --ez-hue-violet-bg: var(--ez-hue-violet-bg);
-  --ez-hue-violet-border: var(--ez-hue-violet-border);
+  --ez-hue-violet-bg: #F5F3FF;
+  --ez-hue-violet-border: #DDD6FE;
   --ez-hue-violet-text: #7C3AED;
-  --ez-hue-red-bg: var(--ez-hue-red-bg);
+  --ez-hue-red-bg: #FEE2E2;
   --ez-hue-red-text: #991B1B;
-  --ez-hue-rose-bg: var(--ez-hue-rose-bg);
-  --ez-hue-rose-border: var(--ez-hue-rose-border);
+  --ez-hue-rose-bg: #FEF2F2;
+  --ez-hue-rose-border: #FECDD3;
   --ez-hue-rose-text: #DC2626;
   --ez-hue-amber-text-deep: #D97706;
-  --ez-hue-green-bg-deep: var(--ez-hue-green-bg-deep);
+  --ez-hue-green-bg-deep: #DCFCE7;
   --ez-hue-green-text-deep: #166534;
   --ez-hue-green-text-bright: #16A34A;
   --ez-hue-blue-text-deep: #1E40AF;
@@ -128,7 +157,25 @@
   --ez-hue-sky-bg: var(--ez-hue-sky-bg);
   --ez-hue-pink-bg-soft: var(--ez-hue-pink-bg-soft);
   --ez-hue-indigo-bg-soft: var(--ez-hue-indigo-bg-soft);
-  --ez-hue-green-border-deep: var(--ez-hue-green-border-deep);
+  /* DS-02 FASE F (2026-10-22): alternative-token evaluation for the 15
+     self-referential tokens above. An alias to an already-valid token is
+     allowed ONLY where the repo itself treats the token as equal to that
+     token in a LIGHT-mode context (var-mapping, fallback chain, or
+     provable component pattern). Result: NO token qualifies. Every other
+     in-repo definition of these tokens is dark-context only (the
+     [data-theme="dark"] block below and the three dark premium themes in
+     premium-themes.css), and the canonical dark block deliberately keeps
+     near-family tokens distinct (e.g. emerald-bg rgba(52,211,153,.26) vs
+     green-bg .28) — kinship is not equality, so no light alias was
+     applied. The tokens.css aliases --ezrab-surface-soft and
+     --ezrab-blue-border point TO slate-bg / blue-bg-deep, making them
+     downstream victims of this gap, not precedents for filling it.
+     Resolved values visible in the compiled snapshot src/styles/
+     magic-ai.css are not design-system definitions and were NOT applied.
+     All 15 remain blockers: the owner must provide or ratify real light
+     values (consumer census per token: Fase F report, qa-paper/
+     ds02-fasef/). */
+  --ez-hue-green-border-deep: #86EFAC;
 
   /* ---- Semantic ---- */
   --ez-color-success: #27845B;
