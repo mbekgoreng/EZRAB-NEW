@@ -521,35 +521,35 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
             flexWrap: 'wrap',
           }}
         >
-          <div style={{ textAlign: 'center', background: 'var(--ez-pastel-cream)', borderRadius: 'var(--ez-radius-card)', padding: '10px 18px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
-            <div style={{ fontSize: '19px', fontWeight: 800, color: 'var(--ez-hue-amber-text)', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+          <div className="ez-stat" style={{ textAlign: 'center', background: 'var(--ez-stat-sky)', borderRadius: 'var(--ez-radius-card)', padding: '10px 18px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+            <div style={{ fontSize: '19px', fontWeight: 800, color: '#FFFFFF', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
               {domainCounts.ALL.toLocaleString('id-ID')}
             </div>
-            <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-warm)', fontWeight: 600 }}>Semua Bidang</div>
+            <div style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 600 }}>Semua Bidang</div>
           </div>
-          <div style={{ textAlign: 'center', background: 'var(--ez-pastel-mint)', borderRadius: 'var(--ez-radius-card)', padding: '10px 18px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
-            <div style={{ fontSize: '19px', fontWeight: 800, color: 'var(--ez-hue-green-text)', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+          <div className="ez-stat" style={{ textAlign: 'center', background: 'var(--ez-stat-mint)', borderRadius: 'var(--ez-radius-card)', padding: '10px 18px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+            <div style={{ fontSize: '19px', fontWeight: 800, color: '#FFFFFF', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
               {domainCounts.CIPTA_KARYA.toLocaleString('id-ID')}
             </div>
-            <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-warm)', fontWeight: 600 }}>Cipta Karya</div>
+            <div style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 600 }}>Cipta Karya</div>
           </div>
-          <div style={{ textAlign: 'center', background: 'var(--ez-pastel-peach)', borderRadius: 'var(--ez-radius-card)', padding: '10px 18px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
-            <div style={{ fontSize: '19px', fontWeight: 800, color: 'var(--ez-hue-amber-text)', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+          <div className="ez-stat" style={{ textAlign: 'center', background: 'var(--ez-stat-cream)', borderRadius: 'var(--ez-radius-card)', padding: '10px 18px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+            <div style={{ fontSize: '19px', fontWeight: 800, color: '#FFFFFF', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
               {domainCounts.BINA_MARGA.toLocaleString('id-ID')}
             </div>
-            <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-warm)', fontWeight: 600 }}>Bina Marga</div>
+            <div style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 600 }}>Bina Marga</div>
           </div>
-          <div style={{ textAlign: 'center', background: 'var(--ez-pastel-sky)', borderRadius: 'var(--ez-radius-card)', padding: '10px 18px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
-            <div style={{ fontSize: '19px', fontWeight: 800, color: 'var(--ez-hue-blue-text-deep)', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+          <div className="ez-stat" style={{ textAlign: 'center', background: 'var(--ez-stat-cyan)', borderRadius: 'var(--ez-radius-card)', padding: '10px 18px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+            <div style={{ fontSize: '19px', fontWeight: 800, color: '#FFFFFF', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
               {domainCounts.SUMBER_DAYA_AIR.toLocaleString('id-ID')}
             </div>
-            <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-warm)', fontWeight: 600 }}>SDA</div>
+            <div style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 600 }}>SDA</div>
           </div>
-          <div style={{ textAlign: 'center', background: 'var(--ez-pastel-cream)', borderRadius: 'var(--ez-radius-card)', padding: '10px 18px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
-            <div style={{ fontSize: '19px', fontWeight: 800, color: 'var(--ez-hue-amber-text)', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+          <div className="ez-stat" style={{ textAlign: 'center', background: 'var(--ez-stat-violet)', borderRadius: 'var(--ez-radius-card)', padding: '10px 18px', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+            <div style={{ fontSize: '19px', fontWeight: 800, color: '#FFFFFF', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
               {domainCounts.SMKK.toLocaleString('id-ID')}
             </div>
-            <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-warm)', fontWeight: 600 }}>SMKK K3</div>
+            <div style={{ fontSize: '10.5px', color: 'rgba(255, 255, 255, 0.85)', fontWeight: 600 }}>SMKK K3</div>
           </div>
           <button
             onClick={() => setShowAuditModal(true)}
