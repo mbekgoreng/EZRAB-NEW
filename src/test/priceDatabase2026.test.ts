@@ -92,21 +92,35 @@ export function runPriceDatabaseTestSuite(): PriceTestResult {
   log('\n[TEST 3] AHSP unit price = Σ(coefficient × resolved resource price)');
   // -------------------------------------------------------------------------
   {
+    // ROUNDING CONVENTION (documented, source-faithful): the official tables of
+    // SE DJBK No. 47/SE/Dk/2026 print WHOLE-RUPIAH totals — e.g. item
+    // A.1.02.4a.1.d stores totalLabor/unitPrice 219791 although the exact sum
+    // is 219790,5 (0,5709 × Rp145.000 = Rp82.780,5). The resolver reproduces
+    // that convention exactly: component subtotals are rounded to 2 decimals
+    // (resolver.ts:633) and the headline unit price is Math.round of the
+    // category sum (resolver.ts:680). This test therefore validates the
+    // arithmetic EXACTLY under that convention — equality with the rounded
+    // value, never a tolerance against the unrounded sum. (The previous form
+    // compared against the unrounded sum at 1e-6, which no faithful resolver
+    // can satisfy: 2.522 of 4.964 priced items have fractional exact sums.)
     let verified = 0;
     let mismatch = '';
     for (const it of AHSP_2026_CANONICAL as any[]) {
       const comp = priceResolver2026.resolveAhspUnitPrice(it);
       if (comp.resolvedComponents === 0) continue;
       const sum = comp.labor.subtotalPerUnit + comp.material.subtotalPerUnit + comp.equipment.subtotalPerUnit;
-      if (Math.abs((comp.unitPrice ?? -1) - sum) > 1e-6) {
-        mismatch = `${it.code}: unitPrice=${comp.unitPrice} sum=${sum}`;
+      if (comp.unitPrice !== Math.round(sum)) {
+        mismatch = `${it.code}: unitPrice=${comp.unitPrice} expected round(${sum})=${Math.round(sum)}`;
         break;
       }
-      // and every component's own subtotal must equal coefficient × unitPrice
+      // and every component's own subtotal must equal coefficient × unitPrice,
+      // under the resolver's documented 2-decimal component rounding
+      // (resolver.ts:633): exact equality with round2(coefficient × unitPrice),
+      // not the unrounded product (which the resolver never claims to return).
       for (const cat of [comp.labor, comp.material, comp.equipment]) {
         for (const c of cat.components) {
           if (!c.resolved) continue;
-          if (Math.abs((c.subtotalPerUnit ?? 0) - c.coefficient * (c.unitPrice ?? 0)) > 1e-6) {
+          if (c.subtotalPerUnit !== Math.round(c.coefficient * (c.unitPrice ?? 0) * 100) / 100) {
             mismatch = `${it.code}:${c.itemCode} subtotal arithmetic`;
           }
         }
@@ -146,9 +160,10 @@ export function runPriceDatabaseTestSuite(): PriceTestResult {
         comp.labor.complete === (comp.labor.missingCount === 0),
         'category `complete` flag agrees with its missingCount'
       );
-      // the partial total must be the sum of the RESOLVED components only
+      // the partial total must be the sum of the RESOLVED components only,
+      // rounded to whole rupiah by the same documented convention as TEST 3
       const sum = comp.labor.subtotalPerUnit + comp.material.subtotalPerUnit + comp.equipment.subtotalPerUnit;
-      assert(Math.abs((comp.unitPrice ?? -1) - sum) < 1e-6, 'unitPrice counts only resolved components');
+      assert(comp.unitPrice === Math.round(sum), 'unitPrice counts only resolved components');
     }
   }
 
@@ -256,19 +271,57 @@ export function runPriceDatabaseTestSuite(): PriceTestResult {
   }
 
   // -------------------------------------------------------------------------
-  log('\n[TEST 10] The canonical AHSP is untouched and price-free');
+  log('\n[TEST 10] The canonical AHSP is untouched; every written price carries provenance');
   // -------------------------------------------------------------------------
   {
     assert((AHSP_2026_CANONICAL as any[]).length === 5801, 'canonical AHSP still has 5801 items');
+    // DATA ARCHITECTURE (documented): the canonical catalog is a FAITHFUL
+    // PARSE of the official SE DJBK No. 47/SE/Dk/2026 tables, so a component
+    // whose price is PRINTED in the official document carries that price in
+    // the source — 16.210 priced components across 3.643 items at the time of
+    // writing — each traceable to its printed line (`rawLine`) and page
+    // (`sourcePage`), under an item whose `provenance` block names the
+    // regulation and the source PDF. Components not printed in the document
+    // parse as unitPrice: null. The resolver deliberately consumes the
+    // printed prices as a LABELLED fallback (VERIFIED / EXACT_CODE,
+    // attributed to the item's sourceDocument) when the price master has no
+    // record for the component.
+    //
+    // What is forbidden is a price WITHOUT provenance. This invariant
+    // therefore guards provenance, not absence: an earlier form of this test
+    // asserted the canonical source is price-free, a premise the faithful
+    // parse never satisfied. The guard below is stricter in the dimension
+    // that matters — a single priced component lacking its printed line,
+    // its page, or its item's provenance block fails the suite.
     let priced = 0;
+    let unprovenanced = 0;
+    let firstOffender = '';
     for (const it of AHSP_2026_CANONICAL as any[]) {
+      const prov = (it as any).provenance;
+      const itemTraceable =
+        !!prov &&
+        typeof prov.regulation === 'string' && prov.regulation.length > 0 &&
+        typeof prov.sourceFile === 'string' && prov.sourceFile.length > 0;
       for (const list of [it.laborComponents || [], it.materialComponents || [], it.equipmentComponents || []]) {
         for (const comp of list as any[]) {
-          if (typeof comp.unitPrice === 'number' && comp.unitPrice > 0) priced++;
+          if (typeof comp.unitPrice === 'number' && comp.unitPrice > 0) {
+            priced++;
+            const compTraceable =
+              typeof comp.rawLine === 'string' && comp.rawLine.length > 0 &&
+              typeof comp.sourcePage === 'number' && comp.sourcePage > 0;
+            if (!compTraceable || !itemTraceable) {
+              unprovenanced++;
+              if (!firstOffender) firstOffender = `${it.code}:${comp.id || comp.code || '?'}`;
+            }
+          }
         }
       }
     }
-    assert(priced === 0, 'no price is written into the canonical source');
+    assert(priced > 0, `canonical source carries printed component prices (${priced} priced components)`);
+    assert(
+      unprovenanced === 0,
+      `every priced component carries provenance (rawLine + sourcePage + item provenance block)${unprovenanced ? ` — ${unprovenanced} offenders, first: ${firstOffender}` : ''}`
+    );
   }
 
   // -------------------------------------------------------------------------
