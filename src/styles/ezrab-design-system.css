@@ -115,7 +115,11 @@
      purple-bg-soft, orange-bg, orange-bg-soft, orange-bg-deep, yellow-bg,
      emerald-bg, sky-bg) NEVER had a light value in this file — they stay
      self-referential (invalid in light mode) until design provides real
-     values; do NOT invent hexes for them. Their dark values are real. */
+     values; do NOT invent hexes for them. Their dark values are real.
+     RESOLVED 2026-10-23: the owner delegated the design decision in the
+     one-pass finalization master prompt; all 15 now carry light values
+     derived from this system's own active patterns (see the DS-02 FINAL
+     note below). They are DESIGN DECISIONS, not historical restorations. */
   --ez-hue-blue-bg: #EFF6FF;
   --ez-hue-blue-border: #BFDBFE;
   --ez-hue-green-bg: #F0FDF4;
@@ -142,39 +146,50 @@
   --ez-hue-green-text-deep: #166534;
   --ez-hue-green-text-bright: #16A34A;
   --ez-hue-blue-text-deep: #1E40AF;
-  --ez-hue-amber-bg-deep: var(--ez-hue-amber-bg-deep);
-  --ez-hue-pink-bg: var(--ez-hue-pink-bg);
-  --ez-hue-indigo-bg: var(--ez-hue-indigo-bg);
-  --ez-hue-blue-bg-deep: var(--ez-hue-blue-bg-deep);
-  --ez-hue-purple-bg-deep: var(--ez-hue-purple-bg-deep);
-  --ez-hue-purple-bg-soft: var(--ez-hue-purple-bg-soft);
-  --ez-hue-orange-bg-soft: var(--ez-hue-orange-bg-soft);
-  --ez-hue-orange-bg: var(--ez-hue-orange-bg);
-  --ez-hue-orange-bg-deep: var(--ez-hue-orange-bg-deep);
-  --ez-hue-yellow-bg: var(--ez-hue-yellow-bg);
-  --ez-hue-slate-bg: var(--ez-hue-slate-bg);
-  --ez-hue-emerald-bg: var(--ez-hue-emerald-bg);
-  --ez-hue-sky-bg: var(--ez-hue-sky-bg);
-  --ez-hue-pink-bg-soft: var(--ez-hue-pink-bg-soft);
-  --ez-hue-indigo-bg-soft: var(--ez-hue-indigo-bg-soft);
-  /* DS-02 FASE F (2026-10-22): alternative-token evaluation for the 15
-     self-referential tokens above. An alias to an already-valid token is
-     allowed ONLY where the repo itself treats the token as equal to that
-     token in a LIGHT-mode context (var-mapping, fallback chain, or
-     provable component pattern). Result: NO token qualifies. Every other
-     in-repo definition of these tokens is dark-context only (the
-     [data-theme="dark"] block below and the three dark premium themes in
-     premium-themes.css), and the canonical dark block deliberately keeps
-     near-family tokens distinct (e.g. emerald-bg rgba(52,211,153,.26) vs
-     green-bg .28) — kinship is not equality, so no light alias was
-     applied. The tokens.css aliases --ezrab-surface-soft and
-     --ezrab-blue-border point TO slate-bg / blue-bg-deep, making them
-     downstream victims of this gap, not precedents for filling it.
-     Resolved values visible in the compiled snapshot src/styles/
-     magic-ai.css are not design-system definitions and were NOT applied.
-     All 15 remain blockers: the owner must provide or ratify real light
-     values (consumer census per token: Fase F report, qa-paper/
-     ds02-fasef/). */
+  --ez-hue-amber-bg-deep: #FEF3C7;
+  --ez-hue-pink-bg: #FDF2F8;
+  --ez-hue-indigo-bg: #EEF2FF;
+  --ez-hue-blue-bg-deep: #DBEAFE;
+  --ez-hue-purple-bg-deep: #F3E8FF;
+  --ez-hue-purple-bg-soft: #FDFAFF;
+  --ez-hue-orange-bg-soft: #FFFBF6;
+  --ez-hue-orange-bg: #FFF7ED;
+  --ez-hue-orange-bg-deep: #FFEDD5;
+  --ez-hue-yellow-bg: #FEFCE8;
+  --ez-hue-slate-bg: #F8FAFC;
+  --ez-hue-emerald-bg: #ECFDF5;
+  --ez-hue-sky-bg: #F0F9FF;
+  --ez-hue-pink-bg-soft: #FEF9FC;
+  --ez-hue-indigo-bg-soft: #F7F9FF;
+  /* DS-02 FINAL (2026-10-23) — keputusan desain terdelegasi owner (master
+     prompt finalisasi one-pass), BUKAN pemulihan historis. Fase F
+     (2026-10-22) membuktikan ke-15 token di atas tidak pernah punya nilai
+     terang yang dapat dibuktikan dan tidak ada alias mode-terang yang sah
+     (setiap definisi lain di repo bersifat konteks-gelap; blok dark
+     kanonis sendiri membedakan keluarga dekat, mis. emerald-bg .26 vs
+     green-bg .28 — kekerabatan bukan kesetaraan). Owner kemudian
+     mendelegasikan penetapan nilai dari design system AKTIF. Dasar pola
+     per varian, dari keluarga valid di :root file ini:
+       -bg       = langkah Tailwind 50 (blue/green/purple/amber/violet/
+                   rose semuanya 50; satu-satunya penyimpang: red-bg di
+                   langkah 100 — pola dominan yang dipakai = 50).
+       -bg-deep  = langkah Tailwind 100 (terbukti di file: green-bg-deep
+                   #DCFCE7 dari 80a2920; konsisten dengan 2 jangkar).
+       -bg-soft  = TIDAK ada preseden terang di file; diturunkan sebagai
+                   tint-50 diringankan 50% menuju putih, mengikuti urutan
+                   intensitas blok dark (soft .24–.26 < base .28 < deep
+                   .32–.34). Ini penyimpangan terdokumentasi, bukan pola
+                   terbukti.
+     Jangkar snapshot terkompilasi src/styles/magic-ai.css (resolusi lama
+     yang terbaca dari utilitas ter-bake, dipakai sebagai nilai karena
+     konsisten dengan pola di atas): blue-bg-deep #DBEAFE (blue-100),
+     slate-bg #F8FAFC (slate-50), amber-bg-deep #FEF3C7 (amber-100).
+     emerald-bg memakai keluarga emerald (#ECFDF5, emerald-50) — berbeda
+     dari green sesuai keberadaan terpisah keduanya di blok dark.
+     "purple" mengikuti keluarga purple file ini (purple-bg = purple-50),
+     bukan violet. Nilai dark ke-15 token TIDAK berubah. Bukti visual:
+     qa-paper/ds02-final/ (computed terang berwarna nyata, kontras teks
+     gelap ≥ 4,5:1, screenshot dua mode). */
   --ez-hue-green-border-deep: #86EFAC;
 
   /* ---- Semantic ---- */
