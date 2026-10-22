@@ -14,11 +14,12 @@
  *   POST /api/ai/multi-provider/execute  -> api/ai/multi-provider/execute.js (gateway wrapper)
  *   GET  /api/ai/multi-provider/providers-> api/ai/multi-provider/providers.js (availability saja)
  *
- * PEMBARUAN 2026-10-22 — total handler kini 12 (= batas plan Hobby Vercel):
- *   access/session, access/verify, credits/balance, credits/estimate,
- *   credits/usage, market/search, + 5 AI di atas, + invitations/[action].
- *   6 endpoint /api/invitations/<aksi> DIGABUNG jadi satu fungsi dinamis
- *   api/invitations/[action].js — URL publik tidak berubah. Menambah
+ * PEMBARUAN 2026-10-22 — total handler kini 11 (batas plan Hobby Vercel:
+ *   12 fungsi per deployment, dan middleware.ts ikut terhitung):
+ *   access/[action], credits/balance, credits/estimate, credits/usage,
+ *   market/search, + 5 AI di atas, + invitations/[action].
+ *   6 endpoint /api/invitations/<aksi> dan 2 endpoint /api/access/<aksi>
+ *   DIGABUNG jadi fungsi dinamis [action].js — URL publik tidak berubah. Menambah
  *   handler baru di luar _lib akan menaikkan hitungan dan menggagalkan
  *   tes ini dengan sengaja: naikkan batas di sini hanya bersama keputusan
  *   plan/arsitektur (konsolidasi dulu, atau naik plan).
@@ -67,7 +68,7 @@ function jsFiles(dir: string): string[] {
 console.log('\n[1] Kontrak handler Vercel (default export function):');
 {
   const handlers = jsFiles(API_DIR).filter((f) => !f.includes('_lib'));
-  check(`ditemukan ${handlers.length} handler di luar _lib`, handlers.length === 12, handlers.map((f) => relative(API_DIR, f)).join(', '));
+  check(`ditemukan ${handlers.length} handler di luar _lib`, handlers.length === 11, handlers.map((f) => relative(API_DIR, f)).join(', '));
   for (const f of handlers) {
     const mod = await import(f);
     const rel = relative(API_DIR, f);
