@@ -11,8 +11,10 @@ import { ChatIntent } from './intentRouter';
 import { EZRAB_AI_TOOLS } from './tools';
 import {
   RabNeeds, extractRabNeeds, missingNeeds, buildDesignPrompt, summarizeRabNeeds,
+  resolveLandAreaM2, stripLandPhrases,
 } from './rabNeeds';
-import { buildDirectRab, formatDirectRabMessage } from './directRab';
+import { buildDirectRab, displayTemplateBasisName, findDirectTemplate, formatDirectRabMessage, matchDirectRegion } from './directRab';
+import { buildSpecRab } from './specRab';
 
 export interface ChatActionContext {
   /** Navigate to a menu id (WorkspaceView.setActiveMenu) */
@@ -73,6 +75,8 @@ export interface ActionResult {
   designPrompt?: string;
   /** Chat menunggu jawaban kelengkapan kebutuhan RAB dari pengguna */
   awaitRabNeeds?: boolean;
+  /** Kartu pilihan RAB bertipe sedang menunggu pilihan/koreksi pengguna (D1) */
+  awaitRabChoice?: boolean;
 }
 
 const MENU_LABELS: Record<string, string> = {
@@ -119,6 +123,8 @@ export function getLastRabDesignPrompt(): string | null {
 }
 
 function rabSummaryResult(raw: string, base?: RabNeeds): ActionResult {
+  // Alur ringkasan menggantikan kartu pilihan yang mungkin menggantung.
+  pendingChoice = null;
   const needs = extractRabNeeds(raw, base);
   lastRabNeeds = needs;
   if (raw) lastRabRaw = raw;
@@ -163,6 +169,139 @@ function rabSummaryResult(raw: string, base?: RabNeeds): ActionResult {
 /** Lanjutan "Lengkapi kebutuhan": gabungkan jawaban pengguna ke ringkasan. */
 export function continueRabNeeds(text: string): ActionResult {
   return rabSummaryResult(text, lastRabNeeds ?? undefined);
+}
+
+/* ------------------------------------------------------------------ */
+/* Kartu pilihan RAB bertipe (D1, remediasi 2026-10-22): setiap       */
+/* parameter di kartu WAJIB berlabel asal — "Dari Anda" untuk yang     */
+/* disebut pengguna eksplisit, "Asumsi" untuk inferensi/default        */
+/* (lantai default, KT/KM & dimensi default template). Pengguna dapat */
+/* mengoreksi lewat chat SEBELUM memilih jalur; koreksi digabung ke    */
+/* state pending yang sama (bukan state machine paralel) dan kartu     */
+/* di-render ulang — kedua tombol memakai spek terkoreksi.             */
+/* ------------------------------------------------------------------ */
+export interface PendingRabChoice {
+  rawText: string;
+  match: NonNullable<ReturnType<typeof findDirectTemplate>>;
+  /** Kebutuhan terbaca + gabungan koreksi (bukan versi enriched prompt). */
+  needs: RabNeeds;
+  floors: number;
+  floorsMentioned: boolean;
+  landAreaM2: number | null;
+}
+
+let pendingChoice: PendingRabChoice | null = null;
+
+export function getPendingRabChoice(): PendingRabChoice | null {
+  return pendingChoice;
+}
+
+export function clearPendingRabChoice(): void {
+  pendingChoice = null;
+}
+
+type CardTemplate = PendingRabChoice['match']['template'];
+
+function templateDefault(template: CardTemplate, key: 'bedroomCount' | 'bathroomCount' | 'buildingLength' | 'buildingWidth'): number | null {
+  const d = template.parameters?.[key]?.defaultValue;
+  return typeof d === 'number' ? d : null;
+}
+
+function choiceCardResult(p: PendingRabChoice, corrected: boolean): ActionResult {
+  const { item, template } = p.match;
+  const needs = p.needs;
+  const { region } = matchDirectRegion(needs.location);
+  const lines: string[] = [];
+  lines.push(
+    corrected
+      ? 'Siap — kartu pilihan saya perbarui dengan koreksi Anda. Ini spek yang kini terbaca:'
+      : 'Siap — permintaan Anda cocok dengan template RAB terdaftar. Ini ringkasan spek yang saya baca:'
+  );
+  lines.push(`• Template: **${item.label}** (${displayTemplateBasisName(template.name, p.floors)}) — Dari Anda (tipe disebut di pesan)`);
+  lines.push(
+    `• Luas bangunan: ${p.floors > 1 ? `${item.area} m² per lantai (total ±${item.area * p.floors} m²)` : `${item.area} m²`} — Dari Anda (dari Type ${item.area})`
+  );
+  if (p.landAreaM2) {
+    lines.push(`• Luas lahan: ${p.landAreaM2} m² — Dari Anda (dicatat — belum memengaruhi hitungan RAB)`);
+  }
+  lines.push(
+    `• Jumlah lantai: ${p.floors} lantai — ${p.floorsMentioned ? 'Dari Anda' : 'Asumsi (default — tidak disebutkan; koreksi bila berbeda)'}`
+  );
+  const bedDefault = templateDefault(template, 'bedroomCount');
+  const bathDefault = templateDefault(template, 'bathroomCount');
+  if (needs.bedrooms) lines.push(`• Kamar tidur: ${needs.bedrooms} — Dari Anda`);
+  else if (bedDefault != null) lines.push(`• Kamar tidur: ${bedDefault} — Asumsi (default template)`);
+  if (needs.bathrooms) lines.push(`• Kamar mandi: ${needs.bathrooms} — Dari Anda`);
+  else if (bathDefault != null) lines.push(`• Kamar mandi: ${bathDefault} — Asumsi (default template)`);
+  if (needs.landLength && needs.landWidth) {
+    lines.push(`• Dimensi bangunan: ${needs.landLength} × ${needs.landWidth} m — Dari Anda`);
+  } else {
+    const bl = templateDefault(template, 'buildingLength');
+    const bw = templateDefault(template, 'buildingWidth');
+    if (bl != null && bw != null) {
+      lines.push(`• Dimensi bangunan: ±${bw} × ${bl} m — Asumsi (default template)`);
+    }
+  }
+  if (needs.location) {
+    lines.push(`• Lokasi: ${needs.location} — Dari Anda → indeks harga ${region}`);
+  } else {
+    lines.push('• Lokasi: belum disebutkan — Asumsi indeks harga DKI Jakarta (default)');
+  }
+  lines.push('');
+  lines.push(
+    'Ada yang keliru? Koreksi langsung di chat sebelum memilih — misalnya "2 lantai" atau "3 kamar tidur" — kartu ini akan saya perbarui, dan kedua pilihan di bawah memakai spek terkoreksi.'
+  );
+  lines.push('');
+  lines.push(
+    'Pilih cara membuat RAB-nya:\n' +
+      '• **Pakai Template** — hitung parametrik instan di chat ini: tabel item + total + tombol Push ke Spreadsheet RAB.\n' +
+      '• **Pakai AI Full** — lanjut ke Workspace Desain & RAB; spek di atas terbawa sebagai konteks/prompt desain.'
+  );
+
+  // Versi enriched untuk prompt desain & state ringkasan: luas bangunan
+  // TIDAK PERNAH diambil dari angka lahan (S7).
+  const enriched: RabNeeds = {
+    ...needs,
+    kind: 'rumah',
+    kindLabel: needs.kindLabel ?? 'rumah tinggal',
+    floors: p.floors,
+    buildingArea:
+      needs.buildingArea && needs.buildingArea !== p.landAreaM2 ? needs.buildingArea : item.area,
+  };
+  lastRabNeeds = enriched;
+  lastRabRaw = p.rawText;
+
+  return {
+    ok: true,
+    message: lines.join('\n'),
+    awaitRabChoice: true,
+    actions: [
+      { label: 'Pakai Template', action: { kind: 'intent', intent: 'GENERATE_RAB_TEMPLATE', param: p.rawText } },
+      { label: 'Pakai AI Full', action: { kind: 'intent', intent: 'OPEN_DESIGN_WORKSPACE', param: buildDesignPrompt(enriched, p.rawText) } },
+    ],
+  };
+}
+
+/**
+ * Koreksi pra-pilih pada kartu pilihan: gabungkan teks koreksi pengguna
+ * ("2 lantai", "3 kamar tidur", "lahan 120 m2", …) ke state pending,
+ * lalu render ulang kartu dengan spek terkoreksi. Konteks pilihan
+ * (template + kedua jalur) tetap utuh.
+ */
+export function continueRabChoice(text: string): ActionResult {
+  const p = pendingChoice;
+  if (!p) return rabSummaryResult(text);
+  const correction = extractRabNeeds(stripLandPhrases(text));
+  const merged = extractRabNeeds(stripLandPhrases(text), { ...p.needs });
+  const updated: PendingRabChoice = {
+    ...p,
+    needs: merged,
+    floors: merged.floors ?? p.floors,
+    floorsMentioned: p.floorsMentioned || correction.floors != null,
+    landAreaM2: resolveLandAreaM2(text) ?? p.landAreaM2,
+  };
+  pendingChoice = updated;
+  return choiceCardResult(updated, true);
 }
 
 export function executeIntent(
@@ -242,13 +381,68 @@ export function executeIntent(
       };
 
     case 'CREATE_RAB_DIRECT': {
-      // Permintaan user 2026-10-21: RAB rumah bertipe dihitung LANGSUNG oleh
-      // mesin parametrik dan ditampilkan sebagai tabel detail di chat —
-      // bukan ringkasan kebutuhan, bukan menu template. Lokal penuh, tanpa
-      // kredit AI. Bila tipe tidak didukung template terdaftar, jatuh jujur
-      // ke ringkasan kebutuhan (tidak memaksa hasil karangan).
-      const built = buildDirectRab(ctx.rawText ?? param ?? '');
-      if (!built) return rabSummaryResult(ctx.rawText ?? param ?? '');
+      const raw = ctx.rawText ?? param ?? '';
+      // Desain owner 2026-10-22 (menggantikan generate-otomatis 2026-10-21
+      // untuk permintaan BERTIPE): bila teks cocok dengan TEMPLATE
+      // TERDAFTAR, JANGAN langsung generate — tampilkan kartu pilihan:
+      // ringkasan spek terbaca + "Pakai Template" (generate parametrik
+      // instan di chat, persis jalur direct lama, lewat klik eksplisit
+      // GENERATE_RAB_TEMPLATE) atau "Pakai AI Full" (ke Workspace
+      // Desain & RAB dengan spek terbawa sebagai prompt lewat mekanisme
+      // OPEN_DESIGN_WORKSPACE existing — TANPA panggilan LLM baru di chat).
+      const typed = findDirectTemplate(raw);
+      if (typed) {
+        // D1: kartu kini dibangun choiceCardResult — semua parameter
+        // berlabel Dari Anda/Asumsi, KT/KM default template DITAMPILKAN,
+        // ada baris "Luas bangunan" eksplisit, dan pengguna dapat
+        // mengoreksi lewat chat sebelum memilih (state pendingChoice).
+        pendingChoice = {
+          rawText: raw,
+          match: typed,
+          needs: { ...typed.needs },
+          floors: typed.floors,
+          floorsMentioned: typed.floorsMentioned,
+          landAreaM2: resolveLandAreaM2(raw),
+        };
+        return choiceCardResult(pendingChoice, false);
+      }
+      // Permintaan langsung baru menggantikan kartu yang menggantung.
+      pendingChoice = null;
+      // Spesifikasi bebas TANPA tipe terdaftar (perluasan 2026-10-22):
+      // tidak ada template yang bisa dipilih → langsung generate parametrik
+      // dari spesifikasi (specRab) dengan daftar asumsi terbuka. Bila
+      // spesifikasi tidak terukur/di luar dukungan, jatuh jujur ke
+      // ringkasan kebutuhan (tidak memaksa hasil karangan).
+      const specBuilt = buildSpecRab(raw);
+      if (specBuilt) {
+        return {
+          ok: true,
+          message: formatDirectRabMessage(specBuilt),
+          actions: [
+            { label: 'Push ke Spreadsheet RAB', action: { kind: 'push-rab' } },
+            { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+            { label: 'Buka Workspace Desain & RAB', action: { kind: 'navigate', menu: 'desain-rab' } },
+          ],
+        };
+      }
+      return rabSummaryResult(raw);
+    }
+
+    case 'GENERATE_RAB_TEMPLATE': {
+      // Hanya tercapai lewat KLIK tombol "Pakai Template" pada kartu pilihan
+      // (persetujuan eksplisit pengguna) — teks ketikan tidak pernah sampai
+      // ke sini. Generate parametrik persis jalur CREATE_RAB_DIRECT lama:
+      // tabel detail + total + tombol Push ke Spreadsheet RAB.
+      // Bila kartu ini adalah kartu pending aktif (param = teks asal kartu),
+      // generate memakai kebutuhan TERKOREKSI pengguna (D1) dan pending
+      // dikonsumsi; klik pada kartu lama yang sudah digantikan jatuh ke
+      // perilaku lama (parse dari param-nya sendiri).
+      const rawParam = param ?? ctx.rawText ?? '';
+      const p = pendingChoice;
+      const usePending = p != null && (rawParam === '' || rawParam === p.rawText);
+      const built = usePending ? buildDirectRab(p.rawText, p.needs) : buildDirectRab(rawParam);
+      if (!built) return rabSummaryResult(rawParam);
+      if (usePending) pendingChoice = null;
       return {
         ok: true,
         message: formatDirectRabMessage(built),

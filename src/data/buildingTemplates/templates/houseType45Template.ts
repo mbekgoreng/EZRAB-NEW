@@ -120,6 +120,7 @@ export const HOUSE_TYPE_45_SINGLE_FLOOR_TEMPLATE: MasterBuildingTemplate = {
   limitations: [
     'Estimasi parametrik awal dengan asumsi tanah datar dan daya dukung tanah normal.',
     'DED dan gambar arsitektur definitif tetap diperlukan untuk pelaksanaan lelang konstruksi.',
+    'Beberapa parameter adalah konstanta tetap template yang BELUM diskalakan ke ukuran bangunan pengguna: panjang kusen 37,5 m\', titik kolom praktis 12, titik lampu 8, titik stop kontak 6 (blocker FORMULA_UNVERIFIED S6 — lihat asumsi per item).',
   ],
   sourceMetadata: {
     standardReference: 'Permen PUPR No. 1/2022 & AHSP Cipta Karya 2026',

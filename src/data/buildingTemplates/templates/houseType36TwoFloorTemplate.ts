@@ -185,6 +185,7 @@ export const HOUSE_TYPE_36_TWO_FLOOR_TEMPLATE: MasterBuildingTemplate = {
     'Perhitungan struktur mengasumsikan daya dukung tanah normal (qa >= 1.0 kg/cm2).',
     'Tidak mencakup pekerjaan tiang pancang / bore pile jika tanah berlumpur / rawa.',
     'Beban gempa standar zona gempa Indonesia sedang (SNI 1726).',
+    'Beberapa parameter adalah konstanta tetap template yang BELUM diskalakan ke ukuran bangunan pengguna: panjang kusen 37,5 m\', titik kolom praktis 12, titik lampu 8, titik stop kontak 6 (blocker FORMULA_UNVERIFIED S6 — lihat asumsi per item).',
   ],
   sourceMetadata: {
     standardReference: 'SNI 2847-2019 (Beton), SNI 1726-2019 (Gempa), PUPR AHSP Cipta Karya 2026',

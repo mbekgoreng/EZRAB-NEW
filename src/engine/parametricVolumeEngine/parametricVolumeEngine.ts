@@ -5,17 +5,62 @@ import {
   WorkItemCategoryGroup,
   TemplateAssumption,
   WorkItemValidationStatus,
+  ItemPriceStatus,
+  UnpricedItemInfo,
 } from '../../data/buildingTemplates/schema/types';
 import { masterBuildingTemplateRegistry } from '../../data/buildingTemplates/masterTemplateRegistry';
 import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
 import { MASTER_PRICE_ITEMS } from '../../data/indonesianPrices';
-// PHASE 1 (audit §16): record every fabricated price. Recording only — no value is changed.
-import { recordFabricatedTotal } from '../pricing/telemetry/fabricatedPriceTelemetry';
 
 export interface RegionalIndex {
   province: string;
   multiplier: number;
 }
+
+/**
+ * REMEDIASI: hasil resolusi harga tertelusur. `unitPrice` null berarti harga
+ * TIDAK tersedia dari sumber valid — null tidak pernah boleh diperlakukan
+ * sebagai Rp0 yang sah di aritmetika mana pun.
+ */
+export interface UnitPriceResolution {
+  unitPrice: number | null;
+  ahspName: string | null;
+  source: string | null;
+  /** Satuan tarif (mis. 'm3', 'm2', 'm', 'unit', 'titik'); null bila tak ada tarif. */
+  priceUnit: string | null;
+  resolution: 'OFFICIAL' | 'BENCHMARK' | 'PRICE_UNAVAILABLE' | 'AHSP_UNRESOLVED';
+  /** true bila harga berasal dari tabel benchmark internal (indikatif). */
+  isFabricated: boolean;
+  /** true bila kode resmi ambigu antar-varian. */
+  isAmbiguous: boolean;
+}
+
+/**
+ * REMEDIASI S1: normalisasi satuan untuk gerbang dimensional.
+ * Mengembalikan kunci kanonik: 'm' (meter lari: m, m', m1), 'm2', 'm3',
+ * 'kg', 'unit' (unit/buah), 'titik', 'set', 'ls', atau string mentah
+ * ter-lowercase untuk satuan di luar keluarga yang dikenal.
+ */
+export function normalizeUnitForGate(raw: string | null | undefined): string {
+  const u = String(raw ?? '').trim().toLowerCase().replace(/\s+/g, '');
+  if (u === 'm²' || u === 'm2') return 'm2';
+  if (u === 'm³' || u === 'm3') return 'm3';
+  if (u === 'm' || u === "m'" || u === 'm1' || u === 'm¹') return 'm';
+  if (u === 'unit' || u === 'buah' || u === 'bh') return 'unit';
+  if (u === 'titik') return 'titik';
+  if (u === 'kg') return 'kg';
+  if (u === 'set') return 'set';
+  if (u === 'ls') return 'ls';
+  return u;
+}
+
+/**
+ * Keluarga satuan yang dimensinya dapat dibandingkan secara pasti.
+ * Satuan di luar himpunan ini (termasuk 'ls' — lump sum memang dapat
+ * mencakup satuan apa pun) TIDAK digerbang: ketidakcocokan tidak dapat
+ * dibuktikan, jadi harga tidak diblokir atas dasar tebakan.
+ */
+const GATE_COMPARABLE_UNITS: ReadonlySet<string> = new Set(['m', 'm2', 'm3', 'kg', 'unit', 'titik', 'set']);
 
 export const REGIONAL_PRICE_INDICES: Record<string, number> = {
   'DKI Jakarta': 1.00,
@@ -177,32 +222,48 @@ export class ParametricVolumeEngine {
    * Phase 3E: Ambiguous codes (multiple variants sharing one code) are NOT
    * silently resolved to the first match. If the input matches an ID exactly,
    * that specific variant is used. If the input is a code matching multiple
-   * variants, the lookup falls through to benchmark/default rather than
-   * picking a potentially wrong variant's price.
+   * variants, the lookup falls through to benchmark rather than picking a
+   * potentially wrong variant's price.
    *
-   * Phase 3F: Returns price status indicators. Fabricated prices (benchmark
-   * fallback, Rp150.000 default) are marked isFabricated=true and must NOT
-   * be presented as verified official prices.
+   * Phase 3F: Returns price status indicators. Benchmark prices are marked
+   * isFabricated=true and must NOT be presented as verified official prices.
+   *
+   * REMEDIASI S2 (menghapus fallback buta-satuan): TIDAK ADA lagi harga
+   * bawaan Rp150.000 untuk kode tak dikenal. Kode yang tidak terpetakan ke
+   * katalog resmi maupun tabel benchmark menghasilkan unitPrice = null
+   * dengan resolution 'PRICE_UNAVAILABLE' — pemanggil wajib menandainya
+   * PRICE_UNAVAILABLE dan mengeluarkannya dari total. Kode yang ditemukan
+   * di katalog resmi tetapi harga resminya belum tersedia menghasilkan
+   * 'AHSP_UNRESOLVED' (null), BUKAN diam-diam diganti benchmark.
    */
-  public resolveUnitPrice(ahspCode: string, region: string = 'DKI Jakarta'): {
-    unitPrice: number;
-    ahspName: string;
-    source: string;
-    /** Phase 3F: true if price is from benchmark/default fallback, not official AHSP */
-    isFabricated: boolean;
-    /** Phase 3F: true if code was ambiguous and no variant was selected */
-    isAmbiguous: boolean;
-  } {
+  public resolveUnitPrice(ahspCode: string, region: string = 'DKI Jakarta'): UnitPriceResolution {
     const multiplier = REGIONAL_PRICE_INDICES[region] || 1.0;
+    const domainSource = (domain: string) =>
+      domain === 'CIPTA_KARYA' ? 'CIPTA_KARYA_2026' : domain === 'BINA_MARGA' ? 'BINA_MARGA_2026' : 'SDA_2026';
 
     // Search official AHSP item
     // Phase 3E: First check for exact ID match (IDs are unique)
     const idMatch = ALL_OFFICIAL_AHSP_ITEMS.find((it) => it.id === ahspCode);
-    if (idMatch && idMatch.unitPrice && idMatch.unitPrice > 0) {
+    if (idMatch) {
+      if (idMatch.unitPrice && idMatch.unitPrice > 0) {
+        return {
+          unitPrice: Math.round(idMatch.unitPrice * multiplier),
+          ahspName: idMatch.name,
+          source: domainSource(idMatch.domain),
+          priceUnit: idMatch.unit,
+          resolution: 'OFFICIAL',
+          isFabricated: false,
+          isAmbiguous: false,
+        };
+      }
+      // Item resmi ditemukan tetapi harga resminya belum tersedia (null).
+      // Null di katalog resmi berarti PRICE_MISSING — bukan 0, bukan diganti.
       return {
-        unitPrice: Math.round(idMatch.unitPrice * multiplier),
+        unitPrice: null,
         ahspName: idMatch.name,
-        source: idMatch.domain === 'CIPTA_KARYA' ? 'CIPTA_KARYA_2026' : idMatch.domain === 'BINA_MARGA' ? 'BINA_MARGA_2026' : 'SDA_2026',
+        source: domainSource(idMatch.domain),
+        priceUnit: idMatch.unit,
+        resolution: 'AHSP_UNRESOLVED',
         isFabricated: false,
         isAmbiguous: false,
       };
@@ -210,66 +271,79 @@ export class ParametricVolumeEngine {
 
     // Phase 3E: For code lookup, check for ambiguity
     const codeMatches = ALL_OFFICIAL_AHSP_ITEMS.filter((it) => it.code === ahspCode);
-    if (codeMatches.length > 1) {
-      // Ambiguous code - do NOT pick first silently.
-      // Fall through to benchmark/default below.
-      // The caller should provide an ID for precise variant selection.
-    } else if (codeMatches.length === 1) {
+    if (codeMatches.length === 1) {
       const officialItem = codeMatches[0];
       if (officialItem.unitPrice && officialItem.unitPrice > 0) {
         return {
           unitPrice: Math.round(officialItem.unitPrice * multiplier),
           ahspName: officialItem.name,
-          source: officialItem.domain === 'CIPTA_KARYA' ? 'CIPTA_KARYA_2026' : officialItem.domain === 'BINA_MARGA' ? 'BINA_MARGA_2026' : 'SDA_2026',
+          source: domainSource(officialItem.domain),
+          priceUnit: officialItem.unit,
+          resolution: 'OFFICIAL',
           isFabricated: false,
           isAmbiguous: false,
         };
       }
+      return {
+        unitPrice: null,
+        ahspName: officialItem.name,
+        source: domainSource(officialItem.domain),
+        priceUnit: officialItem.unit,
+        resolution: 'AHSP_UNRESOLVED',
+        isFabricated: false,
+        isAmbiguous: false,
+      };
     }
-    // Fall through to benchmark/default if: no ID match with valid price,
-    // ambiguous code, single code match without valid price, or no match
+    // codeMatches.length > 1: ambiguous — do NOT pick first silently; fall
+    // through to benchmark below with isAmbiguous=true (Phase 3E preserved).
+    // codeMatches.length === 0: fall through to benchmark / unavailable.
 
 
     // Heuristic benchmark fallback price table based on official PUPR 2026 standards
-    const AHSP_BENCHMARK_RATES: Record<string, { price: number; name: string; source: string }> = {
-      'A.2.2.1.1': { price: 28500, name: '1 m Pengukuran dan pemasangan bowplank', source: 'CIPTA_KARYA_2026' },
-      'A.2.2.1.9': { price: 8500, name: '1 m2 Membersihkan lapangan dan perataan', source: 'CIPTA_KARYA_2026' },
-      'A.2.3.1.1': { price: 86500, name: '1 m3 Galian tanah biasa sedalam 1 m', source: 'CIPTA_KARYA_2026' },
-      'A.2.3.1.9': { price: 29000, name: '1 m3 Pengurugan kembali galian tanah', source: 'CIPTA_KARYA_2026' },
-      'A.2.3.1.11': { price: 245000, name: '1 m3 Pengurugan pasir urug padat', source: 'CIPTA_KARYA_2026' },
-      'A.3.2.1.2': { price: 920000, name: '1 m3 Pasangan pondasi batu belah 1SP : 5PP', source: 'CIPTA_KARYA_2026' },
-      'A.3.2.1.9': { price: 620000, name: '1 m3 Pasangan batu kosong (aanstamping)', source: 'CIPTA_KARYA_2026' },
-      'A.4.1.1.1': { price: 890000, name: '1 m3 Membuat beton mutu f\'c = 7,4 MPa (K 100 / Bo)', source: 'CIPTA_KARYA_2026' },
-      'A.4.1.1.4': { price: 1250000, name: '1 m3 Membuat beton mutu f\'c = 19.3 MPa (K 225)', source: 'CIPTA_KARYA_2026' },
-      'A.4.1.1.5': { price: 1320000, name: '1 m3 Membuat beton mutu f\'c = 21.7 MPa (K 250)', source: 'CIPTA_KARYA_2026' },
-      'A.4.1.1.17': { price: 16500, name: '1 kg Pembesian besi beton ulir / polos', source: 'CIPTA_KARYA_2026' },
-      'A.4.1.1.20': { price: 195000, name: '1 m2 Pasang bekisting untuk sloof / kolom', source: 'CIPTA_KARYA_2026' },
-      'A.4.4.1.1': { price: 142000, name: '1 m2 Pasang dinding bata ringan hebel t=10cm mortar instan', source: 'CIPTA_KARYA_2026' },
-      'A.4.4.1.9': { price: 165000, name: '1 m2 Pasang dinding bata merah tebal 1/2 bata 1:5', source: 'CIPTA_KARYA_2026' },
-      'A.4.4.2.2': { price: 48500, name: '1 m2 Plesteran 1:5 tebal 15 mm', source: 'CIPTA_KARYA_2026' },
-      'A.4.4.2.27': { price: 34500, name: '1 m2 Acian semen / mortar instan', source: 'CIPTA_KARYA_2026' },
-      'A.4.4.3.3': { price: 195000, name: '1 m2 Pasang lantai keramik 40x40 / 50x50 cm', source: 'CIPTA_KARYA_2026' },
-      'A.4.4.3.4': { price: 265000, name: '1 m2 Pasang lantai homogeneous tile granit 60x60 cm', source: 'CIPTA_KARYA_2026' },
-      'A.4.5.1.7': { price: 115000, name: '1 m2 Langit-langit gypsum board 9mm rangka hollow', source: 'CIPTA_KARYA_2026' },
-      'A.4.5.2.3': { price: 185000, name: '1 m2 Rangka atap baja ringan profil C75/0.75', source: 'CIPTA_KARYA_2026' },
-      'A.4.5.2.11': { price: 105000, name: '1 m2 Penutup atap genteng metal warna pasir', source: 'CIPTA_KARYA_2026' },
-      'A.4.6.1.1': { price: 185000, name: '1 m Kusen pintu dan jendela aluminium 4 inch', source: 'CIPTA_KARYA_2026' },
-      'A.4.6.1.2': { price: 950000, name: '1 Unit Daun pintu panel kayu kamper / HPL solid', source: 'CIPTA_KARYA_2026' },
-      'A.4.6.1.5': { price: 420000, name: '1 Unit Daun jendela kaca aluminium 5mm', source: 'CIPTA_KARYA_2026' },
-      'A.4.7.1.10': { price: 32500, name: '1 m2 Pengecatan tembok interior 3 lapis', source: 'CIPTA_KARYA_2026' },
-      'A.4.7.1.11': { price: 46000, name: '1 m2 Pengecatan tembok eksterior weathershield', source: 'CIPTA_KARYA_2026' },
-      'A.4.7.1.1': { price: 28500, name: '1 m2 Pengecatan plafon gypsum', source: 'CIPTA_KARYA_2026' },
-      'A.5.1.1.1': { price: 850000, name: '1 Unit Pasang kloset duduk porselen monoblok', source: 'CIPTA_KARYA_2026' },
-      'A.5.1.1.19': { price: 38500, name: '1 m Pipa PVC tipe AW diameter 3/4 inch', source: 'CIPTA_KARYA_2026' },
-      'A.5.1.1.25': { price: 78500, name: '1 m Pipa PVC tipe D diameter 3 inch / 4 inch', source: 'CIPTA_KARYA_2026' },
-      'A.5.1.1.30': { price: 3200000, name: '1 Unit Bio Septic Tank 1000 Liter + Resapan', source: 'CIPTA_KARYA_2026' },
-      'A.6.1.1.1': { price: 165000, name: '1 Titik Instalasi titik lampu & saklar kabel NYM 3x1.5', source: 'CIPTA_KARYA_2026' },
-      'A.6.1.1.2': { price: 185000, name: '1 Titik Instalasi stop kontak kabel NYM 3x2.5', source: 'CIPTA_KARYA_2026' },
-      'A.6.1.1.10': { price: 750000, name: '1 Set Panel MCB Box 4 Group + Pengaman', source: 'CIPTA_KARYA_2026' },
-      'BM.05.01': { price: 1450000, name: '1 m3 Lapis Pondasi Semen Tanah / Lean Concrete', source: 'BINA_MARGA_2026' },
-      'BM.05.02': { price: 1850000, name: '1 m3 Perkerasan Beton Semen (Rigid Pavement)', source: 'BINA_MARGA_2026' },
-      'SDA.01.01': { price: 485000, name: 'Pemasangan 1 m1 Saluran U-Ditch Pracetak', source: 'SDA_2026' },
-      'SDA.01.02': { price: 215000, name: 'Pemasangan 1 m1 Tutup / Cover U-Ditch Beton Pracetak', source: 'SDA_2026' },
+    // REMEDIASI: setiap entri kini membawa `unit` tarif secara eksplisit
+    // (diambil persis dari awalan nama item itu sendiri: '1 m3', '1 m2',
+    // '1 m', '1 Unit', '1 Titik', '1 kg', '1 Set', '1 m1'). Field ini dipakai
+    // gerbang satuan (UNIT_MISMATCH) — tarif tidak boleh dikalikan ke
+    // kuantitas yang satuannya berbeda. Nilai harga TIDAK diubah.
+    const AHSP_BENCHMARK_RATES: Record<string, { price: number; name: string; source: string; unit: string }> = {
+      'A.2.2.1.1': { price: 28500, name: '1 m Pengukuran dan pemasangan bowplank', source: 'CIPTA_KARYA_2026', unit: 'm' },
+      'A.2.2.1.9': { price: 8500, name: '1 m2 Membersihkan lapangan dan perataan', source: 'CIPTA_KARYA_2026', unit: 'm2' },
+      'A.2.3.1.1': { price: 86500, name: '1 m3 Galian tanah biasa sedalam 1 m', source: 'CIPTA_KARYA_2026', unit: 'm3' },
+      'A.2.3.1.9': { price: 29000, name: '1 m3 Pengurugan kembali galian tanah', source: 'CIPTA_KARYA_2026', unit: 'm3' },
+      'A.2.3.1.11': { price: 245000, name: '1 m3 Pengurugan pasir urug padat', source: 'CIPTA_KARYA_2026', unit: 'm3' },
+      'A.3.2.1.2': { price: 920000, name: '1 m3 Pasangan pondasi batu belah 1SP : 5PP', source: 'CIPTA_KARYA_2026', unit: 'm3' },
+      'A.3.2.1.9': { price: 620000, name: '1 m3 Pasangan batu kosong (aanstamping)', source: 'CIPTA_KARYA_2026', unit: 'm3' },
+      'A.4.1.1.1': { price: 890000, name: '1 m3 Membuat beton mutu f\'c = 7,4 MPa (K 100 / Bo)', source: 'CIPTA_KARYA_2026', unit: 'm3' },
+      'A.4.1.1.4': { price: 1250000, name: '1 m3 Membuat beton mutu f\'c = 19.3 MPa (K 225)', source: 'CIPTA_KARYA_2026', unit: 'm3' },
+      'A.4.1.1.5': { price: 1320000, name: '1 m3 Membuat beton mutu f\'c = 21.7 MPa (K 250)', source: 'CIPTA_KARYA_2026', unit: 'm3' },
+      'A.4.1.1.17': { price: 16500, name: '1 kg Pembesian besi beton ulir / polos', source: 'CIPTA_KARYA_2026', unit: 'kg' },
+      'A.4.1.1.20': { price: 195000, name: '1 m2 Pasang bekisting untuk sloof / kolom', source: 'CIPTA_KARYA_2026', unit: 'm2' },
+      'A.4.4.1.1': { price: 142000, name: '1 m2 Pasang dinding bata ringan hebel t=10cm mortar instan', source: 'CIPTA_KARYA_2026', unit: 'm2' },
+      'A.4.4.1.9': { price: 165000, name: '1 m2 Pasang dinding bata merah tebal 1/2 bata 1:5', source: 'CIPTA_KARYA_2026', unit: 'm2' },
+      'A.4.4.2.2': { price: 48500, name: '1 m2 Plesteran 1:5 tebal 15 mm', source: 'CIPTA_KARYA_2026', unit: 'm2' },
+      'A.4.4.2.27': { price: 34500, name: '1 m2 Acian semen / mortar instan', source: 'CIPTA_KARYA_2026', unit: 'm2' },
+      'A.4.4.3.3': { price: 195000, name: '1 m2 Pasang lantai keramik 40x40 / 50x50 cm', source: 'CIPTA_KARYA_2026', unit: 'm2' },
+      'A.4.4.3.4': { price: 265000, name: '1 m2 Pasang lantai homogeneous tile granit 60x60 cm', source: 'CIPTA_KARYA_2026', unit: 'm2' },
+      'A.4.5.1.7': { price: 115000, name: '1 m2 Langit-langit gypsum board 9mm rangka hollow', source: 'CIPTA_KARYA_2026', unit: 'm2' },
+      'A.4.5.2.3': { price: 185000, name: '1 m2 Rangka atap baja ringan profil C75/0.75', source: 'CIPTA_KARYA_2026', unit: 'm2' },
+      'A.4.5.2.11': { price: 105000, name: '1 m2 Penutup atap genteng metal warna pasir', source: 'CIPTA_KARYA_2026', unit: 'm2' },
+      'A.4.6.1.1': { price: 185000, name: '1 m Kusen pintu dan jendela aluminium 4 inch', source: 'CIPTA_KARYA_2026', unit: 'm' },
+      'A.4.6.1.2': { price: 950000, name: '1 Unit Daun pintu panel kayu kamper / HPL solid', source: 'CIPTA_KARYA_2026', unit: 'unit' },
+      'A.4.6.1.5': { price: 420000, name: '1 Unit Daun jendela kaca aluminium 5mm', source: 'CIPTA_KARYA_2026', unit: 'unit' },
+      'A.4.7.1.10': { price: 32500, name: '1 m2 Pengecatan tembok interior 3 lapis', source: 'CIPTA_KARYA_2026', unit: 'm2' },
+      'A.4.7.1.11': { price: 46000, name: '1 m2 Pengecatan tembok eksterior weathershield', source: 'CIPTA_KARYA_2026', unit: 'm2' },
+      'A.4.7.1.1': { price: 28500, name: '1 m2 Pengecatan plafon gypsum', source: 'CIPTA_KARYA_2026', unit: 'm2' },
+      'A.5.1.1.1': { price: 850000, name: '1 Unit Pasang kloset duduk porselen monoblok', source: 'CIPTA_KARYA_2026', unit: 'unit' },
+      'A.5.1.1.19': { price: 38500, name: '1 m Pipa PVC tipe AW diameter 3/4 inch', source: 'CIPTA_KARYA_2026', unit: 'm' },
+      'A.5.1.1.25': { price: 78500, name: '1 m Pipa PVC tipe D diameter 3 inch / 4 inch', source: 'CIPTA_KARYA_2026', unit: 'm' },
+      'A.5.1.1.30': { price: 3200000, name: '1 Unit Bio Septic Tank 1000 Liter + Resapan', source: 'CIPTA_KARYA_2026', unit: 'unit' },
+      'A.6.1.1.1': { price: 165000, name: '1 Titik Instalasi titik lampu & saklar kabel NYM 3x1.5', source: 'CIPTA_KARYA_2026', unit: 'titik' },
+      'A.6.1.1.2': { price: 185000, name: '1 Titik Instalasi stop kontak kabel NYM 3x2.5', source: 'CIPTA_KARYA_2026', unit: 'titik' },
+      'A.6.1.1.10': { price: 750000, name: '1 Set Panel MCB Box 4 Group + Pengaman', source: 'CIPTA_KARYA_2026', unit: 'set' },
+      'BM.05.01': { price: 1450000, name: '1 m3 Lapis Pondasi Semen Tanah / Lean Concrete', source: 'BINA_MARGA_2026', unit: 'm3' },
+      'BM.05.02': { price: 1850000, name: '1 m3 Perkerasan Beton Semen (Rigid Pavement)', source: 'BINA_MARGA_2026', unit: 'm3' },
+      'SDA.01.01': { price: 485000, name: 'Pemasangan 1 m1 Saluran U-Ditch Pracetak', source: 'SDA_2026', unit: 'm' },
+      'SDA.01.02': { price: 215000, name: 'Pemasangan 1 m1 Tutup / Cover U-Ditch Beton Pracetak', source: 'SDA_2026', unit: 'm' },
     };
 
     const benchmark = AHSP_BENCHMARK_RATES[ahspCode];
@@ -278,29 +352,25 @@ export class ParametricVolumeEngine {
         unitPrice: Math.round(benchmark.price * multiplier),
         ahspName: benchmark.name,
         source: benchmark.source,
+        priceUnit: benchmark.unit,
+        resolution: 'BENCHMARK',
         // Phase 3F: Benchmark is an indicative estimate, not official AHSP price
         isFabricated: true,
-        isAmbiguous: false,
+        isAmbiguous: codeMatches.length > 1,
       };
     }
 
-    // Default fallback
-    // PHASE 1 telemetry: unknown AHSP code → flat Rp 150.000/m3 × regional multiplier.
-    // Phase 3F: This is a generic assumption, NOT an official price.
-    // It is marked isFabricated=true and tracked via telemetry.
-    recordFabricatedTotal('parametric.borongan.default', Math.round(150000 * multiplier), {
-      constant: 150000,
-      unit: ahspCode,
-      itemName: `Analisa Satuan Pekerjaan (${ahspCode})`,
-      calculatorId: ahspCode,
-    });
+    // REMEDIASI S2: TIDAK ADA fallback harga bawaan. Konstanta generik
+    // Rp150.000 ('parametric.borongan.default') DIHAPUS sebagai sumber harga
+    // karena buta-satuan dan tidak tertelusur ke item mana pun. Kode yang
+    // tidak terpetakan = harga belum tersedia (null).
     return {
-      unitPrice: Math.round(150000 * multiplier),
-      ahspName: `Analisa Satuan Pekerjaan (${ahspCode})`,
-      source: 'CUSTOM',
-      // Phase 3F: Generic Rp150.000 fallback is an assumption, NOT verified.
-      // Marked fabricated so totals can distinguish verified vs estimated.
-      isFabricated: true,
+      unitPrice: null,
+      ahspName: null,
+      source: null,
+      priceUnit: null,
+      resolution: 'PRICE_UNAVAILABLE',
+      isFabricated: false,
       isAmbiguous: codeMatches.length > 1,
     };
   }
@@ -377,6 +447,8 @@ export class ParametricVolumeEngine {
     let verifiedDirectCost = 0;
     let fabricatedDirectCost = 0;
     let ambiguousItemCount = 0;
+    // REMEDIASI Fase 8: item yang tidak dapat dihargai secara sah.
+    const unpricedItems: UnpricedItemInfo[] = [];
     const allWarnings: string[] = [...valResult.warnings];
     const allErrors: string[] = [];
 
@@ -412,8 +484,40 @@ export class ParametricVolumeEngine {
 
       // Resolve AHSP and Unit Price
       const defaultAhsp = item.defaultAhspCode || (item.ahspCandidates[0]?.ahspCode ?? 'CUSTOM.01');
-      const { unitPrice, ahspName, source: ahspSource, isFabricated, isAmbiguous } = this.resolveUnitPrice(defaultAhsp, region);
-      const totalPrice = Math.round(quantity * unitPrice);
+      const resolution = this.resolveUnitPrice(defaultAhsp, region);
+      const { ahspName, source: ahspSource, isFabricated, isAmbiguous } = resolution;
+
+      // REMEDIASI S1 — GERBANG SATUAN (UNIT_MISMATCH): tarif hanya boleh
+      // dikalikan ke kuantitas bila satuan tarif dan satuan kuantitas berada
+      // dalam keluarga dimensional yang sama. Ketidakcocokan yang terbukti
+      // (mis. kuantitas m² x tarif Rp/m³) membuat harga TIDAK diterapkan —
+      // item menjadi UNIT_MISMATCH dan dikeluarkan dari total. Gerbang hanya
+      // memblokir bila kedua satuan dikenal pasti (lihat GATE_COMPARABLE_UNITS).
+      const quantityUnitKey = normalizeUnitForGate(volRes.unit || item.unit);
+      const priceUnitKey = resolution.priceUnit ? normalizeUnitForGate(resolution.priceUnit) : null;
+      const unitMismatch =
+        resolution.unitPrice !== null &&
+        priceUnitKey !== null &&
+        GATE_COMPARABLE_UNITS.has(quantityUnitKey) &&
+        GATE_COMPARABLE_UNITS.has(priceUnitKey) &&
+        quantityUnitKey !== priceUnitKey;
+
+      const priceStatus: ItemPriceStatus = unitMismatch
+        ? 'UNIT_MISMATCH'
+        : resolution.resolution === 'OFFICIAL'
+          ? 'OFFICIAL'
+          : resolution.resolution === 'BENCHMARK'
+            ? 'BENCHMARK'
+            : resolution.resolution === 'AHSP_UNRESOLVED'
+              ? 'AHSP_UNRESOLVED'
+              : 'PRICE_UNAVAILABLE';
+
+      // Harga efektif: null (tak berharga) diperlakukan sebagai TIDAK ADA
+      // harga di seluruh aritmetika — bukan Rp0 yang sah. Di permukaan hasil
+      // item tampil unitPrice/totalPrice 0 + priceStatus eksplisit, sesuai
+      // konvensi konsumen existing (`unitPrice > 0` = berharga).
+      const effectiveUnitPrice: number | null = unitMismatch ? null : resolution.unitPrice;
+      const totalPrice = effectiveUnitPrice !== null ? Math.round(quantity * effectiveUnitPrice) : 0;
 
       if (categorySubtotals[item.category] !== undefined) {
         categorySubtotals[item.category] += totalPrice;
@@ -425,16 +529,36 @@ export class ParametricVolumeEngine {
 
       // Phase 3F: Separate verified vs fabricated costs.
       // Fabricated prices must NOT be presented as verified official totals.
-      if (isFabricated) {
+      if (priceStatus === 'BENCHMARK') {
         fabricatedDirectCost += totalPrice;
         allWarnings.push(
           `FABRICATED_PRICE: "${item.name}" menggunakan harga ${isAmbiguous ? 'ambigu' : 'asumsi'} (${ahspSource}), bukan harga AHSP resmi terverifikasi.`
         );
-      } else {
+      } else if (priceStatus === 'OFFICIAL') {
         verifiedDirectCost += totalPrice;
       }
       if (isAmbiguous) {
         ambiguousItemCount++;
+      }
+
+      // REMEDIASI Fase 8: item tak berharga tercatat eksplisit agar pemanggil
+      // dapat membedakan total parsial dari total final.
+      if (priceStatus === 'PRICE_UNAVAILABLE' || priceStatus === 'UNIT_MISMATCH' || priceStatus === 'AHSP_UNRESOLVED') {
+        const reason =
+          priceStatus === 'UNIT_MISMATCH'
+            ? `Satuan kuantitas ${volRes.unit || item.unit} tidak cocok dengan satuan tarif ${resolution.priceUnit} untuk kode ${defaultAhsp}; harga tidak diterapkan.`
+            : priceStatus === 'AHSP_UNRESOLVED'
+              ? `Kode ${defaultAhsp} ditemukan di katalog resmi tetapi harga resminya belum tersedia.`
+              : `Kode ${defaultAhsp} tidak terpetakan ke katalog AHSP resmi maupun tabel benchmark engine; harga belum tersedia.`;
+        unpricedItems.push({
+          workItemId: item.stableId,
+          wbsCode: item.wbsCode,
+          name: item.name,
+          ahspCode: defaultAhsp,
+          priceStatus,
+          reason,
+        });
+        allWarnings.push(`${priceStatus}: "${item.name}" — ${reason} Item TIDAK dihitung ke total.`);
       }
 
       if (volRes.warnings && volRes.warnings.length > 0) {
@@ -451,21 +575,28 @@ export class ParametricVolumeEngine {
         category: item.category,
         unit: item.unit,
         quantity,
-        unitPrice,
+        unitPrice: effectiveUnitPrice ?? 0,
         totalPrice,
         ahspCode: defaultAhsp,
-        ahspName,
-        ahspSource,
+        ahspName: ahspName ?? undefined,
+        ahspSource: ahspSource ?? undefined,
         // Phase 3F: Price provenance per item
         isPriceFabricated: isFabricated,
         isPriceAmbiguous: isAmbiguous,
+        // REMEDIASI: status harga tertelusur + satuan tarif teresolusi
+        priceStatus,
+        priceUnit: resolution.priceUnit,
         formula: volRes.formula,
         formulaInputs: volRes.formulaInputs,
         dimensions: volRes.dimensions,
         assumptionsUsed: volRes.assumptionsUsed,
         status: volRes.status,
         confidence: volRes.confidence,
-        requiresReview: volRes.requiresReview,
+        requiresReview:
+          volRes.requiresReview ||
+          priceStatus === 'PRICE_UNAVAILABLE' ||
+          priceStatus === 'UNIT_MISMATCH' ||
+          priceStatus === 'AHSP_UNRESOLVED',
         warnings: volRes.warnings,
         errors: volRes.errors,
         calculationTrace: volRes.calculationTrace,
@@ -489,6 +620,41 @@ export class ParametricVolumeEngine {
         ? generatedWorkItems.reduce((sum, item) => sum + item.confidence, 0) / generatedWorkItems.length
         : 1.0;
 
+    // REMEDIASI Fase 8: total hanya boleh tampil final (VERIFIED/INDICATIVE)
+    // bila SEMUA item berharga sah. Satu item tak berharga saja membuat
+    // total menjadi PARSIAL -> 'INCOMPLETE', dengan daftarnya di unpricedItems.
+    const hasBlockedOrError = generatedWorkItems.some(
+      (w) => w.status === 'blocked' || (w.errors && w.errors.length > 0)
+    );
+    const hasUnresolvedTotal = hasBlockedOrError || ambiguousItemCount > 0 || unpricedItems.length > 0;
+    const totalStatus: 'VERIFIED' | 'INDICATIVE' | 'INCOMPLETE' = hasUnresolvedTotal
+      ? 'INCOMPLETE'
+      : fabricatedDirectCost > 0
+        ? 'INDICATIVE'
+        : 'VERIFIED';
+    const isVerifiedTotal = totalStatus === 'VERIFIED';
+    // Phase 3G: verified-only overhead/profit/tax — only when VERIFIED.
+    const vOverhead = Math.round((verifiedDirectCost * overheadPercentage) / 100);
+    const vProfit = Math.round((verifiedDirectCost * profitPercentage) / 100);
+    const vSubtotal = verifiedDirectCost + vOverhead + vProfit;
+    const vTax = Math.round((vSubtotal * taxPercentage) / 100);
+
+    // REMEDIASI Fase 5 (S5 — cakupan instalasi air): keterbatasan dari
+    // template diteruskan apa adanya, ditambah catatan cakupan yang
+    // diturunkan dari isi template. Untuk template rumah tinggal, kategori
+    // 13_INSTALASI_AIR yang kosong dinyatakan sebagai keterbatasan cakupan —
+    // item instalasi air TIDAK dikarang hanya agar terlihat lengkap.
+    const limitations: string[] = [...(template.limitations ?? [])];
+    if (
+      template.category === 'residential' &&
+      !template.workItems.some((i) => i.category === '13_INSTALASI_AIR')
+    ) {
+      const coverageNote =
+        'Cakupan: instalasi air bersih dan air kotor (kategori 13_INSTALASI_AIR) BELUM termasuk dalam estimasi ini — template sumber belum memuat item instalasi air dengan formula dan pemetaan AHSP yang terverifikasi.';
+      limitations.push(coverageNote);
+      allWarnings.unshift(`KETERBATASAN CAKUPAN: ${coverageNote}`);
+    }
+
     return {
       templateId: template.id,
       templateCode: template.code,
@@ -510,47 +676,25 @@ export class ParametricVolumeEngine {
       // Phase 3G: Explicit total status contract.
       // VERIFIED: all items have verified official prices, no ambiguity, no unresolved.
       // INDICATIVE: contains benchmark/assumption prices explicitly allowed as indicative estimate.
-      // INCOMPLETE: has unresolved/ambiguous items, total does not cover all required costs.
-      totalStatus: (() => {
-        const hasUnresolved = generatedWorkItems.some(
-          (w: any) => w.status === 'blocked' || (w.errors && w.errors.length > 0)
-        );
-        if (hasUnresolved || ambiguousItemCount > 0) {
-          return 'INCOMPLETE' as const;
-        }
-        if (fabricatedDirectCost > 0) {
-          return 'INDICATIVE' as const;
-        }
-        return 'VERIFIED' as const;
-      })(),
+      // INCOMPLETE: has unresolved/ambiguous/unpriced items, total does not cover all required costs.
+      totalStatus,
       // Phase 3G: Verified-only totals. Only populated when totalStatus is VERIFIED.
       // This ensures overhead/profit/tax inherit validity from base costs.
       // When not VERIFIED, these are undefined - consumers must not use
       // totalRabCost as a verified total.
-      ...(() => {
-        const hasUnresolved = generatedWorkItems.some(
-          (w: any) => w.status === 'blocked' || (w.errors && w.errors.length > 0)
-        );
-        const isVerified = !hasUnresolved && ambiguousItemCount === 0 && fabricatedDirectCost === 0;
-        if (isVerified) {
-          const vOverhead = Math.round((verifiedDirectCost * overheadPercentage) / 100);
-          const vProfit = Math.round((verifiedDirectCost * profitPercentage) / 100);
-          const vSubtotal = verifiedDirectCost + vOverhead + vProfit;
-          const vTax = Math.round((vSubtotal * taxPercentage) / 100);
-          return {
+      ...(isVerifiedTotal
+        ? {
             verifiedOverheadAmount: vOverhead,
             verifiedProfitAmount: vProfit,
             verifiedTaxAmount: vTax,
             verifiedTotalRabCost: vSubtotal + vTax,
-          };
-        }
-        return {
-          verifiedOverheadAmount: undefined as number | undefined,
-          verifiedProfitAmount: undefined as number | undefined,
-          verifiedTaxAmount: undefined as number | undefined,
-          verifiedTotalRabCost: undefined as number | undefined,
-        };
-      })(),
+          }
+        : {
+            verifiedOverheadAmount: undefined as number | undefined,
+            verifiedProfitAmount: undefined as number | undefined,
+            verifiedTaxAmount: undefined as number | undefined,
+            verifiedTotalRabCost: undefined as number | undefined,
+          }),
       overheadPercentage,
       overheadAmount,
       profitPercentage,
@@ -562,8 +706,15 @@ export class ParametricVolumeEngine {
       confidenceScore: Math.round(avgConfidence * 100) / 100,
       warnings: Array.from(new Set(allWarnings)),
       errors: Array.from(new Set(allErrors)),
-      isReadyForSpreadsheet: allErrors.length === 0,
+      // REMEDIASI Fase 8: hasil parsial (ada item tak berharga) tidak boleh
+      // dinyatakan siap final untuk spreadsheet.
+      isReadyForSpreadsheet: allErrors.length === 0 && unpricedItems.length === 0,
       calculationTimestamp: new Date().toISOString(),
+      // REMEDIASI Fase 8: daftar item tak berharga + hitungannya.
+      unpricedItems,
+      unpricedItemCount: unpricedItems.length,
+      // REMEDIASI Fase 5: keterbatasan cakupan (template + turunan engine).
+      limitations,
     };
   }
 
@@ -589,6 +740,8 @@ export class ParametricVolumeEngine {
       ahspCode?: string;
       category?: string;
       wbsCode?: string;
+      /** REMEDIASI: status harga tertelusur (unitPrice 0 + status non-OFFICIAL/BENCHMARK = belum ada harga). */
+      priceStatus?: ItemPriceStatus;
     }>;
     categoryGroups: Array<{
       categoryName: string;
@@ -620,6 +773,7 @@ export class ParametricVolumeEngine {
         ahspCode: wi.ahspCode,
         category: wi.category,
         wbsCode: wi.wbsCode,
+        priceStatus: wi.priceStatus,
       };
       if (!categoryMap[wi.category]) {
         categoryMap[wi.category] = [];
@@ -648,23 +802,31 @@ export class ParametricVolumeEngine {
    * Format result into standard EZRAB spreadsheet items (compatible with ProjectContext & EstimatorSpreadsheet)
    */
   public toRabItems(result: TemplateGenerationResult): any[] {
-    return result.workItems.map((wi, index) => ({
-      id: `rab-${wi.workItemId}-${Date.now()}-${index}`,
-      wbsCode: wi.wbsCode,
-      name: wi.name,
-      category: wi.category,
-      unit: wi.unit,
-      volume: wi.quantity,
-      unitPrice: wi.unitPrice,
-      totalPrice: wi.totalPrice,
-      ahspCode: wi.ahspCode,
-      ahspName: wi.ahspName,
-      formula: wi.formula,
-      confidence: wi.confidence,
-      requiresReview: wi.requiresReview,
-      assumptionsUsed: wi.assumptionsUsed,
-      calculationTrace: wi.calculationTrace,
-    }));
+    return result.workItems.map((wi, index) => {
+      // REMEDIASI Fase 8: spreadsheet tidak boleh menerima harga palsu.
+      // Item tak berharga diteruskan dengan harga null (bukan 0 yang dapat
+      // terbaca sebagai harga sah) + priceStatus agar lapisan spreadsheet
+      // menandainya PRICE_UNRESOLVED sebagaimana mestinya.
+      const isPriced = wi.priceStatus === 'OFFICIAL' || wi.priceStatus === 'BENCHMARK';
+      return {
+        id: `rab-${wi.workItemId}-${Date.now()}-${index}`,
+        wbsCode: wi.wbsCode,
+        name: wi.name,
+        category: wi.category,
+        unit: wi.unit,
+        volume: wi.quantity,
+        unitPrice: isPriced ? wi.unitPrice : null,
+        totalPrice: isPriced ? wi.totalPrice : null,
+        priceStatus: wi.priceStatus,
+        ahspCode: wi.ahspCode,
+        ahspName: wi.ahspName,
+        formula: wi.formula,
+        confidence: wi.confidence,
+        requiresReview: wi.requiresReview,
+        assumptionsUsed: wi.assumptionsUsed,
+        calculationTrace: wi.calculationTrace,
+      };
+    });
   }
 }
 

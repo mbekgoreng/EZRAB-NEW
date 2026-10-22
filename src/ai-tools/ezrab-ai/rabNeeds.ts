@@ -55,6 +55,97 @@ const KIND_PATTERNS: Array<{ kind: RabKind; label: string; re: RegExp }> = [
 
 
 
+/* ------------------------------------------------------------------ */
+/* Pemisahan LAHAN vs BANGUNAN (remediasi S7, 2026-10-22).             */
+/* "lahan 8x12" adalah dimensi LAHAN — bukan tapak bangunan; "luas     */
+/* lahan 90 m2" adalah luas lahan — bukan luas bangunan. Helper di     */
+/* sini dipakai specRab (generate spek bebas) dan directRab (kartu      */
+/* pilihan) agar frasa lahan diekstrak sebagai lahan dan DIBUANG dari   */
+/* teks sebelum ekstraksi kebutuhan bangunan berjalan.                  */
+/* ------------------------------------------------------------------ */
+
+const LAND_AREA_RE =
+  /luas\s*(?:lahan|tanah)\s*(?:=|sekitar|kurang lebih)?\s*(\d+(?:[.,]\d+)?)\s*(?:m(?:2|²)?)?|\b(?:lahan|tanah)\s*(?:seluas\s*)?(\d+(?:[.,]\d+)?)\s*m(?:2|²)/;
+
+const LAND_DIMS_RE =
+  /(?:^|[\s,;])(?:lahan|tanah)\s*(?:ukuran\s*)?(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/;
+
+/** Luas lahan eksplisit dalam m² ("luas lahan 90 m2", "lahan 90 m2"). */
+export function parseLandAreaM2(rawText: string): number | null {
+  const t = (rawText || '').toLowerCase();
+  const m = t.match(LAND_AREA_RE);
+  if (!m) return null;
+  const v = parseFloat((m[1] ?? m[2]).replace(',', '.'));
+  return Number.isFinite(v) && v > 0 ? v : null;
+}
+
+/** Dimensi lahan eksplisit ("lahan 8x12", "tanah ukuran 6 x 15"). */
+export function parseLandDims(rawText: string): { p: number; l: number } | null {
+  const t = (rawText || '').toLowerCase();
+  const m = t.match(LAND_DIMS_RE);
+  if (!m) return null;
+  const p = parseFloat(m[1].replace(',', '.'));
+  const l = parseFloat(m[2].replace(',', '.'));
+  return Number.isFinite(p) && Number.isFinite(l) && p > 0 && l > 0 ? { p, l } : null;
+}
+
+/** Luas lahan total: dari m² eksplisit, atau hasil kali dimensi lahan. */
+export function resolveLandAreaM2(rawText: string): number | null {
+  const explicit = parseLandAreaM2(rawText);
+  if (explicit != null) return explicit;
+  const dims = parseLandDims(rawText);
+  return dims ? dims.p * dims.l : null;
+}
+
+/**
+ * Buang frasa lahan (luas m² + dimensi) dari teks agar ekstraksi kebutuhan
+ * bangunan tidak membacanya sebagai luas/dimensi BANGUNAN.
+ */
+export function stripLandPhrases(rawText: string): string {
+  return (rawText || '')
+    .replace(new RegExp(LAND_AREA_RE.source, 'g'), ' ')
+    .replace(new RegExp(LAND_DIMS_RE.source, 'g'), ' ');
+}
+
+const WORD_FLOORS: Record<string, number> = {
+  satu: 1,
+  dua: 2,
+  tiga: 3,
+  empat: 4,
+  lima: 5,
+};
+
+/**
+ * Jumlah lantai dari teks, semua bentuk yang dipakai pengguna Indonesia.
+ * Urutan pemeriksaan menyelesaikan dua ambiguitas nyata:
+ * - "5x10 lantai 2": pola "<angka> lantai" akan menelan angka dimensi
+ *   ("10 lantai" → 10). Karena itu kecocokan "<angka> lantai" yang
+ *   angkanya adalah ekor dimensi (didahului 'x'/'×') DILEWATI, lalu
+ *   bentuk "lantai 2" (remediasi S7b) yang menang.
+ * - "2 lantai 3 kamar": bentuk "lantai <angka>" akan salah memungut
+ *   angka kamar — karena itu "<angka> lantai" yang sah dicek lebih dulu.
+ * Lalu kata bilangan ("dua lantai" / "lantai dua") dan "bertingkat" (= 2,
+ * konvensi katalog). Null bila tidak disebut.
+ */
+export function parseFloorsMention(text: string): number | null {
+  const t = ` ${(text || '').toLowerCase()} `;
+  const beforeRe = /(\d+)\s*lantai/g;
+  let bm: RegExpExecArray | null;
+  while ((bm = beforeRe.exec(t)) !== null) {
+    const prev = bm.index > 0 ? t[bm.index - 1] : ' ';
+    if (prev === 'x' || prev === '×') continue; // ekor dimensi, bukan lantai
+    return parseInt(bm[1], 10);
+  }
+  const after = t.match(/\blantai\s*(\d+)/);
+  if (after) return parseInt(after[1], 10);
+  const wordAfter = t.match(/\blantai\s+(satu|dua|tiga|empat|lima)\b/);
+  if (wordAfter) return WORD_FLOORS[wordAfter[1]];
+  const wordBefore = t.match(/\b(satu|dua|tiga|empat|lima)\s+lantai\b/);
+  if (wordBefore) return WORD_FLOORS[wordBefore[1]];
+  if (/\bbertingkat\b/.test(t)) return 2;
+  return null;
+}
+
 /** Ekstrak kebutuhan dari satu teks. Tidak menebak kolom yang tak disebut. */
 export function extractRabNeeds(text: string, base?: RabNeeds): RabNeeds {
   const t = ` ${text.toLowerCase().trim().replace(/\s+/g, ' ')} `;
@@ -69,8 +160,8 @@ export function extractRabNeeds(text: string, base?: RabNeeds): RabNeeds {
     }
   }
 
-  const floors = t.match(/(\d+)\s*lantai/);
-  if (floors) n.floors = parseInt(floors[1], 10);
+  const floors = parseFloorsMention(text);
+  if (floors != null) n.floors = floors;
 
   const dims = t.match(/(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*m?\b/);
   if (dims) {
@@ -99,7 +190,7 @@ export function extractRabNeeds(text: string, base?: RabNeeds): RabNeeds {
 export function looksLikeNeedsAnswer(text: string): boolean {
   const t = text.toLowerCase();
   if (/\b(buka|buatkan|bikin|tampilkan|lihat|cari|hitung total|berapa)\b/.test(t) && !/^\s*\d/.test(t)) return false;
-  return /(\d+\s*lantai|\d+\s*[x×]\s*\d+|\d+\s*m2|\d+\s*m²|luas\s*\d+|\d+\s*kamar|\d+\s*kt\b|\d+\s*km\b|carport)/.test(t);
+  return /(\d+\s*lantai|lantai\s*\d+|\d+\s*[x×]\s*\d+|\d+\s*m2|\d+\s*m²|luas\s*\d+|\d+\s*kamar|\d+\s*kt\b|\d+\s*km\b|carport)/.test(t);
 }
 
 /** Kolom penting yang belum terisi — untuk pertanyaan "Lengkapi kebutuhan". */

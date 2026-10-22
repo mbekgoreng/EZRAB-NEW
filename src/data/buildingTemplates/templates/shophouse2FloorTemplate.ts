@@ -167,6 +167,7 @@ export const SHOPHOUSE_2_FLOOR_TEMPLATE: MasterBuildingTemplate = {
   limitations: [
     'Beban hidup lantai 2 dirancang maksimum 250 kg/m2 (SNI 1727).',
     'Tidak diperuntukkan untuk gudang logistik beban berat (> 500 kg/m2).',
+    'Beberapa parameter adalah konstanta tetap template yang BELUM diskalakan ke ukuran bangunan pengguna: panjang kusen 37,5 m\', titik kolom praktis 12, titik lampu 8, titik stop kontak 6 (blocker FORMULA_UNVERIFIED S6 — lihat asumsi per item).',
   ],
   sourceMetadata: {
     standardReference: 'SNI 2847-2019, SNI 1727-2013 (Beban Desain), PUPR Cipta Karya 2026',

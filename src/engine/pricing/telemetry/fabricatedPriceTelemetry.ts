@@ -206,7 +206,7 @@ export const FABRICATED_PRICE_SITES: readonly FabricatedPriceSite[] = Object.fre
     file: 'src/engine/parametricVolumeEngine/parametricVolumeEngine.ts',
     line: 242,
     severity: 'HIGH',
-    note: 'Harga borongan Rp 150.000 × multiplier, dengan region default "DKI Jakarta".',
+    note: 'Harga borongan Rp 150.000 × multiplier, dengan region default "DKI Jakarta". [REMEDIATED 2026-10-22 — NONAKTIF: situs panggilan fallback ini telah DIHAPUS dari parametricVolumeEngine pada remediasi integritas RAB S2; item yang kodenya tidak terpetakan kini berharga null dengan status PRICE_UNAVAILABLE/AHSP_UNRESOLVED, bukan konstanta ini. Entri katalog dipertahankan sebagai sejarah audit Phase 0 — tidak ada pemanggil aktif dan tidak boleh dihidupkan kembali sebagai sumber harga.]',
   },
 
   // ---------------------------------------------------------------------------

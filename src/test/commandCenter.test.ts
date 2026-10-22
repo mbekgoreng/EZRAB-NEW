@@ -7,6 +7,14 @@
  * menampilkan ringkasan kebutuhan (CREATE_RAB_SUMMARY) dengan tombol eksplisit
  * "Buka Workspace Desain & RAB". Wizard/studio hanya terbuka oleh klik tombol.
  * Baseline lama tidak dihapus diam-diam: ekspektasi lama dicatat di komentar.
+ *
+ * CATATAN PERUBAHAN SPESIFIKASI (2026-10-22, desain owner): tes 5a diubah
+ * SENGAJA — permintaan BERTIPE TERDAFTAR tidak lagi langsung menghasilkan
+ * tabel dari teks ketikan, melainkan KARTU PILIHAN (ringkasan spek +
+ * "Pakai Template" / "Pakai AI Full"). Tabel RAB + tombol Push kini lahir
+ * dari klik "Pakai Template" (intent GENERATE_RAB_TEMPLATE, tes 5a2) dengan
+ * hasil yang identik dengan jalur direct lama. Permintaan spesifikasi bebas
+ * tanpa tipe tetap langsung generate (suite freeSpecRab.test.ts).
  */
 import { describe, it, expect } from 'vitest';
 import { routeIntent } from '../ai-tools/ezrab-ai/intentRouter';
@@ -74,11 +82,52 @@ describe('P0: intent routing untuk command center', () => {
 });
 
 describe('P0: action registry', () => {
-  it('5a. CREATE_RAB_DIRECT: tabel RAB detail + tombol Push ke Spreadsheet (permintaan user 2026-10-21)', () => {
+  it('5a. CREATE_RAB_DIRECT bertipe → kartu pilihan (BELUM ada tabel RAB) — desain owner 2026-10-22', () => {
     const ctx = { ...mockCtx, rawText: 'buatkan saya rab rumah type 70 2 lantai' } as never;
     const res = executeIntent('CREATE_RAB_DIRECT', undefined, ctx);
     expect(res.ok).toBe(true);
-    // Tabel detail langsung di chat — bukan ringkasan kebutuhan/template.
+    // Teks ketikan TIDAK langsung generate: baru ringkasan spek + 2 pilihan.
+    expect(res.message).not.toContain('| No | Uraian |');
+    expect(res.message).toContain('Rumah Type 70');
+    expect(res.message).toContain('2 lantai');
+    const labels = (res.actions ?? []).map((a) => a.label);
+    expect(labels).toEqual(['Pakai Template', 'Pakai AI Full']);
+    const tpl = res.actions![0];
+    if (tpl.action.kind === 'intent') {
+      expect(tpl.action.intent).toBe('GENERATE_RAB_TEMPLATE');
+      expect(tpl.action.param).toBe('buatkan saya rab rumah type 70 2 lantai');
+    } else {
+      throw new Error('Expected intent action for Pakai Template');
+    }
+    // "Pakai AI Full": spek terbawa sebagai prompt workspace (param), tanpa
+    // pemanggilan LLM baru di chat.
+    const ai = res.actions![1];
+    if (ai.action.kind === 'intent') {
+      expect(ai.action.intent).toBe('OPEN_DESIGN_WORKSPACE');
+      expect(ai.action.param).toContain('2 lantai');
+      expect(ai.action.param).toContain('70 m²');
+    } else {
+      throw new Error('Expected intent action for Pakai AI Full');
+    }
+  });
+
+  it('5a3. Kartu pilihan 2 lantai: nama basis template TIDAK mengklaim "(1 Lantai)" (WS-2, temuan QA Fase 9)', () => {
+    const ctx = { ...mockCtx, rawText: 'buatkan rab rumah type 45 2 lantai' } as never;
+    const res = executeIntent('CREATE_RAB_DIRECT', undefined, ctx);
+    expect(res.ok).toBe(true);
+    expect(res.message).toContain('Jumlah lantai: 2 lantai');
+    expect(res.message).toContain('(Rumah Tinggal Menengah Tipe 45)');
+    expect(res.message).not.toContain('(1 Lantai)');
+    // Kartu 1 lantai mempertahankan nama registri persis (klaimnya benar).
+    const ctx1 = { ...mockCtx, rawText: 'buatkan rab rumah type 45' } as never;
+    const res1 = executeIntent('CREATE_RAB_DIRECT', undefined, ctx1);
+    expect(res1.message).toContain('Jumlah lantai: 1 lantai');
+    expect(res1.message).toContain('(Rumah Tinggal Menengah Tipe 45 (1 Lantai))');
+  });
+
+  it('5a2. GENERATE_RAB_TEMPLATE (klik "Pakai Template"): tabel RAB detail + tombol Push — identik jalur direct lama', () => {
+    const res = executeIntent('GENERATE_RAB_TEMPLATE', 'buatkan saya rab rumah type 70 2 lantai', mockCtx as never);
+    expect(res.ok).toBe(true);
     expect(res.message).toContain('| No | Uraian | Volume | Satuan | Harga Satuan | Jumlah |');
     expect(res.message).toContain('Total RAB');
     expect(res.message).not.toContain('ringkasan kebutuhan');

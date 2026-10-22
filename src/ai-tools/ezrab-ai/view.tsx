@@ -20,7 +20,7 @@ import { resolveAuthKind, type AuthKind } from '../../lib/demoSession';
 import { renderMarkdown } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { consumePendingAiEntry, requestAiEntry } from '../aiNavigation';
-import { executeIntent, continueRabNeeds, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
+import { executeIntent, continueRabNeeds, continueRabChoice, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
 import { getLastDirectRab } from './directRab';
 import { looksLikeNeedsAnswer } from './rabNeeds';
 import { notificationBus } from '../../notifications/notificationBus';
@@ -152,6 +152,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [gameSpaceOpen, setGameSpaceOpen] = useState(false);
   /** Chat-to-RAB Fase 2: menunggu jawaban "Lengkapi kebutuhan" dari pengguna */
   const [awaitingNeeds, setAwaitingNeeds] = useState(false);
+  /** D1: kartu pilihan RAB bertipe menunggu koreksi/pilihan pengguna */
+  const [awaitingChoice, setAwaitingChoice] = useState(false);
   // P0 Command Center: wizard & design studio overlays
   const [rabWizardOpen, setRabWizardOpen] = useState(false);
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
@@ -253,6 +255,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const newChat = () => {
     setMessages([]);
     setInput('');
+    setAwaitingNeeds(false);
+    setAwaitingChoice(false);
     revokeAllUrls();
     setAttached(null);
     autoresize();
@@ -299,6 +303,27 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     setMessages(next);
     persistMessage('user', entry.content);
     setBusy(true);
+    /* ---- D1: koreksi pra-pilih pada kartu pilihan RAB bertipe ----
+     * Selama kartu pilihan aktif, pesan berbentuk koreksi spek (lantai/
+     * dimensi/kamar/luas) digabung ke kartu dan kartu di-render ulang
+     * dengan spek terkoreksi — BUKAN dilempar ke AI dan BUKAN dianggap
+     * perintah baru. Pesan berbentuk lain menggugurkan status menunggu
+     * dan diproses normal di bawah. */
+    if (awaitingChoice) {
+      if (looksLikeNeedsAnswer(msg)) {
+        try {
+          const res = continueRabChoice(msg);
+          const acts = res.actions && res.actions.length > 0 ? res.actions : undefined;
+          setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: acts }]);
+          persistMessage('assistant', res.message);
+          if (!res.awaitRabChoice) setAwaitingChoice(false);
+        } finally {
+          setBusy(false);
+        }
+        return;
+      }
+      setAwaitingChoice(false);
+    }
     /* ---- Chat-to-RAB Fase 2: jawaban atas "Lengkapi kebutuhan" ----
      * Bila chat sedang menunggu kelengkapan dan pesan ini berbentuk jawaban
      * (lantai/dimensi/kamar), gabungkan ke ringkasan — jangan lempar ke AI. */
@@ -355,6 +380,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             setDesignStudioOpen(true);
           }
           if (res.awaitRabNeeds) setAwaitingNeeds(true);
+          if (res.awaitRabChoice) setAwaitingChoice(true);
           // Action buttons — attached to the assistant message
           const entryActions = res.actions && res.actions.length > 0 ? res.actions : undefined;
           setMessages((prev) => [...prev, { role: 'assistant', content: reply, ts: Date.now(), actions: entryActions }]);
@@ -492,7 +518,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     };
     const r = getLastDirectRab();
     if (!r) {
-      appendMsg('Tidak ada hasil RAB langsung yang aktif untuk di-push. Buat dulu dengan perintah seperti "buatkan rab rumah type 70 2 lantai".', undefined, true);
+      appendMsg('Tidak ada hasil RAB langsung yang aktif untuk di-push. Buat dulu dengan perintah seperti "buatkan rab rumah type 70 2 lantai" atau "buatkan rab rumah 5x10".', undefined, true);
       return;
     }
     if (!effProject) {
@@ -516,20 +542,20 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     const newItems = payload.filter((p) => !existingCodes.has(p.code));
     const dupCount = payload.length - newItems.length;
     if (newItems.length === 0) {
-      appendMsg(`Semua ${payload.length} item RAB Type ${r.houseType} sudah ada di Spreadsheet RAB proyek "${effProject.name}" (duplikat dicegah).`, [
+      appendMsg(`Semua ${payload.length} item RAB ${r.displayLabel} sudah ada di Spreadsheet RAB proyek "${effProject.name}" (duplikat dicegah).`, [
         { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
       ]);
       return;
     }
     try {
       const added = bulkAddRabItems(newItems);
-      const unpriced = newItems.filter((p) => !p.ahspCode).length;
       appendMsg(
-        `✅ ${added.length} item RAB Rumah Type ${r.houseType} (${r.floors} lantai) berhasil di-push ke Spreadsheet RAB proyek "${effProject.name}".` +
+        `✅ ${added.length} item RAB ${r.displayLabel} (${r.floors} lantai) berhasil di-push ke Spreadsheet RAB proyek "${effProject.name}".` +
           (dupCount > 0 ? ` ${dupCount} item dilewati karena sudah ada.` : '') +
-          (unpriced > 0
-            ? ` ${unpriced} item belum terhubung AHSP — harganya masih kosong (bukan Rp0); lengkapi lewat pencarian AHSP di spreadsheet.`
-            : ' Semua item terhubung ke kode AHSP.'),
+          // Kalimat akurat (remediasi S10): item membawa KODE KANDIDAT dari
+          // template berstatus PRICE_UNRESOLVED — harga TIDAK ikut ter-push
+          // dan kode belum terverifikasi terhadap registri AHSP resmi.
+          ' Item masuk dengan kode AHSP kandidat dari template (status PRICE_UNRESOLVED) — harga tidak ikut ter-push dan belum terverifikasi; tetapkan harga resmi lewat pencarian AHSP di spreadsheet sebelum dipakai.',
         [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }]
       );
     } catch (e) {
@@ -550,6 +576,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // Klik tombol ini = persetujuan pengguna. Fase 3: buka HALAMAN workspace
       // penuh (bukan overlay) — prompt dari ringkasan diteruskan via entry
       // navigasi AI sekali-pakai, konteks chat tetap utuh untuk kembali.
+      // Pilihan pada kartu (bila ada) dianggap selesai: status koreksi tutup.
+      setAwaitingChoice(false);
       const prompt = btn.action.param ?? getLastRabDesignPrompt() ?? undefined;
       requestAiEntry('design_workspace', {
         projectId: effProject?.id ?? null,
@@ -557,6 +585,24 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         sourceMenu: currentMenu,
       });
       navigateChat('desain-rab');
+    } else if (btn.action.intent === 'GENERATE_RAB_TEMPLATE') {
+      // Klik "Pakai Template" pada kartu pilihan RAB (desain owner
+      // 2026-10-22) = persetujuan eksplisit: generate parametrik lewat
+      // registry, lalu tampilkan tabel beserta tombol aksinya (Push dsb).
+      // Pilihan selesai → status menunggu koreksi kartu ditutup.
+      setAwaitingChoice(false);
+      const res = executeIntent('GENERATE_RAB_TEMPLATE', btn.action.param, {
+        navigate: onNavigate ?? (() => {}),
+        rawText: btn.action.param,
+        currentMenu,
+        activeProject,
+        projects,
+        projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
+        projectItems: projectSnapshot?.items ?? null,
+      });
+      const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions };
+      setMessages((prev) => [...prev, entry]);
+      persistMessage('assistant', res.message);
     } else if (btn.action.intent === 'RAB_NEEDS_REFINE') {
       const res = executeIntent('RAB_NEEDS_REFINE', undefined, {
         navigate: onNavigate ?? (() => {}),
@@ -820,7 +866,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 <img src={MASCOT_PNG} alt="Ezrab" className="ezchat2-avatar" />
                 <div className="ezchat2-col">
                   <div className="ezchat2-bubble ai">
-                    <div className="ezchat2-text md-body">{renderMarkdown(m.content)}</div>
+                    {/* D3: kontainer teks menjadi scroll-container horizontal
+                        (overflowX auto + maxWidth 100%) agar tabel RAB lebar
+                        (md-table, min-content ±755px) dapat digeser di dalam
+                        gelembung (696px) alih-alih terpotong; layout halaman
+                        tidak berubah, teks biasa tetap membungkus normal. */}
+                    <div className="ezchat2-text md-body" style={{ overflowX: 'auto', maxWidth: '100%' }}>{renderMarkdown(m.content)}</div>
                     {/* P0 Command Center: action buttons */}
                     {m.actions && m.actions.length > 0 && (
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>

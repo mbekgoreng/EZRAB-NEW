@@ -29,6 +29,7 @@ export type ChatIntent =
   | 'START_HOUSE_DESIGN'
   | 'CREATE_RAB_CLARIFY'
   | 'CREATE_RAB_DIRECT'
+  | 'GENERATE_RAB_TEMPLATE'
   | 'CREATE_RAB_SUMMARY'
   | 'RAB_NEEDS_REFINE'
   | 'OPEN_DESIGN_WORKSPACE'
@@ -117,6 +118,17 @@ const PATTERNS: Pattern[] = [
   { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\brumah\b.*\b(type|tipe)\s*\d+/ },
   { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b.*\brumah\b.*\b(type|tipe)\s*\d+.*\brab\b/ },
   { intent: 'CREATE_RAB_DIRECT', re: /\brab\b.*\brumah\b.*\b(type|tipe)\s*\d+/ },
+  // RAB langsung SPESIFIKASI BEBAS (perluasan 2026-10-22): perintah RAB rumah
+  // dengan spesifikasi terukur TANPA tipe terdaftar — dimensi ("rumah 5x10"),
+  // luas bangunan eksplisit ("luas bangunan 50 m2" / "rumah 90 m2") — juga
+  // masuk CREATE_RAB_DIRECT; actionRegistry/specRab yang memutuskan generate
+  // parametrik vs jatuh ke ringkasan. Pola dimensi tanpa kata "rab" memakai
+  // penjaga anti-"desain" agar "buatkan desain rumah 5x10" tetap ringkasan.
+  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\brumah\b.*\d+\s*[x×]\s*\d+/ },
+  { intent: 'CREATE_RAB_DIRECT', re: /\brab\b.*\brumah\b.*\d+\s*[x×]\s*\d+/ },
+  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b(?!.*\bdesain\b)(?!.*\bdesign\b).*\brumah\b.*\d+\s*[x×]\s*\d+/ },
+  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\brumah\b.*(?:luas(?:\s+bangunan)?|lb)\s*(?:=|sekitar)?\s*\d+/ },
+  { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\brumah\b.*\d+\s*m(?:2|²)/ },
   // Chat-to-RAB (Fase 2): permintaan RAB/desain yang DITULIS pengguna TIDAK
   // lagi membuka wizard/studio otomatis. Router mengarah ke CREATE_RAB_SUMMARY:
   // chat menampilkan ringkasan kebutuhan yang terekstrak + tombol eksplisit

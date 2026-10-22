@@ -345,7 +345,15 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
     requiredInputs: ['buildingWidth', 'buildingLength'],
     ahspCandidates: [
       {
-        ahspCode: 'A.2.2.1.4',
+        // REMEDIASI WS-1 (pemetaan benchmark terverifikasi identitas):
+        // kode dikoreksi A.2.2.1.4 -> A.2.2.1.1. Kode lama tidak ditemukan
+        // di katalog resmi maupun tabel benchmark engine (PRICE_UNAVAILABLE).
+        // A.2.2.1.1 pada tabel benchmark = '1 m Pengukuran dan pemasangan
+        // bowplank' — frasa pekerjaan yang sama persis dengan kandidat item
+        // ini ('Pengukuran dan Pemasangan Bouwplank'), satuan sama
+        // (m' ~= m, keluarga meter lari). Tier tetap BENCHMARK (indikatif),
+        // BUKAN harga AHSP resmi.
+        ahspCode: 'A.2.2.1.1',
         name: 'Pemasangan Bouwplank',
         source: 'CIPTA_KARYA_2026',
         unit: 'm\'',
@@ -354,7 +362,7 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
         isRecommended: true,
       },
     ],
-    defaultAhspCode: 'A.2.2.1.4',
+    defaultAhspCode: 'A.2.2.1.1',
     quantityRule: (params) => {
       const w = Number(params.buildingWidth || 6);
       const l = Number(params.buildingLength || 6);
@@ -632,7 +640,10 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
         unit: 'm³',
         formula: 'Jumlah Titik Kolom (12) × (0.15m × 0.15m × Tinggi Dinding)',
         formulaInputs: { jumlahTitik, size, tinggiKolom },
-        assumptionsUsed: ['Jumlah titik kolom praktis 12 titik untuk denah tipe 36.'],
+        assumptionsUsed: [
+          'Jumlah titik kolom praktis 12 titik untuk denah tipe 36.',
+          'PARAMETER TETAP TEMPLATE (belum diskalakan): jumlah titik kolom 12 TIDAK diturunkan dari ukuran denah atau jumlah pertemuan dinding bangunan pengguna. Formula penskalaan yang terbukti belum tersedia (blocker FORMULA_UNVERIFIED S6).',
+        ],
         status: 'calculated',
         confidence: 0.94,
         requiresReview: false,
@@ -871,14 +882,20 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
     wbsCode: '07.01',
     name: 'Rabat Beton Lantai Kerja Tebal 5 cm',
     category: '07_LANTAI',
-    unit: 'm²',
+    // REMEDIASI S1 (UNIT_MISMATCH): satuan item adalah m³, BUKAN m².
+    // Bukti dari data sumber template sendiri: (1) nama item menyatakan
+    // 'Tebal 5 cm'; (2) nama kandidat AHSP menyatakan 'Pembuatan 1 m3 lantai
+    // kerja ...' — tarif A.4.1.1.1 adalah per m³. Perilaku lama mengalikan
+    // luas m² langsung ke tarif per m³ (50 m² x Rp890.000 = Rp44.500.000).
+    // Kini volume = luas x ketebalan 0,05 m (2,5 m³ untuk 50 m²).
+    unit: 'm³',
     requiredInputs: ['buildingArea'],
     ahspCandidates: [
       {
         ahspCode: 'A.4.1.1.1',
         name: 'Pembuatan 1 m3 lantai kerja beton mutu f\'c = 7,4 MPa (K-100)',
         source: 'CIPTA_KARYA_2026',
-        unit: 'm²',
+        unit: 'm³',
         matchScore: 92,
         matchRationale: 'Lantai kerja perata bawah keramik tebal 5cm.',
         isRecommended: true,
@@ -887,12 +904,18 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
     defaultAhspCode: 'A.4.1.1.1',
     quantityRule: (params) => {
       const area = Number(params.buildingArea || 36);
+      // Ketebalan 5 cm dinyatakan eksplisit pada nama/spesifikasi item
+      // template ini ('Rabat Beton Lantai Kerja Tebal 5 cm') — bukan tebakan.
+      const tebalRabat = 0.05;
+      const volume = Math.round(area * tebalRabat * 100) / 100;
       return {
-        quantity: area,
-        unit: 'm²',
-        formula: 'Luas Lantai Bangunan',
-        formulaInputs: { buildingArea: area },
-        assumptionsUsed: ['Sesuai luas lantai bangunan 36 m².'],
+        quantity: volume,
+        unit: 'm³',
+        formula: 'Luas Lantai Bangunan × Tebal Rabat 0,05 m',
+        formulaInputs: { buildingArea: area, tebalRabat },
+        assumptionsUsed: [
+          'Ketebalan rabat 5 cm sesuai nama/spesifikasi item template; tarif A.4.1.1.1 berlaku per m³ sehingga volume dihitung dalam m³ (luas × 0,05 m).',
+        ],
         status: 'calculated',
         confidence: 0.98,
         requiresReview: false,
@@ -900,11 +923,11 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
         errors: [],
         calculationTrace: [
           {
-            step: 'Luas Lantai Kerja',
-            formulaString: '${area}',
-            substitutedValues: { area },
-            result: area,
-            unit: 'm²',
+            step: 'Volume Rabat Beton (Luas x Tebal)',
+            formulaString: '${area} * ${tebalRabat}',
+            substitutedValues: { area, tebalRabat },
+            result: volume,
+            unit: 'm³',
           },
         ],
       };
@@ -919,7 +942,14 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
     requiredInputs: ['buildingArea'],
     ahspCandidates: [
       {
-        ahspCode: 'A.4.4.3.35',
+        // REMEDIASI WS-1 (pemetaan benchmark terverifikasi identitas):
+        // kode dikoreksi A.4.4.3.35 -> A.4.4.3.3. Kode lama tidak ditemukan
+        // di katalog resmi maupun tabel benchmark engine (PRICE_UNAVAILABLE).
+        // A.4.4.3.3 pada tabel benchmark = '1 m2 Pasang lantai keramik
+        // 40x40 / 50x50 cm' — pekerjaan yang sama (pasang lantai keramik
+        // per m2) dan ukuran 40x40 cm item ini tercantum eksplisit dalam
+        // cakupan ukuran entri tarif tersebut. Tier BENCHMARK, bukan resmi.
+        ahspCode: 'A.4.4.3.3',
         name: 'Pemasangan 1 m2 lantai keramik ukuran 40 cm x 40 cm',
         source: 'CIPTA_KARYA_2026',
         unit: 'm²',
@@ -928,17 +958,33 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
         isRecommended: true,
       },
     ],
-    defaultAhspCode: 'A.4.4.3.35',
-    quantityRule: (params) => {
+    defaultAhspCode: 'A.4.4.3.3',
+    quantityRule: (params, _assumptions, spaces) => {
       const area = Number(params.buildingArea || 36);
-      // Ruang kering (36m2 - 2.25m2 KM) = 33.75 m2
-      const areaKering = area - 2.25;
+      const bathroomCount = Number(params.bathroomCount || 1);
+      // REMEDIASI WS-1 (S6a): luas per kamar mandi dibaca dari data ruang
+      // (spaces) template AKTIF, bukan konstanta 2,25 m². Konstanta lama
+      // adalah ukuran KM tipe 36 (1,5 x 1,5), sehingga template yang
+      // mendeklarasikan KM berbeda di spaces-nya sendiri (T45/T70: 3,0 m²)
+      // terhitung tidak konsisten dengan datanya sendiri. Fallback 2,25
+      // hanya dipakai bila template tidak mendeklarasikan ruang basah.
+      // Pengurangan kini juga mengikuti jumlah kamar mandi (konsisten
+      // dengan item 07.03) agar bidang lantai tidak terhitung ganda.
+      const wetSpace = (spaces ?? []).find((s) => s.isWetArea);
+      const kmAreaPerUnit = wetSpace
+        ? (wetSpace.defaultArea ?? wetSpace.defaultLength * wetSpace.defaultWidth)
+        : 2.25;
+      const totalKmArea = bathroomCount * kmAreaPerUnit;
+      const areaKering = area - totalKmArea;
       return {
         quantity: Math.round(areaKering * 100) / 100,
         unit: 'm²',
         formula: 'Luas Lantai Bersih Ruang Kering (Luas Total − Luas KM)',
-        formulaInputs: { buildingArea: area, kmArea: 2.25 },
-        assumptionsUsed: ['Area kamar mandi dipisahkan menggunakan keramik anti-slip.'],
+        formulaInputs: { buildingArea: area, bathroomCount, kmAreaPerUnit, kmArea: totalKmArea },
+        assumptionsUsed: [
+          'Area kamar mandi dipisahkan menggunakan keramik anti-slip.',
+          `Luas per kamar mandi ${kmAreaPerUnit} m² dibaca dari data ruang (spaces) template aktif.`,
+        ],
         status: 'calculated',
         confidence: 0.96,
         requiresReview: false,
@@ -947,8 +993,8 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
         calculationTrace: [
           {
             step: 'Hitung Luas Keramik Ruang Kering',
-            formulaString: '${area} - 2.25',
-            substitutedValues: { area },
+            formulaString: '${area} - (${bathroomCount} x ${kmAreaPerUnit})',
+            substitutedValues: { area, bathroomCount, kmAreaPerUnit, totalKmArea },
             result: areaKering,
             unit: 'm²',
           },
@@ -975,15 +1021,27 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
       },
     ],
     defaultAhspCode: 'A.4.4.3.31',
-    quantityRule: (params) => {
+    quantityRule: (params, _assumptions, spaces) => {
       const count = Number(params.bathroomCount || 1);
-      const areaKM = count * 2.25;
+      // REMEDIASI WS-1 (S6a): luas per kamar mandi dari data ruang (spaces)
+      // template AKTIF — lihat catatan pada item 07.02. Tipe 36 tetap
+      // 2,25 m² (1,5 x 1,5 dari spaces-nya sendiri); T45/T70 menjadi
+      // 3,0 m² sesuai deklarasi spaces masing-masing.
+      const wetSpace = (spaces ?? []).find((s) => s.isWetArea);
+      const kmAreaPerUnit = wetSpace
+        ? (wetSpace.defaultArea ?? wetSpace.defaultLength * wetSpace.defaultWidth)
+        : 2.25;
+      const areaKM = count * kmAreaPerUnit;
       return {
         quantity: areaKM,
         unit: 'm²',
-        formula: 'Jumlah Kamar Mandi × 2.25 m²',
-        formulaInputs: { bathroomCount: count, defaultAreaPerKM: 2.25 },
-        assumptionsUsed: ['Dimensi kamar mandi standar 1.5 × 1.5 m.'],
+        formula: `Jumlah Kamar Mandi × ${kmAreaPerUnit} m² (luas KM dari data ruang template)`,
+        formulaInputs: { bathroomCount: count, kmAreaPerUnit, defaultAreaPerKM: kmAreaPerUnit },
+        assumptionsUsed: [
+          wetSpace
+            ? `Dimensi kamar mandi ${wetSpace.defaultLength} × ${wetSpace.defaultWidth} m sesuai data ruang template aktif.`
+            : 'Dimensi kamar mandi standar 1.5 × 1.5 m (template tidak mendeklarasikan ruang basah).',
+        ],
         status: 'calculated',
         confidence: 0.98,
         requiresReview: false,
@@ -992,8 +1050,8 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
         calculationTrace: [
           {
             step: 'Hitung Luas Keramik Lantai KM',
-            formulaString: '${count} * 2.25',
-            substitutedValues: { count },
+            formulaString: '${count} * ${kmAreaPerUnit}',
+            substitutedValues: { count, kmAreaPerUnit },
             result: areaKM,
             unit: 'm²',
           },
@@ -1062,7 +1120,14 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
     requiredInputs: ['buildingWidth', 'buildingLength'],
     ahspCandidates: [
       {
-        ahspCode: 'A.4.2.1.22',
+        // REMEDIASI WS-1 (pemetaan benchmark terverifikasi identitas):
+        // kode dikoreksi A.4.2.1.22 -> A.4.5.2.3. Kode lama tidak ditemukan
+        // di katalog resmi maupun tabel benchmark engine (PRICE_UNAVAILABLE).
+        // A.4.5.2.3 pada tabel benchmark = '1 m2 Rangka atap baja ringan
+        // profil C75/0.75' — pekerjaan yang sama (rangka atap baja ringan
+        // per m2) dan profilnya sama dengan spesifikasi item ini
+        // (C75.75 = profil C75 tebal 0,75 mm). Tier BENCHMARK, bukan resmi.
+        ahspCode: 'A.4.5.2.3',
         name: 'Pemasangan 1 m2 rangka atap baja ringan profil C',
         source: 'CIPTA_KARYA_2026',
         unit: 'm²',
@@ -1071,7 +1136,7 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
         isRecommended: true,
       },
     ],
-    defaultAhspCode: 'A.4.2.1.22',
+    defaultAhspCode: 'A.4.5.2.3',
     quantityRule: (params, assumptions) => {
       const w = Number(params.buildingWidth || 6);
       const l = Number(params.buildingLength || 6);
@@ -1123,7 +1188,14 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
     requiredInputs: ['buildingWidth', 'buildingLength'],
     ahspCandidates: [
       {
-        ahspCode: 'A.4.5.2.32',
+        // REMEDIASI WS-1 (pemetaan benchmark terverifikasi identitas):
+        // kode dikoreksi A.4.5.2.32 -> A.4.5.2.11. Kode lama tidak ditemukan
+        // di katalog resmi maupun tabel benchmark engine (PRICE_UNAVAILABLE).
+        // A.4.5.2.11 pada tabel benchmark = '1 m2 Penutup atap genteng
+        // metal warna pasir' — pekerjaan & material yang sama dengan item
+        // ini ('Penutup Atap Genteng Metal Berpasir'), satuan sama (m2).
+        // Tier BENCHMARK (indikatif), BUKAN harga AHSP resmi.
+        ahspCode: 'A.4.5.2.11',
         name: 'Pemasangan 1 m2 atap genteng metal',
         source: 'CIPTA_KARYA_2026',
         unit: 'm²',
@@ -1132,7 +1204,7 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
         isRecommended: true,
       },
     ],
-    defaultAhspCode: 'A.4.5.2.32',
+    defaultAhspCode: 'A.4.5.2.11',
     quantityRule: (params, assumptions) => {
       const w = Number(params.buildingWidth || 6);
       const l = Number(params.buildingLength || 6);
@@ -1197,7 +1269,10 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
         unit: 'm\'',
         formula: 'Total Panjang Keliling Kusen Seluruh Pintu & Jendela (37.5 m\')',
         formulaInputs: { pintuUtama: 5.5, pintuKamar: 10.4, pintuKM: 4.8, jendela: 16.8 },
-        assumptionsUsed: ['Pintu Utama (1 unit), Pintu Kamar (2 unit), Pintu KM (1 unit), Jendela (4 unit).'],
+        assumptionsUsed: [
+          'Pintu Utama (1 unit), Pintu Kamar (2 unit), Pintu KM (1 unit), Jendela (4 unit).',
+          'PARAMETER TETAP TEMPLATE (belum diskalakan): total panjang kusen 37,5 m\' adalah jadwal bukaan tetap tipe 36 — TIDAK diturunkan dari dimensi bangunan atau jumlah bukaan aktual pengguna. Formula penskalaan yang terbukti belum tersedia (blocker FORMULA_UNVERIFIED S6).',
+        ],
         status: 'calculated',
         confidence: 0.92,
         requiresReview: false,
@@ -1224,7 +1299,12 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
     requiredInputs: ['bedroomCount'],
     ahspCandidates: [
       {
-        ahspCode: 'A.4.6.1.5',
+        // REMEDIASI S4: kode dikoreksi A.4.6.1.5 -> A.4.6.1.2. Kode lama
+        // menunjuk identitas 'Daun jendela kaca aluminium 5mm' di tabel
+        // benchmark engine (item BERBEDA: daun jendela, bukan daun pintu).
+        // A.4.6.1.2 = 'Daun pintu panel kayu kamper / HPL solid', satuan unit
+        // — identitas & satuan sama dengan item ini.
+        ahspCode: 'A.4.6.1.2',
         name: 'Pemasangan 1 unit daun pintu panel kayu',
         source: 'CIPTA_KARYA_2026',
         unit: 'unit',
@@ -1233,7 +1313,7 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
         isRecommended: true,
       },
     ],
-    defaultAhspCode: 'A.4.6.1.5',
+    defaultAhspCode: 'A.4.6.1.2',
     quantityRule: (params) => {
       const bedrooms = Number(params.bedroomCount || 2);
       const totalPintuKayu = 1 + bedrooms; // 1 Utama + Kamar
@@ -1423,7 +1503,13 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
     requiredInputs: [],
     ahspCandidates: [
       {
-        ahspCode: 'A.5.1.1.19',
+        // REMEDIASI S4: kode dikoreksi A.5.1.1.19 -> A.5.1.1.30. Kode lama
+        // menunjuk identitas 'Pipa PVC tipe AW diameter 3/4 inch' (per meter)
+        // di tabel benchmark engine — item yang sama sekali berbeda.
+        // A.5.1.1.30 = 'Bio Septic Tank 1000 Liter + Resapan', satuan unit —
+        // identitas & satuan sama; rentang kapasitas kandidat (0.5–1.0 m3)
+        // mencakup item tarif tersebut.
+        ahspCode: 'A.5.1.1.30',
         name: 'Pemasangan 1 unit biofilter septic tank kapasitas 0.5 - 1.0 m3',
         source: 'CIPTA_KARYA_2026',
         unit: 'unit',
@@ -1432,7 +1518,7 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
         isRecommended: true,
       },
     ],
-    defaultAhspCode: 'A.5.1.1.19',
+    defaultAhspCode: 'A.5.1.1.30',
     quantityRule: () => {
       return {
         quantity: 1,
@@ -1488,7 +1574,10 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
         unit: 'titik',
         formula: 'Total Titik Lampu Standar Rumah Tipe 36 (8 Titik)',
         formulaInputs: { titikLampu },
-        assumptionsUsed: ['8 titik lampu mencakup seluruh ruangan dan teras depan/belakang.'],
+        assumptionsUsed: [
+          '8 titik lampu mencakup seluruh ruangan dan teras depan/belakang.',
+          'PARAMETER TETAP TEMPLATE (belum diskalakan): jumlah titik lampu 8 adalah jadwal titik tetap tipe 36 — TIDAK diturunkan dari jumlah ruang atau luas bangunan pengguna. Formula penskalaan yang terbukti belum tersedia (blocker FORMULA_UNVERIFIED S6).',
+        ],
         status: 'calculated',
         confidence: 0.95,
         requiresReview: false,
@@ -1532,7 +1621,10 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
         unit: 'titik',
         formula: 'Total Titik Stop Kontak Standar (6 Titik)',
         formulaInputs: { titikDaya },
-        assumptionsUsed: ['Stop kontak di ruang tamu (2), kamar tidur (2), dapur (1), pompa air (1).'],
+        assumptionsUsed: [
+          'Stop kontak di ruang tamu (2), kamar tidur (2), dapur (1), pompa air (1).',
+          'PARAMETER TETAP TEMPLATE (belum diskalakan): jumlah titik stop kontak 6 adalah jadwal titik tetap tipe 36 — TIDAK diturunkan dari jumlah ruang atau luas bangunan pengguna. Formula penskalaan yang terbukti belum tersedia (blocker FORMULA_UNVERIFIED S6).',
+        ],
         status: 'calculated',
         confidence: 0.95,
         requiresReview: false,
@@ -1585,6 +1677,7 @@ export const HOUSE_TYPE_36_SINGLE_FLOOR_TEMPLATE: MasterBuildingTemplate = {
     'Template ini adalah estimasi awal parametrik berbasis standar geometri tipikal.',
     'Kondisi tanah lunak, lereng curam, atau struktur gempa khusus memerlukan analisis DED oleh tenaga ahli berwenang.',
     'Harga satuan final bergantung pada survei harga material dan upah di lokasi proyek yang dipilih.',
+    'Beberapa parameter adalah konstanta tetap template yang BELUM diskalakan ke ukuran bangunan pengguna: panjang kusen 37,5 m\', titik kolom praktis 12, titik lampu 8, titik stop kontak 6 (blocker FORMULA_UNVERIFIED S6 — lihat asumsi per item).',
   ],
   sourceMetadata: {
     standardReference: 'Permen PUPR No. 1/2022 & AHSP Cipta Karya 2026',

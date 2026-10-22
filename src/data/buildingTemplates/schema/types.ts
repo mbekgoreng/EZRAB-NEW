@@ -35,6 +35,37 @@ export type WorkItemValidationStatus =
   | 'blocked'
   | 'verified';
 
+/**
+ * REMEDIASI INTEGRITAS (S1–S4 + Fase 8): status harga per item yang dapat
+ * ditelusur sampai ke sumbernya. Pemetaan ke kosakata audit:
+ * - OFFICIAL         = VALIDATED — harga dari katalog AHSP resmi, satuan cocok.
+ * - BENCHMARK        = NEEDS_REVIEW — harga tabel benchmark internal engine
+ *                      (indikatif, wajib ditandai (est.), BUKAN harga resmi).
+ * - UNIT_MISMATCH    = satuan kuantitas item tidak cocok dengan satuan tarif;
+ *                      harga TIDAK diterapkan (tidak boleh dikalikan).
+ * - AHSP_UNRESOLVED  = kode ditemukan di katalog resmi tetapi harga resminya
+ *                      belum tersedia / kode ambigu antar-varian.
+ * - PRICE_UNAVAILABLE= kode tidak terpetakan ke sumber harga valid mana pun;
+ *                      harga null (di permukaan hasil: 0 + status ini), item
+ *                      dikeluarkan dari total.
+ */
+export type ItemPriceStatus =
+  | 'OFFICIAL'
+  | 'BENCHMARK'
+  | 'UNIT_MISMATCH'
+  | 'AHSP_UNRESOLVED'
+  | 'PRICE_UNAVAILABLE';
+
+/** Item yang tidak dapat dihargai secara sah pada hasil generate. */
+export interface UnpricedItemInfo {
+  workItemId: string;
+  wbsCode: string;
+  name: string;
+  ahspCode?: string;
+  priceStatus: ItemPriceStatus;
+  reason: string;
+}
+
 export type WorkItemCategoryGroup =
   | '01_PERSIAPAN'
   | '02_TANAH'
@@ -204,6 +235,15 @@ export interface GeneratedWorkItemResult {
   isPriceFabricated?: boolean;
   /** Phase 3F: true if AHSP code was ambiguous */
   isPriceAmbiguous?: boolean;
+  /**
+   * REMEDIASI: status harga tertelusur per item. Bila status bukan OFFICIAL /
+   * BENCHMARK, item tidak berharga: unitPrice/totalPrice tampil 0 di
+   * permukaan hasil tetapi TIDAK PERNAH dihitung sebagai harga Rp0 yang sah —
+   * aritmetika engine memperlakukannya sebagai null (tidak masuk total).
+   */
+  priceStatus?: ItemPriceStatus;
+  /** Satuan tarif yang teresolusi (mis. 'm3'), null bila harga tak tersedia. */
+  priceUnit?: string | null;
   formula: string;
   formulaInputs: Record<string, any>;
   dimensions?: Record<string, number>;
@@ -254,4 +294,17 @@ export interface TemplateGenerationResult {
   errors: string[];
   isReadyForSpreadsheet: boolean;
   calculationTimestamp: string;
+  /**
+   * REMEDIASI (Fase 8): daftar item yang tidak berharga secara sah.
+   * Bila tidak kosong, totalDirectCost/totalRabCost adalah TOTAL PARSIAL
+   * dan totalStatus wajib 'INCOMPLETE'.
+   */
+  unpricedItems?: UnpricedItemInfo[];
+  unpricedItemCount?: number;
+  /**
+   * REMEDIASI (Fase 5/S5): keterbatasan cakupan — dari template.limitations
+   * ditambah catatan cakupan yang diturunkan engine (mis. kategori wajib
+   * rumah tinggal yang tidak dimuat template sumber).
+   */
+  limitations?: string[];
 }
