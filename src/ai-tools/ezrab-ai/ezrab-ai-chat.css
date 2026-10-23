@@ -1,12 +1,24 @@
 /* Ezrab Chat AI v2 — royal-blue brand theme.
    Layout sederhana ala ChatGPT/Gemini (2026-10-23): SATU kolom, halaman
    TIDAK scroll — yang scroll hanya daftar pesan dan daftar riwayat
-   (keduanya internal). */
-.ezchat2 { display: flex; flex-direction: column; height: calc(100dvh - 64px); min-height: 0; overflow: hidden; width: 100%; margin: 0 auto; padding: 0 20px; box-sizing: border-box; font-family: 'Plus Jakarta Sans','Inter',system-ui,sans-serif; }
+   (keduanya internal).
+   TINGGI ROOT (fix crop 2026-10-24): JANGAN pakai konstanta viewport
+   (dulu calc(100dvh - 64px)). Di workspace, root ini duduk di bawah
+   TopBar STICKY yang tingginya TIDAK 64px: bar 54px + baris breadcrumb
+   ±29px = ±84px (konteks proyek), sedangkan <main> pembungkusnya hanya
+   minHeight. Akibatnya total konten .pf-main (kontainer scroll shell)
+   = 84 + (100dvh - 64) = 100dvh + ±20px -> shell ikut scroll ±20px dan
+   TopBar sticky menutupi ±20px teratas chat -> header chat terlihat
+   menempel/tercrop di bawah bar breadcrumb, composer ±20px di bawah
+   lipatan. Sekarang view.tsx MENGUKUR sisa ruang vertikal sebenarnya
+   (clientHeight kontainer scroll dikurangi offset konten root) dan
+   menyuntikkannya sebagai --ezchat2-avail; rumus calc() di bawah hanya
+   fallback sebelum pengukuran pertama selesai. */
+.ezchat2 { display: flex; flex-direction: column; height: var(--ezchat2-avail, calc(100dvh - 64px)); min-height: 0; overflow: hidden; width: 100%; margin: 0 auto; padding: 0 20px; box-sizing: border-box; font-family: 'Plus Jakarta Sans','Inter',system-ui,sans-serif; }
 .ezchat2-main { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; width: 100%; max-width: 920px; margin: 0 auto; }
 /* Ruang untuk bottom-nav mobile agar composer tidak tertutup / terpotong tepi viewport */
 @media (max-width: 767px) {
-  .ezchat2 { height: calc(100dvh - 64px - 58px - var(--ezrab-safe-bottom, 0px)); }
+  .ezchat2 { height: calc(var(--ezchat2-avail, calc(100dvh - 64px)) - 58px - var(--ezrab-safe-bottom, 0px)); }
 }
 
 /* ===== Header ===== */
@@ -41,6 +53,9 @@
    Seluruhnya muat satu layar (daftar riwayat dibatasi + scroll internal). */
 .ezchat2-empty { text-align: center; padding: 16px; margin: auto; max-width: 720px; width: 100%; min-width: 0; box-sizing: border-box; animation: ezFadeUp .5s ease; }
 @keyframes ezFadeUp { from { opacity: 0; transform: translateY(14px); } }
+/* Maskot besar di tengah mode awal (permintaan owner 2026-10-24:
+   maskot jangan dihilangkan — tampil besar di tengah, di atas sapaan). */
+.ezchat2-hero-mascot { display: flex; justify-content: center; margin-bottom: 12px; }
 .ezchat2-greet { font-size: 22px; font-weight: 800; margin: 0; color: var(--ez-color-text-primary); }
 .ezchat2-greet-brand { color: var(--ez-color-primary); }
 

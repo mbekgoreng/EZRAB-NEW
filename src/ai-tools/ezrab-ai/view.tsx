@@ -1,18 +1,24 @@
 /**
  * EzrabAiView — Ezrab Chat AI v2.
  * - Layout sederhana ala ChatGPT/Gemini (penyederhanaan owner 2026-10-23):
- *   satu kolom tanpa scroll halaman; mode awal hanya sapaan kecil +
- *   composer di tengah + daftar Riwayat Percakapan kompak; mode berisi =
- *   daftar pesan (scroll internal) + composer di bawah; riwayat juga bisa
- *   dibuka dari tombol "Riwayat" di header (panel dropdown).
- * - Maskot kanonis EZRAB (EZRABMascotLucu) mini 44px di header dengan
- *   eye-tracking + blink, sama seperti permukaan lain.
+ *   satu kolom tanpa scroll halaman; mode awal = maskot besar di tengah +
+ *   sapaan kecil + composer di tengah + daftar Riwayat Percakapan kompak;
+ *   mode berisi = daftar pesan (scroll internal) + composer di bawah;
+ *   riwayat juga bisa dibuka dari tombol "Riwayat" di header (panel dropdown).
+ * - Tinggi root DIUKUR dari sisa ruang nyata di kontainer scroll shell
+ *   (--ezchat2-avail), BUKAN konstanta calc(100dvh - 64px) — konstanta itu
+ *   membuat shell overflow ±20px di konteks proyek (TopBar sticky 54px +
+ *   breadcrumb ±29px) sehingga header chat tercrop di atas (fix 2026-10-24,
+ *   lihat komentar .ezchat2 di ezrab-ai-chat.css).
+ * - Maskot kanonis EZRAB (EZRABMascotLucu): mini 44px di header dan BESAR
+ *   (168px, eye-tracking interaktif) di tengah mode awal — permintaan owner
+ *   2026-10-24 agar maskot tidak dihilangkan dari mode chat.
  * - Royal-blue brand theme (#2563EB), bubble Gemini-style.
  * - Mic voice input (Web Speech API, id-ID), lampir gambar (thumbnail di bubble
  *   user + catatan jujur ke AI bahwa gambar tak bisa dilihat model teks),
  *   timestamp, mode Cepat/Mendalam, tombol chat baru, salin jawaban.
  */
-import React, { useRef, useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import React, { useRef, useState, useEffect, useLayoutEffect, useCallback, Suspense, lazy } from 'react';
 import {
   Send, Sparkles, Loader2, Zap, Brain, RotateCcw,
   Copy, Check, Mic, Paperclip, X, Plus, ImagePlus,
@@ -270,6 +276,52 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       /* honest degradation: in-memory only */
     }
   };
+  /* ---- Tinggi root terukur (fix crop atas, 2026-10-24) ----
+   * Root .ezchat2 harus mengisi PERSIS sisa ruang vertikal di dalam
+   * kontainer scroll shell (.pf-main di WorkspaceView): TopBar sticky
+   * (54px + breadcrumb ±29px di konteks proyek) + <main> yang hanya
+   * minHeight membuat rumus lama calc(100dvh - 64px) kelebihan ±20px —
+   * shell ikut scroll dan header chat tertutup bar breadcrumb (tercrop).
+   * Di sini tinggi diukur dalam koordinat KONTEN kontainer (kebal posisi
+   * scroll): clientHeight kontainer dikurangi offset atas root di dalam
+   * konten. Hasilnya disuntikkan sebagai CSS var --ezchat2-avail; CSS
+   * memakai calc() lama hanya sebagai fallback pra-pengukuran. Diukur
+   * ulang saat mount (termasuk sekali sesudah animasi masuk menu 0,28s
+   * yang menggeser rect sementara), resize, dan rotasi layar. */
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [availH, setAvailH] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const el = rootRef.current;
+    if (!el) return undefined;
+    const measure = () => {
+      const container = el.closest('.pf-main') as HTMLElement | null;
+      let h: number;
+      if (container) {
+        const cRect = container.getBoundingClientRect();
+        const eRect = el.getBoundingClientRect();
+        const contentTop = (eRect.top - cRect.top) + container.scrollTop;
+        h = container.clientHeight - contentTop;
+      } else {
+        /* Di luar shell workspace (fallback): ukur dari tepi atas root
+         * ke dasar viewport. */
+        h = window.innerHeight - el.getBoundingClientRect().top;
+      }
+      if (h > 0) {
+        const next = Math.floor(h);
+        setAvailH((prev) => (prev !== null && Math.abs(prev - next) < 1 ? prev : next));
+      }
+    };
+    measure();
+    const t = window.setTimeout(measure, 350);
+    window.addEventListener('resize', measure);
+    window.addEventListener('orientationchange', measure);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('orientationchange', measure);
+    };
+  }, []);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -1142,7 +1194,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   );
 
   return (
-    <div className="ezchat2">
+    <div
+      className="ezchat2"
+      ref={rootRef}
+      style={availH !== null ? ({ '--ezchat2-avail': `${availH}px` } as React.CSSProperties) : undefined}
+    >
       <div className="ezchat2-main">
       {/* ===== Header ===== */}
       <div className="ezchat2-headerwrap">
@@ -1203,6 +1259,18 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       <div className="ezchat2-body" ref={scrollRef}>
         {messages.length === 0 ? (
           <div className="ezchat2-empty">
+            {/* Maskot BESAR di tengah mode awal (owner 2026-10-24: maskot
+                jangan dihilangkan dari mode chat) — komponen kanonis yang
+                sama dengan hero dashboard, eye-tracking INTERAKTIF aktif. */}
+            <div className="ezchat2-hero-mascot" aria-hidden="true">
+              <EZRABMascotLucu
+                size={168}
+                enableEyeTracking
+                enableBlink
+                enableFloat
+                interactive
+              />
+            </div>
             <h2 className="ezchat2-greet">Halo, saya <span className="ezchat2-greet-brand">EZRAB Chat AI</span></h2>
             {composer(true)}
             <div className="ezhist-home">
