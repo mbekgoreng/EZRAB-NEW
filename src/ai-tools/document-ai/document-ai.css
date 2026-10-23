@@ -355,6 +355,97 @@
 .docai-linkbtn { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: none; background: none; color: var(--ez-color-primary); font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
 .docai-linkbtn:hover { color: var(--ez-color-primary-hover); text-decoration: underline; }
 
+/* ================================================================== */
+/* DOCUMENT STUDIO — 3 jalur, panel konteks, review/revisi/versi.     */
+/* ================================================================== */
+.docai-tabsep { width: 1px; align-self: stretch; background: var(--ez-color-border); margin: 2px 4px; flex-shrink: 0; }
+
+.docai-modeline { display: flex; gap: 6px; flex-wrap: wrap; background: var(--ez-color-background); border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-pill); padding: 4px; margin-bottom: 16px; }
+.docai-modeline button { display: inline-flex; align-items: center; gap: 7px; flex: 1; justify-content: center; border: none; background: transparent; border-radius: var(--ez-radius-pill); padding: 8px 12px; font-family: inherit; font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-muted); cursor: pointer; white-space: nowrap; transition: all .15s; }
+.docai-modeline button:hover { color: var(--ez-color-text-primary); }
+.docai-modeline button.active { background: var(--ez-color-surface); color: var(--ez-color-primary-hover); box-shadow: 0 1px 6px rgba(15,35,80,.12), inset 0 0 0 1.5px var(--ez-color-primary-soft); }
+
+.docai-ctxpanel { border: 1.5px solid var(--ez-color-border); border-radius: var(--ez-radius-card); background: var(--ez-color-surface); padding: 14px 16px; margin: 4px 0 14px; text-align: left; }
+.docai-ctxhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.docai-ctxhead-t { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--ez-color-primary); }
+.docai-ctxhead-n { font-size: 12px; color: var(--ez-color-text-muted); font-weight: 600; }
+.docai-ctxsrcs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.docai-srctoggle { display: inline-flex; align-items: center; gap: 7px; border: 1.5px solid var(--ez-color-border); border-radius: 999px; padding: 6px 12px; font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-muted); cursor: pointer; background: var(--ez-color-surface); }
+.docai-srctoggle input { accent-color: var(--ez-color-primary); margin: 0; }
+.docai-srctoggle.on { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); background: var(--ez-color-primary-soft); }
+.docai-ctxlist { display: flex; flex-direction: column; }
+.docai-ctxrow { display: flex; align-items: baseline; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--ez-color-border-soft); font-size: 13px; }
+.docai-ctxrow:last-child { border-bottom: none; }
+.docai-ctxname { flex: 0 0 170px; font-weight: 700; color: var(--ez-color-text-secondary); }
+.docai-ctxvalue { flex: 1; min-width: 0; color: var(--ez-color-text-primary); word-break: break-word; }
+.docai-ctxmissing { flex: 1; font-size: 11.5px; font-weight: 800; color: var(--ez-color-warning); text-transform: uppercase; letter-spacing: .04em; }
+.docai-ctxsrc { flex-shrink: 0; font-size: 11px; font-weight: 700; color: var(--ez-color-text-muted); background: var(--ez-color-background); border-radius: var(--ez-radius-pill); padding: 2px 8px; white-space: nowrap; }
+
+.docai-missingbox { margin-top: 12px; background: var(--ez-color-warning-soft); border: 1px solid var(--ez-color-warning-soft); border-radius: var(--ez-radius-card); padding: 12px 14px; text-align: left; }
+.docai-missingbox-t { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 800; color: var(--ez-color-warning); margin-bottom: 6px; }
+.docai-missingbox ul { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.6; color: var(--ez-color-text-primary); }
+.docai-genmissing { margin: 14px 0 0; }
+
+.docai-periksapick { display: flex; gap: 12px; align-items: flex-start; margin-top: 18px; padding: 16px 18px; border: 1.5px solid var(--ez-color-border); border-radius: var(--ez-radius-card); background: var(--ez-color-surface); text-align: left; }
+.docai-periksapick strong { font-size: 14.5px; color: var(--ez-color-text-primary); }
+.docai-periksapick p { margin: 3px 0 0; font-size: 13px; color: var(--ez-color-text-muted); line-height: 1.55; }
+
+.docai-studio { margin-top: 18px; background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-card); padding: 20px 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
+.docai-studio-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.docai-studio-t { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; color: var(--ez-color-text-primary); }
+.docai-studio-sub { margin: 5px 0 0; font-size: 12.5px; color: var(--ez-color-text-muted); line-height: 1.6; max-width: 760px; }
+.docai-findings { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+.docai-finding { display: flex; gap: 14px; justify-content: space-between; border: 1px solid var(--ez-color-border-soft); border-left: 4px solid var(--ez-color-border); border-radius: var(--ez-radius-control); padding: 13px 15px; background: var(--ez-color-surface); }
+.docai-finding.sev-high { border-left-color: var(--ez-color-danger); }
+.docai-finding.sev-medium { border-left-color: var(--ez-color-warning); }
+.docai-finding.sev-low { border-left-color: var(--ez-color-border); }
+.docai-finding.st-ignored, .docai-finding.st-checked, .docai-finding.st-fixed { opacity: .62; }
+.docai-finding-main { flex: 1; min-width: 0; }
+.docai-finding-tags { display: flex; gap: 8px; align-items: center; margin-bottom: 5px; }
+.docai-sev { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: 2px 8px; border-radius: var(--ez-radius-pill); }
+.docai-sev.sev-high { background: var(--ez-color-danger-soft); color: var(--ez-color-danger); }
+.docai-sev.sev-medium { background: var(--ez-color-warning-soft); color: var(--ez-color-warning); }
+.docai-sev.sev-low { background: var(--ez-color-background); color: var(--ez-color-text-muted); }
+.docai-finding-status { font-size: 11.5px; font-weight: 700; color: var(--ez-color-text-muted); }
+.docai-finding-desc { font-size: 13.5px; font-weight: 700; color: var(--ez-color-text-primary); line-height: 1.5; }
+.docai-finding-loc { font-size: 12.5px; color: var(--ez-color-text-secondary); margin-top: 3px; word-break: break-word; }
+.docai-finding-why, .docai-finding-sug { font-size: 12.5px; color: var(--ez-color-text-muted); line-height: 1.55; margin-top: 2px; }
+.docai-finding-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+.docai-btn-ghost.docai-mini { padding: 6px 10px; font-size: 12px; gap: 6px; justify-content: flex-start; }
+
+.docai-revisebox { margin-top: 18px; }
+.docai-reviserow { display: flex; gap: 8px; align-items: flex-start; }
+.docai-reviserow textarea, .docai-reviserow select { flex: 1; min-width: 0; }
+.docai-reviserow .docai-btn-ghost { flex-shrink: 0; }
+
+.docai-candidate { margin-top: 14px; border: 1.5px solid var(--ez-color-primary-soft); border-radius: var(--ez-radius-card); padding: 16px 18px; background: var(--ez-color-surface-secondary); }
+.docai-candidate-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+.docai-candidate-head strong { font-size: 13.5px; color: var(--ez-color-text-primary); }
+.docai-candidate-head span { font-size: 12px; color: var(--ez-color-text-muted); }
+.docai-candidate-body { margin: 0 0 10px; max-height: 340px; overflow: auto; white-space: pre-wrap; font-family: inherit; font-size: 13px; line-height: 1.7; color: var(--ez-color-text-primary); background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-control); padding: 12px 14px; }
+
+.docai-versionbox { margin-top: 18px; }
+.docai-versionlist { display: flex; flex-direction: column; gap: 6px; }
+.docai-versionrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-control); padding: 9px 13px; }
+.docai-versionmain { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.docai-versionmain strong { font-size: 13px; color: var(--ez-color-text-primary); }
+.docai-versionmain span { font-size: 12px; color: var(--ez-color-text-muted); word-break: break-word; }
+.docai-comparebox { margin-top: 12px; border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-card); padding: 14px 16px; font-size: 13px; line-height: 1.6; color: var(--ez-color-text-primary); }
+.docai-comparebox p { margin: 0 0 10px; }
+.docai-comparecols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.docai-comparecols ul { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; color: var(--ez-color-text-secondary); }
+.docai-comparecols li { margin: 2px 0; word-break: break-word; }
+
+@media (max-width: 700px) {
+  .docai-finding { flex-direction: column; }
+  .docai-finding-actions { flex-direction: row; flex-wrap: wrap; }
+  .docai-comparecols { grid-template-columns: 1fr; }
+  .docai-ctxname { flex-basis: 120px; }
+  .docai-reviserow { flex-direction: column; }
+  .docai-reviserow .docai-btn-ghost { align-self: flex-start; }
+  .docai-studio { padding: 16px 14px; }
+}
+
 /* Pratinjau contoh dokumen profesional (data dummy bertanda CONTOH) */
 .docai-samplepreview { margin-top: 10px; max-height: 520px; overflow: auto; padding: 18px 20px; border: 1px solid var(--ez-color-border); border-radius: var(--ez-radius-control); background: #fff; color: #1f2430; font-family: 'Liberation Serif', 'Times New Roman', serif; font-size: 12.5px; line-height: 1.55; text-align: left; }
 .docai-samplepreview h1 { font-size: 16px; margin: 10px 0 6px; }

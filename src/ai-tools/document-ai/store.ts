@@ -59,6 +59,16 @@ export function docStatusLabel(s: DocDraftStatus | string): string {
   }
 }
 
+/** Satu versi isi draf pada riwayat versi (Document Studio). */
+export interface DraftVersion {
+  id: string;
+  content: string;
+  contentFormat?: 'plain' | 'html';
+  createdAt: number;
+  origin: 'generate' | 'revise' | 'manual' | 'restore';
+  note?: string;
+}
+
 export interface DraftRecord {
   id: string;
   templateId: string;
@@ -75,6 +85,57 @@ export interface DraftRecord {
   status: DocDraftStatus;
   createdAt: number;
   updatedAt: number;
+  /* --- Document Studio (aditif; draf lama tanpa field ini tetap terbaca) --- */
+  /** Riwayat versi isi (maks 20, tertua dibuang). */
+  versions?: DraftVersion[];
+  /** Snapshot konteks ber-provenance yang dipakai saat generate. */
+  contextSnapshot?: import('./types').ContextField[];
+  /** Label model yang menghasilkan draf (bila diketahui dari provider). */
+  modelLabel?: string;
+  /** Versi system prompt DRAFT yang dipakai (lihat prompt.ts DRAFT_PROMPT_VERSION). */
+  promptVersion?: string;
+}
+
+/** Batas riwayat versi per draf. */
+export const MAX_DRAFT_VERSIONS = 20;
+
+/**
+ * Snapshot isi draf saat ini sebagai versi baru. Murni: mengembalikan draf
+ * BARU, tidak mengubah argumen. Pemanggil menyimpan via draftStore.upsert.
+ */
+export function pushVersion(
+  draft: DraftRecord,
+  origin: DraftVersion['origin'],
+  note?: string,
+): DraftRecord {
+  const version: DraftVersion = {
+    id: newId('ver'),
+    content: draft.content,
+    contentFormat: draft.contentFormat,
+    createdAt: Date.now(),
+    origin,
+    note,
+  };
+  const versions = [...(draft.versions ?? []), version].slice(-MAX_DRAFT_VERSIONS);
+  return { ...draft, versions };
+}
+
+/**
+ * Kembalikan isi draf ke versi terpilih TANPA menghilangkan isi berjalan:
+ * isi saat ini di-snapshot dulu sebagai versi baru (origin 'restore'),
+ * lalu isi diganti dengan isi versi tujuan. Versi tak ditemukan → draf
+ * dikembalikan apa adanya.
+ */
+export function restoreVersion(draft: DraftRecord, versionId: string): DraftRecord {
+  const target = (draft.versions ?? []).find((v) => v.id === versionId);
+  if (!target) return draft;
+  const snap = pushVersion(draft, 'restore', `Snapshot sebelum restore ke versi ${versionId}`);
+  return {
+    ...snap,
+    content: target.content,
+    contentFormat: target.contentFormat,
+    updatedAt: Date.now(),
+  };
 }
 
 const LS_DOCS = 'ezrab_docai_library_v1';

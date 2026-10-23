@@ -16,24 +16,29 @@
  * Format: draf baru disimpan sebagai HTML (contentFormat: 'html');
  * draf lama teks polos dikonversi saat dibuka (richText.ts).
  */
-import React, { Suspense, lazy, useMemo, useRef, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Loader2, Save, Download, AlertTriangle, FilePlus2, Check, MoreHorizontal,
   RefreshCw, History as HistoryIcon, Focus, ListTree, FilePlus, X, CloudOff,
-  Printer, LayoutTemplate, ArrowRight, Briefcase,
+  Printer, LayoutTemplate, ArrowRight, Briefcase, Sparkles, ClipboardCheck,
 } from 'lucide-react';
 import { getDefaultProfile, kopHtml } from '../companyProfile';
 import {
-  TEMPLATE_META, EXTRA_BUILTIN_TEMPLATES, buildFieldBlock, missingRequiredFields,
+  TEMPLATE_META, EXTRA_BUILTIN_TEMPLATES,
   resolveTemplate, subtypeLabel, referenceStatusLabel,
   listUserTemplates, saveUserTemplate, newUserTemplate, type UserTemplate,
 } from '../docTemplates';
 import { htmlToPaperBlocks } from '../paperModel';
 import { exportPaperPdf, exportPaperDocx } from '../paperExport';
 import { CompanyIdentityPanel, MyTemplatesPanel, SavedDocsPanel } from './DocPanels';
+import { DocContextPanel } from './DocContextPanel';
+import { DocStudioReview } from './DocStudioReview';
+import { documentStudioOrchestrator } from '../orchestrator';
+import { collectProjectContext, detectMissingFields } from '../contextAdapter';
+import { pushVersion, restoreVersion } from '../store';
+import type { MissingFieldInfo } from '../types';
 import { docStatusLabel, type DocDraftStatus } from '../view';
 import type { Editor } from '@tiptap/react';
-import { dokumenAiService } from '../service';
 import type { DraftRecord, HistoryEntry } from '../view';
 import { newId, formatDate } from '../view';
 import { draftFormat, toEditorHtml, toPlainText, plainToHtml } from '../richText';
@@ -94,13 +99,18 @@ function verifySaved(rec: DraftRecord, attempts = 14): Promise<boolean> {
   });
 }
 
+/** Jalur Studio yang sedang aktif di view.tsx — mengatur mode awal DocCreator. */
+export type DocStudioPath = 'ai' | 'template' | 'periksa';
+
 export const DocCreator: React.FC<{
   drafts: DraftRecord[];
   onUpsertDraft: (d: DraftRecord) => void;
   onAddHistory: (e: Omit<HistoryEntry, 'id' | 'at'>) => void;
   /** Navigasi silang ke menu lain (Dokumen Proyek & Tender = 'dokumen-tender'). Opsional: tanpa prop ini tautan silang tidak dirender. */
   onNavigateToMenu?: (menu: string) => void;
-}> = ({ drafts, onUpsertDraft, onAddHistory, onNavigateToMenu }) => {
+  /** Jalur Document Studio dari view.tsx: 'ai' = instruksi-pertama, 'template' = form-pertama, 'periksa' = editor + panel periksa. */
+  studioPath?: DocStudioPath;
+}> = ({ drafts, onUpsertDraft, onAddHistory, onNavigateToMenu, studioPath }) => {
   const { t } = useI18n();
   const TEMPLATES = getTemplates(t);
   /* Paper System (Fase B): subnavigasi + template tambahan + profil perusahaan */
@@ -138,6 +148,23 @@ export const DocCreator: React.FC<{
   const [showOutline, setShowOutline] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
 
+  /* Document Studio: mode buat (instruksi-pertama vs form-pertama), sumber
+     konteks yang diizinkan, dan daftar field belum tersedia dari generate. */
+  const [createMode, setCreateMode] = useState<'ai' | 'form'>(studioPath === 'template' ? 'form' : 'ai');
+  const [aiAutoType, setAiAutoType] = useState(true);
+  const [srcProject, setSrcProject] = useState(true);
+  const [srcCompany, setSrcCompany] = useState(true);
+  const [genMissing, setGenMissing] = useState<MissingFieldInfo[]>([]);
+
+  /* Jalur Studio dari view.tsx mengatur mode tampil; subnav internal tetap
+     bebas dipakai pengguna setelahnya (efek hanya berjalan saat jalur berubah). */
+  useEffect(() => {
+    if (!studioPath) return;
+    setSubView('buat');
+    if (studioPath === 'ai') setCreateMode('ai');
+    if (studioPath === 'template') setCreateMode('form');
+  }, [studioPath]);
+
   const editorRef = useRef<Editor | null>(null);
   const loadingRef = useRef(false);
 
@@ -155,6 +182,25 @@ export const DocCreator: React.FC<{
     setShowSample(false);
   };
   const project = projects.find((p) => p.id === projectId) || currentProject;
+
+  /* Konteks ber-provenance untuk generate (Document Studio): hanya field
+     yang benar-benar ada pada proyek/profil; toggle sumber memengaruhi
+     daftar ini secara langsung, dan daftar inilah yang dikirim ke AI. */
+  const genMeta = createMode === 'ai' && aiAutoType ? undefined : effectiveMeta;
+  /** Detail template (subjenis/field/contoh) hanya relevan bila template dipilih. */
+  const showTemplateDetail = createMode === 'form' || !aiAutoType;
+  const contextFields = collectProjectContext(project ?? null, defaultProfile, {
+    templateMeta: genMeta,
+    sources: { project: srcProject, company: srcCompany },
+  });
+  const liveMissing = detectMissingFields(contextFields, genMeta, fieldValues);
+
+  /* Meta untuk review deterministik atas draf aktif (template dasar draf). */
+  const reviewMeta = useMemo(() => {
+    if (!draft) return undefined;
+    const base = TEMPLATE_META[draft.templateId];
+    return base ? resolveTemplate(base) : undefined;
+  }, [draft]);
 
   const outline = useMemo<OutlineItem[]>(() => {
     if (!html) return [];
@@ -225,6 +271,7 @@ export const DocCreator: React.FC<{
     setSaveState('saved');
     setPending(null);
     setError(null);
+    setGenMissing([]);
   };
 
   const openDraft = (target: DraftRecord) => {
@@ -235,50 +282,58 @@ export const DocCreator: React.FC<{
     loadIntoEditor(target);
   };
 
-  /* ---------------- generate (AI) ---------------- */
+  /* ---------------- generate (AI) via Document Studio Orchestrator ---------------- */
 
   const runGenerate = async (isRegen: boolean) => {
-    const missing = missingRequiredFields(effectiveMeta, fieldValues);
-    if (missing.length) {
-      setError(`Field wajib belum diisi: ${missing.join(', ')}.`);
-      return;
-    }
     setBusy(true);
     setError(null);
     setPending(null);
+    setGenMissing([]);
     try {
-      const projInfo = project
-        ? `Proyek: ${project.name}\nLokasi: ${project.location || '-'}\nKlien: ${project.clientName || '-'}`
-        : 'Proyek: (tidak dipilih)';
-      const fieldBlock = buildFieldBlock(effectiveMeta, fieldValues);
-      const docName = activeSubtypeLabel ? `${template.name} — ${activeSubtypeLabel}` : template.name;
-      const prompt =
-        `Buatkan ${docName}.\n${projInfo}\n${fieldBlock ? `\n${fieldBlock}\n` : ''}\nDetail/instruksi pengguna:\n${instruction || '(tidak ada detail tambahan)'}` +
-        `\n\nAturan: gunakan HANYA informasi yang diberikan; jangan mengarang nomor surat, nama pihak, ` +
-        `nilai kontrak, tanggal, atau persetujuan. Tandai bagian yang perlu dilengkapi pengguna dengan ` +
-        `[ISI: ...]. Hasilkan draf yang jelas berstatus DRAF.`;
-      const res = await dokumenAiService.chat({
-        documentText: projInfo,
-        fileName: 'info-proyek',
-        mode: 'CHAT',
-        prompt,
+      // Nama dokumen: jalur AI tanpa jenis terpilih = draf bebas otomatis.
+      const docName =
+        createMode === 'ai' && aiAutoType
+          ? 'Draf Bebas (AI)'
+          : activeSubtypeLabel
+            ? `${template.name} — ${activeSubtypeLabel}`
+            : template.name;
+      // CREATE_DOCUMENT (mode DRAFT + scaffold/aiGuidance + konteks
+      // ber-provenance). Field yang belum tersedia TIDAK memblokir generate:
+      // orchestrator melaporkannya sebagai missingFields dan AI menandai
+      // [ISI: ...] — daftar ditampilkan ke pengguna, bukan disembunyikan.
+      const res = await documentStudioOrchestrator.handle({
+        intent: 'CREATE_DOCUMENT',
+        instruction: instruction.trim() || undefined,
+        templateMeta: genMeta,
+        fieldValues,
+        contextFields,
+        documentName: docName,
+        fileName: docName,
       });
       if (!res.success) {
         setError(`${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`);
         return;
       }
-      const reply = res.reply || '';
+      const reply = res.content || '';
       const newHtml = plainToHtml(reply);
+      setGenMissing(res.missingFields);
       if (isRegen && draft) {
         // Isi editor saat ini (termasuk edit yang belum disimpan) menjadi
-        // versi sebelumnya — tidak ada yang terhapus diam-diam.
-        const rec = buildRecord({
+        // versi sebelumnya DAN entri riwayat versi — tidak ada yang terhapus
+        // diam-diam.
+        const current = buildRecord({ content: html, contentFormat: 'html' });
+        const withVersion = pushVersion(current, 'generate', 'Isi sebelum buat ulang AI');
+        const rec: DraftRecord = {
+          ...withVersion,
           content: newHtml,
           contentFormat: 'html',
           previousContent: html,
           previousFormat: 'html',
           status: 'draft',
-        });
+          contextSnapshot: contextFields,
+          promptVersion: res.promptVersion ?? draft.promptVersion,
+          updatedAt: Date.now(),
+        };
         loadingRef.current = true;
         setHtml(newHtml);
         setEditorKey((k) => k + 1);
@@ -287,9 +342,9 @@ export const DocCreator: React.FC<{
       } else {
         const rec: DraftRecord = {
           id: newId('draft'),
-          templateId,
-          templateName: template.name,
-          title: `${template.name} — ${project?.name || t('ai.doc.create.no_project')}`,
+          templateId: createMode === 'ai' && aiAutoType ? 'bebas' : templateId,
+          templateName: docName,
+          title: `${docName} — ${project?.name || t('ai.doc.create.no_project')}`,
           content: newHtml,
           contentFormat: 'html',
           projectId: project?.id,
@@ -297,6 +352,8 @@ export const DocCreator: React.FC<{
           status: 'draft',
           createdAt: Date.now(),
           updatedAt: Date.now(),
+          contextSnapshot: contextFields,
+          promptVersion: res.promptVersion,
         };
         loadingRef.current = true;
         setHtml(newHtml);
@@ -308,7 +365,7 @@ export const DocCreator: React.FC<{
         type: 'draft',
         docIds: [],
         docNames: [],
-        title: `${t('ai.doc.create.hist_a')} ${draft?.title || template.name}`,
+        title: `${t('ai.doc.create.hist_a')} ${draft?.title || docName}`,
         resultPreview: reply.slice(0, 300),
         resultFull: reply,
       });
@@ -317,6 +374,41 @@ export const DocCreator: React.FC<{
     } finally {
       setBusy(false);
     }
+  };
+
+  /* ---------------- revisi AI & riwayat versi (Edit & Periksa) ---------------- */
+
+  /** Terapkan kandidat revisi dari panel periksa: snapshot isi berjalan
+      sebagai versi 'revise' SEBELUM menimpa, lalu persist terverifikasi. */
+  const applyCandidate = async (candidatePlain: string, note: string) => {
+    if (!draft) return;
+    const candidateHtml = plainToHtml(candidatePlain);
+    const current = buildRecord({ content: html, contentFormat: 'html' });
+    const withVersion = pushVersion(current, 'revise', note);
+    const rec: DraftRecord = {
+      ...withVersion,
+      content: candidateHtml,
+      contentFormat: 'html',
+      status: draft.status,
+      updatedAt: Date.now(),
+    };
+    loadingRef.current = true;
+    setHtml(candidateHtml);
+    setEditorKey((k) => k + 1);
+    await persist(rec);
+  };
+
+  /** Pulihkan versi: restoreVersion men-snapshot isi berjalan lebih dulu. */
+  const restoreVersionById = async (versionId: string) => {
+    if (!draft) return;
+    const current = buildRecord({ content: html, contentFormat: 'html' });
+    const restored = restoreVersion(current, versionId);
+    if (restored === current) return;
+    const restoredHtml = toEditorHtml(restored.content, draftFormat(restored));
+    loadingRef.current = true;
+    setHtml(restoredHtml);
+    setEditorKey((k) => k + 1);
+    await persist({ ...restored, content: restoredHtml, contentFormat: 'html', updatedAt: Date.now() });
   };
 
   /* ---------------- versi sebelumnya ---------------- */
@@ -597,6 +689,65 @@ export const DocCreator: React.FC<{
           <h3>{t('ai.doc.create.ed_empty_h')}</h3>
           <p>{t('ai.doc.create.ed_empty_p')}</p>
           <div className="docai-edform">
+            <div className="docai-modeline" role="tablist" aria-label="Mode buat dokumen">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={createMode === 'ai'}
+                className={createMode === 'ai' ? 'active' : ''}
+                onClick={() => setCreateMode('ai')}
+              >
+                <Sparkles size={14} /> Buat dengan AI — instruksi dulu
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={createMode === 'form'}
+                className={createMode === 'form' ? 'active' : ''}
+                onClick={() => setCreateMode('form')}
+              >
+                <LayoutTemplate size={14} /> Form Template — template dulu
+              </button>
+            </div>
+            {createMode === 'ai' && (
+              <>
+                <div className="docai-step" style={{ textAlign: 'left' }}>1 · Instruksi untuk AI</div>
+                <textarea
+                  className="docai-textarea"
+                  rows={5}
+                  value={instruction}
+                  onChange={(e) => setInstruction(e.target.value)}
+                  placeholder="Tuliskan dokumen yang Anda butuhkan dalam Bahasa Indonesia. AI hanya memakai instruksi ini dan data pada ringkasan konteks di bawah; data yang belum tersedia ditandai [ISI: ...], tidak dikarang."
+                />
+                <div className="docai-step" style={{ textAlign: 'left', marginTop: 6 }}>
+                  2 · Jenis dokumen (opsional)
+                </div>
+                <select
+                  className="docai-select docai-full"
+                  value={aiAutoType ? '' : templateId}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (!v) setAiAutoType(true);
+                    else {
+                      setAiAutoType(false);
+                      chooseTemplate(v);
+                    }
+                  }}
+                >
+                  <option value="">Otomatis — AI menentukan dari instruksi (Draf Bebas)</option>
+                  {ALL_TEMPLATES.map((tmpl) => (
+                    <option key={tmpl.id} value={tmpl.id}>
+                      {tmpl.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="docai-step" style={{ textAlign: 'left', marginTop: 16 }}>
+                  3 · Proyek &amp; konteks
+                </div>
+              </>
+            )}
+            {createMode === 'form' && (
+              <>
             <div className="docai-step" style={{ textAlign: 'left' }}>{t('ai.doc.create.step_1')}</div>
             <div className="docai-tmplgrid">
               {ALL_TEMPLATES.map((tmpl) => (
@@ -610,7 +761,11 @@ export const DocCreator: React.FC<{
                 </button>
               ))}
             </div>
-            <div className="docai-step" style={{ textAlign: 'left', marginTop: 16 }}>{t('ai.doc.create.step_2')}</div>
+              </>
+            )}
+            {createMode === 'form' && (
+              <div className="docai-step" style={{ textAlign: 'left', marginTop: 16 }}>{t('ai.doc.create.step_2')}</div>
+            )}
             <select
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
@@ -623,6 +778,14 @@ export const DocCreator: React.FC<{
                 </option>
               ))}
             </select>
+            <DocContextPanel
+              fields={contextFields}
+              sources={{ project: srcProject, company: srcCompany }}
+              onToggleSource={(which, on) => (which === 'project' ? setSrcProject(on) : setSrcCompany(on))}
+              missing={liveMissing}
+            />
+            {showTemplateDetail && (
+              <>
             {baseMeta?.subtypes && baseMeta.subtypes.length > 0 && (
               <div className="docai-fieldgrid">
                 <label className="docai-fielditem">
@@ -685,17 +848,25 @@ export const DocCreator: React.FC<{
                 )}
               </div>
             )}
-            <textarea
-              className="docai-textarea"
-              rows={4}
-              value={instruction}
-              onChange={(e) => setInstruction(e.target.value)}
-              placeholder={t('ai.doc.create.instr_ph')}
-            />
+              </>
+            )}
+            {createMode === 'form' && (
+              <textarea
+                className="docai-textarea"
+                rows={4}
+                value={instruction}
+                onChange={(e) => setInstruction(e.target.value)}
+                placeholder={t('ai.doc.create.instr_ph')}
+              />
+            )}
             <button className="docai-btn-primary docai-runbtn" onClick={() => void runGenerate(false)} disabled={busy}>
               {busy ? (
                 <>
                   <Loader2 size={15} className="spin" /> {t('ai.doc.create.gen_busy')}
+                </>
+              ) : createMode === 'ai' ? (
+                <>
+                  <Sparkles size={15} /> Buat Draf dengan AI
                 </>
               ) : (
                 <>
@@ -724,6 +895,19 @@ export const DocCreator: React.FC<{
             <button type="button" className="docai-btn-ghost" onClick={() => onNavigateToMenu('dokumen-tender')}>
               Buka Dokumen Proyek <ArrowRight size={14} />
             </button>
+          </div>
+        )}
+
+        {studioPath === 'periksa' && (
+          <div className="docai-periksapick">
+            <ClipboardCheck size={20} style={{ color: 'var(--ez-color-primary)', flexShrink: 0 }} />
+            <div>
+              <strong>Edit &amp; Periksa</strong>
+              <p>
+                Pilih draf tersimpan di bawah untuk membukanya di editor. Panel Periksa Dokumen, Revisi
+                Bahasa Alami, dan Riwayat Versi berada di bawah editor.
+              </p>
+            </div>
           </div>
         )}
 
@@ -960,6 +1144,36 @@ export const DocCreator: React.FC<{
           </Suspense>
         </div>
       </div>
+
+      {genMissing.length > 0 && (
+        <div className="docai-missingbox docai-genmissing">
+          <div className="docai-missingbox-t">
+            <AlertTriangle size={14} /> Perlu dilengkapi pada draf ini ({genMissing.length})
+          </div>
+          <ul>
+            {genMissing.map((m) => (
+              <li key={m.key}>
+                <strong>{m.label}</strong> — {m.reason}
+              </li>
+            ))}
+          </ul>
+          <p className="docai-hint" style={{ marginTop: 6 }}>
+            Draf tetap dibuat; lengkapi bagian di atas langsung di editor atau lewat panel Periksa di bawah.
+          </p>
+        </div>
+      )}
+
+      {draft && (
+        <DocStudioReview
+          key={draft.id}
+          draft={draft}
+          html={html}
+          templateMeta={reviewMeta}
+          getEditor={() => editorRef.current}
+          onApplyCandidate={applyCandidate}
+          onRestoreVersion={restoreVersionById}
+        />
+      )}
 
       {draftList}
     </div>

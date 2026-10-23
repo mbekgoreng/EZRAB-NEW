@@ -1,10 +1,15 @@
 /**
- * AI DOKUMEN — Orchestrator (4 menu utama), dashboard design language.
+ * AI DOCUMENT STUDIO — Orchestrator halaman, dashboard design language.
  *
- * 1. Dokumen Saya     — library dokumen (upload, cari, filter, hapus)
- * 2. Analisis Dokumen — workspace kontekstual (dibuka dari Dokumen Saya)
- * 3. Buat Dokumen     — template → draf → review → ekspor
- * 4. Riwayat          — jejak analisis & draf
+ * Tiga jalur utama Studio (satu DocCreator yang sama, mode berbeda):
+ * 1. Buat dengan AI  — instruksi bebas + konteks proyek/perusahaan → draf AI
+ * 2. Gunakan Template — katalog template + form field → draf AI
+ * 3. Edit & Periksa  — editor draf + review deterministik + revisi AI + versi
+ *
+ * Permukaan pendukung (dipertahankan, bukan jalur utama):
+ * - Dokumen Saya     — library dokumen (upload, cari, filter, hapus)
+ * - Analisis Dokumen — workspace kontekstual (dibuka dari Dokumen Saya)
+ * - Riwayat          — jejak analisis & draf
  *
  * State (dokumen, riwayat, draf) diangkat ke sini dan dipersist ke
  * localStorage — BUKAN penyimpanan server, jangan dianggap arsip resmi.
@@ -16,7 +21,11 @@
  * DokumenAiView melaporkan status workspace via onAnalysisActiveChange.
  */
 import React, { useEffect, useState } from 'react';
-import { FolderOpen, ScanSearch, FilePlus2, History } from 'lucide-react';
+import { FolderOpen, ScanSearch, History, Sparkles, LayoutTemplate, ClipboardCheck } from 'lucide-react';
+import type { DraftVersion } from './store';
+import type { ContextField } from './types';
+
+export type { DraftVersion };
 import { DocLibrary } from './components/DocLibrary';
 import { DocAnalyzer } from './components/DocAnalyzer';
 import { DocCreator } from './components/DocCreator';
@@ -102,6 +111,16 @@ export interface DraftRecord {
   status: DocDraftStatus;
   createdAt: number;
   updatedAt: number;
+  /* --- Document Studio (aditif, identik dengan store.ts DraftRecord;
+     record lama tanpa field ini tetap terbaca) --- */
+  /** Riwayat versi isi (maks 20, tertua dibuang). */
+  versions?: DraftVersion[];
+  /** Snapshot konteks ber-provenance yang dipakai saat generate. */
+  contextSnapshot?: ContextField[];
+  /** Label model yang menghasilkan draf (bila diketahui dari provider). */
+  modelLabel?: string;
+  /** Versi system prompt DRAFT yang dipakai (prompt.ts DRAFT_PROMPT_VERSION). */
+  promptVersion?: string;
 }
 
 export function newId(prefix: string): string {
@@ -155,7 +174,17 @@ function writeLS(key: string, value: unknown): void {
 /* Orchestrator                                                        */
 /* ------------------------------------------------------------------ */
 
-type Tab = 'library' | 'analyze' | 'create' | 'history';
+/** Tab halaman: tiga jalur Studio + tiga permukaan pendukung. */
+type Tab = 'buat-ai' | 'template' | 'periksa' | 'library' | 'analyze' | 'history';
+
+/** Jalur Studio memakai SATU instance DocCreator agar draf aktif tidak hilang saat berpindah jalur. */
+const STUDIO_TABS: Tab[] = ['buat-ai', 'template', 'periksa'];
+type StudioPath = 'ai' | 'template' | 'periksa';
+const STUDIO_PATH: Record<string, StudioPath> = {
+  'buat-ai': 'ai',
+  template: 'template',
+  periksa: 'periksa',
+};
 
 interface DokumenAiViewProps {
   /** Dipanggil saat workspace analisis aktif/nonaktif — WorkspaceView memakai ini untuk menyembunyikan floating assistant. */
@@ -166,7 +195,7 @@ interface DokumenAiViewProps {
 
 export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveChange, onNavigateToMenu }) => {
   const { t } = useI18n();
-  const [tab, setTab] = useState<Tab>('library');
+  const [tab, setTab] = useState<Tab>('buat-ai');
   const [activeDoc, setActiveDoc] = useState<DocRecord | null>(null);
 
   const [docs, setDocs] = useState<DocRecord[]>(() => readLS<DocRecord[]>(LS_DOCS, []));
@@ -220,9 +249,25 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
       </div>
       <nav className="docai-tabs" aria-label={t('ai.doc.tab_menu_label')}>
         {[
+          { id: 'buat-ai', label: 'Buat dengan AI', icon: Sparkles },
+          { id: 'template', label: 'Gunakan Template', icon: LayoutTemplate },
+          { id: 'periksa', label: 'Edit & Periksa', icon: ClipboardCheck },
+        ].map((tabItem) => {
+          const Icon = tabItem.icon;
+          return (
+            <button
+              key={tabItem.id}
+              className={`docai-tabbtn ${tab === tabItem.id ? 'active' : ''}`}
+              onClick={() => setTab(tabItem.id as Tab)}
+            >
+              <Icon size={16} /> {tabItem.label}
+            </button>
+          );
+        })}
+        <span className="docai-tabsep" aria-hidden="true" />
+        {[
           { id: 'library', label: t('ai.doc.tab_library'), icon: FolderOpen },
           { id: 'analyze', label: t('ai.doc.tab_analyze'), icon: ScanSearch },
-          { id: 'create', label: t('ai.doc.tab_create'), icon: FilePlus2 },
           { id: 'history', label: t('ai.doc.tab_history'), icon: History },
         ].map((tabItem) => {
           const Icon = tabItem.icon;
@@ -248,8 +293,14 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
         {tab === 'analyze' && activeDoc && (
           <DocAnalyzer doc={activeDoc} docs={docs} onBack={() => setTab('library')} onAddHistory={addHistory} />
         )}
-        {tab === 'create' && (
-          <DocCreator drafts={drafts} onUpsertDraft={upsertDraft} onAddHistory={addHistory} onNavigateToMenu={onNavigateToMenu} />
+        {STUDIO_TABS.includes(tab) && (
+          <DocCreator
+            drafts={drafts}
+            onUpsertDraft={upsertDraft}
+            onAddHistory={addHistory}
+            onNavigateToMenu={onNavigateToMenu}
+            studioPath={STUDIO_PATH[tab]}
+          />
         )}
         {tab === 'history' && <DocHistory history={history} onRemoveHistory={removeHistory} />}
       </div>
