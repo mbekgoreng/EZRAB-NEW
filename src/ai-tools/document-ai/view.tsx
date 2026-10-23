@@ -121,6 +121,16 @@ export interface DraftRecord {
   modelLabel?: string;
   /** Versi system prompt DRAFT yang dipakai (prompt.ts DRAFT_PROMPT_VERSION). */
   promptVersion?: string;
+  /* --- Polish (aditif, identik dengan store.ts DraftRecord;
+     record lama tanpa field ini tetap terbaca) --- */
+  /** Profil perusahaan yang kopnya dipakai draf ini (null = pakai default). */
+  companyProfileId?: string | null;
+  /** Nama penyetuju — diisi HANYA lewat tindakan persetujuan eksplisit (approveDraft). */
+  approvedBy?: string;
+  /** Waktu persetujuan (epoch ms), pasangan approvedBy. */
+  approvedAt?: number;
+  /** Status temuan review per ID temuan — persisten lintas sesi (panel review). */
+  findingStatuses?: Record<string, 'open' | 'fixed' | 'ignored' | 'checked'>;
 }
 
 export function newId(prefix: string): string {

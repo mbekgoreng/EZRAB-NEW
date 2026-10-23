@@ -4,7 +4,7 @@
  * comparison. Answers come only from the uploaded document content.
  */
 
-export type DocAiMode = 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | 'CHAT' | 'CHECKLIST' | 'DRAFT';
+export type DocAiMode = 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | 'CHAT' | 'CHECKLIST' | 'DRAFT' | 'ENHANCE';
 
 export type ChatTurn = { role: 'user' | 'ai'; text: string };
 
@@ -16,6 +16,14 @@ export type DokumenAiChatRequest = {
   /** Riwayat percakapan untuk QA kontekstual (maks beberapa turn terakhir). */
   history?: ChatTurn[];
   timeoutMs?: number;
+  /**
+   * Mode ENHANCE: teks TARGET yang disunting (rentang terpilih atau seluruh
+   * dokumen bila pemanggil memintanya). Hanya teks ini yang dikirim ke
+   * provider — BUKAN seluruh dokumen bila yang diminta hanya satu rentang.
+   */
+  selectionText?: string;
+  /** Mode ENHANCE: jenis transformasi (kunci EnhanceTransform). */
+  transform?: string;
 };
 
 export type DokumenAiChatResponse = {
@@ -45,7 +53,8 @@ export type DocumentIntent =
   | 'REVISE_DOCUMENT'
   | 'COMPARE_DOCUMENTS'
   | 'CREATE_REPORT'
-  | 'EXTRACT_CONSTRUCTION_SCOPE';
+  | 'EXTRACT_CONSTRUCTION_SCOPE'
+  | 'ENHANCE_TEXT';
 
 export const DOCUMENT_INTENTS: readonly DocumentIntent[] = [
   'CREATE_DOCUMENT',
@@ -57,6 +66,7 @@ export const DOCUMENT_INTENTS: readonly DocumentIntent[] = [
   'COMPARE_DOCUMENTS',
   'CREATE_REPORT',
   'EXTRACT_CONSTRUCTION_SCOPE',
+  'ENHANCE_TEXT',
 ] as const;
 
 export function isDocumentIntent(v: unknown): v is DocumentIntent {
@@ -91,6 +101,17 @@ export interface MissingFieldInfo {
 export type ReviewSeverity = 'high' | 'medium' | 'low';
 export type ReviewFindingStatus = 'open' | 'fixed' | 'ignored' | 'checked';
 
+/** Kelompok temuan review (polish §7): kelengkapan data, konsistensi, struktur, bahasa, sumber/verifikasi. */
+export type ReviewCategory = 'kelengkapan' | 'konsistensi' | 'struktur' | 'bahasa' | 'sumber';
+
+export const REVIEW_CATEGORIES: readonly ReviewCategory[] = [
+  'kelengkapan',
+  'konsistensi',
+  'struktur',
+  'bahasa',
+  'sumber',
+] as const;
+
 /**
  * Temuan review deterministik (master prompt §F). Semua temuan adalah
  * pemeriksaan kelengkapan/konsistensi internal — BUKAN penilaian kepatuhan
@@ -99,11 +120,47 @@ export type ReviewFindingStatus = 'open' | 'fixed' | 'ignored' | 'checked';
 export interface ReviewFinding {
   id: string;
   severity: ReviewSeverity;
+  /** Kelompok temuan untuk panel review (polish §7). */
+  category: ReviewCategory;
   description: string;
   location?: string;
   reason: string;
   suggestion: string;
   status: ReviewFindingStatus;
+}
+
+/* ------------------------------------------------------------------ */
+/* ENHANCE TEXT (polish §5) — transformasi atas rentang teks terpilih  */
+/* ------------------------------------------------------------------ */
+
+/** Jenis transformasi Enhance Text. 'bebas' memakai instruksi pengguna sendiri. */
+export type EnhanceTransform =
+  | 'sempurnakan'
+  | 'formal'
+  | 'perjelas'
+  | 'ringkas'
+  | 'perluas'
+  | 'tata-bahasa'
+  | 'teknis'
+  | 'poin'
+  | 'tabel'
+  | 'bebas';
+
+export const ENHANCE_TRANSFORMS: readonly EnhanceTransform[] = [
+  'sempurnakan',
+  'formal',
+  'perjelas',
+  'ringkas',
+  'perluas',
+  'tata-bahasa',
+  'teknis',
+  'poin',
+  'tabel',
+  'bebas',
+] as const;
+
+export function isEnhanceTransform(v: unknown): v is EnhanceTransform {
+  return typeof v === 'string' && (ENHANCE_TRANSFORMS as readonly string[]).includes(v);
 }
 
 /** Ringkasan perbandingan dua dokumen (deterministik, tanpa AI). */
@@ -142,6 +199,10 @@ export interface IntentRequest {
   reportKind?: 'harian' | 'mingguan';
   /** COMPARE_DOCUMENTS: minta narasi AI tambahan di atas ringkasan deterministik. */
   useAiNarrative?: boolean;
+  /** ENHANCE_TEXT: teks target (rentang terpilih) yang disunting. */
+  selectionText?: string;
+  /** ENHANCE_TEXT: jenis transformasi (EnhanceTransform). */
+  transform?: EnhanceTransform | string;
   timeoutMs?: number;
 }
 
@@ -156,7 +217,7 @@ export interface IntentResult {
   comparison?: DocumentComparison;
   /** Field yang belum tersedia — selalu ada (mungkin kosong), tidak pernah disembunyikan. */
   missingFields: MissingFieldInfo[];
-  /** Versi system prompt DRAFT yang dipakai (untuk disimpan ke draf oleh UI). */
+  /** Versi system prompt yang dipakai (DRAFT/ENHANCE) — disimpan ke draf oleh UI sebagai metadata. */
   promptVersion?: string;
   errorCode?: string;
   stage?: string;

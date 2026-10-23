@@ -454,3 +454,115 @@
 .docai-samplepreview table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 11.5px; }
 .docai-samplepreview th, .docai-samplepreview td { border: 1px solid #b9bec9; padding: 4px 6px; vertical-align: top; text-align: left; }
 .docai-samplepreview th { background: #eef1f6; }
+
+/* ================================================================== */
+/* PROFESSIONAL POLISH — Template Studio, kop dua mode, status sah,   */
+/* mode pratinjau.                                                    */
+/* ================================================================== */
+
+/* Katalog template: pencarian + chip kategori + grup */
+.docai-tmplsearch { margin-bottom: 10px; }
+.docai-catchips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.docai-catchip { border: 1.5px solid var(--ez-color-border); background: var(--ez-color-surface); color: var(--ez-color-text-secondary); border-radius: 999px; padding: 6px 13px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all .15s; }
+.docai-catchip:hover { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); }
+.docai-catchip.active { background: var(--ez-color-primary); border-color: var(--ez-color-primary); color: #fff; }
+.docai-tmplgroup { margin-bottom: 16px; }
+.docai-tmplgroup-h { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ez-color-primary); margin-bottom: 8px; display: flex; align-items: baseline; gap: 8px; }
+.docai-tmplgroup-h span { font-size: 11px; font-weight: 600; color: var(--ez-color-text-muted); text-transform: none; letter-spacing: 0; }
+
+/* Kartu katalog: state terpilih diperkuat + penanda eksplisit */
+.docai-tmpl.active { box-shadow: 0 0 0 3px rgba(37,99,235,.14); }
+.docai-tmpl-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.docai-tmpl-sel { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--ez-color-primary-hover); background: var(--ez-color-surface); border: 1px solid var(--ez-color-primary); border-radius: var(--ez-radius-pill); padding: 2px 8px; }
+.docai-tmpl-struct { margin: 8px 0 0; padding: 8px 0 0 16px; border-top: 1px dashed var(--ez-color-border-soft); font-size: 11px; line-height: 1.55; color: var(--ez-color-text-muted); text-align: left; }
+.docai-tmpl-struct li { margin: 1px 0; }
+
+/* Panel detail template terpilih */
+.docai-tmpldetail { border: 1.5px solid var(--ez-color-primary-soft); border-radius: var(--ez-radius-card); background: var(--ez-color-surface); padding: 14px 16px; margin-bottom: 14px; text-align: left; }
+.docai-tmpldetail-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.docai-tmpldetail-h strong { font-size: 14px; color: var(--ez-color-text-primary); }
+.docai-tmpldetail-cat { cursor: default; pointer-events: none; }
+.docai-tmpldetail-purpose { margin: 6px 0 0; font-size: 12.5px; line-height: 1.6; color: var(--ez-color-text-secondary); }
+.docai-tmpldetail-sec { margin-top: 12px; }
+.docai-tmpldetail-ctx { list-style: none; margin: 0; padding: 0; font-size: 12.5px; }
+.docai-tmpldetail-ctx li { display: flex; gap: 10px; padding: 4px 0; border-bottom: 1px dashed var(--ez-color-border-soft); }
+.docai-tmpldetail-ctx li:last-child { border-bottom: none; }
+.docai-tmpldetail-ctx span { flex: 0 0 150px; color: var(--ez-color-text-muted); font-weight: 600; }
+.docai-tmpldetail-ctx strong { flex: 1; min-width: 0; font-weight: 600; color: var(--ez-color-text-primary); word-break: break-word; }
+.docai-tmpldetail-missing { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.6; color: var(--ez-color-text-primary); }
+.docai-tmpldetail-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+.docai-btn-ghost.is-active { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); background: var(--ez-color-primary-soft); }
+
+/* Header editor: badge status turunan + gerbang final + pemilih kop */
+.docai-edstatus { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; font-size: 12.5px; color: var(--ez-color-text-muted); }
+.docai-statusbadge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: 3px 10px; border-radius: var(--ez-radius-pill); white-space: nowrap; }
+.docai-statusbadge.st-final { background: var(--ez-color-success-soft); color: var(--ez-color-success); }
+.docai-statusbadge.st-incomplete { background: var(--ez-color-warning-soft); color: var(--ez-color-warning); }
+.docai-statusbadge.st-review { background: var(--ez-color-warning-soft); color: var(--ez-color-warning); }
+.docai-statusbadge.st-ready { background: var(--ez-color-primary-soft); color: var(--ez-color-primary-hover); }
+.docai-statusbadge.st-draft { background: var(--ez-color-background); color: var(--ez-color-text-muted); }
+.docai-statusselect { font: inherit; font-size: 12px; padding: 4px 8px; border: 1.5px solid var(--ez-color-border); border-radius: 8px; background: var(--ez-color-surface); color: var(--ez-color-text-secondary); cursor: pointer; }
+.docai-finalnote { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: var(--ez-color-success); }
+.docai-kopselect { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--ez-color-text-secondary); }
+.docai-kopselect select { font: inherit; font-size: 12px; padding: 4px 8px; border: 1.5px solid var(--ez-color-border); border-radius: 8px; background: var(--ez-color-surface); color: var(--ez-color-text-secondary); cursor: pointer; max-width: 280px; }
+.docai-kopselect select:disabled { opacity: .5; cursor: not-allowed; }
+.docai-approver-input { flex: 1 1 200px; max-width: 280px; }
+
+/* Mode pratinjau */
+.docai-previewbar { display: flex; align-items: center; gap: 8px; background: var(--ez-color-primary-soft); border: 1px solid var(--ez-color-primary-soft); color: var(--ez-color-primary-hover); font-size: 12.5px; font-weight: 700; border-radius: var(--ez-radius-control); padding: 9px 13px; margin-bottom: 12px; }
+
+/* Panel identitas: kop gambar penuh + kontrol angka */
+.docai-fullkop-img { display: block; height: auto; max-width: 100%; border: 1px solid var(--ez-color-border-soft); border-radius: 8px; background: #fff; }
+.docai-numrow { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+.docai-numrow label { flex: 0 1 150px; display: block; }
+.docai-numrow .docai-input { width: 100%; }
+
+@media (max-width: 700px) {
+  .docai-tmpldetail-ctx span { flex-basis: 110px; }
+  .docai-approver-input { max-width: none; }
+}
+
+
+/* ================================================================== */
+/* POLISH UI-2 — Enhance Text seleksi, preset poles, review           */
+/* profesional (ringkasan + grup kategori + konfirmasi abaikan).      */
+/* ================================================================== */
+
+/* Panel Sempurnakan Teks */
+.docai-enhance { margin-top: 18px; }
+.docai-enhance-capture { margin-top: 14px; border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-control); padding: 11px 13px; background: var(--ez-color-surface-secondary); }
+.docai-enhance-capture-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 7px; }
+.docai-enhance-capture-h strong { font-size: 12.5px; color: var(--ez-color-text-primary); }
+.docai-enhance-capture-h span { font-size: 11.5px; color: var(--ez-color-text-muted); }
+.docai-enhance-capture-body { margin: 0; max-height: 180px; overflow: auto; white-space: pre-wrap; word-break: break-word; font-family: inherit; font-size: 12.5px; line-height: 1.6; color: var(--ez-color-text-primary); }
+.docai-enhance-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 10px; }
+.docai-enhance-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 10px; }
+.docai-enhance-colh { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--ez-color-text-muted); margin-bottom: 5px; }
+.docai-enhance-compare .docai-candidate-body { height: 100%; box-sizing: border-box; }
+
+/* Preset poles dokumen */
+.docai-polishbox { margin-top: 18px; }
+.docai-polishrow { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Ringkasan review */
+.docai-reviewsummary { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.docai-sumchip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--ez-color-text-secondary); background: var(--ez-color-background); border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-pill); padding: 4px 11px; }
+.docai-sumchip strong { font-size: 12.5px; color: var(--ez-color-text-primary); }
+.docai-sumchip.is-high { background: var(--ez-color-danger-soft); border-color: var(--ez-color-danger-soft); color: var(--ez-color-danger); }
+.docai-sumchip.is-high strong { color: var(--ez-color-danger); }
+.docai-sumchip.is-medium { background: var(--ez-color-warning-soft); border-color: var(--ez-color-warning-soft); color: var(--ez-color-warning); }
+.docai-sumchip.is-medium strong { color: var(--ez-color-warning); }
+.docai-sumchip.is-missing { background: var(--ez-color-warning-soft); border-color: var(--ez-color-warning-soft); color: var(--ez-color-warning); }
+.docai-sumchip.is-missing strong { color: var(--ez-color-warning); }
+
+/* Grup temuan per kategori */
+.docai-findinggroup { display: flex; flex-direction: column; gap: 10px; }
+.docai-findinggroup-h { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ez-color-primary); display: flex; align-items: baseline; gap: 8px; margin-top: 6px; }
+.docai-findinggroup-h span { font-size: 11px; font-weight: 600; color: var(--ez-color-text-muted); text-transform: none; letter-spacing: 0; }
+
+/* Konfirmasi inline (abaikan temuan) */
+.docai-confirm-inline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; border: 1px dashed var(--ez-color-warning); background: var(--ez-color-warning-soft); border-radius: var(--ez-radius-control); padding: 8px 11px; font-size: 12.5px; color: var(--ez-color-text-primary); }
+
+@media (max-width: 700px) {
+  .docai-enhance-compare { grid-template-columns: 1fr; }
+}

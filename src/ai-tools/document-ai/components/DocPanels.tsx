@@ -9,14 +9,16 @@
  * database server; label di UI menyatakannya apa adanya.
  */
 import React, { useRef, useState } from 'react';
-import { Building2, Upload, Trash2, Check, FileText, Archive, Copy, Play } from 'lucide-react';
+import { Building2, Upload, Trash2, Check, FileText, Archive, Copy, Play, AlertTriangle } from 'lucide-react';
 import {
   emptyProfile,
   kopHtml,
+  kopModeEffective,
   listProfiles,
   saveProfile,
   deleteProfile,
   validateLogoFile,
+  validateFullKopFile,
   type CompanyProfile,
   type KopLayout,
 } from '../companyProfile';
@@ -38,8 +40,17 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
   const [editing, setEditing] = useState<CompanyProfile>(() => listProfiles().find((x) => x.isDefault) ?? emptyProfile());
   const [logoMsg, setLogoMsg] = useState<string | null>(null);
   const [logoBusy, setLogoBusy] = useState(false);
+  const [kopMsg, setKopMsg] = useState<string | null>(null);
+  const [kopBusy, setKopBusy] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
+  /** Konfirmasi inline dua langkah untuk aksi destruktif (pola confirmBar fitur ini — bukan window.confirm). */
+  const [confirmKind, setConfirmKind] = useState<'logo' | 'fullkop' | 'profile' | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const fullKopRef = useRef<HTMLInputElement>(null);
+
+  const kopMode = editing.kopMode ?? 'structured';
+  /** Mode yang benar-benar tampil saat render (full hanya bila asetnya ada). */
+  const effectiveKopMode = kopModeEffective(editing);
 
   const refresh = (next: CompanyProfile[]) => {
     setProfiles(next);
@@ -60,6 +71,21 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
     setLogoMsg(`Logo valid${v.width ? ` (${v.width}×${v.height}px, ${v.kind?.toUpperCase()})` : ''}.`);
   };
 
+  const handleFullKop = async (file: File | null) => {
+    if (!file) return;
+    setKopBusy(true);
+    setKopMsg(null);
+    const v = await validateFullKopFile(file);
+    setKopBusy(false);
+    if (!v.ok) {
+      // Error validasi ditampilkan apa adanya agar pengguna bisa bertindak.
+      setKopMsg(v.error || 'Gambar kop tidak valid.');
+      return;
+    }
+    setEditing((e) => ({ ...e, fullKopDataUrl: v.dataUrl || null }));
+    setKopMsg(`Gambar kop valid${v.width ? ` (${v.width}×${v.height}px, ${v.kind?.toUpperCase()})` : ''}. Klik Simpan Profil untuk menyimpan.`);
+  };
+
   const handleSave = () => {
     const next = saveProfile(editing);
     refresh(next);
@@ -71,7 +97,28 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
     const next = deleteProfile(editing.id);
     refresh(next);
     setEditing(next.find((x) => x.isDefault) ?? emptyProfile());
+    setConfirmKind(null);
   };
+
+  /** Jalankan aksi destruktif yang sudah dikonfirmasi pengguna. */
+  const runConfirmedDelete = () => {
+    if (confirmKind === 'logo') setEditing((p) => ({ ...p, logoDataUrl: null }));
+    else if (confirmKind === 'fullkop') setEditing((p) => ({ ...p, fullKopDataUrl: null }));
+    else if (confirmKind === 'profile') {
+      handleDelete();
+      return;
+    }
+    setConfirmKind(null);
+  };
+
+  const confirmText =
+    confirmKind === 'logo'
+      ? 'Hapus logo dari profil ini? Logo tidak tampil lagi di kop sampai Anda mengunggah ulang (klik Simpan Profil untuk menerapkan).'
+      : confirmKind === 'fullkop'
+        ? 'Hapus gambar kop penuh dari profil ini? Mode kop gambar penuh tidak aktif sampai gambar diunggah lagi (klik Simpan Profil untuk menerapkan).'
+        : confirmKind === 'profile'
+          ? `Hapus profil perusahaan "${editing.name || '(tanpa nama)'}" secara permanen dari perangkat ini?`
+          : '';
 
   const field = (label: string, key: keyof CompanyProfile, placeholder?: string) => (
     <label style={{ display: 'block', marginBottom: 10 }}>
@@ -119,6 +166,35 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
           {field('Email', 'email', 'halo@perusahaan.co.id')}
           {field('Website', 'website', 'www.perusahaan.co.id')}
           {field('Info Tambahan (opsional)', 'extra', 'mis. NPWP / nomor izin')}
+          <span className="docai-label">Mode Kop Surat</span>
+          <div className="docai-modeline" role="tablist" aria-label="Mode kop surat" style={{ marginBottom: 12 }}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={kopMode === 'structured'}
+              className={kopMode === 'structured' ? 'active' : ''}
+              onClick={() => setEditing((p) => ({ ...p, kopMode: 'structured' }))}
+            >
+              Kop Terstruktur
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={kopMode === 'full'}
+              className={kopMode === 'full' ? 'active' : ''}
+              onClick={() => setEditing((p) => ({ ...p, kopMode: 'full' }))}
+            >
+              Kop Gambar Penuh
+            </button>
+          </div>
+          <p className="docai-hint" style={{ margin: '0 0 12px' }}>
+            {kopMode === 'structured'
+              ? 'Kop disusun dari logo + nama/kontak perusahaan di bawah. Gambar kop penuh (bila pernah diunggah) tetap tersimpan dan tidak ditimpa mode ini.'
+              : 'Satu gambar kop surat lengkap menggantikan seluruh blok kop — logo/nama terstruktur TIDAK ditumpuk di atasnya. Data terstruktur tetap tersimpan dan tidak ditimpa mode ini.'}
+          </p>
+
+          {kopMode === 'structured' && (
+            <>
           <label style={{ display: 'block', marginBottom: 10 }}>
             <span className="docai-label">Layout Kop</span>
             <select
@@ -140,6 +216,97 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
               style={{ width: 64, height: 36, padding: 2, background: 'transparent', border: 'none' }}
             />
           </label>
+
+          <div style={{ marginBottom: 12 }}>
+            <span className="docai-label">Logo Perusahaan</span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <button className="docai-btn-ghost" onClick={() => fileRef.current?.click()} disabled={logoBusy}>
+                <Upload size={14} /> {logoBusy ? 'Memeriksa…' : 'Unggah Logo'}
+              </button>
+              {editing.logoDataUrl && (
+                <button className="docai-btn-ghost" onClick={() => setConfirmKind('logo')}>
+                  <Trash2 size={14} /> Hapus Logo
+                </button>
+              )}
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/png,image/jpeg,image/gif,image/webp"
+                style={{ display: 'none' }}
+                onChange={(e) => { void handleLogo(e.target.files?.[0] ?? null); e.target.value = ''; }}
+              />
+            </div>
+            {logoMsg && <p className="docai-hint" style={{ marginTop: 6 }}>{logoMsg}</p>}
+            <p className="docai-hint">PNG/JPG/GIF/WebP asli (isi file diperiksa), maks 2 MB. Rekomendasi: latar transparan, lebar ≥ 400px.</p>
+          </div>
+            </>
+          )}
+
+          {kopMode === 'full' && (
+            <div style={{ marginBottom: 12 }}>
+              <span className="docai-label">Gambar Kop Surat Lengkap</span>
+              {effectiveKopMode !== 'full' && (
+                <div className="docai-warn" style={{ margin: '0 0 10px' }}>
+                  Mode kop gambar penuh dipilih, tetapi gambar kop belum diunggah — yang tampil pada
+                  dokumen saat ini adalah kop terstruktur. Unggah gambar kop di bawah agar mode penuh aktif.
+                </div>
+              )}
+              {editing.fullKopDataUrl && (
+                <img
+                  className="docai-fullkop-img"
+                  src={editing.fullKopDataUrl}
+                  alt="Pratinjau gambar kop surat lengkap"
+                  style={{ width: `${Math.max(50, Math.min(100, editing.fullKopWidthPct ?? 100))}%` }}
+                />
+              )}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
+                <button className="docai-btn-ghost" onClick={() => fullKopRef.current?.click()} disabled={kopBusy}>
+                  <Upload size={14} /> {kopBusy ? 'Memeriksa…' : editing.fullKopDataUrl ? 'Ganti Gambar Kop' : 'Unggah Gambar Kop'}
+                </button>
+                {editing.fullKopDataUrl && (
+                  <button className="docai-btn-ghost" onClick={() => setConfirmKind('fullkop')}>
+                    <Trash2 size={14} /> Hapus Gambar Kop
+                  </button>
+                )}
+                <input
+                  ref={fullKopRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/gif,image/webp"
+                  style={{ display: 'none' }}
+                  onChange={(e) => { void handleFullKop(e.target.files?.[0] ?? null); e.target.value = ''; }}
+                />
+              </div>
+              {kopMsg && <p className="docai-hint" style={{ marginTop: 6 }}>{kopMsg}</p>}
+              <p className="docai-hint">PNG/JPG/GIF/WebP asli (isi file diperiksa, bukan hanya ekstensi), maks 5 MB. Gambar tersimpan lokal di perangkat ini, sama seperti profil — bukan unggahan cloud.</p>
+              <div className="docai-numrow">
+                <label>
+                  <span className="docai-label">Lebar Kop (%)</span>
+                  <input
+                    type="number"
+                    className="docai-input"
+                    style={{ marginBottom: 0 }}
+                    min={50}
+                    max={100}
+                    value={editing.fullKopWidthPct ?? 100}
+                    onChange={(e) => setEditing((p) => ({ ...p, fullKopWidthPct: Math.max(50, Math.min(100, Number(e.target.value) || 100)) }))}
+                  />
+                </label>
+                <label>
+                  <span className="docai-label">Jarak ke Isi (mm)</span>
+                  <input
+                    type="number"
+                    className="docai-input"
+                    style={{ marginBottom: 0 }}
+                    min={0}
+                    max={30}
+                    value={editing.fullKopMarginMm ?? 0}
+                    onChange={(e) => setEditing((p) => ({ ...p, fullKopMarginMm: Math.max(0, Math.min(30, Number(e.target.value) || 0)) }))}
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
           <label className="docai-checkrow" style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
             <input
               type="checkbox"
@@ -149,35 +316,23 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
             <span>Jadikan profil default</span>
           </label>
 
-          <div style={{ marginBottom: 12 }}>
-            <span className="docai-label">Logo Perusahaan</span>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <button className="docai-btn-ghost" onClick={() => fileRef.current?.click()} disabled={logoBusy}>
-                <Upload size={14} /> {logoBusy ? 'Memeriksa…' : 'Unggah Logo'}
-              </button>
-              {editing.logoDataUrl && (
-                <button className="docai-btn-ghost" onClick={() => setEditing((p) => ({ ...p, logoDataUrl: null }))}>
-                  <Trash2 size={14} /> Hapus Logo
-                </button>
-              )}
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/png,image/jpeg,image/gif,image/webp"
-                style={{ display: 'none' }}
-                onChange={(e) => void handleLogo(e.target.files?.[0] ?? null)}
-              />
+          {confirmKind && (
+            <div className="docai-confirmbar" role="alertdialog" aria-live="polite">
+              <AlertTriangle size={16} />
+              <span>{confirmText}</span>
+              <div className="docai-confirmbtns">
+                <button className="docai-btn-primary" onClick={runConfirmedDelete}>Ya, Hapus</button>
+                <button className="docai-btn-ghost" onClick={() => setConfirmKind(null)}>Batal</button>
+              </div>
             </div>
-            {logoMsg && <p className="docai-hint" style={{ marginTop: 6 }}>{logoMsg}</p>}
-            <p className="docai-hint">PNG/JPG/GIF/WebP asli (isi file diperiksa), maks 2 MB. Rekomendasi: latar transparan, lebar ≥ 400px.</p>
-          </div>
+          )}
 
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="docai-btn-primary" onClick={handleSave}>
               <Check size={15} /> Simpan Profil
             </button>
             {profiles.some((p) => p.id === editing.id) && (
-              <button className="docai-btn-ghost" onClick={handleDelete}>
+              <button className="docai-btn-ghost" onClick={() => setConfirmKind('profile')}>
                 <Trash2 size={14} /> Hapus
               </button>
             )}
@@ -323,18 +478,25 @@ export const SavedDocsPanel: React.FC<{
               <span className="docai-draftst">{d.templateName} · {new Date(d.updatedAt).toLocaleString('id-ID')}</span>
             </div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <select
-                className="docai-select"
-                value={d.status === 'reviewed' ? 'review' : d.status}
-                onChange={(e) => onStatus(d, e.target.value as DocDraftStatus)}
-                aria-label="Status dokumen"
-              >
-                <option value="draft">Draft</option>
-                <option value="editing">Sedang Disunting</option>
-                <option value="review">Siap Ditinjau</option>
-                <option value="final">Final</option>
-                <option value="archived">Diarsipkan</option>
-              </select>
+              {d.status === 'final' ? (
+                // Final hanya dicapai lewat persetujuan bernama (approveDraft)
+                // di editor — di sini statusnya terkunci, tidak dipilih bebas.
+                <span className="docai-statusbadge st-final">
+                  Final{d.approvedBy ? ` · ${d.approvedBy}` : ''}
+                </span>
+              ) : (
+                <select
+                  className="docai-select"
+                  value={d.status === 'reviewed' ? 'review' : d.status}
+                  onChange={(e) => onStatus(d, e.target.value as DocDraftStatus)}
+                  aria-label="Status dokumen"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="editing">Sedang Disunting</option>
+                  <option value="review">Siap Ditinjau</option>
+                  <option value="archived">Diarsipkan</option>
+                </select>
+              )}
               <button className="docai-btn-primary" onClick={() => onOpen(d)}>Buka</button>
             </div>
           </div>

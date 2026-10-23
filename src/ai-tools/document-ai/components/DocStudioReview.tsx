@@ -12,9 +12,15 @@
  *   pemanggil; isi berjalan ter-snapshot otomatis) + bandingkan dua teks via
  *   COMPARE_DOCUMENTS (ringkasan deterministik per baris).
  *
- * Status temuan (open/fixed/ignored/checked) hidup di state komponen ini,
- * per draf aktif; menjalankan Periksa ulang mempertahankan status temuan
- * dengan id yang sama.
+ * Status temuan (open/fixed/ignored/checked) hidup di state komponen ini
+ * dan — bila pemanggil memberi onFindingStatusesChange — ditulis balik ke
+ * DraftRecord.findingStatuses agar persisten lintas sesi. Menjalankan
+ * Periksa ulang mempertahankan status temuan dengan id yang sama.
+ *
+ * Polish (polish §6–§7): ringkasan temuan dari summarizeFindings (angka
+ * aktual pemeriksaan, bukan skor karangan), temuan dikelompokkan per
+ * kategori, dan preset poles dokumen = SATU transformasi per klik lewat
+ * REVISE_DOCUMENT (Periksa Kelengkapan = menjalankan review yang ada).
  */
 import React, { useEffect, useState } from 'react';
 import {
@@ -23,10 +29,12 @@ import {
 } from 'lucide-react';
 import type { Editor } from '@tiptap/react';
 import { documentStudioOrchestrator } from '../orchestrator';
-import type { DocumentComparison, ReviewFinding } from '../types';
+import { summarizeFindings } from '../review';
+import type { ContextField, DocumentComparison, ReviewFinding, ReviewFindingStatus } from '../types';
 import type { DocTemplateMeta } from '../docTemplates';
 import { draftFormat, toPlainText } from '../richText';
 import { formatDate, type DraftRecord } from '../view';
+import { groupFindingsByCategory, POLISH_PRESETS, type PolishPreset } from './reviewPolish';
 
 const SEVERITY_LABEL: Record<ReviewFinding['severity'], string> = {
   high: 'Tinggi',
@@ -37,6 +45,7 @@ const SEVERITY_LABEL: Record<ReviewFinding['severity'], string> = {
 const VERSION_ORIGIN_LABEL: Record<string, string> = {
   generate: 'Buat ulang AI',
   revise: 'Revisi AI',
+  enhance: 'Sempurnakan Teks AI',
   manual: 'Simpan manual',
   restore: 'Snapshot sebelum pulihkan',
 };
@@ -53,12 +62,17 @@ export const DocStudioReview: React.FC<{
   /** Isi editor saat ini (HTML) — sumber kebenaran untuk review/revisi/banding. */
   html: string;
   templateMeta?: DocTemplateMeta;
+  /** Konteks ber-provenance yang dihitung DocCreator — diteruskan ke review
+      agar cek kategori 'sumber' (nilai/tanggal tak bersumber) dapat berjalan. */
+  contextFields?: ContextField[];
   getEditor: () => Editor | null;
   /** Terapkan kandidat revisi: pemanggil men-snapshot versi dulu, lalu menimpa isi editor + persist. */
   onApplyCandidate: (candidatePlain: string, note: string) => Promise<void>;
   /** Pulihkan versi: pemanggil memakai restoreVersion (isi berjalan ter-snapshot otomatis). */
   onRestoreVersion: (versionId: string) => Promise<void>;
-}> = ({ draft, html, templateMeta, getEditor, onApplyCandidate, onRestoreVersion }) => {
+  /** Tulis balik status temuan ke DraftRecord.findingStatuses (persisten). */
+  onFindingStatusesChange?: (statuses: Record<string, ReviewFindingStatus>) => void;
+}> = ({ draft, html, templateMeta, contextFields, getEditor, onApplyCandidate, onRestoreVersion, onFindingStatusesChange }) => {
   const [findings, setFindings] = useState<ReviewFinding[] | null>(null);
   const [reviewBusy, setReviewBusy] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -72,6 +86,8 @@ export const DocStudioReview: React.FC<{
   const [comparison, setComparison] = useState<DocumentComparison | null>(null);
   const [compareBusy, setCompareBusy] = useState(false);
   const [compareError, setCompareError] = useState<string | null>(null);
+  const [confirmIgnoreId, setConfirmIgnoreId] = useState<string | null>(null);
+  const [polishBusyId, setPolishBusyId] = useState<string | null>(null);
 
   // Panel selalu menempel pada SATU draf aktif; ganti draf = state bersih.
   useEffect(() => {
@@ -83,12 +99,22 @@ export const DocStudioReview: React.FC<{
     setComparison(null);
     setCompareError(null);
     setCompareVersionId('');
+    setConfirmIgnoreId(null);
+    setPolishBusyId(null);
   }, [draft.id]);
 
   const currentPlain = () => toPlainText(html, 'html');
 
-  const setFindingStatus = (id: string, status: ReviewFinding['status']) =>
-    setFindings((prev) => (prev ? prev.map((f) => (f.id === id ? { ...f, status } : f)) : prev));
+  const setFindingStatus = (id: string, status: ReviewFinding['status']) => {
+    if (!findings) return;
+    const next = findings.map((f) => (f.id === id ? { ...f, status } : f));
+    setFindings(next);
+    if (onFindingStatusesChange) {
+      const map: Record<string, ReviewFindingStatus> = { ...(draft.findingStatuses ?? {}) };
+      for (const f of next) map[f.id] = f.status;
+      onFindingStatusesChange(map);
+    }
+  };
 
   /* ---------------- review deterministik ---------------- */
 
@@ -96,20 +122,29 @@ export const DocStudioReview: React.FC<{
     setReviewBusy(true);
     setReviewError(null);
     setJumpNote(null);
+    setConfirmIgnoreId(null);
     try {
       const res = await documentStudioOrchestrator.handle({
         intent: 'REVIEW_DOCUMENT',
         documentText: currentPlain(),
         templateMeta,
+        contextFields,
         fileName: draft.title,
       });
       if (!res.success) {
         setReviewError(`${res.errorCode || 'ERROR'}: ${res.message || 'Pemeriksaan gagal.'}`);
         return;
       }
+      // Status dipertahankan antar-run: state sesi berjalan lebih dulu,
+      // lalu status persisten pada draf (draft.findingStatuses), terakhir
+      // status bawaan temuan baru ('open').
       const prevStatus = new Map((findings ?? []).map((f) => [f.id, f.status]));
+      const persisted = draft.findingStatuses ?? {};
       setFindings(
-        (res.findings ?? []).map((f) => ({ ...f, status: prevStatus.get(f.id) ?? f.status })),
+        (res.findings ?? []).map((f) => ({
+          ...f,
+          status: prevStatus.get(f.id) ?? persisted[f.id] ?? f.status,
+        })),
       );
     } catch (e) {
       setReviewError(e instanceof Error ? e.message : 'Pemeriksaan gagal.');
@@ -120,11 +155,17 @@ export const DocStudioReview: React.FC<{
 
   /* ---------------- revisi AI (kandidat) ---------------- */
 
-  const requestRevision = async (instruction: string, sourceLabel: string, findingId?: string) => {
+  const requestRevision = async (
+    instruction: string,
+    sourceLabel: string,
+    findingId?: string,
+    meta?: DocTemplateMeta,
+  ) => {
     const res = await documentStudioOrchestrator.handle({
       intent: 'REVISE_DOCUMENT',
       documentText: currentPlain(),
       instruction,
+      templateMeta: meta,
       fileName: draft.title,
     });
     if (!res.success) {
@@ -156,6 +197,23 @@ export const DocStudioReview: React.FC<{
       await requestRevision(reviseText.trim(), `Revisi: ${reviseText.trim().slice(0, 80)}`);
     } finally {
       setReviseBusy(false);
+    }
+  };
+
+  /* ---------------- poles dokumen (preset, satu transformasi per klik) ---------------- */
+
+  const runPolish = async (preset: PolishPreset) => {
+    setPolishBusyId(preset.id);
+    setReviewError(null);
+    try {
+      await requestRevision(
+        preset.instruction,
+        `Poles dokumen: ${preset.label}`,
+        undefined,
+        preset.usesTemplateMeta ? templateMeta : undefined,
+      );
+    } finally {
+      setPolishBusyId(null);
     }
   };
 
@@ -235,7 +293,75 @@ export const DocStudioReview: React.FC<{
     }
   };
 
+  /* ---------------- render satu temuan ---------------- */
+
+  const renderFinding = (f: ReviewFinding) => (
+    <div key={f.id} className={`docai-finding sev-${f.severity} st-${f.status}`}>
+      <div className="docai-finding-main">
+        <div className="docai-finding-tags">
+          <span className={`docai-sev sev-${f.severity}`}>{SEVERITY_LABEL[f.severity]}</span>
+          <span className="docai-finding-status">
+            {f.status === 'open' && 'Terbuka'}
+            {f.status === 'fixed' && 'Sudah diperbaiki'}
+            {f.status === 'ignored' && 'Diabaikan'}
+            {f.status === 'checked' && 'Sudah diperiksa'}
+          </span>
+        </div>
+        <div className="docai-finding-desc">{f.description}</div>
+        {f.location && <div className="docai-finding-loc">Lokasi: {f.location}</div>}
+        <div className="docai-finding-why">Alasan: {f.reason}</div>
+        <div className="docai-finding-sug">Saran: {f.suggestion}</div>
+        {confirmIgnoreId === f.id && (
+          <div className="docai-confirm-inline" role="alert">
+            <span>Yakin abaikan temuan ini? Statusnya tetap tercatat sebagai Diabaikan.</span>
+            <button
+              className="docai-btn-ghost docai-mini"
+              onClick={() => {
+                setFindingStatus(f.id, 'ignored');
+                setConfirmIgnoreId(null);
+              }}
+            >
+              <Check size={13} /> Ya, abaikan
+            </button>
+            <button className="docai-btn-ghost docai-mini" onClick={() => setConfirmIgnoreId(null)}>
+              <X size={13} /> Batal
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="docai-finding-actions">
+        <button
+          className="docai-btn-ghost docai-mini"
+          onClick={() => void fixFinding(f)}
+          disabled={fixBusyId !== null || f.status === 'fixed'}
+        >
+          {fixBusyId === f.id ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}{' '}
+          Perbaiki dengan AI
+        </button>
+        <button className="docai-btn-ghost docai-mini" onClick={() => jumpToFinding(f)}>
+          <Crosshair size={13} /> Buka bagian
+        </button>
+        <button
+          className="docai-btn-ghost docai-mini"
+          onClick={() => setConfirmIgnoreId(f.id)}
+          disabled={f.status === 'ignored' || confirmIgnoreId === f.id}
+        >
+          <EyeOff size={13} /> Abaikan
+        </button>
+        <button
+          className="docai-btn-ghost docai-mini"
+          onClick={() => setFindingStatus(f.id, 'checked')}
+          disabled={f.status === 'checked'}
+        >
+          <CheckCheck size={13} /> Tandai diperiksa
+        </button>
+      </div>
+    </div>
+  );
+
   const openCount = findings?.filter((f) => f.status === 'open').length ?? 0;
+  const summary = findings ? summarizeFindings(findings) : null;
+  const findingGroups = findings ? groupFindingsByCategory(findings) : [];
   const snapshot = draft.contextSnapshot;
 
   return (
@@ -275,6 +401,38 @@ export const DocStudioReview: React.FC<{
       )}
       {jumpNote && <div className="docai-warn">{jumpNote}</div>}
 
+      <div className="docai-polishbox">
+        <div className="docai-step">Poles Dokumen (AI)</div>
+        <p className="docai-hint" style={{ marginTop: 0 }}>
+          Satu transformasi per klik — tidak digabung otomatis. Hasilnya selalu berupa kandidat yang
+          harus Anda terapkan sendiri, dan setiap preset menegaskan fakta, angka, serta penanda
+          [ISI: ...] dipertahankan apa adanya.
+        </p>
+        <div className="docai-polishrow">
+          {POLISH_PRESETS.map((p) => (
+            <button
+              key={p.id}
+              className="docai-btn-ghost docai-mini"
+              onClick={() => void runPolish(p)}
+              disabled={polishBusyId !== null || reviseBusy || fixBusyId !== null}
+              title={`Jalankan preset: ${p.label}`}
+            >
+              {polishBusyId === p.id ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}{' '}
+              {p.label}
+            </button>
+          ))}
+          <button
+            className="docai-btn-ghost docai-mini"
+            onClick={() => void runReview()}
+            disabled={reviewBusy}
+            title="Jalankan pemeriksaan kelengkapan deterministik"
+          >
+            {reviewBusy ? <Loader2 size={13} className="spin" /> : <ClipboardCheck size={13} />}{' '}
+            Periksa Kelengkapan
+          </button>
+        </div>
+      </div>
+
       {findings !== null && (
         <div className="docai-findings">
           {findings.length === 0 ? (
@@ -284,53 +442,34 @@ export const DocStudioReview: React.FC<{
             </p>
           ) : (
             <>
-              <div className="docai-step">
-                {findings.length} temuan · {openCount} masih terbuka
-              </div>
-              {findings.map((f) => (
-                <div key={f.id} className={`docai-finding sev-${f.severity} st-${f.status}`}>
-                  <div className="docai-finding-main">
-                    <div className="docai-finding-tags">
-                      <span className={`docai-sev sev-${f.severity}`}>{SEVERITY_LABEL[f.severity]}</span>
-                      <span className="docai-finding-status">
-                        {f.status === 'open' && 'Terbuka'}
-                        {f.status === 'fixed' && 'Sudah diperbaiki'}
-                        {f.status === 'ignored' && 'Diabaikan'}
-                        {f.status === 'checked' && 'Sudah diperiksa'}
-                      </span>
-                    </div>
-                    <div className="docai-finding-desc">{f.description}</div>
-                    {f.location && <div className="docai-finding-loc">Lokasi: {f.location}</div>}
-                    <div className="docai-finding-why">Alasan: {f.reason}</div>
-                    <div className="docai-finding-sug">Saran: {f.suggestion}</div>
+              {summary && (
+                <div className="docai-reviewsummary" aria-label="Ringkasan hasil pemeriksaan">
+                  <span className="docai-sumchip">
+                    Total temuan <strong>{summary.total}</strong>
+                  </span>
+                  <span className="docai-sumchip is-high">
+                    Kritis (Tinggi) <strong>{summary.bySeverity.high}</strong>
+                  </span>
+                  <span className="docai-sumchip is-medium">
+                    Peringatan (Sedang) <strong>{summary.bySeverity.medium}</strong>
+                  </span>
+                  <span className="docai-sumchip is-low">
+                    Saran (Rendah) <strong>{summary.bySeverity.low}</strong>
+                  </span>
+                  <span className="docai-sumchip is-missing">
+                    Field wajib belum tersedia <strong>{summary.missingRequired}</strong>
+                  </span>
+                  <span className="docai-sumchip">
+                    Masih terbuka <strong>{openCount}</strong>
+                  </span>
+                </div>
+              )}
+              {findingGroups.map((g) => (
+                <div key={g.category} className="docai-findinggroup">
+                  <div className="docai-findinggroup-h">
+                    {g.label} <span>{g.findings.length} temuan</span>
                   </div>
-                  <div className="docai-finding-actions">
-                    <button
-                      className="docai-btn-ghost docai-mini"
-                      onClick={() => void fixFinding(f)}
-                      disabled={fixBusyId !== null || f.status === 'fixed'}
-                    >
-                      {fixBusyId === f.id ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}{' '}
-                      Perbaiki dengan AI
-                    </button>
-                    <button className="docai-btn-ghost docai-mini" onClick={() => jumpToFinding(f)}>
-                      <Crosshair size={13} /> Buka bagian
-                    </button>
-                    <button
-                      className="docai-btn-ghost docai-mini"
-                      onClick={() => setFindingStatus(f.id, 'ignored')}
-                      disabled={f.status === 'ignored'}
-                    >
-                      <EyeOff size={13} /> Abaikan
-                    </button>
-                    <button
-                      className="docai-btn-ghost docai-mini"
-                      onClick={() => setFindingStatus(f.id, 'checked')}
-                      disabled={f.status === 'checked'}
-                    >
-                      <CheckCheck size={13} /> Tandai diperiksa
-                    </button>
-                  </div>
+                  {g.findings.map((f) => renderFinding(f))}
                 </div>
               ))}
             </>

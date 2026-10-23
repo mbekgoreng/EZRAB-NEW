@@ -606,6 +606,48 @@ export const EXTRA_BUILTIN_TEMPLATES: Array<{ id: string; name: string; desc: st
 ];
 
 /* ------------------------------------------------------------------ */
+/* Kategori katalog template (polish §2) — pengelompokan UI saja;      */
+/* metadata/field/scaffold template TIDAK berubah.                     */
+/* ------------------------------------------------------------------ */
+
+export type TemplateCategory =
+  | 'surat-administrasi'
+  | 'berita-acara'
+  | 'laporan'
+  | 'qc-k3'
+  | 'rapat'
+  | 'penawaran-tender';
+
+export const TEMPLATE_CATEGORIES: Array<{ id: TemplateCategory; label: string }> = [
+  { id: 'surat-administrasi', label: 'Surat dan Administrasi' },
+  { id: 'berita-acara', label: 'Berita Acara dan Serah Terima' },
+  { id: 'laporan', label: 'Laporan Pelaksanaan' },
+  { id: 'qc-k3', label: 'QC, Inspeksi, dan K3' },
+  { id: 'rapat', label: 'Rapat dan Koordinasi' },
+  { id: 'penawaran-tender', label: 'Penawaran dan Tender' },
+];
+
+/**
+ * Kategori per id template yang dikenal UI (seluruh TEMPLATE_META +
+ * template ekstra + 'bebas'). Id di luar peta ini tidak dikategorikan —
+ * pemanggil memutuskan tampilannya (mis. grup "Lainnya"), tidak ditebak.
+ */
+export const TEMPLATE_CATEGORY_BY_ID: Record<string, TemplateCategory> = {
+  'berita-acara': 'berita-acara',
+  bast: 'berita-acara',
+  opname: 'berita-acara',
+  surat: 'surat-administrasi',
+  'surat-undangan': 'surat-administrasi',
+  bebas: 'surat-administrasi',
+  'laporan-harian': 'laporan',
+  'laporan-mingguan': 'laporan',
+  'checklist-qc': 'qc-k3',
+  'laporan-k3': 'qc-k3',
+  notulen: 'rapat',
+  'surat-penawaran': 'penawaran-tender',
+};
+
+/* ------------------------------------------------------------------ */
 /* Field values → blok deterministik                                   */
 /* ------------------------------------------------------------------ */
 

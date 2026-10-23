@@ -136,10 +136,13 @@ interface DocEditorProps {
   headerHtml?: string;
   /** Teks footer lembar (nama perusahaan • judul dokumen). */
   footerText?: string;
+  /** false = mode pratinjau: editor tidak dapat disunting dan toolbar disembunyikan. Default true. */
+  editable?: boolean;
 }
 
-export const DocEditor: React.FC<DocEditorProps> = ({ initialHtml, onChange, onEditorReady, t, headerHtml, footerText }) => {
+export const DocEditor: React.FC<DocEditorProps> = ({ initialHtml, onChange, onEditorReady, t, headerHtml, footerText, editable = true }) => {
   const editor = useEditor({
+    editable,
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
       TextStyle,
@@ -166,10 +169,15 @@ export const DocEditor: React.FC<DocEditorProps> = ({ initialHtml, onChange, onE
     if (editor) onEditorReady?.(editor);
   }, [editor, onEditorReady]);
 
+  // Mode pratinjau dapat dinyalakan/dimatikan tanpa me-remount editor.
+  useEffect(() => {
+    if (editor && editor.isEditable !== editable) editor.setEditable(editable);
+  }, [editor, editable]);
+
   if (!editor) return null;
   return (
     <div className="docai-editorwrap">
-      <DocToolbar editor={editor} t={t} />
+      {editable && <DocToolbar editor={editor} t={t} />}
       <div className="docai-canvas">
         <div className="docai-page">
           {headerHtml ? <div dangerouslySetInnerHTML={{ __html: headerHtml }} /> : null}

@@ -65,7 +65,7 @@ export interface DraftVersion {
   content: string;
   contentFormat?: 'plain' | 'html';
   createdAt: number;
-  origin: 'generate' | 'revise' | 'manual' | 'restore';
+  origin: 'generate' | 'revise' | 'manual' | 'restore' | 'enhance';
   note?: string;
 }
 
@@ -94,6 +94,15 @@ export interface DraftRecord {
   modelLabel?: string;
   /** Versi system prompt DRAFT yang dipakai (lihat prompt.ts DRAFT_PROMPT_VERSION). */
   promptVersion?: string;
+  /* --- Polish (aditif; draf lama tanpa field ini tetap terbaca) --- */
+  /** Profil perusahaan yang kopnya dipakai draf ini (null = pakai default). */
+  companyProfileId?: string | null;
+  /** Nama penyetuju — diisi HANYA lewat tindakan persetujuan eksplisit (approveDraft). */
+  approvedBy?: string;
+  /** Waktu persetujuan (epoch ms), pasangan approvedBy. */
+  approvedAt?: number;
+  /** Status temuan review per ID temuan — persisten lintas sesi (panel review). */
+  findingStatuses?: Record<string, 'open' | 'fixed' | 'ignored' | 'checked'>;
 }
 
 /** Batas riwayat versi per draf. */
@@ -136,6 +145,50 @@ export function restoreVersion(draft: DraftRecord, versionId: string): DraftReco
     contentFormat: target.contentFormat,
     updatedAt: Date.now(),
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* Persetujuan & status tampil (polish §4)                             */
+/* ------------------------------------------------------------------ */
+
+export interface ApproveDraftResult {
+  draft: DraftRecord;
+  ok: boolean;
+  /** Alasan bila persetujuan tidak dilakukan. */
+  reason?: string;
+}
+
+/**
+ * Tindakan persetujuan yang sah — SATU-SATUNYA jalan status menjadi
+ * 'final'. Murni: mengembalikan draf BARU. Nama penyetuju kosong →
+ * persetujuan DITOLAK (ok:false) dan draf dikembalikan apa adanya:
+ * dokumen tidak pernah final tanpa nama penyetuju yang tercatat.
+ */
+export function approveDraft(draft: DraftRecord, approverName: string, now: number = Date.now()): ApproveDraftResult {
+  const name = (approverName || '').trim();
+  if (!name) {
+    return { draft, ok: false, reason: 'Nama penyetuju wajib diisi — dokumen tidak dapat difinalkan tanpa persetujuan bernama.' };
+  }
+  return {
+    draft: { ...draft, status: 'final', approvedBy: name, approvedAt: now, updatedAt: now },
+    ok: true,
+  };
+}
+
+/** Label status tampil Document Studio (polish §4) — diturunkan dari status + kelengkapan nyata. */
+export type DraftDisplayStatus = 'Final' | 'Perlu dilengkapi' | 'Perlu ditinjau' | 'Siap disetujui' | 'Draf';
+
+/**
+ * Petakan status draf + jumlah field/penanda yang belum tersedia menjadi
+ * label tampil. 'Final' hanya dari status final (yang hanya bisa dicapai
+ * lewat approveDraft) — hasil generate AI tidak pernah langsung final.
+ */
+export function deriveDisplayStatus(draft: DraftRecord, missingCount: number): DraftDisplayStatus {
+  if (draft.status === 'final') return 'Final';
+  if (missingCount > 0) return 'Perlu dilengkapi';
+  if (draft.status === 'review' || draft.status === 'editing') return 'Perlu ditinjau';
+  if (draft.status === 'reviewed') return 'Siap disetujui';
+  return 'Draf';
 }
 
 const LS_DOCS = 'ezrab_docai_library_v1';

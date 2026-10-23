@@ -13,6 +13,10 @@
  * Fidelitas: PDF A4 dengan kop (halaman 1), footer + nomor halaman semua
  * halaman, tabel autotable, font Times. DOCX A4 dengan header kop Word,
  * footer bernomor halaman (field Word asli), heading & tabel Word asli.
+ * Kop dua mode (polish §3): terstruktur (logo + identitas) atau gambar kop
+ * penuh yang menggantikan seluruh blok terstruktur; rasio gambar asli
+ * dipertahankan di kedua format (jsPDF getImageProperties untuk PDF,
+ * parser dimensi byte untuk DOCX).
  * Keterbatasan: gaya inline di dalam sel tabel diratakan; daftar bernomor
  * DOCX memakai satu skema penomoran dokumen (tidak restart per daftar).
  */
@@ -69,6 +73,70 @@ function dataUrlToBytes(dataUrl: string): { bytes: Uint8Array; kind: 'png' | 'jp
   return { bytes, kind };
 }
 
+/**
+ * Dimensi asli gambar dari byte mentah (PNG/JPEG/GIF/WebP) — deterministik,
+ * tanpa memuat Image. Dipakai ekspor DOCX agar rasio logo/kop memakai rasio
+ * ASLI gambar, bukan tebakan. null bila format tidak dikenali/rusak.
+ */
+export function imageSizeFromBytes(bytes: Uint8Array): { width: number; height: number } | null {
+  if (bytes.length >= 24 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+    // PNG: IHDR pada offset 16 (lebar) & 20 (tinggi), big-endian.
+    const w = ((bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19]) >>> 0;
+    const h = ((bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23]) >>> 0;
+    return w > 0 && h > 0 ? { width: w, height: h } : null;
+  }
+  if (bytes.length >= 10 && bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) {
+    // GIF: lebar/tinggi little-endian pada offset 6 & 8.
+    const w = bytes[6] | (bytes[7] << 8);
+    const h = bytes[8] | (bytes[9] << 8);
+    return w > 0 && h > 0 ? { width: w, height: h } : null;
+  }
+  if (
+    bytes.length >= 30 &&
+    bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+    bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
+  ) {
+    // WebP: VP8X (extended) menyimpan canvas 24-bit LE (+1) pada 24 & 27.
+    if (bytes[12] === 0x56 && bytes[13] === 0x50 && bytes[14] === 0x38 && bytes[15] === 0x58) {
+      const w = (bytes[24] | (bytes[25] << 8) | (bytes[26] << 16)) + 1;
+      const h = (bytes[27] | (bytes[28] << 8) | (bytes[29] << 16)) + 1;
+      return { width: w, height: h };
+    }
+    // WebP VP8 (lossy): dimensi 14-bit pada offset 26 & 28.
+    if (bytes[12] === 0x56 && bytes[13] === 0x50 && bytes[14] === 0x38 && bytes[15] === 0x20 && bytes.length >= 30) {
+      const w = (bytes[26] | (bytes[27] << 8)) & 0x3fff;
+      const h = (bytes[28] | (bytes[29] << 8)) & 0x3fff;
+      return w > 0 && h > 0 ? { width: w, height: h } : null;
+    }
+    return null;
+  }
+  if (bytes.length >= 4 && bytes[0] === 0xff && bytes[1] === 0xd8) {
+    // JPEG: telusuri segmen sampai Start-Of-Frame (bukan DHT/JPGn/DAC).
+    let i = 2;
+    while (i + 8 < bytes.length) {
+      if (bytes[i] !== 0xff) return null;
+      const marker = bytes[i + 1];
+      if (marker === 0xd8 || marker === 0xd9 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) {
+        i += 2;
+        continue;
+      }
+      const segLen = (bytes[i + 2] << 8) | bytes[i + 3];
+      const isSof =
+        (marker >= 0xc0 && marker <= 0xc3) || (marker >= 0xc5 && marker <= 0xc7) ||
+        (marker >= 0xc9 && marker <= 0xcb) || (marker >= 0xcd && marker <= 0xcf);
+      if (isSof) {
+        const h = (bytes[i + 5] << 8) | bytes[i + 6];
+        const w = (bytes[i + 7] << 8) | bytes[i + 8];
+        return w > 0 && h > 0 ? { width: w, height: h } : null;
+      }
+      if (segLen < 2) return null;
+      i += 2 + segLen;
+    }
+    return null;
+  }
+  return null;
+}
+
 /* ------------------------------------------------------------------ */
 /* PDF (jsPDF)                                                         */
 /* ------------------------------------------------------------------ */
@@ -119,8 +187,26 @@ export async function exportPaperPdf(input: PaperExportInput): Promise<void> {
     }
   };
 
-  /* Kop surat — halaman pertama */
-  if (p && (p.name.trim() || p.logoDataUrl)) {
+  /* Kop surat gambar penuh — halaman pertama, MENGGANTIKAN kop terstruktur
+     (tidak ditumpuk). Lebar sesuai fullKopWidthPct dari area konten, rasio
+     asli dipertahankan lewat properti gambar jsPDF; isi mulai di bawah kop
+     + margin aman profil. Bila gambar gagal dibaca jsPDF, jatuh ke kop
+     terstruktur di bawah (dokumen tidak pernah kehilangan kop diam-diam). */
+  let fullKopDrawn = false;
+  if (p && p.kopMode === 'full' && p.fullKopDataUrl) {
+    try {
+      const props = doc.getImageProperties(p.fullKopDataUrl);
+      const pct = Math.max(10, Math.min(100, p.fullKopWidthPct ?? 100));
+      const kopW = (contentW * pct) / 100;
+      const kopH = (kopW * props.height) / props.width;
+      doc.addImage(p.fullKopDataUrl, 'PNG', MM.marginX + (contentW - kopW) / 2, y, kopW, kopH);
+      y += kopH + Math.max(0, p.fullKopMarginMm ?? 0) + 6;
+      fullKopDrawn = true;
+    } catch { /* jatuh ke kop terstruktur */ }
+  }
+
+  /* Kop surat terstruktur — halaman pertama */
+  if (!fullKopDrawn && p && (p.name.trim() || p.logoDataUrl)) {
     const accent = hexToRgb(p.accentColor);
     let logoW = 0;
     let logoH = 0;
@@ -343,21 +429,43 @@ export async function exportPaperDocx(input: PaperExportInput): Promise<void> {
 
   /* Header kop Word */
   let header: Header | undefined;
-  if (p && (p.name.trim() || p.logoDataUrl)) {
+  const fullKopDocx = p && p.kopMode === 'full' && p.fullKopDataUrl ? p.fullKopDataUrl : null;
+  if (p && (p.name.trim() || p.logoDataUrl || fullKopDocx)) {
     const children: Paragraph[] = [];
-    if (p.logoDataUrl) {
+    // Lebar area konten DOCX (twips → px @96dpi): halaman dikurangi margin kiri/kanan 1134 twips.
+    const contentWidthPx = Math.round((((landscape ? 16838 : 11906) - 2268) / 1440) * 96);
+    if (fullKopDocx) {
+      // Kop gambar penuh: SATU gambar di header, rasio asli dari byte gambar;
+      // tanpa nama/kontak terstruktur agar tidak dobel dengan isi kop.
+      const { bytes, kind } = dataUrlToBytes(fullKopDocx);
+      if (bytes.length) {
+        const size = imageSizeFromBytes(bytes);
+        const pct = Math.max(10, Math.min(100, p.fullKopWidthPct ?? 100));
+        const widthPx = Math.round((contentWidthPx * pct) / 100);
+        const ratio = size ? size.height / size.width : 0.25;
+        children.push(
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [new ImageRun({ type: kind, data: bytes, transformation: { width: widthPx, height: Math.max(1, Math.round(widthPx * ratio)) } })],
+          }),
+        );
+      }
+    } else if (p.logoDataUrl) {
       const { bytes, kind } = dataUrlToBytes(p.logoDataUrl);
       if (bytes.length) {
         const widthPx = Math.round((Math.max(14, Math.min(70, p.logoWidthMm || 32)) / 25.4) * 96);
+        // Rasio ASLI logo dari byte gambar (sebelumnya ditebak 0.45).
+        const size = imageSizeFromBytes(bytes);
+        const ratio = size ? size.height / size.width : 0.45;
         children.push(
           new Paragraph({
             alignment: p.layout === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT,
-            children: [new ImageRun({ type: kind, data: bytes, transformation: { width: widthPx, height: Math.round(widthPx * 0.45) } })],
+            children: [new ImageRun({ type: kind, data: bytes, transformation: { width: widthPx, height: Math.max(1, Math.round(widthPx * ratio)) } })],
           }),
         );
       }
     }
-    if (p.name.trim()) {
+    if (!fullKopDocx && p.name.trim()) {
       children.push(
         new Paragraph({
           alignment: p.layout === 'center' ? AlignmentType.CENTER : AlignmentType.LEFT,
@@ -365,7 +473,7 @@ export async function exportPaperDocx(input: PaperExportInput): Promise<void> {
         }),
       );
     }
-    const contact = kopContactLine(p);
+    const contact = fullKopDocx ? '' : kopContactLine(p);
     if (contact) {
       children.push(
         new Paragraph({

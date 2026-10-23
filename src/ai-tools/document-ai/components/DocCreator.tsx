@@ -21,22 +21,28 @@ import {
   Loader2, Save, Download, AlertTriangle, FilePlus2, Check, MoreHorizontal,
   RefreshCw, History as HistoryIcon, Focus, ListTree, FilePlus, X, CloudOff,
   Printer, LayoutTemplate, ArrowRight, Briefcase, Sparkles, ClipboardCheck,
+  Search, Eye, CheckCircle2, FileText, Lock, Building2,
 } from 'lucide-react';
-import { getDefaultProfile, kopHtml } from '../companyProfile';
+import { getDefaultProfile, kopHtml, listProfiles } from '../companyProfile';
 import {
-  TEMPLATE_META, EXTRA_BUILTIN_TEMPLATES,
+  TEMPLATE_META, EXTRA_BUILTIN_TEMPLATES, TEMPLATE_CATEGORIES,
   resolveTemplate, subtypeLabel, referenceStatusLabel,
   listUserTemplates, saveUserTemplate, newUserTemplate, type UserTemplate,
 } from '../docTemplates';
 import { htmlToPaperBlocks } from '../paperModel';
 import { exportPaperPdf, exportPaperDocx } from '../paperExport';
 import { CompanyIdentityPanel, MyTemplatesPanel, SavedDocsPanel } from './DocPanels';
-import { DocContextPanel } from './DocContextPanel';
+import { DocContextPanel, CONTEXT_FIELD_LABELS } from './DocContextPanel';
+import {
+  catalogCategoryOf, filterCatalogEntries, groupCatalogEntries,
+  scaffoldPreviewLines, CATALOG_GROUP_LABELS,
+} from './templateCatalog';
 import { DocStudioReview } from './DocStudioReview';
+import { DocEnhance } from './DocEnhance';
 import { documentStudioOrchestrator } from '../orchestrator';
 import { collectProjectContext, detectMissingFields } from '../contextAdapter';
-import { pushVersion, restoreVersion } from '../store';
-import type { MissingFieldInfo } from '../types';
+import { approveDraft, deriveDisplayStatus, pushVersion, restoreVersion } from '../store';
+import type { MissingFieldInfo, ReviewFindingStatus } from '../types';
 import { docStatusLabel, type DocDraftStatus } from '../view';
 import type { Editor } from '@tiptap/react';
 import type { DraftRecord, HistoryEntry } from '../view';
@@ -130,6 +136,8 @@ export const DocCreator: React.FC<{
   ];
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const defaultProfile = useMemo(() => getDefaultProfile(), [profileVersion]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const allProfiles = useMemo(() => listProfiles(), [profileVersion]);
   const { currentProject, projects } = useProject();
 
   const [templateId, setTemplateId] = useState('berita-acara');
@@ -155,6 +163,15 @@ export const DocCreator: React.FC<{
   const [srcProject, setSrcProject] = useState(true);
   const [srcCompany, setSrcCompany] = useState(true);
   const [genMissing, setGenMissing] = useState<MissingFieldInfo[]>([]);
+
+  /* Template Studio (polish §2): pencarian + filter kategori katalog. */
+  const [tplQuery, setTplQuery] = useState('');
+  const [tplCat, setTplCat] = useState<'all' | string>('all');
+
+  /* Editor (polish §3/§4): mode pratinjau + bar konfirmasi persetujuan final. */
+  const [previewMode, setPreviewMode] = useState(false);
+  const [approveOpen, setApproveOpen] = useState(false);
+  const [approverName, setApproverName] = useState('');
 
   /* Jalur Studio dari view.tsx mengatur mode tampil; subnav internal tetap
      bebas dipakai pengguna setelahnya (efek hanya berjalan saat jalur berubah). */
@@ -194,6 +211,58 @@ export const DocCreator: React.FC<{
     sources: { project: srcProject, company: srcCompany },
   });
   const liveMissing = detectMissingFields(contextFields, genMeta, fieldValues);
+
+  /* Template Studio: katalog dikelompokkan per kategori (template pengguna
+     mengikuti kategori template dasarnya) + pencarian nama/kegunaan. */
+  const userBaseMap = useMemo(
+    () => new Map(userTemplates.map((u) => [u.id, u.baseTemplateId])),
+    [userTemplates],
+  );
+  const catalogGroups = useMemo(
+    () =>
+      groupCatalogEntries(filterCatalogEntries(ALL_TEMPLATES, tplQuery), userBaseMap).filter(
+        (g) => tplCat === 'all' || g.id === tplCat,
+      ),
+    // ALL_TEMPLATES dibangun ulang tiap render dari state yang sama.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tplQuery, tplCat, userTemplates, templateId],
+  );
+  /** Preview struktur singkat kartu katalog dari scaffold meta template itu. */
+  const previewFor = (entryId: string): string[] => {
+    const ut = userTemplates.find((u) => u.id === entryId);
+    const scaffold = ut?.scaffold?.trim()
+      ? ut.scaffold
+      : TEMPLATE_META[ut ? ut.baseTemplateId : entryId]?.scaffold;
+    return scaffoldPreviewLines(scaffold);
+  };
+  /** Field konteks yang benar-benar tersedia (akan dipakai generate). */
+  const availableContext = contextFields.filter(
+    (f) => f.verificationStatus !== 'missing' && f.value.trim(),
+  );
+
+  /* Kop per-dokumen (polish §3): profil efektif draf terbuka = profil yang
+     dipilih untuk dokumen ini (draft.companyProfileId), jatuh ke profil
+     default global bila belum dipilih / profilnya sudah dihapus. */
+  const draftProfile = draft?.companyProfileId
+    ? (allProfiles.find((p) => p.id === draft.companyProfileId) ?? null)
+    : null;
+  const effectiveProfile = draftProfile ?? defaultProfile;
+
+  /* Status tampil (polish §4): label diturunkan dari status + daftar missing
+     yang sudah dihitung komponen ini (hasil generate terakhir, atau daftar
+     missing konteks/form yang hidup). 'Final' hanya dari status final —
+     yang hanya bisa dicapai lewat approveDraft. */
+  const statusMissingCount = genMissing.length > 0 ? genMissing.length : liveMissing.length;
+  const displayStatus = draft ? deriveDisplayStatus(draft, statusMissingCount) : null;
+  const displayStatusSlug = displayStatus
+    ? {
+        Final: 'final',
+        'Perlu dilengkapi': 'incomplete',
+        'Perlu ditinjau': 'review',
+        'Siap disetujui': 'ready',
+        Draf: 'draft',
+      }[displayStatus]
+    : '';
 
   /* Meta untuk review deterministik atas draf aktif (template dasar draf). */
   const reviewMeta = useMemo(() => {
@@ -251,7 +320,8 @@ export const DocCreator: React.FC<{
         title: draft.title,
         content: html,
         contentFormat: 'html',
-        status: 'review',
+        // Menyimpan dokumen final tidak boleh menurunkannya diam-diam.
+        status: draft.status === 'final' ? 'final' : 'review',
         projectId: draft.projectId,
         projectName: draft.projectName,
       }),
@@ -272,6 +342,8 @@ export const DocCreator: React.FC<{
     setPending(null);
     setError(null);
     setGenMissing([]);
+    setPreviewMode(false);
+    setApproveOpen(false);
   };
 
   const openDraft = (target: DraftRecord) => {
@@ -330,6 +402,9 @@ export const DocCreator: React.FC<{
           previousContent: html,
           previousFormat: 'html',
           status: 'draft',
+          // Isi berubah total → persetujuan final lama tidak berlaku lagi.
+          approvedBy: undefined,
+          approvedAt: undefined,
           contextSnapshot: contextFields,
           promptVersion: res.promptVersion ?? draft.promptVersion,
           updatedAt: Date.now(),
@@ -398,6 +473,59 @@ export const DocCreator: React.FC<{
     await persist(rec);
   };
 
+  /** Terapkan kandidat Enhance Text (DocEnhance): snapshot isi berjalan
+      sebagai versi 'enhance' SEBELUM mengganti rentang, lalu ganti HANYA
+      rentang terpilih di editor dan persist isi hasil edit editor.
+      Kandidat teks polos: satu baris disisipkan sebagai teks; multi-baris
+      sebagai paragraf (plainToHtml). Gagal mengganti → lempar error agar
+      panel menampilkan pesan dan dokumen tidak berubah. */
+  const applyEnhance = async (
+    range: { from: number; to: number },
+    candidateText: string,
+    note: string,
+  ) => {
+    if (!draft) throw new Error('Tidak ada draf aktif — kandidat tidak diterapkan.');
+    const ed = editorRef.current;
+    if (!ed) throw new Error('Editor tidak tersedia — kandidat tidak diterapkan.');
+    const current = buildRecord({ content: html, contentFormat: 'html' });
+    const withVersion = pushVersion(current, 'enhance', note);
+    const ok = /\n/.test(candidateText)
+      ? ed.commands.insertContentAt({ from: range.from, to: range.to }, plainToHtml(candidateText))
+      : ed.commands.insertContentAt(
+          { from: range.from, to: range.to },
+          { type: 'text', text: candidateText },
+        );
+    if (!ok) throw new Error('Penggantian rentang di editor gagal — dokumen tidak berubah.');
+    const newHtml = ed.getHTML();
+    const rec: DraftRecord = {
+      ...withVersion,
+      content: newHtml,
+      contentFormat: 'html',
+      status: draft.status,
+      updatedAt: Date.now(),
+    };
+    loadingRef.current = true;
+    setHtml(newHtml);
+    setEditorKey((k) => k + 1);
+    await persist(rec);
+  };
+
+  /** Status temuan review persisten: ditulis ke draf beserta isi editor
+      berjalan (pola changeDraftKop) agar konten tidak terbalik ke versi
+      tersimpan terakhir. */
+  const changeFindingStatuses = (statuses: Record<string, ReviewFindingStatus>) => {
+    if (!draft) return;
+    const rec: DraftRecord = {
+      ...draft,
+      content: html,
+      contentFormat: 'html',
+      findingStatuses: statuses,
+      updatedAt: Date.now(),
+    };
+    setDraft(rec);
+    onUpsertDraft(rec);
+  };
+
   /** Pulihkan versi: restoreVersion men-snapshot isi berjalan lebih dulu. */
   const restoreVersionById = async (versionId: string) => {
     if (!draft) return;
@@ -423,6 +551,9 @@ export const DocCreator: React.FC<{
       previousContent: html,
       previousFormat: 'html',
       status: 'draft',
+      // Isi diganti versi sebelumnya → status final & persetujuannya gugur.
+      approvedBy: undefined,
+      approvedAt: undefined,
     });
     loadingRef.current = true;
     setHtml(prevHtml);
@@ -504,7 +635,7 @@ export const DocCreator: React.FC<{
     setExporting(kind);
     setError(null);
     try {
-      const input = { title: draft.title, blocks: htmlToPaperBlocks(html), profile: getDefaultProfile() };
+      const input = { title: draft.title, blocks: htmlToPaperBlocks(html), profile: effectiveProfile };
       if (kind === 'pdf') await exportPaperPdf(input);
       else await exportPaperDocx(input);
     } catch (e) {
@@ -540,7 +671,44 @@ export const DocCreator: React.FC<{
 
   const changeDraftStatus = (st: DocDraftStatus) => {
     if (!draft) return;
+    // Status final terkunci: hanya berubah lewat persetujuan (approveDraft)
+    // atau perubahan isi (buat ulang/pulihkan versi) — tidak dari select ini.
+    if (draft.status === 'final') return;
+    // 'final' tidak pernah dipasang dari pilihan manual.
+    if (st === 'final') return;
     const rec = { ...draft, status: st, updatedAt: Date.now() };
+    setDraft(rec);
+    onUpsertDraft(rec);
+  };
+
+  /** Persetujuan sah (polish §4): satu-satunya jalan status menjadi final. */
+  const approveCurrentDraft = async () => {
+    if (!draft) return;
+    const res = approveDraft(
+      buildRecord({ content: html, contentFormat: 'html' }),
+      approverName,
+    );
+    if (!res.ok) {
+      setError(res.reason || 'Persetujuan tidak dapat dilakukan.');
+      return;
+    }
+    setApproveOpen(false);
+    setError(null);
+    await persist(res.draft as DraftRecord);
+  };
+
+  /** Pilih profil kop untuk dokumen ini (tersimpan di draf, bukan global). */
+  const changeDraftKop = (profileId: string) => {
+    if (!draft || draft.status === 'final') return;
+    const rec: DraftRecord = {
+      ...draft,
+      // Sertakan isi editor berjalan agar pergantian kop tidak mengembalikan
+      // konten ke versi tersimpan terakhir.
+      content: html,
+      contentFormat: 'html',
+      companyProfileId: profileId || null,
+      updatedAt: Date.now(),
+    };
     setDraft(rec);
     onUpsertDraft(rec);
   };
@@ -749,18 +917,81 @@ export const DocCreator: React.FC<{
             {createMode === 'form' && (
               <>
             <div className="docai-step" style={{ textAlign: 'left' }}>{t('ai.doc.create.step_1')}</div>
-            <div className="docai-tmplgrid">
-              {ALL_TEMPLATES.map((tmpl) => (
+            <div className="docai-search docai-tmplsearch">
+              <Search size={15} />
+              <input
+                value={tplQuery}
+                onChange={(e) => setTplQuery(e.target.value)}
+                placeholder="Cari template (nama / kegunaan)…"
+                aria-label="Cari template"
+              />
+            </div>
+            <div className="docai-catchips" role="tablist" aria-label="Filter kategori template">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tplCat === 'all'}
+                className={`docai-catchip ${tplCat === 'all' ? 'active' : ''}`}
+                onClick={() => setTplCat('all')}
+              >
+                Semua
+              </button>
+              {TEMPLATE_CATEGORIES.map((c) => (
                 <button
-                  key={tmpl.id}
-                  className={`docai-tmpl ${templateId === tmpl.id ? 'active' : ''}`}
-                  onClick={() => chooseTemplate(tmpl.id)}
+                  key={c.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={tplCat === c.id}
+                  className={`docai-catchip ${tplCat === c.id ? 'active' : ''}`}
+                  onClick={() => setTplCat(c.id)}
                 >
-                  <div className="docai-tmpl-n">{tmpl.name}</div>
-                  <div className="docai-tmpl-d">{tmpl.desc}</div>
+                  {c.label}
                 </button>
               ))}
             </div>
+            {catalogGroups.length === 0 && (
+              <p className="docai-hint" style={{ textAlign: 'left' }}>
+                Tidak ada template yang cocok dengan pencarian/filter ini.
+              </p>
+            )}
+            {catalogGroups.map((group) => (
+              <div key={group.id} className="docai-tmplgroup">
+                <div className="docai-tmplgroup-h">
+                  {group.label} <span>{group.entries.length} template</span>
+                </div>
+                <div className="docai-tmplgrid">
+                  {group.entries.map((tmpl) => {
+                    const active = templateId === tmpl.id;
+                    const lines = previewFor(tmpl.id);
+                    return (
+                      <button
+                        key={tmpl.id}
+                        className={`docai-tmpl ${active ? 'active' : ''}`}
+                        onClick={() => chooseTemplate(tmpl.id)}
+                        aria-pressed={active}
+                      >
+                        <div className="docai-tmpl-top">
+                          <span className="docai-tmpl-n">{tmpl.name}</span>
+                          {active && (
+                            <span className="docai-tmpl-sel">
+                              <Check size={11} /> Terpilih
+                            </span>
+                          )}
+                        </div>
+                        <div className="docai-tmpl-d">{tmpl.desc}</div>
+                        {lines.length > 0 && (
+                          <ul className="docai-tmpl-struct">
+                            {lines.map((l, i) => (
+                              <li key={i}>{l}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
               </>
             )}
             {createMode === 'form' && (
@@ -786,6 +1017,77 @@ export const DocCreator: React.FC<{
             />
             {showTemplateDetail && (
               <>
+            <div className="docai-tmpldetail">
+              <div className="docai-tmpldetail-h">
+                <strong>{template.name}</strong>
+                <span className="docai-catchip docai-tmpldetail-cat">
+                  {CATALOG_GROUP_LABELS[catalogCategoryOf(template.id, userBaseMap)]}
+                </span>
+              </div>
+              <p className="docai-tmpldetail-purpose">
+                {template.desc}
+                {effectiveMeta?.reference?.scope ? <> · {effectiveMeta.reference.scope}</> : null}
+              </p>
+              <div className="docai-tmpldetail-sec">
+                <span className="docai-label">Data yang diambil dari proyek &amp; perusahaan</span>
+                {availableContext.length === 0 ? (
+                  <p className="docai-hint" style={{ margin: 0 }}>
+                    Belum ada data konteks yang tersedia — pilih proyek dan lengkapi profil perusahaan
+                    agar AI memakai data yang sah, bukan karangan.
+                  </p>
+                ) : (
+                  <ul className="docai-tmpldetail-ctx">
+                    {availableContext.slice(0, 8).map((f) => (
+                      <li key={`${f.sourceType}:${f.fieldName}`}>
+                        <span>{CONTEXT_FIELD_LABELS[f.fieldName] ?? f.fieldName}</span>
+                        <strong>{f.value}</strong>
+                      </li>
+                    ))}
+                    {availableContext.length > 8 && (
+                      <li className="docai-hint">+{availableContext.length - 8} field tersedia lainnya (lihat ringkasan konteks di atas).</li>
+                    )}
+                  </ul>
+                )}
+              </div>
+              <div className="docai-tmpldetail-sec">
+                <span className="docai-label">Data wajib yang belum tersedia</span>
+                {liveMissing.length === 0 ? (
+                  <p className="docai-hint" style={{ margin: 0 }}>Semua data wajib yang terdeteksi sudah tersedia.</p>
+                ) : (
+                  <ul className="docai-tmpldetail-missing">
+                    {liveMissing.map((m) => (
+                      <li key={m.key}>
+                        <strong>{m.label}</strong> — {m.reason}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="docai-tmpldetail-actions">
+                <button
+                  type="button"
+                  className={`docai-btn-ghost docai-mini ${createMode === 'ai' ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setCreateMode('ai');
+                    setAiAutoType(false);
+                  }}
+                >
+                  <Sparkles size={13} /> Buat dengan AI
+                </button>
+                <button
+                  type="button"
+                  className={`docai-btn-ghost docai-mini ${createMode === 'form' ? 'is-active' : ''}`}
+                  onClick={() => setCreateMode('form')}
+                >
+                  <FileText size={13} /> Isi Manual
+                </button>
+                <span className="docai-hint" style={{ margin: 0 }}>
+                  {createMode === 'ai'
+                    ? 'AI menyusun draf dari instruksi + data konteks; field yang kosong ditandai [ISI: ...].'
+                    : 'Anda mengisi field template di bawah; tombol buat di bawah tetap memakai AI dengan data isian ini.'}
+                </span>
+              </div>
+            </div>
             {baseMeta?.subtypes && baseMeta.subtypes.length > 0 && (
               <div className="docai-fieldgrid">
                 <label className="docai-fielditem">
@@ -956,24 +1258,75 @@ export const DocCreator: React.FC<{
           />
           <div className="docai-edmeta">
             {draft?.projectName || t('ai.doc.create.no_project')} · {draft?.templateName}
-            {draft && (
-              <>
-                {' · '}
-                <select
-                  aria-label="Status dokumen"
-                  value={draft.status === 'reviewed' ? 'review' : draft.status}
-                  onChange={(e) => changeDraftStatus(e.target.value as DocDraftStatus)}
-                  style={{ font: 'inherit', fontSize: 12 }}
-                >
-                  <option value="draft">Draft</option>
-                  <option value="editing">Sedang Disunting</option>
-                  <option value="review">Siap Ditinjau</option>
-                  <option value="final">Final</option>
-                  <option value="archived">Diarsipkan</option>
-                </select>
-              </>
-            )}
           </div>
+          {draft && (
+            <div className="docai-edstatus">
+              {displayStatus && (
+                <span className={`docai-statusbadge st-${displayStatusSlug}`}>{displayStatus}</span>
+              )}
+              {draft.status === 'final' ? (
+                <span className="docai-finalnote">
+                  <Lock size={12} /> Final — disetujui oleh <strong>{draft.approvedBy || '—'}</strong>
+                  {draft.approvedAt
+                    ? ` pada ${new Date(draft.approvedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                    : ''}
+                  . Status terkunci.
+                </span>
+              ) : (
+                <>
+                  <select
+                    aria-label="Status dokumen"
+                    value={draft.status}
+                    onChange={(e) => changeDraftStatus(e.target.value as DocDraftStatus)}
+                    className="docai-statusselect"
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="editing">Sedang Disunting</option>
+                    <option value="review">Perlu Ditinjau</option>
+                    <option value="reviewed">Siap Disetujui</option>
+                    <option value="archived">Diarsipkan</option>
+                  </select>
+                  {displayStatus === 'Siap disetujui' && (
+                    <button
+                      type="button"
+                      className="docai-btn-ghost docai-mini"
+                      onClick={() => setApproveOpen(true)}
+                    >
+                      <CheckCircle2 size={13} /> Setujui &amp; Tandai Final
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+          {draft && (
+            <div className="docai-edstatus">
+              <label className="docai-kopselect">
+                <Building2 size={13} /> Kop dokumen:
+                <select
+                  value={draft.companyProfileId ?? ''}
+                  onChange={(e) => changeDraftKop(e.target.value)}
+                  disabled={draft.status === 'final'}
+                  aria-label="Profil kop untuk dokumen ini"
+                >
+                  <option value="">
+                    Profil default{defaultProfile?.name ? ` (${defaultProfile.name})` : ''}
+                  </option>
+                  {allProfiles.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name || '(tanpa nama)'}
+                      {p.isDefault ? ' · default' : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {draftProfile && (
+                <span className="docai-hint" style={{ margin: 0 }}>
+                  Dokumen ini memakai kop profil terpilih (editor, cetak, PDF, DOCX).
+                </span>
+              )}
+            </div>
+          )}
         </div>
         <div className="docai-edactions">
           {statusPill}
@@ -988,6 +1341,14 @@ export const DocCreator: React.FC<{
           </button>
           <button className="docai-btn-ghost" onClick={() => void doExport('docx')} disabled={!draft || exporting !== null}>
             {exporting === 'docx' ? <Loader2 size={15} className="spin" /> : <Download size={15} />} DOCX
+          </button>
+          <button
+            className={`docai-btn-ghost ${previewMode ? 'is-active' : ''}`}
+            onClick={() => setPreviewMode((v) => !v)}
+            disabled={!draft}
+            aria-pressed={previewMode}
+          >
+            <Eye size={15} /> Pratinjau
           </button>
           <div className="docai-menuwrap">
             <button
@@ -1083,6 +1444,36 @@ export const DocCreator: React.FC<{
 
       <div className="docai-draftwarn">{t('ai.doc.create.draft_warn')}</div>
       {confirmBar}
+      {approveOpen && draft && (
+        <div className="docai-confirmbar" role="alertdialog" aria-live="polite">
+          <CheckCircle2 size={16} />
+          <span>
+            Tandai dokumen ini <strong>Final</strong>? Persetujuan dicatat atas nama penyetuju dan
+            status dokumen terkunci. Perubahan isi sesudahnya (buat ulang / pulihkan versi) membatalkan
+            status final.
+          </span>
+          <input
+            className="docai-input docai-approver-input"
+            style={{ marginBottom: 0 }}
+            value={approverName}
+            onChange={(e) => setApproverName(e.target.value)}
+            placeholder="Nama penyetuju (wajib)"
+            aria-label="Nama penyetuju"
+          />
+          <div className="docai-confirmbtns">
+            <button
+              className="docai-btn-primary"
+              onClick={() => void approveCurrentDraft()}
+              disabled={!approverName.trim()}
+            >
+              Setujui &amp; Tandai Final
+            </button>
+            <button className="docai-btn-ghost" onClick={() => setApproveOpen(false)}>
+              {t('ai.doc.create.ed_cancel')}
+            </button>
+          </div>
+        </div>
+      )}
       {error && (
         <div className="docai-error">
           <AlertTriangle size={14} /> {error}
@@ -1091,6 +1482,13 @@ export const DocCreator: React.FC<{
       {busy && (
         <div className="docai-busybar">
           <Loader2 size={14} className="spin" /> {t('ai.doc.create.gen_busy')}
+        </div>
+      )}
+
+      {previewMode && (
+        <div className="docai-previewbar" role="status">
+          <Eye size={14} /> Mode Pratinjau — dokumen tidak dapat disunting. Matikan Pratinjau untuk
+          kembali menyunting.
         </div>
       )}
 
@@ -1129,8 +1527,9 @@ export const DocCreator: React.FC<{
             <DocEditor
               key={`${draft?.id ?? 'new'}-${editorKey}`}
               initialHtml={html}
-              headerHtml={kopHtml(defaultProfile) || undefined}
-              footerText={draft ? `${defaultProfile?.name?.trim() ? `${defaultProfile.name} • ` : ''}${draft.title}` : undefined}
+              headerHtml={kopHtml(effectiveProfile) || undefined}
+              footerText={draft ? `${effectiveProfile?.name?.trim() ? `${effectiveProfile.name} • ` : ''}${draft.title}` : undefined}
+              editable={!previewMode}
               t={t}
               onEditorReady={(ed) => {
                 editorRef.current = ed;
@@ -1169,9 +1568,20 @@ export const DocCreator: React.FC<{
           draft={draft}
           html={html}
           templateMeta={reviewMeta}
+          contextFields={contextFields}
           getEditor={() => editorRef.current}
           onApplyCandidate={applyCandidate}
           onRestoreVersion={restoreVersionById}
+          onFindingStatusesChange={changeFindingStatuses}
+        />
+      )}
+
+      {draft && (
+        <DocEnhance
+          key={`enh-${draft.id}`}
+          draft={draft}
+          getEditor={() => editorRef.current}
+          onApplyEnhance={applyEnhance}
         />
       )}
 

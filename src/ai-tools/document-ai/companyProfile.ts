@@ -28,11 +28,28 @@ export interface CompanyProfile {
   accentColor: string;
   isDefault: boolean;
   updatedAt: number;
+  /* --- Mode kop (polish §3) — dua mode TIDAK saling menimpa --- */
+  /**
+   * 'structured' = logo + nama/kontak terstruktur (perilaku lama).
+   * 'full' = satu gambar kop surat lengkap (fullKopDataUrl) menggantikan
+   * seluruh blok terstruktur — logo/nama TIDAK ditumpuk di atasnya.
+   * Kosong (record lama) diperlakukan sebagai 'structured'.
+   */
+  kopMode?: 'structured' | 'full';
+  /** Gambar kop penuh sebagai data URL (divalidasi magic bytes, maks 5 MB). */
+  fullKopDataUrl?: string | null;
+  /** Lebar kop penuh sebagai persen lebar area konten. Default 100. */
+  fullKopWidthPct?: number;
+  /** Jarak aman (mm) antara kop penuh dan awal isi dokumen. Default 0. */
+  fullKopMarginMm?: number;
 }
 
 const LS_KEY = 'ezrab_docai_company_v1';
 export const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 export const MAX_LOGO_DIMENSION = 4000;
+/** Batas gambar kop surat penuh (lebih longgar dari logo: kop memuat seluruh header). */
+export const MAX_FULL_KOP_BYTES = 5 * 1024 * 1024;
+export const MAX_FULL_KOP_DIMENSION = 6000;
 
 /* Penyimpanan: localStorage bila ada; fallback memori (tes/node). */
 const memoryStore = new Map<string, string>();
@@ -148,15 +165,33 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(bin);
 }
 
+export interface ImageValidationOptions {
+  /** Batas ukuran file (bytes). Default: batas logo (2 MB). */
+  maxBytes?: number;
+  /** Batas dimensi sisi terpanjang (px). Default: batas logo (4000px). */
+  maxDimension?: number;
+  /** Sebutan aset pada pesan error ('logo', 'kop', ...). Default 'gambar'. */
+  label?: string;
+}
+
+function formatByteLimit(bytes: number): string {
+  return bytes % (1024 * 1024) === 0 ? `${bytes / (1024 * 1024)} MB` : `${Math.round(bytes / 1024)} KB`;
+}
+
 /**
- * Validasi file logo dari pengguna. Async karena perlu membaca dimensi
- * gambar asli lewat Image (browser). Di luar browser, dimensi dilewati
- * dengan jujur (width/height kosong) — magic bytes & ukuran tetap diperiksa.
+ * Validasi file gambar dari pengguna (dipakai logo & kop penuh). Async
+ * karena perlu membaca dimensi gambar asli lewat Image (browser). Di luar
+ * browser, dimensi dilewati dengan jujur (width/height kosong) — magic
+ * bytes & ukuran tetap diperiksa. Isi file yang menentukan jenis gambar,
+ * bukan ekstensi/MIME yang diklaim.
  */
-export async function validateLogoFile(file: File): Promise<LogoValidation> {
+export async function validateImageFile(file: File, opts: ImageValidationOptions = {}): Promise<LogoValidation> {
+  const maxBytes = opts.maxBytes ?? MAX_LOGO_BYTES;
+  const maxDimension = opts.maxDimension ?? MAX_LOGO_DIMENSION;
+  const label = opts.label ?? 'gambar';
   if (file.size === 0) return { ok: false, error: 'File kosong.' };
-  if (file.size > MAX_LOGO_BYTES) {
-    return { ok: false, error: `Ukuran logo ${(file.size / 1024).toFixed(0)} KB melebihi batas 2 MB.` };
+  if (file.size > maxBytes) {
+    return { ok: false, error: `Ukuran ${label} ${(file.size / 1024).toFixed(0)} KB melebihi batas ${formatByteLimit(maxBytes)}.` };
   }
   const buf = new Uint8Array(await file.arrayBuffer());
   const kind = detectLogoKind(buf);
@@ -178,14 +213,27 @@ export async function validateLogoFile(file: File): Promise<LogoValidation> {
       });
       width = dims.w;
       height = dims.h;
-      if (width > MAX_LOGO_DIMENSION || height > MAX_LOGO_DIMENSION) {
-        return { ok: false, error: `Dimensi logo ${width}×${height}px melebihi batas ${MAX_LOGO_DIMENSION}px.` };
+      if (width > maxDimension || height > maxDimension) {
+        return { ok: false, error: `Dimensi ${label} ${width}×${height}px melebihi batas ${maxDimension}px.` };
       }
     } catch {
       return { ok: false, error: 'File gambar tidak dapat dibaca (kemungkinan rusak).' };
     }
   }
   return { ok: true, kind, dataUrl, width, height };
+}
+
+/**
+ * Validasi file logo (perilaku & pesan error sama seperti sebelum
+ * generalisasi): maks 2 MB, dimensi ≤4000px.
+ */
+export async function validateLogoFile(file: File): Promise<LogoValidation> {
+  return validateImageFile(file, { maxBytes: MAX_LOGO_BYTES, maxDimension: MAX_LOGO_DIMENSION, label: 'logo' });
+}
+
+/** Validasi gambar kop surat penuh: maks 5 MB, dimensi ≤6000px. */
+export async function validateFullKopFile(file: File): Promise<LogoValidation> {
+  return validateImageFile(file, { maxBytes: MAX_FULL_KOP_BYTES, maxDimension: MAX_FULL_KOP_DIMENSION, label: 'kop' });
 }
 
 /* ------------------------------------------------------------------ */
@@ -205,9 +253,30 @@ export function kopContactLine(p: CompanyProfile): string {
   return [p.address, p.phone, p.email, p.website, p.extra].filter((x) => x && x.trim()).join(' • ');
 }
 
+/**
+ * Mode kop yang BENAR-BENAR dipakai saat render: 'full' hanya bila mode
+ * dipilih DAN gambar kop penuh tersedia. Bila pengguna memilih 'full' tapi
+ * asetnya kosong, render jatuh ke kop terstruktur (agar dokumen tetap
+ * berkop) — UI membandingkan fungsi ini dengan profile.kopMode untuk
+ * menampilkan peringatan bahwa kop penuh belum terpasang, bukan diam-diam
+ * menganggap fallback itu mode penuh.
+ */
+export function kopModeEffective(p: CompanyProfile | null): 'structured' | 'full' {
+  return p && p.kopMode === 'full' && !!p.fullKopDataUrl ? 'full' : 'structured';
+}
+
 /** HTML kop untuk zona header lembar editor & cetak. Kosong bila profil kosong. */
 export function kopHtml(p: CompanyProfile | null): string {
-  if (!p || (!p.name.trim() && !p.logoDataUrl)) return '';
+  if (!p) return '';
+  // Mode kop gambar penuh: HANYA gambar kop (rasio asli, lebar sesuai
+  // fullKopWidthPct) — tanpa logo/nama/kontak terstruktur agar tidak dobel.
+  if (kopModeEffective(p) === 'full') {
+    const pct = Math.max(10, Math.min(100, p.fullKopWidthPct ?? 100));
+    const marginMm = Math.max(0, p.fullKopMarginMm ?? 0);
+    const style = `width:${pct}%${marginMm ? `;margin-bottom:${marginMm}mm` : ''}`;
+    return `<div class="docai-kop docai-kop-full"><img class="docai-kop-full-img" src="${p.fullKopDataUrl}" alt="" style="${style}" /></div>`;
+  }
+  if (!p.name.trim() && !p.logoDataUrl) return '';
   const contact = kopContactLine(p);
   const logo = p.logoDataUrl
     ? `<img class="docai-kop-logo" src="${p.logoDataUrl}" alt="" style="width:${Math.max(14, Math.min(70, p.logoWidthMm))}mm" />`

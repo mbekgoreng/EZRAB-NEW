@@ -8,6 +8,8 @@
  *
  * Aturan integritas (master prompt §C–J):
  * - CREATE_DOCUMENT memakai mode DRAFT (system prompt Document Assistant).
+ * - ENHANCE_TEXT memakai mode ENHANCE (system prompt Professional Document
+ *   Editor) atas rentang teks terpilih saja — tidak mengirim seluruh dokumen.
  * - REVISE_DOCUMENT mengembalikan KANDIDAT revisi — tidak pernah menerapkan
  *   perubahan ke dokumen pengguna; penerapan adalah keputusan pemanggil.
  * - REVIEW_DOCUMENT deterministik (review.ts), BUKAN panggilan AI.
@@ -15,12 +17,13 @@
  */
 
 import { DokumenAiService, dokumenAiService } from './service';
-import { DRAFT_PROMPT_VERSION } from './prompt';
+import { DRAFT_PROMPT_VERSION, ENHANCE_PROMPT_VERSION } from './prompt';
 import { TEMPLATE_META, buildFieldBlock, missingRequiredFields, type DocTemplateMeta } from './docTemplates';
 import { detectMissingFields, formatContextBlock } from './contextAdapter';
 import { reviewDocument, scanIsiMarkers, stripHtml } from './review';
 import {
   isDocumentIntent,
+  isEnhanceTransform,
   type ContextField,
   type DocumentComparison,
   type DokumenAiChatRequest,
@@ -172,6 +175,8 @@ export class DocumentStudioOrchestrator {
         return this.compare(request);
       case 'EXTRACT_CONSTRUCTION_SCOPE':
         return this.extractScope(request);
+      case 'ENHANCE_TEXT':
+        return this.enhanceText(request);
     }
   }
 
@@ -319,7 +324,7 @@ export class DocumentStudioOrchestrator {
     if (!content.trim()) {
       return fail(request.intent, 'NO_DATA', 'document', 'Tidak ada isi dokumen yang bisa direview.');
     }
-    const findings = reviewDocument(content, request.templateMeta);
+    const findings = reviewDocument(content, request.templateMeta, request.contextFields);
     const missingFields = isiMissing(content);
     return { success: true, intent: request.intent, findings, missingFields };
   }
@@ -334,11 +339,18 @@ export class DocumentStudioOrchestrator {
     if (!request.instruction?.trim()) {
       return fail(request.intent, 'NO_INSTRUCTION', 'intent', 'Instruksi revisi belum ditulis.');
     }
+    // Template terpilih (bila diberikan pemanggil, mis. preset "Sesuaikan
+    // Template"): scaffold + panduan template ikut ke prompt revisi agar
+    // hasil kandidat mengikuti kerangka template itu.
+    const templateBlock = request.templateMeta
+      ? buildFieldBlock(request.templateMeta, request.fieldValues ?? {})
+      : '';
     const prompt = [
       `Revisi dokumen referensi berikut sesuai instruksi pengguna.`,
       `INSTRUKSI REVISI: ${request.instruction.trim()}`,
+      templateBlock,
       'ATURAN REVISI (wajib): ubah HANYA bagian yang diminta instruksi; pertahankan seluruh bagian lain persis seperti aslinya; jangan mengarang fakta baru (nama, nomor, tanggal, nilai, persetujuan) — bila instruksi membutuhkan data yang tidak tersedia, tandai [ISI: ...]. Keluarkan SELURUH dokumen hasil revisi sebagai KANDIDAT untuk ditinjau pengguna sebelum diterapkan.',
-    ].join('\n\n');
+    ].filter(Boolean).join('\n\n');
     const res = await this.transport.chat({
       documentText: current,
       fileName: request.fileName || 'Draf Dokumen',
@@ -358,6 +370,53 @@ export class DocumentStudioOrchestrator {
       missingFields: isiMissing(content),
       promptVersion: DRAFT_PROMPT_VERSION,
       message: 'Hasil adalah kandidat revisi — belum diterapkan ke dokumen. Tinjau sebelum menerima.',
+    };
+  }
+
+  /* ---------------- ENHANCE TEXT (kandidat rentang, tidak menerapkan) ---------------- */
+
+  /**
+   * Enhance Text (polish §5): menyunting rentang teks terpilih lewat mode
+   * ENHANCE. Yang dikirim ke provider HANYA teks target + konteks minimum
+   * (nama dokumen pada fileName) — documentText TIDAK diteruskan. Hasil
+   * adalah KANDIDAT teks rentang; penerapan (dan snapshot versi 'enhance')
+   * adalah keputusan pemanggil setelah pratinjau.
+   */
+  private async enhanceText(request: IntentRequest): Promise<IntentResult> {
+    const selection = request.selectionText ?? '';
+    if (!selection.trim()) {
+      return fail(request.intent, 'EMPTY_SELECTION', 'enhance', 'Tidak ada teks yang dipilih untuk disempurnakan.');
+    }
+    if (!isEnhanceTransform(request.transform)) {
+      return fail(
+        request.intent,
+        'UNKNOWN_TRANSFORM',
+        'intent',
+        `Jenis transformasi "${String(request.transform ?? '')}" tidak dikenal. Gunakan salah satu transformasi Enhance Text yang tersedia.`,
+      );
+    }
+    const res = await this.transport.chat({
+      // Sengaja kosong: service mode ENHANCE bekerja dari selectionText saja.
+      documentText: '',
+      fileName: request.fileName || request.documentName || 'Dokumen',
+      mode: 'ENHANCE',
+      selectionText: selection,
+      transform: request.transform,
+      prompt: request.instruction,
+      timeoutMs: request.timeoutMs,
+    });
+    if (!res.success) return fromServiceError(request.intent, res);
+    const content = (res.reply ?? '').trim();
+    if (!content) {
+      return fail(request.intent, 'EMPTY_RESPONSE', 'enhance', 'Penyedia AI mengembalikan hasil suntingan kosong — teks asli tidak berubah.');
+    }
+    return {
+      success: true,
+      intent: request.intent,
+      content,
+      missingFields: isiMissing(content),
+      promptVersion: ENHANCE_PROMPT_VERSION,
+      message: 'Hasil adalah kandidat suntingan untuk rentang terpilih — belum diterapkan. Tinjau pratinjau sebelum menerima.',
     };
   }
 
