@@ -72,6 +72,7 @@ import { TutorialCenter } from '../onboarding/tutorials/TutorialCenter';
 const APP_VERSION = '2.0.0';
 const APP_BUILD = 'Production';
 import { settingsAuditService, SettingsAuditEntry, SettingsCategory, SettingsScope } from '../../services/settingsAuditService';
+import { BrowserNotifyControl } from '../../notifications/BrowserNotifyControl';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 
 export type SettingsTabId =
@@ -1214,6 +1215,19 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div
+                  style={{
+                    padding: '14px 16px',
+                    borderRadius: '10px',
+                    background: 'var(--ez-color-surface-secondary)',
+                    border: '1px solid #EEF1F6',
+                  }}
+                >
+                  <BrowserNotifyControl />
+                  <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginTop: '4px' }}>
+                    Teruskan notifikasi aplikasi ke notifikasi browser (Chrome dan lainnya) — preferensi yang sama dengan panel lonceng.
+                  </div>
+                </div>
                 {[
                   { label: 'Pembaruan Status Proyek', desc: 'Notifikasi saat ada revisi atau perubahan status tender', checked: notifProject, setChecked: setNotifProject },
                   { label: 'Kalkulasi Otomatis RAB', desc: 'Notifikasi saat perhitungan otomatis RAB & rekapitulasi selesai', checked: notifRab, setChecked: setNotifRab },

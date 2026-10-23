@@ -19,6 +19,7 @@ import {
   type NotificationItem,
   type NotificationType,
 } from './NotificationContext';
+import { BrowserNotifyControl } from './BrowserNotifyControl';
 import { useI18n } from '../i18n';
 
 interface NotificationBellProps {
@@ -285,6 +286,15 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
                 </div>
               ))
             )}
+          </div>
+
+          <div
+            style={{
+              padding: '10px 16px',
+              borderTop: '1px solid var(--ez-color-surface-tertiary)',
+            }}
+          >
+            <BrowserNotifyControl showTestButton />
           </div>
 
           <div

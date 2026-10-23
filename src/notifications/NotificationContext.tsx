@@ -22,6 +22,7 @@ import React, {
   useState,
 } from 'react';
 import { notificationBus } from './notificationBus';
+import { ensureBrowserNotifyBridge, maybeShowBrowserNotification } from './browserNotify';
 
 export type NotificationType = 'ai' | 'error' | 'info' | 'success';
 
@@ -121,7 +122,19 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       read: false,
       link: input.link,
     };
+    // Satu titik integrasi jembatan browser: SETIAP notifikasi baru (notify
+    // langsung maupun dari bus, yang sama-sama lewat fungsi ini) diteruskan
+    // ke browserNotify. Penayangan native sendiri digerbang di sana
+    // (pref opt-in + izin granted + tab tidak fokus). Item yang dipulihkan
+    // dari localStorage tidak lewat sini, jadi tidak pernah tampil ulang.
+    void maybeShowBrowserNotification(item);
     setNotifications((prev) => [item, ...prev].slice(0, MAX_ITEMS));
+  }, []);
+
+  // Pasang jembatan notifikasi browser sekali (listener klik dari service
+  // worker + registrasi SW bila preferensi sudah 'on'). Tidak meminta izin.
+  useEffect(() => {
+    ensureBrowserNotifyBridge();
   }, []);
 
   // Bridge: events published on the bus become notifications.

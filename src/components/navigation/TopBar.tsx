@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { NotificationBell } from '../../notifications/NotificationBell';
 import type { NotificationItem } from '../../notifications/NotificationContext';
+import { setBrowserNotifyNavigationHandler } from '../../notifications/browserNotify';
 import { ClientUserManagementService } from '../../services/userManagementService';
 import { UserRole, type Project } from '../../types';
 import { useI18n, LANG_OPTIONS } from '../../i18n';
@@ -195,6 +196,16 @@ const handleNotificationItemClick = (item: NotificationItem) => {
       onNavigate(menu, tab);
     }
   };
+  // Klik pada notifikasi BROWSER (service worker → bridge) menavigasi lewat
+  // jalur yang sama persis dengan klik item lonceng di atas: pecah link
+  // 'menu:tab' lalu onNavigate.
+  useEffect(() => {
+    setBrowserNotifyNavigationHandler((link) => {
+      const [menu, tab] = link.split(':');
+      onNavigate(menu, tab);
+    });
+    return () => setBrowserNotifyNavigationHandler(null);
+  }, [onNavigate]);
   const handleNotificationSettings = () => {
     onNavigate('pengaturan', 'notifications');
   };
