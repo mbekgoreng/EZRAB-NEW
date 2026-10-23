@@ -86,8 +86,6 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
 
   const [selectedScenarioCode, setSelectedScenarioCode] = useState<EstimateScenario['code']>('SCENARIO_A');
 
-  if (!isOpen) return null;
-
   // Selected Comparison Versions
   const baseVersion = versions.find((v) => v.id === baseVersionId) || versions[versions.length - 1] || null;
   const targetVersion = versions.find((v) => v.id === targetVersionId) || versions[0] || null;
@@ -105,6 +103,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
   const baselineScenario = scenarios.find((s) => s.isBaseline) || scenarios[0];
 
   const categoryVariances = useMemo(() => {
+    if (!baselineScenario || !activeScenario) return [];
     return VersionAndScenarioEngine.calculateCategoryVariance(
       baselineScenario.items,
       activeScenario.items
@@ -137,6 +136,12 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
     setNewRevDesc('');
     setNewRevNotes('');
   };
+
+  // PENTING: early return HARUS sesudah semua hooks — return bersyarat di
+  // antara hooks membuat React melempar "Rendered more hooks than during
+  // the previous render" saat modal dibuka (halaman kosong). Regresi ini
+  // dikunci oleh src/test/versionScenarioModalHooks.test.ts.
+  if (!isOpen) return null;
 
   return (
     <div
@@ -707,6 +712,12 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                   </select>
                 </div>
               </div>
+
+              {versions.length < 2 && (
+                <div style={{ padding: '30px', textAlign: 'center', color: '#94A3B8', fontSize: '12.5px' }}>
+                  Perbandingan membutuhkan minimal 2 versi tersimpan. Simpan snapshot versi dari tab Versi terlebih dahulu.
+                </div>
+              )}
 
               {/* Comparison Summary Metrics */}
               {comparisonResult && (
