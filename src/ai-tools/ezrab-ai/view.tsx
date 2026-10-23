@@ -1,7 +1,12 @@
 /**
- * EzrabAiView — Ezrab Chat AI v2 (total overhaul).
- * - Maskot kanonis EZRAB (EZRABMascotLucu): hero besar saat kosong + mini di
- *   header. Eye-tracking + blink + float, sama seperti permukaan lain.
+ * EzrabAiView — Ezrab Chat AI v2.
+ * - Layout sederhana ala ChatGPT/Gemini (penyederhanaan owner 2026-10-23):
+ *   satu kolom tanpa scroll halaman; mode awal hanya sapaan kecil +
+ *   composer di tengah + daftar Riwayat Percakapan kompak; mode berisi =
+ *   daftar pesan (scroll internal) + composer di bawah; riwayat juga bisa
+ *   dibuka dari tombol "Riwayat" di header (panel dropdown).
+ * - Maskot kanonis EZRAB (EZRABMascotLucu) mini 44px di header dengan
+ *   eye-tracking + blink, sama seperti permukaan lain.
  * - Royal-blue brand theme (#2563EB), bubble Gemini-style.
  * - Mic voice input (Web Speech API, id-ID), lampir gambar (thumbnail di bubble
  *   user + catatan jujur ke AI bahwa gambar tak bisa dilihat model teks),
@@ -11,9 +16,7 @@ import React, { useRef, useState, useEffect, useCallback, Suspense, lazy } from 
 import {
   Send, Sparkles, Loader2, Zap, Brain, RotateCcw,
   Copy, Check, Mic, Paperclip, X, Plus, ImagePlus,
-  ArrowRight, Building2, ChevronRight, FileEdit, FileText,
-  FolderOpen, History, LayoutTemplate, Lightbulb, Trash2,
-  UploadCloud, ClipboardCheck,
+  History, Trash2,
 } from 'lucide-react';
 import { ezrabAiService } from './service';
 import { debitChatCreditOnSuccess } from './chatCreditDebit';
@@ -94,19 +97,12 @@ const getSpeechRecognitionCtor = (): (new () => EzrabSpeechRecognition) | null =
   return Ctor ?? null;
 };
 
-const SUGGESTIONS = [
-  '🏠 Apa itu RAB?',
-  '🧱 Hitung volume beton 10×8×0.12',
-  '📐 Jelaskan AHSP 2026',
-  '💰 Estimasi biaya renovasi dapur',
-];
-
 const MASCOT_PNG = '/images/ezrab-mascot-greeting.png';
 
 const fmtTime = (ts: number) =>
   new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
-/* Tanggal ringkas id-ID untuk daftar riwayat percakapan di rel kanan. */
+/* Tanggal ringkas id-ID untuk daftar riwayat percakapan. */
 const fmtHistoryDate = (ts: number) => {
   const diff = Date.now() - ts;
   const minute = 60 * 1000;
@@ -203,15 +199,16 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   // diproses setelah ini agar tidak menimpa riwayat (stale closure).
   const [conversationReady, setConversationReady] = useState(false);
 
-  /* ---- Rel kanan: Riwayat Percakapan ---- */
+  /* ---- Riwayat Percakapan (daftar kompak di mode awal + panel header) ---- */
   interface HistoryItem { id: string; title: string; updatedAt: number; messageCount: number }
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
-  const historyCardRef = useRef<HTMLElement>(null);
+  /** Panel dropdown riwayat dari tombol "Riwayat" di header. */
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const refreshHistory = useCallback(() => {
     try {
       const list = unifiedConversationStore.listConversations(storeProjectId);
-      setHistoryItems(list.slice(0, 12).map((c) => {
+      setHistoryItems(list.slice(0, 8).map((c) => {
         const rawTitle = (c.title ?? '').trim();
         const placeholder = !rawTitle || rawTitle === 'Percakapan baru' || rawTitle === 'Percakapan Copilot';
         const firstUser = (c.messages ?? []).find((m) => m.role === 'user');
@@ -320,6 +317,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   };
 
   const newChat = () => {
+    setHistoryOpen(false);
     setMessages([]);
     setInput('');
     setAwaitingNeeds(false);
@@ -340,12 +338,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
   };
 
-  /* Muat percakapan dari daftar riwayat (rel kanan): pemetaan restore
+  /* Muat percakapan dari daftar riwayat: pemetaan restore
    * SAMA seperti useEffect mount — hanya pesan user/assistant, ts dari
    * createdAt. Semua status menunggu (needs/choice/subtype + paksa-AI)
    * direset agar konteks lama tidak bocor ke percakapan yang dimuat. */
   const loadConversation = (id: string) => {
-    if (busy || id === convIdRef.current) return;
+    if (busy) return;
+    setHistoryOpen(false);
+    if (id === convIdRef.current) return;
     try {
       const conv = unifiedConversationStore.getConversation(id, storeProjectId);
       if (!conv) return;
@@ -380,6 +380,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * ulang dari store dengan pemetaan yang sama seperti mount /
    * loadConversation. */
   const reloadChat = () => {
+    setHistoryOpen(false);
     setBusy(false);
     setCreditConfirm(null);
     setAwaitingNeeds(false);
@@ -1027,8 +1028,53 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     setAttached({ url: trackUrl(URL.createObjectURL(f)), name: f.name });
   };
 
+  /* Panel riwayat header: tombol Escape menutup panel. */
+  useEffect(() => {
+    if (!historyOpen) return undefined;
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setHistoryOpen(false); };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [historyOpen]);
+
+  /* Daftar Riwayat Percakapan — SATU komponen dipakai ulang di mode awal
+   * (blok kompak di bawah composer) dan di panel dropdown header, agar
+   * perilaku muat/hapus percakapan identik di kedua tempat. */
+  const historyList = (
+    historyItems.length === 0 ? (
+      <p className="ezhist-empty">Belum ada riwayat percakapan</p>
+    ) : (
+      <div className="ezhist-list">
+        {historyItems.map((h) => (
+          <div key={h.id} className={`ezhist-row${h.id === activeConvId ? ' active' : ''}`}>
+            <button className="ezhist-main" onClick={() => loadConversation(h.id)} title={h.title}>
+              <span className="ezhist-title">{h.title}</span>
+              <span className="ezhist-meta">{fmtHistoryDate(h.updatedAt)} • {h.messageCount} pesan</span>
+            </button>
+            <button
+              className="ezhist-del"
+              onClick={() => deleteHistoryItem(h.id)}
+              title="Hapus percakapan"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        ))}
+      </div>
+    )
+  );
+
+  /* Kepala bagian riwayat: judul kecil + tombol Percakapan Baru. */
+  const historyHead = (
+    <div className="ezhist-head">
+      <h3 className="ezhist-heading">Riwayat Percakapan</h3>
+      <button className="ezhist-newbtn" onClick={newChat}>
+        <Plus size={13} /> Percakapan Baru
+      </button>
+    </div>
+  );
+
   /* Composer dipakai dua tempat: di tengah (saat chat kosong, di bawah
-   * trust badges) dan di bawah (saat sudah ada percakapan). */
+   * sapaan) dan di bawah (saat sudah ada percakapan). */
   const composer = (middle: boolean) => (
     <div className={`ezchat2-input-wrap${middle ? ' middle' : ''}`}>
       {attached && (
@@ -1097,9 +1143,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
 
   return (
     <div className="ezchat2">
-      <div className="ezchat2-layout">
       <div className="ezchat2-main">
       {/* ===== Header ===== */}
+      <div className="ezchat2-headerwrap">
       <div className="ezchat2-header">
         <div className="ezchat2-mascot">
           <EZRABMascotLucu
@@ -1127,90 +1173,42 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
               <Brain size={13} /> Mendalam
             </button>
           </div>
+          <button
+            className={`ezchat2-new${historyOpen ? ' active' : ''}`}
+            onClick={() => setHistoryOpen((o) => !o)}
+            title="Riwayat percakapan"
+          >
+            <History size={14} /> Riwayat
+          </button>
           <button className="ezchat2-new" onClick={reloadChat} title="Muat ulang tampilan chat (reset status macet, percakapan tidak dihapus)">
             <RotateCcw size={14} /> Muat Ulang
           </button>
-          {messages.length > 0 && (
-            <button className="ezchat2-new" onClick={newChat} title="Percakapan baru">
-              <Plus size={15} /> Baru
-            </button>
-          )}
+          <button className="ezchat2-new" onClick={newChat} title="Percakapan baru">
+            <Plus size={15} /> Baru
+          </button>
         </div>
       </div>
+      {historyOpen && (
+        <>
+          <div className="ezchat2-hist-veil" onClick={() => setHistoryOpen(false)} />
+          <div className="ezchat2-hist-panel" role="dialog" aria-label="Riwayat percakapan">
+            {historyHead}
+            {historyList}
+          </div>
+        </>
+      )}
+      </div>{/* /.ezchat2-headerwrap */}
 
       {/* ===== Body ===== */}
       <div className="ezchat2-body" ref={scrollRef}>
         {messages.length === 0 ? (
           <div className="ezchat2-empty">
-            <div className="ezchat2-hero">
-              <span className="ezchat2-spark s1"><Sparkles size={13} /></span>
-              <span className="ezchat2-spark s2"><Sparkles size={10} /></span>
-              <span className="ezchat2-spark s3"><Sparkles size={11} /></span>
-              <span className="ezchat2-spark s4"><Sparkles size={9} /></span>
-              <div className="ezchat2-hero-circle">
-                <EZRABMascotLucu
-                  size={120}
-                  enableEyeTracking={true}
-                  enableFloat={true}
-                  enableBlink={true}
-                />
-              </div>
-            </div>
             <h2 className="ezchat2-greet">Halo, saya <span className="ezchat2-greet-brand">EZRAB Chat AI</span></h2>
-            <p className="ezchat2-sub">
-              Asisten cerdas untuk kebutuhan RAB, estimasi, dan dokumen konstruksi Anda.<br />
-              Tanyakan apa saja, atau pilih fitur di bawah untuk memulai.
-            </p>
-            <div className="ezchat2-features">
-              <button className="ezfeat" onClick={() => taRef.current?.focus()}>
-                <span className="ezfeat-ic sky"><Sparkles size={20} /></span>
-                <span className="ezfeat-title">Buat dengan AI</span>
-                <span className="ezfeat-desc">Tulis kebutuhan Anda, biarkan AI membuat dokumen yang sesuai.</span>
-                <span className="ezfeat-arrow"><ArrowRight size={14} /></span>
-              </button>
-              <button className="ezfeat" onClick={() => navigateChat('template-rab')}>
-                <span className="ezfeat-ic mint"><LayoutTemplate size={20} /></span>
-                <span className="ezfeat-title">Gunakan Template</span>
-                <span className="ezfeat-desc">Pilih dari 180+ template dokumen konstruksi profesional.</span>
-                <span className="ezfeat-arrow"><ArrowRight size={14} /></span>
-              </button>
-              <button className="ezfeat" onClick={() => navigateChat('dokumen-ai')}>
-                <span className="ezfeat-ic lilac"><FileEdit size={20} /></span>
-                <span className="ezfeat-title">Edit &amp; Periksa</span>
-                <span className="ezfeat-desc">Perbaiki, tingkatkan, dan periksa dokumen dengan bantuan AI.</span>
-                <span className="ezfeat-arrow"><ArrowRight size={14} /></span>
-              </button>
-              <button className="ezfeat" onClick={() => navigateChat('proyek')}>
-                <span className="ezfeat-ic peach"><FolderOpen size={20} /></span>
-                <span className="ezfeat-title">Akses Data Proyek</span>
-                <span className="ezfeat-desc">Gunakan data proyek, AHSP, RAB, dan dokumen yang tersedia.</span>
-                <span className="ezfeat-arrow"><ArrowRight size={14} /></span>
-              </button>
-            </div>
-            <div className="ezchat2-examples">
-              <div className="ezchat2-examples-head">
-                <Sparkles size={15} />
-                <span>Contoh pertanyaan yang bisa Anda coba:</span>
-              </div>
-              <div className="ezchat2-chips">
-                {SUGGESTIONS.map((s) => (
-                  <button key={s} className="ezchat2-chip" onClick={() => submit(s)}>{s}</button>
-                ))}
-              </div>
-              <button
-                className="ezchat2-examples-arrow"
-                onClick={() => taRef.current?.focus()}
-                title="Ketik pertanyaan sendiri"
-              >
-                <ArrowRight size={14} />
-              </button>
-            </div>
-            <div className="ezchat2-trust">
-              <span>📖 AHSP 2026 resmi</span><i>•</i>
-              <span>🧮 Hitung volume</span><i>•</i>
-              <span>📋 Bantu susun RAB</span>
-            </div>
             {composer(true)}
+            <div className="ezhist-home">
+              {historyHead}
+              {historyList}
+            </div>
           </div>
         ) : (
           <div className="ezchat2-list">
@@ -1303,110 +1301,6 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       {/* ===== Composer di bawah (hanya saat sudah ada percakapan) ===== */}
       {messages.length > 0 && composer(false)}
       </div>{/* /.ezchat2-main */}
-
-      {/* ===== Rel kanan: proyek aktif, riwayat, quick actions, tips ===== */}
-      <aside className="ezchat2-rail">
-        <section className="ezrail-card">
-          <h3 className="ezrail-title">Proyek Aktif</h3>
-          {effProject ? (
-            <button className="ezrail-project" onClick={() => navigateChat('proyek')}>
-              <span className="ezrail-ic sky"><Building2 size={20} /></span>
-              <span className="ezrail-project-meta">
-                <span className="ezrail-project-name">{effProject.name}</span>
-                <span className="ezrail-project-id">{effProject.id}</span>
-              </span>
-              <span className="ezrail-chip">Aktif</span>
-              <ChevronRight size={16} className="ezrail-chev" />
-            </button>
-          ) : (
-            <p className="ezrail-empty">Belum ada proyek aktif</p>
-          )}
-        </section>
-
-        <section className="ezrail-card" ref={historyCardRef}>
-          <div className="ezrail-head">
-            <h3 className="ezrail-title">Riwayat Percakapan</h3>
-            <button className="ezrail-newbtn" onClick={newChat}>
-              <Plus size={13} /> Percakapan Baru
-            </button>
-          </div>
-          {historyItems.length === 0 ? (
-            <p className="ezrail-empty">Belum ada riwayat percakapan.</p>
-          ) : (
-            <div className="ezrail-history">
-              {historyItems.map((h) => (
-                <div key={h.id} className={`ezrail-hist${h.id === activeConvId ? ' active' : ''}`}>
-                  <button className="ezrail-hist-main" onClick={() => loadConversation(h.id)} title={h.title}>
-                    <span className="ezrail-hist-title">{h.title}</span>
-                    <span className="ezrail-hist-meta">{fmtHistoryDate(h.updatedAt)} • {h.messageCount} pesan</span>
-                  </button>
-                  <button
-                    className="ezrail-hist-del"
-                    onClick={() => deleteHistoryItem(h.id)}
-                    title="Hapus percakapan"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="ezrail-card">
-          <h3 className="ezrail-title">Quick Actions</h3>
-          <div className="ezrail-actions">
-            <button className="ezrail-action" onClick={() => fileRef.current?.click()}>
-              <span className="ezrail-ic sky"><UploadCloud size={18} /></span>
-              <span className="ezrail-action-meta">
-                <span className="ezrail-action-name">Upload Dokumen</span>
-                <span className="ezrail-action-sub">Lampirkan gambar ke percakapan</span>
-              </span>
-              <ChevronRight size={16} className="ezrail-chev" />
-            </button>
-            <button className="ezrail-action" onClick={() => navigateChat('rab-estimasi')}>
-              <span className="ezrail-ic lilac"><FileText size={18} /></span>
-              <span className="ezrail-action-meta">
-                <span className="ezrail-action-name">Lihat RAB</span>
-                <span className="ezrail-action-sub">Estimasi &amp; analisa biaya</span>
-              </span>
-              <ChevronRight size={16} className="ezrail-chev" />
-            </button>
-            <button className="ezrail-action" onClick={() => navigateChat('ahsp-2026')}>
-              <span className="ezrail-ic sky"><ClipboardCheck size={18} /></span>
-              <span className="ezrail-action-meta">
-                <span className="ezrail-action-name">Cek AHSP 2026</span>
-                <span className="ezrail-action-sub">Referensi resmi</span>
-              </span>
-              <ChevronRight size={16} className="ezrail-chev" />
-            </button>
-            <button className="ezrail-action" onClick={() => historyCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-              <span className="ezrail-ic peach"><History size={18} /></span>
-              <span className="ezrail-action-meta">
-                <span className="ezrail-action-name">Riwayat Chat</span>
-                <span className="ezrail-action-sub">Lihat percakapan sebelumnya</span>
-              </span>
-              <ChevronRight size={16} className="ezrail-chev" />
-            </button>
-          </div>
-        </section>
-
-        <section className="ezrail-card">
-          <h3 className="ezrail-title"><Lightbulb size={15} /> Tips Penggunaan</h3>
-          <ul className="ezrail-tips">
-            <li><Check size={14} /> Gunakan bahasa yang jelas dan spesifik</li>
-            <li><Check size={14} /> Sertakan detail proyek (lokasi, spesifikasi, dll)</li>
-            <li><Check size={14} /> Untuk perhitungan, sebutkan satuan dengan tepat</li>
-            <li><Check size={14} /> Hindari memberikan data sensitif</li>
-          </ul>
-        </section>
-
-        <div className="ezrail-status">
-          <span><span className="ezdot" /> EZRAB Chat AI v1.0</span>
-          <span><span className="ezdot" /> Online</span>
-        </div>
-      </aside>
-      </div>{/* /.ezchat2-layout */}
 
       {/* ===== Dialog saldo tidak cukup (simulasi) ===== */}
       {creditConfirm && (

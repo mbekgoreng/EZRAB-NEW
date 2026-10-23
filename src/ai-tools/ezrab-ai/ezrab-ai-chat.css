@@ -1,31 +1,16 @@
-/* Ezrab Chat AI v2 — royal-blue brand theme, 3D beranda mascot */
-.ezchat2 { display: flex; flex-direction: column; height: calc(100dvh - 64px); min-height: 480px; width: 100%; margin: 0 auto; padding: 0 20px; box-sizing: border-box; font-family: 'Plus Jakarta Sans','Inter',system-ui,sans-serif; }
-
-/* ===== Layout dua kolom: chat utama + rel kanan (mockup owner 2026-10-23) ===== */
-.ezchat2-layout { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 20px; width: 100%; max-width: 920px; margin: 0 auto; }
-.ezchat2-main { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; width: 100%; }
-.ezchat2-rail { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-/* Di bawah 1280px rel menumpuk di bawah chat: halaman .ezchat2 yang scroll,
-   kolom chat mempertahankan tinggi viewport-nya sendiri. */
-@media (max-width: 1279px) {
-  .ezchat2 { overflow-y: auto; }
-  .ezchat2-layout { overflow: visible; }
-  .ezchat2-main { flex: none; height: calc(100dvh - 64px - 8px); min-height: 480px; }
-}
-@media (max-width: 1279px) and (max-width: 767px) {
-  .ezchat2-main { height: calc(100dvh - 64px - 58px - var(--ezrab-safe-bottom, 0px) - 8px); min-height: 360px; }
-}
-@media (min-width: 1280px) {
-  .ezchat2-layout { flex-direction: row; max-width: 1260px; align-items: stretch; }
-  .ezchat2-main { max-width: 920px; }
-  .ezchat2-rail { width: 300px; flex-shrink: 0; overflow-y: auto; min-height: 0; padding: 2px 2px 12px; scrollbar-width: thin; }
-}
+/* Ezrab Chat AI v2 — royal-blue brand theme.
+   Layout sederhana ala ChatGPT/Gemini (2026-10-23): SATU kolom, halaman
+   TIDAK scroll — yang scroll hanya daftar pesan dan daftar riwayat
+   (keduanya internal). */
+.ezchat2 { display: flex; flex-direction: column; height: calc(100dvh - 64px); min-height: 0; overflow: hidden; width: 100%; margin: 0 auto; padding: 0 20px; box-sizing: border-box; font-family: 'Plus Jakarta Sans','Inter',system-ui,sans-serif; }
+.ezchat2-main { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; width: 100%; max-width: 920px; margin: 0 auto; }
 /* Ruang untuk bottom-nav mobile agar composer tidak tertutup / terpotong tepi viewport */
 @media (max-width: 767px) {
-  .ezchat2 { height: calc(100dvh - 64px - 58px - var(--ezrab-safe-bottom, 0px)); min-height: 360px; }
+  .ezchat2 { height: calc(100dvh - 64px - 58px - var(--ezrab-safe-bottom, 0px)); }
 }
 
 /* ===== Header ===== */
+.ezchat2-headerwrap { position: relative; flex-shrink: 0; }
 .ezchat2-header { display: flex; align-items: center; gap: 12px; padding: 12px 10px 10px; background: var(--ez-color-surface); border-bottom: 1px solid var(--ez-color-border-soft); margin-bottom: 6px; }
 .ezchat2-mascot { width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; background: radial-gradient(circle at 50% 35%, var(--ez-color-info-soft), var(--ez-color-primary-soft)); border: 1.5px solid var(--ez-color-primary-soft); overflow: hidden; }
 .ezchat2-title { min-width: 0; }
@@ -41,55 +26,40 @@
 .ezchat2-modes button.active { background: var(--ez-color-surface); color: var(--ez-color-primary-hover); box-shadow: 0 2px 8px rgba(15,23,42,.1); }
 .ezchat2-new { display: flex; align-items: center; gap: 5px; border: 1.5px solid var(--ez-color-border); background: var(--ez-color-surface); border-radius: var(--ez-radius-pill); padding: 7px 14px; font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-primary); cursor: pointer; font-family: inherit; transition: all .18s; }
 .ezchat2-new:hover { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); }
+.ezchat2-new.active { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); background: var(--ez-color-primary-soft); }
 
-/* ===== Body / empty hero ===== */
+/* ===== Panel riwayat (dropdown header) ===== */
+.ezchat2-hist-veil { position: fixed; inset: 0; z-index: 49; background: transparent; }
+.ezchat2-hist-panel { position: absolute; top: calc(100% + 4px); right: 10px; z-index: 50; width: min(360px, calc(100vw - 24px)); max-height: min(70dvh, 520px); display: flex; flex-direction: column; background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: 16px; box-shadow: 0 24px 48px -16px rgba(15,23,42,.28); padding: 12px; animation: ezFadeUp .18s ease; }
+.ezchat2-hist-panel .ezhist-list { max-height: none; flex: 1; min-height: 0; }
+
+/* ===== Body ===== */
 .ezchat2-body { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 4px 16px; display: flex; flex-direction: column; scrollbar-width: none; -ms-overflow-style: none; }
 .ezchat2-body::-webkit-scrollbar { display: none; }
-.ezchat2-empty { text-align: center; padding: 20px; margin: auto; max-width: 880px; width: 100%; min-width: 0; box-sizing: border-box; animation: ezFadeUp .5s ease; }
+
+/* Mode awal: sapaan kecil + composer + riwayat, di tengah vertikal.
+   Seluruhnya muat satu layar (daftar riwayat dibatasi + scroll internal). */
+.ezchat2-empty { text-align: center; padding: 16px; margin: auto; max-width: 720px; width: 100%; min-width: 0; box-sizing: border-box; animation: ezFadeUp .5s ease; }
 @keyframes ezFadeUp { from { opacity: 0; transform: translateY(14px); } }
-.ezchat2-hero { position: relative; display: inline-block; margin-bottom: 18px; }
-.ezchat2-hero-circle { display: flex; border-radius: 50%; background: radial-gradient(circle at 50% 35%, var(--ez-color-info-soft) 0%, var(--ez-color-primary-soft) 55%, var(--ez-color-primary-soft) 100%); border: 2px solid var(--ez-color-primary-soft); box-shadow: 0 18px 44px -12px rgba(37,99,235,.35); overflow: hidden; }
-.ezchat2-spark { position: absolute; display: flex; color: var(--ez-color-primary); opacity: .55; pointer-events: none; }
-.ezchat2-spark.s1 { left: -27px; top: 32%; }
-.ezchat2-spark.s2 { left: -15px; top: 63%; opacity: .35; }
-.ezchat2-spark.s3 { right: -25px; top: 28%; }
-.ezchat2-spark.s4 { right: -14px; top: 60%; opacity: .35; }
-.ezchat2-greet { font-size: clamp(24px, 4vw, 34px); font-weight: 800; margin: 0 0 10px; color: var(--ez-color-text-primary); }
+.ezchat2-greet { font-size: 22px; font-weight: 800; margin: 0; color: var(--ez-color-text-primary); }
 .ezchat2-greet-brand { color: var(--ez-color-primary); }
-.ezchat2-sub { color: var(--ez-color-text-muted); font-size: 14px; line-height: 1.65; margin: 0 0 26px; }
-.ezchat2-chips { display: flex; flex-wrap: wrap; gap: 9px; justify-content: center; }
-.ezchat2-chip { border: 1.5px solid var(--ez-color-border); background: var(--ez-color-surface); border-radius: var(--ez-radius-pill); padding: 10px 18px; font-size: 13px; font-weight: 600; color: var(--ez-color-text-primary); cursor: pointer; font-family: inherit; transition: all .18s; box-shadow: 0 2px 8px -2px rgba(15,23,42,.06); }
-.ezchat2-chip:hover { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); transform: translateY(-2px); box-shadow: 0 8px 18px -4px rgba(37,99,235,.28); }
-.ezchat2-trust { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 26px; font-size: 12px; color: var(--ez-color-text-muted); font-weight: 600; flex-wrap: wrap; }
-.ezchat2-trust span { display: inline-flex; align-items: center; gap: 5px; }
-.ezchat2-trust i { font-style: normal; opacity: .5; }
 
-/* ===== Kartu fitur (empty state, mockup) ===== */
-.ezchat2-features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; text-align: left; margin-bottom: 16px; }
-@media (min-width: 1100px) { .ezchat2-features { grid-template-columns: repeat(4, 1fr); } }
-@media (max-width: 420px) { .ezchat2-features { grid-template-columns: 1fr; } }
-.ezfeat { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: 18px; padding: 18px; cursor: pointer; font-family: inherit; text-align: left; box-shadow: 0 4px 18px -8px rgba(15,23,42,.08); transition: all .18s; min-width: 0; }
-.ezfeat:hover { transform: translateY(-2px); border-color: var(--ez-color-primary-soft); box-shadow: 0 12px 26px -10px rgba(37,99,235,.25); }
-.ezfeat-title { font-size: 14.5px; font-weight: 800; color: var(--ez-color-text-primary); margin-top: 4px; }
-.ezfeat-desc { font-size: 12.5px; line-height: 1.55; color: var(--ez-color-text-muted); }
-.ezfeat-arrow { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--ez-color-border); color: var(--ez-color-text-muted); margin-top: auto; }
-.ezfeat:hover .ezfeat-arrow { border-color: var(--ez-color-primary); color: var(--ez-color-primary); }
-/* Lingkaran ikon pastel — dipakai kartu fitur & rel kanan */
-.ezfeat-ic, .ezrail-ic { display: flex; align-items: center; justify-content: center; border-radius: 50%; flex-shrink: 0; }
-.ezfeat-ic { width: 44px; height: 44px; }
-.ezrail-ic { width: 40px; height: 40px; }
-.ezfeat-ic.sky, .ezrail-ic.sky { background: var(--ez-pastel-sky); color: var(--ez-color-primary-hover); }
-.ezfeat-ic.mint, .ezrail-ic.mint { background: var(--ez-pastel-mint); color: var(--ez-color-success); }
-.ezfeat-ic.lilac, .ezrail-ic.lilac { background: var(--ez-pastel-lilac); color: #7C3AED; }
-.ezfeat-ic.peach, .ezrail-ic.peach { background: var(--ez-pastel-peach); color: var(--ez-color-warning); }
-
-/* ===== Bar contoh pertanyaan (empty state, mockup) ===== */
-.ezchat2-examples { position: relative; text-align: left; background: var(--ez-color-primary-soft); border-radius: 18px; padding: 16px 52px 16px 18px; }
-.ezchat2-examples-head { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: var(--ez-color-primary-hover); margin-bottom: 12px; }
-.ezchat2-examples .ezchat2-chips { justify-content: flex-start; }
-.ezchat2-examples .ezchat2-chip { box-shadow: none; }
-.ezchat2-examples-arrow { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--ez-color-primary-soft); background: var(--ez-color-surface); color: var(--ez-color-primary); cursor: pointer; transition: all .18s; }
-.ezchat2-examples-arrow:hover { border-color: var(--ez-color-primary); }
+/* ===== Riwayat Percakapan (kompak — mode awal & panel header) ===== */
+.ezhist-home { width: 100%; margin-top: 28px; text-align: left; }
+.ezhist-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.ezhist-heading { font-size: 13px; font-weight: 800; color: var(--ez-color-text-primary); margin: 0; }
+.ezhist-newbtn { display: inline-flex; align-items: center; gap: 4px; border: 1.5px solid var(--ez-color-border); background: var(--ez-color-surface); border-radius: var(--ez-radius-pill); padding: 5px 11px; font-size: 11.5px; font-weight: 700; color: var(--ez-color-text-primary); cursor: pointer; font-family: inherit; transition: all .18s; flex-shrink: 0; }
+.ezhist-newbtn:hover { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); }
+.ezhist-empty { font-size: 12.5px; color: var(--ez-color-text-muted); margin: 0; padding: 2px; }
+.ezhist-list { display: flex; flex-direction: column; gap: 4px; max-height: 266px; overflow-y: auto; scrollbar-width: thin; padding-right: 2px; }
+.ezhist-row { display: flex; align-items: stretch; gap: 4px; border-radius: 12px; border: 1px solid transparent; transition: all .15s; }
+.ezhist-row:hover { background: var(--ez-color-surface-secondary); }
+.ezhist-row.active { background: var(--ez-color-primary-soft); border-color: var(--ez-color-primary-soft); }
+.ezhist-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; background: none; border: none; padding: 7px 10px; cursor: pointer; font-family: inherit; text-align: left; }
+.ezhist-title { font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ezhist-meta { font-size: 11px; color: var(--ez-color-text-muted); }
+.ezhist-del { display: flex; align-items: center; justify-content: center; width: 30px; border: none; background: none; border-radius: 10px; color: var(--ez-color-text-muted); cursor: pointer; flex-shrink: 0; transition: all .15s; }
+.ezhist-del:hover { background: var(--ez-color-danger-soft); color: var(--ez-color-danger); }
 
 /* ===== Messages ===== */
 .ezchat2-list { display: flex; flex-direction: column; gap: 20px; padding: 10px 4px; }
@@ -120,9 +90,9 @@
 .ezchat2-thinking { font-size: 12.5px; color: var(--ez-color-text-muted); font-weight: 600; margin-left: 6px; }
 
 /* ===== Composer ===== */
-.ezchat2-input-wrap { padding: 6px 0 calc(14px + env(safe-area-inset-bottom, 0px)); }
-/* Composer di tengah (saat chat kosong): di bawah trust badges */
-.ezchat2-input-wrap.middle { margin-top: 22px; padding-bottom: 0; text-align: left; }
+.ezchat2-input-wrap { padding: 6px 0 calc(14px + env(safe-area-inset-bottom, 0px)); flex-shrink: 0; }
+/* Composer di tengah (saat chat kosong): di bawah sapaan */
+.ezchat2-input-wrap.middle { margin-top: 14px; padding-bottom: 0; text-align: left; }
 .ezchat2-input-wrap.middle .ezchat2-foot { text-align: center; }
 .ezchat2-attchip { display: inline-flex; align-items: center; gap: 8px; background: var(--ez-color-primary-soft); border: 1.5px solid var(--ez-color-primary-soft); border-radius: var(--ez-radius-control); padding: 6px 10px 6px 6px; margin-bottom: 8px; font-size: 12.5px; font-weight: 600; color: var(--ez-color-primary-hover); }
 .ezchat2-attchip img { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; }
@@ -168,59 +138,21 @@
 .md-body .md-table tr:nth-child(even) td { background: var(--ez-color-surface-secondary); }
 
 @media (max-width: 640px) {
-  .ezchat2 { padding: 0 10px; height: 100%; }
+  .ezchat2 { padding: 0 10px; }
   .ezchat2-col { max-width: 88%; }
   .ezchat2-bubble { font-size: 13.5px; }
   .ezchat2-modes button { padding: 7px 10px; }
   .ezchat2-status { display: none; }
+  .ezchat2-greet { font-size: 19px; }
+  .ezchat2-hist-panel { right: 0; }
 }
 
-/* Header sempit (<=480px): izinkan actions (kredit + mode + Baru) turun ke baris kedua daripada terjepit */
+/* Header sempit (<=480px): izinkan actions (kredit + mode + Riwayat + Muat Ulang + Baru) turun ke baris kedua daripada terjepit */
 @media (max-width: 480px) {
   .ezchat2-header { flex-wrap: wrap; row-gap: 8px; }
   .ezchat2-actions { flex-wrap: wrap; row-gap: 6px; }
 }
 
-/* ===== Rel kanan: kartu proyek / riwayat / quick actions / tips ===== */
-.ezrail-card { background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: 18px; padding: 16px; box-shadow: 0 4px 18px -8px rgba(15,23,42,.08); }
-.ezrail-title { display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 800; color: var(--ez-color-text-primary); margin: 0 0 12px; }
-.ezrail-empty { font-size: 12.5px; color: var(--ez-color-text-muted); margin: 0; line-height: 1.55; }
-.ezrail-chev { color: var(--ez-color-text-muted); flex-shrink: 0; margin-left: auto; }
-/* Proyek aktif */
-.ezrail-project { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: none; padding: 2px; cursor: pointer; font-family: inherit; text-align: left; border-radius: 12px; }
-.ezrail-project-meta { display: flex; flex-direction: column; min-width: 0; }
-.ezrail-project-name { font-size: 13px; font-weight: 700; color: var(--ez-color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ezrail-project-id { font-size: 11.5px; color: var(--ez-color-text-muted); }
-.ezrail-chip { font-size: 10.5px; font-weight: 700; color: var(--ez-color-primary-hover); background: var(--ez-color-primary-soft); border-radius: var(--ez-radius-pill); padding: 3px 10px; flex-shrink: 0; }
-/* Riwayat percakapan */
-.ezrail-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.ezrail-head .ezrail-title { margin-bottom: 12px; }
-.ezrail-newbtn { display: inline-flex; align-items: center; gap: 4px; border: 1.5px solid var(--ez-color-border); background: var(--ez-color-surface); border-radius: var(--ez-radius-pill); padding: 5px 11px; font-size: 11.5px; font-weight: 700; color: var(--ez-color-text-primary); cursor: pointer; font-family: inherit; margin-bottom: 12px; transition: all .18s; flex-shrink: 0; }
-.ezrail-newbtn:hover { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); }
-.ezrail-history { display: flex; flex-direction: column; gap: 6px; max-height: 324px; overflow-y: auto; scrollbar-width: thin; padding-right: 2px; }
-.ezrail-hist { display: flex; align-items: stretch; gap: 4px; border-radius: 12px; border: 1px solid transparent; transition: all .15s; }
-.ezrail-hist:hover { background: var(--ez-color-surface-secondary); }
-.ezrail-hist.active { background: var(--ez-color-primary-soft); border-color: var(--ez-color-primary-soft); }
-.ezrail-hist-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; background: none; border: none; padding: 8px 10px; cursor: pointer; font-family: inherit; text-align: left; }
-.ezrail-hist-title { font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ezrail-hist-meta { font-size: 11px; color: var(--ez-color-text-muted); }
-.ezrail-hist-del { display: flex; align-items: center; justify-content: center; width: 30px; border: none; background: none; border-radius: 10px; color: var(--ez-color-text-muted); cursor: pointer; flex-shrink: 0; transition: all .15s; }
-.ezrail-hist-del:hover { background: var(--ez-color-danger-soft); color: var(--ez-color-danger); }
-/* Quick actions */
-.ezrail-actions { display: flex; flex-direction: column; gap: 2px; }
-.ezrail-action { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: none; padding: 7px 4px; border-radius: 12px; cursor: pointer; font-family: inherit; text-align: left; transition: background .15s; }
-.ezrail-action:hover { background: var(--ez-color-surface-secondary); }
-.ezrail-action-meta { display: flex; flex-direction: column; min-width: 0; }
-.ezrail-action-name { font-size: 13px; font-weight: 700; color: var(--ez-color-text-primary); }
-.ezrail-action-sub { font-size: 11.5px; color: var(--ez-color-text-muted); }
-/* Tips */
-.ezrail-tips { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
-.ezrail-tips li { display: flex; align-items: flex-start; gap: 7px; font-size: 12.5px; line-height: 1.5; color: var(--ez-color-text-secondary); }
-.ezrail-tips li svg { color: var(--ez-color-success); flex-shrink: 0; margin-top: 2px; }
-/* Baris status */
-.ezrail-status { display: flex; align-items: center; gap: 18px; padding: 0 6px; font-size: 11.5px; font-weight: 600; color: var(--ez-color-text-muted); }
-.ezrail-status span { display: inline-flex; align-items: center; gap: 6px; }
-
 @media (prefers-reduced-motion: reduce) {
-  .ezchat2-empty, .ezchat2-row, .ezdot.pulse, .tdot, .ezchat2-avatar.thinking, .spin { animation: none !important; }
+  .ezchat2-empty, .ezchat2-row, .ezchat2-hist-panel, .ezdot.pulse, .tdot, .ezchat2-avatar.thinking, .spin { animation: none !important; }
 }
