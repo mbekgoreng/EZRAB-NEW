@@ -9,7 +9,7 @@
  * database server; label di UI menyatakannya apa adanya.
  */
 import React, { useRef, useState } from 'react';
-import { Building2, Upload, Trash2, Check, FileText, Archive, Copy, Play, AlertTriangle } from 'lucide-react';
+import { Building2, Upload, Trash2, Check, FileText, Archive, Copy, Play, AlertTriangle, Search } from 'lucide-react';
 import {
   emptyProfile,
   kopHtml,
@@ -158,14 +158,16 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 420px) 1fr', gap: 20, alignItems: 'start' }}>
-        <div>
+      <div className="docai-panelgrid">
+        <div className="docai-card">
+          <div className="docai-step">Profil Perusahaan</div>
           {field('Nama Perusahaan', 'name', 'mis. YF Architect Studio')}
           {field('Alamat', 'address', 'Jalan, kota, kode pos')}
           {field('Telepon', 'phone', 'mis. 0812-3456-7890')}
           {field('Email', 'email', 'halo@perusahaan.co.id')}
           {field('Website', 'website', 'www.perusahaan.co.id')}
           {field('Info Tambahan (opsional)', 'extra', 'mis. NPWP / nomor izin')}
+          <div className="docai-step" style={{ marginTop: 8 }}>Kop Surat</div>
           <span className="docai-label">Mode Kop Surat</span>
           <div className="docai-modeline" role="tablist" aria-label="Mode kop surat" style={{ marginBottom: 12 }}>
             <button
@@ -211,9 +213,9 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
             <span className="docai-label">Warna Aksen Garis Kop</span>
             <input
               type="color"
+              className="docai-colorinput"
               value={editing.accentColor}
               onChange={(e) => setEditing((p) => ({ ...p, accentColor: e.target.value }))}
-              style={{ width: 64, height: 36, padding: 2, background: 'transparent', border: 'none' }}
             />
           </label>
 
@@ -336,7 +338,7 @@ export const CompanyIdentityPanel: React.FC<{ onChanged?: () => void }> = ({ onC
                 <Trash2 size={14} /> Hapus
               </button>
             )}
-            {savedMsg && <span className="docai-hint" style={{ alignSelf: 'center' }}>Tersimpan ✓</span>}
+            {savedMsg && <span className="docai-savedmsg"><Check size={14} /> Tersimpan</span>}
           </div>
         </div>
 
@@ -370,6 +372,10 @@ export const MyTemplatesPanel: React.FC<{
   const [items, setItems] = useState<UserTemplate[]>(() => listUserTemplates());
   const [form, setForm] = useState<UserTemplate>(() => newUserTemplate({}));
   const [msg, setMsg] = useState(false);
+  const [query, setQuery] = useState('');
+  const shownItems = items.filter(
+    (x) => !query.trim() || `${x.name} ${x.desc ?? ''}`.toLowerCase().includes(query.trim().toLowerCase()),
+  );
 
   const persist = (t: UserTemplate) => {
     setItems(saveUserTemplate(t));
@@ -387,8 +393,9 @@ export const MyTemplatesPanel: React.FC<{
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 420px) 1fr', gap: 20, alignItems: 'start' }}>
-        <div>
+      <div className="docai-panelgrid">
+        <div className="docai-card">
+          <div className="docai-step">Buat Template</div>
           <label style={{ display: 'block', marginBottom: 10 }}>
             <span className="docai-label">Nama Template</span>
             <input className="docai-input" style={{ marginBottom: 0 }} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="mis. BA Pemeriksaan Kolom" />
@@ -413,28 +420,53 @@ export const MyTemplatesPanel: React.FC<{
             <button className="docai-btn-primary" disabled={!form.name.trim()} onClick={() => { persist(form); setForm(newUserTemplate({})); }}>
               <Check size={15} /> Simpan Template
             </button>
-            {msg && <span className="docai-hint" style={{ alignSelf: 'center' }}>Tersimpan ✓</span>}
+            {msg && <span className="docai-savedmsg"><Check size={14} /> Tersimpan</span>}
           </div>
           <p className="docai-hint" style={{ marginTop: 10 }}>Tip: dari editor dokumen, gunakan menu ⋯ → “Simpan sebagai Template” untuk menyimpan isi dokumen saat ini sebagai contoh template.</p>
         </div>
 
-        <div className="docai-draftlist" style={{ marginTop: 0 }}>
-          {items.length === 0 && <p className="docai-hint">Belum ada template pribadi.</p>}
-          {items.map((x) => (
-            <div key={x.id} className="docai-draftitem" style={{ cursor: 'default' }}>
-              <div>
-                <strong>{x.name}</strong>
-                <span className="docai-draftst">{x.archived ? 'Diarsipkan' : x.sampleHtml ? 'Dengan contoh isi' : 'Kerangka AI'}</span>
-                {x.desc && <div className="docai-hint">{x.desc}</div>}
+        <div>
+          {items.length > 0 && (
+            <div className="docai-listtoolbar">
+              <div className="docai-search">
+                <Search size={15} />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Cari template saya…"
+                  aria-label="Cari template saya"
+                />
               </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button className="docai-btn-ghost" title="Pakai template" onClick={() => onUse(x)}><Play size={14} /></button>
-                <button className="docai-btn-ghost" title="Duplikat" onClick={() => setItems(saveUserTemplate(newUserTemplate({ ...x, name: `${x.name} (salinan)` })))}><Copy size={14} /></button>
-                <button className="docai-btn-ghost" title={x.archived ? 'Batalkan arsip' : 'Arsipkan'} onClick={() => setItems(saveUserTemplate({ ...x, archived: !x.archived }))}><Archive size={14} /></button>
-                <button className="docai-btn-ghost" title="Hapus" onClick={() => setItems(deleteUserTemplate(x.id))}><Trash2 size={14} /></button>
-              </div>
+              <span className="docai-listcount">{shownItems.length} dari {items.length} template</span>
             </div>
-          ))}
+          )}
+          <div className="docai-draftlist" style={{ marginTop: 0 }}>
+            {items.length === 0 && (
+              <div className="docai-empty docai-empty-sm">
+                <FileText size={26} />
+                <h3>Belum ada template pribadi</h3>
+                <p>Gunakan formulir buat template untuk menambahkan template pertama Anda, atau simpan isi dokumen dari editor lewat menu ⋯ → “Simpan sebagai Template”.</p>
+              </div>
+            )}
+            {items.length > 0 && shownItems.length === 0 && (
+              <p className="docai-hint" style={{ margin: 0 }}>Tidak ada template yang cocok dengan pencarian ini.</p>
+            )}
+            {shownItems.map((x) => (
+              <div key={x.id} className={`docai-draftitem ${x.archived ? 'is-archived' : ''}`} style={{ cursor: 'default' }}>
+                <div>
+                  <strong>{x.name}</strong>
+                  <span className="docai-draftmeta">{x.archived ? 'Diarsipkan' : x.sampleHtml ? 'Dengan contoh isi' : 'Kerangka AI'}</span>
+                  {x.desc && <div className="docai-hint" style={{ marginTop: 2 }}>{x.desc}</div>}
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button className="docai-iconbtn" title="Pakai template" aria-label={`Pakai template ${x.name}`} onClick={() => onUse(x)}><Play size={14} /></button>
+                  <button className="docai-iconbtn" title="Duplikat" aria-label={`Duplikat template ${x.name}`} onClick={() => setItems(saveUserTemplate(newUserTemplate({ ...x, name: `${x.name} (salinan)` })))}><Copy size={14} /></button>
+                  <button className="docai-iconbtn" title={x.archived ? 'Batalkan arsip' : 'Arsipkan'} aria-label={`${x.archived ? 'Batalkan arsip' : 'Arsipkan'} template ${x.name}`} onClick={() => setItems(saveUserTemplate({ ...x, archived: !x.archived }))}><Archive size={14} /></button>
+                  <button className="docai-iconbtn danger" title="Hapus" aria-label={`Hapus template ${x.name}`} onClick={() => setItems(deleteUserTemplate(x.id))}><Trash2 size={14} /></button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -449,9 +481,16 @@ export const SavedDocsPanel: React.FC<{
   drafts: DraftRecord[];
   onOpen: (d: DraftRecord) => void;
   onStatus: (d: DraftRecord, s: DocDraftStatus) => void;
-}> = ({ drafts, onOpen, onStatus }) => {
+  /** Aksi kosong-state: kembali ke sub-view Buat Dokumen (opsional). */
+  onCreate?: () => void;
+}> = ({ drafts, onOpen, onStatus, onCreate }) => {
   const [filter, setFilter] = useState<string>('all');
-  const shown = drafts.filter((d) => filter === 'all' || d.status === filter || (filter === 'review' && d.status === 'reviewed'));
+  const [query, setQuery] = useState('');
+  const shown = drafts.filter(
+    (d) =>
+      (filter === 'all' || d.status === filter || (filter === 'review' && d.status === 'reviewed')) &&
+      (!query.trim() || `${d.title} ${d.templateName}`.toLowerCase().includes(query.trim().toLowerCase())),
+  );
   return (
     <div className="docai-tab">
       <div className="docai-pagehead">
@@ -460,22 +499,58 @@ export const SavedDocsPanel: React.FC<{
           <h2><Archive size={20} style={{ verticalAlign: -3 }} /> Dokumen Tersimpan</h2>
           <p>Semua draf di perangkat ini beserta statusnya. Mengarsipkan tidak menghapus dokumen.</p>
         </div>
-        <select className="docai-select" value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="all">Semua status</option>
-          <option value="draft">Draft</option>
-          <option value="editing">Sedang Disunting</option>
-          <option value="review">Siap Ditinjau</option>
-          <option value="final">Final</option>
-          <option value="archived">Diarsipkan</option>
-        </select>
       </div>
+      {drafts.length > 0 && (
+        <div className="docai-listtoolbar">
+          <div className="docai-search">
+            <Search size={15} />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Cari dokumen (judul / template)…"
+              aria-label="Cari dokumen tersimpan"
+            />
+          </div>
+          <select className="docai-select" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Filter status dokumen">
+            <option value="all">Semua status</option>
+            <option value="draft">Draft</option>
+            <option value="editing">Sedang Disunting</option>
+            <option value="review">Siap Ditinjau</option>
+            <option value="final">Final</option>
+            <option value="archived">Diarsipkan</option>
+          </select>
+          <span className="docai-listcount">{shown.length} dari {drafts.length} dokumen</span>
+        </div>
+      )}
       <div className="docai-draftlist" style={{ marginTop: 0 }}>
-        {shown.length === 0 && <p className="docai-hint">Tidak ada dokumen pada filter ini.</p>}
+        {drafts.length === 0 && (
+          <div className="docai-empty">
+            <Archive size={30} />
+            <h3>Belum ada dokumen tersimpan</h3>
+            <p>Draf yang Anda buat akan muncul di sini beserta statusnya, siap dibuka kembali kapan saja.</p>
+            {onCreate && (
+              <button className="docai-btn-primary" onClick={onCreate}>Buat Dokumen</button>
+            )}
+          </div>
+        )}
+        {drafts.length > 0 && shown.length === 0 && (
+          <div className="docai-empty docai-empty-sm">
+            <Search size={26} />
+            <h3>Tidak ada dokumen yang cocok</h3>
+            <p>Tidak ada dokumen yang cocok dengan pencarian atau filter status ini.</p>
+            <button
+              className="docai-btn-ghost"
+              onClick={() => { setQuery(''); setFilter('all'); }}
+            >
+              Atur Ulang Filter
+            </button>
+          </div>
+        )}
         {shown.map((d) => (
           <div key={d.id} className="docai-draftitem" style={{ cursor: 'default' }}>
             <div>
-              <strong>{d.title}</strong>
-              <span className="docai-draftst">{d.templateName} · {new Date(d.updatedAt).toLocaleString('id-ID')}</span>
+              <button type="button" className="docai-titlebtn" onClick={() => onOpen(d)} title="Buka dokumen di editor">{d.title}</button>
+              <span className="docai-draftmeta">{d.templateName} · {new Date(d.updatedAt).toLocaleString('id-ID')}</span>
             </div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               {d.status === 'final' ? (
@@ -497,7 +572,7 @@ export const SavedDocsPanel: React.FC<{
                   <option value="archived">Diarsipkan</option>
                 </select>
               )}
-              <button className="docai-btn-primary" onClick={() => onOpen(d)}>Buka</button>
+              <button className="docai-btn-primary docai-mini" onClick={() => onOpen(d)}>Buka</button>
             </div>
           </div>
         ))}

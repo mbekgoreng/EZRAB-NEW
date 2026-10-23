@@ -21,7 +21,7 @@ import {
   Loader2, Save, Download, AlertTriangle, FilePlus2, Check, MoreHorizontal,
   RefreshCw, History as HistoryIcon, Focus, ListTree, FilePlus, X, CloudOff,
   Printer, LayoutTemplate, ArrowRight, Briefcase, Sparkles, ClipboardCheck,
-  Search, Eye, CheckCircle2, FileText, Lock, Building2, Languages,
+  Search, Eye, CheckCircle2, FileText, Lock, Building2, Languages, Archive,
 } from 'lucide-react';
 import { getDefaultProfile, kopHtml, listProfiles } from '../companyProfile';
 import {
@@ -843,7 +843,7 @@ export const DocCreator: React.FC<{
           >
             <div>
               <strong>{d.title}</strong>
-              <span className="docai-draftst">
+              <span className={`docai-draftst st-${d.status === 'reviewed' ? 'review' : d.status}`}>
                 {docStatusLabel(d.status)}
               </span>
             </div>
@@ -891,10 +891,10 @@ export const DocCreator: React.FC<{
 
   const subnav = (
     <div className="docai-subnav" role="tablist" aria-label="AI Document">
-      <button className={`docai-subbtn ${subView === 'buat' ? 'active' : ''}`} onClick={() => setSubView('buat')}>Buat Dokumen</button>
-      <button className={`docai-subbtn ${subView === 'tersimpan' ? 'active' : ''}`} onClick={() => setSubView('tersimpan')}>Dokumen Tersimpan</button>
-      <button className={`docai-subbtn ${subView === 'template' ? 'active' : ''}`} onClick={() => setSubView('template')}>Template Saya</button>
-      <button className={`docai-subbtn ${subView === 'identitas' ? 'active' : ''}`} onClick={() => setSubView('identitas')}>Identitas Perusahaan</button>
+      <button className={`docai-subbtn ${subView === 'buat' ? 'active' : ''}`} onClick={() => setSubView('buat')}><FilePlus2 size={15} /> Buat Dokumen</button>
+      <button className={`docai-subbtn ${subView === 'tersimpan' ? 'active' : ''}`} onClick={() => setSubView('tersimpan')}><Archive size={15} /> Dokumen Tersimpan</button>
+      <button className={`docai-subbtn ${subView === 'template' ? 'active' : ''}`} onClick={() => setSubView('template')}><LayoutTemplate size={15} /> Template Saya</button>
+      <button className={`docai-subbtn ${subView === 'identitas' ? 'active' : ''}`} onClick={() => setSubView('identitas')}><Building2 size={15} /> Identitas Perusahaan</button>
     </div>
   );
 
@@ -932,6 +932,7 @@ export const DocCreator: React.FC<{
         {subnav}
         <SavedDocsPanel
           drafts={drafts}
+          onCreate={() => setSubView('buat')}
           onOpen={(d) => { setSubView('buat'); openDraft(d); }}
           onStatus={(d, st) => onUpsertDraft({ ...d, status: st, updatedAt: Date.now() })}
         />
