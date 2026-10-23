@@ -34,6 +34,10 @@ export interface EzrabAiRequest {
   /** Structured active-project snapshot (drives read-only project tools). */
   projectSnapshot?: import('./projectContext').ProjectSnapshot | null;
   mode?: 'fast' | 'advanced';
+  /** Kunci idempotensi operasi kirim ini. Bila kosong, service membuat
+   *  satu kunci acak baru untuk operasi ini; percobaan ulang operasi yang
+   *  sama meneruskan kunci yang sama. */
+  idempotencyKey?: string;
 }
 
 export interface EzrabAiResponse {

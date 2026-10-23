@@ -24,6 +24,12 @@ export interface AiToolsRequest {
   imageMimeType?: string;
   pdfDataBase64?: string;
   mode?: 'fast' | 'advanced';
+  /** Kunci idempotensi operasi pemanggil. Dikirim apa adanya sebagai
+   *  header Idempotency-Key pada panggilan gateway (jalur browser);
+   *  klien TIDAK membuat/mengubah kunci — satu operasi = satu kunci,
+   *  ditentukan pemanggil. Jalur non-gateway (adapter Node) tidak
+   *  terpengaruh. */
+  idempotencyKey?: string;
 }
 
 export interface AiToolsSuccess<T = unknown> {
@@ -204,7 +210,11 @@ export class AiToolsProviderClient {
       const timer = globalThis.setTimeout(() => controller.abort(), timeoutMs + 1000);
       const resp = await fetch('/api/ai/tools/execute', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(await aiGatewayAuthHeaders()) },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(await aiGatewayAuthHeaders()),
+          ...(request.idempotencyKey ? { 'Idempotency-Key': request.idempotencyKey } : {}),
+        },
         body: JSON.stringify({
           productId: request.productId,
           prompt: request.prompt,

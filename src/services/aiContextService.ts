@@ -230,17 +230,23 @@ export const getReportContext = (
   const clientName = project?.client || project?.clientName || 'Klien Proyek';
   const location = project?.location || 'Indonesia';
 
+  // Hanya pekerjaan yang benar-benar tercatat di jadwal. Bila kosong, daftar
+  // berisi SATU label jujur — bukan contoh pekerjaan karangan. (Sebelumnya
+  // daftar kosong diganti contoh seperti 'Pekerjaan Persiapan & Pengukuran
+  // Bowplank' yang dapat dikutip laporan seolah pekerjaan nyata selesai —
+  // keluarga fabrikasi yang sama dengan placeholder Kurva S yang dihapus F6;
+  // dibersihkan pada QA D8.)
   const completedWorks = scheduleContext.completedTasks.length > 0
     ? scheduleContext.completedTasks.map((t) => t.name)
-    : ['Pekerjaan Persiapan & Pengukuran Bowplank', 'Galian Tanah Pondasi Footplat'];
+    : ['Belum ada pekerjaan tercatat selesai'];
 
   const activeWorks = scheduleContext.activeTasks.length > 0
     ? scheduleContext.activeTasks.map((t) => t.name)
-    : ['Pekerjaan Struktur Beton Bertulang (Kolom Lt. 1 & 2)', 'Pembesian Tulangan D13 & D16'];
+    : ['Belum ada pekerjaan tercatat sedang berjalan'];
 
   const upcomingWorks = scheduleContext.pendingTasks.length > 0
     ? scheduleContext.pendingTasks.slice(0, 3).map((t) => t.name)
-    : ['Pekerjaan Pasangan Dinding Bata Ringan', 'Pekerjaan Plesteran & Acian', 'Pemasangan Granit Lantai'];
+    : ['Belum ada pekerjaan tercatat berikutnya'];
 
   const potentialIssues: string[] = [];
   if (curveSContext.status === 'BEHIND_SCHEDULE') {
@@ -322,7 +328,7 @@ export const getRelevantContextSlices = (
   if (q.includes('laporan') || q.includes('mingguan') || q.includes('ringkas') || q.includes('kendala') || q.includes('resume')) {
     return {
       domain: 'REPORT',
-      summary: `Laporan ${fullContext.report.periodLabel}: Progres ${fullContext.report.actualProgress !== null ? `${fullContext.report.actualProgress}%` : 'belum tercatat'}, Selesai: ${fullContext.report.completedWorks.length} pekerjaan, Aktif: ${fullContext.report.activeWorks.length} pekerjaan`,
+      summary: `Laporan ${fullContext.report.periodLabel}: Progres ${fullContext.report.actualProgress !== null ? `${fullContext.report.actualProgress}%` : 'belum tercatat'}, Selesai: ${fullContext.schedule.completedTasks.length} pekerjaan, Aktif: ${fullContext.schedule.activeTasks.length} pekerjaan`,
     };
   }
 

@@ -11,8 +11,17 @@ import { ChatIntent } from './intentRouter';
 import { EZRAB_AI_TOOLS } from './tools';
 import {
   RabNeeds, extractRabNeeds, missingNeeds, buildDesignPrompt, summarizeRabNeeds,
-  resolveLandAreaM2, stripLandPhrases,
+  resolveLandAreaM2, stripLandPhrases, formatLengthM,
 } from './rabNeeds';
+import {
+  RabSubtype, subtypeGroupFor, getSubtype, detectSubtypeFromText, findSubtypeTemplates,
+} from './rabSubtypes';
+import { RabTemplateService } from '../../services/rabTemplateService';
+import { listUnifiedTemplates } from '../../services/rabTemplateCatalogAdapter';
+import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
+import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
+import { clarifyTopicCard, clarifyPickResult } from './clarifyTopics';
+import { evaluateCalculation } from './calcIntent';
 import { buildDirectRab, displayTemplateBasisName, findDirectTemplate, formatDirectRabMessage, matchDirectRegion } from './directRab';
 import { buildSpecRab } from './specRab';
 
@@ -21,6 +30,9 @@ export interface ChatActionContext {
   navigate: (menu: string) => void;
   /** Teks mentah pesan pengguna saat ini (untuk ekstraksi kebutuhan RAB) */
   rawText?: string;
+  /** Mode klarifikasi topik aktif (untuk case CLARIFY_QUERY):
+   *  'ahsp' | 'harga-material' | 'harga-upah' | 'harga-alat' | 'template' */
+  clarifyMode?: string;
   /** Current route/menu id, for contextual responses */
   currentMenu: string;
   /** Active project snapshot (null if none) */
@@ -77,6 +89,12 @@ export interface ActionResult {
   awaitRabNeeds?: boolean;
   /** Kartu pilihan RAB bertipe sedang menunggu pilihan/koreksi pengguna (D1) */
   awaitRabChoice?: boolean;
+  /** Chat menunggu jawaban subtipe pekerjaan (klarifikasi "Jalan apa?") */
+  awaitRabSubtype?: boolean;
+  /** Chat menunggu query lanjutan klarifikasi topik (nilai = mode-nya) */
+  awaitClarify?: string;
+  /** Prompt Full AI yang disusun dari kebutuhan terkumpul (dijalankan view) */
+  fullAiPrompt?: string;
 }
 
 const MENU_LABELS: Record<string, string> = {
@@ -122,10 +140,128 @@ export function getLastRabDesignPrompt(): string | null {
   return buildDesignPrompt(lastRabNeeds, lastRabRaw);
 }
 
+/* ------------------------------------------------------------------ */
+/* Klarifikasi subtipe (permintaan user 2026-10-23): untuk kategori    */
+/* berpeta subtipe (jalan/drainase/jembatan), ringkasan TIDAK langsung */
+/* memberi kartu jalur. Bila subtipe belum disebut, chat bertanya      */
+/* balik dulu ("Jalan apa?") dengan tombol subtipe — lokal penuh,      */
+/* tanpa panggilan AI/kredit. Sesudah subtipe dipilih (klik tombol     */
+/* atau disebut di teks), barulah kartu jalur tampil: Pakai template / */
+/* Full AI / Dari gambar DED.                                          */
+/* ------------------------------------------------------------------ */
+let pendingSubtypeNeeds: RabNeeds | null = null;
+
+export function getPendingSubtypeNeeds(): RabNeeds | null {
+  return pendingSubtypeNeeds;
+}
+
+/** Isi subtipe dari teks bila kategori punya peta & subtipe belum terisi. */
+function applySubtypeDetection(needs: RabNeeds, raw: string): void {
+  if (needs.subtypeId || !subtypeGroupFor(needs.kind)) return;
+  const det = detectSubtypeFromText(needs.kind, raw);
+  if (det) {
+    needs.subtypeId = det.id;
+    needs.subtypeLabel = det.label;
+  }
+}
+
+/**
+ * Deteksi teks keluaran buildFullAiPrompt (prompt siap-LLM), agar case
+ * RAB_FULL_AI TIDAK mem-parse-nya sebagai teks perintah mentah pengguna.
+ * Prompt hasil susunan selalu diawali "Buatkan RAB " dan memuat frasa
+ * "Susun daftar pekerjaan lengkap".
+ */
+function isBuiltFullAiPrompt(text: string): boolean {
+  return text.startsWith('Buatkan RAB ') && text.includes('Susun daftar pekerjaan lengkap');
+}
+
+/** Prompt Full AI dari kebutuhan terkumpul (jenis+subtipe+ukuran terbawa). */
+export function buildFullAiPrompt(needs: RabNeeds): string {
+  const parts: string[] = [`Buatkan RAB ${needs.kindLabel ?? 'pekerjaan'}`];
+  if (needs.subtypeLabel) parts.push(`jenis ${needs.subtypeLabel}`);
+  if (needs.lengthM) parts.push(`panjang ${formatLengthM(needs.lengthM)}`);
+  if (needs.location) parts.push(`lokasi ${needs.location}`);
+  return (
+    `${parts.join(', ')}. Susun daftar pekerjaan lengkap dari persiapan sampai ` +
+    'selesai beserta volume dan harga satuannya memakai data AHSP 2026 dan ' +
+    'template EZRAB (gunakan alat pencarian yang tersedia). Tandai dengan ' +
+    'jelas setiap harga yang belum ada data resminya — jangan mengarang angka.'
+  );
+}
+
+function subtypeQuestionResult(needs: RabNeeds): ActionResult {
+  const group = subtypeGroupFor(needs.kind)!;
+  const summary = summarizeRabNeeds(needs, missingNeeds(needs), { closingLine: false, hints: false });
+  return {
+    ok: true,
+    message:
+      `${summary}\n\n**${group.question}** Pilih jenisnya di bawah — sesudah itu ` +
+      'saya tampilkan pilihan membuatnya lewat **Template** atau **Full AI**. ' +
+      'Bisa juga langsung ketik jenisnya, misalnya "hotmix".',
+    awaitRabSubtype: true,
+    actions: [
+      ...group.subtypes.map((s) => ({
+        label: s.label,
+        action: { kind: 'intent', intent: 'RAB_SUBTYPE_SELECT', param: s.id } as const,
+      })),
+      { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } as const },
+    ],
+  };
+}
+
+function pathCardResult(needs: RabNeeds): ActionResult {
+  const subtype = getSubtype(needs.kind, needs.subtypeId);
+  const summary = summarizeRabNeeds(needs, missingNeeds(needs), { closingLine: false, hints: false });
+  const lines: string[] = [summary, ''];
+  lines.push(
+    `Catatan jujur: AI Design Studio saat ini khusus bangunan (rumah/gedung) — ` +
+      `pekerjaan ${needs.kindLabel ?? 'ini'} tidak saya arahkan ke wizard rumah.`
+  );
+  lines.push('');
+  lines.push('Pilih cara membuat RAB-nya:');
+  lines.push(
+    `• **Pakai template** — mulai dari template RAB ${subtype?.label ?? ''} yang sudah jadi di katalog EZRAB.`
+  );
+  lines.push('• **Full AI** — AI menyusun RAB dari kebutuhan di atas (memakai kredit AI seperti chat biasa).');
+  lines.push('• **Dari gambar DED** — estimasi dari file gambar kerja Anda.');
+  return {
+    ok: true,
+    message: lines.join('\n'),
+    actions: [
+      { label: 'Pakai template', action: { kind: 'intent', intent: 'RAB_PATH_TEMPLATE' } },
+      { label: 'Full AI', action: { kind: 'intent', intent: 'RAB_FULL_AI', param: buildFullAiPrompt(needs) } },
+      { label: 'Dari gambar DED', action: { kind: 'navigate', menu: 'ded-ai' } },
+    ],
+  };
+}
+
+/**
+ * Jawaban subtipe yang DIKETIK pengguna selama pertanyaan subtipe aktif.
+ * Mengembalikan null bila tidak ada pertanyaan aktif atau teks tidak
+ * menyebut subtipe apa pun — pemanggil (view) lalu memproses pesan
+ * secara normal (perintah baru menggugurkan status menunggu).
+ */
+export function tryContinueRabSubtype(text: string): ActionResult | null {
+  const pending = pendingSubtypeNeeds;
+  if (!pending) return null;
+  const det = detectSubtypeFromText(pending.kind, text);
+  if (!det) return null;
+  // Gabungkan kebutuhan lain yang ikut disebut (mis. "hotmix, panjang 2 km").
+  const merged = extractRabNeeds(text, { ...pending });
+  merged.subtypeId = det.id;
+  merged.subtypeLabel = det.label;
+  pendingSubtypeNeeds = null;
+  lastRabNeeds = merged;
+  lastRabRaw = text;
+  return pathCardResult(merged);
+}
+
 function rabSummaryResult(raw: string, base?: RabNeeds): ActionResult {
   // Alur ringkasan menggantikan kartu pilihan yang mungkin menggantung.
   pendingChoice = null;
+  pendingSubtypeNeeds = null;
   const needs = extractRabNeeds(raw, base);
+  applySubtypeDetection(needs, raw);
   lastRabNeeds = needs;
   if (raw) lastRabRaw = raw;
   const missing = missingNeeds(needs);
@@ -152,7 +288,16 @@ function rabSummaryResult(raw: string, base?: RabNeeds): ActionResult {
       ],
     };
   }
-  // Non-bangunan (jalan, drainase, dll.): JANGAN paksa ke wizard/desain rumah.
+  // Non-bangunan berpeta subtipe (jalan/drainase/jembatan): tanya subtipe
+  // dulu bila belum disebut; kartu jalur hanya sesudah subtipe jelas.
+  if (subtypeGroupFor(needs.kind)) {
+    if (!needs.subtypeId) {
+      pendingSubtypeNeeds = needs;
+      return subtypeQuestionResult(needs);
+    }
+    return pathCardResult(needs);
+  }
+  // Non-bangunan tanpa peta subtipe: perilaku lama (ringkasan + jalur).
   return {
     ok: true,
     message:
@@ -198,6 +343,44 @@ export function getPendingRabChoice(): PendingRabChoice | null {
 
 export function clearPendingRabChoice(): void {
   pendingChoice = null;
+}
+
+type BuiltRab = NonNullable<ReturnType<typeof buildDirectRab>>;
+
+/**
+ * Hasil komposisi deterministik sebagai jawaban chat: tabel lengkap +
+ * tombol Push ke Spreadsheet RAB (pola yang sama dengan
+ * GENERATE_RAB_TEMPLATE dan jalur spek bebas CREATE_RAB_DIRECT).
+ */
+function directRabTableResult(built: BuiltRab): ActionResult {
+  return {
+    ok: true,
+    message: formatDirectRabMessage(built),
+    actions: [
+      { label: 'Push ke Spreadsheet RAB', action: { kind: 'push-rab' } },
+      { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+      { label: 'Buka Workspace Desain & RAB', action: { kind: 'navigate', menu: 'desain-rab' } },
+    ],
+  };
+}
+
+/**
+ * Teks sintetis minimal dari kebutuhan rumah tersimpan — jalur defensif
+ * RAB_FULL_AI bila teks asal pengguna tidak tersedia (mis. pemanggil lama
+ * tanpa param). RabNeeds tidak membawa houseType/templateId: angka tipe
+ * terbawa lewat buildingArea (konvensi katalog EZRAB: angka tipe = luas
+ * per lantai, dan choiceCardResult memang mengisi buildingArea dari tipe
+ * terdaftar); dimensi lahan/bangunan menjadi jalur spek bebas. Tanpa
+ * luas/dimensi terukur, tidak ada teks jujur yang bisa disusun → null.
+ */
+function syntheticHouseRawText(n: RabNeeds): string | null {
+  const parts: string[] = ['buatkan rab rumah'];
+  if (n.buildingArea) parts.push(`type ${n.buildingArea}`);
+  else if (n.landLength && n.landWidth) parts.push(`${n.landLength}x${n.landWidth}`);
+  else return null;
+  if (n.floors) parts.push(`${n.floors} lantai`);
+  if (n.location) parts.push(`di ${n.location}`);
+  return parts.join(' ');
 }
 
 type CardTemplate = PendingRabChoice['match']['template'];
@@ -255,7 +438,7 @@ function choiceCardResult(p: PendingRabChoice, corrected: boolean): ActionResult
   lines.push(
     'Pilih cara membuat RAB-nya:\n' +
       '• **Pakai Template** — hitung parametrik instan di chat ini: tabel item + total + tombol Push ke Spreadsheet RAB.\n' +
-      '• **Pakai AI Full** — lanjut ke Workspace Desain & RAB; spek di atas terbawa sebagai konteks/prompt desain.'
+      '• **Pakai AI Full** — AI menyusun RAB lengkap langsung di chat ini: tabel item + total + tombol Push ke Spreadsheet RAB.'
   );
 
   // Versi enriched untuk prompt desain & state ringkasan: luas bangunan
@@ -277,7 +460,7 @@ function choiceCardResult(p: PendingRabChoice, corrected: boolean): ActionResult
     awaitRabChoice: true,
     actions: [
       { label: 'Pakai Template', action: { kind: 'intent', intent: 'GENERATE_RAB_TEMPLATE', param: p.rawText } },
-      { label: 'Pakai AI Full', action: { kind: 'intent', intent: 'OPEN_DESIGN_WORKSPACE', param: buildDesignPrompt(enriched, p.rawText) } },
+      { label: 'Pakai AI Full', action: { kind: 'intent', intent: 'RAB_FULL_AI', param: p.rawText } },
     ],
   };
 }
@@ -302,6 +485,135 @@ export function continueRabChoice(text: string): ActionResult {
   };
   pendingChoice = updated;
   return choiceCardResult(updated, true);
+}
+
+/* ------------------------------------------------------------------ */
+/* Klarifikasi topik (peraturan owner 2026-10-23): query lanjutan     */
+/* atas kartu klarifikasi dijawab DETERMINISTIK dari data EZRAB —     */
+/* format hasil meniru PERSIS pola tool yang bersangkutan di          */
+/* tools.ts (cari_ahsp / cari_harga), provenans diteruskan apa        */
+/* adanya, harga tak tersedia TIDAK PERNAH ditulis Rp0.               */
+/* ------------------------------------------------------------------ */
+
+/** Query mode 'ahsp': cari di katalog AHSP 2026 resmi (maks 6). */
+function clarifyAhspQueryResult(query: string): ActionResult {
+  let hits: ReturnType<typeof officialAhspRepository.searchOfficialAhsp>;
+  try {
+    hits = officialAhspRepository.searchOfficialAhsp(query, { limit: 6 });
+  } catch {
+    return {
+      ok: false,
+      message: 'Pencarian AHSP sedang tidak bisa diakses. Coba lagi sebentar, atau buka katalog AHSP 2026 langsung.',
+      actions: [
+        { label: 'Buka katalog AHSP 2026', action: { kind: 'navigate', menu: 'ahsp-2026' } },
+      ],
+    };
+  }
+  if (hits.length === 0) {
+    return {
+      ok: true,
+      message:
+        `Tidak ditemukan AHSP untuk "${query}" di katalog AHSP 2026 resmi.\n\n` +
+        'Tips kata kunci: coba kata yang lebih umum — nama pekerjaannya saja (mis. "beton", ' +
+        '"pasangan bata", "galian tanah") atau potongan kode analisanya (mis. "A.4.1"). ' +
+        'Ketik kata kunci barunya langsung di sini.',
+      awaitClarify: 'ahsp',
+    };
+  }
+  // Format per baris PERSIS pola tool cari_ahsp (tools.ts): [kode] judul
+  // — satuan — harga; provenans (dokumen sumber + status verifikasi)
+  // diteruskan apa adanya dari record kanonis.
+  const lines = hits.map((h, i) => {
+    const it: any = h.item;
+    let price: number | null = Number(it.unitPrice) || null;
+    if (!price && it.code) {
+      try {
+        const r: any = priceResolver2026.resolveAhspUnitPrice(it.code, it.unit);
+        if (r?.unitPrice) price = Number(r.unitPrice);
+      } catch { /* abaikan — tampilkan belum tersedia */ }
+    }
+    const title = it.title ?? it.name ?? '-';
+    const prov: string[] = [];
+    if (it.sourceDocument) prov.push(`Sumber: ${it.sourceDocument}`);
+    if (it.status) prov.push(`Status verifikasi: ${it.status}`);
+    const head = `${i + 1}. [${it.code ?? '-'}] ${title} — ${it.unit ?? ''}${price ? ` — ${fmtIDR(Math.round(price))}` : ' — harga belum tersedia (lihat analisa komponen)'}`;
+    return prov.length ? `${head}\n   ${prov.join(' · ')}` : head;
+  });
+  return {
+    ok: true,
+    message: `Hasil pencarian AHSP 2026 untuk "${query}":\n\n${lines.join('\n')}`,
+    actions: [
+      { label: 'Buka katalog AHSP 2026', action: { kind: 'navigate', menu: 'ahsp-2026' } },
+      { label: 'Cari lagi', action: { kind: 'intent', intent: 'CLARIFY_PICK', param: 'ahsp:search' } },
+    ],
+  };
+}
+
+/** Query mode harga-*: lewat tool cari_harga (resolver + format kanonis). */
+function clarifyHargaQueryResult(
+  query: string,
+  mode: 'harga-material' | 'harga-upah' | 'harga-alat',
+): ActionResult {
+  const jenis = mode === 'harga-upah' ? 'upah' : mode === 'harga-alat' ? 'alat' : 'material';
+  const tool = EZRAB_AI_TOOLS.find((t) => t.name === 'cari_harga');
+  if (!tool) return { ok: false, message: 'Pencarian harga tidak tersedia saat ini.' };
+  const result = tool.invoke({ kata_kunci: query, jenis });
+  if (result.startsWith('ERROR')) return { ok: false, message: result };
+  if (result.startsWith('Tidak ditemukan harga')) {
+    // Belum tersedia ≠ nol: beri kesempatan mencoba nama lain dalam
+    // mode yang sama tanpa mengulang dari kartu.
+    return {
+      ok: true,
+      message: `${result}\n\nKetik nama lain langsung di sini untuk mencoba lagi.`,
+      awaitClarify: mode,
+    };
+  }
+  return { ok: true, message: result };
+}
+
+/** Query mode 'template': cari di katalog template gabungan (maks 6). */
+function clarifyTemplateQueryResult(query: string): ActionResult {
+  let entries: ReturnType<typeof listUnifiedTemplates>;
+  try {
+    entries = listUnifiedTemplates();
+  } catch {
+    return { ok: false, message: 'Katalog template sedang tidak bisa dibaca. Coba lagi sebentar.' };
+  }
+  const words = query.toLowerCase().split(/\s+/).filter((w) => w.length > 1);
+  const scored = entries
+    .map((e) => {
+      const cat = e.catalogTemplate?.category ?? '';
+      const sub = e.catalogTemplate?.subcategory ?? '';
+      const hay = `${e.name} ${e.id} ${cat} ${sub}`.toLowerCase();
+      let score = 0;
+      for (const w of words) if (hay.includes(w)) score++;
+      return { e, score, catLabel: (sub || cat).replace(/_/g, ' ') };
+    })
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6);
+  if (scored.length === 0) {
+    return {
+      ok: true,
+      message:
+        `Tidak ditemukan template untuk "${query}".\n\n` +
+        'Coba kata kunci lain — jenis bangunannya (mis. "rumah", "ruko") atau jenis ' +
+        'pekerjaannya (mis. "jalan", "drainase"). Ketik kata kunci barunya langsung di sini.',
+      awaitClarify: 'template',
+    };
+  }
+  const list = scored
+    .map((s, i) => `${i + 1}. ${s.e.name}${s.catLabel ? ` — ${s.catLabel}` : ''}`)
+    .join('\n');
+  return {
+    ok: true,
+    message:
+      `Template yang cocok untuk "${query}":\n\n${list}\n\n` +
+      'Buka katalog untuk melihat detailnya dan menerapkan template ke proyek.',
+    actions: [
+      { label: 'Buka Katalog Template', action: { kind: 'navigate', menu: 'template-rab' } },
+    ],
+  };
 }
 
 export function executeIntent(
@@ -334,9 +646,23 @@ export function executeIntent(
         navigated: true,
       };
 
-    case 'CAPABILITIES':
+    case 'CAPABILITIES': {
       // Jawaban produk deterministik: keunggulan EZRAB yang nyata + tombol
-      // untuk langsung mencoba. Angka template/AHSP sesuai data produk.
+      // untuk langsung mencoba. Angka template/AHSP DIHITUNG DARI SUMBER
+      // DATA NYATA saat runtime (kasus A1: angka hard-coded lama "52
+      // template / 5.801 analisa" basi — aktual 180 / 5.742). Bila aksesor
+      // gagal, angka spesifik dihilangkan (klaim kualitatif saja) — jangan
+      // mengganti hard-code lama dengan hard-code baru.
+      let templateLine = '• Template RAB siap pakai untuk berbagai jenis proyek';
+      try {
+        const n = RabTemplateService.getInstance().getAllTemplates().length;
+        if (n > 0) templateLine = `• ${n.toLocaleString('id-ID')} template RAB siap pakai untuk berbagai jenis proyek`;
+      } catch { /* aksesor tak tersedia — klaim kualitatif */ }
+      let ahspLine = '• AHSP 2026 resmi — cari dan pakai langsung di RAB';
+      try {
+        const n = officialAhspRepository.size;
+        if (n > 0) ahspLine = `• AHSP 2026 resmi (${n.toLocaleString('id-ID')} analisa) — cari dan pakai langsung di RAB`;
+      } catch { /* aksesor tak tersedia — klaim kualitatif */ }
       return {
         ok: true,
         message:
@@ -345,9 +671,9 @@ export function executeIntent(
           '• Wizard RAB rumah — 5 langkah, RAB terbentuk dari tipe & ukuran rumah\n' +
           '• Desain Rumah AI — dari deskripsi teks menjadi spesifikasi & daftar pekerjaan\n' +
           '• Estimasi dari DED — unggah gambar kerja, draft estimasinya disusun otomatis\n' +
-          '• 52 template RAB siap pakai untuk berbagai jenis proyek\n\n' +
+          templateLine + '\n\n' +
           'DATA & HITUNGAN YANG BISA DIPERCAYA\n' +
-          '• AHSP 2026 resmi (5.801 analisa) — cari dan pakai langsung di RAB\n' +
+          ahspLine + '\n' +
           '• Database harga material, upah, dan peralatan 2026\n' +
           '• Volume & subtotal dihitung engine deterministik; harga yang belum ada data resminya ditandai jelas, tidak pernah dikarang\n' +
           '• Tanya langsung di sini: total proyek, item termahal/termurah, cari AHSP\n\n' +
@@ -356,6 +682,43 @@ export function executeIntent(
           { label: 'Buat RAB', action: { kind: 'intent', intent: 'CREATE_RAB_CLARIFY' } },
           { label: 'Desain rumah dengan AI', action: { kind: 'intent', intent: 'START_HOUSE_DESIGN' } },
           { label: 'Estimasi dari DED', action: { kind: 'navigate', menu: 'ded-ai' } },
+          { label: 'Lihat template RAB', action: { kind: 'navigate', menu: 'template-rab' } },
+        ],
+      };
+    }
+
+    case 'CALCULATE': {
+      // Hitungan deterministik lokal (calcIntent) — tanpa LLM, tanpa
+      // kredit. Router hanya mengarahkan ke sini bila pola terparse penuh;
+      // bila evaluasi ulang tak menghasilkan apa pun, jawab jujur.
+      const calc = evaluateCalculation(ctx.rawText ?? param ?? '');
+      if (!calc) {
+        return {
+          ok: false,
+          message:
+            'Hitungannya belum bisa saya parse dengan pasti. Coba tulis angkanya dengan satuan yang jelas, misalnya "hitung volume balok 0,25 m × 0,40 m × 6 m".',
+        };
+      }
+      return { ok: true, message: calc.message };
+    }
+
+    case 'RAB_DATA_CHECKLIST':
+      // Permintaan dokumen persiapan (kasus A3) — jawaban lokal
+      // deterministik, BUKAN intake pembuatan RAB.
+      return {
+        ok: true,
+        message:
+          'Checklist data sebelum menyusun RAB — siapkan ini agar RAB tidak berhenti di asumsi:\n\n' +
+          '1. **Gambar kerja** — denah, tampak, potongan, dan gambar detail (sumber semua ukuran & volume).\n' +
+          '2. **Spesifikasi teknis & material** — jenis/mutu material, standar pekerjaan, merek bila ditentukan.\n' +
+          '3. **Lokasi proyek & akses** — wilayah menentukan basis harga; akses lokasi menentukan biaya mobilisasi.\n' +
+          '4. **Kondisi lahan/tanah** — kontur, daya dukung, muka air tanah, dan pekerjaan tanah yang diperlukan.\n' +
+          '5. **Ukuran & ruang lingkup** — luas bangunan/lahan, jumlah lantai, dimensi, dan daftar pekerjaan yang termasuk.\n' +
+          '6. **Sumber harga wilayah** — HSPK setempat atau survei pasar terbaru beserta tanggal berlakunya.\n' +
+          '7. **Jadwal target & batasan** — target selesai, jam kerja, dan izin/lingkungan yang memengaruhi metode kerja.\n\n' +
+          'Data yang belum ada boleh menyusul — di EZRAB data kosong ditandai "belum tersedia", bukan diisi angka karangan. Kalau datanya sudah siap, kita bisa langsung mulai menyusun RAB-nya.',
+        actions: [
+          { label: 'Mulai susun RAB', action: { kind: 'intent', intent: 'CREATE_RAB_CLARIFY' } },
           { label: 'Lihat template RAB', action: { kind: 'navigate', menu: 'template-rab' } },
         ],
       };
@@ -387,9 +750,9 @@ export function executeIntent(
       // TERDAFTAR, JANGAN langsung generate — tampilkan kartu pilihan:
       // ringkasan spek terbaca + "Pakai Template" (generate parametrik
       // instan di chat, persis jalur direct lama, lewat klik eksplisit
-      // GENERATE_RAB_TEMPLATE) atau "Pakai AI Full" (ke Workspace
-      // Desain & RAB dengan spek terbawa sebagai prompt lewat mekanisme
-      // OPEN_DESIGN_WORKSPACE existing — TANPA panggilan LLM baru di chat).
+      // GENERATE_RAB_TEMPLATE) atau "Pakai AI Full" (intent RAB_FULL_AI —
+      // komposisi deterministik langsung di chat: tabel + Push ke
+      // Spreadsheet; LLM hanya fallback bila komposisi tak bisa dibuat).
       const typed = findDirectTemplate(raw);
       if (typed) {
         // D1: kartu kini dibangun choiceCardResult — semua parameter
@@ -404,10 +767,12 @@ export function executeIntent(
           floorsMentioned: typed.floorsMentioned,
           landAreaM2: resolveLandAreaM2(raw),
         };
+        pendingSubtypeNeeds = null;
         return choiceCardResult(pendingChoice, false);
       }
       // Permintaan langsung baru menggantikan kartu yang menggantung.
       pendingChoice = null;
+      pendingSubtypeNeeds = null;
       // Spesifikasi bebas TANPA tipe terdaftar (perluasan 2026-10-22):
       // tidak ada template yang bisa dipilih → langsung generate parametrik
       // dari spesifikasi (specRab) dengan daftar asumsi terbuka. Bila
@@ -457,6 +822,131 @@ export function executeIntent(
     case 'CREATE_RAB_SUMMARY':
       // Fase 2: ringkasan kebutuhan dulu — TIDAK membuka wizard/studio.
       return rabSummaryResult(ctx.rawText ?? param ?? '');
+
+    case 'RAB_SUBTYPE_SELECT': {
+      // Klik tombol subtipe pada pertanyaan klarifikasi ("Jalan apa?").
+      // State kebutuhan berasal dari pertanyaan yang menggantung (atau
+      // ringkasan terakhir); param = id subtipe dari peta rabSubtypes.
+      const needs = pendingSubtypeNeeds ?? lastRabNeeds;
+      const subtype = needs ? getSubtype(needs.kind, param ?? null) : null;
+      if (!needs || !subtype) {
+        return {
+          ok: false,
+          message:
+            'Konteks pertanyaan subtipe sudah tidak aktif. Tulis ulang kebutuhannya, misalnya "buatkan rab jalan hotmix 1 km".',
+        };
+      }
+      const merged: RabNeeds = { ...needs, subtypeId: subtype.id, subtypeLabel: subtype.label };
+      pendingSubtypeNeeds = null;
+      lastRabNeeds = merged;
+      return pathCardResult(merged);
+    }
+
+    case 'RAB_PATH_TEMPLATE': {
+      // Klik "Pakai template" pada kartu jalur: cocokkan subtipe ke katalog
+      // template NYATA (RabTemplateService — sumber yang sama dengan menu
+      // Template RAB). Katalog tidak menerima query awal dari chat, jadi
+      // nama template yang cocok ditampilkan di sini + kata kunci pencarian
+      // diteruskan untuk diketik di katalog. Bila TIDAK ada template yang
+      // cocok: jawab jujur & arahkan ke Full AI — jangan mengarang.
+      const needs = lastRabNeeds;
+      const subtype: RabSubtype | null = needs ? getSubtype(needs.kind, needs.subtypeId) : null;
+      if (!needs || !subtype) {
+        return {
+          ok: false,
+          message:
+            'Konteks RAB-nya sudah tidak aktif. Tulis ulang kebutuhannya, misalnya "buatkan rab jalan hotmix 1 km".',
+        };
+      }
+      const matches = findSubtypeTemplates(
+        subtype,
+        RabTemplateService.getInstance().getAllTemplates()
+      );
+      if (matches.length === 0) {
+        return {
+          ok: true,
+          message:
+            `Jujur: untuk ${needs.kindLabel ?? 'pekerjaan ini'} jenis **${subtype.label}** saat ini ` +
+            '**belum ada template** di katalog EZRAB — saya tidak mengarang template. ' +
+            'Jalur yang tersedia: **Full AI** (AI menyusun RAB dari kebutuhan Anda memakai data ' +
+            'AHSP 2026) atau estimasi dari gambar DED.',
+          actions: [
+            { label: 'Full AI', action: { kind: 'intent', intent: 'RAB_FULL_AI', param: buildFullAiPrompt(needs) } },
+            { label: 'Dari gambar DED', action: { kind: 'navigate', menu: 'ded-ai' } },
+            { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+          ],
+        };
+      }
+      const shown = matches.slice(0, 6);
+      const list = shown.map((tpl, i) => `${i + 1}. ${tpl.name}`).join('\n');
+      const more = matches.length > shown.length ? `\n…dan ${matches.length - shown.length} template terkait lainnya.` : '';
+      return {
+        ok: true,
+        message:
+          `Ada **${matches.length} template** ${subtype.label} di katalog EZRAB:\n${list}${more}\n\n` +
+          `Klik "Buka Katalog Template", lalu ketik "**${subtype.query}**" di kolom pencarian katalog — ` +
+          'template di atas akan muncul dan bisa langsung diterapkan ke proyek.',
+        actions: [
+          { label: 'Buka Katalog Template', action: { kind: 'navigate', menu: 'template-rab' } },
+          { label: 'Full AI', action: { kind: 'intent', intent: 'RAB_FULL_AI', param: buildFullAiPrompt(needs) } },
+        ],
+      };
+    }
+
+    case 'RAB_FULL_AI': {
+      // Permintaan owner 2026-10-23: "Full AI" untuk RAB yang BISA disusun
+      // dari data EZRAB dijawab dengan komposisi deterministik LANGSUNG di
+      // chat — tabel lengkap + tombol Push ke Spreadsheet RAB — bukan
+      // prompt prosa ke LLM. Kontrak view: hasil berkomposisi TIDAK
+      // membawa fullAiPrompt (dirender sebagai jawaban biasa); fallback
+      // membawa fullAiPrompt persis perilaku lama (view mengirimnya ke
+      // pipeline Chat AI dengan gerbang kredit yang sama). LLM hanya
+      // fallback bila komposisi tidak bisa dibuat — mis. pekerjaan infra
+      // (jalan/drainase/jembatan) yang belum punya mesin parametrik.
+      const rawParam = param ?? '';
+
+      // (a) Kartu pilihan rumah aktif: susun dari teks asal + kebutuhan
+      // TERKOREKSI pada kartu (pola GENERATE_RAB_TEMPLATE — pending hanya
+      // dipakai bila param kosong/teks asal kartu, dan terkonsumsi hanya
+      // bila komposisi berhasil).
+      const p = pendingChoice;
+      if (p && (rawParam === '' || rawParam === p.rawText)) {
+        const built = buildDirectRab(p.rawText, p.needs);
+        if (built) {
+          pendingChoice = null;
+          return directRabTableResult(built);
+        }
+      }
+
+      // (b) Param berupa teks mentah yang bisa diparse — BUKAN prompt
+      // hasil buildFullAiPrompt (teks prompt tidak boleh di-parse sebagai
+      // perintah mentah): coba template tipe terdaftar, lalu spek bebas.
+      if (rawParam && !isBuiltFullAiPrompt(rawParam)) {
+        const built = buildDirectRab(rawParam) ?? buildSpecRab(rawParam);
+        if (built) return directRabTableResult(built);
+      }
+
+      // (c) Kebutuhan terakhir berupa rumah: susun teks sintetis minimal
+      // dari needs dan coba komposisi sekali lagi; hanya hasil nyata
+      // yang dikembalikan.
+      const n = lastRabNeeds;
+      if (n && n.kind === 'rumah') {
+        const synthetic = syntheticHouseRawText(n);
+        const built = synthetic
+          ? buildDirectRab(synthetic, n) ?? buildSpecRab(synthetic)
+          : null;
+        if (built) return directRabTableResult(built);
+      }
+
+      // Fallback — perilaku lama PERSIS: prompt terkumpul diteruskan ke
+      // view untuk dikirim ke pipeline Chat AI sebagai pesan.
+      const prompt = param || (lastRabNeeds ? buildFullAiPrompt(lastRabNeeds) : '');
+      return {
+        ok: true,
+        message: 'Menyiapkan Full AI dari kebutuhan yang terkumpul…',
+        fullAiPrompt: prompt || undefined,
+      };
+    }
 
     case 'RAB_NEEDS_REFINE': {
       const missing = lastRabNeeds ? missingNeeds(lastRabNeeds) : [];
@@ -539,6 +1029,60 @@ export function executeIntent(
           `${subtotalMsg} Total akhir (grand total): ${fmtIDR(cb.grandTotal)} ` +
           `(sudah termasuk overhead ${cb.overheadPercent}%, profit ${cb.profitPercent}%, PPN ${cb.taxPercent}%).`,
       };
+    }
+
+    case 'CLARIFY_TOPIC': {
+      // Pertanyaan telanjang/ambigu (peraturan owner 2026-10-23): tampilkan
+      // kartu pilihan maksud — JANGAN menebak, JANGAN ke LLM.
+      const card = clarifyTopicCard(param ?? '');
+      if (!card) {
+        return {
+          ok: false,
+          message: 'Topiknya belum jelas. Coba tulis lebih spesifik, atau ketik /help untuk daftar perintah.',
+        };
+      }
+      return { ok: true, message: card.message, actions: card.actions };
+    }
+
+    case 'CLARIFY_PICK': {
+      // Klik pilihan pada kartu klarifikasi: jawaban lokal (penjelasan)
+      // atau permintaan query + awaitClarify. Jumlah analisa AHSP dibaca
+      // dari repository nyata; gagal baca → kalimat tanpa angka.
+      let ahspCount: number | null = null;
+      try {
+        const n = officialAhspRepository.size;
+        if (typeof n === 'number' && n > 0) ahspCount = n;
+      } catch { /* aksesor tak tersedia — tanpa angka */ }
+      return clarifyPickResult(param ?? '', { ahspCount });
+    }
+
+    case 'CLARIFY_QUERY': {
+      // Pesan lanjutan selama mode klarifikasi aktif (diarahkan view):
+      // param = teks query, ctx.clarifyMode = mode yang menunggu.
+      const query = (param ?? '').trim();
+      const mode = ctx.clarifyMode ?? '';
+      if (!query) {
+        return {
+          ok: true,
+          message: 'Ketik kata kuncinya dulu — nama pekerjaan, material, atau template yang mau dicari.',
+          awaitClarify: mode || undefined,
+        };
+      }
+      switch (mode) {
+        case 'ahsp':
+          return clarifyAhspQueryResult(query);
+        case 'harga-material':
+        case 'harga-upah':
+        case 'harga-alat':
+          return clarifyHargaQueryResult(query, mode);
+        case 'template':
+          return clarifyTemplateQueryResult(query);
+        default:
+          return {
+            ok: false,
+            message: 'Mode klarifikasi sedang tidak aktif. Tulis ulang kebutuhan Anda, atau ketik /help untuk daftar perintah.',
+          };
+      }
     }
 
     case 'SEARCH_AHSP': {

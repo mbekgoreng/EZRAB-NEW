@@ -12,6 +12,7 @@ export type RabKind =
   | 'gedung'
   | 'jalan'
   | 'drainase'
+  | 'jembatan'
   | 'renovasi'
   | 'ded'
   | 'lainnya';
@@ -20,6 +21,12 @@ export interface RabNeeds {
   kind: RabKind | null;
   /** Kata jenis apa adanya dari teks (mis. "ruko", "villa", "paving") */
   kindLabel: string | null;
+  /** Subtipe pekerjaan terpilih/terdeteksi (id dari peta rabSubtypes, mis. "hotmix") */
+  subtypeId: string | null;
+  /** Label subtipe untuk tampilan (mis. "Hotmix / Aspal") */
+  subtypeLabel: string | null;
+  /** Panjang pekerjaan linear dalam meter (jalan/saluran/jembatan), dari "1 km" / "500 m" */
+  lengthM: number | null;
   floors: number | null;
   /** Luas bangunan eksplisit (m²), dari "90 m2" / "luas 90" */
   buildingArea: number | null;
@@ -34,6 +41,9 @@ export interface RabNeeds {
 export const emptyRabNeeds = (): RabNeeds => ({
   kind: null,
   kindLabel: null,
+  subtypeId: null,
+  subtypeLabel: null,
+  lengthM: null,
   floors: null,
   buildingArea: null,
   landLength: null,
@@ -47,6 +57,7 @@ export const emptyRabNeeds = (): RabNeeds => ({
 const KIND_PATTERNS: Array<{ kind: RabKind; label: string; re: RegExp }> = [
   { kind: 'ded', label: 'dari dokumen DED', re: /\b(ded|gambar kerja|gambar teknis|denah pdf)\b/ },
   { kind: 'drainase', label: 'drainase / saluran', re: /\b(drainase|saluran air|gorong|u-?ditch)\b/ },
+  { kind: 'jembatan', label: 'jembatan', re: /\bjembatan\b/ },
   { kind: 'jalan', label: 'jalan / perkerasan', re: /\b(jalan|perkerasan|paving|rabat beton|aspal)\b/ },
   { kind: 'renovasi', label: 'renovasi', re: /\b(renovasi|rehab|perbaikan rumah|perbaikan gedung)\b/ },
   { kind: 'gedung', label: 'gedung', re: /\b(gedung|kantor|ruko|villa|gudang|sekolah|masjid|kos|kontrakan|apartemen|hotel|toko)\b/ },
@@ -146,6 +157,62 @@ export function parseFloorsMention(text: string): number | null {
   return null;
 }
 
+/** Kategori pekerjaan linear (panjang adalah kebutuhan utamanya). */
+export function isLinearKind(kind: RabKind | null): boolean {
+  return kind === 'jalan' || kind === 'drainase' || kind === 'jembatan';
+}
+
+/**
+ * Panjang pekerjaan linear dari teks: "panjang 1 km", "1 km", "500 m",
+ * "panjang 250 meter". Mengembalikan nilai meter + rentang teks yang
+ * terpakai (dipakai untuk menetralkan tafsir "km" sebagai kamar mandi).
+ * Bentuk meter polos ("500 m") hanya diterima bila teks tidak memuat
+ * pola dimensi "AxB" (yang sudah ditangani ekstraksi dimensi generik).
+ */
+export function parseLinearLength(
+  text: string,
+  hasDims: boolean
+): { value: number; span: [number, number] } | null {
+  const t = ` ${text.toLowerCase().trim().replace(/\s+/g, ' ')} `;
+  const num = (s: string) => parseFloat(s.replace(',', '.'));
+  const panjang = t.match(
+    /panjang\s*(?:=|sekitar|kurang lebih)?\s*(\d+(?:[.,]\d+)?)\s*(km|kilometer|m|meter)\b/
+  );
+  if (panjang) {
+    const v = num(panjang[1]) * (panjang[2].startsWith('k') ? 1000 : 1);
+    if (Number.isFinite(v) && v > 0) {
+      return { value: v, span: [panjang.index ?? 0, (panjang.index ?? 0) + panjang[0].length] };
+    }
+  }
+  const kmMatch = t.match(/(\d+(?:[.,]\d+)?)\s*(km|kilometer)\b/);
+  if (kmMatch) {
+    const v = num(kmMatch[1]) * 1000;
+    if (Number.isFinite(v) && v > 0) {
+      return { value: v, span: [kmMatch.index ?? 0, (kmMatch.index ?? 0) + kmMatch[0].length] };
+    }
+  }
+  if (!hasDims) {
+    const mMatch = t.match(/(\d+(?:[.,]\d+)?)\s*(m|meter)\b/);
+    if (mMatch) {
+      const v = num(mMatch[1]);
+      if (Number.isFinite(v) && v > 0) {
+        return { value: v, span: [mMatch.index ?? 0, (mMatch.index ?? 0) + mMatch[0].length] };
+      }
+    }
+  }
+  return null;
+}
+
+/** Format panjang untuk ringkasan: 1000 → "1 km (1.000 m)", 250 → "250 m". */
+export function formatLengthM(m: number): string {
+  const meters = `${m.toLocaleString('id-ID')} m`;
+  if (m >= 1000) {
+    const km = (m / 1000).toLocaleString('id-ID', { maximumFractionDigits: 3 });
+    return `${km} km (${meters})`;
+  }
+  return meters;
+}
+
 /** Ekstrak kebutuhan dari satu teks. Tidak menebak kolom yang tak disebut. */
 export function extractRabNeeds(text: string, base?: RabNeeds): RabNeeds {
   const t = ` ${text.toLowerCase().trim().replace(/\s+/g, ' ')} `;
@@ -169,13 +236,25 @@ export function extractRabNeeds(text: string, base?: RabNeeds): RabNeeds {
     n.landWidth = parseFloat(dims[2].replace(',', '.'));
   }
 
+  /* Panjang pekerjaan linear (jalan/drainase/jembatan): "1 km" adalah
+   * PANJANG, bukan "1 kamar mandi" — rentang teks kilometer dibuang dari
+   * salinan yang dipakai regex kamar mandi di bawah. */
+  let tForBathrooms = t;
+  if (isLinearKind(n.kind)) {
+    const len = parseLinearLength(text, Boolean(dims));
+    if (len) {
+      n.lengthM = len.value;
+      tForBathrooms = `${t.slice(0, len.span[0])} ${t.slice(len.span[1])}`;
+    }
+  }
+
   const area = t.match(/(?:luas(?:\s+bangunan)?|lb)\s*(?:=|sekitar|kurang lebih)?\s*(\d+(?:[.,]\d+)?)\s*m/) ||
     t.match(/(\d+(?:[.,]\d+)?)\s*m(?:2|²|eter persegi|\s*persegi)/);
   if (area) n.buildingArea = parseFloat(area[1].replace(',', '.'));
 
   const kt = t.match(/(\d+)\s*(?:kamar tidur|kt)\b/);
   if (kt) n.bedrooms = parseInt(kt[1], 10);
-  const km = t.match(/(\d+)\s*(?:kamar mandi|km)\b/);
+  const km = tForBathrooms.match(/(\d+)\s*(?:kamar mandi|km)\b/);
   if (km) n.bathrooms = parseInt(km[1], 10);
   if (/\bcarport\b/.test(t)) n.carport = !/\b(tanpa|tidak ada|nggak ada|ga ada)\s+carport\b/.test(t);
 
@@ -220,11 +299,19 @@ export function buildDesignPrompt(n: RabNeeds, rawText: string): string {
 }
 
 /** Ringkasan kebutuhan dalam format chat (bisa dibaca & dikoreksi pengguna). */
-export function summarizeRabNeeds(n: RabNeeds, missing: string[]): string {
+export function summarizeRabNeeds(
+  n: RabNeeds,
+  missing: string[],
+  opts?: { closingLine?: boolean; hints?: boolean }
+): string {
   const lines: string[] = ['Baik — ini ringkasan kebutuhan yang saya tangkap dari pesan Anda:'];
   const row = (label: string, value: string | null) =>
     lines.push(`• ${label}: ${value ?? '— (belum disebutkan)'}`);
   row('Jenis pekerjaan', n.kindLabel);
+  if (isLinearKind(n.kind)) {
+    if (n.subtypeLabel) row('Jenis / subtipe', n.subtypeLabel);
+    row('Panjang', n.lengthM ? formatLengthM(n.lengthM) : null);
+  }
   if (n.kind === 'rumah' || n.kind === 'gedung' || n.kind === 'renovasi' || !n.kind) {
     row('Jumlah lantai', n.floors ? `${n.floors} lantai` : null);
     row('Luas bangunan', n.buildingArea ? `${n.buildingArea} m²` : null);
@@ -236,12 +323,16 @@ export function summarizeRabNeeds(n: RabNeeds, missing: string[]): string {
     }
   }
   if (n.location) row('Lokasi', n.location);
-  if (missing.length > 0) {
+  if (opts?.hints === false) {
+    /* Blok petunjuk diserahkan ke pemanggil (alur subtipe/jalur). */
+  } else if (missing.length > 0) {
     lines.push(`Masih kurang: ${missing.join('; ')}.`);
     lines.push('Anda bisa melengkapinya lewat tombol "Lengkapi kebutuhan" atau langsung koreksi di chat, misalnya "2 lantai, 6x15, 3 kamar tidur".');
   } else {
     lines.push('Datanya sudah cukup untuk mulai. Anda tetap bisa mengoreksinya di dalam workspace.');
   }
-  lines.push('Belum ada yang dibuka otomatis — klik "Buka Workspace Desain & RAB" bila ringkasan ini sudah benar.');
+  if (opts?.closingLine !== false) {
+    lines.push('Belum ada yang dibuka otomatis — klik "Buka Workspace Desain & RAB" bila ringkasan ini sudah benar.');
+  }
   return lines.join('\n');
 }

@@ -322,6 +322,13 @@ export class PriceResolver {
     const exactNameMatches: PriceDefinition[] = [];
     const partialCandidates: PriceResolutionCandidate[] = [];
     const allCandidates: import('../contracts/types').PriceCandidate[] = [];
+    // Set when records belonging to the queried item's family (candidate name
+    // contains the full query name, e.g. "Besi beton polos" for query
+    // "Besi Beton", or every query term matches) were rejected by the unit
+    // gate. In that case the unit rejection is FINAL for this query: the
+    // resolver must not drift to a different material via keyword matching
+    // (QA C7: "Besi Beton" per m3 silently landing on "Beton" per m3).
+    let familyUnitRejected = false;
 
     for (const p of allPrices) {
       if (qObj.category && p.category !== qObj.category) continue;
@@ -368,6 +375,7 @@ export class PriceResolver {
         // become resolvedPrice.
         const unitMismatch = !!normalizedUnitQuery && normPUnit !== normalizedUnitQuery;
         if (unitMismatch) {
+          if (normPName.includes(normalizedNameQuery)) familyUnitRejected = true;
           recordPriceWarning({
             kind: 'UNIT_MISMATCH',
             queryName: qObj.name || qObj.code || '',
@@ -431,6 +439,9 @@ export class PriceResolver {
           // never becomes a resolution candidate.
           const kwUnitMismatch = !!normalizedUnitQuery && normPUnit !== normalizedUnitQuery;
           if (kwUnitMismatch) {
+            // Candidate carries EVERY query term (it is the queried item's
+            // family) but in an incompatible unit → same finality rule.
+            if (matchCount >= queryTerms.length) familyUnitRejected = true;
             recordPriceWarning({
               kind: 'UNIT_MISMATCH',
               queryName: qObj.name || qObj.code || '',
@@ -527,6 +538,27 @@ export class PriceResolver {
         confidence: 0.90,
         warnings: ['Ditemukan beberapa entri harga dengan nama identik di database.'],
         explanation: `Ditemukan ${exactNameMatches.length} varian harga di database untuk nama yang sama. Pilihan terbaik: ${best.name} (Rp ${best.price.toLocaleString('id-ID')}/${best.unit})`,
+      };
+    }
+
+    // UNIT GATE FINALITY (QA C7): the queried item's family exists but only
+    // in incompatible units, and NO same-family candidate survived the unit
+    // gate. Refuse here instead of drifting to a different material through
+    // keyword/partial matching.
+    const hasSurvivingFamilyCandidate = partialCandidates.some((c) =>
+      PriceNormalizationEngine.normalizeText(c.price.name).includes(normalizedNameQuery)
+    );
+    if (familyUnitRejected && !hasSurvivingFamilyCandidate) {
+      return {
+        status: 'PRICE_NOT_FOUND',
+        query: qObj,
+        error: `UNIT_MISMATCH: "${qObj.name}" tersedia di database hanya dalam satuan yang berbeda dari "${qObj.unit}".`,
+        confidence: 0,
+        priceCandidates: allCandidates,
+        warnings: [
+          `UNIT_MISMATCH: satuan "${qObj.unit}" tidak cocok untuk "${qObj.name}". Resolusi dihentikan — harga tidak diisi (bukan Rp0) dan tidak dialihkan ke material lain. Konversi satuan tervalidasi diperlukan.`,
+        ],
+        explanation: `Harga "${qObj.name}" tidak diresolve: item tersedia hanya dalam satuan berbeda dari "${qObj.unit}" (UNIT_MISMATCH). Tidak dialihkan ke item lain.`,
       };
     }
 
@@ -636,8 +668,32 @@ export class PriceResolver {
         const pNormUnit = PriceNormalizationEngine.normalizeUnit(p.unit);
         return pNormName === normName && (!normUnit || pNormUnit === normUnit);
       });
-      if (!refItem) {
-        refItem = allMaster.find((p) => PriceNormalizationEngine.normalizeText(p.name) === normName);
+      if (!refItem && normUnit) {
+        // UNIT GATE (fail-closed, QA C7 P1): same-name records exist ONLY in
+        // other units. Previously a second, unit-blind name lookup returned
+        // e.g. the per-m3 price for a per-kg request with no warning at all.
+        // Now the mismatch is recorded and the reference stays unresolved,
+        // exactly like resolve() and priceResolver2026 behave.
+        const sameName = allMaster.filter((p) => PriceNormalizationEngine.normalizeText(p.name) === normName);
+        for (const p of sameName) {
+          recordPriceWarning({
+            kind: 'UNIT_MISMATCH',
+            queryName: qObj.name || qObj.code || '',
+            queryUnit: qObj.unit,
+            candidateName: p.name,
+            candidateUnit: p.unit,
+            price: p.price,
+            sourceName: p.provenance?.sourceName || p.priceSource,
+            region: p.location,
+            notes: `resolvePrice Step A: satuan permintaan "${qObj.unit}" tidak sama dengan satuan referensi "${p.unit}". Referensi ditolak — harga tidak diisi, bukan Rp0.`,
+          });
+        }
+        if (sameName.length > 0) {
+          const units = [...new Set(sameName.map((p) => p.unit))].join(', ');
+          refWarnings.push(
+            `UNIT_MISMATCH: "${qObj.name}" hanya tersedia dalam satuan ${units}; permintaan "${qObj.unit}" ditolak — diperlukan konversi satuan tervalidasi.`
+          );
+        }
       }
     }
 
@@ -909,7 +965,9 @@ export class PriceResolver {
       sourceName: 'Harga Tidak Ditemukan',
       isFinal: false,
       confidence: 0,
-      explanation: `Harga untuk "${qObj.name || qObj.code}" tidak ditemukan dalam database referensi maupun harga proyek.`,
+      explanation:
+        refWarnings.find((w) => w.startsWith('UNIT_MISMATCH')) ||
+        `Harga untuk "${qObj.name || qObj.code}" tidak ditemukan dalam database referensi maupun harga proyek.`,
     };
   }
 }

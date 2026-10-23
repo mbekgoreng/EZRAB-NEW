@@ -356,17 +356,26 @@ describe('remediasi D1 — kartu pilihan berlabel + koreksi pra-pilih', () => {
     expect(corr.message).toContain('Kamar mandi: 1 — Asumsi (default template)');
     expect(corr.message).toContain('Luas bangunan: 45 m² per lantai (total ±90 m²)');
     expect(getPendingRabChoice()?.floors).toBe(2);
-    // Jalur AI Full: prompt membawa spek terkoreksi.
-    const ai = corr.actions![1];
-    if (ai.action.kind === 'intent') {
-      expect(ai.action.param).toContain('2 lantai');
-      expect(ai.action.param).toContain('3 kamar tidur');
-    } else {
-      throw new Error('Expected intent action for Pakai AI Full');
-    }
     // Jalur Template: generate memakai lantai terkoreksi, pending terkonsumsi.
     const gen = executeIntent('GENERATE_RAB_TEMPLATE', 'buatkan rab rumah type 45 di Bogor', mockCtx as never);
     expect(gen.message).toContain('Rumah Type 45 (2 lantai, luas total ±90 m²)');
+    expect(getPendingRabChoice()).toBeNull();
+    // Jalur AI Full (kontrak baru 2026-10-23): tombol membawa intent
+    // RAB_FULL_AI + param teks mentah; spek terkoreksi mengalir lewat
+    // pendingChoice.needs yang dikonsumsi case RAB_FULL_AI — hasil kliknya
+    // adalah tabel terkoreksi (2 lantai, ±90 m²), BUKAN prompt LLM.
+    executeIntent('CREATE_RAB_DIRECT', undefined, ctx);
+    const corr2 = continueRabChoice('2 lantai, 3 kamar tidur');
+    const ai = corr2.actions![1];
+    if (ai.action.kind !== 'intent') throw new Error('Expected intent action for Pakai AI Full');
+    expect(ai.label).toBe('Pakai AI Full');
+    expect(ai.action.intent).toBe('RAB_FULL_AI');
+    expect(ai.action.param).toBe('buatkan rab rumah type 45 di Bogor');
+    const full = executeIntent('RAB_FULL_AI', ai.action.param, mockCtx as never);
+    expect(full.fullAiPrompt).toBeUndefined();
+    expect(full.message).toContain('Rumah Type 45 (2 lantai, luas total ±90 m²)');
+    expect(full.actions?.some((a) => a.action.kind === 'push-rab')).toBe(true);
+    expect(getLastDirectRab()?.floors).toBe(2);
     expect(getPendingRabChoice()).toBeNull();
   });
 });

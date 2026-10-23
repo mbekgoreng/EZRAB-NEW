@@ -49,14 +49,47 @@ function fmtIDR(n: number): string {
   return 'Rp ' + n.toLocaleString('id-ID');
 }
 
+/** Normalisasi satuan untuk perbandingan dimensi ("m²"→"m2", "Rp/m³"→"m3"). */
+function normUnitArg(v: unknown): string | null {
+  if (typeof v !== 'string') return null;
+  let s = v.trim().toLowerCase().replace(/²/g, '2').replace(/³/g, '3');
+  if (s.includes('/')) s = s.slice(s.lastIndexOf('/') + 1);
+  return s || null;
+}
+
+/** Label tier sumber harga (nilai engine diteruskan apa adanya, tidak dinaikkan). */
+const PRICE_TIER_LABELS: Record<string, string> = {
+  OFFICIAL_GOVERNMENT: 'RESMI (sumber pemerintah)',
+  OFFICIAL_PROJECT: 'RESMI (dokumen proyek)',
+  VERIFIED_REGIONAL: 'Referensi wilayah terverifikasi',
+  USER_IMPORTED_VERIFIED: 'Impor pengguna terverifikasi',
+  PROJECT_INTERNAL_MASTER: 'Master internal proyek (belum terverifikasi eksternal)',
+  COMMERCIAL_REFERENCE: 'REFERENSI PASAR/KOMERSIAL',
+  LEGACY_SUPERSEDED: 'Sumber lama (sudah digantikan)',
+};
+
 export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
   {
     name: 'subtotal',
-    description: 'Menghitung jumlah = volume × harga satuan.',
+    description: 'Menghitung jumlah = volume × harga satuan. Menolak volume/harga negatif dan menolak perkalian lintas satuan (argumen unit & priceUnit berbeda).',
     invoke: (args) => {
       const q = asNumber(args.volume ?? args.quantity);
       const p = asNumber(args.unitPrice ?? args.price);
       if (q === null || p === null) return 'ERROR: volume dan harga satuan wajib berupa angka.';
+      // Penjaga B13: subtotal negatif bukan nilai sah — tolak, jangan kalikan.
+      if (q < 0 || p < 0) {
+        return 'ERROR: volume dan harga satuan tidak boleh negatif. Periksa kembali inputnya — hasil negatif tidak disimpan sebagai nilai yang sah.';
+      }
+      // Penjaga B10/B15: satuan kuantitas dan satuan harga yang dinyatakan
+      // berbeda tidak boleh dikalikan diam-diam; perlu konversi yang sah.
+      const unitQ = normUnitArg(args.unit ?? args.satuan ?? args.quantityUnit);
+      const unitP = normUnitArg(args.priceUnit ?? args.satuan_harga ?? args.unitPriceUnit);
+      if (unitQ && unitP && unitQ !== unitP) {
+        return (
+          `ERROR: satuan kuantitas (${unitQ}) dan satuan harga (${unitP}) berbeda — subtotal tidak boleh dihitung lintas satuan. ` +
+          'Samakan satuannya lewat konversi yang sah (mis. densitas terverifikasi untuk kg↔m³) sebelum mengalikan.'
+        );
+      }
       return `Subtotal = ${fmtIDR(Math.round(q * p))}`;
     },
   },
@@ -75,13 +108,37 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
   },
   {
     name: 'luas_dinding',
-    description: 'Luas dinding: (panjang × tinggi) × 2, dikurangi luas bukaan bila diberi.',
+    description:
+      'Luas dinding SATU bidang: panjang × tinggi, dikurangi total luas bukaan (argumen "bukaan" = total luas bukaan dalam m², atau daftar luas/nilai {panjang, tinggi, jumlah}). ' +
+      'Hanya untuk dua bidang sejajar (pasangan dinding) beri argumen sisi=2 secara eksplisit.',
     invoke: (args) => {
       const p = asNumber(args.panjang);
       const h = asNumber(args.tinggi);
-      const b = asNumber(args.bukaan);
       if (p === null || h === null) return 'ERROR: panjang dan tinggi wajib berupa angka.';
-      const area = 2 * p * h - (b ?? 0);
+      if (p <= 0 || h <= 0) return 'ERROR: panjang dan tinggi harus lebih dari nol.';
+      // Default SATU sisi (perbaikan B3: rumus lama selalu ×2 sehingga soal
+      // satu bidang menghasilkan angka salah deterministik). Dua sisi hanya
+      // bila diminta eksplisit lewat argumen sisi.
+      const sisiRaw = asNumber(args.sisi ?? args.jumlah_sisi ?? args.sisi_dinding);
+      const sisi = sisiRaw === 2 ? 2 : 1;
+      let bukaan = 0;
+      const bRaw = args.bukaan ?? args.luas_bukaan;
+      if (Array.isArray(bRaw)) {
+        for (const e of bRaw) {
+          const n = asNumber(e);
+          if (n !== null) { bukaan += n; continue; }
+          if (e && typeof e === 'object') {
+            const ep = asNumber((e as Record<string, unknown>).panjang);
+            const et = asNumber((e as Record<string, unknown>).tinggi);
+            const cnt = asNumber((e as Record<string, unknown>).jumlah) ?? 1;
+            if (ep !== null && et !== null) bukaan += ep * et * cnt;
+          }
+        }
+      } else {
+        bukaan = asNumber(bRaw) ?? 0;
+      }
+      if (bukaan < 0) return 'ERROR: luas bukaan tidak boleh negatif.';
+      const area = sisi * p * h - bukaan;
       if (area < 0) return 'ERROR: luas bukaan melebihi luas dinding.';
       return `Luas dinding = ${area.toLocaleString('id-ID', { maximumFractionDigits: 2 })} m²`;
     },
@@ -116,7 +173,13 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
             } catch { /* ignore */ }
           }
           const title = it.title ?? it.name ?? '-';
-          return `${i + 1}. [${it.code ?? '-'}] ${title} — ${it.unit ?? ''}${price ? ` — ${fmtIDR(Math.round(price))}` : ' — harga lihat analisa komponen'}`;
+          // Provenance diteruskan apa adanya dari record kanonis (dokumen
+          // sumber + status verifikasi item) — tidak dinaikkan/diturunkan.
+          const prov: string[] = [];
+          if (it.sourceDocument) prov.push(`Sumber: ${it.sourceDocument}`);
+          if (it.status) prov.push(`Status verifikasi: ${it.status}`);
+          const head = `${i + 1}. [${it.code ?? '-'}] ${title} — ${it.unit ?? ''}${price ? ` — ${fmtIDR(Math.round(price))}` : ' — harga belum tersedia (lihat analisa komponen)'}`;
+          return prov.length ? `${head}\n   ${prov.join(' · ')}` : head;
         }).join('\n');
       } catch (e: any) {
         return 'ERROR: gagal mencari AHSP: ' + (e?.message ?? e);
@@ -133,9 +196,52 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
       const resourceType = jenis === 'upah' ? 'labor' : jenis === 'alat' ? 'equipment' : jenis === 'material' ? 'material' : 'unknown';
       try {
         const res = priceResolver2026.resolveResourcePrice({ resourceName: q, resourceType } as any);
-        const rec: any = (res as any)?.record ?? res;
-        if (!rec || rec.price == null) return `Tidak ditemukan harga untuk "${q}".`;
-        return `${rec.name ?? q} — ${rec.unit ?? ''} — ${fmtIDR(Math.round(Number(rec.price)))}${rec.location ? ` (${rec.location})` : ''}`;
+        const r: any = (res as any)?.record ?? res;
+        if (!r || r.price == null) {
+          // Harga null = BELUM TERSEDIA, bukan Rp0 (dan bukan "tidak ada"
+          // tanpa konteks: statusnya dinyatakan eksplisit).
+          return (
+            `Tidak ditemukan harga untuk "${q}" — harga belum tersedia di database (bukan angka nol). ` +
+            'Bila perlu, gunakan harga manual yang dilabeli manual atau lakukan riset harga.'
+          );
+        }
+        // Provenance WAJIB ikut (akar PARTIAL C3/C12/C15): nama, satuan,
+        // harga, tier/status sumber, status verifikasi (diteruskan apa
+        // adanya — NEEDS_REVIEW TIDAK dinaikkan menjadi VERIFIED),
+        // dokumen sumber, wilayah basis, dan periode data.
+        const name = r.resourceName ?? r.name ?? q;
+        const lines: string[] = [
+          `${name} — ${r.unit ?? ''} — ${fmtIDR(Math.round(Number(r.price)))}`,
+        ];
+        const tier: string | undefined = r.source?.tier ?? r.sourceTier;
+        if (tier) lines.push(`Status sumber: ${PRICE_TIER_LABELS[tier] ?? tier} (${tier})`);
+        const verif: string | undefined = r.verificationStatus;
+        if (verif) lines.push(`Status verifikasi: ${verif}`);
+        const srcName: string | undefined = r.source?.name ?? r.sourceName;
+        const srcDoc: string | undefined = r.source?.document ?? r.sourceDocument ?? undefined;
+        if (srcName) lines.push(`Sumber: ${srcName}${srcDoc ? ` — ${srcDoc}` : ''}`);
+        else if (srcDoc) lines.push(`Sumber: ${srcDoc}`);
+        const loc = r.resolvedLocation ?? r.location;
+        if (loc && typeof loc === 'object') {
+          const parts = [loc.provinceName, loc.regencyName, loc.cityName].filter(Boolean).join(' / ');
+          if (parts || loc.level) lines.push(`Wilayah basis harga: ${parts || loc.level}${parts && loc.level ? ` (${loc.level})` : ''}`);
+        } else if (typeof loc === 'string' && loc) {
+          lines.push(`Wilayah basis harga: ${loc}`);
+        }
+        const per = r.resolvedPeriod ?? r.period;
+        if (per && (per.label || per.year)) lines.push(`Periode data: ${per.label ?? per.year}`);
+        // Alternatif berharga berbeda (bahan perbandingan C4) — bidang
+        // yang memang tersedia dari resolver ditampilkan apa adanya.
+        const alts = (Array.isArray(r.alternatives) ? r.alternatives : [])
+          .filter((a: any) => a && a.price != null && Number(a.price) !== Number(r.price))
+          .slice(0, 3);
+        if (alts.length > 0) {
+          lines.push('Alternatif dari sumber lain (harga berbeda — bandingkan satuan, wilayah, tanggal, dan status verifikasinya):');
+          for (const a of alts) {
+            lines.push(`• ${fmtIDR(Math.round(Number(a.price)))}/${a.unit ?? ''} — ${a.sourceName ?? '-'} (${a.locationLevel ?? '-'})`);
+          }
+        }
+        return lines.join('\n');
       } catch (e: any) {
         return 'ERROR: gagal mencari harga: ' + (e?.message ?? e);
       }
@@ -251,7 +357,9 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
         `Kelompok: ${it.sectionName || '-'}`,
         `Volume: ${it.volume} ${it.unit}`,
         `Harga satuan: ${it.priceStatus === 'PRICE_UNRESOLVED' ? 'belum tersedia (BUKAN Rp0)' : `${formatIDR(it.unitPrice ?? 0)}/${it.unit}`}`,
-        `Subtotal: ${formatIDR(it.totalPrice)}`,
+        // Item unresolved tidak boleh tercetak "Subtotal: Rp0" — snapshot
+        // menyimpan totalPrice 0 untuk item belum berharga (observasi C2).
+        `Subtotal: ${it.priceStatus === 'PRICE_UNRESOLVED' ? 'belum tersedia' : formatIDR(it.totalPrice)}`,
       ].join('\n');
     },
   },

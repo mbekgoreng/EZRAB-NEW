@@ -9,8 +9,11 @@
  */
 import React, { useRef, useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import {
-  Send, Sparkles, Loader2, Zap, Brain,
+  Send, Sparkles, Loader2, Zap, Brain, RotateCcw,
   Copy, Check, Mic, Paperclip, X, Plus, ImagePlus,
+  ArrowRight, Building2, ChevronRight, FileEdit, FileText,
+  FolderOpen, History, LayoutTemplate, Lightbulb, Trash2,
+  UploadCloud, ClipboardCheck,
 } from 'lucide-react';
 import { ezrabAiService } from './service';
 import { debitChatCreditOnSuccess } from './chatCreditDebit';
@@ -19,7 +22,7 @@ import { resolveAuthKind, type AuthKind } from '../../lib/demoSession';
 import { renderMarkdown } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { consumePendingAiEntry, requestAiEntry } from '../aiNavigation';
-import { executeIntent, continueRabNeeds, continueRabChoice, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
+import { executeIntent, continueRabNeeds, continueRabChoice, tryContinueRabSubtype, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
 import { getLastDirectRab } from './directRab';
 import { looksLikeNeedsAnswer } from './rabNeeds';
 import { notificationBus } from '../../notifications/notificationBus';
@@ -47,6 +50,10 @@ interface ChatEntry {
   role: 'user' | 'assistant';
   content: string;
   isError?: boolean;
+  /** Entry jawaban yang berasal dari pipeline AI (service.send) — pembeda
+   *  dari error lokal registry/push agar tombol "Coba Lagi" hanya tampil
+   *  pada kegagalan AI yang memang bisa dikirim ulang. */
+  fromAi?: boolean;
   model?: string;
   ts: number;
   imageUrl?: string;
@@ -94,16 +101,23 @@ const SUGGESTIONS = [
   '💰 Estimasi biaya renovasi dapur',
 ];
 
-const GREETINGS = [
-  'Halo! 👋 Mau estimasi apa hari ini?',
-  'Hai! ✨ Siap bantu hitung RAB kamu.',
-  'Halo! 🏗️ Tanya apa saja soal konstruksi.',
-];
-
 const MASCOT_PNG = '/images/ezrab-mascot-greeting.png';
 
 const fmtTime = (ts: number) =>
   new Date(ts).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+/* Tanggal ringkas id-ID untuk daftar riwayat percakapan di rel kanan. */
+const fmtHistoryDate = (ts: number) => {
+  const diff = Date.now() - ts;
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  if (diff < minute) return 'Baru saja';
+  if (diff < hour) return `${Math.max(1, Math.floor(diff / minute))} menit lalu`;
+  if (diff < day) return `${Math.floor(diff / hour)} jam lalu`;
+  if (diff < 2 * day) return 'Kemarin';
+  return new Date(ts).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+};
 
 interface EzrabAiViewProps {
   /** Navigate to a workspace menu (injected by WorkspaceView) */
@@ -138,7 +152,6 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     return () => { cancelled = true; };
   }, []);
   const [mode, setMode] = useState<'fast' | 'advanced'>('fast');
-  const [greeting] = useState(() => GREETINGS[Math.floor(Math.random() * GREETINGS.length)]);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [attached, setAttached] = useState<{ url: string; name: string } | null>(null);
   // --- AI Credits (simulasi frontend) ---
@@ -153,6 +166,20 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [awaitingNeeds, setAwaitingNeeds] = useState(false);
   /** D1: kartu pilihan RAB bertipe menunggu koreksi/pilihan pengguna */
   const [awaitingChoice, setAwaitingChoice] = useState(false);
+  /** Klarifikasi subtipe (2026-10-23): menunggu jawaban "Jalan apa?" */
+  const [awaitingSubtype, setAwaitingSubtype] = useState(false);
+  /** Klarifikasi topik (2026-10-23): menunggu query lanjutan atas kartu
+   *  klarifikasi — nilai = mode ('ahsp' | 'harga-material' | 'harga-upah'
+   *  | 'harga-alat' | 'template'); null = tidak menunggu. */
+  const [awaitingClarify, setAwaitingClarify] = useState<string | null>(null);
+  /** Full AI dari kartu jalur: pesan berikutnya WAJIB ke pipeline AI
+   *  (lewati router lokal) — prompt-nya memang berbentuk perintah RAB yang
+   *  akan tertangkap CREATE_RAB_SUMMARY bila dirutekan ulang. */
+  const forceAiRef = useRef(false);
+  /** Teks user terakhir yang BENAR-BENAR dikirim ke pipeline AI
+   *  (diisi tepat sebelum service.send — bukan pada jawaban lokal
+   *  registry). Target tombol "Coba Lagi" pada pesan error AI. */
+  const lastAiPromptRef = useRef<string | null>(null);
   // P0 Command Center: wizard & design studio overlays
   const [rabWizardOpen, setRabWizardOpen] = useState(false);
   const [designStudioOpen, setDesignStudioOpen] = useState(false);
@@ -169,15 +196,56 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   // Conversation store is keyed by project; use a stable key when none is active.
   const storeProjectId = effProject?.id ?? '__ezrab_ai_global__';
   const convIdRef = useRef<string | null>(null);
+  // Cermin state dari convIdRef agar item aktif di daftar riwayat bisa
+  // ter-highlight dan ikut re-render.
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
   // True setelah percakapan tersimpan selesai di-restore — entry AI baru
   // diproses setelah ini agar tidak menimpa riwayat (stale closure).
   const [conversationReady, setConversationReady] = useState(false);
+
+  /* ---- Rel kanan: Riwayat Percakapan ---- */
+  interface HistoryItem { id: string; title: string; updatedAt: number; messageCount: number }
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+  const historyCardRef = useRef<HTMLElement>(null);
+
+  const refreshHistory = useCallback(() => {
+    try {
+      const list = unifiedConversationStore.listConversations(storeProjectId);
+      setHistoryItems(list.slice(0, 12).map((c) => {
+        const rawTitle = (c.title ?? '').trim();
+        const placeholder = !rawTitle || rawTitle === 'Percakapan baru' || rawTitle === 'Percakapan Copilot';
+        const firstUser = (c.messages ?? []).find((m) => m.role === 'user');
+        return {
+          id: c.id,
+          title: placeholder
+            ? (firstUser ? firstUser.content.slice(0, 60) : 'Percakapan baru')
+            : rawTitle,
+          updatedAt: c.updatedAt,
+          messageCount: (c.messages ?? []).length,
+        };
+      }));
+    } catch {
+      /* storage failure is non-fatal — riwayat hanya tidak tampil */
+    }
+  }, [storeProjectId]);
+
+  // Segarkan daftar saat percakapan siap, saat jumlah pesan berubah, dan
+  // saat store berubah (pesan masuk dari permukaan AI lain).
+  useEffect(() => { refreshHistory(); }, [refreshHistory, conversationReady, messages.length]);
+  useEffect(() => {
+    try {
+      return unifiedConversationStore.subscribe(() => refreshHistory());
+    } catch {
+      return undefined;
+    }
+  }, [refreshHistory]);
 
   // Load persisted conversation on mount / project change.
   useEffect(() => {
     try {
       const conv = unifiedConversationStore.getOrCreateActiveConversation(storeProjectId);
       convIdRef.current = conv.id;
+      setActiveConvId(conv.id);
       const restored: ChatEntry[] = (conv.messages ?? [])
         .filter((m) => m.role === 'user' || m.role === 'assistant')
         .map((m) => ({
@@ -256,6 +324,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     setInput('');
     setAwaitingNeeds(false);
     setAwaitingChoice(false);
+    setAwaitingSubtype(false);
+    setAwaitingClarify(null);
+    forceAiRef.current = false;
     revokeAllUrls();
     setAttached(null);
     autoresize();
@@ -263,33 +334,120 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const conv = unifiedConversationStore.createConversation(storeProjectId, 'Percakapan baru');
       unifiedConversationStore.setActiveConversationId(storeProjectId, conv.id);
       convIdRef.current = conv.id;
+      setActiveConvId(conv.id);
     } catch {
       /* non-fatal */
     }
   };
 
-  const submit = async (text?: string) => {
+  /* Muat percakapan dari daftar riwayat (rel kanan): pemetaan restore
+   * SAMA seperti useEffect mount — hanya pesan user/assistant, ts dari
+   * createdAt. Semua status menunggu (needs/choice/subtype + paksa-AI)
+   * direset agar konteks lama tidak bocor ke percakapan yang dimuat. */
+  const loadConversation = (id: string) => {
+    if (busy || id === convIdRef.current) return;
+    try {
+      const conv = unifiedConversationStore.getConversation(id, storeProjectId);
+      if (!conv) return;
+      unifiedConversationStore.setActiveConversationId(storeProjectId, id);
+      convIdRef.current = id;
+      setActiveConvId(id);
+      revokeAllUrls();
+      setAttached(null);
+      setInput('');
+      setAwaitingNeeds(false);
+      setAwaitingChoice(false);
+      setAwaitingSubtype(false);
+      setAwaitingClarify(null);
+      forceAiRef.current = false;
+      const restored: ChatEntry[] = (conv.messages ?? [])
+        .filter((m) => m.role === 'user' || m.role === 'assistant')
+        .map((m) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          ts: m.createdAt ? Date.parse(m.createdAt) || Date.now() : Date.now(),
+        }));
+      setMessages(restored);
+      autoresize();
+    } catch {
+      /* non-fatal — percakapan aktif tidak berubah */
+    }
+  };
+
+  /* Muat Ulang (2026-10-23): reset state tampilan yang macet TANPA
+   * menghapus percakapan — busy dibersihkan, dialog kredit ditutup,
+   * semua status menunggu direset, lalu percakapan aktif di-restore
+   * ulang dari store dengan pemetaan yang sama seperti mount /
+   * loadConversation. */
+  const reloadChat = () => {
+    setBusy(false);
+    setCreditConfirm(null);
+    setAwaitingNeeds(false);
+    setAwaitingChoice(false);
+    setAwaitingSubtype(false);
+    setAwaitingClarify(null);
+    forceAiRef.current = false;
+    try {
+      const conv = unifiedConversationStore.getOrCreateActiveConversation(storeProjectId);
+      convIdRef.current = conv.id;
+      setActiveConvId(conv.id);
+      const restored: ChatEntry[] = (conv.messages ?? [])
+        .filter((m) => m.role === 'user' || m.role === 'assistant')
+        .map((m) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          ts: m.createdAt ? Date.parse(m.createdAt) || Date.now() : Date.now(),
+        }));
+      setMessages(restored);
+    } catch {
+      /* non-fatal — tampilan saat ini dipertahankan */
+    }
+  };
+
+  const deleteHistoryItem = (id: string) => {
+    try {
+      const wasActive = convIdRef.current === id;
+      unifiedConversationStore.deleteConversation(id, storeProjectId);
+      if (wasActive) newChat();
+      else refreshHistory();
+    } catch {
+      /* non-fatal */
+    }
+  };
+
+  const submit = async (text?: string, opts?: { echo?: boolean }) => {
     const msg = (text ?? input).trim();
+    // echo=false = mode "Coba Lagi": kirim ulang prompt terakhir ke
+    // pipeline AI TANPA gelembung user duplikat dan tanpa mengosongkan
+    // draft yang sedang diketik pengguna.
+    const echo = opts?.echo !== false;
     if ((!msg && !attached) || busy) return;
+    /* Full AI (klik tombol di kartu jalur): pesan ini prompt terkumpul yang
+     * memang harus diproses pipeline AI — router lokal dilewati, tetapi
+     * gerbang kredit & pencatatan pemakaian tetap berlaku persis seperti
+     * pesan AI biasa. Bendera sekali-pakai; dialog konfirmasi kredit
+     * memasangnya lagi sebelum memanggil ulang submit. */
+    const forcedAi = forceAiRef.current;
+    forceAiRef.current = false;
     // --- AI Credits: intent lokal tidak memanggil AI → tanpa biaya ---
     const preRouted = routeIntent(msg);
-    const needsAi = !(preRouted.localOnly && preRouted.intent !== 'UNKNOWN') && !preRouted.needsClarification;
+    const needsAi = forcedAi || (!(preRouted.localOnly && preRouted.intent !== 'UNKNOWN') && !preRouted.needsClarification);
     if (needsAi && balance.total < chatEstimate.max) {
       // Saldo simulasi tidak cukup → dialog konfirmasi (bukan blokir diam-diam).
       setCreditConfirm({
         estimate: chatEstimate.max,
-        pending: () => { setCreditConfirm(null); void submit(text); },
+        pending: () => { setCreditConfirm(null); forceAiRef.current = forcedAi; void submit(text, opts); },
       });
       return;
     }
-    const img = attached;
+    const img = echo ? attached : null;
     /* Catatan jujur ke model teks: ia tidak bisa melihat gambar */
     const content = img && !msg
       ? `🖼️ (pengguna melampirkan gambar "${img.name}" — saya tidak dapat melihat gambar, mohon minta deskripsi atau lanjutkan tanpa gambar)`
       : img
         ? `${msg}\n\n🖼️ (pengguna juga melampirkan gambar "${img.name}" — saya tidak dapat melihat gambar)`
         : msg;
-    setInput('');
+    if (echo) setInput('');
     /* P2 UI-1: JANGAN revoke di sini — URL dipakai thumbnail di pesan.
      * Kepemilikan URL pindah ke pesan; di-revoke saat chat dibersihkan/unmount. */
     if (img) { setAttached(null); }
@@ -298,9 +456,23 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       role: 'user', content: msg || '(gambar terlampir)', ts: Date.now(),
       imageUrl: img?.url, imageName: img?.name,
     };
-    const next: ChatEntry[] = [...messages, entry];
-    setMessages(next);
-    persistMessage('user', entry.content);
+    let next: ChatEntry[];
+    if (echo) {
+      next = [...messages, entry];
+      setMessages(next);
+      persistMessage('user', entry.content);
+    } else {
+      // Coba lagi: entry user hanya menjadi konteks payload AI (di ujung
+      // `next`), TIDAK ditampilkan sebagai gelembung baru dan tidak
+      // dipersistensikan ulang. Tampilan dibersihkan dari entry error
+      // asisten terakhir — percobaan ini menggantikannya.
+      const cleaned = [...messages];
+      for (let i = cleaned.length - 1; i >= 0; i--) {
+        if (cleaned[i].role === 'assistant' && cleaned[i].isError) { cleaned.splice(i, 1); break; }
+      }
+      setMessages(cleaned);
+      next = [...cleaned, entry];
+    }
     setBusy(true);
     /* ---- D1: koreksi pra-pilih pada kartu pilihan RAB bertipe ----
      * Selama kartu pilihan aktif, pesan berbentuk koreksi spek (lantai/
@@ -308,7 +480,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
      * dengan spek terkoreksi — BUKAN dilempar ke AI dan BUKAN dianggap
      * perintah baru. Pesan berbentuk lain menggugurkan status menunggu
      * dan diproses normal di bawah. */
-    if (awaitingChoice) {
+    if (!forcedAi && awaitingChoice) {
       if (looksLikeNeedsAnswer(msg)) {
         try {
           const res = continueRabChoice(msg);
@@ -323,10 +495,27 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       }
       setAwaitingChoice(false);
     }
+    /* ---- Klarifikasi subtipe (2026-10-23): jawaban atas "Jalan apa?" ----
+     * Selama pertanyaan subtipe aktif, pesan yang menyebut subtipe dari
+     * peta kategori yang menunggu digabung ke kebutuhan dan kartu jalur
+     * ditampilkan — BUKAN dilempar ke AI. Pesan tanpa subtipe (perintah
+     * baru) menggugurkan status menunggu dan diproses normal di bawah. */
+    if (!forcedAi && awaitingSubtype) {
+      const subRes = tryContinueRabSubtype(msg);
+      if (subRes) {
+        const acts = subRes.actions && subRes.actions.length > 0 ? subRes.actions : undefined;
+        setMessages((prev) => [...prev, { role: 'assistant', content: subRes.message, ts: Date.now(), actions: acts }]);
+        persistMessage('assistant', subRes.message);
+        setAwaitingSubtype(false);
+        setBusy(false);
+        return;
+      }
+      setAwaitingSubtype(false);
+    }
     /* ---- Chat-to-RAB Fase 2: jawaban atas "Lengkapi kebutuhan" ----
      * Bila chat sedang menunggu kelengkapan dan pesan ini berbentuk jawaban
      * (lantai/dimensi/kamar), gabungkan ke ringkasan — jangan lempar ke AI. */
-    if (awaitingNeeds) {
+    if (!forcedAi && awaitingNeeds) {
       setAwaitingNeeds(false);
       if (looksLikeNeedsAnswer(msg)) {
         try {
@@ -340,9 +529,42 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         return;
       }
     }
+    /* ---- Klarifikasi topik (2026-10-23): query lanjutan kartu klarifikasi ----
+     * Selama mode klarifikasi aktif, pesan diperlakukan sebagai QUERY untuk
+     * mode itu (nama pekerjaan / material / template) dan dijawab lokal
+     * lewat CLARIFY_QUERY — BUKAN perintah baru dan BUKAN dilempar ke LLM.
+     * Pengecualian: pesan yang router kenali sebagai perintah lokal SPESIFIK
+     * (intent lokal selain UNKNOWN dan CLARIFY_TOPIC) menggugurkan mode
+     * klarifikasi dan diproses normal di bawah. */
+    if (!forcedAi && awaitingClarify) {
+      const routedClarify = routeIntent(msg);
+      if (routedClarify.localOnly && routedClarify.intent !== 'UNKNOWN' && routedClarify.intent !== 'CLARIFY_TOPIC') {
+        setAwaitingClarify(null);
+      } else {
+        try {
+          const res = executeIntent('CLARIFY_QUERY', msg, {
+            navigate: onNavigate ?? (() => {}),
+            rawText: msg,
+            currentMenu,
+            activeProject,
+            projects,
+            projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
+            projectItems: projectSnapshot?.items ?? null,
+            clarifyMode: awaitingClarify,
+          });
+          const acts = res.actions && res.actions.length > 0 ? res.actions : undefined;
+          setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: acts }]);
+          persistMessage('assistant', res.message);
+          setAwaitingClarify(res.awaitClarify ?? null);
+        } finally {
+          setBusy(false);
+        }
+        return;
+      }
+    }
     /* ---- Phase 1: local intent router runs BEFORE any AI provider call ---- */
     const routed = routeIntent(msg);
-    if (routed.localOnly && routed.intent !== 'UNKNOWN') {
+    if (!forcedAi && routed.localOnly && routed.intent !== 'UNKNOWN') {
       try {
         const ctx: ChatActionContext = {
           navigate: onNavigate ?? (() => {}),
@@ -380,6 +602,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           }
           if (res.awaitRabNeeds) setAwaitingNeeds(true);
           if (res.awaitRabChoice) setAwaitingChoice(true);
+          if (res.awaitRabSubtype) setAwaitingSubtype(true);
+          if (res.awaitClarify) setAwaitingClarify(res.awaitClarify);
           // Action buttons — attached to the assistant message
           const entryActions = res.actions && res.actions.length > 0 ? res.actions : undefined;
           setMessages((prev) => [...prev, { role: 'assistant', content: reply, ts: Date.now(), actions: entryActions }]);
@@ -393,12 +617,15 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       }
       return;
     }
-    if (routed.needsClarification && routed.clarificationPrompt) {
+    if (!forcedAi && routed.needsClarification && routed.clarificationPrompt) {
       setMessages((prev) => [...prev, { role: 'assistant', content: routed.clarificationPrompt!, ts: Date.now() }]);
       persistMessage('assistant', routed.clarificationPrompt!);
       setBusy(false);
       return;
     }
+    // Titik ini = jalur pipeline AI: catat prompt terakhir untuk
+    // tombol "Coba Lagi" (jawaban lokal registry tidak sampai ke sini).
+    lastAiPromptRef.current = msg;
     try {
       const res = await ezrabAiService.send({
         // F3: the "[gambar: …]" note belongs ONLY to the message just sent
@@ -428,6 +655,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         role: 'assistant',
         content: res.reply,
         isError: !res.success,
+        fromAi: true,
         model: (res as any).model,
         ts: Date.now(),
         creditsUsed: res.success ? simUsed : undefined,
@@ -443,7 +671,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     } catch (err: any) {
       setLastOutcome('failure');
       const errMsg = err?.message || 'Ups! Ada gangguan. Coba lagi ya 🥺';
-      setMessages((prev) => [...prev, { role: 'assistant', content: errMsg, isError: true, ts: Date.now() }]);
+      setMessages((prev) => [...prev, { role: 'assistant', content: errMsg, isError: true, fromAi: true, ts: Date.now() }]);
       notificationBus.publish({
         type: 'error',
         title: 'Ezrab AI mengalami gangguan',
@@ -569,10 +797,24 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
   };
 
+  /* Coba Lagi (2026-10-23): kirim ulang prompt AI terakhir lewat jalur
+   * submit yang sama, dengan bendera paksa-AI (prompt-nya memang untuk
+   * pipeline AI) dan echo=false (tanpa gelembung user duplikat; entry
+   * error lama dibuang oleh submit sebelum mencoba lagi). */
+  const retryLastAi = () => {
+    const prompt = lastAiPromptRef.current;
+    if (!prompt || busy) return;
+    forceAiRef.current = true;
+    void submit(prompt, { echo: false });
+  };
+
   const handleActionButton = (btn: ChatActionButton) => {
     if (btn.action.kind === 'push-rab') {
       pushDirectRabToSpreadsheet();
     } else if (btn.action.kind === 'navigate') {
+      // Navigasi meninggalkan alur chat — status menunggu subtipe gugur.
+      setAwaitingSubtype(false);
+      setAwaitingClarify(null);
       navigateChat(btn.action.menu);
     } else if (btn.action.intent === 'START_RAB_WIZARD') {
       // Chat-to-RAB Fase 2: tombol "Rumah tinggal" TIDAK lagi membuka wizard
@@ -609,6 +851,80 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions };
       setMessages((prev) => [...prev, entry]);
       persistMessage('assistant', res.message);
+    } else if (btn.action.intent === 'RAB_SUBTYPE_SELECT' || btn.action.intent === 'RAB_PATH_TEMPLATE') {
+      // Klarifikasi subtipe (2026-10-23): klik subtipe → kartu jalur;
+      // klik "Pakai template" pada kartu jalur → daftar template NYATA
+      // dari katalog (atau jawaban jujur bila belum ada template).
+      // Keduanya lokal penuh lewat registry — tanpa panggilan AI/kredit.
+      setAwaitingSubtype(false);
+      setAwaitingClarify(null);
+      const res = executeIntent(btn.action.intent as never, btn.action.param, {
+        navigate: onNavigate ?? (() => {}),
+        currentMenu,
+        activeProject,
+        projects,
+        projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
+        projectItems: projectSnapshot?.items ?? null,
+      });
+      const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions };
+      setMessages((prev) => [...prev, entry]);
+      persistMessage('assistant', res.message);
+    } else if (btn.action.intent === 'RAB_FULL_AI') {
+      // Klik "Full AI" pada kartu jalur = persetujuan pengguna. Kontrak baru:
+      // registry lebih dulu mencoba komposisi deterministik dari kebutuhan
+      // terkumpul (tabel RAB lengkap + tombol Push ke Spreadsheet). Bila
+      // komposisi berhasil, registry mengembalikan message+actions TANPA
+      // fullAiPrompt → tampilkan sebagai entry asisten biasa. Bila belum
+      // bisa disusun (fullAiPrompt ada) → perilaku lama persis: prompt
+      // dikirim ke pipeline Chat AI dengan bendera paksa-AI agar tidak
+      // tertangkap router lokal CREATE_RAB_SUMMARY lagi.
+      setAwaitingSubtype(false);
+      setAwaitingClarify(null);
+      const res = executeIntent('RAB_FULL_AI', btn.action.param, {
+        navigate: onNavigate ?? (() => {}),
+        currentMenu,
+        activeProject,
+        projects,
+        projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
+        projectItems: projectSnapshot?.items ?? null,
+      });
+      if (res.fullAiPrompt) {
+        forceAiRef.current = true;
+        void submit(res.fullAiPrompt);
+      } else if (res.message) {
+        const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions };
+        setMessages((prev) => [...prev, entry]);
+        persistMessage('assistant', res.message);
+      } else if (btn.action.param) {
+        // Cadangan defensif: registry tidak memberi apa pun — pakai param
+        // tombol seperti perilaku lama.
+        forceAiRef.current = true;
+        void submit(btn.action.param);
+      }
+    } else if (btn.action.intent === 'CLARIFY_PICK') {
+      // Pilihan pada kartu klarifikasi topik (2026-10-23): registry memberi
+      // jawaban lokal (mis. penjelasan AHSP) atau permintaan query +
+      // awaitClarify — keduanya lokal penuh, tanpa panggilan AI/kredit.
+      // Mode menunggu disetel dari hasil (awaitClarify baru) atau ditutup.
+      const res = executeIntent('CLARIFY_PICK', btn.action.param, {
+        navigate: onNavigate ?? (() => {}),
+        currentMenu,
+        activeProject,
+        projects,
+        projectTotal: projectSnapshot ? projectSnapshot.totalDirect : projectTotal,
+        projectItems: projectSnapshot?.items ?? null,
+      });
+      const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now(), actions: res.actions };
+      setMessages((prev) => [...prev, entry]);
+      persistMessage('assistant', res.message);
+      setAwaitingClarify(res.awaitClarify ?? null);
+    } else if (btn.action.intent === 'CREATE_RAB_SUMMARY') {
+      // Tombol pilihan jenis pekerjaan pada kartu klarifikasi topik 'rab':
+      // kirim PARAM tombol (perintah lengkapnya, mis. "buatkan rab jalan")
+      // sebagai pesan agar mengalir ke flow kebutuhan/subtipe yang sudah
+      // ada — label tombolnya saja tidak cukup spesifik untuk router.
+      setAwaitingClarify(null);
+      void submit(btn.action.param ?? btn.label);
     } else if (btn.action.intent === 'RAB_NEEDS_REFINE') {
       const res = executeIntent('RAB_NEEDS_REFINE', undefined, {
         navigate: onNavigate ?? (() => {}),
@@ -781,6 +1097,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
 
   return (
     <div className="ezchat2">
+      <div className="ezchat2-layout">
+      <div className="ezchat2-main">
       {/* ===== Header ===== */}
       <div className="ezchat2-header">
         <div className="ezchat2-mascot">
@@ -809,6 +1127,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
               <Brain size={13} /> Mendalam
             </button>
           </div>
+          <button className="ezchat2-new" onClick={reloadChat} title="Muat ulang tampilan chat (reset status macet, percakapan tidak dihapus)">
+            <RotateCcw size={14} /> Muat Ulang
+          </button>
           {messages.length > 0 && (
             <button className="ezchat2-new" onClick={newChat} title="Percakapan baru">
               <Plus size={15} /> Baru
@@ -822,20 +1143,67 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         {messages.length === 0 ? (
           <div className="ezchat2-empty">
             <div className="ezchat2-hero">
-              <EZRABMascotLucu
-                size={128}
-                enableEyeTracking
-                enableFloat
-                enableBlink
-                interactive={false}
-              />
+              <span className="ezchat2-spark s1"><Sparkles size={13} /></span>
+              <span className="ezchat2-spark s2"><Sparkles size={10} /></span>
+              <span className="ezchat2-spark s3"><Sparkles size={11} /></span>
+              <span className="ezchat2-spark s4"><Sparkles size={9} /></span>
+              <div className="ezchat2-hero-circle">
+                <EZRABMascotLucu
+                  size={120}
+                  enableEyeTracking={true}
+                  enableFloat={true}
+                  enableBlink={true}
+                />
+              </div>
             </div>
-            <h2 className="ezchat2-greet">{greeting}</h2>
-            <p className="ezchat2-sub">Tanya apa saja soal RAB, AHSP 2026, volume, dan estimasi biaya konstruksi</p>
-            <div className="ezchat2-chips">
-              {SUGGESTIONS.map((s) => (
-                <button key={s} className="ezchat2-chip" onClick={() => submit(s)}>{s}</button>
-              ))}
+            <h2 className="ezchat2-greet">Halo, saya <span className="ezchat2-greet-brand">EZRAB Chat AI</span></h2>
+            <p className="ezchat2-sub">
+              Asisten cerdas untuk kebutuhan RAB, estimasi, dan dokumen konstruksi Anda.<br />
+              Tanyakan apa saja, atau pilih fitur di bawah untuk memulai.
+            </p>
+            <div className="ezchat2-features">
+              <button className="ezfeat" onClick={() => taRef.current?.focus()}>
+                <span className="ezfeat-ic sky"><Sparkles size={20} /></span>
+                <span className="ezfeat-title">Buat dengan AI</span>
+                <span className="ezfeat-desc">Tulis kebutuhan Anda, biarkan AI membuat dokumen yang sesuai.</span>
+                <span className="ezfeat-arrow"><ArrowRight size={14} /></span>
+              </button>
+              <button className="ezfeat" onClick={() => navigateChat('template-rab')}>
+                <span className="ezfeat-ic mint"><LayoutTemplate size={20} /></span>
+                <span className="ezfeat-title">Gunakan Template</span>
+                <span className="ezfeat-desc">Pilih dari 180+ template dokumen konstruksi profesional.</span>
+                <span className="ezfeat-arrow"><ArrowRight size={14} /></span>
+              </button>
+              <button className="ezfeat" onClick={() => navigateChat('dokumen-ai')}>
+                <span className="ezfeat-ic lilac"><FileEdit size={20} /></span>
+                <span className="ezfeat-title">Edit &amp; Periksa</span>
+                <span className="ezfeat-desc">Perbaiki, tingkatkan, dan periksa dokumen dengan bantuan AI.</span>
+                <span className="ezfeat-arrow"><ArrowRight size={14} /></span>
+              </button>
+              <button className="ezfeat" onClick={() => navigateChat('proyek')}>
+                <span className="ezfeat-ic peach"><FolderOpen size={20} /></span>
+                <span className="ezfeat-title">Akses Data Proyek</span>
+                <span className="ezfeat-desc">Gunakan data proyek, AHSP, RAB, dan dokumen yang tersedia.</span>
+                <span className="ezfeat-arrow"><ArrowRight size={14} /></span>
+              </button>
+            </div>
+            <div className="ezchat2-examples">
+              <div className="ezchat2-examples-head">
+                <Sparkles size={15} />
+                <span>Contoh pertanyaan yang bisa Anda coba:</span>
+              </div>
+              <div className="ezchat2-chips">
+                {SUGGESTIONS.map((s) => (
+                  <button key={s} className="ezchat2-chip" onClick={() => submit(s)}>{s}</button>
+                ))}
+              </div>
+              <button
+                className="ezchat2-examples-arrow"
+                onClick={() => taRef.current?.focus()}
+                title="Ketik pertanyaan sendiri"
+              >
+                <ArrowRight size={14} />
+              </button>
             </div>
             <div className="ezchat2-trust">
               <span>📖 AHSP 2026 resmi</span><i>•</i>
@@ -897,6 +1265,24 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                       </button>
                     </div>
                   </div>
+                  {/* Coba Lagi: hanya pada entry error dari pipeline AI
+                      yang menjadi pesan terakhir dan masih ada prompt
+                      terakhir untuk dikirim ulang. */}
+                  {m.isError && m.fromAi && i === messages.length - 1 && lastAiPromptRef.current && (
+                    <button
+                      onClick={retryLastAi}
+                      disabled={busy}
+                      title="Kirim ulang pertanyaan terakhir ke AI"
+                      style={{
+                        alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6,
+                        marginTop: 6, padding: '7px 13px', borderRadius: 8,
+                        border: '1px solid #FCA5A5', background: '#FEF2F2', color: '#991B1B',
+                        fontWeight: 600, fontSize: 13, cursor: busy ? 'default' : 'pointer',
+                        opacity: busy ? 0.6 : 1,
+                      }}>
+                      <RotateCcw size={13} /> Coba Lagi
+                    </button>
+                  )}
                   <div className="ezchat2-ts">{fmtTime(m.ts)}</div>
                 </div>
               </div>
@@ -916,6 +1302,111 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
 
       {/* ===== Composer di bawah (hanya saat sudah ada percakapan) ===== */}
       {messages.length > 0 && composer(false)}
+      </div>{/* /.ezchat2-main */}
+
+      {/* ===== Rel kanan: proyek aktif, riwayat, quick actions, tips ===== */}
+      <aside className="ezchat2-rail">
+        <section className="ezrail-card">
+          <h3 className="ezrail-title">Proyek Aktif</h3>
+          {effProject ? (
+            <button className="ezrail-project" onClick={() => navigateChat('proyek')}>
+              <span className="ezrail-ic sky"><Building2 size={20} /></span>
+              <span className="ezrail-project-meta">
+                <span className="ezrail-project-name">{effProject.name}</span>
+                <span className="ezrail-project-id">{effProject.id}</span>
+              </span>
+              <span className="ezrail-chip">Aktif</span>
+              <ChevronRight size={16} className="ezrail-chev" />
+            </button>
+          ) : (
+            <p className="ezrail-empty">Belum ada proyek aktif</p>
+          )}
+        </section>
+
+        <section className="ezrail-card" ref={historyCardRef}>
+          <div className="ezrail-head">
+            <h3 className="ezrail-title">Riwayat Percakapan</h3>
+            <button className="ezrail-newbtn" onClick={newChat}>
+              <Plus size={13} /> Percakapan Baru
+            </button>
+          </div>
+          {historyItems.length === 0 ? (
+            <p className="ezrail-empty">Belum ada riwayat percakapan.</p>
+          ) : (
+            <div className="ezrail-history">
+              {historyItems.map((h) => (
+                <div key={h.id} className={`ezrail-hist${h.id === activeConvId ? ' active' : ''}`}>
+                  <button className="ezrail-hist-main" onClick={() => loadConversation(h.id)} title={h.title}>
+                    <span className="ezrail-hist-title">{h.title}</span>
+                    <span className="ezrail-hist-meta">{fmtHistoryDate(h.updatedAt)} • {h.messageCount} pesan</span>
+                  </button>
+                  <button
+                    className="ezrail-hist-del"
+                    onClick={() => deleteHistoryItem(h.id)}
+                    title="Hapus percakapan"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="ezrail-card">
+          <h3 className="ezrail-title">Quick Actions</h3>
+          <div className="ezrail-actions">
+            <button className="ezrail-action" onClick={() => fileRef.current?.click()}>
+              <span className="ezrail-ic sky"><UploadCloud size={18} /></span>
+              <span className="ezrail-action-meta">
+                <span className="ezrail-action-name">Upload Dokumen</span>
+                <span className="ezrail-action-sub">Lampirkan gambar ke percakapan</span>
+              </span>
+              <ChevronRight size={16} className="ezrail-chev" />
+            </button>
+            <button className="ezrail-action" onClick={() => navigateChat('rab-estimasi')}>
+              <span className="ezrail-ic lilac"><FileText size={18} /></span>
+              <span className="ezrail-action-meta">
+                <span className="ezrail-action-name">Lihat RAB</span>
+                <span className="ezrail-action-sub">Estimasi &amp; analisa biaya</span>
+              </span>
+              <ChevronRight size={16} className="ezrail-chev" />
+            </button>
+            <button className="ezrail-action" onClick={() => navigateChat('ahsp-2026')}>
+              <span className="ezrail-ic sky"><ClipboardCheck size={18} /></span>
+              <span className="ezrail-action-meta">
+                <span className="ezrail-action-name">Cek AHSP 2026</span>
+                <span className="ezrail-action-sub">Referensi resmi</span>
+              </span>
+              <ChevronRight size={16} className="ezrail-chev" />
+            </button>
+            <button className="ezrail-action" onClick={() => historyCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+              <span className="ezrail-ic peach"><History size={18} /></span>
+              <span className="ezrail-action-meta">
+                <span className="ezrail-action-name">Riwayat Chat</span>
+                <span className="ezrail-action-sub">Lihat percakapan sebelumnya</span>
+              </span>
+              <ChevronRight size={16} className="ezrail-chev" />
+            </button>
+          </div>
+        </section>
+
+        <section className="ezrail-card">
+          <h3 className="ezrail-title"><Lightbulb size={15} /> Tips Penggunaan</h3>
+          <ul className="ezrail-tips">
+            <li><Check size={14} /> Gunakan bahasa yang jelas dan spesifik</li>
+            <li><Check size={14} /> Sertakan detail proyek (lokasi, spesifikasi, dll)</li>
+            <li><Check size={14} /> Untuk perhitungan, sebutkan satuan dengan tepat</li>
+            <li><Check size={14} /> Hindari memberikan data sensitif</li>
+          </ul>
+        </section>
+
+        <div className="ezrail-status">
+          <span><span className="ezdot" /> EZRAB Chat AI v1.0</span>
+          <span><span className="ezdot" /> Online</span>
+        </div>
+      </aside>
+      </div>{/* /.ezchat2-layout */}
 
       {/* ===== Dialog saldo tidak cukup (simulasi) ===== */}
       {creditConfirm && (
