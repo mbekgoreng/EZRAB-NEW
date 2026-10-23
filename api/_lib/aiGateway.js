@@ -415,6 +415,14 @@ export async function executeAI(o, onAttempt) {
   }
 
   const outcomes = [];
+  // Anggaran WAKTU TOTAL rantai (fix hang 2026-10-24): tanpa plafon ini,
+  // rantai yang menyempit (mis. ATMO_API_KEY belum terpasang) bisa membakar
+  // 55 dtk x banyak attempt (worst case ~220 dtk) untuk satu pesan chat —
+  // UI terlihat menggantung. Sesudah 100 dtk, attempt BARU tidak dimulai;
+  // attempt yang sedang berjalan tetap dibiarkan selesai (maks +55 dtk,
+  // masih di bawah plafon fungsi 300 dtk).
+  const chainStart = Date.now();
+  const CHAIN_BUDGET_MS = 100000;
   // Anggaran percobaan per provider: begitu sebuah provider gagal, ia hanya
   // mendapat MAKS 1 percobaan ulang; attempt berikutnya untuk provider yang
   // sama dilewati dan failover lanjut ke provider berikutnya. Ini memutus
@@ -423,6 +431,10 @@ export async function executeAI(o, onAttempt) {
   const providerAttempts = new Map();
   const providerFailures = new Map();
   for (const a of attempts) {
+    if (outcomes.length > 0 && Date.now() - chainStart > CHAIN_BUDGET_MS) {
+      outcomes.push({ provider: 'gateway', model: null, ok: false, ms: Date.now() - chainStart, error: 'chain time budget exceeded (100s)' });
+      break;
+    }
     const tries = providerAttempts.get(a.provider) || 0;
     const fails = providerFailures.get(a.provider) || 0;
     if (fails > 0 && tries >= 2) continue;

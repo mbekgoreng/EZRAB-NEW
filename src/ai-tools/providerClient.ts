@@ -210,6 +210,7 @@ export class AiToolsProviderClient {
       const timer = globalThis.setTimeout(() => controller.abort(), timeoutMs + 1000);
       const resp = await fetch('/api/ai/tools/execute', {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           ...(await aiGatewayAuthHeaders()),
