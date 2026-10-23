@@ -141,6 +141,84 @@ console.log('\n[6] Fidelity round-trip sub-menu RAB (temuan 2026-10-19):');
   check("paths.estimate() tanpa tab -> 'rab-estimasi'", r0.menu === 'rab-estimasi', r0.menu);
 }
 
+// ---------------------------------------------------------------- 7. Fidelity matriks PENUH (audit routing 2026-10-23)
+// Kelas bug 2026-10-19 meluas: bukan hanya sub-menu RAB — menu apa pun yang
+// tidak punya case di routeForMenu jatuh ke dashboard (global) / dashboard
+// proyek, lalu sinkronisasi route menimpa activeMenu. Bagian ini mengunci
+// SELURUH menu yang dikenal (routeForMenu + parse + render WorkspaceView)
+// x kedua scope: parse(routeForMenu(menu)) harus mengembalikan menu kanonis
+// (alias dipetakan ke kanonisnya dan didokumentasikan di peta ini).
+console.log('\n[7] Fidelity round-trip matriks penuh menu x scope (audit 2026-10-23):');
+{
+  const EXPECTED: Record<string, string> = {
+    dashboard: 'dashboard', proyek: 'proyek',
+    'rab-estimasi': 'rab-estimasi', 'rab-spreadsheet': 'rab-spreadsheet',
+    'rab-rekapitulasi': 'rab-rekapitulasi', 'rab-analisa-harga': 'rab-analisa-harga',
+    'rab-kurva-s': 'rab-kurva-s', 'rab-catatan': 'rab-catatan', 'rab-pengaturan': 'rab-pengaturan',
+    'daftar-pekerjaan': 'daftar-pekerjaan', pekerjaan: 'daftar-pekerjaan', 'qto-daftar': 'daftar-pekerjaan',
+    'ezrab-ai': 'ezrab-ai', 'desain-rab': 'desain-rab', 'ded-ai': 'ded-ai',
+    'dokumen-ai': 'dokumen-ai', 'kredit-ai': 'kredit-ai',
+    'magic-ai': 'magic-ai', 'ai-assistant': 'magic-ai', 'ded-rab': 'magic-ai',
+    'volume-calculation': 'qto-vc', 'qto-vc': 'qto-vc', qto: 'qto', 'qto-rekap': 'qto',
+    'template-rab': 'template-rab',
+    'ahsp-2026': 'ahsp-2026', ahsp: 'ahsp-2026', 'analisa-ahsp': 'ahsp-2026',
+    'material-harga': 'database-material', 'database-material': 'database-material',
+    material: 'database-material', harga: 'database-material',
+    'database-upah': 'database-upah', upah: 'database-upah',
+    'database-alat': 'database-alat', alat: 'database-alat',
+    'harga-proyek': 'harga-proyek', 'project-price': 'harga-proyek',
+    'resource-library': 'suppliers', suppliers: 'suppliers',
+    'manajemen-proyek': 'manajemen-proyek', jadwal: 'jadwal', 'kurva-s': 'kurva-s',
+    laporan: 'laporan', boq: 'boq', rekapitulasi: 'rekapitulasi', export: 'laporan',
+    'dokumen-tender': 'dokumen-tender',
+    'keuangan-proyek': 'keuangan-proyek', keuangan: 'keuangan-proyek', termin: 'keuangan-proyek',
+    invoice: 'keuangan-proyek', pemasukan: 'keuangan-proyek', pengeluaran: 'keuangan-proyek',
+    'cash-flow': 'keuangan-proyek',
+    subscription: 'subscription', 'blog-admin': 'blog-admin', pengaturan: 'pengaturan',
+  };
+  let ok = 0;
+  let total = 0;
+  for (const [menu, canonical] of Object.entries(EXPECTED)) {
+    for (const pid of [null, 'proj-123']) {
+      total++;
+      const url = routeForMenu(menu, pid);
+      const r = parse(url);
+      const good = r.status === 'ok' && r.menu === canonical;
+      if (!good) console.log(`    ✗ menu=${menu} pid=${pid} -> ${url} => ${JSON.stringify(r)} (harap ${canonical})`);
+      else ok++;
+    }
+  }
+  check(`${ok}/${total} matriks menu x scope round-trip ke menu kanonis`, ok === total);
+  // mode ded-rab harus selamat dalam round-trip 'ded-rab'
+  const rd = parse(routeForMenu('ded-rab', null));
+  check("routeForMenu('ded-rab') mempertahankan mode=ded-rab", rd.mode === 'ded-rab', JSON.stringify(rd));
+  const rdp = parse(routeForMenu('ded-rab', 'proj-123'));
+  check("routeForMenu('ded-rab', proyek) mempertahankan mode=ded-rab", rdp.mode === 'ded-rab', JSON.stringify(rdp));
+}
+
+// ---------------------------------------------------------------- 8. Deep-link global baru
+// /app/schedule, /app/curve-s, /app/reports/{boq,recap,rab,ahsp} sebelumnya
+// not-found padahal varian proyeknya ada dan view globalnya dirender
+// (ManajemenProyekView section / LaporanView tab).
+console.log('\n[8] Deep-link global laporan & jadwal (audit 2026-10-23):');
+{
+  const cases: Array<[string, string]> = [
+    ['/app/schedule', 'jadwal'],
+    ['/app/curve-s', 'kurva-s'],
+    ['/app/reports/boq', 'boq'],
+    ['/app/reports/recap', 'rekapitulasi'],
+    ['/app/reports/rab', 'laporan'],
+    ['/app/reports/ahsp', 'laporan'],
+  ];
+  let ok = 0;
+  for (const [u, menu] of cases) {
+    const r = parse(u);
+    if (r.status === 'ok' && r.menu === menu && r.scope === 'global') ok++;
+    else console.log(`    ✗ ${u} => ${JSON.stringify(r)} (harap ${menu})`);
+  }
+  check(`${ok}/${cases.length} deep-link global parse ke menu yang benar`, ok === cases.length);
+}
+
 console.log(`\nHasil: ${passed} lolos, ${failed} gagal`);
 if (failed > 0) {
   console.log('GAGAL:', failures.join(', '));

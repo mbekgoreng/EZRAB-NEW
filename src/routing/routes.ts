@@ -28,6 +28,11 @@ export const paths = {
   loginRole: () => '/masuk/role',
   app: () => APP_PREFIX,
   projects: (status?: string) => `${PROJECTS_PREFIX}${status ? `?status=${encodeURIComponent(status)}` : ''}`,
+  // /app/pekerjaan: alias publik Daftar Pekerjaan (parse sudah mengenalnya;
+  // routeForMenu kini memakainya agar klik menu global tidak jatuh dashboard).
+  pekerjaan: () => `${APP_PREFIX}/pekerjaan`,
+  schedule: () => `${APP_PREFIX}/schedule`,
+  curveS: () => `${APP_PREFIX}/curve-s`,
   dashboard: () => `${APP_PREFIX}/dashboard`,
   // tab: sub-menu RAB (spreadsheet|rekapitulasi|analisa-harga|kurva-s|catatan|pengaturan).
   // Tanpa tab = tab default (spreadsheet). Dipakai routeForMenu agar klik sub-menu
@@ -45,7 +50,7 @@ export const paths = {
   ahsp: () => `${APP_PREFIX}/ahsp`,
   qto: () => `${APP_PREFIX}/qto`,
   management: () => `${APP_PREFIX}/management`,
-  reports: () => `${APP_PREFIX}/reports`,
+  reports: (view?: 'rab' | 'boq' | 'recap' | 'ahsp') => `${APP_PREFIX}/reports${view && view !== 'rab' ? `/${view}` : ''}`,
   tenderDocuments: () => `${APP_PREFIX}/tender-documents`,
   materialHarga: (type: 'material' | 'labor' | 'equipment' | 'suppliers' | 'project-price' = 'material') => `${APP_PREFIX}/resources?type=${type}`,
   finance: (tab?: string) => `${APP_PREFIX}/finance${tab ? `?tab=${tab}` : ''}`,
@@ -103,8 +108,16 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
       case 'rab-kurva-s': return paths.estimate('kurva-s');
       case 'rab-catatan': return paths.estimate('catatan');
       case 'rab-pengaturan': return paths.estimate('pengaturan');
+      // Daftar Pekerjaan global: parse mengenal /app/pekerjaan, jadi klik
+      // menu tanpa proyek tidak boleh jatuh ke default dashboard (kelas bug
+      // fidelity 2026-10-19; audit routing 2026-10-23).
+      case 'daftar-pekerjaan':
+      case 'pekerjaan':
+      case 'qto-daftar': return paths.pekerjaan();
       case 'ezrab-ai': return paths.ezrabAi();
       case 'desain-rab': return paths.desainRab();
+      // 'ded-rab' = Magic AI mode ded-rab (satu view dengan magic-ai).
+      case 'ded-rab': return paths.magicAi('ded-rab');
       case 'ded-ai': return paths.dedAiEstimate();
       case 'dokumen-ai': return paths.dokumenAi();
       case 'kredit-ai': return paths.kreditAi();
@@ -127,10 +140,23 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
       case 'project-price': return paths.materialHarga('project-price');
       case 'resource-library':
       case 'suppliers': return paths.materialHarga('suppliers');
+      // 'harga' = alias lama grup material di WorkspaceView.
+      case 'harga': return paths.materialHarga('material');
       case 'qto':
       case 'qto-rekap': return paths.qto();
       case 'manajemen-proyek': return paths.management();
+      // Jadwal & Kurva S global dirender ManajemenProyekView (section) —
+      // sebelumnya tanpa case: klik tab dari halaman global menimpa menu
+      // menjadi dashboard via sinkronisasi route (audit routing 2026-10-23).
+      case 'jadwal': return paths.schedule();
+      case 'kurva-s': return paths.curveS();
       case 'laporan': return paths.reports();
+      case 'boq': return paths.reports('boq');
+      case 'rekapitulasi': return paths.reports('recap');
+      // 'export' merender LaporanView yang sama dengan 'laporan'.
+      case 'export': return paths.reports();
+      // Blog CMS global (tanpa sidebar) — sama seperti kredit-ai.
+      case 'blog-admin': return paths.blogAdmin();
       case 'dokumen-tender': return paths.tenderDocuments();
       case 'keuangan-proyek':
       case 'keuangan':
@@ -192,11 +218,18 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
     case 'suppliers': return paths.project.resources(project, 'suppliers');
     case 'jadwal': return paths.project.schedule(project);
     case 'kurva-s': return paths.project.curveS(project);
+    // 'harga' = alias lama grup material di WorkspaceView.
+    case 'harga': return paths.project.resources(project, 'material');
     case 'laporan': return paths.project.reports(project, 'rab');
+    // 'export' merender LaporanView yang sama dengan 'laporan'.
+    case 'export': return paths.project.reports(project, 'rab');
+    // Blog CMS selalu halaman global (bukan per-proyek).
+    case 'blog-admin': return paths.blogAdmin();
     case 'boq': return paths.project.reports(project, 'boq');
     case 'rekapitulasi': return paths.project.reports(project, 'recap');
     case 'magic-ai':
     case 'ai-assistant': return paths.project.ai(project, mode);
+    case 'ded-rab': return paths.project.ai(project, 'ded-rab');
     case 'ezrab-ai': return paths.project.ezrabAi(project);
     case 'desain-rab': return paths.project.desainRab(project);
     case 'ded-ai': return paths.project.dedAiEstimate(project);
@@ -252,7 +285,14 @@ export const parseWorkspaceRoute = (pathname: string, search: string = ''): Work
   if (path === `${APP_PREFIX}/ahsp`) return { scope: 'global', menu: 'ahsp-2026', status: 'ok' };
   if (path === `${APP_PREFIX}/qto`) return { scope: 'global', menu: 'qto', status: 'ok' };
   if (path === `${APP_PREFIX}/management`) return { scope: 'global', menu: 'manajemen-proyek', status: 'ok' };
+  if (path === `${APP_PREFIX}/schedule`) return { scope: 'global', menu: 'jadwal', status: 'ok' };
+  if (path === `${APP_PREFIX}/curve-s`) return { scope: 'global', menu: 'kurva-s', status: 'ok' };
   if (path === `${APP_PREFIX}/reports`) return { scope: 'global', menu: 'laporan', status: 'ok' };
+  // Sub-path laporan global — cermin perilaku proyek (reports/ahsp tetap
+  // membuka Laporan, bukan explorer AHSP; lihat catatan F6 di scope proyek).
+  if (path === `${APP_PREFIX}/reports/boq`) return { scope: 'global', menu: 'boq', status: 'ok' };
+  if (path === `${APP_PREFIX}/reports/recap`) return { scope: 'global', menu: 'rekapitulasi', status: 'ok' };
+  if (path === `${APP_PREFIX}/reports/rab` || path === `${APP_PREFIX}/reports/ahsp`) return { scope: 'global', menu: 'laporan', status: 'ok' };
   if (path === `${APP_PREFIX}/tender-documents`) return { scope: 'global', menu: 'dokumen-tender', status: 'ok' };
   if (path === `${APP_PREFIX}/finance` || path === `${APP_PREFIX}/keuangan` || path === `${APP_PREFIX}/keuangan-proyek`) return { scope: 'global', menu: 'keuangan-proyek', status: 'ok' };
   // /app/enterprise: TIDAK diaktifkan (2026-10-17). Komponen
