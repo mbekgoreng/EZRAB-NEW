@@ -80,6 +80,7 @@ import {
   BajaWfDiagram,
 } from '../../engine/constructionCalculators/diagrams';
 import { MASTER_VOLUME_CALCULATOR_SPEC } from '../../engine/constructionCalculators/masterJsonSpec';
+import { getCalculatorIllustration } from './calculatorIllustrations';
 import { formatRupiah, formatNumberId } from '../../engine/formulaEngine';
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
 import { TechnicalReferenceViewer } from './TechnicalReferenceViewer';
@@ -1235,6 +1236,9 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       </div>
     );
   }
+
+  // Ilustrasi statis pekerjaan terpilih (bila ada di peta ilustrasi final).
+  const activeIllustration = getCalculatorIllustration(selectedCalcId);
 
   // Render Diagram Component
   const renderDiagram = () => {
@@ -2405,6 +2409,31 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Ilustrasi Pekerjaan — gambar statis render-style, menonjol di atas
+              diagram CAD. Diagram CAD di bawahnya TETAP dipertahankan karena
+              interaktif/fungsional (klik anotasi memilih parameter form,
+              label menampilkan nilai input live) — ilustrasi tidak menggantikannya. */}
+          {activeIllustration && (
+            <figure
+              style={{
+                margin: 0,
+                border: '1px solid #EEF1F6',
+                borderRadius: '20px',
+                overflow: 'hidden',
+                background: 'var(--ez-color-surface)',
+                boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
+              }}
+            >
+              <img
+                src={activeIllustration.src}
+                alt={activeIllustration.title}
+                title={activeIllustration.title}
+                loading="lazy"
+                style={{ width: '100%', height: 'auto', display: 'block' }}
+              />
+            </figure>
+          )}
 
           {/* Technical CAD Diagram Viewer (Collapsible) */}
           {showCadDiagram && (
