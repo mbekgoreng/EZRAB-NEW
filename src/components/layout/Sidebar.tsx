@@ -920,6 +920,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   )}
                   <button
                     type="button"
+                    className={isAi ? 'ez-ai-item' : undefined}
                     data-tour={`menu-${item.id}`}
                   onClick={() => onSelectMenu(item.id)}
                   onMouseEnter={(e) => handleMouseEnterItem(e, item.label, item.id)}
@@ -941,7 +942,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       ? active ? 'var(--ez-ai-surface-active)' : hoveredItemId === item.id ? 'var(--ez-ai-surface-hover)' : 'var(--ez-ai-surface)'
                       : active ? 'var(--ez-color-sidebar-active)' : hoveredItemId === item.id ? 'var(--ez-color-sidebar-hover)' : 'transparent',
                     boxShadow: isAi
-                      ? active ? '0 4px 12px rgba(124, 58, 237, 0.35)' : 'inset 0 0 0 1px var(--ez-ai-border)'
+                      ? active ? '0 4px 12px rgba(2, 132, 199, 0.35)' : 'inset 0 0 0 1px var(--ez-ai-border)'
                       : undefined,
                     border: 'none',
                     cursor: 'pointer',
@@ -953,7 +954,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {isAi ? (
-                      <span style={{ width: '24px', height: '24px', borderRadius: '8px', background: 'var(--ez-ai-chip)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 6px rgba(124, 58, 237, 0.35)' }}>
+                      <span style={{ width: '24px', height: '24px', borderRadius: '8px', background: 'var(--ez-ai-chip)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 6px rgba(2, 132, 199, 0.35)' }}>
                         <IconComp size={14} color="#FFFFFF" />
                       </span>
                     ) : (

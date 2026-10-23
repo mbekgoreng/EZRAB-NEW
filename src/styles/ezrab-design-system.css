@@ -34,14 +34,14 @@
   --ez-color-sidebar-active: #FFFFFF;
   --ez-color-sidebar-hover: #DCE7F5;
 
-  /* ---- Sidebar AI items — identitas ungu, beda dari nav biru (user 2026-10-21) ---- */
-  --ez-ai-surface: #F2ECFE;
-  --ez-ai-surface-hover: #E9DFFD;
-  --ez-ai-surface-active: linear-gradient(135deg, #7C3AED 0%, #6366F1 100%);
-  --ez-ai-text: #5B21B6;
-  --ez-ai-border: #DECFFB;
-  --ez-ai-chip: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
-  --ez-ai-badge: linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%);
+  /* ---- Sidebar AI items — identitas frost blue→mint + shimmer diamond (user 2026-10-23; sebelumnya ungu 2026-10-21) ---- */
+  --ez-ai-surface: linear-gradient(135deg, #E9F7FF 0%, #E4FBF1 100%);
+  --ez-ai-surface-hover: linear-gradient(135deg, #D8EFFF 0%, #CDF6E3 100%);
+  --ez-ai-surface-active: linear-gradient(135deg, #2563EB 0%, #0EA5A5 55%, #10B981 100%);
+  --ez-ai-text: #0B5FA5;
+  --ez-ai-border: #BDE6F2;
+  --ez-ai-chip: linear-gradient(135deg, #38BDF8 0%, #2DD4BF 100%);
+  --ez-ai-badge: linear-gradient(135deg, #38BDF8 0%, #2DD4BF 100%);
 
   /* ---- Text ---- */
   --ez-color-text-primary: #0F172A;
@@ -249,14 +249,14 @@
   --ez-color-sidebar-text: #9AA8BF;
   --ez-color-sidebar-active: #243252;
   --ez-color-sidebar-hover: #223052;
-  /* ---- Sidebar AI items (dark): tint ungu transparan di atas canvas gelap ---- */
-  --ez-ai-surface: rgba(139, 92, 246, 0.13);
-  --ez-ai-surface-hover: rgba(139, 92, 246, 0.22);
-  --ez-ai-surface-active: linear-gradient(135deg, #6D28D9 0%, #4338CA 100%);
-  --ez-ai-text: #C4B5FD;
-  --ez-ai-border: rgba(167, 139, 250, 0.32);
-  --ez-ai-chip: linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%);
-  --ez-ai-badge: linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%);
+  /* ---- Sidebar AI items (dark): tint frost transparan di atas canvas gelap ---- */
+  --ez-ai-surface: rgba(56, 189, 248, 0.13);
+  --ez-ai-surface-hover: rgba(45, 212, 191, 0.20);
+  --ez-ai-surface-active: linear-gradient(135deg, #1D4ED8 0%, #0D9488 100%);
+  --ez-ai-text: #67E8F9;
+  --ez-ai-border: rgba(103, 232, 249, 0.32);
+  --ez-ai-chip: linear-gradient(135deg, #0284C7 0%, #0D9488 100%);
+  --ez-ai-badge: linear-gradient(135deg, #0284C7 0%, #0D9488 100%);
   --ez-color-text-primary: #E6ECF5;
   --ez-color-text: var(--ez-color-text-primary);
   --ez-color-text-secondary: #9AA8BF;
@@ -596,4 +596,48 @@ a:focus-visible,
   :focus-visible {
     transition: none !important;
   }
+}
+
+/* ---- Sidebar AI items: shimmer diamond (kilau menyapu + sparkle) — user 2026-10-23 ---- */
+@keyframes ez-ai-shimmer-sweep {
+  0% { transform: translateX(-140%) skewX(-18deg); }
+  55%, 100% { transform: translateX(260%) skewX(-18deg); }
+}
+@keyframes ez-ai-twinkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.7) rotate(0deg); }
+  50% { opacity: 0.95; transform: scale(1.15) rotate(20deg); }
+}
+.ez-ai-item {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.ez-ai-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), rgba(186, 240, 255, 0.35), transparent);
+  transform: translateX(-140%) skewX(-18deg);
+  animation: ez-ai-shimmer-sweep 3.8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+.ez-ai-item::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  width: 7px;
+  height: 7px;
+  background: linear-gradient(135deg, #FFFFFF, #BAF0FF);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  animation: ez-ai-twinkle 2.6s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ez-ai-item::before, .ez-ai-item::after { animation: none; }
 }
