@@ -103,10 +103,63 @@ export interface DraftRecord {
   approvedAt?: number;
   /** Status temuan review per ID temuan — persisten lintas sesi (panel review). */
   findingStatuses?: Record<string, 'open' | 'fixed' | 'ignored' | 'checked'>;
+  /* --- Terjemahan (F8, aditif; hanya ada pada draf hasil terjemahan) --- */
+  /** ID draf sumber tempat draf terjemahan ini berasal. */
+  sourceDraftId?: string;
+  /** Kode bahasa ISI draf ini (TranslateLanguageCode, mis. 'en'). Tanpa field = Bahasa Indonesia. */
+  language?: string;
+  /** Kode bahasa draf sumber saat diterjemahkan (umumnya 'id'). */
+  sourceLanguage?: string;
 }
 
 /** Batas riwayat versi per draf. */
 export const MAX_DRAFT_VERSIONS = 20;
+
+/**
+ * Bangun record DRAF TERJEMAHAN dari draf sumber (F8). Murni: mengembalikan
+ * record BARU — sumber tidak diubah. Mewarisi template, proyek, dan profil
+ * kop sumber (kop dokumen terjemahan mengikuti profil dokumen sumber), serta
+ * mencatat provenance terjemahan (sourceDraftId, sourceLanguage → language,
+ * modelLabel bila diketahui dari provider, versi prompt terjemahan).
+ * Status SELALU 'draft': persetujuan final sumber TIDAK PERNAH diwarisi —
+ * approvedBy/approvedAt tidak disalin, jadi satu-satunya jalan draf ini
+ * menjadi final tetap approveDraft atas namanya sendiri.
+ */
+export function buildTranslatedDraft(
+  source: DraftRecord,
+  opts: {
+    /** Isi hasil terjemahan dalam HTML editor. */
+    content: string;
+    /** Kode bahasa target (TranslateLanguageCode). */
+    targetLanguage: string;
+    /** Label model aktual dari respons provider (null/tidak ada = tidak diketahui). */
+    modelLabel?: string | null;
+    /** Versi system prompt terjemahan (prompt.ts TRANSLATE_PROMPT_VERSION). */
+    promptVersion?: string;
+    now?: number;
+  },
+): DraftRecord {
+  const now = opts.now ?? Date.now();
+  return {
+    id: newId('draft'),
+    templateId: source.templateId,
+    templateName: source.templateName,
+    title: `${source.title} (${opts.targetLanguage.toUpperCase()})`,
+    content: opts.content,
+    contentFormat: 'html',
+    projectId: source.projectId,
+    projectName: source.projectName,
+    status: 'draft',
+    createdAt: now,
+    updatedAt: now,
+    companyProfileId: source.companyProfileId,
+    sourceDraftId: source.id,
+    sourceLanguage: source.language ?? 'id',
+    language: opts.targetLanguage,
+    modelLabel: opts.modelLabel ?? undefined,
+    promptVersion: opts.promptVersion,
+  };
+}
 
 /**
  * Snapshot isi draf saat ini sebagai versi baru. Murni: mengembalikan draf

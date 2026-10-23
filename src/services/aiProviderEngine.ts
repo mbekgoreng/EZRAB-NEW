@@ -88,6 +88,112 @@ export interface AIProvider {
   ) => Promise<AiResponseResult>;
 }
 
+// ============================================================================
+// F5 (4.2): Kurva S / progress availability — HONEST resolution.
+// The old code defaulted missing values to 0 (`?? 0`) and then announced
+// "0% — Sesuai/Lebat Cepat dari Rencana": absence of data was presented as a
+// measured, on-schedule project. Worse, contexts built by buildFullAIContext
+// WITHOUT kurva data carry placeholder values from aiContextService's
+// fallback (planned 45.5 / actual 42.6, empty dataPoints) — numbers nobody
+// measured. Rules applied here:
+// - planned/actual are trusted ONLY from a real Kurva S series
+//   (curveS.dataPoints non-empty), or — for actual — from an explicit
+//   schedule value or the project's own stored `progress` field.
+// - curveS scalars WITHOUT a data series are NOT trusted (placeholder risk).
+// - deviation/status are only produced when BOTH sides are genuinely known.
+// ============================================================================
+
+export interface CurveSProgressAvailability {
+  actual: number | null;
+  planned: number | null;
+  deviation: number | null;
+  statusLabel: string | null;
+  hasActual: boolean;
+  hasPlanned: boolean;
+  hasAny: boolean;
+  hasBoth: boolean;
+}
+
+const finiteNum = (v: unknown): number | null =>
+  typeof v === 'number' && Number.isFinite(v) ? v : null;
+
+export function resolveCurveSProgress(
+  context: FullProjectAIContext | any
+): CurveSProgressAvailability {
+  const cs: any = context?.curveS;
+  const sched: any = (context as any)?.schedule;
+  const hasPoints = Array.isArray(cs?.dataPoints) && cs.dataPoints.length > 0;
+
+  const actual = hasPoints
+    ? (finiteNum(cs?.actualProgress) ?? finiteNum((context as any)?.project?.progress))
+    : (finiteNum(sched?.actualProgress) ?? finiteNum((context as any)?.project?.progress));
+  const planned = hasPoints ? finiteNum(cs?.plannedProgress) : finiteNum(sched?.plannedProgress);
+
+  const deviation =
+    actual !== null && planned !== null ? Number((actual - planned).toFixed(2)) : null;
+
+  let statusLabel: string | null = null;
+  if (deviation !== null) {
+    statusLabel =
+      hasPoints && typeof cs?.statusLabel === 'string' && cs.statusLabel
+        ? cs.statusLabel
+        : deviation > 1.5
+          ? `Lebih Cepat (+${deviation}% Ahead of Schedule)`
+          : deviation < -1.5
+            ? `Terlambat (${deviation}% Behind Schedule)`
+            : 'Sesuai Rencana (On Track)';
+  }
+
+  return {
+    actual,
+    planned,
+    deviation,
+    statusLabel,
+    hasActual: actual !== null,
+    hasPlanned: planned !== null,
+    hasAny: actual !== null || planned !== null,
+    hasBoth: actual !== null && planned !== null,
+  };
+}
+
+/** Answer used when NO progress/schedule data exists: no numbers, no verdict. */
+export function curveSNoDataResponse(projectName: string): AiResponseResult {
+  return {
+    badge: 'KURVA S',
+    content: `**Progres & Kurva S — Data Belum Tersedia**\n\nProyek **${projectName}** belum memiliki data Kurva S (rangkaian progres mingguan) maupun catatan progres yang tersimpan, jadi saya tidak dapat menampilkan angka progres, progres rencana, atau status deviasi apa pun — menampilkan angka tanpa data akan menyesatkan.\n\nUntuk memulainya, buka menu **Jadwal & Kurva S** pada proyek ini, susun jadwal pekerjaannya, dan perbarui progres aktualnya. Setelah data tersimpan, saya dapat mengevaluasi progres dan deviasinya dari data nyata.`,
+    followUpSuggestions: ['Berapa total RAB proyek ini?', 'Tampilkan item RAB terbesar'],
+  };
+}
+
+/** Answer used when only ONE side (actual or planned) is genuinely known. */
+export function curveSPartialResponse(
+  projectName: string,
+  avail: CurveSProgressAvailability
+): AiResponseResult {
+  if (avail.hasActual && !avail.hasPlanned) {
+    return {
+      badge: 'KURVA S',
+      stats: {
+        label: 'Progress Aktual Proyek',
+        value: `${avail.actual}%`,
+        sub: 'Progres rencana (Kurva S) belum tersedia',
+        color: '#2563EB',
+      },
+      content: `Progress fisik proyek **${projectName}** tercatat sebesar **${avail.actual}%**.\n\nData progres rencana (Kurva S) belum tersedia untuk proyek ini, sehingga deviasi terhadap rencana belum dapat dihitung dan status ketepatan jadwal belum dapat ditentukan. Buka menu **Jadwal & Kurva S** untuk menyusun jadwal rencana proyek ini.`,
+    };
+  }
+  return {
+    badge: 'KURVA S',
+    stats: {
+      label: 'Progres Rencana Kumulatif',
+      value: `${avail.planned}%`,
+      sub: 'Realisasi aktual belum tercatat',
+      color: '#2563EB',
+    },
+    content: `Progres rencana kumulatif proyek **${projectName}** adalah **${avail.planned}%**.\n\nProgres realisasi aktual belum tercatat untuk proyek ini, sehingga deviasi terhadap rencana belum dapat dihitung dan status ketepatan jadwal belum dapat ditentukan. Perbarui progres aktual di menu **Jadwal & Kurva S** agar deviasi dapat dievaluasi.`,
+  };
+}
+
 export class MockAiProvider implements AIProvider {
   name = 'EZRAB Construction AI (Data-Connected)';
 
@@ -1628,9 +1734,11 @@ Daftar seluruh item pekerjaan telah dihitung secara otomatis dengan rincian volu
 
     const projectName = context.project?.name || 'Proyek Aktif';
     const totalRab = context.rab?.totalRab ?? (context.rab as any)?.totalBudget ?? 0;
-    const actualProgress = context.curveS?.actualProgress ?? (context as any).schedule?.actualProgress ?? 0;
-    const plannedProgress = context.curveS?.plannedProgress ?? (context as any).schedule?.plannedProgress ?? 0;
-    const deviation = context.curveS?.deviation ?? (context as any).schedule?.deviation ?? 0;
+    // F5 (4.2): availability-aware progress — never `?? 0` (see helper above).
+    const curveSProgress = resolveCurveSProgress(context);
+    const actualProgress = curveSProgress.actual;
+    const plannedProgress = curveSProgress.planned;
+    const deviation = curveSProgress.deviation;
 
     // =========================================================================
     // 5. BASA-BASI / SMALL TALK
@@ -1808,15 +1916,21 @@ Ada bagian pekerjaan yang ingin kita mulai sekarang?`,
       p.includes('capaian')
     ) {
       if (!p.includes('terlambat') && !p.includes('laporan')) {
+        // F5 (4.2): no data → say so; partial data → show only what exists.
+        // (The old answer also invented a work stage — "terkonsentrasi pada
+        // pekerjaan struktur kolom dan balok" — that sentence is removed.)
+        if (!curveSProgress.hasAny) return curveSNoDataResponse(projectName);
+        if (!curveSProgress.hasBoth) return curveSPartialResponse(projectName, curveSProgress);
+        const dev = deviation as number;
         return {
           badge: 'KURVA S',
           stats: {
             label: 'Progress Aktual Proyek',
             value: `${actualProgress}%`,
-            sub: `Rencana Kumulatif: ${plannedProgress}% (Deviasi ${deviation >= 0 ? '+' : ''}${deviation}%)`,
-            color: deviation >= 0 ? '#16A34A' : '#D97706',
+            sub: `Rencana Kumulatif: ${plannedProgress}% (Deviasi ${dev >= 0 ? '+' : ''}${dev}%)`,
+            color: dev >= 0 ? '#16A34A' : '#D97706',
           },
-          content: `Progress fisik proyek **${projectName}** saat ini tercatat sebesar **${actualProgress}%**.\n\nBerdasarkan kurva S jadwal master:\n- **Progress Rencana**: ${plannedProgress}%\n- **Deviasi**: ${deviation >= 0 ? '+' : ''}${deviation}%\n- **Status**: **${context.curveS.statusLabel}**\n\nTahap pekerjaan saat ini terkonsentrasi pada pekerjaan struktur kolom dan balok.`,
+          content: `Progress fisik proyek **${projectName}** saat ini tercatat sebesar **${actualProgress}%**.\n\nBerdasarkan kurva S jadwal master:\n- **Progress Rencana**: ${plannedProgress}%\n- **Deviasi**: ${dev >= 0 ? '+' : ''}${dev}%\n- **Status**: **${curveSProgress.statusLabel}**`,
         };
       }
     }
@@ -1825,20 +1939,24 @@ Ada bagian pekerjaan yang ingin kita mulai sekarang?`,
     // 11. KURVA S & DEVIASI / KETERLAMBATAN
     // =========================================================================
     if (p.includes('terlambat') || p.includes('deviasi') || p.includes('kurva s') || p.includes('kurvas') || p.includes('jadwal')) {
-      const isBehind = deviation < -1.0;
-      const isAhead = deviation > 1.0;
+      // F5 (4.2): a deviation verdict requires BOTH actual and planned data.
+      if (!curveSProgress.hasAny) return curveSNoDataResponse(projectName);
+      if (!curveSProgress.hasBoth) return curveSPartialResponse(projectName, curveSProgress);
+      const dev = deviation as number;
+      const isBehind = dev < -1.0;
+      const isAhead = dev > 1.0;
 
       return {
         badge: 'KURVA S',
         stats: {
           label: 'Deviasi Kurva S',
-          value: `${deviation >= 0 ? '+' : ''}${deviation}%`,
+          value: `${dev >= 0 ? '+' : ''}${dev}%`,
           sub: isBehind ? 'Terlambat dari jadwal' : isAhead ? 'Lebih cepat dari jadwal' : 'Sesuai jadwal (On Track)',
           color: isBehind ? '#EF4444' : '#16A34A',
         },
         content: isBehind
-          ? `Perhatian: Proyek **${projectName}** mengalami deviasi negatif sebesar **${deviation}%** terhadap Kurva S rencana.\n\n- **Rencana Kumulatif**: ${plannedProgress}%\n- **Realisasi Lapangan**: ${actualProgress}%\n\nRekomendasi AI: Lakukan percepatan pada jalur kritis (*critical path*) struktur pembesian untuk mengejar target minggu depan.`
-          : `Kondisi jadwal proyek **${projectName}** terpantau aman.\n\n- **Realisasi Aktual**: ${actualProgress}%\n- **Rencana Kumulatif**: ${plannedProgress}%\n- **Deviasi**: **${deviation >= 0 ? '+' : ''}${deviation}%** (${context.curveS.statusLabel}).`,
+          ? `Perhatian: Proyek **${projectName}** mengalami deviasi negatif sebesar **${dev}%** terhadap Kurva S rencana.\n\n- **Rencana Kumulatif**: ${plannedProgress}%\n- **Realisasi Lapangan**: ${actualProgress}%\n\nRekomendasi AI: Lakukan percepatan pada jalur kritis (*critical path*) struktur pembesian untuk mengejar target minggu depan.`
+          : `Kondisi jadwal proyek **${projectName}** terpantau aman.\n\n- **Realisasi Aktual**: ${actualProgress}%\n- **Rencana Kumulatif**: ${plannedProgress}%\n- **Deviasi**: **${dev >= 0 ? '+' : ''}${dev}%** (${curveSProgress.statusLabel}).`,
       };
     }
 
@@ -1847,9 +1965,14 @@ Ada bagian pekerjaan yang ingin kita mulai sekarang?`,
     // =========================================================================
     if (p.includes('laporan') || p.includes('ringkasan') || p.includes('resume')) {
       const r = context.report;
+      // Progres kini nullable (F6): null = belum tercatat, jangan cetak "null%".
+      const plannedLabel = r.plannedProgress !== null ? `${r.plannedProgress}%` : 'belum tercatat';
+      const actualLabel = r.actualProgress !== null ? `**${r.actualProgress}%**` : 'belum tercatat';
+      const deviationLabel =
+        r.deviation !== null ? ` (Deviasi: ${r.deviation >= 0 ? '+' : ''}${r.deviation}%)` : '';
       return {
         badge: 'LAPORAN',
-        content: `Berikut draf **Ringkasan Laporan Mingguan** (${r.periodLabel}):\n\n### 📋 Identitas Proyek\n- **Nama Proyek**: ${r.projectName}\n- **Klien**: ${r.clientName}\n- **Lokasi**: ${r.location}\n- **Tanggal Cut-Off**: ${r.currentDate}\n\n### 📈 Status Progres & Keuangan\n- **Progres Rencana**: ${r.plannedProgress}%\n- **Progres Aktual**: **${r.actualProgress}%** (Deviasi: ${r.deviation >= 0 ? '+' : ''}${r.deviation}%)\n- **Nilai Kontrak RAB**: ${formatRupiah(r.totalCost)}\n\n### ✅ Pekerjaan Selesai\n${r.completedWorks.map((w) => `- ${w}`).join('\n')}\n\n### 🚧 Pekerjaan Sedang Berjalan\n${r.activeWorks.map((w) => `- ${w}`).join('\n')}\n\n### ⚠️ Kendala & Catatan Lapangan\n${r.potentialIssues.map((w) => `- ${w}`).join('\n')}\n\nLaporan ini siap diekspor ke format resmi PDF / Excel melalui modul Laporan Proyek.`,
+        content: `Berikut draf **Ringkasan Laporan Mingguan** (${r.periodLabel}):\n\n### 📋 Identitas Proyek\n- **Nama Proyek**: ${r.projectName}\n- **Klien**: ${r.clientName}\n- **Lokasi**: ${r.location}\n- **Tanggal Cut-Off**: ${r.currentDate}\n\n### 📈 Status Progres & Keuangan\n- **Progres Rencana**: ${plannedLabel}\n- **Progres Aktual**: ${actualLabel}${deviationLabel}\n- **Nilai Kontrak RAB**: ${formatRupiah(r.totalCost)}\n\n### ✅ Pekerjaan Selesai\n${r.completedWorks.map((w) => `- ${w}`).join('\n')}\n\n### 🚧 Pekerjaan Sedang Berjalan\n${r.activeWorks.map((w) => `- ${w}`).join('\n')}\n\n### ⚠️ Kendala & Catatan Lapangan\n${r.potentialIssues.map((w) => `- ${w}`).join('\n')}\n\nLaporan ini siap diekspor ke format resmi PDF / Excel melalui modul Laporan Proyek.`,
       };
     }
 
@@ -1973,9 +2096,14 @@ Ada bagian pekerjaan yang ingin kita mulai sekarang?`,
     }
 
     if (p.includes('kurva s') || p.includes('schedule') || p.includes('jadwal') || p.includes('progress') || p.includes('progres')) {
+      // F5 (4.2): this block previously printed "0% — Sesuai/Lebih Cepat dari
+      // Rencana" from zero-defaulted values when no data existed at all.
+      if (!curveSProgress.hasAny) return curveSNoDataResponse(projectName);
+      if (!curveSProgress.hasBoth) return curveSPartialResponse(projectName, curveSProgress);
+      const dev = deviation as number;
       return {
         badge: 'KURVA S',
-        content: `**Evaluasi Kurva S & Jadwal Proyek:**\n\n- Progres Rencana Kumulatif: **${plannedProgress}%**\n- Progres Realisasi Aktual: **${actualProgress}%**\n- Status Deviasi: **${deviation >= 0 ? '+' : ''}${deviation}%** (${deviation >= 0 ? 'Sesuai/Lebih Cepat dari Rencana' : 'Terlambat / Butuh Tindakan Korektif'})\n\nKurva S EZRAB memetakan bobot persentase biaya setiap item pekerjaan terhadap rentang waktu pelaksanaan (mingguan/bulanan).`,
+        content: `**Evaluasi Kurva S & Jadwal Proyek:**\n\n- Progres Rencana Kumulatif: **${plannedProgress}%**\n- Progres Realisasi Aktual: **${actualProgress}%**\n- Status Deviasi: **${dev >= 0 ? '+' : ''}${dev}%** (${dev >= 0 ? 'Sesuai/Lebih Cepat dari Rencana' : 'Terlambat / Butuh Tindakan Korektif'})\n\nKurva S EZRAB memetakan bobot persentase biaya setiap item pekerjaan terhadap rentang waktu pelaksanaan (mingguan/bulanan).`,
       };
     }
 

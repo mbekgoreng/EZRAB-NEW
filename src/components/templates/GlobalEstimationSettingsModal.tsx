@@ -118,27 +118,12 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
             </div>
           </div>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-body)', marginBottom: '6px' }}>
-              Sumber Harga Acuan Utama
-            </label>
-            <select
-              value={formData.priceSource}
-              onChange={e => setFormData({ ...formData, priceSource: e.target.value as any })}
-              style={{
-                width: '100%',
-                padding: '8px 10px',
-                borderRadius: '8px',
-                border: '1px solid var(--ez-hue-slate-border)',
-                fontSize: '12.5px',
-                background: 'var(--ez-color-surface)'
-              }}
-            >
-              <option value="OFFICIAL_AHSP">PUPR 2026 Standar Nasional (Resmi)</option>
-              <option value="PROJECT_PRICE">Database Harga Kontrak Proyek</option>
-              <option value="REFERENCE_PRICE">Survey Pasar & Vendor Terbaru</option>
-            </select>
-          </div>
+          <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--ez-color-text-muted)', lineHeight: 1.5 }}>
+            Overhead, profit, waste, dan PPN di bawah diterapkan pada <strong>total konfigurator template</strong> atas
+            subtotal non-resmi saja (harga resmi DHSP sudah termasuk overhead &amp; profit, sehingga dikecualikan agar
+            tidak ganda). Pengaturan tersimpan persisten di perangkat ini. (Bidang "Sumber Harga Acuan" dihapus —
+            tidak ada alur yang mengonsumsinya; sumber harga mengikuti resolusi tiap template.)
+          </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>

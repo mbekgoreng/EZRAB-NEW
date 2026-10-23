@@ -22,14 +22,17 @@ describe('EZRAB DED -> RAB Dual Mode & Workflow Verification Suite', () => {
   it('1. FAST Mode Configuration & Routing Integrity', () => {
     const fastConfig = getDedProcessingConfig('FAST');
     assert.equal(fastConfig.mode, 'FAST');
-    assert.ok(fastConfig.provider === 'gemini' || fastConfig.provider === 'zyrouter');
-    assert.ok(fastConfig.model.includes('flash') || fastConfig.model.includes('gemini'));
+    // Satu sumber kebenaran: registry menetapkan DED_AI_FAST -> river /
+    // deepseek-ai/DeepSeek-V4.1-Flash (bukan lagi tebakan gemini/zyrouter).
+    assert.equal(fastConfig.provider, 'river');
+    assert.equal(fastConfig.model, 'deepseek-ai/DeepSeek-V4.1-Flash');
     assert.equal(fastConfig.reasoningLevel, 'low');
     assert.equal(fastConfig.enableSecondPass, false);
     assert.equal(fastConfig.maxConcurrentPages, 6);
 
     const modelInfo = getDedModel('FAST');
-    assert.ok(modelInfo.provider === 'gemini' || modelInfo.provider === 'zyrouter');
+    assert.equal(modelInfo.provider, 'river');
+    assert.equal(modelInfo.model, 'deepseek-ai/DeepSeek-V4.1-Flash');
   });
 
   it('2. ADVANCED Mode Configuration & Routing Integrity', () => {

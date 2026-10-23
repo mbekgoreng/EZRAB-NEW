@@ -1,9 +1,12 @@
 /**
  * gatewayChainOrder.mjs — urutan rantai provider per mode di executeAI.
  * Fetch di-stub per host; tidak ada panggilan jaringan nyata, tidak ada key asli.
- * Urutan target (user, 2026-10-21):
- *  - chat     : River teks -> River vision -> Dahl -> Atmo atmo -> Atmo ali
- *               -> ZyRouter -> ekor (Atria -> Dahl -> River teks -> Gemini-OAI)
+ * Urutan target:
+ *  - chat     : Gemini native -> Atmo ag/gemini-3.8-flash-high -> Atmo
+ *               cx/gpt-6-luna -> ZyRouter -> ekor cadangan terakhir
+ *               (Dahl -> River vision -> River teks -> Gemini-OAI -> Atria 1 key)
+ *               [urutan owner terbaru; sebelumnya River/Dahl dulu & Gemini
+ *               absen — chat mati saat ZyRouter membalas SSE + Atria 429]
  *  - advanced : Gemini native -> Atmo ag/gemini-3.8-flash-high
  *               -> Atmo cx/gpt-6-luna -> ZyRouter
  *  - fast     : Gemini native -> River vision (DeepSeek V4.1)
@@ -44,14 +47,18 @@ global.fetch = async (url) => {
     return { ok: false, status: 500, json: async () => ({}), text: async () => 'stub-fail' };
   }
   if (host === 'gemini') {
+    const payload = { candidates: [{ content: { parts: [{ text: 'OK-GEMINI' }] } }], usageMetadata: {} };
     return {
       ok: true, status: 200,
-      json: async () => ({ candidates: [{ content: { parts: [{ text: 'OK-GEMINI' }] } }], usageMetadata: {} }),
+      json: async () => payload,
+      text: async () => JSON.stringify(payload),
     };
   }
+  const payload = { choices: [{ message: { content: 'OK-' + host.toUpperCase() } }], usage: {} };
   return {
     ok: true, status: 200,
-    json: async () => ({ choices: [{ message: { content: 'OK-' + host.toUpperCase() } }], usage: {} }),
+    json: async () => payload,
+    text: async () => JSON.stringify(payload),
   };
 };
 
@@ -64,20 +71,18 @@ function check(name, fn) {
 }
 const seq = (r) => r.attempts.map((a) => `${a.provider}:${a.model}`);
 
-// --- 1. Chat: fallback bekerja — River+Dahl gagal, AtmoRouter menyelamatkan
+// --- 1. Chat: fallback bekerja — Gemini gagal, AtmoRouter ag menyelamatkan
 setAll('fail'); behavior.atmo = 'ok';
 {
   const r = await executeAI({ message: 'halo', mode: 'chat' });
   check('chat fallback: ok via atmorouter', () => assert.equal(r.ok, true));
-  check('chat fallback: provider atmorouter model atmo/deepseek-v4.1-flash', () => {
+  check('chat fallback: provider atmorouter model ag/gemini-3.8-flash-high', () => {
     assert.equal(r.provider, 'atmorouter');
-    assert.equal(r.model, 'atmo/deepseek-v4.1-flash');
+    assert.equal(r.model, 'ag/gemini-3.8-flash-high');
   });
   check('chat fallback: urutan attempts sebelum sukses', () => assert.deepEqual(seq(r), [
-    'river-text:nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4',
-    'river-vision:deepseek-ai/DeepSeek-V4.1-Flash',
-    'dahl:deepseek-ai/DeepSeek-V4-Flash-0731',
-    'atmorouter:atmo/deepseek-v4.1-flash',
+    'gemini:gemini-3.5-flash-lite',
+    'atmorouter:ag/gemini-3.8-flash-high',
   ]));
 }
 
@@ -87,16 +92,15 @@ setAll('fail');
   const r = await executeAI({ message: 'halo', mode: 'chat' });
   check('chat all-fail: ok=false', () => assert.equal(r.ok, false));
   check('chat all-fail: urutan rantai penuh', () => assert.deepEqual(seq(r), [
-    'river-text:nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4',
-    'river-vision:deepseek-ai/DeepSeek-V4.1-Flash',
-    'dahl:deepseek-ai/DeepSeek-V4-Flash-0731',
-    'atmorouter:atmo/deepseek-v4.1-flash',
-    'atmorouter:ali/deepseek-v4.1-flash',
+    'gemini:gemini-3.5-flash-lite',
+    'atmorouter:ag/gemini-3.8-flash-high',
+    'atmorouter:cx/gpt-6-luna',
     'zyrouter:geminiflash-3.8',
-    'atria:Atria-Dawn-Preview',
     'dahl:deepseek-ai/DeepSeek-V4-Flash-0731',
+    'river-vision:deepseek-ai/DeepSeek-V4.1-Flash',
     'river-text:nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4',
     'gemini-oai:gemini-3.8-flash',
+    'atria:Atria-Dawn-Preview',
   ]));
 }
 

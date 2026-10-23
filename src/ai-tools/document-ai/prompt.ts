@@ -4,10 +4,50 @@
  */
 
 /** Versi system prompt mode DRAFT (Document Assistant). Disimpan ke draf oleh UI sebagai metadata. */
-export const DRAFT_PROMPT_VERSION = 'doc-draft-v2';
+export const DRAFT_PROMPT_VERSION = 'doc-draft-v3';
 
 /** Versi system prompt mode ENHANCE (Professional Document Editor). */
 export const ENHANCE_PROMPT_VERSION = 'doc-enhance-v1';
+
+/** Versi system prompt mode TRANSLATE (penerjemah dokumen, F8). */
+export const TRANSLATE_PROMPT_VERSION = 'doc-translate-v1';
+
+import type { TranslateLanguageCode } from './types';
+
+/**
+ * Nama bahasa target terjemahan: `label` untuk UI (Bahasa Indonesia),
+ * `english` + `native` untuk disebut di prompt agar model tidak salah bahasa.
+ */
+export const TRANSLATE_LANGUAGE_NAMES: Record<TranslateLanguageCode, { label: string; english: string; native: string }> = {
+  en: { label: 'Inggris', english: 'English', native: 'English' },
+  zh: { label: 'Mandarin', english: 'Mandarin Chinese (Simplified)', native: '简体中文' },
+  ja: { label: 'Jepang', english: 'Japanese', native: '日本語' },
+  ko: { label: 'Korea', english: 'Korean', native: '한국어' },
+  ar: { label: 'Arab', english: 'Arabic', native: 'العربية' },
+  es: { label: 'Spanyol', english: 'Spanish', native: 'Español' },
+  fr: { label: 'Prancis', english: 'French', native: 'Français' },
+  de: { label: 'Jerman', english: 'German', native: 'Deutsch' },
+};
+
+/**
+ * System prompt penerjemah dokumen (F8) — dipakai mode TRANSLATE. Berdiri
+ * sendiri seperti prompt DRAFT/ENHANCE: tugasnya MENERJEMAHKAN dokumen yang
+ * diberikan ke bahasa target yang disebut pada permintaan pengguna, dengan
+ * aturan preservasi yang ketat. Bukan menjawab pertanyaan dan bukan
+ * membuat dokumen baru.
+ */
+export const DOKUMEN_AI_TRANSLATE_SYSTEM = `Anda adalah EZRAB Document Translator, penerjemah profesional dokumen proyek konstruksi Indonesia.
+
+Tugas Anda adalah menerjemahkan SELURUH dokumen yang diberikan ke bahasa target yang disebut pada permintaan pengguna — lengkap, tanpa meringkas, tanpa menghilangkan bagian, dan tanpa menambah isi baru.
+
+ATURAN PRESERVASI (wajib):
+1. Pertahankan struktur markdown dokumen PERSIS: judul "# ", subjudul "## "/"### ", **tebal**, daftar "- " atau penomoran "1.", tabel sebagai tabel pipa markdown (baris header, baris pemisah |---|---|, lalu baris data dengan jumlah kolom yang sama), dan penomoran pasal/bagian sebagaimana aslinya.
+2. JANGAN terjemahkan dan pertahankan APA ADANYA: nama orang, nama perusahaan/instansi, nomor dokumen/nomor surat, tanggal, serta semua angka dan nilai uang (termasuk format "Rp 850.000.000"). Nilainya tidak boleh berubah, dibulatkan, atau diformat ulang.
+3. Pertahankan penanda [ISI: ...] apa adanya — jangan diterjemahkan, diisi, atau dihapus.
+4. Istilah resmi konstruksi dan administrasi diterjemahkan ke padanan baku yang lazim dalam bahasa target; istilah yang memang dipakai sebagai nama resmi (mis. nama dokumen/perizinan setempat) boleh dipertahankan dengan padanan pada kemunculan pertama bila membantu kejelasan.
+5. Gunakan ragam bahasa formal/dokumen resmi dalam bahasa target, setara dengan nada dokumen sumber.
+
+Keluarkan HANYA dokumen hasil terjemahan dalam markdown terstruktur — tanpa pengantar, tanpa komentar, tanpa catatan penerjemah, tanpa penjelasan perubahan, dan tanpa membungkusnya dalam blok kode.`;
 
 /**
  * System prompt Document Assistant (master prompt §D) — dipakai mode DRAFT.
@@ -28,6 +68,8 @@ Gunakan format dokumen yang sesuai dengan praktik administrasi konstruksi Indone
 Pisahkan fakta sumber, masukan pengguna, dan bagian yang perlu dikonfirmasi. Tandai dokumen sebagai DRAF sampai ditinjau dan disetujui oleh pengguna.
 
 Hasil harus dapat diedit, memiliki struktur heading dan tabel yang benar, serta dapat dikonversi ke format ekspor yang didukung aplikasi.
+
+FORMAT KELUARAN (wajib): tulis dokumen dalam markdown terstruktur — judul utama diawali "# ", subjudul "## " dan "### ", teks penting dengan **tebal**, daftar dengan "- " atau penomoran "1.", dan tabel sebagai tabel pipa markdown (baris header, baris pemisah |---|---|, lalu baris data). Aplikasi mengonversi markdown ini menjadi format dokumen (heading, tebal, daftar, dan tabel sungguhan) di editor dan pada ekspor. Jangan menulis HTML mentah dan jangan membungkus dokumen dalam blok kode. Bila dokumen referensi diberikan dalam markdown (mis. untuk revisi), pertahankan struktur markdown-nya: heading, tabel, dan daftar pada bagian yang tidak diubah harus kembali persis dalam bentuk yang sama.
 
 DISIPLIN PENANDA [ISI: ...]: untuk setiap informasi wajib yang tidak tersedia dari instruksi, template, atau konteks yang diberikan, tulis penanda [ISI: jelaskan informasi yang perlu dilengkapi] tepat di posisi informasi itu seharusnya muncul — jangan mengarang penggantinya dan jangan mengosongkannya diam-diam.`;
 
@@ -56,8 +98,8 @@ export const ENHANCE_TRANSFORM_GUIDANCE: Record<string, string> = {
   perluas: 'Perluas penjelasan: uraikan lebih rinci dari bahan yang sudah ada di teks; jangan menambahkan fakta, angka, atau klaim baru.',
   'tata-bahasa': 'Perbaiki tata bahasa dan ejaan (PUEBI): hanya koreksi bahasa — jangan mengubah isi, urutan, atau istilah teknis.',
   teknis: 'Ubah menjadi bahasa teknis konstruksi: pakai istilah baku pekerjaan konstruksi Indonesia yang tepat, tanpa mengubah nilai/spesifikasi.',
-  poin: 'Susun menjadi poin-poin: ubah paragraf menjadi daftar butir yang sejajar, satu gagasan per butir.',
-  tabel: 'Ubah menjadi tabel: bila isi teks memang berstruktur data, sajikan sebagai tabel markdown dengan header yang jelas; bila tidak sesuai, pertahankan bentuk teks dan jangan memaksakan tabel.',
+  poin: 'Susun menjadi poin-poin: ubah paragraf menjadi daftar butir yang sejajar, satu gagasan per butir. Tulis setiap butir pada baris sendiri diawali "- " (markdown) agar aplikasi menampilkannya sebagai daftar sungguhan.',
+  tabel: 'Ubah menjadi tabel: bila isi teks memang berstruktur data, sajikan sebagai tabel pipa markdown (baris header, baris pemisah |---|---|, lalu baris data) agar aplikasi menampilkannya sebagai tabel sungguhan; bila tidak sesuai, pertahankan bentuk teks dan jangan memaksakan tabel.',
   bebas: 'Ikuti instruksi pengguna sendiri yang menyertai permintaan ini.',
 };
 
@@ -72,7 +114,7 @@ ATURAN WAJIB:
 3. JANGAN menyebut nama penyedia model eksternal. Gunakan identitas "Dokumen AI".
 4. Jangan membuat atau mengarang data dari luar dokumen.`;
 
-export function systemForMode(mode: 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | 'CHAT' | 'CHECKLIST' | 'DRAFT' | 'ENHANCE'): string {
+export function systemForMode(mode: 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | 'CHAT' | 'CHECKLIST' | 'DRAFT' | 'ENHANCE' | 'TRANSLATE'): string {
   const base = DOKUMEN_AI_SYSTEM_BASE;
   switch (mode) {
     case 'SUMMARY':
@@ -87,6 +129,8 @@ export function systemForMode(mode: 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | '
       return DOKUMEN_AI_DRAFT_SYSTEM;
     case 'ENHANCE':
       return DOKUMEN_AI_EDITOR_SYSTEM;
+    case 'TRANSLATE':
+      return DOKUMEN_AI_TRANSLATE_SYSTEM;
     case 'QA':
     case 'CHAT':
     default:

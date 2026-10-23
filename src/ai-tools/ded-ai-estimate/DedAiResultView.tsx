@@ -330,6 +330,9 @@ export const DedAiResultView: React.FC<Props> = ({
               {output.analysisTrace.skippedPageCount > 0 && (
                 <> Halaman terlewat budget: {output.analysisTrace.pages.filter((p) => p.status === 'SKIPPED_BUDGET').map((p) => `hal. ${p.page} (${p.pageType}${p.sourceFile ? `, ${p.sourceFile}` : ''})`).join(', ')}.</>
               )}
+              {output.analysisTrace.pages.some((p) => p.status === 'NO_TEXT') && (
+                <> Halaman tanpa lapisan teks (tidak dianalisis — butuh OCR): {output.analysisTrace.pages.filter((p) => p.status === 'NO_TEXT').map((p) => `hal. ${p.page}${p.sourceFile ? ` (${p.sourceFile})` : ''}`).join(', ')}.</>
+              )}
               {output.analysisTrace.warnings.map((w, i) => (
                 <div key={i} style={{ color: '#D97706', marginTop: 3 }}>⚠ {w}</div>
               ))}

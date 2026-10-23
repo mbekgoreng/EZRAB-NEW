@@ -5,8 +5,8 @@
  */
 
 import { aiToolsProviderClient } from '../providerClient';
-import { ENHANCE_TRANSFORM_GUIDANCE, systemForMode } from './prompt';
-import { DokumenAiChatRequest, DokumenAiChatResponse } from './types';
+import { ENHANCE_TRANSFORM_GUIDANCE, TRANSLATE_LANGUAGE_NAMES, systemForMode } from './prompt';
+import { DokumenAiChatRequest, DokumenAiChatResponse, isTranslateLanguage } from './types';
 
 const MAX_DOC_CHARS = 140_000;
 
@@ -16,6 +16,7 @@ export const MAX_ENHANCE_SELECTION_CHARS = 8_000;
 export class DokumenAiService {
   public async chat(request: DokumenAiChatRequest): Promise<DokumenAiChatResponse> {
     if (request.mode === 'ENHANCE') return this.enhance(request);
+    if (request.mode === 'TRANSLATE') return this.translate(request);
 
     const fullText = request.documentText || '';
     const truncated = fullText.length > MAX_DOC_CHARS;
@@ -73,7 +74,14 @@ export class DokumenAiService {
       };
     }
 
-    return { success: true, reply: result.content, mode: request.mode, truncated };
+    return {
+      success: true,
+      reply: result.content,
+      mode: request.mode,
+      truncated,
+      provider: result.provider ?? null,
+      model: result.model ?? null,
+    };
   }
 
   /**
@@ -136,7 +144,80 @@ export class DokumenAiService {
       };
     }
 
-    return { success: true, reply: result.content, mode: request.mode };
+    return {
+      success: true,
+      reply: result.content,
+      mode: request.mode,
+      provider: result.provider ?? null,
+      model: result.model ?? null,
+    };
+  }
+
+  /**
+   * Mode TRANSLATE (F8): menerjemahkan SELURUH teks dokumen (markdown-lite
+   * dari orchestrator) ke bahasa target. Validasi bahasa & kekosongan di
+   * sini, sebelum jaringan: bahasa tak dikenal → UNKNOWN_LANGUAGE, dokumen
+   * kosong → NO_DATA. Pemotongan memakai batas yang sama dengan mode lain
+   * dan dilaporkan lewat flag `truncated` — tidak disembunyikan.
+   */
+  private async translate(request: DokumenAiChatRequest): Promise<DokumenAiChatResponse> {
+    const target = request.targetLanguage ?? '';
+    if (!isTranslateLanguage(target)) {
+      return {
+        success: false,
+        reply: '',
+        mode: request.mode,
+        errorCode: 'UNKNOWN_LANGUAGE',
+        stage: 'translate:language',
+        message: `Bahasa target "${target || '(kosong)'}" tidak didukung. Pilih salah satu bahasa terjemahan yang tersedia.`,
+      };
+    }
+    const fullText = request.documentText || '';
+    if (!fullText.trim()) {
+      return {
+        success: false,
+        reply: '',
+        mode: request.mode,
+        errorCode: 'NO_DATA',
+        stage: 'translate:document',
+        message: 'Dokumen kosong — tidak ada isi yang bisa diterjemahkan.',
+      };
+    }
+    const truncated = fullText.length > MAX_DOC_CHARS;
+    const docText = fullText.slice(0, MAX_DOC_CHARS);
+    const lang = TRANSLATE_LANGUAGE_NAMES[target];
+    const userPrompt =
+      `Terjemahkan dokumen "${request.fileName || 'Dokumen'}" berikut ke bahasa target: ${lang.english} (${lang.native}). ` +
+      `Ikuti seluruh aturan preservasi pada instruksi sistem. Keluarkan hanya dokumen hasil terjemahan dalam markdown.\n\n${docText}`;
+
+    const result = await aiToolsProviderClient.execute<unknown>({
+      productId: 'DOKUMEN_AI',
+      prompt: userPrompt,
+      systemPrompt: systemForMode('TRANSLATE'),
+      jsonMode: false,
+      maxTokens: 4000,
+      timeoutMs: request.timeoutMs ?? 120000,
+    });
+
+    if (!result.success) {
+      return {
+        success: false,
+        reply: '',
+        mode: request.mode,
+        errorCode: result.errorCode,
+        stage: result.stage,
+        message: result.message,
+      };
+    }
+
+    return {
+      success: true,
+      reply: result.content,
+      mode: request.mode,
+      truncated,
+      provider: result.provider ?? null,
+      model: result.model ?? null,
+    };
   }
 }
 

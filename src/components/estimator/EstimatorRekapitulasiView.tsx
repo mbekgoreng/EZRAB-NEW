@@ -21,12 +21,13 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
   items,
   onOpenExportModal,
 }) => {
-  const { categoryList, directCost, overheadNominal, ppnNominal, grandTotal } = useMemo(() => {
+  const { categoryList, directCost, overheadNominal, ppnNominal, grandTotal, overheadPct, ppnPct } = useMemo(() => {
     const map = new Map<string, { name: string; total: number; count: number }>();
     let direct = 0;
 
     items.forEach((item) => {
-      const cat = item.category || "Pekerjaan Persiapan & Umum";
+      // F1a: kunci pengelompokan sama dengan spreadsheet (sectionName || category).
+      const cat = item.sectionName || item.category || "Pekerjaan Persiapan & Umum";
       const amt = item.amount || (item.volume || 0) * (item.unitPrice || 0);
       direct += amt;
 
@@ -61,6 +62,8 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
       overheadNominal: overhead,
       ppnNominal: ppn,
       grandTotal: total,
+      overheadPct,
+      ppnPct,
     };
   }, [items, currentProject]);
 
@@ -92,7 +95,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
         {/* Card 2: Overhead & Profit */}
         <div className="ez-stat" style={{ background: "var(--ez-stat-indigo)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-<span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255, 255, 255, 0.88)" }}>Overhead & Keuntungan ({(currentProject as any)?.overheadPercent ?? 10}%)</span>
+<span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255, 255, 255, 0.88)" }}>Overhead & Keuntungan ({overheadPct}%)</span>
             <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-color-surface)", color: "#16A34A", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <TrendingUp size={16} />
             </div>
@@ -108,7 +111,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
         {/* Card 3: PPN 11% */}
         <div className="ez-stat" style={{ background: "var(--ez-stat-cream)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-            <span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255, 255, 255, 0.88)" }}>PPN 11%</span>
+            <span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255, 255, 255, 0.88)" }}>PPN {ppnPct}%</span>
             <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-color-surface)", color: "var(--ez-hue-amber-text)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <ShieldCheck size={16} />
             </div>
@@ -258,7 +261,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
                 </tr>
                 <tr style={{ background: "var(--ez-color-surface)", borderTop: "1px solid var(--ez-color-surface-tertiary)", color: "var(--ez-color-text-slate)" }}>
                   <td colSpan={3} style={{ padding: "9px 14px", textAlign: "right" }}>
-                    Jasa Overhead & Keuntungan Pelaksana (10%) (B)
+                    Jasa Overhead & Keuntungan Pelaksana ({overheadPct}%) (B)
                   </td>
                   <td style={{ padding: "9px 14px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                     {formatCurrencyIDR(overheadNominal)}
@@ -267,7 +270,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
                 </tr>
                 <tr style={{ background: "var(--ez-color-surface)", borderTop: "1px solid var(--ez-color-surface-tertiary)", color: "var(--ez-color-text-slate)" }}>
                   <td colSpan={3} style={{ padding: "9px 14px", textAlign: "right" }}>
-                    Pajak Pertambahan Nilai (PPN 11%) (C)
+                    Pajak Pertambahan Nilai (PPN {ppnPct}%) (C)
                   </td>
                   <td style={{ padding: "9px 14px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                     {formatCurrencyIDR(ppnNominal)}

@@ -326,7 +326,10 @@ export const parseWorkspaceRoute = (pathname: string, search: string = ''): Work
   if (module === 'reports/rab' || module === 'reports') return { ...base, menu: 'laporan' };
   if (module === 'reports/boq') return { ...base, menu: 'boq' };
   if (module === 'reports/recap') return { ...base, menu: 'rekapitulasi' };
-  if (module === 'reports/ahsp') return { ...base, menu: 'analisa-ahsp' };
+  // reports/ahsp = "Laporan AHSP" → buka Laporan (LaporanView), BUKAN
+  // AhspExplorerView — label laporan tidak boleh membuka explorer (F6).
+  // Menu 'analisa-ahsp' tetap dipakai route /ahsp (explorer) itu sendiri.
+  if (module === 'reports/ahsp') return { ...base, menu: 'laporan' };
   if (module === 'finance' || module === 'keuangan' || module === 'keuangan-proyek') return { ...base, menu: 'keuangan-proyek' };
   if (module === 'settings') return { ...base, menu: 'pengaturan' };
 

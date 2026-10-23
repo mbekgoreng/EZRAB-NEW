@@ -29,7 +29,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
   onOpenProject,
 }) => {
   const { updateProject } = useProject();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [searchQuery, setSearchQuery] = useState('');
 
   const completedProjects = projects.filter(
@@ -54,15 +54,12 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
     0
   );
 
-  // Financial simulation: estimate profit margins
-  const getCompletedProjectFinancials = (proj: Project) => {
-    const totalRab = proj.totalRab || proj.costSummary?.grandTotal || 0;
-    // Simulated real cost (90-93% of RAB for healthy margin)
-    const realCost = Math.round(totalRab * 0.88);
-    const profitMargin = totalRab - realCost;
-    const profitPercent = totalRab > 0 ? ((profitMargin / totalRab) * 100).toFixed(1) : '12.0';
-    return { totalRab, realCost, profitMargin, profitPercent };
-  };
+  // F1a: TIDAK ada simulasi finansial. Biaya realisasi lapangan tidak
+  // memiliki sumber data nyata di model Project, jadi kartu menampilkan
+  // '—' untuk realisasi & margin (dulu: realCost dikarang = 88% dari RAB
+  // dan margin selalu +12,4%). Nilai kontrak tetap dari data proyek.
+  const getContractValue = (proj: Project): number =>
+    proj.totalRab || proj.costSummary?.grandTotal || 0;
 
   const handleArchiveProject = (proj: Project) => {
     if (
@@ -93,8 +90,19 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
     }
   };
 
-  const handlePrintBast = (proj: Project) => {
-    alert(t('proj.done.bast_ok_a') + proj.name + t('proj.done.bast_ok_b'));
+  // F1a: tombol BAST tidak lagi berpura-pura mencetak (dulu hanya alert
+  // "dokumen siap dicetak" tanpa dokumen apa pun). BAST benar-benar dibuat
+  // di menu Dokumen Proyek (dokumen-tender) proyek tersebut.
+  const bastButtonLabel =
+    ({
+      id: 'Buat BAST di Dokumen Proyek',
+      en: 'Create BAST in Project Documents',
+      zh: '在项目文件中创建 BAST',
+      ms: 'Buat BAST di Dokumen Projek',
+    })[lang] ?? 'Buat BAST di Dokumen Proyek';
+
+  const handleOpenBastDocs = (proj: Project) => {
+    onOpenProject?.(proj.id, 'dokumen-tender');
   };
 
   return (
@@ -144,7 +152,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
             {t('proj.done.kpi3_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
-            +12.4%
+            —
           </div>
           <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', marginTop: '6px' }}>
             {t('proj.done.kpi3_s')}
@@ -259,7 +267,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
           }}
         >
           {filteredProjects.map((proj) => {
-            const { totalRab, realCost, profitMargin, profitPercent } = getCompletedProjectFinancials(proj);
+            const totalRab = getContractValue(proj);
 
             return (
               <div
@@ -356,7 +364,8 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
                       <span>{t('proj.done.actual_t')}</span>
-                      <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(realCost)}</span>
+                      {/* Belum ada data realisasi biaya — tampilkan '—', bukan angka karangan. */}
+                      <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>—</span>
                     </div>
 
                     <div
@@ -367,11 +376,11 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         fontWeight: 700,
-                        color: 'var(--ez-pill-ok-text)',
+                        color: 'var(--ez-color-text-muted)',
                       }}
                     >
                       <span>{t('proj.done.margin_t')}</span>
-                      <span>+{formatRupiah(profitMargin)} ({profitPercent}%)</span>
+                      <span>—</span>
                     </div>
                   </div>
                 </div>
@@ -380,7 +389,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                 <div style={{ borderTop: '1px solid var(--ez-color-border-soft)', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <button
-                      onClick={() => handlePrintBast(proj)}
+                      onClick={() => handleOpenBastDocs(proj)}
                       style={{
                         flex: 1,
                         height: '36px',
@@ -398,7 +407,7 @@ export const CompletedProjectsView: React.FC<CompletedProjectsViewProps> = ({
                       }}
                     >
                       <FileCheck size={13} />
-                      <span>{t('proj.done.bast_btn')}</span>
+                      <span>{bastButtonLabel}</span>
                     </button>
 
                     <button

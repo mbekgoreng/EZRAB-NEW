@@ -15,6 +15,7 @@ import {
   ahspPriceResolver,
 } from '../ded-rab-v2';
 import { officialAhspRepository } from '../data/nationalCostDatabase/officialAhspRepository';
+import { getModelTarget } from '../ai-tools/aiModelRegistry';
 
 describe('EZRAB DED -> RAB 3-Mode Pipeline Integration Test Suite', () => {
   const projectId = 'test-3mode-proj-001';
@@ -22,25 +23,31 @@ describe('EZRAB DED -> RAB 3-Mode Pipeline Integration Test Suite', () => {
   it('1. FAST Mode: Routing, configuration, and single-pass behavior', async () => {
     const fastConfig = getDedProcessingConfig('FAST');
     assert.equal(fastConfig.mode, 'FAST');
-    assert.equal(fastConfig.provider, 'zyrouter');
-    assert.ok(fastConfig.model.includes('flash') || fastConfig.model.includes('gemini'));
+    // Registry adalah satu-satunya sumber: DED_AI_FAST -> river/DeepSeek.
+    const fastTarget = getModelTarget('DED_AI_FAST');
+    assert.equal(fastConfig.provider, fastTarget.provider);
+    assert.equal(fastConfig.model, fastTarget.model);
     assert.equal(fastConfig.reasoningLevel, 'low');
     assert.equal(fastConfig.enableSecondPass, false);
     assert.equal(fastConfig.maxConcurrentPages, 6);
 
     const modelInfo = getDedModel('FAST');
-    assert.equal(modelInfo.provider, 'zyrouter');
+    assert.equal(modelInfo.provider, fastTarget.provider);
     assert.ok(modelInfo.model.length > 0);
   });
 
-  it('uses explicit Gemini vision model labels while retaining shared processing contract', () => {
+  it('derives FAST/ADVANCED provider+model from the central registry (single source)', () => {
     const fast = getDedProcessingConfig('FAST');
     const advanced = getDedProcessingConfig('ADVANCED');
-    assert.equal(fast.model, 'gemini-3.5-flash-lite');
-    assert.equal(fast.modelLabel, 'Gemini 3.5 Flash Lite');
-    assert.equal(advanced.model, 'geminiflash-3.8');
+    const fastTarget = getModelTarget('DED_AI_FAST');
+    const detailTarget = getModelTarget('DED_AI_DETAIL');
+    assert.equal(fast.provider, fastTarget.provider); // river
+    assert.equal(fast.model, fastTarget.model); // deepseek-ai/DeepSeek-V4.1-Flash
+    assert.equal(fast.modelLabel, 'DeepSeek V4.1 Flash');
+    assert.equal(advanced.provider, detailTarget.provider); // zyrouter
+    assert.equal(advanced.model, detailTarget.model); // geminiflash-3.8
     assert.equal(advanced.modelLabel, 'Gemini Flash 3.8');
-    assert.equal(fast.provider, advanced.provider);
+    assert.notEqual(fast.provider, advanced.provider);
     assert.equal(fast.enablePriceResolution, true);
     assert.equal(advanced.enablePriceResolution, true);
   });

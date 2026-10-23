@@ -9,6 +9,7 @@
  */
 import { aiToolsProviderClient } from '../providerClient';
 import { parseDedPdf } from '../ded-ai-estimate/parser';
+import { PAGE_TYPE_PRIORITY, formatPageRanges } from '../ded-ai-estimate/analysisTrace';
 import { buildFullAiPrompt } from './prompts';
 import { validateFullAiItem, verifySubtotal } from './validator';
 import {
@@ -19,28 +20,144 @@ import {
 const MAX_TOTAL_CHARS = 60000;  // Lebih besar dari pipeline lama (15000)
 const MAX_PAGE_CHARS = 4000;
 
-function buildDocumentText(
-  pages: Array<{ page: number; text: string }>,
-  onTruncate?: (truncated: boolean, totalChars: number) => void
-): { text: string; truncated: boolean; totalChars: number } {
-  let text = '';
-  let totalChars = 0;
-  let truncated = false;
+/**
+ * F4 (3.3): batas waktu per panggilan AI yang BENAR-BENAR diterapkan.
+ * providerClient membatasi semua permintaan pada plafon 180 detik
+ * (MAX_TIMEOUT_MS di gateway client) — meminta 240 detik untuk mode
+ * Mendalam dulu dipotong diam-diam sehingga timeout selalu tampak seperti
+ * "model lambat". Sekarang permintaan disamakan dengan plafon nyata dan
+ * batasnya dinyatakan terbuka di metadata hasil (provenance.timeoutLimitMs)
+ * serta peringatan mode Mendalam.
+ */
+export const FULL_AI_TIMEOUT_MS = {
+  FAST: 120000,
+  ADVANCED: 180000,
+} as const;
 
-  const parts: string[] = [];
-  for (const p of pages) {
-    const pageText = (p.text || '').slice(0, MAX_PAGE_CHARS);
-    if (totalChars + pageText.length > MAX_TOTAL_CHARS) {
-      truncated = true;
-      break;
+/**
+ * F4 (3.7): normalisasi peringatan dari model. Model kadang mengembalikan
+ * `warnings` sebagai SATU string — menyebarnya dengan spread akan memecah
+ * string menjadi peringatan per karakter. String utuh menjadi satu
+ * peringatan; array dipertahankan per elemen (objek dengan field `message`
+ * memakai pesannya); nilai lain yang tidak dikenal dibuang, bukan dikarang.
+ */
+export function normalizeAiWarnings(raw: unknown): string[] {
+  if (raw == null) return [];
+  if (typeof raw === 'string') return raw.trim() ? [raw] : [];
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const entry of raw) {
+    if (typeof entry === 'string') {
+      if (entry.trim()) out.push(entry);
+    } else if (typeof entry === 'number' || typeof entry === 'boolean') {
+      out.push(String(entry));
+    } else if (entry && typeof entry === 'object' && typeof (entry as any).message === 'string') {
+      out.push((entry as any).message);
     }
-    parts.push(`--- Halaman ${p.page} ---\n${pageText}`);
+  }
+  return out;
+}
+
+/**
+ * F4 (3.1): identitas provider/model yang BENAR-BENAR melayani respons,
+ * dibaca dari hasil gateway. Bila respons tidak membawa identitas, hasilnya
+ * null ("tidak diketahui") — TIDAK PERNAH diganti tebakan/registry/hardcode,
+ * karena rantai gateway dapat failover ke provider lain dari yang diminta.
+ */
+export function resolveActualProviderModel(result: unknown): {
+  provider: string | null;
+  model: string | null;
+} {
+  const r = (result || {}) as { provider?: unknown; model?: unknown };
+  const clean = (v: unknown): string | null =>
+    typeof v === 'string' && v.trim() ? v.trim() : null;
+  return { provider: clean(r.provider), model: clean(r.model) };
+}
+
+export interface FullAiDocumentText {
+  text: string;
+  totalChars: number;
+  /** Ada konten yang tidak terkirim/terpotong (budget, per-halaman, atau halaman kosong). */
+  truncated: boolean;
+  /** Halaman yang terkirim ke model (seleksi prioritas). */
+  includedPages: number[];
+  /** Halaman tidak terkirim karena budget karakter habis. */
+  skippedPages: number[];
+  /** Halaman yang teksnya dipotong pada batas per-halaman. */
+  truncatedPages: number[];
+  /** Halaman tanpa lapisan teks (scan/gambar) — tidak dapat dianalisis tanpa OCR. */
+  emptyTextPages: number[];
+}
+
+/**
+ * F4 (3.4): seleksi halaman BERPRIORITAS, menggantikan potongan sekuensial
+ * lama yang berhenti di halaman pertama yang tidak muat (halaman akhir —
+ * sering berisi spesifikasi/jadwal/daftar material — tidak pernah
+ * dianalisis, tanpa jejak halaman mana yang hilang).
+ *
+ * Mengikuti pendekatan pipeline multi-pass (analysisTrace.PAGE_TYPE_PRIORITY):
+ * halaman berisi daftar pekerjaan/spesifikasi/jadwal (denah, struktur,
+ * kusen, MEP, spesifikasi, …) didahulukan dalam budget; sisanya menyusul
+ * sampai budget habis. Teks yang dikirim tetap disusun menurut urutan
+ * halaman asli dokumen. Setiap halaman yang terlewat/potong/kosong tercatat
+ * eksplisit agar dapat diperingatkan dengan rentang halamannya.
+ */
+export function buildDocumentText(
+  pages: Array<{ page: number; text: string; pageType?: string }>
+): FullAiDocumentText {
+  const emptyTextPages: number[] = [];
+  const withText = pages.filter((p) => {
+    if ((p.text || '').trim()) return true;
+    emptyTextPages.push(p.page);
+    return false;
+  });
+
+  const byPriority = [...withText].sort(
+    (a, b) =>
+      (PAGE_TYPE_PRIORITY[a.pageType || 'HALAMAN'] ?? 10) -
+        (PAGE_TYPE_PRIORITY[b.pageType || 'HALAMAN'] ?? 10) ||
+      a.page - b.page
+  );
+
+  const included = new Map<number, string>();
+  const skippedPages: number[] = [];
+  const truncatedPages: number[] = [];
+  let totalChars = 0;
+  let budgetExhausted = false;
+
+  for (const p of byPriority) {
+    const fullText = p.text || '';
+    const pageText = fullText.slice(0, MAX_PAGE_CHARS);
+    if (!budgetExhausted && totalChars + pageText.length > MAX_TOTAL_CHARS) {
+      budgetExhausted = true;
+    }
+    if (budgetExhausted) {
+      skippedPages.push(p.page);
+      continue;
+    }
+    if (fullText.length > MAX_PAGE_CHARS) truncatedPages.push(p.page);
+    included.set(p.page, pageText);
     totalChars += pageText.length;
   }
 
-  if (onTruncate) onTruncate(truncated, totalChars);
-  return { text: parts.join('\n\n'), truncated, totalChars };
+  const includedPages = [...included.keys()].sort((a, b) => a - b);
+  const parts = includedPages.map(
+    (n) => `--- Halaman ${n} ---\n${included.get(n)}`
+  );
+
+  return {
+    text: parts.join('\n\n'),
+    totalChars,
+    truncated:
+      skippedPages.length > 0 || truncatedPages.length > 0 || emptyTextPages.length > 0,
+    includedPages,
+    skippedPages: skippedPages.sort((a, b) => a - b),
+    truncatedPages: truncatedPages.sort((a, b) => a - b),
+    emptyTextPages: emptyTextPages.sort((a, b) => a - b),
+  };
 }
+
+export { formatPageRanges };
 
 export class FullAiDedService {
   async execute(options: FullAiServiceOptions): Promise<FullAiOutput> {
@@ -63,22 +180,42 @@ export class FullAiDedService {
       const pages = parsed.pages || [];
       notify('PARSE', 25, `Dokumen dibaca: ${pages.length} halaman`);
 
-      // Tahap 2: Siapkan teks dengan chunking transparan
-      let wasTruncated = false;
-      const { text: docText, truncated, totalChars } = buildDocumentText(
-        pages.map((p: any) => ({ page: p.page, text: p.text || '' })),
-        (t) => { wasTruncated = t; }
+      // Tahap 2: Siapkan teks dengan seleksi halaman berprioritas (F4 3.4/3.6)
+      const doc = buildDocumentText(
+        pages.map((p: any) => ({ page: p.page, text: p.text || '', pageType: p.pageType }))
       );
+      const docText = doc.text;
+      const totalChars = doc.totalChars;
 
       const warnings: string[] = [];
-      if (truncated) {
+      if (doc.skippedPages.length > 0) {
         warnings.push(
-          `Dokumen dipotong pada ${MAX_TOTAL_CHARS} karakter. ` +
+          `Halaman tidak terkirim ke AI karena batas ${MAX_TOTAL_CHARS.toLocaleString('id-ID')} karakter ` +
+          `(halaman prioritas jenis didahulukan): halaman ${formatPageRanges(doc.skippedPages)}. ` +
           `Analisis mungkin tidak mencakup seluruh DED.`
+        );
+      }
+      if (doc.truncatedPages.length > 0) {
+        warnings.push(
+          `Teks halaman dipotong pada ${MAX_PAGE_CHARS.toLocaleString('id-ID')} karakter per halaman: ` +
+          `halaman ${formatPageRanges(doc.truncatedPages)}.`
+        );
+      }
+      if (doc.emptyTextPages.length > 0) {
+        warnings.push(
+          `${doc.emptyTextPages.length} halaman tanpa lapisan teks tidak dapat dianalisis ` +
+          `(kemungkinan hasil scan/gambar — butuh OCR): halaman ${formatPageRanges(doc.emptyTextPages)}.`
         );
       }
       if (totalChars === 0) {
         warnings.push('Tidak ada teks yang dapat diekstrak dari dokumen. Hasil mungkin tidak akurat.');
+      }
+      if (mode === 'ADVANCED') {
+        warnings.push(
+          `Mode Mendalam dibatasi ${Math.round(FULL_AI_TIMEOUT_MS.ADVANCED / 1000)} detik waktu pemrosesan ` +
+          `per panggilan AI (plafon gateway). Dokumen sangat besar yang melewati batas ini akan berakhir ` +
+          `sebagai timeout pemrosesan — bukan karena model lambat.`
+        );
       }
 
       // Tahap 3: Panggil AI
@@ -97,7 +234,7 @@ export class FullAiDedService {
         systemPrompt: system,
         jsonMode: true,
         maxTokens: mode === 'FAST' ? 16000 : 32000,
-        timeoutMs: mode === 'FAST' ? 120000 : 240000,
+        timeoutMs: FULL_AI_TIMEOUT_MS[mode],
       });
 
       if (!aiResult.success) {
@@ -155,16 +292,19 @@ export class FullAiDedService {
 
         const validation = validateFullAiItem(normalized, i);
 
+        // F4 (3.7): peringatan validator SELALU diteruskan; error validator
+        // dikumpulkan ke allErrors dan WAJIB muncul di hasil akhir (dulu
+        // dikumpulkan lalu hilang tanpa jejak selain warnings).
+        warnings.push(...validation.warnings);
         if (!validation.valid) {
           allErrors.push(...validation.errors);
-          warnings.push(...validation.warnings);
           // Item tidak valid tetap ditampilkan dengan status UNRESOLVED
           // Jangan buang diam-diam
         }
 
         const q = normalized.quantity || {};
         const p = normalized.price || {};
-        const { subtotal } = verifySubtotal(
+        const { subtotal, verified: subtotalComputed } = verifySubtotal(
           typeof q.value === 'number' ? q.value : null,
           typeof p.unitPrice === 'number' ? p.unitPrice : null
         );
@@ -244,7 +384,11 @@ export class FullAiDedService {
             notes: p.notes || undefined,
           },
           subtotal: includeInTotal ? subtotal : null,
-          subtotalVerified: true,
+          // F4 (3.7): hanya true bila subtotal item ini benar-benar terhitung
+          // & terverifikasi dari qty × harga yang keduanya ada. Item yang
+          // subtotalnya null (harga/volume hilang atau tereksklusi) TIDAK
+          // boleh mengklaim terverifikasi.
+          subtotalVerified: subtotalComputed && includeInTotal,
           status: includeInTotal ? 'READY' : status,
           exclusionReason: includeInTotal ? null : exclusionReason,
           sourcePages: Array.isArray(raw.sourcePages) ? raw.sourcePages : undefined,
@@ -304,9 +448,18 @@ export class FullAiDedService {
         grandTotal,
         grandTotalNote,
         summary,
-        warnings: [...warnings, ...(parsedAi.warnings || [])],
+        // F4 (3.7): error validator per item WAJIB tampil di hasil akhir;
+        // peringatan model dinormalisasi (string utuh ≠ peringatan per karakter).
+        warnings: [
+          ...warnings,
+          ...allErrors.map((e) => `Validasi: ${e}`),
+          ...normalizeAiWarnings(parsedAi.warnings),
+        ],
+        // F4 (3.1): identitas AKTUAL dari respons gateway — null bila
+        // respons tidak membawanya. Bukan lagi hardcode per mode.
         provenance: {
-          model: mode === 'FAST' ? 'gemini-3.5-flash-lite' : 'geminiflash-3.8',
+          ...resolveActualProviderModel(aiResult),
+          timeoutLimitMs: FULL_AI_TIMEOUT_MS[mode],
           timestamp: new Date().toISOString(),
           documentPages: pages.length,
           documentChars: totalChars,
@@ -347,7 +500,9 @@ export class FullAiDedService {
       warnings: [],
       error,
       provenance: {
-        model: '',
+        provider: null,
+        model: null,
+        timeoutLimitMs: FULL_AI_TIMEOUT_MS[mode],
         timestamp: new Date().toISOString(),
         documentPages: 0,
         documentChars: 0,

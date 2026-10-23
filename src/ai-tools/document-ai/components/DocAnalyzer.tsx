@@ -4,12 +4,17 @@
  * bukan chat permanen. Floating assistant global sudah disembunyikan di
  * menu ini oleh WorkspaceView (single-mascot rule).
  *
- * ADAPTASI (service cabang ini belum mendukung mode CHECKLIST / param
- * history / flag truncated milik referensi):
+ * ADAPTASI (service cabang ini belum mendukung mode CHECKLIST):
  * - Tab "Kelengkapan" dijalankan lewat mode CHAT dengan instruksi
  *   pemeriksaan kelengkapan yang dibangun di komponen.
- * - QA berjalan per-turn tanpa riwayat percakapan kontekstual.
- * - Peringatan pemotongan dihitung lokal (batas service 140.000 karakter).
+ * - QA meneruskan riwayat percakapan (history) ke service agar pertanyaan
+ *   lanjutan tetap kontekstual; service membatasinya ke 6 turn terakhir.
+ * - Pemotongan: flag truncated diambil dari respons service. Khusus
+ *   COMPARE, anggaran 140.000 karakter DIBAGI DUA per dokumen dan
+ *   peringatan menyebut dokumen mana yang terpotong — bukan lagi gabungan
+ *   yang terpotong dari depan hingga dokumen kedua bisa hilang diam-diam.
+ * - Hasil analisis & jawaban QA dirender TERFORMAT dari markdown AI lewat
+ *   markdownToHtml (escape-first) — bukan lagi teks polos mentah.
  */
 import React, { useMemo, useRef, useState } from 'react';
 import {
@@ -17,6 +22,7 @@ import {
   GitCompare, ClipboardCheck, Copy, Check, AlertTriangle, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { dokumenAiService } from '../service';
+import { markdownToHtml } from '../markdownHtml';
 import type { DocRecord, ChatMessage, HistoryEntry, HistoryType } from '../view';
 import { useI18n } from '../../../i18n/I18nContext';
 import '../../../ai-credits/ai-credits.css';
@@ -90,7 +96,8 @@ export const DocAnalyzer: React.FC<{
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState('');
-  const [truncated, setTruncated] = useState(false);
+  /** Catatan pemotongan yang tampil ke pengguna (umum dari service, atau spesifik per dokumen untuk COMPARE). */
+  const [truncNote, setTruncNote] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   // QA chat
   const [chat, setChat] = useState<ChatMessage[]>([]);
@@ -122,10 +129,16 @@ export const DocAnalyzer: React.FC<{
     });
   };
 
-  const runMode = async (anaTab: AnaTab, prompt?: string, docTextOverride?: string, fileNameOverride?: string) => {
+  const runMode = async (
+    anaTab: AnaTab,
+    prompt?: string,
+    docTextOverride?: string,
+    fileNameOverride?: string,
+    truncNoteOverride?: string | null,
+  ) => {
     const mode = MODE_OF[anaTab];
     const docText = docTextOverride ?? doc.text;
-    setBusy(true); setError(null); setResult(''); setTruncated(docText.length > MAX_DOC_CHARS);
+    setBusy(true); setError(null); setResult(''); setTruncNote(truncNoteOverride ?? null);
     try {
       const res = await dokumenAiService.chat({
         documentText: docText,
@@ -135,6 +148,9 @@ export const DocAnalyzer: React.FC<{
       });
       if (res.success) {
         setResult(res.reply || '');
+        // Flag truncated dari service adalah sumber kebenaran pemotongan
+        // (kecuali pemanggil — COMPARE — sudah memberi catatan spesifik).
+        if (res.truncated && !truncNoteOverride) setTruncNote(t('ai.doc.ana.warn_truncated'));
         recordHistory(anaTab, res.reply || '');
         // --- AI Credits: catat pemakaian SIMULASI ---
         consume('ai-document', docEstimate.max, `AI Document (${anaTab}): ${doc.fileName.slice(0, 50)}`);
@@ -156,7 +172,13 @@ export const DocAnalyzer: React.FC<{
     setChat(next); setQuestion(''); setBusy(true); setError(null); scrollChat();
     try {
       const res = await dokumenAiService.chat({
-        documentText: doc.text, fileName: doc.fileName, mode: 'QA', prompt: q,
+        documentText: doc.text,
+        fileName: doc.fileName,
+        mode: 'QA',
+        prompt: q,
+        // Riwayat percakapan SEBELUM pertanyaan ini (service memotong ke 6
+        // turn terakhir) — pertanyaan lanjutan terjawab dalam konteksnya.
+        history: chat.map((m) => ({ role: m.role, text: m.text })),
       });
       if (res.success) {
         const aiMsg: ChatMessage = { role: 'ai', text: res.reply || '', at: Date.now() };
@@ -181,8 +203,23 @@ export const DocAnalyzer: React.FC<{
   const runCompare = () => {
     const other = docs.find((d) => d.id === compareId);
     if (!other) { setError(t('ai.doc.ana.err_compare_first')); return; }
-    const combined = `=== DOKUMEN 1: ${doc.fileName} ===\n${doc.text}\n\n=== DOKUMEN 2: ${other.fileName} ===\n${other.text}`;
-    runMode('compare', undefined, combined, `${doc.fileName} vs ${other.fileName}`);
+    // Anggaran karakter DIBAGI DUA per dokumen: masing-masing dipotong ke
+    // separuh batas service, sehingga dokumen kedua tidak pernah hilang
+    // diam-diam karena dokumen pertama memenuhi seluruh anggaran.
+    const halfBudget = Math.floor(MAX_DOC_CHARS / 2);
+    const firstCut = doc.text.length > halfBudget;
+    const secondCut = other.text.length > halfBudget;
+    const combined =
+      `=== DOKUMEN 1: ${doc.fileName} ===\n${doc.text.slice(0, halfBudget)}` +
+      `\n\n=== DOKUMEN 2: ${other.fileName} ===\n${other.text.slice(0, halfBudget)}`;
+    const cutList = [
+      firstCut ? `Dokumen 1 (${doc.fileName})` : null,
+      secondCut ? `Dokumen 2 (${other.fileName})` : null,
+    ].filter(Boolean);
+    const note = cutList.length
+      ? `Anggaran analisis ${MAX_DOC_CHARS.toLocaleString('id-ID')} karakter dibagi dua per dokumen. Yang dipotong: ${cutList.join(' dan ')} — bagian akhirnya tidak ikut dibandingkan.`
+      : null;
+    runMode('compare', undefined, combined, `${doc.fileName} vs ${other.fileName}`, note);
   };
 
   const copyResult = () => {
@@ -205,7 +242,7 @@ export const DocAnalyzer: React.FC<{
         {TABS.map((tb) => {
           const Icon = tb.icon;
           return (
-            <button key={tb.id} className={tab === tb.id ? 'active' : ''} onClick={() => { setTab(tb.id); setResult(''); setError(null); }}>
+            <button key={tb.id} className={tab === tb.id ? 'active' : ''} onClick={() => { setTab(tb.id); setResult(''); setError(null); setTruncNote(null); }}>
               <Icon size={15} /> {tb.label}
             </button>
           );
@@ -241,7 +278,16 @@ export const DocAnalyzer: React.FC<{
                 )}
                 {chat.map((m, i) => (
                   <div key={i} className={`docai-msg ${m.role}`}>
-                    <div className="docai-msg-b">{m.text}</div>
+                    {m.role === 'ai' ? (
+                      // Jawaban AI adalah markdown — dirender terformat lewat
+                      // konverter escape-first (bukan teks polos mentah).
+                      <div
+                        className="docai-msg-b docai-md"
+                        dangerouslySetInnerHTML={{ __html: markdownToHtml(m.text) }}
+                      />
+                    ) : (
+                      <div className="docai-msg-b">{m.text}</div>
+                    )}
                   </div>
                 ))}
                 {busy && <div className="docai-msg ai"><div className="docai-msg-b"><Loader2 size={14} className="spin" /> {t('ai.doc.ana.busy_reading')}</div></div>}
@@ -275,14 +321,17 @@ export const DocAnalyzer: React.FC<{
                 {busy ? <><Loader2 size={15} className="spin" /> {t('ai.doc.ana.run_busy')}</> : `${t('ai.doc.ana.run_a')} ${TABS.find((tb) => tb.id === tab)?.label}`}
               </button>
               {error && <div className="docai-error"><AlertTriangle size={14} /> {error}</div>}
-              {truncated && <div className="docai-warn">{t('ai.doc.ana.warn_truncated')}</div>}
+              {truncNote && <div className="docai-warn">{truncNote}</div>}
               {result && (
                 <div className="docai-result">
                   <div className="docai-result-head">
                     <span>{t('ai.doc.ana.result_a')} {TABS.find((tb) => tb.id === tab)?.label}</span>
                     <button onClick={copyResult}>{copied ? <Check size={14} /> : <Copy size={14} />} {copied ? t('ai.doc.ana.copied') : t('ai.doc.ana.copy')}</button>
                   </div>
-                  <div className="docai-result-body">{result}</div>
+                  <div
+                    className="docai-result-body docai-md"
+                    dangerouslySetInnerHTML={{ __html: markdownToHtml(result) }}
+                  />
                 </div>
               )}
               {!result && !busy && (

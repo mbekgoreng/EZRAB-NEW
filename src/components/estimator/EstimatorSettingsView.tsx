@@ -6,7 +6,6 @@ import {
   ShieldCheck,
   Percent,
   MapPin,
-  Coins,
   FileSpreadsheet,
 } from "lucide-react";
 import { Project, RabItem } from "../../types";
@@ -29,7 +28,6 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
   const [selectedRegion, setSelectedRegion] = useState<string>(
     (currentProject as any)?.region || "JAWA_TIMUR"
   );
-  const [roundingScheme, setRoundingScheme] = useState<string>("RIBUAN");
   const [isSaved, setIsSaved] = useState(false);
 
   const handleSave = () => {
@@ -37,7 +35,6 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
       overheadPercent,
       ppnPercent,
       region: selectedRegion,
-      roundingScheme,
     });
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2500);
@@ -53,7 +50,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
               Pengaturan & Parameter Estimasi Proyek
             </h3>
             <p style={{ fontSize: "12.5px", color: "#64748B", margin: "3px 0 0 0" }}>
-              Konfigurasi persentase margin overhead, tarif pajak PPN, faktor wilayah harga, dan pembulatan spreadsheet
+              Konfigurasi persentase margin overhead, tarif pajak PPN, dan wilayah proyek (metadata)
             </p>
           </div>
 
@@ -172,9 +169,9 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
             </div>
             <div>
               <h4 style={{ fontSize: "14px", fontWeight: 700, color: "var(--ez-color-text-primary)", margin: 0 }}>
-                Faktor Penyesuaian Wilayah
+                Wilayah Proyek
               </h4>
-              <span style={{ fontSize: "11.5px", color: "#64748B" }}>Indeks harga pasar lokal acuan</span>
+              <span style={{ fontSize: "11.5px", color: "#64748B" }}>Metadata lokasi proyek</span>
             </div>
           </div>
 
@@ -194,59 +191,27 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
               outline: "none",
             }}
           >
-            <option value="JAWA_TIMUR">Jawa Timur (Surabaya, Malang, Sidoarjo) — Indeks 1.00</option>
-            <option value="DKI_JAKARTA">DKI Jakarta & Bodetabek — Indeks 1.15</option>
-            <option value="JAWA_BARAT">Jawa Barat (Bandung, Cirebon, dll) — Indeks 1.05</option>
-            <option value="JAWA_TENGAH">Jawa Tengah & DIY Yogyakarta — Indeks 0.98</option>
-            <option value="BALI_NUSA">Bali & Nusa Tenggara — Indeks 1.10</option>
-            <option value="SUMATERA">Sumatera (Medan, Palembang, dll) — Indeks 1.12</option>
-            <option value="KALIMANTAN">Kalimantan — Indeks 1.25</option>
-            <option value="SULAWESI">Sulawesi — Indeks 1.15</option>
-            <option value="PAPUA_MALUKU">Papua & Maluku — Indeks 1.55</option>
+            <option value="JAWA_TIMUR">Jawa Timur (Surabaya, Malang, Sidoarjo)</option>
+            <option value="DKI_JAKARTA">DKI Jakarta & Bodetabek</option>
+            <option value="JAWA_BARAT">Jawa Barat (Bandung, Cirebon, dll)</option>
+            <option value="JAWA_TENGAH">Jawa Tengah & DIY Yogyakarta</option>
+            <option value="BALI_NUSA">Bali & Nusa Tenggara</option>
+            <option value="SUMATERA">Sumatera (Medan, Palembang, dll)</option>
+            <option value="KALIMANTAN">Kalimantan</option>
+            <option value="SULAWESI">Sulawesi</option>
+            <option value="PAPUA_MALUKU">Papua & Maluku</option>
           </select>
-          <p style={{ fontSize: "11.5px", color: "#94A3B8", marginTop: "8px", margin: 0 }}>
-            Otomatis mengalikan koefisien harga material dan upah tenaga kerja lokal.
+          <p style={{ fontSize: "11.5px", color: "#94A3B8", marginTop: "8px", margin: 0, lineHeight: 1.5 }}>
+            Wilayah tersimpan sebagai <strong>metadata proyek</strong> dan saat ini <strong>belum memengaruhi
+            harga</strong> — tidak ada pengali koefisien wilayah yang diterapkan. Harga mengikuti sumber
+            resmi/referensi per item. (Angka "indeks kemahalan" lama dihapus karena tidak ada perhitungan
+            yang mengonsumsinya.)
           </p>
         </div>
 
-        {/* Card 4: Skema Pembulatan Harga */}
-        <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "14px", padding: "20px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-hue-purple-bg-soft)", color: "var(--ez-hue-purple-text)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Coins size={16} />
-            </div>
-            <div>
-              <h4 style={{ fontSize: "14px", fontWeight: 700, color: "var(--ez-color-text-primary)", margin: 0 }}>
-                Pembulatan Angka Akhir
-              </h4>
-              <span style={{ fontSize: "11.5px", color: "#64748B" }}>Format pembulatan pada tabel & laporan</span>
-            </div>
-          </div>
-
-          <select
-            value={roundingScheme}
-            onChange={(e) => setRoundingScheme(e.target.value)}
-            style={{
-              width: "100%",
-              height: "38px",
-              padding: "0 12px",
-              borderRadius: "8px",
-              border: "1px solid var(--ez-hue-slate-border)",
-              fontSize: "13px",
-              color: "var(--ez-color-text-primary)",
-              fontWeight: 600,
-              background: "var(--ez-color-surface)",
-              outline: "none",
-            }}
-          >
-            <option value="RIBUAN">Pembulatan ke Ribuan Terdekat (Rp 1.000)</option>
-            <option value="RATUSAN">Pembulatan ke Ratusan Terdekat (Rp 100)</option>
-            <option value="EXACT">Nilai Eksak (Tanpa Pembulatan)</option>
-          </select>
-          <p style={{ fontSize: "11.5px", color: "#94A3B8", marginTop: "8px", margin: 0 }}>
-            Mempermudah penerbitan dokumen penawaran harga resmi.
-          </p>
-        </div>
+        {/* Card 4 (Skema Pembulatan) DIHAPUS dari panel ini: nilainya tersimpan
+            tetapi tidak dibaca perhitungan/tampilan mana pun, sehingga kontrolnya
+            menyesatkan. Pengaturan pembulatan dikelola di Pengaturan Terpadu. */}
       </div>
     </div>
   );

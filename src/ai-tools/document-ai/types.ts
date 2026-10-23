@@ -4,7 +4,7 @@
  * comparison. Answers come only from the uploaded document content.
  */
 
-export type DocAiMode = 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | 'CHAT' | 'CHECKLIST' | 'DRAFT' | 'ENHANCE';
+export type DocAiMode = 'SUMMARY' | 'QA' | 'EXTRACT' | 'COMPARE' | 'CHAT' | 'CHECKLIST' | 'DRAFT' | 'ENHANCE' | 'TRANSLATE';
 
 export type ChatTurn = { role: 'user' | 'ai'; text: string };
 
@@ -24,6 +24,8 @@ export type DokumenAiChatRequest = {
   selectionText?: string;
   /** Mode ENHANCE: jenis transformasi (kunci EnhanceTransform). */
   transform?: string;
+  /** Mode TRANSLATE: kode bahasa target (TranslateLanguageCode). */
+  targetLanguage?: string;
 };
 
 export type DokumenAiChatResponse = {
@@ -32,10 +34,35 @@ export type DokumenAiChatResponse = {
   reply?: string;
   /** true jika teks dokumen dipotong karena batas. */
   truncated?: boolean;
+  /** Identitas provider/model AKTUAL dari respons providerClient (F4) — null/tidak ada bila tidak disediakan. */
+  provider?: string | null;
+  model?: string | null;
   errorCode?: string;
   stage?: string;
   message?: string;
 };
+
+/* ------------------------------------------------------------------ */
+/* TERJEMAHAN (F8) — bahasa target yang didukung                      */
+/* ------------------------------------------------------------------ */
+
+/** Kode bahasa target terjemahan dokumen. Bahasa sumber dokumen EZRAB adalah 'id'. */
+export type TranslateLanguageCode = 'en' | 'zh' | 'ja' | 'ko' | 'ar' | 'es' | 'fr' | 'de';
+
+export const TRANSLATE_LANGUAGE_CODES: readonly TranslateLanguageCode[] = [
+  'en',
+  'zh',
+  'ja',
+  'ko',
+  'ar',
+  'es',
+  'fr',
+  'de',
+] as const;
+
+export function isTranslateLanguage(v: unknown): v is TranslateLanguageCode {
+  return typeof v === 'string' && (TRANSLATE_LANGUAGE_CODES as readonly string[]).includes(v);
+}
 
 /* ------------------------------------------------------------------ */
 /* DOCUMENT STUDIO — kontrak intent, provenance konteks, review       */
@@ -54,7 +81,8 @@ export type DocumentIntent =
   | 'COMPARE_DOCUMENTS'
   | 'CREATE_REPORT'
   | 'EXTRACT_CONSTRUCTION_SCOPE'
-  | 'ENHANCE_TEXT';
+  | 'ENHANCE_TEXT'
+  | 'TRANSLATE_DOCUMENT';
 
 export const DOCUMENT_INTENTS: readonly DocumentIntent[] = [
   'CREATE_DOCUMENT',
@@ -67,6 +95,7 @@ export const DOCUMENT_INTENTS: readonly DocumentIntent[] = [
   'CREATE_REPORT',
   'EXTRACT_CONSTRUCTION_SCOPE',
   'ENHANCE_TEXT',
+  'TRANSLATE_DOCUMENT',
 ] as const;
 
 export function isDocumentIntent(v: unknown): v is DocumentIntent {
@@ -203,6 +232,10 @@ export interface IntentRequest {
   selectionText?: string;
   /** ENHANCE_TEXT: jenis transformasi (EnhanceTransform). */
   transform?: EnhanceTransform | string;
+  /** TRANSLATE_DOCUMENT: kode bahasa target (TranslateLanguageCode). */
+  targetLanguage?: TranslateLanguageCode | string;
+  /** TRANSLATE_DOCUMENT: kode bahasa sumber dokumen (default 'id'). */
+  sourceLanguage?: string;
   timeoutMs?: number;
 }
 
@@ -219,6 +252,11 @@ export interface IntentResult {
   missingFields: MissingFieldInfo[];
   /** Versi system prompt yang dipakai (DRAFT/ENHANCE) — disimpan ke draf oleh UI sebagai metadata. */
   promptVersion?: string;
+  /** Identitas provider/model AKTUAL yang melayani (dari respons providerClient, pola F4) — null bila tidak disediakan; tidak pernah ditulis keras. */
+  provider?: string | null;
+  model?: string | null;
+  /** true bila teks yang dikirim ke AI dipotong service karena batas karakter — tidak pernah disembunyikan dari UI. */
+  truncated?: boolean;
   errorCode?: string;
   stage?: string;
   message?: string;

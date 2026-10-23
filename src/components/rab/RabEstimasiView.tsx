@@ -43,7 +43,11 @@ import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { exportProjectToExcel } from '../../export/excelExportEngine';
 import { useProject } from '../../context/ProjectContext';
 import { ProjectHistory } from '../../lib/projectHistory';
-import { buildRabCellUpdates } from './rabCellEdit';
+import {
+  buildRabCellUpdates,
+  recalculateRabItemAmounts,
+  insertRabItemRelative,
+} from './rabCellEdit';
 import { WorkItemInspectorDrawer } from '../inspector/WorkItemInspectorDrawer';
 import { IntelligentExcelImportModal } from '../import/IntelligentExcelImportModal';
 import { EstimateVersionAndScenarioModal } from '../versioning/EstimateVersionAndScenarioModal';
@@ -198,9 +202,9 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
   const [editingCell, setEditingCell] = useState<{ itemId: string; column: string } | null>(null);
   const [editValue, setEditValue] = useState<string>('');
 
-  // Pagination state
-  const [pageSize, setPageSize] = useState<number>(50);
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  // F1a: pagination lama adalah fiksi (kontrolnya tidak pernah memotong
+  // daftar; totalPages selalu 1). Spreadsheet merender seluruh baris —
+  // kontrol pagination dihapus dari footer, diganti jumlah item yang jujur.
 
   // Modals & Drawers
   const [smartAddModalOpen, setSmartAddModalOpen] = useState(false);
@@ -396,13 +400,9 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
   };
 
   const handleRecalculateTotals = () => {
-    const updated = projectRabItems.map((item) => {
-      const vol = item.volume || 0;
-      const up = item.unitPrice || 0;
-      const newAmt = Math.round(vol * up);
-      return { ...item, amount: newAmt, totalPrice: newAmt };
-    });
-    replaceProjectRabItems(updated);
+    // F1a: item tanpa harga (unitPrice null) dilewati — amount tetap null,
+    // tidak pernah ditulis 0 (kontrak null ≠ Rp0).
+    replaceProjectRabItems(recalculateRabItemAmounts(projectRabItems));
     showToast('Seluruh formula dan total RAB berhasil disinkronkan & dihitung ulang');
   };
 
@@ -756,38 +756,43 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
     showToast('Item berhasil dihapus');
   };
 
-  const handleInsertRowAbove = (referenceItem: RabItem) => {
+  // F1a: sisipkan baris BENAR-BENAR relatif terhadap item jangkar di dalam
+  // grupnya (render berkelompok mengikuti urutan array proyek) — bukan
+  // append ke akhir grup seperti sebelumnya. Harga awal baris sisipan null
+  // (belum diisi), bukan 0 dan bukan NaN.
+  const buildInsertedRow = (referenceItem: RabItem): RabItem => {
     const cat = referenceItem.sectionName || referenceItem.category || 'Pekerjaan Persiapan & Bowplank';
-    createRabItemDirect({
-      sectionName: cat,
+    return {
+      id: `rab-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+      projectId: currentProject?.id || referenceItem.projectId,
+      no: referenceItem.no,
+      code: '',
       category: cat,
-      code: (referenceItem.code || 'A.1.1') + '.1',
+      sectionName: cat,
       description: 'Item Pekerjaan Baru',
       volume: 1,
-      unit: 'm¹',
-      // Fase 4A: baris kosong baru -> harga belum diisi (NaN), bukan nol eksplisit.
-      unitPrice: NaN,
-      amount: 0,
-      totalPrice: 0,
+      unit: referenceItem.unit || 'm¹',
+      unitPrice: null,
+      amount: null,
+      totalPrice: null,
+      priceStatus: 'PRICE_UNRESOLVED',
       volumeSource: 'MANUAL',
-    });
+      ahspCode: '',
+      verificationStatus: 'NEEDS_VERIFICATION',
+    };
+  };
+
+  const handleInsertRowAbove = (referenceItem: RabItem) => {
+    replaceProjectRabItems(
+      insertRabItemRelative(projectRabItems, referenceItem.id, buildInsertedRow(referenceItem), 'above')
+    );
     showToast('Baris baru disisipkan di atas');
   };
 
   const handleInsertRowBelow = (referenceItem: RabItem) => {
-    const cat = referenceItem.sectionName || referenceItem.category || 'Pekerjaan Persiapan & Bowplank';
-    createRabItemDirect({
-      sectionName: cat,
-      category: cat,
-      code: (referenceItem.code || 'A.1.1') + '.2',
-      description: 'Item Pekerjaan Baru',
-      volume: 1,
-      unit: 'm¹',
-      unitPrice: 0,
-      amount: 0,
-      totalPrice: 0,
-      volumeSource: 'MANUAL',
-    });
+    replaceProjectRabItems(
+      insertRabItemRelative(projectRabItems, referenceItem.id, buildInsertedRow(referenceItem), 'below')
+    );
     showToast('Baris baru disisipkan di bawah');
   };
 
@@ -998,11 +1003,6 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
               totalItemsCount={totalItemsCount}
               totalRab={totalRabNominal}
               onAddGroup={() => handleOpenSmartAdd('selector')}
-              pageSize={pageSize}
-              onPageSizeChange={setPageSize}
-              currentPage={currentPage}
-              totalPages={1}
-              onPageChange={setCurrentPage}
               isSaving={saveStatus === 'saving'}
             />
           </>

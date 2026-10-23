@@ -539,6 +539,9 @@ export interface Project {
   shareToken?: string;
   sharePermission?: 'VIEW_ONLY' | 'CAN_COMMENT' | 'CAN_EDIT';
   isShareActive?: boolean;
+  /** F1a: true hanya untuk proyek contoh bawaan (seed demo) — data contoh
+   * tidak boleh menyamar sebagai proyek nyata pengguna. */
+  isDemo?: boolean;
   layoutConfig?: SpreadsheetLayoutConfig;
   isArchived?: boolean;
   archivedAt?: string;

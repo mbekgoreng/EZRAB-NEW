@@ -33,6 +33,7 @@ import { summarizeFindings } from '../review';
 import type { ContextField, DocumentComparison, ReviewFinding, ReviewFindingStatus } from '../types';
 import type { DocTemplateMeta } from '../docTemplates';
 import { draftFormat, toPlainText } from '../richText';
+import { htmlToMarkdownLite } from '../markdownHtml';
 import { formatDate, type DraftRecord } from '../view';
 import { groupFindingsByCategory, POLISH_PRESETS, type PolishPreset } from './reviewPolish';
 
@@ -51,7 +52,7 @@ const VERSION_ORIGIN_LABEL: Record<string, string> = {
 };
 
 interface Candidate {
-  /** Teks polos kandidat dari orchestrator (belum diterapkan). */
+  /** Teks markdown kandidat dari orchestrator (belum diterapkan). */
   text: string;
   sourceLabel: string;
   findingId?: string;
@@ -66,8 +67,8 @@ export const DocStudioReview: React.FC<{
       agar cek kategori 'sumber' (nilai/tanggal tak bersumber) dapat berjalan. */
   contextFields?: ContextField[];
   getEditor: () => Editor | null;
-  /** Terapkan kandidat revisi: pemanggil men-snapshot versi dulu, lalu menimpa isi editor + persist. */
-  onApplyCandidate: (candidatePlain: string, note: string) => Promise<void>;
+  /** Terapkan kandidat revisi (markdown): pemanggil men-snapshot versi dulu, mengonversi markdown→HTML, lalu menimpa isi editor + persist. */
+  onApplyCandidate: (candidateMarkdown: string, note: string) => Promise<void>;
   /** Pulihkan versi: pemanggil memakai restoreVersion (isi berjalan ter-snapshot otomatis). */
   onRestoreVersion: (versionId: string) => Promise<void>;
   /** Tulis balik status temuan ke DraftRecord.findingStatuses (persisten). */
@@ -104,6 +105,14 @@ export const DocStudioReview: React.FC<{
   }, [draft.id]);
 
   const currentPlain = () => toPlainText(html, 'html');
+  /**
+   * Serialisasi dokumen untuk MODEL (jalur revisi): markdown-lite, BUKAN
+   * teks polos — heading/tabel/tebal/daftar bertahan melewati model dan
+   * kandidatnya dikonversi kembali dengan markdownToHtml, sehingga revisi
+   * tidak lagi meratakan format dokumen. Review deterministik & banding
+   * tetap memakai teks polos (currentPlain).
+   */
+  const currentMarkdown = () => htmlToMarkdownLite(html);
 
   const setFindingStatus = (id: string, status: ReviewFinding['status']) => {
     if (!findings) return;
@@ -163,7 +172,7 @@ export const DocStudioReview: React.FC<{
   ) => {
     const res = await documentStudioOrchestrator.handle({
       intent: 'REVISE_DOCUMENT',
-      documentText: currentPlain(),
+      documentText: currentMarkdown(),
       instruction,
       templateMeta: meta,
       fileName: draft.title,
@@ -506,8 +515,10 @@ export const DocStudioReview: React.FC<{
           </div>
           <pre className="docai-candidate-body">{candidate.text}</pre>
           <p className="docai-hint" style={{ marginTop: 0 }}>
-            Kandidat adalah teks polos hasil AI; menerapkan akan mengganti isi editor (format kaya seperti
-            bold/tabel dari kandidat tidak dipertahankan) setelah isi saat ini disimpan sebagai versi.
+            Kandidat adalah markdown hasil AI; menerapkan mengonversinya menjadi format editor (heading,
+            tebal, daftar, dan tabel dari kandidat diterapkan sebagai format sungguhan) dan mengganti isi
+            editor setelah isi saat ini disimpan sebagai versi. Dokumen dikirim ke AI dalam markdown
+            juga, sehingga struktur yang tidak diubah model dipertahankan.
           </p>
           <div className="docai-btnrow">
             <button className="docai-btn-primary" onClick={() => void applyCandidate()} disabled={candidateBusy}>

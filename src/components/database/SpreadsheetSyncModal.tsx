@@ -46,44 +46,85 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
   const [parsedRows, setParsedRows] = useState<any[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
 
-  // Google Sheets Live Sync State
+  // Google Sheets State — CATATAN KEJUJURAN: integrasi Google Sheets TIDAK
+  // terhubung di aplikasi ini. URL hanya disimpan sebagai preferensi lokal;
+  // tidak ada sinkronisasi yang dijalankan (dulu tombolnya berpura-pura
+  // berhasil lewat setTimeout). Pindah data dilakukan via Ekspor/Impor CSV.
   const [sheetsUrl, setSheetsUrl] = useState(() => {
     try {
-      return localStorage.getItem('ezrab_gsheets_db_url') || 'https://docs.google.com/spreadsheets/d/1ezrab-national-master-2026-price-db/edit';
+      return localStorage.getItem('ezrab_gsheets_db_url') || '';
     } catch {
       return '';
     }
   });
   const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState<string>(() => {
-    try {
-      return localStorage.getItem('ezrab_gsheets_last_sync') || 'Hari ini, 08:30 WIB';
-    } catch {
-      return 'Belum pernah disinkronisasi';
-    }
-  });
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
+  const [lastSyncTime] = useState<string>('Belum pernah disinkronisasi');
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
+  // ---------------------------------------------------------------------------
+  // Ekspor dari dataset yang BENAR-BENAR ditampilkan pengguna (layanan
+  // Material/Labor/Equipment), bukan dataset repository terpisah.
+  // ---------------------------------------------------------------------------
+  const csvCell = (v: unknown): string => {
+    const s = v === null || v === undefined ? '' : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  const buildDisplayedDatasetCsv = (): string => {
+    const header = 'Kode,Nama,Kategori,Subkategori,Spesifikasi,Brand,Unit,Harga Acuan,Wilayah,Sumber,Tanggal Update';
+    const rows: string[] = [header];
+    const push = (cols: unknown[]) => rows.push(cols.map(csvCell).join(','));
+
+    const includeMaterials = exportScope === 'ALL' || activeCategory === 'MATERIALS';
+    const includeLabor = exportScope === 'ALL' || activeCategory === 'LABOR';
+    const includeEquipment = exportScope === 'ALL' || activeCategory === 'EQUIPMENT';
+
+    if (includeMaterials) {
+      const matDb = MaterialDatabaseService.getInstance();
+      for (const m of matDb.getAllMaterials()) {
+        const p = matDb.getPricesByMaterialId(m.id)[0];
+        push([
+          m.materialCode, m.name, 'MATERIAL', m.subcategory || '', m.specification || '',
+          m.brand || '', m.unit, typeof p?.price === 'number' ? p.price : '',
+          p?.region?.province || '', p?.sourceName || '', p?.priceDate || '',
+        ]);
+      }
+    }
+    if (includeLabor) {
+      const laborDb = LaborDatabaseService.getInstance();
+      for (const l of laborDb.getAllLabor()) {
+        push([
+          l.code, l.name, 'LABOR', l.subcategory || '', l.specialization || '',
+          '', l.unit, l.basePriceOH, l.province || l.region || '',
+          l.regulationSource || '', l.effectiveDate || '',
+        ]);
+      }
+    }
+    if (includeEquipment) {
+      const equipDb = EquipmentDatabaseService.getInstance();
+      for (const e of equipDb.getAllEquipment()) {
+        push([
+          e.code, e.name, 'EQUIPMENT', e.subcategory || '', e.specification || '',
+          e.brand || '', e.unit, e.rentalPricePerDay, '',
+          e.provenance?.sourceName || '', e.provenance?.effectiveDate || '',
+        ]);
+      }
+    }
+    return rows.join('\n');
+  };
+
   // Handle Export CSV
   const handleDownloadExport = () => {
-    const repo = PriceRepository.getInstance();
-    let csvData = '';
-
-    if (exportScope === 'CURRENT') {
-      const catFilter =
-        activeCategory === 'LABOR'
-          ? 'LABOR'
-          : activeCategory === 'EQUIPMENT'
-          ? 'EQUIPMENT'
-          : 'MATERIAL';
-      const items = repo.queryPrices({ category: catFilter });
-      csvData = repo.exportToCsv(items);
+    let csvData: string;
+    if (exportScope === 'CURRENT' && activeCategory === 'PROJECT_PRICE') {
+      // Harga proyek hidup di PriceRepository — ekspor dari sana apa adanya.
+      const repo = PriceRepository.getInstance();
+      csvData = repo.exportToCsv(repo.getAll());
     } else {
-      const items = repo.getAll();
-      csvData = repo.exportToCsv(items);
+      csvData = buildDisplayedDatasetCsv();
     }
 
     const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
@@ -100,15 +141,13 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
   };
 
   const handleCopyClipboard = () => {
-    const repo = PriceRepository.getInstance();
-    const catFilter =
-      activeCategory === 'LABOR'
-        ? 'LABOR'
-        : activeCategory === 'EQUIPMENT'
-        ? 'EQUIPMENT'
-        : 'MATERIAL';
-    const items = exportScope === 'CURRENT' ? repo.queryPrices({ category: catFilter }) : repo.getAll();
-    const csvData = repo.exportToCsv(items.slice(0, 100)); // First 100 preview for clipboard
+    const csvData =
+      exportScope === 'CURRENT' && activeCategory === 'PROJECT_PRICE'
+        ? PriceRepository.getInstance().exportToCsv(PriceRepository.getInstance().getAll().slice(0, 100))
+        : buildDisplayedDatasetCsv()
+            .split('\n')
+            .slice(0, 101)
+            .join('\n'); // 100 baris pertama + header untuk clipboard
     navigator.clipboard.writeText(csvData);
     setCopiedClipboard(true);
     setTimeout(() => setCopiedClipboard(false), 2500);
@@ -157,49 +196,136 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
     }
   };
 
-  // Handle Save Imported Items
+  // Handle Save Imported Items — impor masuk ke layanan dataset yang DITAMPILKAN
+  // (Material/Labor/Equipment), sehingga tabel yang dilihat pengguna berubah.
+  // Material tambahan pengguna juga dipersistenkan oleh materialDatabaseService.
   const handleExecuteImport = () => {
-    const repo = PriceRepository.getInstance();
+    const matDb = MaterialDatabaseService.getInstance();
+    const laborDb = LaborDatabaseService.getInstance();
+    const equipDb = EquipmentDatabaseService.getInstance();
     let importedCount = 0;
 
     for (const r of parsedRows) {
-      if (r.price > 0 && r.name) {
-        repo.addCustomPrice({
+      if (!(r.price > 0) || !r.name) continue;
+      const category = r.category === 'LABOR' ? 'LABOR' : r.category === 'EQUIPMENT' ? 'EQUIPMENT' : 'MATERIAL';
+
+      if (category === 'MATERIAL') {
+        const existing = matDb.getAllMaterials().find(
+          (m) => m.materialCode.toUpperCase() === String(r.code).toUpperCase()
+        );
+        const priceRec = {
+          id: `PRC-IMP-${Date.now()}-${importedCount}`,
+          materialId: existing?.id || `MAT-IMP-${Date.now()}-${importedCount}`,
+          materialCode: r.code,
+          regionId: 'REG-NASIONAL',
+          region: { country: 'Indonesia' as const, province: r.location || 'Nasional' },
+          price: r.price,
+          currency: 'IDR' as const,
+          unit: r.unit,
+          priceTier: 'STANDARD' as const,
+          priceType: 'USER_DEFINED' as const,
+          sourceType: 'USER_INPUT' as const,
+          sourceName: 'Import Spreadsheet',
+          taxIncluded: false,
+          taxRate: 0.11,
+          deliveryIncluded: false,
+          confidence: 'LOW' as const,
+          verificationStatus: 'UNVERIFIED' as const,
+          freshness: 'CURRENT' as const,
+          priceDate: new Date().toISOString().split('T')[0],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        if (existing) {
+          matDb.addPriceRecord(priceRec);
+        } else {
+          matDb.addMaterial(
+            {
+              id: priceRec.materialId,
+              materialCode: r.code,
+              name: r.name,
+              category: 'Konstruksi Umum',
+              unit: r.unit,
+              specification: '',
+              active: true,
+              aliases: [],
+            } as any,
+            priceRec as any
+          );
+        }
+        importedCount++;
+      } else if (category === 'LABOR') {
+        // Konvensi domain terdokumentasi: 1 OH = 7 jam kerja; tarif lembur 1,5× tarif jam.
+        const perHour = Math.round(r.price / 7);
+        const res = laborDb.addLabor({
           code: r.code,
           name: r.name,
-          category: r.category === 'LABOR' ? 'LABOR' : r.category === 'EQUIPMENT' ? 'EQUIPMENT' : 'MATERIAL',
-          unit: r.unit,
-          price: r.price,
-          location: r.location,
-          priceSource: 'Import Spreadsheet',
-        });
-        importedCount++;
+          aliases: [],
+          category: 'Tenaga Umum Konstruksi',
+          subcategory: 'Umum',
+          roleCategory: 'Tenaga Umum Konstruksi',
+          skillLevel: 'NON_SKILLED',
+          unit: 'OH',
+          basePriceOH: r.price,
+          basePriceOJ: perHour,
+          workHoursPerDay: 7,
+          overtimeHourlyRate: Math.round(perHour * 1.5),
+          regionalFactor: 1.0,
+          province: r.location || undefined,
+          effectiveDate: new Date().toISOString().split('T')[0],
+          regulationSource: 'Import Spreadsheet (input pengguna)',
+          sourceStatus: 'USER_INPUT',
+          status: 'UNVERIFIED',
+          duties: [],
+          safetyRequirements: [],
+        } as any);
+        if (res.success) importedCount++;
+      } else {
+        const res = equipDb.addEquipment({
+          code: r.code,
+          name: r.name,
+          aliases: [],
+          category: 'GENERAL_TOOLS',
+          subcategory: 'Umum',
+          capacity: '',
+          enginePowerHP: 0,
+          unit: 'hari',
+          ownershipMode: 'RENTED',
+          rentalPricePerHour: 0,
+          rentalPricePerDay: r.price,
+          fuelType: 'MANUAL',
+          fuelConsumptionLiterPerHour: 0,
+          operatorIncluded: false,
+          maintenanceFactor: 0.1,
+          mobDemobEstimate: 0,
+          specification: '',
+          recommendedBrands: [],
+          provenance: {
+            sourceName: 'Import Spreadsheet (input pengguna)',
+            effectiveDate: new Date().toISOString().split('T')[0],
+            confidenceScore: 0,
+          },
+          status: 'UNVERIFIED',
+        } as any);
+        if (res.success) importedCount++;
       }
     }
 
     setImportStatus('SAVED');
     if (onDataImported) onDataImported();
+    return importedCount;
   };
 
-  // Handle Live Google Sheets Sync
+  // Google Sheets: TIDAK ADA sinkronisasi — integrasi belum terhubung.
+  // Tombol hanya menyimpan URL sebagai preferensi dan menjelaskan statusnya.
   const handleSyncGoogleSheets = () => {
-    setIsSyncing(true);
-    setSyncFeedback(null);
+    setIsSyncing(false);
     try {
       localStorage.setItem('ezrab_gsheets_db_url', sheetsUrl);
     } catch {}
-
-    setTimeout(() => {
-      setIsSyncing(false);
-      const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-      const timeStr = `Hari ini, ${now} WIB`;
-      setLastSyncTime(timeStr);
-      try {
-        localStorage.setItem('ezrab_gsheets_last_sync', timeStr);
-      } catch {}
-      setSyncFeedback('✅ Sinkronisasi Berhasil! 4 Sheet (01_MATERIAL, 02_UPAH, 03_ALAT, 04_HARGA_PROYEK) terverifikasi sinkron dengan database lokal.');
-      if (onDataImported) onDataImported();
-    }, 1200);
+    setSyncFeedback(
+      'Belum terhubung: integrasi Google Sheets belum tersedia di aplikasi ini, jadi tidak ada sinkronisasi yang dijalankan. URL di atas hanya disimpan sebagai preferensi. Untuk memindahkan data, gunakan tab Ekspor/Impor CSV.'
+    );
   };
 
   return (
@@ -276,7 +402,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                 </span>
               </div>
               <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: 'var(--ez-color-text-muted)' }}>
-                Ekspor katalog, unggah berkas CSV/Excel, atau tautkan Google Spreadsheet live.
+                Ekspor katalog atau unggah berkas CSV dari dataset yang ditampilkan. Integrasi Google Sheets belum terhubung.
               </p>
             </div>
           </div>
@@ -365,7 +491,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
             }}
           >
             <Link2 size={15} />
-            Google Sheets 2-Way Live
+            Google Sheets (Belum Terhubung)
           </button>
         </div>
 
@@ -410,7 +536,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                       Seluruh Database Master
                     </div>
                     <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
-                      Gabungan Material, Upah Tenaga Kerja, Peralatan, dan Harga Proyek.
+                      Gabungan Material, Upah Tenaga Kerja, dan Peralatan dari database yang ditampilkan.
                     </div>
                   </div>
                 </div>
@@ -546,7 +672,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
               {importStatus === 'SAVED' && (
                 <div style={{ backgroundColor: 'var(--ez-hue-emerald-bg)', border: '1px solid #6EE7B7', color: 'var(--ez-hue-green-text-deep)', padding: '14px', borderRadius: '8px', fontSize: '13.5px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <CheckCircle2 size={18} />
-                  <span>Berhasil mengimpor {parsedRows.length} item ke database! Data kini aktif dan dapat langsung digunakan pada kalkulator RAB.</span>
+                  <span>Impor selesai: baris yang valid tersimpan ke database yang ditampilkan (material tambahan pengguna tersimpan persisten). Baris tanpa harga/nama atau kode duplikat dilewati.</span>
                 </div>
               )}
 
@@ -635,72 +761,50 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                     }}
                   >
                     <RefreshCw size={15} className={isSyncing ? 'animate-spin' : ''} />
-                    {isSyncing ? 'Menyinkronkan...' : 'Sinkronkan Sekarang'}
+                    Simpan URL
                   </button>
                 </div>
               </div>
 
               {syncFeedback && (
-                <div style={{ backgroundColor: 'var(--ez-hue-emerald-bg)', border: '1px solid var(--ez-hue-green-border-deep)', color: 'var(--ez-hue-green-text-deep)', padding: '12px 14px', borderRadius: '8px', fontSize: '12.5px' }}>
+                <div style={{ backgroundColor: 'var(--ez-pastel-cream)', border: '1px solid var(--ez-hue-amber-border)', color: 'var(--ez-hue-amber-text)', padding: '12px 14px', borderRadius: '8px', fontSize: '12.5px' }}>
                   {syncFeedback}
                 </div>
               )}
 
-              {/* Status & Sheet Mapping */}
+              {/* Status Koneksi — JUJUR: belum terhubung, tidak ada sinkronisasi */}
               <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: 'var(--ez-radius-control)', overflow: 'hidden' }}>
                 <div style={{ backgroundColor: 'var(--ez-color-surface-secondary)', padding: '12px 16px', borderBottom: '1px solid var(--ez-color-border-line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Status Koneksi 4 Sheet Master:</span>
-                  <span style={{ fontSize: '12px', color: 'var(--ez-hue-green-text)', fontWeight: 600 }}>Tersinkronisasi ({lastSyncTime})</span>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Status Koneksi:</span>
+                  <span style={{ fontSize: '12px', color: 'var(--ez-hue-amber-text)', fontWeight: 600 }}>Belum terhubung — {lastSyncTime}</span>
                 </div>
-                <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12.5px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ backgroundColor: 'var(--ez-hue-blue-bg-deep)', color: 'var(--ez-hue-blue-text-deep)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '11px' }}>01_MATERIAL</span>
-                      <span style={{ color: 'var(--ez-color-text-body)' }}>Master Bahan Bangunan Nasional & Regional</span>
-                    </div>
-                    <span style={{ color: 'var(--ez-hue-green-text)', fontWeight: 600 }}>6.164 baris ✔</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12.5px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ backgroundColor: 'var(--ez-hue-amber-bg-deep)', color: 'var(--ez-hue-amber-text-dark)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '11px' }}>02_UPAH</span>
-                      <span style={{ color: 'var(--ez-color-text-body)' }}>Standar Upah Tenaga Kerja, Mandor & Sertifikasi SKK</span>
-                    </div>
-                    <span style={{ color: 'var(--ez-hue-green-text)', fontWeight: 600 }}>14 klasifikasi ✔</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12.5px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ backgroundColor: 'var(--ez-hue-indigo-bg)', color: '#3730A3', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '11px' }}>03_ALAT</span>
-                      <span style={{ color: 'var(--ez-color-text-body)' }}>Persewaan Alat Berat, Molen, Crane & Stamper</span>
-                    </div>
-                    <span style={{ color: 'var(--ez-hue-green-text)', fontWeight: 600 }}>16 jenis mesin ✔</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12.5px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ backgroundColor: 'var(--ez-hue-pink-bg)', color: '#9D174D', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, fontSize: '11px' }}>04_HARGA_PROYEK</span>
-                      <span style={{ color: 'var(--ez-color-text-body)' }}>Harga Kesepakatan Khusus Project Override</span>
-                    </div>
-                    <span style={{ color: 'var(--ez-hue-green-text)', fontWeight: 600 }}>Aktif terhubung ✔</span>
-                  </div>
+                <div style={{ padding: '12px 16px', fontSize: '12.5px', color: 'var(--ez-color-text-body)', lineHeight: 1.6 }}>
+                  Aplikasi ini belum memiliki integrasi Google Sheets (tidak ada kredensial/OAuth yang dikonfigurasi), sehingga
+                  sheet <strong>01_MATERIAL</strong>, <strong>02_UPAH</strong>, <strong>03_ALAT</strong>, dan <strong>04_HARGA_PROYEK</strong> tidak
+                  tersinkron dengan database lokal. Gunakan tab <strong>Ekspor</strong> dan <strong>Impor CSV</strong> untuk memindahkan data secara manual.
                 </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12.5px', color: 'var(--ez-color-text-muted)' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'not-allowed', opacity: 0.6 }}>
                   <input
                     type="checkbox"
                     checked={autoSyncEnabled}
                     onChange={(e) => setAutoSyncEnabled(e.target.checked)}
+                    disabled
                   />
-                  <span>Sinkronisasi otomatis di latar belakang saat RAB dibuka</span>
+                  <span>Sinkronisasi otomatis (tidak tersedia — integrasi belum terhubung)</span>
                 </label>
-                <a
-                  href={sheetsUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ color: 'var(--ez-color-primary)', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
-                >
-                  Buka di Google Sheets <ArrowRight size={13} />
-                </a>
+                {sheetsUrl && (
+                  <a
+                    href={sheetsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: 'var(--ez-color-primary)', textDecoration: 'none', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    Buka URL Tersimpan <ArrowRight size={13} />
+                  </a>
+                )}
               </div>
             </div>
           )}

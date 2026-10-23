@@ -388,36 +388,52 @@ export const TemplatePreviewDrawer: React.FC<TemplatePreviewDrawerProps> = ({
             </div>
           )}
 
-          {/* Engine Verification & Traceability Status */}
-          <div
-            style={{
-              background: 'var(--ez-hue-green-bg)',
-              border: '1px solid var(--ez-hue-green-border)',
-              borderRadius: '8px',
-              padding: '10px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontSize: '11.5px'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ez-hue-green-text-deep)' }}>
-              <span style={{ fontWeight: 700 }}>✓ AHSP & Harga:</span>
-              <span>Terpetakan ke Database Resmi PUPR 2026 / Bina Marga</span>
-            </div>
-            <span
-              style={{
-                fontSize: '10px',
-                fontWeight: 700,
-                padding: '2px 6px',
-                borderRadius: '4px',
-                background: 'var(--ez-hue-green-bg-deep)',
-                color: 'var(--ez-hue-green-text)'
-              }}
-            >
-              RESMI
-            </span>
-          </div>
+          {/* Engine Verification & Traceability Status — banner mengikuti
+              kesiapan pemetaan NYATA (mappingReadiness). Badge RESMI hanya
+              bila 100% komponen terverifikasi ke katalog kanonis. */}
+          {(() => {
+            const fullyOfficial =
+              mappingReadiness !== null &&
+              mappingReadiness.totalComponents > 0 &&
+              mappingReadiness.verifiedCodeCount === mappingReadiness.totalComponents;
+            return (
+              <div
+                style={{
+                  background: fullyOfficial ? 'var(--ez-hue-green-bg)' : 'var(--ez-hue-amber-bg)',
+                  border: fullyOfficial ? '1px solid var(--ez-hue-green-border)' : '1px solid var(--ez-hue-amber-border)',
+                  borderRadius: '8px',
+                  padding: '10px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontSize: '11.5px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: fullyOfficial ? 'var(--ez-hue-green-text-deep)' : 'var(--ez-hue-amber-text-dark)' }}>
+                  <span style={{ fontWeight: 700 }}>{fullyOfficial ? '✓ AHSP & Harga:' : 'AHSP & Harga:'}</span>
+                  <span>
+                    {fullyOfficial
+                      ? 'Terpetakan ke Database Resmi PUPR 2026 / Bina Marga'
+                      : mappingReadiness
+                        ? `Pemetaan sebagian — ${mappingReadiness.readinessPercent}% kode terverifikasi (${mappingReadiness.verifiedCodeCount}/${mappingReadiness.totalComponents}); sisanya harga referensi atau belum terpetakan`
+                        : 'Status pemetaan AHSP tidak tersedia untuk template ini'}
+                  </span>
+                </div>
+                <span
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    background: fullyOfficial ? 'var(--ez-hue-green-bg-deep)' : 'var(--ez-hue-amber-bg-deep)',
+                    color: fullyOfficial ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-amber-text-dark)'
+                  }}
+                >
+                  {fullyOfficial ? 'RESMI' : 'SEBAGIAN'}
+                </span>
+              </div>
+            );
+          })()}
 
           {/* Work Packages Breakdown */}
           <div>

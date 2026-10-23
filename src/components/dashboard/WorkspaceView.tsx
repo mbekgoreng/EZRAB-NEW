@@ -150,6 +150,9 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
   const [proyekSubmenuOpen, setProyekSubmenuOpen] = useState(true);
   const [pengaturanSubmenuOpen, setPengaturanSubmenuOpen] = useState(false);
   const [pengaturanActiveTab, setPengaturanActiveTab] = useState<string>('profile');
+  /** Paket yang dipilih user di halaman Subscription (status jujur di tempat,
+   * tanpa navigasi menyesatkan — pembayaran memang belum tersedia). */
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [workspaceSubmenuOpen, setWorkspaceSubmenuOpen] = useState(true);
   const [estimasiSubmenuOpen, setEstimasiSubmenuOpen] = useState(true);
   const [dataMasterLaporanOpen, setDataMasterLaporanOpen] = useState(true);
@@ -737,7 +740,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           </main>
         ) : (activeMenu === 'kurva-s' || activeMenu === 'jadwal') ? (
           <main style={{ padding: '20px 24px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>
-            <ManajemenProyekView projects={projects} />
+            <ManajemenProyekView projects={projects} initialSection={activeMenu === 'jadwal' ? 'jadwal' : 'kurva-s'} />
           </main>
         ) : activeMenu === 'export' ? (
           <main style={{ padding: '20px 24px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>
@@ -753,7 +756,24 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           </main>
         ) : activeMenu === 'subscription' ? (
           <main style={{ padding: isNarrowMobile ? '16px 14px' : '24px 28px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>
-            <PricingSection onSelectPlan={() => setActiveMenu('ezrab-ai')} />
+            {selectedPlanId && (
+              <div
+                role="status"
+                style={{
+                  marginBottom: '16px',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--ez-hue-amber-border, #FDE68A)',
+                  background: 'var(--ez-hue-amber-bg, #FFFBEB)',
+                  color: 'var(--ez-color-text-primary)',
+                  fontSize: '13.5px',
+                  fontWeight: 600,
+                }}
+              >
+                Paket {(({ free: 'Free', basic: 'Basic', pro: 'Pro', enterprise: 'Enterprise' } as Record<string, string>)[selectedPlanId] || selectedPlanId)} dipilih — pembayaran belum tersedia. Paket Anda saat ini: <strong>Gratis</strong>.
+              </div>
+            )}
+            <PricingSection onSelectPlan={(planId) => setSelectedPlanId(planId)} />
           </main>
         ) : activeMenu === 'blog-admin' ? (
           // CMS blog — internal, tidak ada di sidebar. Gate capability di BlogAdminPage.
@@ -884,7 +904,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
 
 
       {/* EZRAB Floating Launcher (Bottom-Right, safe from mobile bottom nav; hidden in AI views per Single-Mascot Rule) */}
-      {activeMenu !== 'magic-ai' && activeMenu !== 'ezrab-ai' && activeMenu !== 'ded-ai' && activeMenu !== 'dokumen-ai' && (
+      {activeMenu !== 'magic-ai' && activeMenu !== 'ai-assistant' && activeMenu !== 'ded-rab' && activeMenu !== 'ezrab-ai' && activeMenu !== 'ded-ai' && activeMenu !== 'dokumen-ai' && (
         <>
           <EzrabCoAssistantLauncher
             isOpen={coAssistantMode !== 'closed' && coAssistantMode !== 'minimized'}

@@ -165,6 +165,8 @@ export const DED_MODE_METADATA: Record<DedProcessingMode, DedModeMetadata> = {
   },
 };
 
+import { getModelTarget } from '../../ai-tools/aiModelRegistry';
+
 function getEnv(name: string, fallback: string): string {
   if (typeof process !== 'undefined' && process.env && process.env[name]) {
     return process.env[name]!;
@@ -173,8 +175,28 @@ function getEnv(name: string, fallback: string): string {
 }
 
 /**
- * Resolves the provider and model IDs for a given mode from environment variables.
+ * Display label derived from the ACTUAL resolved model id, so the label can
+ * never drift from the model the registry picked (incl. env overrides).
+ */
+function labelForModel(model: string): string {
+  if (/deepseek/i.test(model)) return 'DeepSeek V4.1 Flash';
+  if (/flash-lite/i.test(model)) return 'Gemini 3.5 Flash Lite';
+  if (/gemini/i.test(model)) return 'Gemini Flash 3.8';
+  return model;
+}
+
+/**
+ * Resolves the provider and model IDs for a given mode.
  * SERVER-SIDE ONLY - NEVER EXPOSE TO CLIENT BROWSER.
+ *
+ * SINGLE SOURCE OF TRUTH: FAST and DETAIL/ADVANCED delegate to the central
+ * aiModelRegistry (productId DED_AI_FAST / DED_AI_DETAIL). This config used
+ * to re-derive provider/model from its own env logic and DRIFTED from the
+ * registry (it answered gemini/zyrouter labels while the registry routes
+ * DED_AI_FAST to River DeepSeek V4.1 Flash). Env overrides remain possible —
+ * through the registry's own env resolution, not a second copy here.
+ * STANDARD has no registry productId (legacy vleee/Qwen mode) and keeps its
+ * own env-based resolution.
  */
 export function getDedModel(mode: DedProcessingMode): {
   provider: string;
@@ -186,22 +208,16 @@ export function getDedModel(mode: DedProcessingMode): {
 } {
   switch (mode) {
     case 'FAST': {
-      const defaultProvider =
-        getEnv('GEMINI_API_KEY_1', '') || getEnv('GEMINI_API_KEY', '') ? 'gemini' : 'zyrouter';
-      const provider = getEnv('DED_FAST_PROVIDER', defaultProvider);
-
-      const fastModel =
-        getEnv('DED_FAST_MODEL', '') ||
-        getEnv('GEMINI_FAST_MODEL', '') ||
-        getEnv('GEMINI_MODEL_FLASH_LITE', '') ||
-        (provider === 'zyrouter' ? 'geminiflash-3.8' : 'gemini-3.5-flash-lite');
-
+      // Registry: DED_AI_FAST -> river / deepseek-ai/DeepSeek-V4.1-Flash
+      // (env DED_FAST_MODEL|RIVER_MODEL|DEEPSEEK_MODEL may substitute the id,
+      // e.g. the documented gemini-3.5-flash-lite fallback).
+      const target = getModelTarget('DED_AI_FAST');
       return {
-        provider,
-        model: fastModel,
-        modelLabel: provider === 'zyrouter' ? 'Gemini Flash 3.8' : 'Gemini 3.5 Flash Lite',
-        visionModel: fastModel,
-        textModel: fastModel,
+        provider: target.provider,
+        model: target.model,
+        modelLabel: labelForModel(target.model),
+        visionModel: target.model,
+        textModel: target.model,
         reasoningLevel: 'low',
       };
     }
@@ -220,22 +236,16 @@ export function getDedModel(mode: DedProcessingMode): {
     }
     case 'DETAIL':
     case 'ADVANCED': {
-      // ZyRouter expects its own model id `geminiflash-3.8` (see aiProviderRegistry,
-      // provider `zyrouter`). `gemini-3.8-flash` is the NATIVE Google id and would not
-      // resolve on the ZyRouter gateway.
-      const detailModel =
-        getEnv('DED_ADVANCED_MODEL', '') ||
-        getEnv('DED_DETAIL_MODEL', '') ||
-        getEnv('ZYROUTER_MODEL', '') ||
-        getEnv('DED_SCAN_AI_MODEL', '') ||
-        'geminiflash-3.8';
-
+      // Registry: DED_AI_DETAIL -> zyrouter / geminiflash-3.8 (ZyRouter's own
+      // gateway id; the native Google id `gemini-3.8-flash` would not
+      // resolve there).
+      const target = getModelTarget('DED_AI_DETAIL');
       return {
-        provider: 'zyrouter',
-        model: detailModel,
-        modelLabel: 'Gemini Flash 3.8',
-        visionModel: detailModel,
-        textModel: detailModel,
+        provider: target.provider,
+        model: target.model,
+        modelLabel: labelForModel(target.model),
+        visionModel: target.model,
+        textModel: target.model,
         reasoningLevel: 'medium',
       };
     }

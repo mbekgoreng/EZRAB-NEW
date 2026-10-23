@@ -49,7 +49,7 @@ import { aiApiClient } from '../../services/aiApiClient';
 import { coAssistantService, resolveClientWizardStep } from '../../services/coAssistantService';
 import aiLogoAsset from '../../assets/ezrab-co-assistant-logo.jpg';
 import ezrabAvatarImg from '../../assets/ezrab_avatar.png';
-import mascotNewImg from '../../assets/mascot-ezrab-new.png';
+import { EZRABMascotLucu } from '../mascot/EZRABMascotLucu';
 
 // =============================================================================
 // TYPES & DATA STRUCTURES
@@ -1996,15 +1996,12 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                   animation: 'ezrabAiOrbBreathe 5s ease-in-out infinite',
                 }}
               >
-                <img
-                  src={mascotNewImg}
-                  alt="EZRAB AI"
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain',
-                    display: 'block',
-                  }}
+                <EZRABMascotLucu
+                  size={82}
+                  enableEyeTracking={true}
+                  enableFloat={true}
+                  enableBlink={true}
+                  interactive={false}
                 />
               </div>
 
@@ -2300,10 +2297,12 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                             boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
                           }}
                         >
-                          <img
-                            src={mascotNewImg}
-                            alt="EZRAB AI"
-                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                          <EZRABMascotLucu
+                            size={28}
+                            enableEyeTracking={false}
+                            enableFloat={false}
+                            enableBlink={true}
+                            interactive={false}
                           />
                         </div>
 
@@ -2610,7 +2609,13 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
                       marginTop: '2px',
                     }}
                   >
-                    <img src={mascotNewImg} alt="EZRAB AI" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    <EZRABMascotLucu
+                      size={28}
+                      enableEyeTracking={false}
+                      enableFloat={false}
+                      enableBlink={true}
+                      interactive={false}
+                    />
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>

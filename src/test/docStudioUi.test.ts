@@ -110,7 +110,7 @@ async function main(): Promise<void> {
   const back = draftStore.get('draft_studio_1');
   check('versions bertahan', back?.versions?.length === 1 && back.versions[0].origin === 'generate');
   check('contextSnapshot bertahan', back?.contextSnapshot?.length === 2 && back.contextSnapshot[1].verificationStatus === 'missing');
-  check('promptVersion bertahan', back?.promptVersion === 'doc-draft-v2');
+  check('promptVersion bertahan', back?.promptVersion === 'doc-draft-v3');
   check('tersimpan di kunci LS yang sama', mem.has('ezrab_docai_drafts_v1'));
   const legacy: DraftRecord = {
     id: 'draft_legacy_1', templateId: 'bebas', templateName: 'Draf Bebas',
@@ -153,7 +153,7 @@ async function main(): Promise<void> {
     'konteks proyek masuk ke prompt/teks pendukung',
     !!captured && JSON.stringify(captured).includes('Pembangunan Rumah Tinggal 2 Lantai'),
   );
-  check('hasil membawa promptVersion doc-draft-v2', res.promptVersion === 'doc-draft-v2');
+  check('hasil membawa promptVersion doc-draft-v3', res.promptVersion === 'doc-draft-v3');
   check('penanda [ISI:] dilaporkan sebagai missingFields', res.missingFields.some((m) => m.key.startsWith('isi:')));
   const fieldsNoProject = collectProjectContext(project, company, { sources: { project: false, company: true } });
   check('toggle sumber proyek OFF membuang field proyek', !fieldsNoProject.some((f) => f.sourceType === 'project'));

@@ -229,7 +229,8 @@ export type WarningType =
   | 'IDENTICAL_PRICES'      // Multiple different items have identical prices
   | 'LOW_CONFIDENCE'        // Item has low confidence
   | 'MISSING_QUANTITY'      // Quantity is null / unresolved
-  | 'MISSING_PRICE';        // Price is null / unresolved
+  | 'MISSING_PRICE'         // Price is null / unresolved
+  | 'PRICE_STAGE_FAILED';   // F5 (4.5): the whole AI pricing stage failed — result-level warning
 
 export interface AiEstimateWarning {
   type: WarningType;

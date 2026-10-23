@@ -38,6 +38,17 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
     return items.filter((it) => it.code || it.ahspCode || it.ahspSnapshot);
   }, [items]);
 
+  // "Terhubung" yang JUJUR: hanya item yang kodenya benar-benar cocok dengan
+  // AHSP resmi di repository, atau yang membawa snapshot AHSP nyata. Item
+  // berkode WBS sembarang TIDAK dihitung terhubung.
+  const officialMatchCount = useMemo(() => {
+    return projectAhspList.filter((it) => {
+      if (it.ahspSnapshot) return true;
+      const code = it.code || it.ahspCode;
+      return code ? !!officialAhspRepository.getOfficialAhsp(code) : false;
+    }).length;
+  }, [projectAhspList]);
+
   const categories = useMemo(() => {
     const set = new Set<string>();
     items.forEach((it) => {
@@ -73,7 +84,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
             </p>
           </div>
           <div style={{ fontSize: "12.5px", fontWeight: 700, color: "var(--ez-hue-blue-text)", background: "var(--ez-hue-blue-bg)", padding: "6px 12px", borderRadius: "8px", border: "1px solid var(--ez-hue-blue-border)" }}>
-            {projectAhspList.length} Analisa AHSP Terhubung
+            {officialMatchCount} dari {projectAhspList.length} Analisa Cocok AHSP Resmi
           </div>
         </div>
 
@@ -216,7 +227,7 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                       </div>
                       <div style={{ fontSize: "11.5px", color: "#64748B", marginTop: "2px" }}>
                         Kategori: {item.category} • Satuan: <strong>{item.unit || "m²"}</strong> • Sumber:{" "}
-                        {snap?.sourceDocument || "Permen PUPR No. 1/PRT/M/2022"}
+                        {snap?.sourceDocument || (matchOfficial ? "Database AHSP Resmi EZRAB" : "Belum terhubung ke AHSP resmi")}
                       </div>
                     </div>
                   </div>
@@ -324,6 +335,41 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                                     <td style={{ padding: "6px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{m.unitPrice === null || m.unitPrice === undefined ? "—" : m.unitPrice.toLocaleString("id-ID")}</td>
                                     <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: "var(--ez-color-text-primary)", fontVariantNumeric: "tabular-nums" }}>
                                       {formatCurrencyIDR(m.unitPrice === null || m.unitPrice === undefined ? null : (m.coefficient || 0) * m.unitPrice)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+
+                        {/* Equipment Component Table — komponen Alat SUDAH
+                            dihitung (snap/resolver) tetapi dulu tidak pernah
+                            dirender; sekarang ditampilkan seperti Bahan/Upah. */}
+                        {equipments.length > 0 && (
+                          <div>
+                            <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--ez-color-text-strong)", marginBottom: "6px" }}>
+                              C. Peralatan (Alat)
+                            </div>
+                            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+                              <thead>
+                                <tr style={{ background: "var(--ez-color-surface-secondary)", borderBottom: "1px solid var(--ez-color-border-line)", color: "#64748B" }}>
+                                  <th style={{ padding: "6px 8px", textAlign: "left" }}>Uraian Peralatan</th>
+                                  <th style={{ padding: "6px 8px", textAlign: "center", width: "80px" }}>Satuan</th>
+                                  <th style={{ padding: "6px 8px", textAlign: "right", width: "100px" }}>Koefisien</th>
+                                  <th style={{ padding: "6px 8px", textAlign: "right", width: "130px" }}>Harga Satuan (Rp)</th>
+                                  <th style={{ padding: "6px 8px", textAlign: "right", width: "140px" }}>Subtotal (Rp)</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {equipments.map((eq, eqIdx) => (
+                                  <tr key={eqIdx} style={{ borderBottom: "1px solid var(--ez-color-surface-tertiary)" }}>
+                                    <td style={{ padding: "6px 8px", color: "var(--ez-color-text-primary)", fontWeight: 500 }}>{eq.name}</td>
+                                    <td style={{ padding: "6px 8px", textAlign: "center", color: "#64748B" }}>{eq.unit}</td>
+                                    <td style={{ padding: "6px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{formatNumberID(eq.coefficient, 4)}</td>
+                                    <td style={{ padding: "6px 8px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{eq.unitPrice === null || eq.unitPrice === undefined ? "—" : eq.unitPrice.toLocaleString("id-ID")}</td>
+                                    <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 600, color: "var(--ez-color-text-primary)", fontVariantNumeric: "tabular-nums" }}>
+                                      {formatCurrencyIDR(eq.unitPrice === null || eq.unitPrice === undefined ? null : (eq.coefficient || 0) * eq.unitPrice)}
                                     </td>
                                   </tr>
                                 ))}

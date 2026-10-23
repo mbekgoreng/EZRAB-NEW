@@ -15,7 +15,6 @@ import {
   BookOpen,
   Keyboard,
   LifeBuoy,
-  MessageSquare,
   Plus,
   Sun,
   Moon,
@@ -60,6 +59,8 @@ const MENU_SEARCH_INDEX: Array<{ id: string; label: string; keywords: string }> 
   { id: 'ezrab-ai', label: 'Ezrab Chat AI', keywords: 'chat ai asisten' },
   { id: 'ded-ai', label: 'DED Estimate AI', keywords: 'ded estimate gambar ai' },
   { id: 'dokumen-ai', label: 'AI Document', keywords: 'dokumen document ai' },
+  { id: 'dokumen-tender', label: 'Dokumen Tender', keywords: 'dokumen tender proyek lelang berkas' },
+  { id: 'kredit-ai', label: 'Kredit AI', keywords: 'kredit ai saldo token top up' },
   { id: 'template-rab', label: 'Template RAB', keywords: 'template' },
   { id: 'keuangan-proyek', label: 'Keuangan Proyek', keywords: 'keuangan finance kas' },
   { id: 'ahsp-2026', label: 'AHSP 2026', keywords: 'ahsp analisa harga satuan pupr' },
@@ -70,6 +71,8 @@ const MENU_SEARCH_INDEX: Array<{ id: string; label: string; keywords: string }> 
 import { useRole } from '../../auth/RoleContext';
 import { useTheme, type PremiumTheme } from '../../context/ThemeContext';
 import { CreditBalance } from '../../ai-credits/components/CreditBalance';
+import { ONBOARDING_OPEN_EVENT } from '../onboarding/OnboardingTour';
+import { navigateTo } from '../../routing/routes';
 
 interface TopBarProps {
   isMobile: boolean;
@@ -710,10 +713,15 @@ onFocus={(e) => {
 
                 <div style={{ padding: '6px' }}>
                   {[
-                    { label: 'Panduan Penggunaan EZRAB', icon: BookOpen, action: () => { setHelpOpen(false); onNavigate('pengaturan', 'help'); } },
-                    { label: 'Pusat Bantuan & FAQ', icon: LifeBuoy, action: () => { setHelpOpen(false); onNavigate('pengaturan', 'help'); } },
+                    // Panduan → picu ulang tur onboarding (mekanisme event yang
+                    // sama dengan tombol "Ulangi Tutorial" di Pengaturan).
+                    { label: 'Panduan Penggunaan EZRAB', icon: BookOpen, action: () => { setHelpOpen(false); window.dispatchEvent(new CustomEvent(ONBOARDING_OPEN_EVENT)); } },
+                    // FAQ → bagian FAQ nyata di halaman publik /fitur.
+                    { label: 'Pusat Bantuan & FAQ', icon: LifeBuoy, action: () => { setHelpOpen(false); navigateTo('/fitur'); window.setTimeout(() => { document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' }); }, 250); } },
                     { label: 'Shortcut Keyboard (⌘ K)', icon: Keyboard, action: () => { setHelpOpen(false); alert(`${t('nav.shortcut_title')}:\n- ⌘ K / Ctrl+K: ${t('nav.shortcut_search')}\n- Esc: ${t('nav.shortcut_close')}\n- Shift+A: ${t('nav.shortcut_magic_ai')}`); } },
-                    { label: 'Hubungi Support Teknis', icon: MessageSquare, action: () => { setHelpOpen(false); onNavigate('pengaturan', 'help'); } },
+                    // Item dukungan teknis DIHAPUS (F6): tidak ada kanal
+                    // support nyata di konfigurasi — item itu hanya melempar
+                    // ke tab pengaturan yang sama dan menyesatkan.
                   ].map((menuItem) => {
                     const Icon = menuItem.icon;
                     return (
@@ -1203,7 +1211,10 @@ color: 'var(--ez-hue-violet-text)', background: 'var(--ez-hue-violet-bg)',
                   }}
                 >
 <LogOut size={15} color="var(--ez-color-danger-strong)" />
-                  <span>{t('nav.keluar_akun')}</span>
+                  {/* Login dinonaktifkan (AUTH_ENABLED=false): tombol ini tidak
+                      mengakhiri sesi apa pun — ia hanya kembali ke landing.
+                      Label disesuaikan dengan perilaku sebenarnya (F6). */}
+                  <span>{{ id: 'Kembali ke Beranda', en: 'Back to Home', zh: '返回首页', ms: 'Kembali ke Laman Utama' }[lang]}</span>
                 </button>
               </div>
             </div>

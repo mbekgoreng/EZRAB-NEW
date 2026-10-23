@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FileText,
   Save,
@@ -23,12 +23,20 @@ export const EstimatorNotesView: React.FC<EstimatorNotesViewProps> = ({
   items,
   onSaveNotes,
 }) => {
-  const [projectNotes, setProjectNotes] = useState<string>(
-    (currentProject as any)?.notes ||
-      `• Asumsi Mutu Beton Struktur: fc' 20 MPa (K-250) Ready Mix dengan slump 12±2 cm.\n• Rangka Atap: Baja Ringan Kanal C75.075 SNI dengan genteng metal pasir / spandek insulasi.\n• Dinding: Bata Ringan (Hebel) tebal 10 cm dengan mortar instan perekat thinbed dan plesteran 15 mm.\n• Instalasi Elektrikal: Kabel NYM 3x2.5 mm² standar SPLN dengan armature lampu LED downlight dan MCB Box Hager.\n• Plumbing: Pipa PVC tipe AW untuk air bersih dan tipe D untuk air kotor/bekas.`
-  );
+  // Catatan mulai dari isi proyek yang NYATA (atau kosong). Teks spek bawaan
+  // karangan (beton fc'20, baja C75.075, hebel 10 cm, NYM 3×2.5) DIHAPUS —
+  // editor kosong menampilkan placeholder abu-abu, bukan "fakta" proyek.
+  const [projectNotes, setProjectNotes] = useState<string>((currentProject as any)?.notes || "");
 
   const [isSaved, setIsSaved] = useState(false);
+
+  // Sinkronkan editor saat proyek berganti — tanpa ini, menyimpan catatan di
+  // proyek B dapat menimpa dengan isi proyek A yang masih tampil.
+  useEffect(() => {
+    setProjectNotes((currentProject as any)?.notes || "");
+    setIsSaved(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentProject?.id]);
 
   const handleSave = () => {
     onSaveNotes?.(projectNotes);

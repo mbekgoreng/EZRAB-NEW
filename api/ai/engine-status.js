@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     success: true,
     status: anyKeys ? 'ready' : 'no_keys',
     providers: { gemini_keys: gemini, zyrouter, atria_keys: atria, dahl_keys: dahl, gemini_oai_keys: geminiOai, river_keys: river },
-    modes: { chat: 'NVIDIA-Nemotron-3.5 (River)', fast: 'DeepSeek-V4.1-Flash (River)', advanced: 'geminiflash-3.8' },
+    modes: { chat: 'gemini-3.5-flash-lite (Gemini)', fast: 'gemini-3.5-flash-lite (Gemini)', advanced: 'gemini-3.5-flash-lite (Gemini)' },
     time: new Date().toISOString(),
   });
 }

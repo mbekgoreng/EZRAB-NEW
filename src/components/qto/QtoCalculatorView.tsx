@@ -92,9 +92,9 @@ import { WeirCostInput } from '../../engine/weir/weirTypes';
 import { WeirCostSummaryPanel } from '../weir/WeirCostSummaryPanel';
 import { WeirAuditTrailPanel } from '../weir/WeirAuditTrailPanel';
 import { TutorialHelpButton } from '../onboarding/tutorials/TutorialHelpButton';
-// PHASE 1 (audit §16): record every fabricated price. Recording only — no value is changed.
+// Provenance harga: label sumber tiap baris breakdown (MASTER_DB /
+// CALCULATOR_ESTIMATE / UNRESOLVED). Situs fabrikasi QTO sudah dihapus (F1b).
 import {
-  recordFabricatedTotal,
   exposeFabricatedPriceTelemetry,
   type CostPriceSourceKind,
   type CostPriceStatus,
@@ -118,8 +118,9 @@ interface QtoPriceRow {
   uraian: string;
   volume: number;
   satuan: string;
-  hargaSatuan: number;
-  jumlahHarga: number;
+  /** null = tidak ada sumber harga nyata (BUKAN Rp0). */
+  hargaSatuan: number | null;
+  jumlahHarga: number | null;
   isOverridden: boolean;
   priceSource: CostPriceSourceKind;
 }
@@ -625,8 +626,9 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   // Reset Confirmation Modal State
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
 
-  // Price Override State
-  const [priceOverrides] = useState<Record<string, number>>({});
+  // CATATAN: state override harga per item yang lama (useState tanpa setter &
+  // tanpa UI) DIHAPUS — cabangnya mati dan menyesatkan. Harga hanya berasal
+  // dari sumber nyata (MASTER_DB / estimasi kalkulator), selain itu null.
 
   // Mobile / Tablet Active View
   const [mobileStep, setMobileStep] = useState<'dimensi' | 'volume' | 'result'>('dimensi');
@@ -684,6 +686,40 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       setActiveParam(activeSpec.parameters[0]?.id || 'P');
     }
   }, [selectedCalcId, activeSpec, editingQtoId]);
+
+  // Ikuti initialQtoId dari navigasi (mis. tombol Edit di Rekap QTO).
+  useEffect(() => {
+    if (initialQtoId) setEditingQtoId(initialQtoId);
+  }, [initialQtoId]);
+
+  // MUAT parameterSnapshot item yang diedit ke form. Tanpa ini form menampilkan
+  // nilai default kalkulator, dan tombol Update menimpa quantity item lama
+  // dengan hasil perhitungan default (temuan audit).
+  const loadedEditIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!editingQtoId) {
+      loadedEditIdRef.current = null;
+      return;
+    }
+    if (loadedEditIdRef.current === editingQtoId) return;
+    const item = projectQtoItems.find((q) => q.id === editingQtoId);
+    if (!item) return;
+    loadedEditIdRef.current = editingQtoId;
+    if (item.calculatorId && item.calculatorId !== selectedCalcId) {
+      setSelectedCalcId(item.calculatorId);
+    }
+    const spec = getCalculatorById(item.calculatorId || selectedCalcId) || activeSpec;
+    const snap = (item.parameterSnapshot || {}) as Record<string, any>;
+    const loaded: Record<string, number> = {};
+    spec.parameters.forEach((p) => {
+      const raw = snap[p.id];
+      const num = typeof raw === 'number' ? raw : Number(raw);
+      loaded[p.id] = Number.isFinite(num) ? num : p.defaultValue;
+    });
+    setInputs(loaded);
+    setActiveParam(spec.parameters[0]?.id || 'P');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingQtoId, projectQtoItems]);
 
   // Real-time calculation result
   const calculationResult = useMemo(() => {
@@ -763,6 +799,12 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
     if (!currentProjectId) return;
     if (!isCalculationValid) {
       showToast('Parameter perhitungan belum valid.', 'warning');
+      return;
+    }
+    // Tanpa satu pun harga dari sumber nyata, sinkron akan mencatat harga
+    // satuan Rp0 di RAB — batalkan dengan jujur.
+    if (priceBreakdown.grandTotal <= 0) {
+      showToast('Harga belum tersedia dari sumber nyata — sinkron ke RAB dibatalkan agar tidak tercatat Rp0. Simpan ke QTO terlebih dahulu, lalu lengkapi harga komponennya.', 'warning');
       return;
     }
     try {
@@ -973,258 +1015,100 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
     }
   }, [selectedCalcId, inputs, priceContext.location]);
 
-  // Compute live price breakdown (Tenaga Kerja, Bahan, Peralatan)
+  // Compute live price breakdown (Tenaga Kerja, Bahan, Peralatan).
+  // ATURAN F1b: harga HANYA dari sumber nyata — record MASTER_PRICE_ITEMS atau
+  // estimasi yang dideklarasikan kalkulator itu sendiri (CALCULATOR_ESTIMATE).
+  // Rantai tebakan kata-kunci, tarif tebak-peran, dan last-resort Rp50.000
+  // DIHAPUS: tanpa sumber → harga null berlabel UNRESOLVED (bukan angka tebak).
   const priceBreakdown = useMemo(() => {
     // 1. Tenaga Kerja
     const laborRows: QtoPriceRow[] = calculationResult.labor.map((l) => {
-      let defaultRate = 0;
       const match = MASTER_PRICE_ITEMS.find(p => p.category === 'LABOR' && p.name.toLowerCase().includes(l.role.toLowerCase()));
-      if (match) {
-        defaultRate = match.price;
-      } else {
-        defaultRate = l.rateEstimate || (l.role.includes('Pekerja') ? 100000 : l.role.includes('Tukang') ? 145000 : l.role.includes('Kepala') ? 175000 : 200000);
-        if (!l.rateEstimate) {
-          // PHASE 1 telemetry: the upah was guessed from the role name, not resolved from a price source.
-          recordFabricatedTotal(
-            'qto.labor.role-default',
-            SafeDecimalEngine.safeMultiply(l.hoursOrDays, defaultRate),
-            {
-              constant: defaultRate,
-              unit: l.unit || 'OH',
-              itemName: l.role,
-              calculatorId: selectedCalcId,
-              calculatorTitle: activeSpec.title,
-            },
-          );
-        }
-      }
-      const unitRate = priceOverrides[`labor_${l.role}`] ?? defaultRate;
-      const totalCost = SafeDecimalEngine.safeMultiply(l.hoursOrDays, unitRate);
-      // PHASE 1 step 1.1: provenance marker only. `unitRate` itself is unchanged.
-      const laborPriceSource: CostPriceSourceKind =
-        priceOverrides[`labor_${l.role}`] !== undefined ? 'OVERRIDE'
-          : match ? 'MASTER_DB'
-            : l.rateEstimate ? 'CALCULATOR_ESTIMATE'
-              : 'FABRICATED';
+      const unitRate: number | null = match
+        ? match.price
+        : l.rateEstimate && l.rateEstimate > 0
+          ? l.rateEstimate
+          : null;
+      const laborPriceSource: CostPriceSourceKind = match
+        ? 'MASTER_DB'
+        : unitRate != null
+          ? 'CALCULATOR_ESTIMATE'
+          : 'UNRESOLVED';
       return {
         key: `labor_${l.role}`,
         uraian: l.role,
         volume: l.hoursOrDays,
         satuan: l.unit || 'OH',
         hargaSatuan: unitRate,
-        jumlahHarga: totalCost,
-        isOverridden: priceOverrides[`labor_${l.role}`] !== undefined,
+        jumlahHarga: unitRate == null ? null : SafeDecimalEngine.safeMultiply(l.hoursOrDays, unitRate),
+        isOverridden: false,
         priceSource: laborPriceSource,
       };
     });
-    const subtotalLabor = laborRows.reduce((acc, row) => acc + row.jumlahHarga, 0);
+    const subtotalLabor = laborRows.reduce((acc, row) => acc + (row.jumlahHarga ?? 0), 0);
 
     // 2. Bahan
     const materialRows: QtoPriceRow[] = calculationResult.materials.map((m) => {
-      let defaultPrice = 0;
-      // PHASE 1 telemetry: which fabricated branch (if any) supplied this price.
-      let fabricatedSiteId: string | null = null;
-      let match = null;
-
-      if (m.unitPriceEstimate && m.unitPriceEstimate > 0) {
-        defaultPrice = m.unitPriceEstimate;
-      } else {
-        match = MASTER_PRICE_ITEMS.find(p => p.category === 'MATERIAL' && (p.name.toLowerCase().includes(m.name.toLowerCase()) || m.name.toLowerCase().includes(p.name.toLowerCase())));
-        if (match) {
-          defaultPrice = match.price;
-        } else {
-          if (m.name.includes('Besi')) { defaultPrice = 14500; fabricatedSiteId = 'qto.material.keyword-branch'; }
-          else if (m.name.includes('Kawat')) { defaultPrice = 28000; fabricatedSiteId = 'qto.material.keyword-branch'; }
-          else if (m.name.includes('Kayu papan')) { defaultPrice = 3200000; fabricatedSiteId = 'qto.material.keyword-branch'; }
-          else if (m.name.includes('Paku')) { defaultPrice = 22000; fabricatedSiteId = 'qto.material.keyword-branch'; }
-          else if (m.name.includes('Minyak')) { defaultPrice = 18000; fabricatedSiteId = 'qto.material.keyword-branch'; }
-          else if (m.name.includes('Semen')) { defaultPrice = 72000; fabricatedSiteId = 'qto.material.keyword-branch'; }
-          else if (m.name.includes('Pasir beton') || m.name.includes('Pasir pasang')) { defaultPrice = 320000; fabricatedSiteId = 'qto.material.keyword-branch'; }
-          else if (m.name.includes('Batu split')) { defaultPrice = 360000; fabricatedSiteId = 'qto.material.keyword-branch'; }
-          else if (m.name.includes('Air')) { defaultPrice = 120; fabricatedSiteId = 'qto.material.keyword-branch'; }
-          else if (m.name.includes('Bata Ringan')) { defaultPrice = 750000; fabricatedSiteId = 'qto.material.keyword-branch'; }
-          else if (m.name.includes('Batu Belah')) { defaultPrice = 295000; fabricatedSiteId = 'qto.material.keyword-branch'; }
-          // Civil & Infrastructure keywords (SDA SE DJBK No. 47 / Bina Marga 2026)
-          else if (m.name.includes('Pintu') && (m.name.includes('Baja') || m.name.includes('Penguras') || m.name.includes('Bilas') || m.name.includes('Air'))) {
-            defaultPrice = 38500000; // Standar Lampiran IV SE DJBK No. 47 Tahun 2026 (SDA-MASTER-1396)
-          }
-          else if (m.name.includes('Girder')) { defaultPrice = 45000000; }
-          else if (m.name.includes('Sheet Pile') || m.name.includes('CCSP')) { defaultPrice = 2850000; }
-          else if (m.name.includes('Bearing Pad')) { defaultPrice = 2500000; }
-          else if (m.name.includes('Expansion Joint')) { defaultPrice = 1850000; }
-          else if (m.name.includes('U-Ditch')) { defaultPrice = 850000; }
-          else if (m.name.includes('Box Culvert')) { defaultPrice = 2200000; }
-          else if (m.name.includes('Bronjong')) { defaultPrice = 185000; }
-          else if (m.name.includes('Pasangan Batu') || m.name.includes('Batu Kali')) { defaultPrice = 850000; }
-          else if (m.name.includes('Beton') && (m.name.includes('K-350') || m.name.includes('fc 30') || m.name.includes('30 MPa'))) { defaultPrice = 1450000; }
-          else if (m.name.includes('Beton') && m.name.includes('K-300')) { defaultPrice = 1350000; }
-          else if (m.name.includes('Beton') && m.name.includes('K-250')) { defaultPrice = 1250000; }
-          else if (m.name.includes('Beton') && (m.name.includes('K-225') || m.name.includes('Siklop'))) { defaultPrice = 1150000; }
-          else if (m.name.includes('Bekisting')) { defaultPrice = 185000; }
-          else if (m.name.includes('Timbunan') || m.name.includes('Urug')) { defaultPrice = 125000; }
-          else if (m.name.includes('Galian') || m.name.includes('Dredging')) { defaultPrice = 85000; }
-          else if (m.name.includes('Tiang Pancang') || m.name.includes('Bored Pile')) { defaultPrice = 1200000; }
-          else if (m.name.includes('Pipa') || m.name.includes('Pipe')) { defaultPrice = 450000; }
-          else if (m.name.includes('Geomembran')) { defaultPrice = 85000; }
-          else if (m.name.includes('Waterproofing')) { defaultPrice = 95000; }
-          else if (m.name.includes('Riprap') || m.name.includes('Armor')) { defaultPrice = 380000; }
-          else if (m.name.includes('Manhole')) { defaultPrice = 1250000; }
-          else if (m.name.includes('Cover Plat') || m.name.includes('Cover Manhole')) { defaultPrice = 350000; }
-          else if (m.name.includes('Plesteran') || m.name.includes('Siar')) { defaultPrice = 48000; }
-          else if (m.name.includes('Tangki')) { defaultPrice = 15000000; }
-          else { defaultPrice = 50000; fabricatedSiteId = 'qto.material.last-resort'; }
-        }
-      }
-
-      const unitPrice = priceOverrides[`mat_${m.name}`] ?? defaultPrice;
-      if (fabricatedSiteId && priceOverrides[`mat_${m.name}`] === undefined) {
-        // PHASE 1 telemetry: price came from a hardcoded constant, not from a price source.
-        recordFabricatedTotal(
-          fabricatedSiteId,
-          SafeDecimalEngine.safeMultiply(m.quantity, unitPrice),
-          {
-            constant: unitPrice,
-            quantity: m.quantity,
-            unit: m.unit,
-            itemName: m.name,
-            calculatorId: selectedCalcId,
-            calculatorTitle: activeSpec.title,
-          },
-        );
-      }
-      const totalCost = SafeDecimalEngine.safeMultiply(m.quantity, unitPrice);
-      // PHASE 1 step 1.1: provenance marker only. `unitPrice` itself is unchanged.
+      const match =
+        m.unitPriceEstimate && m.unitPriceEstimate > 0
+          ? null
+          : MASTER_PRICE_ITEMS.find(p => p.category === 'MATERIAL' && (p.name.toLowerCase().includes(m.name.toLowerCase()) || m.name.toLowerCase().includes(p.name.toLowerCase())));
+      const unitPrice: number | null =
+        m.unitPriceEstimate && m.unitPriceEstimate > 0 ? m.unitPriceEstimate : match ? match.price : null;
       const materialPriceSource: CostPriceSourceKind =
-        priceOverrides[`mat_${m.name}`] !== undefined ? 'OVERRIDE'
-          : m.unitPriceEstimate ? 'CALCULATOR_ESTIMATE'
-            : match ? 'MASTER_DB'
-              : fabricatedSiteId ? 'FABRICATED'
-                : 'CALCULATOR_ESTIMATE';
+        m.unitPriceEstimate && m.unitPriceEstimate > 0
+          ? 'CALCULATOR_ESTIMATE'
+          : match
+            ? 'MASTER_DB'
+            : 'UNRESOLVED';
       return {
         key: `mat_${m.name}`,
         uraian: m.name,
         volume: m.quantity,
         satuan: m.unit,
         hargaSatuan: unitPrice,
-        jumlahHarga: totalCost,
-        isOverridden: priceOverrides[`mat_${m.name}`] !== undefined,
+        jumlahHarga: unitPrice == null ? null : SafeDecimalEngine.safeMultiply(m.quantity, unitPrice),
+        isOverridden: false,
         priceSource: materialPriceSource,
       };
     });
-    const subtotalMaterials = materialRows.reduce((acc, row) => acc + row.jumlahHarga, 0);
+    const subtotalMaterials = materialRows.reduce((acc, row) => acc + (row.jumlahHarga ?? 0), 0);
 
-    // 3. Peralatan
-    const hasDeclaredEquipment = Array.isArray(calculationResult.equipment) && calculationResult.equipment.length > 0;
-    if (!hasDeclaredEquipment) {
-      // PHASE 1 telemetry: an empty equipment list is silently replaced by one paid line item.
-      recordFabricatedTotal('qto.equipment.implicit-default', 45000, {
-        constant: 45000,
-        quantity: 1,
-        unit: 'ls',
-        itemName: 'Alat Bantu Konstruksi & Pengadukan',
-        calculatorId: selectedCalcId,
-        calculatorTitle: activeSpec.title,
-      });
-    }
-    const equipmentRows: QtoPriceRow[] = (calculationResult.equipment || [
-      { name: 'Alat Bantu Konstruksi & Pengadukan', quantity: 1, unit: 'ls', unitPriceEstimate: 45000 },
-    ]).map((eq) => {
-      let defaultPrice = 0;
+    // 3. Peralatan — hanya alat yang benar-benar dideklarasikan kalkulator;
+    // baris "Alat Bantu" implisit Rp45.000 DIHAPUS.
+    const equipmentRows: QtoPriceRow[] = (calculationResult.equipment || []).map((eq) => {
       const match = MASTER_PRICE_ITEMS.find(p => p.category === 'EQUIPMENT' && p.name.toLowerCase().includes(eq.name.toLowerCase()));
-      if (match) {
-        defaultPrice = match.price;
-      } else {
-        defaultPrice = eq.unitPriceEstimate || 45000;
-        if (!eq.unitPriceEstimate && priceOverrides[`eq_${eq.name}`] === undefined) {
-          recordFabricatedTotal(
-            'qto.equipment.last-resort',
-            SafeDecimalEngine.safeMultiply(eq.quantity, defaultPrice),
-            {
-              constant: defaultPrice,
-              quantity: eq.quantity,
-              unit: eq.unit,
-              itemName: eq.name,
-              calculatorId: selectedCalcId,
-              calculatorTitle: activeSpec.title,
-            },
-          );
-        }
-      }
-      const unitPrice = priceOverrides[`eq_${eq.name}`] ?? defaultPrice;
-      const totalCost = SafeDecimalEngine.safeMultiply(eq.quantity, unitPrice);
-      // PHASE 1 step 1.1: provenance marker only. `unitPrice` itself is unchanged.
-      const equipmentPriceSource: CostPriceSourceKind =
-        priceOverrides[`eq_${eq.name}`] !== undefined ? 'OVERRIDE'
-          : match ? 'MASTER_DB'
-            : !hasDeclaredEquipment ? 'FABRICATED'
-              : eq.unitPriceEstimate ? 'CALCULATOR_ESTIMATE'
-                : 'FABRICATED';
+      const unitPrice: number | null = match
+        ? match.price
+        : eq.unitPriceEstimate && eq.unitPriceEstimate > 0
+          ? eq.unitPriceEstimate
+          : null;
+      const equipmentPriceSource: CostPriceSourceKind = match
+        ? 'MASTER_DB'
+        : unitPrice != null
+          ? 'CALCULATOR_ESTIMATE'
+          : 'UNRESOLVED';
       return {
         key: `eq_${eq.name}`,
         uraian: eq.name,
         volume: eq.quantity,
         satuan: eq.unit,
         hargaSatuan: unitPrice,
-        jumlahHarga: totalCost,
-        isOverridden: priceOverrides[`eq_${eq.name}`] !== undefined,
+        jumlahHarga: unitPrice == null ? null : SafeDecimalEngine.safeMultiply(eq.quantity, unitPrice),
+        isOverridden: false,
         priceSource: equipmentPriceSource,
       };
     });
-    const subtotalEquipment = equipmentRows.reduce((acc, row) => acc + row.jumlahHarga, 0);
+    const subtotalEquipment = equipmentRows.reduce((acc, row) => acc + (row.jumlahHarga ?? 0), 0);
 
-    let finalLaborRows = [...laborRows];
-    let finalSubtotalLabor = subtotalLabor;
-    let finalGrandTotal = subtotalLabor + subtotalMaterials + subtotalEquipment;
+    const finalLaborRows = [...laborRows];
+    const finalSubtotalLabor = subtotalLabor;
+    // Total = jumlah baris yang BENAR-BENAR berharga saja. Fallback "borongan"
+    // dari kata-kunci judul kalkulator DIHAPUS — total 0 di sini berarti
+    // "belum ada harga", dan UI menampilkannya sebagai belum tersedia.
+    const finalGrandTotal = subtotalLabor + subtotalMaterials + subtotalEquipment;
 
-    if (finalGrandTotal === 0 && calculationResult.primaryQuantity > 0) {
-      const calcName = (activeSpec.title || '').toLowerCase();
-      let fallbackUnitPrice = 150000;
-      
-      if (calcName.includes('galian') || calcName.includes('cut')) fallbackUnitPrice = 85000;
-      else if (calcName.includes('urugan') || calcName.includes('fill')) fallbackUnitPrice = 120000;
-      else if (calcName.includes('beton') || calcName.includes('cor') || calcName.includes('lantai kerja')) fallbackUnitPrice = 1200000;
-      else if (calcName.includes('besi') || calcName.includes('tulangan')) fallbackUnitPrice = 18000;
-      else if (calcName.includes('bekisting')) fallbackUnitPrice = 175000;
-      else if (calcName.includes('pondasi') || calcName.includes('pasangan') || calcName.includes('bata')) fallbackUnitPrice = 145000;
-      else if (calcName.includes('plesteran') || calcName.includes('acian')) fallbackUnitPrice = 65000;
-      else if (calcName.includes('atap') || calcName.includes('baja')) fallbackUnitPrice = 250000;
-      else if (calcName.includes('plafond') || calcName.includes('plafon')) fallbackUnitPrice = 135000;
-      else if (calcName.includes('keramik') || calcName.includes('lantai')) fallbackUnitPrice = 220000;
-      else if (calcName.includes('pengecatan') || calcName.includes('cat')) fallbackUnitPrice = 45000;
-      else if (calcName.includes('pintu') || calcName.includes('jendela')) fallbackUnitPrice = 3500000;
-      else if (calcName.includes('sanitasi') || calcName.includes('pipa') || calcName.includes('drainase')) fallbackUnitPrice = 250000;
-      else if (calcName.includes('listrik') || calcName.includes('kabel')) fallbackUnitPrice = 350000;
-      else if (calcName.includes('jalan') || calcName.includes('paving')) fallbackUnitPrice = 185000;
-
-      const totalCost = SafeDecimalEngine.safeMultiply(calculationResult.primaryQuantity, fallbackUnitPrice);
-
-      // PHASE 1 telemetry: the unit price was chosen from a keyword in the calculator TITLE.
-      recordFabricatedTotal('qto.borongan.title-keyword', totalCost, {
-        constant: fallbackUnitPrice,
-        quantity: calculationResult.primaryQuantity,
-        unit: calculationResult.primaryUnit,
-        itemName: activeSpec.title || '',
-        calculatorId: selectedCalcId,
-        calculatorTitle: activeSpec.title,
-      });
-
-      finalLaborRows = [{
-        key: 'borongan_ahsp',
-        uraian: `Borongan ${activeSpec.title || ''} (Estimasi AHSP)`,
-        volume: calculationResult.primaryQuantity,
-        satuan: calculationResult.primaryUnit,
-        hargaSatuan: fallbackUnitPrice,
-        jumlahHarga: totalCost,
-        isOverridden: false,
-        priceSource: 'FABRICATED' as CostPriceSourceKind,
-      }];
-      finalSubtotalLabor = totalCost;
-      finalGrandTotal = totalCost;
-    }
-
-    // PHASE 1 step 1.1: expose completeness without altering any number.
-    // This is what lets the UI say "REFERENCE ESTIMATE" instead of silently showing a total.
-    type PricedRow = { hargaSatuan?: number; priceSource?: CostPriceSourceKind };
+    type PricedRow = { hargaSatuan?: number | null; priceSource?: CostPriceSourceKind };
     const allDisplayedRows: PricedRow[] = [
       ...(finalLaborRows as PricedRow[]),
       ...(materialRows as PricedRow[]),
@@ -1232,10 +1116,10 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
     ];
     const fabricatedRowCount = allDisplayedRows.filter((r) => r.priceSource === 'FABRICATED').length;
     const estimatedRowCount = allDisplayedRows.filter((r) => r.priceSource === 'CALCULATOR_ESTIMATE').length;
-    const unresolvedRowCount = allDisplayedRows.filter((r) => !r.hargaSatuan || r.hargaSatuan <= 0).length;
+    const unresolvedRowCount = allDisplayedRows.filter((r) => r.hargaSatuan == null).length;
     const priceStatus: CostPriceStatus =
       unresolvedRowCount > 0 ? 'INCOMPLETE'
-        : fabricatedRowCount > 0 || estimatedRowCount > 0 ? 'REFERENCE_ESTIMATE'
+        : estimatedRowCount > 0 ? 'REFERENCE_ESTIMATE'
           : 'RESOLVED';
 
     return {
@@ -1251,7 +1135,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       estimatedRowCount,
       unresolvedRowCount,
     };
-  }, [calculationResult, priceOverrides, activeSpec, selectedCalcId]);
+  }, [calculationResult, activeSpec, selectedCalcId]);
 
   // Export to Excel / CSV
   const handleExportExcel = () => {
@@ -1271,11 +1155,11 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
       [''],
       ['4.3 RESULT & REKAPITULASI BIAYA (AHSP S.E. BINA KONSTRUKSI 2025/2026)'],
       ['Kategori', 'Uraian', 'Volume', 'Satuan', 'Harga Satuan (Rp)', 'Jumlah Harga (Rp)'],
-      ...priceBreakdown.laborRows.map((r) => ['TENAGA KERJA', r.uraian, r.volume, r.satuan, r.hargaSatuan, r.jumlahHarga]),
+      ...priceBreakdown.laborRows.map((r) => ['TENAGA KERJA', r.uraian, r.volume, r.satuan, r.hargaSatuan ?? '', r.jumlahHarga ?? '']),
       ['', 'SUBTOTAL TENAGA KERJA', '', '', '', priceBreakdown.subtotalLabor],
-      ...priceBreakdown.materialRows.map((r) => ['BAHAN', r.uraian, r.volume, r.satuan, r.hargaSatuan, r.jumlahHarga]),
+      ...priceBreakdown.materialRows.map((r) => ['BAHAN', r.uraian, r.volume, r.satuan, r.hargaSatuan ?? '', r.jumlahHarga ?? '']),
       ['', 'SUBTOTAL BAHAN', '', '', '', priceBreakdown.subtotalMaterials],
-      ...priceBreakdown.equipmentRows.map((r) => ['PERALATAN', r.uraian, r.volume, r.satuan, r.hargaSatuan, r.jumlahHarga]),
+      ...priceBreakdown.equipmentRows.map((r) => ['PERALATAN', r.uraian, r.volume, r.satuan, r.hargaSatuan ?? '', r.jumlahHarga ?? '']),
       ['', 'SUBTOTAL PERALATAN', '', '', '', priceBreakdown.subtotalEquipment],
       ['', 'TOTAL BIAYA PEKERJAAN', '', '', '', priceBreakdown.grandTotal],
     ];
@@ -2911,8 +2795,17 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                       : 'Estimasi Biaya Referensi (Bina Konstruksi)'}
                   </div>
                   <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--ez-color-text-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif", marginTop: '2px' }}>
-                    {formatRupiah(scopeCost.hasMapping && scopeCost.summary?.grandTotal ? scopeCost.summary.grandTotal : priceBreakdown.grandTotal)}
+                    {scopeCost.hasMapping && scopeCost.summary?.grandTotal
+                      ? formatRupiah(scopeCost.summary.grandTotal)
+                      : priceBreakdown.grandTotal > 0
+                        ? formatRupiah(priceBreakdown.grandTotal)
+                        : 'Belum tersedia'}
                   </div>
+                  {!(scopeCost.hasMapping && scopeCost.status === 'RESOLVED') && priceBreakdown.unresolvedRowCount > 0 && (
+                    <div style={{ fontSize: '10.5px', color: 'var(--ez-hue-amber-text-dark)', marginTop: '2px', maxWidth: '260px', lineHeight: 1.4 }}>
+                      {priceBreakdown.unresolvedRowCount} komponen belum memiliki harga dari sumber nyata — total bersifat parsial (referensi tak lengkap), bukan Rp0.
+                    </div>
+                  )}
                 </div>
                 <span
                   style={{

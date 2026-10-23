@@ -1,8 +1,10 @@
 /**
  * EZRAB Price Assumption Store
  * ==============================
- * In-memory store for price assumptions with full audit trail.
- * Persist to Supabase in production (see migration notes below).
+ * Store for price assumptions with full audit trail.
+ * Data DIPERSISTENKAN ke localStorage (kunci ezrab_price_assumptions_v1)
+ * agar tidak hilang saat reload; sebelumnya store ini murni in-memory.
+ * (Sinkronisasi Supabase tetap pekerjaan produksi terpisah.)
  *
  * Rules:
  * - A user cannot approve their own assumption (enforced in approve()).
@@ -37,8 +39,43 @@ const TRANSITIONS: Record<AssumptionStatus, AssumptionStatus[]> = {
   DISABLED: ['DRAFT'],
 };
 
+const ASSUMPTION_STORAGE_KEY = 'ezrab_price_assumptions_v1';
+
 export class AssumptionStore {
   private items = new Map<string, PriceAssumption>();
+
+  constructor() {
+    this.loadPersisted();
+  }
+
+  /** Muat asumsi dari localStorage (aman di lingkungan tanpa localStorage). */
+  private loadPersisted(): void {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      const raw = localStorage.getItem(ASSUMPTION_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as PriceAssumption[];
+      if (!Array.isArray(parsed)) return;
+      for (const item of parsed) {
+        if (item && item.id) this.items.set(item.id, item);
+      }
+    } catch {
+      /* data rusak → mulai kosong, jangan crash */
+    }
+  }
+
+  /** Simpan asumsi ke localStorage setelah setiap mutasi. */
+  private persist(): void {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      localStorage.setItem(
+        ASSUMPTION_STORAGE_KEY,
+        JSON.stringify([...this.items.values()])
+      );
+    } catch {
+      /* kuota penuh dll → abaikan, data tetap hidup in-memory sesi ini */
+    }
+  }
 
   create(input: CreateAssumptionInput, createdBy: string): PriceAssumption {
     if (!input.resourceCode?.trim()) throw new Error('resourceCode required');
@@ -86,6 +123,7 @@ export class AssumptionStore {
       notes: input.notes?.trim() || null,
     };
     this.items.set(item.id, item);
+    this.persist();
     return item;
   }
 
@@ -160,6 +198,7 @@ export class AssumptionStore {
       previousStatus: prev,
       newStatus: to,
     });
+    this.persist();
     return item;
   }
 
@@ -228,6 +267,7 @@ export class AssumptionStore {
 
   clear(): void {
     this.items.clear();
+    this.persist();
   }
 
   size(): number {

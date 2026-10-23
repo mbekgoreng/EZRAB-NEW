@@ -46,6 +46,75 @@ export interface SmartAddWorkItemModalProps {
 
 const COMMON_UNITS = ['m¹', 'm²', 'm³', 'kg', 'unit', 'bh', 'ls', 'ttk', 'set', 'btg', 'zak'];
 
+// ============================================================================
+// F5 (4.6): AI suggestion state + save gate.
+// Previously a volume missing from the model output was silently replaced
+// with 1, and a null unitPrice was multiplied into amount = 0 and saved
+// without any explicit user decision. Now: missing volume = null (blocks
+// saving until the user fills it); null price = allowed ONLY after an
+// explicit confirmation, and its amount stays null (never 0).
+// ============================================================================
+
+export interface AiGeneratedItemState {
+  code: string;
+  description: string;
+  category: string;
+  /** null = AI did not determine a volume — user must fill it before saving. */
+  volume: number | null;
+  unit: string;
+  /** null = AI has no price — requires explicit confirmation to save. */
+  unitPrice: number | null;
+  notes: string;
+}
+
+export function mapAiGeneratedItem(
+  parsed: any,
+  opts: { fallbackDescription: string; category: string; code: string }
+): AiGeneratedItemState {
+  return {
+    code: opts.code,
+    description: parsed?.description || opts.fallbackDescription,
+    category: parsed?.category || opts.category,
+    volume:
+      typeof parsed?.volume === 'number' && Number.isFinite(parsed.volume) && parsed.volume > 0
+        ? parsed.volume
+        : null,
+    unit: parsed?.unit || 'm²',
+    unitPrice:
+      typeof parsed?.unitPrice === 'number' && Number.isFinite(parsed.unitPrice)
+        ? parsed.unitPrice
+        : null,
+    notes: parsed?.notes || 'Dianalisis oleh EZRAB AI.',
+  };
+}
+
+export type AiItemSaveGate =
+  | { ok: true }
+  | { ok: false; reason: 'VOLUME_MISSING' | 'PRICE_NEEDS_CONFIRMATION'; message: string };
+
+export function aiItemSaveGate(
+  item: AiGeneratedItemState,
+  nullPriceConfirmed: boolean
+): AiItemSaveGate {
+  if (item.volume === null) {
+    return {
+      ok: false,
+      reason: 'VOLUME_MISSING',
+      message:
+        'Volume belum ditentukan oleh AI — isi volume terlebih dahulu sebelum menambahkan item.',
+    };
+  }
+  if (item.unitPrice === null && !nullPriceConfirmed) {
+    return {
+      ok: false,
+      reason: 'PRICE_NEEDS_CONFIRMATION',
+      message:
+        'Harga belum ada — item akan ditandai Perlu Verifikasi. Centang konfirmasi harga kosong untuk melanjutkan.',
+    };
+  }
+  return { ok: true };
+}
+
 export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
   isOpen,
   onClose,
@@ -87,16 +156,11 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
   // AI State
   const [aiPrompt, setAiPrompt] = useState<string>('');
   const [aiIsGenerating, setAiIsGenerating] = useState<boolean>(false);
-  const [aiGeneratedItem, setAiGeneratedItem] = useState<{
-    code: string;
-    description: string;
-    category: string;
-    volume: number;
-    unit: string;
-    unitPrice: number;
-    notes: string;
-  } | null>(null);
+  const [aiGeneratedItem, setAiGeneratedItem] = useState<AiGeneratedItemState | null>(null);
   const [aiIsEditingPreview, setAiIsEditingPreview] = useState<boolean>(false);
+  // F5 (4.6): explicit user confirmation before saving an item whose price
+  // is still missing (null) — saving must never be silent.
+  const [aiNullPriceConfirmed, setAiNullPriceConfirmed] = useState<boolean>(false);
 
   // Template State
   const allTemplates = useMemo(() => {
@@ -354,21 +418,21 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
     setAiIsGenerating(true);
 
     try {
-      const { AiToolsProviderClient } = await import('../../ai-tools/providerClient');
+      const { AiToolsProviderClient, scanLongestParseableJson } = await import('../../ai-tools/providerClient');
       const client = new AiToolsProviderClient();
 
       const systemPrompt = `Anda adalah estimator konstruksi Indonesia. Analisis permintaan pekerjaan dan kembalikan JSON:
 {
   "description": "nama pekerjaan lengkap",
   "category": "kategori pekerjaan",
-  "volume": number,
+  "volume": number|null,
   "unit": "m2|m3|kg|titik|ls|bh",
   "unitPrice": number|null,
   "notes": "catatan spesifikasi"
 }
-Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga.`;
+Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga. Jika volume tidak dapat ditentukan dari permintaan, volume = null. Jangan mengarang volume.`;
 
-      const result = await client.execute({
+      const result = await client.execute<Record<string, unknown>>({
         productId: 'EZRAB_AI',
         prompt: aiPrompt.trim(),
         systemPrompt,
@@ -381,23 +445,24 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga.`;
         throw new Error(result.message || 'AI tidak dapat memproses permintaan.');
       }
 
-      let parsed: any = null;
-      try {
-        const jsonMatch = result.content.match(/\{[\s\S]*\}/);
-        parsed = JSON.parse(jsonMatch ? jsonMatch[0] : result.content);
-      } catch {
+      // F5 (4.6): prefer the client's structured parse; fall back to its
+      // balanced JSON scanner instead of the old greedy /\{[\s\S]*\}/ regex.
+      let parsed: any =
+        result.structured && typeof result.structured === 'object'
+          ? result.structured
+          : scanLongestParseableJson(result.content);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
         throw new Error('Respons AI tidak valid.');
       }
 
-      setAiGeneratedItem({
-        code: `AI.${(existingItems.length + 1).toString().padStart(2, '0')}`,
-        description: parsed.description || aiPrompt.trim(),
-        category: parsed.category || targetCategory,
-        volume: typeof parsed.volume === 'number' ? parsed.volume : 1,
-        unit: parsed.unit || 'm²',
-        unitPrice: typeof parsed.unitPrice === 'number' ? parsed.unitPrice : null,
-        notes: parsed.notes || 'Dianalisis oleh EZRAB AI.',
-      });
+      setAiNullPriceConfirmed(false);
+      setAiGeneratedItem(
+        mapAiGeneratedItem(parsed, {
+          fallbackDescription: aiPrompt.trim(),
+          category: targetCategory,
+          code: `AI.${(existingItems.length + 1).toString().padStart(2, '0')}`,
+        })
+      );
     } catch (err: any) {
       setErrorMessage(err.message || 'Gagal menganalisis dengan AI. Coba lagi.');
     } finally {
@@ -408,18 +473,32 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga.`;
   const handleSaveAiItem = async () => {
     if (!aiGeneratedItem) return;
 
+    // F5 (4.6): save gate — missing volume blocks outright; a null price
+    // requires the explicit confirmation checkbox first. Nothing is saved
+    // silently with an invented quantity or a zeroed amount.
+    const gate = aiItemSaveGate(aiGeneratedItem, aiNullPriceConfirmed);
+    if (!gate.ok) {
+      setErrorMessage(gate.message);
+      if (gate.reason === 'VOLUME_MISSING') setAiIsEditingPreview(true);
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage(null);
 
     try {
-      const amount = Math.round(aiGeneratedItem.volume * aiGeneratedItem.unitPrice);
+      // Amount derives from a null price stays null — never Math.round(v * null) = 0.
+      const amount =
+        aiGeneratedItem.unitPrice == null
+          ? null
+          : Math.round((aiGeneratedItem.volume as number) * aiGeneratedItem.unitPrice);
       await onAddItem({
         no: existingItems.length + 1,
         sectionName: aiGeneratedItem.category,
         category: aiGeneratedItem.category,
         code: aiGeneratedItem.code,
         description: aiGeneratedItem.description,
-        volume: aiGeneratedItem.volume,
+        volume: aiGeneratedItem.volume as number,
         unit: aiGeneratedItem.unit,
         unitPrice: aiGeneratedItem.unitPrice,
         amount,
@@ -427,6 +506,7 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga.`;
         volumeSource: 'CALCULATOR',
         ahspCode: '',
         verificationStatus: 'NEEDS_VERIFICATION',
+        priceStatus: aiGeneratedItem.unitPrice == null ? 'PRICE_UNRESOLVED' : 'PRICE_RESOLVED',
       });
       onClose();
     } catch (err: any) {
@@ -1593,9 +1673,14 @@ value={manualUnitPriceRaw}
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
                         <input
                           type="number"
-                          value={aiGeneratedItem.volume}
-                          onChange={(e) => setAiGeneratedItem({ ...aiGeneratedItem, volume: parseFloat(e.target.value) || 0 })}
-                          style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
+                          value={aiGeneratedItem.volume ?? ''}
+                          placeholder="Volume (wajib diisi)"
+                          onChange={(e) => {
+                            const raw = e.target.value.trim();
+                            const v = raw === '' ? NaN : parseFloat(raw);
+                            setAiGeneratedItem({ ...aiGeneratedItem, volume: Number.isFinite(v) && v > 0 ? v : null });
+                          }}
+                          style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: aiGeneratedItem.volume === null ? '1px solid #D97706' : '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
                         />
                         <input
                           type="text"
@@ -1605,8 +1690,14 @@ value={manualUnitPriceRaw}
                         />
                         <input
                           type="number"
-                          value={aiGeneratedItem.unitPrice}
-                          onChange={(e) => setAiGeneratedItem({ ...aiGeneratedItem, unitPrice: parseFloat(e.target.value) || 0 })}
+                          value={aiGeneratedItem.unitPrice ?? ''}
+                          placeholder="Harga (boleh kosong)"
+                          onChange={(e) => {
+                            const raw = e.target.value.trim();
+                            const v = raw === '' ? NaN : parseFloat(raw);
+                            setAiGeneratedItem({ ...aiGeneratedItem, unitPrice: Number.isFinite(v) ? v : null });
+                            setAiNullPriceConfirmed(false);
+                          }}
                           style={{ height: '34px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
                         />
                       </div>
@@ -1631,23 +1722,46 @@ value={manualUnitPriceRaw}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', background: 'var(--ez-color-surface)', padding: '10px', borderRadius: '8px', border: '1px solid var(--ez-color-border-line)', marginBottom: '12px' }}>
                     <div>
                       <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>Volume</div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
-                        {aiGeneratedItem.volume} {aiGeneratedItem.unit}
-                      </div>
+                      {aiGeneratedItem.volume !== null ? (
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
+                          {aiGeneratedItem.volume} {aiGeneratedItem.unit}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: '#D97706' }}>
+                          Belum ditentukan — wajib diisi
+                        </div>
+                      )}
                     </div>
                     <div>
                       <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>Harga Satuan (Ref)</div>
                       <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
-                        {formatCurrencyIDR(aiGeneratedItem.unitPrice)}
+                        {aiGeneratedItem.unitPrice !== null ? formatCurrencyIDR(aiGeneratedItem.unitPrice) : 'Belum ada harga'}
                       </div>
                     </div>
                     <div>
                       <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)' }}>Total Biaya</div>
                       <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-color-primary)' }}>
-                        {formatCurrencyIDR(aiGeneratedItem.volume * aiGeneratedItem.unitPrice)}
+                        {aiGeneratedItem.volume !== null && aiGeneratedItem.unitPrice !== null
+                          ? formatCurrencyIDR(aiGeneratedItem.volume * aiGeneratedItem.unitPrice)
+                          : '—'}
                       </div>
                     </div>
                   </div>
+
+                  {/* F5 (4.6): explicit confirmation before saving a price-less item */}
+                  {aiGeneratedItem.unitPrice === null && (
+                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px', borderRadius: '8px', background: '#FFFBEB', border: '1px solid #FDE68A', marginBottom: '12px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={aiNullPriceConfirmed}
+                        onChange={(e) => setAiNullPriceConfirmed(e.target.checked)}
+                        style={{ marginTop: '2px' }}
+                      />
+                      <span style={{ fontSize: '12px', fontWeight: 650, color: '#92400E', lineHeight: '1.45' }}>
+                        Harga belum ada — item akan ditandai Perlu Verifikasi
+                      </span>
+                    </label>
+                  )}
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                     <button
@@ -1672,7 +1786,7 @@ value={manualUnitPriceRaw}
                     </button>
                     <button
                       onClick={handleSaveAiItem}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !aiItemSaveGate(aiGeneratedItem, aiNullPriceConfirmed).ok}
                       style={{
                         height: '34px',
                         padding: '0 18px',
@@ -1682,7 +1796,8 @@ value={manualUnitPriceRaw}
                         border: 'none',
                         fontSize: '12px',
                         fontWeight: 750,
-                        cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                        cursor: isSubmitting || !aiItemSaveGate(aiGeneratedItem, aiNullPriceConfirmed).ok ? 'not-allowed' : 'pointer',
+                        opacity: isSubmitting || !aiItemSaveGate(aiGeneratedItem, aiNullPriceConfirmed).ok ? 0.55 : 1,
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',

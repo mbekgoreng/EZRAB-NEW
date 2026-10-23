@@ -10,11 +10,14 @@ import {
   CheckCircle2,
   FileText,
   TrendingUp,
+  Archive,
+  Pencil,
 } from 'lucide-react';
 import { Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
 import { useI18n } from '../../i18n';
-import { EZRABMascot3D } from '../mascot/EZRABMascot3D';
+import { countUnpricedRabItems, unpricedInsightText } from '../../lib/dashboardInsight';
+import { EZRABMascotLucu } from '../mascot/EZRABMascotLucu';
 
 interface EzrabAiDashboardViewClassicProps {
   projects: Project[];
@@ -26,6 +29,8 @@ interface EzrabAiDashboardViewClassicProps {
   onOpenSubscription: () => void;
   onResetData?: () => void;
   onOpenOnboarding?: () => void;
+  /** F1a: feed aktivitas nyata (sumber sama dengan mode Modern, dari WorkspaceView). */
+  activities?: Array<{ text: string; time: string; type: string }>;
 }
 
 /** BCP47 locale untuk bahasa antarmuka yang sedang aktif. */
@@ -57,6 +62,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
   onNavigateToTab,
   onNavigateToProjects,
   onOpenMagicAi,
+  activities,
 }) => {
   // Navigasi ke menu Proyek dengan filter status tertentu (fallback: tab proyek).
   const goProjects = (filter: string) => {
@@ -64,8 +70,17 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
     else onNavigateToTab('proyek');
   };
 
-  const { currentProject, setCurrentProjectId } = useProject();
+  const { currentProject, setCurrentProjectId, allRabItems } = useProject();
   const { t, lang } = useI18n();
+
+  // F1a: Insight dari hitungan nyata; proyek terkini urut updatedAt dengan
+  // fallback nilai grandTotal (sama seperti mode Modern).
+  const unpricedCount = countUnpricedRabItems(allRabItems);
+  const recentProjects = [...projects]
+    .sort((a, b) => (Date.parse(b.updatedAt ?? '') || 0) - (Date.parse(a.updatedAt ?? '') || 0))
+    .slice(0, 3);
+  const projectRabValue = (p: Project): number | null =>
+    p.totalRab && p.totalRab > 0 ? p.totalRab : p.costSummary?.grandTotal || null;
 
   // Dynamic time-based greeting (localized)
   const getLocalizedGreeting = (): string => {
@@ -195,8 +210,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               marginBottom: '10px',
             }}
           >
-            <span style={{ color: 'var(--ez-color-text-primary)' }}>{getLocalizedGreeting()}, </span>
-            <span style={{ color: 'var(--ez-color-primary)' }}>Ahmad</span>
+            {/* F1a: sapaan netral — nama "Ahmad" hardcode dihapus. */}
+            <span style={{ color: 'var(--ez-color-text-primary)' }}>{getLocalizedGreeting()}</span>
           </div>
 
           <h1
@@ -391,15 +406,13 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             `}</style>
           </div>
 
-          {/* Master 3D GLB Mascot in Dynamic 3/4 Pose with Wide Eyes */}
-          <EZRABMascot3D
-            variant="dashboard"
+          {/* Maskot kanonis EZRAB (vektor Lucu) */}
+          <EZRABMascotLucu
             width="100%"
             height="100%"
             enableEyeTracking={true}
             enableFloat={true}
             enableBlink={true}
-            enableGlow={true}
           />
         </div>
       </section>
@@ -871,7 +884,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
         className="ezrab-dashboard-split"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) 350px',
+          gridTemplateColumns: unpricedCount > 0 ? 'minmax(0, 1fr) 350px' : 'minmax(0, 1fr)',
           gap: '16px',
           alignItems: 'stretch',
         }}
@@ -912,7 +925,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                 </tr>
               </thead>
               <tbody>
-                {projects.slice(0, 3).map((proj) => {
+                {recentProjects.map((proj) => {
                   const badge = getStatusBadge(proj.status);
                   const progressPct = proj.progress || 0;
                   const barColor = progressPct >= 70 ? 'var(--ez-color-success)' : progressPct > 0 ? 'var(--ez-color-primary)' : 'var(--ez-color-border)';
@@ -963,8 +976,8 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
 
                       {/* Nilai RAB */}
                       <td style={{ padding: '14px 12px', color: 'var(--ez-color-text-primary)', fontWeight: 550, whiteSpace: 'nowrap' }}>
-                        {proj.totalRab && proj.totalRab > 0
-                          ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(proj.totalRab)
+                        {projectRabValue(proj)
+                          ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(projectRabValue(proj) as number)
                           : '-'}
                       </td>
 
@@ -1018,7 +1031,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
           </div>
         </div>
 
-        {/* RIGHT: EZRAB Insight Card with Mini Mascot Peeking */}
+        {/* RIGHT: EZRAB Insight Card with Mini Mascot Peeking — hanya tampil
+            bila hitungan item belum berharga resmi > 0 (data nyata). */}
+        {unpricedCount > 0 && (
         <div
           style={{
             background: 'var(--ez-color-surface)',
@@ -1057,7 +1072,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
             </div>
 
             <p style={{ fontSize: '13px', color: 'var(--ez-color-text-primary)', lineHeight: 1.5, margin: 0, maxWidth: '200px' }}>
-              {t('dash.insight_text')}
+              {unpricedInsightText(unpricedCount, lang)}
             </p>
           </div>
 
@@ -1108,46 +1123,115 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
               }}
             >
               <div style={{ width: '130px', height: '130px', transform: 'translateY(10px)' }}>
-                <EZRABMascot3D
-                  variant="dashboard"
+                <EZRABMascotLucu
                   width="100%"
                   height="100%"
                   enableEyeTracking={true}
                   enableFloat={false}
                   enableBlink={true}
-                  enableGlow={false}
                 />
               </div>
             </div>
           </div>
         </div>
+        )}
       </section>
 
       {/* =========================================================================
           5. BOTTOM: AKTIVITAS TERBARU
          ========================================================================= */}
-      <section style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0 24px 0' }}>
-        <h2 style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
-          {t('dash.aktivitas_terbaru')}
-        </h2>
-        <button
-          type="button"
-          onClick={() => goProjects('Semua Proyek')}
+      <section style={{ paddingBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0 14px 0' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 750, color: 'var(--ez-color-text-primary)', margin: 0 }}>
+            {t('dash.aktivitas_terbaru')}
+          </h2>
+          <button
+            type="button"
+            onClick={() => goProjects('Semua Proyek')}
+            style={{
+              fontSize: '12.5px',
+              fontWeight: 650,
+              color: 'var(--ez-color-primary)',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            <span>{t('dashboard.lihat_semua')}</span>
+            <ChevronRight size={14} />
+          </button>
+        </div>
+
+        {/* F1a: daftar aktivitas NYATA dari props activities (sumber sama
+            dengan mode Modern — derivasi timestamp proyek di WorkspaceView).
+            Sebelumnya seksi ini hanya judul + tombol tanpa daftar apa pun. */}
+        <div
           style={{
-            fontSize: '12.5px',
-            fontWeight: 650,
-            color: 'var(--ez-color-primary)',
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
+            background: 'var(--ez-color-surface)',
+            borderRadius: '22px',
+            border: '1px solid var(--ez-color-border)',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
+            padding: '6px 24px',
           }}
         >
-          <span>{t('dashboard.lihat_semua')}</span>
-          <ChevronRight size={14} />
-        </button>
+          {activities && activities.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {activities.slice(0, 5).map((a, i, arr) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    gap: '12px',
+                    alignItems: 'flex-start',
+                    padding: '11px 0',
+                    borderBottom: i < arr.length - 1 ? '1px solid var(--ez-color-border-soft)' : 'none',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '10px',
+                      flexShrink: 0,
+                      background:
+                        a.type === 'create'
+                          ? 'var(--ez-pastel-sky)'
+                          : a.type === 'done'
+                            ? 'var(--ez-pastel-mint)'
+                            : a.type === 'archive'
+                              ? 'var(--ez-color-surface-tertiary)'
+                              : 'var(--ez-pastel-cream)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {a.type === 'create' ? (
+                      <Plus size={15} color="var(--ez-pill-run-text)" />
+                    ) : a.type === 'done' ? (
+                      <CheckCircle2 size={15} color="var(--ez-pill-ok-text)" />
+                    ) : a.type === 'archive' ? (
+                      <Archive size={15} color="var(--ez-color-text-muted)" />
+                    ) : (
+                      <Pencil size={14} color="var(--ez-pill-wait-text)" />
+                    )}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--ez-color-text-primary)', lineHeight: 1.45 }}>{a.text}</div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>{a.time}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', textAlign: 'center', padding: '18px 8px' }}>
+              {t('proj.all.activity_empty')}
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );

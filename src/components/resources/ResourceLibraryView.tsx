@@ -113,27 +113,33 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
   const [newSource, setNewSource] = useState('Vendor / Supplier');
   const [newDate, setNewDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [newNotes, setNewNotes] = useState('');
-  const [newConfidence, setNewConfidence] = useState<'HIGH_VERIFIED' | 'MEDIUM_MARKET' | 'REFERENCE_SHST'>('HIGH_VERIFIED');
+  // Record input estimator sendiri berstatus UNVERIFIED sampai ada proses
+  // verifikasi nyata — bukan 'HIGH_VERIFIED' secara default.
+  const [newConfidence, setNewConfidence] = useState<'HIGH_VERIFIED' | 'MEDIUM_MARKET' | 'REFERENCE_SHST' | 'UNVERIFIED'>('UNVERIFIED');
 
   // Master Raw List with Local Overrides
+  // KEJUJURAN DATA: harga supplier/historis/pemerintah TIDAK disintesis dari
+  // harga dasar (dulu dikalikan 1,02/0,95/0,98 lalu dilabeli MARKET QUOTE /
+  // Historis / OFFICIAL HSPK). Field-field itu hanya terisi bila record
+  // benar-benar memilikinya (mis. input estimator), selain itu undefined dan
+  // drawer komparasi menampilkannya sebagai "belum ada data".
+  // Confidence diturunkan dari priceSource NYATA item, bukan dari indeks baris.
   const [priceRecords, setPriceRecords] = useState<ExtendedPriceRecord[]>(() => {
-    return MASTER_PRICE_ITEMS.map((item, idx) => {
-      // Synthesize multi-source prices from real range
-      const base = item.price;
-      const govPrice = Math.round(base * 0.98);
-      const suppPrice = Math.round(base * 1.02);
-      const histPrice = Math.round(base * 0.95);
-
+    return MASTER_PRICE_ITEMS.map((item) => {
+      const src = (item.priceSource || '').toLowerCase();
+      const isOfficialReference =
+        src.includes('pupr') || src.includes('permen') || src.includes('bina marga') ||
+        src.includes('ditjen') || src.includes('permenaker') || src.includes('hspk') || src.includes('shst');
       return {
         ...item,
-        province: item.location || 'DKI Jakarta',
-        city: 'Jabodetabek',
-        effectiveDate: item.lastUpdated || '2026-08-01',
+        province: item.location || '',
+        city: item.location || '',
+        effectiveDate: item.lastUpdated || '',
         scope: 'GLOBAL',
-        confidence: idx % 4 === 0 ? 'HIGH_VERIFIED' : idx % 3 === 0 ? 'REFERENCE_SHST' : 'MEDIUM_MARKET',
-        supplierPrice: suppPrice,
-        historicalPrice: histPrice,
-        governmentPrice: govPrice,
+        confidence: isOfficialReference ? 'REFERENCE_SHST' : 'UNVERIFIED',
+        supplierPrice: undefined,
+        historicalPrice: undefined,
+        governmentPrice: undefined,
       };
     });
   });
@@ -228,7 +234,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
         id: 'sup-1',
         name: 'PT Krakatau Steel (Persero) Tbk',
         category: 'Baja, Besi Beton & Profil Baja',
-        verified: true,
+        verified: false, // belum diverifikasi EZRAB — direktori contoh
         location: 'Cilegon / DKI Jakarta',
         contact: '+62 21 522-1255',
         email: 'sales@krakatausteel.com',
@@ -240,7 +246,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
         id: 'sup-2',
         name: 'PT Semen Indonesia Group (SIG)',
         category: 'Semen Portland, Semen Curah & Ready Mix',
-        verified: true,
+        verified: false, // belum diverifikasi EZRAB — direktori contoh
         location: 'Jawa Timur / Nasional',
         contact: '+62 31 398-1811',
         email: 'info@sig.id',
@@ -252,7 +258,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
         id: 'sup-3',
         name: 'PT Satya Djaya Raya (Roman Ceramics)',
         category: 'Keramik & RomanGranit',
-        verified: true,
+        verified: false, // belum diverifikasi EZRAB — direktori contoh
         location: 'Tangerang / Jabodetabek',
         contact: '+62 21 590-3456',
         email: 'marketing@romanceramics.com',
@@ -264,7 +270,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
         id: 'sup-4',
         name: 'HSPK & SHST DKI Jakarta 2026',
         category: 'Harga Satuan Pokok Kegiatan Pemprov DKI',
-        verified: true,
+        verified: false, // belum diverifikasi EZRAB — direktori contoh
         location: 'DKI Jakarta',
         contact: 'Dinas Bina Marga / Cipta Karya',
         email: 'bppbj@jakarta.go.id',
@@ -276,7 +282,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
         id: 'sup-5',
         name: 'Jurnal Harga Satuan Bahan Bangunan (Bina Sarana)',
         category: 'Jurnal Kompilasi Harga Pasar Nasional',
-        verified: true,
+        verified: false, // belum diverifikasi EZRAB — direktori contoh
         location: 'Seluruh Indonesia',
         contact: '+62 21 789-0123',
         email: 'redaksi@jurnalhargabangunan.id',
@@ -400,13 +406,15 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
       specification: newSpec.trim() || 'Spesifikasi standar',
       unit: newUnit.trim() || 'unit',
       price: newPrice,
-      supplierPrice: newSupplierPrice > 0 ? newSupplierPrice : newPrice,
-      historicalPrice: newHistoricalPrice > 0 ? newHistoricalPrice : Math.round(newPrice * 0.95),
-      governmentPrice: newGovPrice > 0 ? newGovPrice : Math.round(newPrice * 0.98),
+      // Harga pembanding hanya dicatat bila estimator benar-benar mengisinya —
+      // tidak lagi disintesis dari harga utama (×0,95 / ×0,98).
+      supplierPrice: newSupplierPrice > 0 ? newSupplierPrice : undefined,
+      historicalPrice: newHistoricalPrice > 0 ? newHistoricalPrice : undefined,
+      governmentPrice: newGovPrice > 0 ? newGovPrice : undefined,
       location: `${newProvince} / ${newCity}`,
       province: newProvince,
       city: newCity,
-      supplier: newSupplierName.trim() || 'Distributor Terverifikasi',
+      supplier: newSupplierName.trim() || undefined,
       periodVersion: '2026-Q3',
       lastUpdated: new Date().toISOString().split('T')[0],
       priceSource: 'Input Estimator (Internal)',
@@ -700,7 +708,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
         {/* Price Intelligence Disclaimer Badge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', color: 'var(--ez-color-text-warm)' }}>
           <ShieldCheck size={14} color="var(--ez-hue-green-text)" />
-          <span>Multi-source verified (PUPR 2026, Distributor & Jurnal Pasar)</span>
+          <span>Harga pembanding hanya ditampilkan bila benar-benar tercatat — tidak disintesis dari harga dasar</span>
         </div>
       </div>
 
@@ -905,6 +913,10 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
         {activeTab === 'SUPPLIERS' ? (
           // SUPPLIER DIRECTORY CARDS
+          <div>
+            <div style={{ marginBottom: '14px', padding: '10px 14px', borderRadius: 'var(--ez-radius-control)', background: 'var(--ez-pastel-cream)', border: '1px solid var(--ez-hue-amber-border)', color: 'var(--ez-hue-amber-text)', fontSize: '12px', fontWeight: 600 }}>
+              Direktori contoh: daftar referensi bawaan aplikasi. Entitas di bawah ini belum diverifikasi EZRAB — status, kontak, dan rating tidak diklaim sebagai hasil verifikasi.
+            </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '16px' }}>
             {suppliersDirectory.map((supplier) => (
               <div
@@ -978,6 +990,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                 </div>
               </div>
             ))}
+          </div>
           </div>
         ) : (
           // RESOURCE PRICE INTELLIGENCE TABLE
@@ -1168,12 +1181,14 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
             <div style={{ padding: '20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '18px' }}>
               {/* Statistical Distribution Summary */}
               {(() => {
+                // Statistik hanya dari harga yang BENAR-BENAR tercatat —
+                // harga pembanding yang tidak ada tidak lagi disintesis.
                 const prices = [
                   comparingResource.price,
-                  comparingResource.supplierPrice || comparingResource.price,
-                  comparingResource.historicalPrice || Math.round(comparingResource.price * 0.95),
-                  comparingResource.governmentPrice || Math.round(comparingResource.price * 0.98),
-                ];
+                  comparingResource.supplierPrice,
+                  comparingResource.historicalPrice,
+                  comparingResource.governmentPrice,
+                ].filter((p): p is number => typeof p === 'number' && p > 0);
                 const minPrice = Math.min(...prices);
                 const maxPrice = Math.max(...prices);
                 const medianPrice = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
@@ -1211,7 +1226,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
               {/* 4 Multi-Source Price Cards */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
-                  Sumber Komparasi Harga Terverifikasi:
+                  Sumber Komparasi Harga:
                 </div>
 
                 {/* 1. Project Active Price */}
@@ -1232,7 +1247,8 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                   </div>
                 </div>
 
-                {/* 2. Supplier / Market Price */}
+                {/* 2. Supplier / Market Price — hanya dirender bila harga supplier benar-benar tercatat */}
+                {typeof comparingResource.supplierPrice === 'number' && (
                 <div style={{ background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1240,18 +1256,18 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                       <span style={{ fontSize: '10px', background: 'var(--ez-pastel-mint)', color: 'var(--ez-hue-green-text)', padding: '1px 5px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>MARKET QUOTE</span>
                     </div>
                     <div style={{ fontSize: '11px', color: 'var(--ez-color-text-warm)', marginTop: '2px' }}>
-                      Supplier: {comparingResource.supplier || 'Distributor Utama'} • Tanggal: {comparingResource.lastUpdated}
+                      Supplier: {comparingResource.supplier || '—'} • Tanggal: {comparingResource.lastUpdated}
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <span style={{ fontSize: '15px', fontWeight: 850, color: 'var(--ez-hue-green-text)' }}>
-                      {formatCurrencyIDR(comparingResource.supplierPrice || comparingResource.price)}
+                      {formatCurrencyIDR(comparingResource.supplierPrice)}
                     </span>
                     <button
                       onClick={() =>
                         setAdoptTarget({
                           resource: comparingResource,
-                          newPrice: comparingResource.supplierPrice || comparingResource.price,
+                          newPrice: comparingResource.supplierPrice as number,
                           priceLabel: 'Penawaran Supplier',
                         })
                       }
@@ -1271,8 +1287,10 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                     </button>
                   </div>
                 </div>
+                )}
 
-                {/* 3. Internal Historical Price */}
+                {/* 3. Internal Historical Price — hanya dirender bila benar-benar tercatat */}
+                {typeof comparingResource.historicalPrice === 'number' && (
                 <div style={{ background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1280,18 +1298,18 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                       <span style={{ fontSize: '10px', background: '#F5F4EF', color: 'var(--ez-color-text-warm)', padding: '1px 5px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>INTERNAL RECORD</span>
                     </div>
                     <div style={{ fontSize: '11px', color: 'var(--ez-color-text-warm)', marginTop: '2px' }}>
-                      Rata-rata pengadaan proyek 6 bulan terakhir
+                      Harga historis yang tercatat untuk item ini
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <span style={{ fontSize: '15px', fontWeight: 850, color: 'var(--ez-color-text-warm)' }}>
-                      {formatCurrencyIDR(comparingResource.historicalPrice || Math.round(comparingResource.price * 0.95))}
+                      {formatCurrencyIDR(comparingResource.historicalPrice)}
                     </span>
                     <button
                       onClick={() =>
                         setAdoptTarget({
                           resource: comparingResource,
-                          newPrice: comparingResource.historicalPrice || Math.round(comparingResource.price * 0.95),
+                          newPrice: comparingResource.historicalPrice as number,
                           priceLabel: 'Historis Proyek Internal',
                         })
                       }
@@ -1311,27 +1329,29 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                     </button>
                   </div>
                 </div>
+                )}
 
-                {/* 4. Government / Reference Price */}
+                {/* 4. Government / Reference Price — hanya dirender bila benar-benar tercatat */}
+                {typeof comparingResource.governmentPrice === 'number' && (
                 <div style={{ background: 'var(--ez-color-surface)', border: '1px solid #EEF1F6', borderRadius: 'var(--ez-radius-control)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontSize: '12px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>4. Standar Acuan Pemerintah (SHST / PUPR)</span>
-                      <span style={{ fontSize: '10px', background: 'var(--ez-pastel-cream)', color: 'var(--ez-hue-amber-text)', padding: '1px 5px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>OFFICIAL HSPK</span>
+                      <span style={{ fontSize: '10px', background: 'var(--ez-pastel-cream)', color: 'var(--ez-hue-amber-text)', padding: '1px 5px', borderRadius: 'var(--ez-radius-pill)', fontWeight: 700 }}>ACUAN PEMERINTAH</span>
                     </div>
                     <div style={{ fontSize: '11px', color: 'var(--ez-color-text-warm)', marginTop: '2px' }}>
-                      Pedoman Permen PUPR No. 1 2022 / SE DJBK 2026
+                      Harga acuan pemerintah yang tercatat untuk item ini (sumber: {comparingResource.priceSource})
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <span style={{ fontSize: '15px', fontWeight: 850, color: 'var(--ez-hue-amber-text)' }}>
-                      {formatCurrencyIDR(comparingResource.governmentPrice || Math.round(comparingResource.price * 0.98))}
+                      {formatCurrencyIDR(comparingResource.governmentPrice)}
                     </span>
                     <button
                       onClick={() =>
                         setAdoptTarget({
                           resource: comparingResource,
-                          newPrice: comparingResource.governmentPrice || Math.round(comparingResource.price * 0.98),
+                          newPrice: comparingResource.governmentPrice as number,
                           priceLabel: 'Standar PUPR 2026',
                         })
                       }
@@ -1351,6 +1371,15 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
                     </button>
                   </div>
                 </div>
+                )}
+
+                {typeof comparingResource.supplierPrice !== 'number' &&
+                  typeof comparingResource.historicalPrice !== 'number' &&
+                  typeof comparingResource.governmentPrice !== 'number' && (
+                    <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-warm)', background: '#FAFAF8', border: '1px dashed #E3E1D8', borderRadius: 'var(--ez-radius-control)', padding: '10px 14px' }}>
+                      Belum ada harga pembanding (supplier, historis, atau acuan pemerintah) yang tercatat untuk item ini. Harga pembanding tidak disintesis dari harga dasar.
+                    </div>
+                  )}
               </div>
             </div>
           </div>

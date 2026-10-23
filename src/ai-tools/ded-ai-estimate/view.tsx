@@ -15,7 +15,7 @@ import {
 import { DedAiInputView, DedAiSession } from './DedAiInputView';
 import { DedAiProgressView, DedAiStage, getStageDefs, ProgressSummary } from './DedAiProgressView';
 import { DedAiResultView } from './DedAiResultView';
-import { fullAiDedService } from '../ded-full-ai/service';
+import { fullAiDedService, FULL_AI_TIMEOUT_MS } from '../ded-full-ai/service';
 import { FullAiOutput, FullAiItem } from '../ded-full-ai/types';
 import { FullAiResultView } from '../ded-full-ai/FullAiResultView';
 import { notificationBus } from '../../notifications/notificationBus';
@@ -187,7 +187,13 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         summary,
         warnings: allWarnings,
         provenance: {
-          model: lastOutput?.provenance.model || '',
+          // Identitas aktual dari file terakhir yang diproses; null bila
+          // respons gateway tidak membawanya (jangan ditebak).
+          provider: lastOutput?.provenance.provider ?? null,
+          model: lastOutput?.provenance.model ?? null,
+          timeoutLimitMs:
+            lastOutput?.provenance.timeoutLimitMs ??
+            FULL_AI_TIMEOUT_MS[sess.mode === 'FAST' ? 'FAST' : 'ADVANCED'],
           timestamp: new Date().toISOString(),
           documentPages: totalPages,
           documentChars: totalChars,

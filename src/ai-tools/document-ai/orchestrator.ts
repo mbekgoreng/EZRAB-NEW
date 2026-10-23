@@ -13,17 +13,21 @@
  * - REVISE_DOCUMENT mengembalikan KANDIDAT revisi — tidak pernah menerapkan
  *   perubahan ke dokumen pengguna; penerapan adalah keputusan pemanggil.
  * - REVIEW_DOCUMENT deterministik (review.ts), BUKAN panggilan AI.
+ * - TRANSLATE_DOCUMENT menerjemahkan lewat mode TRANSLATE dan mengembalikan
+ *   kandidat markdown; draf baru dibuat pemanggil — dokumen sumber utuh.
  * - Ekstraksi adalah hasil AI dari dokumen sumber — bukan data resmi.
  */
 
 import { DokumenAiService, dokumenAiService } from './service';
-import { DRAFT_PROMPT_VERSION, ENHANCE_PROMPT_VERSION } from './prompt';
+import { DRAFT_PROMPT_VERSION, ENHANCE_PROMPT_VERSION, TRANSLATE_PROMPT_VERSION, TRANSLATE_LANGUAGE_NAMES } from './prompt';
 import { TEMPLATE_META, buildFieldBlock, missingRequiredFields, type DocTemplateMeta } from './docTemplates';
 import { detectMissingFields, formatContextBlock } from './contextAdapter';
 import { reviewDocument, scanIsiMarkers, stripHtml } from './review';
+import { htmlToMarkdownLite } from './markdownHtml';
 import {
   isDocumentIntent,
   isEnhanceTransform,
+  isTranslateLanguage,
   type ContextField,
   type DocumentComparison,
   type DokumenAiChatRequest,
@@ -177,6 +181,8 @@ export class DocumentStudioOrchestrator {
         return this.extractScope(request);
       case 'ENHANCE_TEXT':
         return this.enhanceText(request);
+      case 'TRANSLATE_DOCUMENT':
+        return this.translateDocument(request);
     }
   }
 
@@ -230,6 +236,7 @@ export class DocumentStudioOrchestrator {
       content,
       missingFields: dedupeMissing([...preMissing, ...isiMissing(content)]),
       promptVersion: DRAFT_PROMPT_VERSION,
+      truncated: res.truncated,
     };
   }
 
@@ -268,7 +275,7 @@ export class DocumentStudioOrchestrator {
     if (!res.success) return fromServiceError(request.intent, res);
     const content = (res.reply ?? '').trim();
     if (!content) return fail(request.intent, 'EMPTY_RESPONSE', 'generate', 'Penyedia AI mengembalikan hasil kosong.');
-    return { success: true, intent: request.intent, content, missingFields: [] };
+    return { success: true, intent: request.intent, content, missingFields: [], truncated: res.truncated };
   }
 
   private async ask(request: IntentRequest): Promise<IntentResult> {
@@ -288,7 +295,7 @@ export class DocumentStudioOrchestrator {
     if (!res.success) return fromServiceError(request.intent, res);
     const content = (res.reply ?? '').trim();
     if (!content) return fail(request.intent, 'EMPTY_RESPONSE', 'generate', 'Penyedia AI mengembalikan jawaban kosong.');
-    return { success: true, intent: request.intent, content, missingFields: [] };
+    return { success: true, intent: request.intent, content, missingFields: [], truncated: res.truncated };
   }
 
   private async extractScope(request: IntentRequest): Promise<IntentResult> {
@@ -349,7 +356,7 @@ export class DocumentStudioOrchestrator {
       `Revisi dokumen referensi berikut sesuai instruksi pengguna.`,
       `INSTRUKSI REVISI: ${request.instruction.trim()}`,
       templateBlock,
-      'ATURAN REVISI (wajib): ubah HANYA bagian yang diminta instruksi; pertahankan seluruh bagian lain persis seperti aslinya; jangan mengarang fakta baru (nama, nomor, tanggal, nilai, persetujuan) — bila instruksi membutuhkan data yang tidak tersedia, tandai [ISI: ...]. Keluarkan SELURUH dokumen hasil revisi sebagai KANDIDAT untuk ditinjau pengguna sebelum diterapkan.',
+      'ATURAN REVISI (wajib): ubah HANYA bagian yang diminta instruksi; pertahankan seluruh bagian lain persis seperti aslinya; jangan mengarang fakta baru (nama, nomor, tanggal, nilai, persetujuan) — bila instruksi membutuhkan data yang tidak tersedia, tandai [ISI: ...]. Keluarkan SELURUH dokumen hasil revisi sebagai KANDIDAT untuk ditinjau pengguna sebelum diterapkan. Dokumen referensi ditulis dalam markdown terstruktur: pertahankan struktur itu persis pada bagian yang tidak diubah (heading diawali #, **tebal**, daftar diawali - atau 1., tabel dalam format pipa dengan baris pemisah) agar struktur dokumen tidak hilang saat kandidat dikonversi kembali ke editor.',
     ].filter(Boolean).join('\n\n');
     const res = await this.transport.chat({
       documentText: current,
@@ -417,6 +424,64 @@ export class DocumentStudioOrchestrator {
       missingFields: isiMissing(content),
       promptVersion: ENHANCE_PROMPT_VERSION,
       message: 'Hasil adalah kandidat suntingan untuk rentang terpilih — belum diterapkan. Tinjau pratinjau sebelum menerima.',
+    };
+  }
+
+  /* ---------------- TRANSLATE (dokumen baru dibuat pemanggil) ---------------- */
+
+  /**
+   * Terjemahan dokumen (F8): isi draf sumber (HTML editor) diserialisasi ke
+   * markdown-lite — jalur yang sama dengan REVISE — agar struktur (heading,
+   * tabel, daftar, penomoran) bertahan melewati model, lalu diterjemahkan
+   * lewat mode TRANSLATE (system prompt doc-translate-v1 dengan aturan
+   * preservasi). Hasil adalah KANDIDAT markdown terjemahan pada `content`;
+   * pembuatan DRAF BARU (judul + penanda bahasa, warisan template/kop/
+   * proyek, status selalu draf — tidak pernah mewarisi persetujuan final)
+   * adalah keputusan pemanggil, sama seperti kandidat revisi. Provenance:
+   * provider/model diteruskan dari respons transport apa adanya (pola F4) —
+   * null bila provider tidak menyediakannya, tidak pernah ditulis keras.
+   */
+  private async translateDocument(request: IntentRequest): Promise<IntentResult> {
+    const html = request.documentText ?? '';
+    if (!html.trim()) {
+      return fail(request.intent, 'NO_DATA', 'document', 'Tidak ada isi dokumen yang bisa diterjemahkan.');
+    }
+    const target = request.targetLanguage ?? '';
+    if (!isTranslateLanguage(target)) {
+      return fail(
+        request.intent,
+        'UNKNOWN_LANGUAGE',
+        'translate',
+        `Bahasa target "${String(target || '(kosong)')}" tidak didukung. Pilih salah satu bahasa terjemahan yang tersedia.`,
+      );
+    }
+    const markdown = htmlToMarkdownLite(html);
+    if (!markdown.trim()) {
+      return fail(request.intent, 'NO_DATA', 'document', 'Isi dokumen kosong setelah dibaca — tidak ada yang bisa diterjemahkan.');
+    }
+    const res = await this.transport.chat({
+      documentText: markdown,
+      fileName: request.fileName || request.documentName || 'Dokumen',
+      mode: 'TRANSLATE',
+      targetLanguage: target,
+      timeoutMs: request.timeoutMs,
+    });
+    if (!res.success) return fromServiceError(request.intent, res);
+    const content = (res.reply ?? '').trim();
+    if (!content) {
+      return fail(request.intent, 'EMPTY_RESPONSE', 'translate', 'Penyedia AI mengembalikan terjemahan kosong — dokumen asli tidak berubah.');
+    }
+    const langName = TRANSLATE_LANGUAGE_NAMES[target].label;
+    return {
+      success: true,
+      intent: request.intent,
+      content,
+      missingFields: [],
+      promptVersion: TRANSLATE_PROMPT_VERSION,
+      truncated: res.truncated,
+      provider: res.provider ?? null,
+      model: res.model ?? null,
+      message: `Hasil adalah draf terjemahan ke bahasa ${langName} — dokumen sumber tidak berubah. Periksa kembali nama, nomor, tanggal, dan nilai sebelum memakai terjemahan sebagai dokumen resmi.`,
     };
   }
 

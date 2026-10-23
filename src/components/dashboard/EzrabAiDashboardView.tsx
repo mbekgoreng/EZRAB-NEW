@@ -17,7 +17,8 @@ import {
 import { Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
 import { useI18n } from '../../i18n';
-import { EZRABMascot3D } from '../mascot/EZRABMascot3D';
+import { countUnpricedRabItems, unpricedInsightText } from '../../lib/dashboardInsight';
+import { EZRABMascotLucu } from '../mascot/EZRABMascotLucu';
 
 interface EzrabAiDashboardViewProps {
   projects: Project[];
@@ -108,8 +109,21 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
     else onNavigateToTab('proyek');
   };
 
-  const { currentProject, setCurrentProjectId } = useProject();
+  const { currentProject, setCurrentProjectId, allRabItems } = useProject();
 const { t, lang } = useI18n();
+
+  // F1a: "EZRAB Insight" dihitung dari data nyata (item RAB lintas proyek
+  // yang belum berharga resmi). Kartu disembunyikan bila hitungannya 0 —
+  // angka hardcode lama ("3 item material") dihapus.
+  const unpricedCount = countUnpricedRabItems(allRabItems);
+
+  // Proyek terkini: urut updatedAt terbaru; nilai dari totalRab, fallback
+  // ke costSummary.grandTotal (jangan tampil '-' bila grandTotal ada).
+  const recentProjects = [...projects]
+    .sort((a, b) => (Date.parse(b.updatedAt ?? '') || 0) - (Date.parse(a.updatedAt ?? '') || 0))
+    .slice(0, 3);
+  const projectRabValue = (p: Project): number | null =>
+    p.totalRab && p.totalRab > 0 ? p.totalRab : p.costSummary?.grandTotal || null;
 
   // Dynamic time-based greeting (localized)
   const getLocalizedGreeting = (): string => {
@@ -300,8 +314,8 @@ className="ezdb-anim ezdb-hero"
       >
 <div className="ezdb-hero-text" style={{ flex: 1, maxWidth: '580px', position: 'relative', zIndex: 2 }}>
           <div style={{ fontSize: '13.5px', fontWeight: 700, letterSpacing: '0.01em', marginBottom: '10px' }}>
-            <span style={{ color: 'var(--ez-color-text-primary)' }}>{getLocalizedGreeting()}, </span>
-            <span style={{ color: 'var(--ez-color-primary)' }}>Ahmad</span>
+            {/* F1a: sapaan netral — nama "Ahmad" hardcode dihapus (bukan data user). */}
+            <span style={{ color: 'var(--ez-color-text-primary)' }}>{getLocalizedGreeting()}</span>
           </div>
           <h1
             style={{
@@ -432,14 +446,12 @@ className="ezdb-anim ezdb-hero"
               <path d="M 175 106 L 189 105 L 185 92" stroke="var(--ez-color-primary)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
             </svg>
           </div>
-          <EZRABMascot3D
-            variant="dashboard"
+          <EZRABMascotLucu
             width="100%"
             height="100%"
             enableEyeTracking={true}
             enableFloat={true}
             enableBlink={true}
-            enableGlow={true}
           />
         </div>
       </section>
@@ -608,7 +620,7 @@ className="ezdb-anim ezdb-hero"
       {/* ============ 4. SPLIT: DAFTAR PROYEK TERKINI + EZRAB INSIGHT ============ */}
       <section
 className="ezdb-split"
-        style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 350px', gap: '18px', alignItems: 'stretch' }}
+        style={{ display: 'grid', gridTemplateColumns: unpricedCount > 0 ? 'minmax(0, 1fr) 350px' : 'minmax(0, 1fr)', gap: '18px', alignItems: 'stretch' }}
       >
         {/* LEFT: Daftar Proyek Terkini table */}
         <div
@@ -640,7 +652,7 @@ className="ezdb-split"
                 </tr>
               </thead>
               <tbody>
-                {projects.slice(0, 3).map((proj) => {
+                {recentProjects.map((proj) => {
                   const badge = getStatusBadge(proj.status);
                   const progressPct = Math.max(0, Math.min(100, proj.progress || 0));
                   const barColor = progressPct >= 70 ? 'var(--ez-color-success)' : progressPct > 0 ? 'var(--ez-color-primary)' : 'var(--ez-color-border)';
@@ -683,7 +695,7 @@ className="ezdb-split"
                         {proj.location || 'Indonesia'}
                       </td>
                       <td style={{ padding: '14px 12px', color: 'var(--ez-color-text-primary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                        {proj.totalRab && proj.totalRab > 0 ? formatRpFull(proj.totalRab) : '-'}
+                        {projectRabValue(proj) ? formatRpFull(projectRabValue(proj) as number) : '-'}
                       </td>
                       <td style={{ padding: '14px 12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '110px' }}>
@@ -721,7 +733,9 @@ className="ezdb-split"
           </div>
         </div>
 
-        {/* RIGHT: EZRAB Insight */}
+        {/* RIGHT: EZRAB Insight — hanya tampil bila ada item belum berharga
+            resmi (hitungan nyata); bila 0, kartu disembunyikan. */}
+        {unpricedCount > 0 && (
         <div
           className="ezdb-anim ez-mini"
           style={{
@@ -759,7 +773,7 @@ className="ezdb-split"
               </span>
             </div>
             <p style={{ fontSize: '13px', color: 'var(--ez-color-text-secondary)', lineHeight: 1.6, margin: 0, maxWidth: '220px' }}>
-              {t('dash.insight_text')}
+              {unpricedInsightText(unpricedCount, lang)}
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-start', marginTop: '20px' }}>
@@ -797,6 +811,7 @@ className="ezdb-split"
             </button>
           </div>
         </div>
+        )}
       </section>
 
       {/* ============ 5. AKTIVITAS TERBARU ============ */}

@@ -116,6 +116,16 @@ export function gatherEstimateSources(
   return sources;
 }
 
+/**
+ * F5 (4.7): terima harga AI HANYA bila benar-benar number finite > 0.
+ * String angka ("850000") DITOLAK — koersi diam-diam (`"850000" > 0` === true,
+ * lalu Math.round mengonversinya) membuat validasi tipe seolah terjadi padahal
+ * tidak. Nilai tidak valid → null → pemanggil jatuh ke heuristik transparan.
+ */
+export function strictPositivePrice(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
+}
+
 function median(nums: number[]): number {
   if (nums.length === 0) return 0;
   const s = [...nums].sort((a, b) => a - b);
@@ -194,9 +204,9 @@ export async function requestAiPriceEstimate(
     const { AiToolsProviderClient } = await import('../../../ai-tools/providerClient');
     const client = new AiToolsProviderClient();
     const result = await client.execute<{
-      estimatedPrice?: number;
-      confidence?: number;
-      reasoning?: string;
+      estimatedPrice?: unknown;
+      confidence?: unknown;
+      reasoning?: unknown;
     }>({
       productId: 'EZRAB_AI',
       prompt,
@@ -209,19 +219,29 @@ export async function requestAiPriceEstimate(
       timeoutMs: 60000,
     });
 
-    if (result.success && result.structured && result.structured.estimatedPrice! > 0) {
+    // F5 (4.7): estimatedPrice wajib number finite > 0 (string angka ditolak,
+    // bukan dikoersi). Confidence pun hanya diterima sebagai number.
+    const aiPrice = result.success && result.structured
+      ? strictPositivePrice(result.structured.estimatedPrice)
+      : null;
+    if (result.success && result.structured && aiPrice !== null) {
       const st = result.structured;
+      const confRaw =
+        typeof st.confidence === 'number' && Number.isFinite(st.confidence) ? st.confidence : 0.4;
       return {
         id: newId(),
         componentCode: req.componentCode,
         componentName: req.componentName,
         unit: req.unit,
-        estimatedPrice: Math.round(st.estimatedPrice!),
+        estimatedPrice: Math.round(aiPrice),
         currency: 'IDR',
         sources,
-        confidence: Math.max(0.1, Math.min(0.7, Number(st.confidence) || 0.4)),
+        confidence: Math.max(0.1, Math.min(0.7, confRaw)),
         method: 'ai',
-        reasoning: String(st.reasoning || 'Sintesis AI dari sumber harga yang tersedia.'),
+        reasoning:
+          typeof st.reasoning === 'string' && st.reasoning
+            ? st.reasoning
+            : 'Sintesis AI dari sumber harga yang tersedia.',
         createdAt: nowIso(),
         acknowledged: false,
         acknowledgedBy: null,

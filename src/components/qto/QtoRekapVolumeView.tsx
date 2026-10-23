@@ -33,12 +33,27 @@ import {
   ArrowRight,
   Share2,
   MoreVertical,
+  RefreshCw,
 } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
 import { CONSTRUCTION_CALCULATORS, getCalculatorById } from '../../engine/constructionCalculators/registry';
 import { QTOItem } from '../../types';
 import { formatNumberId, formatRupiah } from '../../engine/formulaEngine';
 import bowplankImg from '../../assets/bowplank-technical.jpg';
+import foundationImg from '../../assets/volume-foundation.jpg';
+
+/**
+ * Ilustrasi teknis per jenis pekerjaan — HANYA untuk kalkulator yang memang
+ * punya aset gambarnya. Jenis lain tidak menampilkan gambar (dulu semua item
+ * dipasangi foto bowplank yang tidak relevan).
+ */
+function technicalImageForItem(item: QTOItem | null | undefined): string | null {
+  if (!item) return null;
+  const calcId = (item.calculatorId || '').toUpperCase();
+  if (calcId.includes('BOWPLANK')) return bowplankImg;
+  if (calcId.includes('PONDASI') || calcId.includes('FOOTING') || calcId.includes('FOUNDATION')) return foundationImg;
+  return null;
+}
 
 interface QtoRekapVolumeViewProps {
   onNavigateToCalculator?: (calcId?: string, qtoId?: string) => void;
@@ -253,18 +268,52 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
 
   // KPI Calculations
   const totalItemCount = projectQtoItems.length;
-  const totalVolumeSum = projectQtoItems.reduce((acc, q) => acc + (q.quantity || 0), 0);
+  // Volume TIDAK dijumlahkan lintas satuan (m³ + m' + bh tidak sebanding) —
+  // KPI menampilkan rincian per satuan.
+  const volumeByUnit = useMemo(() => {
+    const map = new Map<string, number>();
+    projectQtoItems.forEach((q) => {
+      const unit = q.unit || '—';
+      map.set(unit, (map.get(unit) || 0) + (q.quantity || 0));
+    });
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+  }, [projectQtoItems]);
   const distinctCalculators = new Set(
     projectQtoItems.filter((i) => i.calculatorId !== 'MANUAL').map((i) => i.calculatorId)
   ).size;
+  // "% Terverifikasi" hanya menghitung status VERIFIED yang nyata — status
+  // CALCULATED (baru terhitung) BUKAN terverifikasi.
   const verifiedPercentage =
     totalItemCount > 0
       ? Math.round(
-          (projectQtoItems.filter((i) => i.status === 'SYNCED_TO_RAB' || i.status === 'CALCULATED').length /
-            totalItemCount) *
-            100
+          (projectQtoItems.filter((i) => i.status === 'VERIFIED').length / totalItemCount) * 100
         )
       : 0;
+
+  // Bulk actions untuk checkbox terpilih — benar-benar memanggil engine sync
+  // yang selama ini hanya diimpor tapi tidak pernah dipakai di view ini.
+  const handleBulkSyncToRab = () => {
+    let ok = 0;
+    let failed = 0;
+    selectedItemIds.forEach((id) => {
+      try {
+        syncQtoToRabSpreadsheet(id);
+        ok++;
+      } catch {
+        failed++;
+      }
+    });
+    if (ok > 0) showToast(`${ok} item QTO berhasil disinkronkan ke RAB.`);
+    if (failed > 0) showToast(`${failed} item gagal disinkronkan (data tidak lengkap / proyek tidak aktif).`, 'info');
+    setSelectedItemIds([]);
+  };
+
+  const handleBulkDelete = () => {
+    if (!confirm(`Hapus ${selectedItemIds.length} item QTO terpilih?`)) return;
+    selectedItemIds.forEach((id) => deleteQtoItem(id));
+    setSelectedItemIds([]);
+    showToast('Item QTO terpilih berhasil dihapus.');
+  };
 
   // Handle Export CSV
   const handleExportCsv = () => {
@@ -681,13 +730,15 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
           }}
         >
           <div style={{ fontSize: '12px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.88)', marginBottom: '8px' }}>
-            Total Volume
+            Total Volume per Satuan
           </div>
-          <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
-            {formatNumberId(totalVolumeSum, 2)}
+          <div style={{ fontSize: '20px', fontWeight: 800, letterSpacing: '-0.5px', color: '#FFFFFF', lineHeight: 1.25 }}>
+            {volumeByUnit.length > 0 ? `${formatNumberId(volumeByUnit[0][1], 2)} ${volumeByUnit[0][0]}` : '—'}
           </div>
-          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '6px' }}>
-            berbagai satuan
+          <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '6px', lineHeight: 1.5 }}>
+            {volumeByUnit.length > 0
+              ? volumeByUnit.map(([unit, vol]) => `${formatNumberId(vol, 2)} ${unit}`).join(' · ')
+              : 'belum ada volume'}
           </div>
         </div>
 
@@ -731,7 +782,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             {verifiedPercentage}%
           </div>
           <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '6px' }}>
-            item terhubung
+            item berstatus VERIFIED
           </div>
         </div>
       </div>
@@ -895,6 +946,46 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Bulk Action Bar — muncul hanya saat ada item tercentang */}
+      {selectedItemIds.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            flexWrap: 'wrap',
+            background: 'var(--ez-hue-blue-bg)',
+            border: '1px solid var(--ez-hue-blue-border, #BFDBFE)',
+            borderRadius: '10px',
+            padding: '10px 14px',
+          }}
+        >
+          <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
+            {selectedItemIds.length} item dipilih
+          </span>
+          <button
+            onClick={handleBulkSyncToRab}
+            style={{ height: '32px', padding: '0 14px', borderRadius: '8px', background: '#059669', color: '#FFFFFF', fontSize: '12px', fontWeight: 700, border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            <RefreshCw size={13} />
+            <span>Sinkronkan ke RAB</span>
+          </button>
+          <button
+            onClick={handleBulkDelete}
+            style={{ height: '32px', padding: '0 14px', borderRadius: '8px', background: 'var(--ez-color-surface)', color: '#DC2626', fontSize: '12px', fontWeight: 700, border: '1px solid #FECACA', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Trash2 size={13} />
+            <span>Hapus Terpilih</span>
+          </button>
+          <button
+            onClick={() => setSelectedItemIds([])}
+            style={{ height: '32px', padding: '0 10px', borderRadius: '8px', background: 'transparent', color: 'var(--ez-color-text-warm)', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer' }}
+          >
+            Batalkan pilihan
+          </button>
+        </div>
+      )}
 
       {/* 6. Main Content Split Layout: Table (Left) + Detail Panel (Right) */}
       <div
@@ -1196,6 +1287,32 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                                 <td style={{ padding: '10px 12px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                                   <button
                                     onClick={() => {
+                                      try {
+                                        syncQtoToRabSpreadsheet(item.id);
+                                        showToast(`Item "${item.uraian}" disinkronkan ke RAB.`);
+                                      } catch (err: any) {
+                                        showToast(err?.message || 'Gagal menyinkronkan item ke RAB.', 'info');
+                                      }
+                                    }}
+                                    title="Sinkronkan ke RAB"
+                                    style={{
+                                      width: '26px',
+                                      height: '26px',
+                                      borderRadius: '6px',
+                                      background: 'transparent',
+                                      border: 'none',
+                                      color: 'var(--ez-color-text-warm)',
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      marginRight: '2px',
+                                    }}
+                                  >
+                                    <RefreshCw size={13} />
+                                  </button>
+                                  <button
+                                    onClick={() => {
                                       if (confirm(`Hapus item QTO ${item.uraian}?`)) {
                                         deleteQtoItem(item.id);
                                         showToast('Item QTO berhasil dihapus.');
@@ -1249,13 +1366,8 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                 }}
               >
                 <span>
-                  Menampilkan 1 - {filteredQtoItems.length} dari {projectQtoItems.length} data
+                  Menampilkan {filteredQtoItems.length} dari {projectQtoItems.length} data (semua hasil filter ditampilkan — belum ada paginasi)
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <button style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface)', cursor: 'pointer' }}>&lt;</button>
-                  <button style={{ width: '28px', height: '28px', borderRadius: '6px', border: 'none', background: 'var(--ez-color-primary)', color: '#FFFFFF', fontWeight: 700 }}>1</button>
-                  <button style={{ width: '28px', height: '28px', borderRadius: '6px', border: '1px solid var(--ez-color-border-line)', background: 'var(--ez-color-surface)', cursor: 'pointer' }}>&gt;</button>
-                </div>
               </div>
             </div>
           )}
@@ -1322,42 +1434,58 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
               </span>
             </div>
 
-            {/* Technical Construction Illustration Thumbnail */}
-            <div
-              style={{
-                borderRadius: 'var(--ez-radius-card)',
-                overflow: 'hidden',
-                border: '1px solid #EEF1F6',
-                position: 'relative',
-                background: '#0F172A',
-                cursor: 'pointer',
-              }}
-              onClick={() => setImageViewerOpen(true)}
-            >
-              <img
-                src={bowplankImg}
-                alt="Technical illustration"
-                style={{ width: '100%', height: '160px', objectFit: 'cover', display: 'block' }}
-              />
+            {/* Technical Construction Illustration Thumbnail — hanya bila ada
+                pemetaan gambar untuk jenis pekerjaan ini */}
+            {technicalImageForItem(activeSelectedItem) ? (
               <div
                 style={{
-                  position: 'absolute',
-                  bottom: '6px',
-                  right: '6px',
-                  background: 'rgba(0,0,0,0.65)',
-                  color: '#FFFFFF',
-                  padding: '2px 8px',
-                  borderRadius: '6px',
-                  fontSize: '10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
+                  borderRadius: 'var(--ez-radius-card)',
+                  overflow: 'hidden',
+                  border: '1px solid #EEF1F6',
+                  position: 'relative',
+                  background: '#0F172A',
+                  cursor: 'pointer',
+                }}
+                onClick={() => setImageViewerOpen(true)}
+              >
+                <img
+                  src={technicalImageForItem(activeSelectedItem) as string}
+                  alt="Technical illustration"
+                  style={{ width: '100%', height: '160px', objectFit: 'cover', display: 'block' }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '6px',
+                    right: '6px',
+                    background: 'rgba(0,0,0,0.65)',
+                    color: '#FFFFFF',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    fontSize: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  <Maximize2 size={11} />
+                  <span>Lihat Gambar</span>
+                </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  borderRadius: 'var(--ez-radius-card)',
+                  border: '1px dashed var(--ez-color-border-line)',
+                  padding: '14px',
+                  fontSize: '11.5px',
+                  color: 'var(--ez-color-text-warm)',
+                  textAlign: 'center',
                 }}
               >
-                <Maximize2 size={11} />
-                <span>Lihat Gambar</span>
+                Tidak ada ilustrasi teknis untuk jenis pekerjaan ini.
               </div>
-            </div>
+            )}
 
             {/* Informasi Volume Box */}
             <div style={{ borderTop: '1px solid #EEF1F6', paddingTop: '12px' }}>
@@ -1403,8 +1531,8 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--ez-color-text-warm)' }}>Oleh:</span>
-                  <span style={{ color: 'var(--ez-color-text-body)' }}>Ahmad Yusuf</span>
+                  <span style={{ color: 'var(--ez-color-text-warm)' }}>Status:</span>
+                  <span style={{ color: 'var(--ez-color-text-body)' }}>{activeSelectedItem.status}</span>
                 </div>
               </div>
             </div>
@@ -1521,7 +1649,7 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
 
             <div style={{ padding: '16px', textAlign: 'center', background: '#0F172A' }}>
               <img
-                src={bowplankImg}
+                src={technicalImageForItem(activeSelectedItem) || bowplankImg}
                 alt="Technical render large"
                 style={{ maxWidth: '100%', maxHeight: '520px', borderRadius: '8px', objectFit: 'contain' }}
               />

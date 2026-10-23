@@ -29,7 +29,13 @@ import { checkAhspIdentitySafety } from '../data/priceDatabase2026/ahspDisplayPo
 import { resolvePriceStatus } from '../engine/pricing/priceStatus';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
 import { projectPriceEngine } from '../engine/pricing/projectPriceEngine';
-import { resolveInitialProjects } from '../lib/demoSeed';
+import {
+  resolveInitialProjects,
+  resolveInitialRabItems,
+  computeSeedCostSummary,
+  markSeedProject,
+} from '../lib/demoSeed';
+import { cloneProjectItems } from '../lib/projectClone';
 import {
   saveVersioned,
   loadVersioned,
@@ -62,6 +68,8 @@ interface ProjectContextType {
   createProject: (projectData: Partial<Project>) => Project;
   updateProject: (id: string, projectData: Partial<Project>) => void;
   deleteProject: (id: string) => void;
+  /** F1a: salin item RAB, QTO, dan mapping milik proyek sumber ke proyek tujuan (id baru). */
+  duplicateProjectData: (sourceProjectId: string, targetProjectId: string) => void;
   backupProjectData: (id: string) => any;
 
   // 2. Work Items (Daftar Pekerjaan Master Workspace)
@@ -197,6 +205,127 @@ export const ProjectContext = createContext<ProjectContextType | undefined>(unde
 
 const DEFAULT_FLAGSHIP_PROJECT_ID = 'PRJ-RUMAH-2LT-01';
 
+const DEFAULT_FLAGSHIP_RAB_ITEMS: RabItem[] = [
+  {
+    id: 'RAB-TROPIS-01',
+    projectId: DEFAULT_FLAGSHIP_PROJECT_ID,
+    no: 1,
+    code: 'A.2.2.1.1',
+    category: 'Pekerjaan Persiapan & Bowplank',
+    sectionName: 'Pekerjaan Persiapan & Bowplank',
+    description: 'Pengukuran dan pemasangan Bowplank',
+    volume: 124.5,
+    unit: 'm¹',
+    unitPrice: 48500,
+    amount: 6038250,
+    totalPrice: 6038250,
+    ahspCode: 'A.2.2.1.1',
+    volumeSource: 'MANUAL',
+  },
+  {
+    id: 'RAB-TROPIS-02',
+    projectId: DEFAULT_FLAGSHIP_PROJECT_ID,
+    no: 1,
+    code: 'A.2.3.1.1',
+    category: 'Pekerjaan Tanah & Pondasi',
+    sectionName: 'Pekerjaan Tanah & Pondasi',
+    description: 'Galian tanah pondasi footplat kedalaman 2m',
+    volume: 68.2,
+    unit: 'm³',
+    unitPrice: 86200,
+    amount: 5878840,
+    totalPrice: 5878840,
+    ahspCode: 'A.2.3.1.1',
+    volumeSource: 'MANUAL',
+  },
+  {
+    id: 'RAB-TROPIS-03',
+    projectId: DEFAULT_FLAGSHIP_PROJECT_ID,
+    no: 1,
+    code: 'A.4.1.1.5',
+    category: 'Pekerjaan Struktur Beton Bertulang',
+    sectionName: 'Pekerjaan Struktur Beton Bertulang',
+    description: 'Beton K-300 ready mix untuk Kolom & Balok Lt. 1 & 2',
+    volume: 184.0,
+    unit: 'm³',
+    unitPrice: 1250000,
+    amount: 230000000,
+    totalPrice: 230000000,
+    ahspCode: 'A.4.1.1.5',
+    volumeSource: 'AHSP 2026' as any,
+  },
+  {
+    id: 'RAB-TROPIS-04',
+    projectId: DEFAULT_FLAGSHIP_PROJECT_ID,
+    no: 2,
+    code: 'A.4.1.1.17',
+    category: 'Pekerjaan Struktur Beton Bertulang',
+    sectionName: 'Pekerjaan Struktur Beton Bertulang',
+    description: 'Pembesian ulir D13 & D16 baja tulangan BJTS 420B',
+    volume: 14250.0,
+    unit: 'kg',
+    unitPrice: 18144,
+    amount: 258552000,
+    totalPrice: 258552000,
+    ahspCode: 'A.4.1.1.17',
+    volumeSource: 'AHSP 2026' as any,
+  },
+  {
+    id: 'RAB-TROPIS-05',
+    projectId: DEFAULT_FLAGSHIP_PROJECT_ID,
+    no: 1,
+    code: 'A.4.4.1.1',
+    category: 'Pekerjaan Dinding & Plesteran',
+    sectionName: 'Pekerjaan Dinding & Plesteran',
+    description: 'Pasangan dinding bata ringan (hebel) tebal 10cm + mortar',
+    volume: 485.0,
+    unit: 'm²',
+    unitPrice: 142000,
+    amount: 68870000,
+    totalPrice: 68870000,
+    ahspCode: 'A.4.4.1.1',
+    volumeSource: 'MANUAL',
+  },
+  {
+    id: 'RAB-TROPIS-06',
+    projectId: DEFAULT_FLAGSHIP_PROJECT_ID,
+    no: 1,
+    code: 'A.4.4.3.3',
+    category: 'Pekerjaan Lantai & Keramik',
+    sectionName: 'Pekerjaan Lantai & Keramik',
+    description: 'Pemasangan Granit Tile 60×60cm Glazed Polish ruang utama',
+    volume: 320.0,
+    unit: 'm²',
+    unitPrice: 285000,
+    amount: 91200000,
+    totalPrice: 91200000,
+    ahspCode: 'A.4.4.3.3',
+    volumeSource: 'MANUAL',
+  },
+  {
+    id: 'RAB-TROPIS-07',
+    projectId: DEFAULT_FLAGSHIP_PROJECT_ID,
+    no: 2,
+    code: 'A.4.4.3.5',
+    category: 'Pekerjaan Lantai & Keramik',
+    sectionName: 'Pekerjaan Lantai & Keramik',
+    description: 'Pemasangan Plint Granit Tile 10×60cm ruang utama',
+    volume: 35.0,
+    unit: 'm¹',
+    unitPrice: 2850,
+    amount: 99750,
+    totalPrice: 99750,
+    ahspCode: 'A.4.4.3.5',
+    volumeSource: 'MANUAL',
+  },
+];
+// F1a: ringkasan biaya flagship DITURUNKAN dari item-itemnya sendiri
+// (directCost = Σ amount item; pajak 11% × subtotal) — tidak ada angka yatim
+// seperti taxAmount lama yang tidak cocok dengan subtotalnya.
+const FLAGSHIP_COST_SUMMARY = computeSeedCostSummary(DEFAULT_FLAGSHIP_RAB_ITEMS, {
+  costPerM2: 2450000,
+});
+
 const DEFAULT_FLAGSHIP_PROJECT: Project = {
   id: DEFAULT_FLAGSHIP_PROJECT_ID,
   projectNumber: 'PRJ-2026-001',
@@ -207,33 +336,15 @@ const DEFAULT_FLAGSHIP_PROJECT: Project = {
   buildingType: 'Rumah Tinggal',
   status: 'draft',
   progress: 0,
-  totalRab: 0,
+  totalRab: FLAGSHIP_COST_SUMMARY.grandTotal,
   createdAt: '2026-09-19T08:00:00.000Z',
   updatedAt: '2026-09-19T10:24:00.000Z',
   itemsCount: 7,
   sections: [],
-  costSummary: {
-    directCost: 732532724,
-    overheadPercent: 5,
-    overheadAmount: 36626636,
-    profitPercent: 5,
-    profitAmount: 36626636,
-    contingencyPercent: 0,
-    contingencyAmount: 0,
-    directorMarkupPercent: 0,
-    directorMarkupNominal: 0,
-    directorMarkupTotal: 0,
-    showMarkupToEditor: false,
-    showMarkupToClient: false,
-    subtotalBeforeTax: 805786000,
-    taxPercent: 11,
-    taxAmount: 7325324,
-    grandTotal: 813111324,
-    costPerM2: 2450000,
-  },
+  costSummary: FLAGSHIP_COST_SUMMARY,
 };
 
-export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = [
+export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = ([
   DEFAULT_FLAGSHIP_PROJECT,
   {
     id: 'PRJ-KANTOR-BDG-02',
@@ -374,123 +485,10 @@ export const DEFAULT_PORTFOLIO_PROJECTS: Project[] = [
       costPerM2: 2450000,
     },
   },
-];
-
-const DEFAULT_FLAGSHIP_RAB_ITEMS: RabItem[] = [
-  {
-    id: 'RAB-TROPIS-01',
-    projectId: DEFAULT_FLAGSHIP_PROJECT_ID,
-    no: 1,
-    code: 'A.2.2.1.1',
-    category: 'Pekerjaan Persiapan & Bowplank',
-    sectionName: 'Pekerjaan Persiapan & Bowplank',
-    description: 'Pengukuran dan pemasangan Bowplank',
-    volume: 124.5,
-    unit: 'm¹',
-    unitPrice: 48500,
-    amount: 6038250,
-    totalPrice: 6038250,
-    ahspCode: 'A.2.2.1.1',
-    volumeSource: 'MANUAL',
-  },
-  {
-    id: 'RAB-TROPIS-02',
-    projectId: DEFAULT_FLAGSHIP_PROJECT_ID,
-    no: 1,
-    code: 'A.2.3.1.1',
-    category: 'Pekerjaan Tanah & Pondasi',
-    sectionName: 'Pekerjaan Tanah & Pondasi',
-    description: 'Galian tanah pondasi footplat kedalaman 2m',
-    volume: 68.2,
-    unit: 'm³',
-    unitPrice: 86200,
-    amount: 5878840,
-    totalPrice: 5878840,
-    ahspCode: 'A.2.3.1.1',
-    volumeSource: 'MANUAL',
-  },
-  {
-    id: 'RAB-TROPIS-03',
-    projectId: DEFAULT_FLAGSHIP_PROJECT_ID,
-    no: 1,
-    code: 'A.4.1.1.5',
-    category: 'Pekerjaan Struktur Beton Bertulang',
-    sectionName: 'Pekerjaan Struktur Beton Bertulang',
-    description: 'Beton K-300 ready mix untuk Kolom & Balok Lt. 1 & 2',
-    volume: 184.0,
-    unit: 'm³',
-    unitPrice: 1250000,
-    amount: 230000000,
-    totalPrice: 230000000,
-    ahspCode: 'A.4.1.1.5',
-    volumeSource: 'AHSP 2026' as any,
-  },
-  {
-    id: 'RAB-TROPIS-04',
-    projectId: DEFAULT_FLAGSHIP_PROJECT_ID,
-    no: 2,
-    code: 'A.4.1.1.17',
-    category: 'Pekerjaan Struktur Beton Bertulang',
-    sectionName: 'Pekerjaan Struktur Beton Bertulang',
-    description: 'Pembesian ulir D13 & D16 baja tulangan BJTS 420B',
-    volume: 14250.0,
-    unit: 'kg',
-    unitPrice: 18144,
-    amount: 258552000,
-    totalPrice: 258552000,
-    ahspCode: 'A.4.1.1.17',
-    volumeSource: 'AHSP 2026' as any,
-  },
-  {
-    id: 'RAB-TROPIS-05',
-    projectId: DEFAULT_FLAGSHIP_PROJECT_ID,
-    no: 1,
-    code: 'A.4.4.1.1',
-    category: 'Pekerjaan Dinding & Plesteran',
-    sectionName: 'Pekerjaan Dinding & Plesteran',
-    description: 'Pasangan dinding bata ringan (hebel) tebal 10cm + mortar',
-    volume: 485.0,
-    unit: 'm²',
-    unitPrice: 142000,
-    amount: 68870000,
-    totalPrice: 68870000,
-    ahspCode: 'A.4.4.1.1',
-    volumeSource: 'MANUAL',
-  },
-  {
-    id: 'RAB-TROPIS-06',
-    projectId: DEFAULT_FLAGSHIP_PROJECT_ID,
-    no: 1,
-    code: 'A.4.4.3.3',
-    category: 'Pekerjaan Lantai & Keramik',
-    sectionName: 'Pekerjaan Lantai & Keramik',
-    description: 'Pemasangan Granit Tile 60×60cm Glazed Polish ruang utama',
-    volume: 320.0,
-    unit: 'm²',
-    unitPrice: 285000,
-    amount: 91200000,
-    totalPrice: 91200000,
-    ahspCode: 'A.4.4.3.3',
-    volumeSource: 'MANUAL',
-  },
-  {
-    id: 'RAB-TROPIS-07',
-    projectId: DEFAULT_FLAGSHIP_PROJECT_ID,
-    no: 2,
-    code: 'A.4.4.3.5',
-    category: 'Pekerjaan Lantai & Keramik',
-    sectionName: 'Pekerjaan Lantai & Keramik',
-    description: 'Pemasangan Plint Granit Tile 10×60cm ruang utama',
-    volume: 35.0,
-    unit: 'm¹',
-    unitPrice: 2850,
-    amount: 99750,
-    totalPrice: 99750,
-    ahspCode: 'A.4.4.3.5',
-    volumeSource: 'MANUAL',
-  },
-];
-
+  // F1a: seluruh proyek bawaan ditandai sebagai data contoh (isDemo) dan
+  // costSummary-nya dinormalisasi (pajak & grand total diturunkan dari
+  // subtotal) oleh markSeedProject.
+] as Project[]).map(markSeedProject);
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   /**
    * Hardened dataset loader: reads versioned envelope or legacy raw JSON.
@@ -562,10 +560,16 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
 
   // 6. RAB Items Flat Database per Project
+  // F1a: kunci yang SUDAH ADA dihormati apa adanya — termasuk array kosong
+  // hasil pengguna menghapus seluruh item (dulu: array kosong selalu
+  // memunculkan kembali item flagship setelah reload). Seed flagship hanya
+  // untuk instalasi pertama (kunci belum pernah ada) / data rusak.
   const [allRabItems, setAllRabItems] = useState<RabItem[]>(() => {
-    const loaded = loadDataset<RabItem[]>('ezrab_prod_rab_items', []);
-    if (loaded.length > 0) return loaded;
-    return DEFAULT_FLAGSHIP_RAB_ITEMS;
+    const result = loadVersioned<RabItem[]>('ezrab_prod_rab_items');
+    if (!result.ok && (result.error === 'CORRUPT' || result.error === 'MIGRATION_FAILED')) {
+      console.warn(`[EZRAB] Storage ${result.error} for key ezrab_prod_rab_items; using fallback.`);
+    }
+    return resolveInitialRabItems(result, DEFAULT_FLAGSHIP_RAB_ITEMS);
   });
 
   // 7. Schedule Tasks Store
@@ -950,6 +954,36 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     },
     [currentProjectId, backupProjectData]
+  );
+
+  // F1a: Duplicate project data — salin item RAB, QTO, dan mapping proyek
+  // sumber ke proyek tujuan dengan id baru (nilai duplikat konsisten dengan
+  // isinya; dulu duplikat hanya menyalin totalRab tanpa item apa pun).
+  const duplicateProjectData = useCallback(
+    (sourceProjectId: string, targetProjectId: string) => {
+      const stamp = Date.now().toString(36);
+      const cloned = cloneProjectItems(
+        { rabItems: allRabItems, qtoItems, mappings },
+        sourceProjectId,
+        targetProjectId,
+        (kind, _oldId, idx) =>
+          `${kind}-copy-${stamp}-${idx}-${Math.random().toString(36).slice(2, 6)}`
+      );
+      if (cloned.qtoItems.length > 0) {
+        setQtoItems((prev) => [...prev, ...cloned.qtoItems]);
+      }
+      if (cloned.rabItems.length > 0) {
+        setAllRabItems((prev) => {
+          const next = [...prev, ...cloned.rabItems];
+          recalculateProjectSummary(targetProjectId, next);
+          return next;
+        });
+      }
+      if (cloned.mappings.length > 0) {
+        setMappings((prev) => [...prev, ...cloned.mappings]);
+      }
+    },
+    [allRabItems, qtoItems, mappings, recalculateProjectSummary]
   );
 
   // Getters
@@ -2400,6 +2434,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createProject,
       updateProject,
       deleteProject,
+      duplicateProjectData,
       backupProjectData,
       allWorkItems: workItems,
       projectWorkItems,
@@ -2465,6 +2500,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createProject,
       updateProject,
       deleteProject,
+      duplicateProjectData,
       backupProjectData,
       workItems,
       projectWorkItems,

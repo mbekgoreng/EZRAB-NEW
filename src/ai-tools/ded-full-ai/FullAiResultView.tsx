@@ -125,6 +125,11 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
               <span style={{ fontWeight: 700, color: item.subtotal != null ? '#111827' : '#9ca3af' }}>
                 {fmtRp(item.subtotal)}
               </span>
+              {item.subtotal != null && (
+                <span style={{ fontSize: 11, color: item.subtotalVerified ? '#16a34a' : '#d97706', marginLeft: 8 }}>
+                  {item.subtotalVerified ? '✓ terverifikasi (volume × harga)' : 'belum terverifikasi'}
+                </span>
+              )}
               {item.subtotal == null && item.status !== 'UNRESOLVED' && (
                 <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 8 }}>
                   tidak masuk total{item.exclusionReason ? ` [${item.exclusionReason}]` : ''}
@@ -218,6 +223,9 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
                         : item.price.notes,
                     },
                     subtotal: includeInTotal ? newSubtotal : null,
+                    // Subtotal hasil edit dihitung aplikasi dari volume × harga
+                    // yang terisi — terverifikasi hanya bila benar-benar terhitung.
+                    subtotalVerified: includeInTotal && newSubtotal != null,
                     status: includeInTotal ? 'READY' : newStatus,
                     exclusionReason: includeInTotal ? null : newExclusion,
                   });
@@ -296,7 +304,10 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack }
           fontSize: 11, padding: '4px 12px', borderRadius: 12,
           background: '#7C3AED15', color: '#7C3AED', fontWeight: 700,
         }}>
-          {output.mode === 'FAST' ? 'Cepat' : 'Mendalam'} • {output.provenance.model}
+          {output.mode === 'FAST' ? 'Cepat' : 'Mendalam'} •{' '}
+          {output.provenance.provider && output.provenance.model
+            ? `${output.provenance.provider} / ${output.provenance.model}`
+            : output.provenance.model || 'Model tidak diketahui'}
         </span>
       </div>
 

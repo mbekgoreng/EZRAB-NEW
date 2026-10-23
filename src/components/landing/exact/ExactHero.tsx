@@ -146,7 +146,7 @@ export const ExactHero: React.FC<ExactHeroProps> = ({ onStartFree, onOpenDemo })
             </button>
 
             <button onClick={onOpenDemo} className="ez-btn-outline-pill">
-              <Play size={15} fill="currentColor" />
+              <Sparkles size={15} />
               <span>Lihat Cara Kerja</span>
             </button>
           </div>

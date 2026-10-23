@@ -8,6 +8,7 @@ import {
   heuristicEstimate,
   aiEstimateStore,
   formatAiEstimatePrice,
+  strictPositivePrice,
   AI_ESTIMATE_LABEL,
 } from '../engine/pricing/aiEstimate/aiPriceEstimate';
 import { marketReviewStore } from '../engine/pricing/market/reviewStore';
@@ -117,5 +118,20 @@ describe('aiPriceEstimate', () => {
 
   it('9. display policy: tidak pernah mengubah null menjadi 0', () => {
     expect(formatAiEstimatedPrice(undefined)).toBeNull();
+  });
+
+  it('10. F5 (4.7): strictPositivePrice hanya menerima number finite > 0 — string angka DITOLAK', () => {
+    expect(strictPositivePrice(850000)).toBe(850000);
+    expect(strictPositivePrice(0.5)).toBe(0.5);
+    // Koersi diam-diam yang lama: "850000" > 0 === true, Math.round mengonversi.
+    expect(strictPositivePrice('850000')).toBeNull();
+    expect(strictPositivePrice('125000')).toBeNull();
+    expect(strictPositivePrice(0)).toBeNull();
+    expect(strictPositivePrice(-5)).toBeNull();
+    expect(strictPositivePrice(NaN)).toBeNull();
+    expect(strictPositivePrice(Infinity)).toBeNull();
+    expect(strictPositivePrice(null)).toBeNull();
+    expect(strictPositivePrice(undefined)).toBeNull();
+    expect(strictPositivePrice(true)).toBeNull();
   });
 });

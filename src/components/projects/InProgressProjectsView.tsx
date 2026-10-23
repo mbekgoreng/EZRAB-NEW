@@ -28,7 +28,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
   onOpenProject,
 }) => {
   const { updateProject } = useProject();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusSubFilter, setStatusSubFilter] = useState<'all' | 'on_track' | 'behind'>('all');
   
@@ -42,25 +42,41 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
     return 'Rp ' + (val || 0).toLocaleString('id-ID');
   };
 
-  // Mock / Calculated S-Curve planned vs actual deviation for simulation
+  // F1a: status jadwal JUJUR dari data nyata — progres aktual dari field
+  // progress (bila terisi), progres rencana dari titik terakhir kurvaSData
+  // proyek (bila ada). Dulu: progres kosong dianggap 35% dan rencana
+  // dikarang dari paritas panjang id proyek (simulasi). Sekarang nilai yang
+  // tidak ada datanya = null dan ditampilkan '—'.
   const getProjectScheduleStatus = (proj: Project) => {
-    const progress = proj.progress || 35;
-    // Simulate planned progress (e.g. 5% higher or lower based on id hash)
-    const planned = Math.min(100, Math.max(10, progress + (proj.id.length % 2 === 0 ? 4 : -3)));
-    const deviation = progress - planned;
-    const isAhead = deviation >= 0;
+    const progress = typeof proj.progress === 'number' ? proj.progress : null;
+    const points = proj.kurvaSData ?? [];
+    const lastPoint = points.length > 0 ? points[points.length - 1] : undefined;
+    const planned =
+      lastPoint && typeof lastPoint.cumulativePlannedPercent === 'number'
+        ? lastPoint.cumulativePlannedPercent
+        : null;
+    const hasActualPoint = points.some((pt) => typeof pt.actualProgressPercent === 'number');
+    const deviation =
+      progress != null && planned != null && hasActualPoint ? progress - planned : null;
+    const isAhead = deviation != null ? deviation >= 0 : null;
     return { progress, planned, deviation, isAhead };
   };
 
-  const onTrackCount = inProgressProjects.filter((p) => getProjectScheduleStatus(p).isAhead).length;
-  const behindCount = inProgressProjects.length - onTrackCount;
+  const scheduleStatuses = inProgressProjects.map(getProjectScheduleStatus);
+  const onTrackCount = scheduleStatuses.filter((s) => s.isAhead === true).length;
+  const behindCount = scheduleStatuses.filter((s) => s.isAhead === false).length;
+  const knownScheduleCount = scheduleStatuses.filter((s) => s.isAhead !== null).length;
   const totalActiveValue = inProgressProjects.reduce(
     (acc, p) => acc + (p.totalRab || p.costSummary?.grandTotal || 0),
     0
   );
-  const avgActiveProgress = inProgressProjects.length > 0
-    ? Math.round(inProgressProjects.reduce((acc, p) => acc + (p.progress || 35), 0) / inProgressProjects.length)
-    : 0;
+  const projectsWithProgress = inProgressProjects.filter((p) => typeof p.progress === 'number');
+  const avgActiveProgress = projectsWithProgress.length > 0
+    ? Math.round(
+        projectsWithProgress.reduce((acc, p) => acc + (p.progress as number), 0) /
+          projectsWithProgress.length
+      )
+    : null;
 
   const filteredProjects = inProgressProjects.filter((proj) => {
     const matchesSearch =
@@ -72,15 +88,16 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
     const { isAhead } = getProjectScheduleStatus(proj);
     const matchesSubFilter =
       statusSubFilter === 'all' ||
-      (statusSubFilter === 'on_track' && isAhead) ||
-      (statusSubFilter === 'behind' && !isAhead);
+      (statusSubFilter === 'on_track' && isAhead === true) ||
+      (statusSubFilter === 'behind' && isAhead === false);
 
     return matchesSearch && matchesSubFilter;
   });
 
   const handleOpenProgressModal = (proj: Project) => {
     setEditingProgressProjId(proj.id);
-    setNewProgressVal(proj.progress || 35);
+    // Progres belum terisi mulai dari 0 untuk diisi pengguna — bukan 35 karangan.
+    setNewProgressVal(typeof proj.progress === 'number' ? proj.progress : 0);
   };
 
   const handleSaveProgress = (projId: string) => {
@@ -90,6 +107,10 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
     });
     setEditingProgressProjId(null);
   };
+
+  const noScheduleText =
+    ({ id: 'Belum ada data jadwal', en: 'No schedule data', zh: '暂无进度数据', ms: 'Belum ada data jadual' })[lang] ??
+    'Belum ada data jadwal';
 
   const handleMarkAsCompleted = (proj: Project) => {
     if (
@@ -140,8 +161,14 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
             {t('proj.active.kpi2_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
-            {onTrackCount}{' '}
-            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi2_u')}</span>
+            {knownScheduleCount > 0 ? (
+              <>
+                {onTrackCount}{' '}
+                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi2_u')}</span>
+              </>
+            ) : (
+              '—'
+            )}
           </div>
           <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', marginTop: '6px' }}>
             {t('proj.active.kpi2_s')}
@@ -159,8 +186,14 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
             {t('proj.active.kpi3_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
-            {behindCount}{' '}
-            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi3_u')}</span>
+            {knownScheduleCount > 0 ? (
+              <>
+                {behindCount}{' '}
+                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.active.kpi3_u')}</span>
+              </>
+            ) : (
+              '—'
+            )}
           </div>
           <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', marginTop: '6px' }}>
             {t('proj.active.kpi3_s')}
@@ -173,10 +206,10 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
             {t('proj.active.kpi4_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
-            {avgActiveProgress}%
+            {avgActiveProgress != null ? `${avgActiveProgress}%` : '—'}
           </div>
           <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.35)', borderRadius: 'var(--ez-radius-pill)', overflow: 'hidden', marginTop: '10px' }}>
-            <div style={{ width: `${avgActiveProgress}%`, height: '100%', background: '#FFFFFF', borderRadius: 'var(--ez-radius-pill)' }} />
+            <div style={{ width: `${avgActiveProgress ?? 0}%`, height: '100%', background: '#FFFFFF', borderRadius: 'var(--ez-radius-pill)' }} />
           </div>
         </div>
       </div>
@@ -405,12 +438,22 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                         fontWeight: 700,
                         padding: '5px 12px',
                         borderRadius: 'var(--ez-radius-pill)',
-                        background: isAhead ? 'var(--ez-pastel-mint)' : '#FCE9E9',
-                        color: isAhead ? 'var(--ez-pill-ok-text)' : 'var(--ez-hue-rose-text)',
+                        background:
+                          isAhead === null
+                            ? 'var(--ez-color-surface-tertiary)'
+                            : isAhead
+                              ? 'var(--ez-pastel-mint)'
+                              : '#FCE9E9',
+                        color:
+                          isAhead === null
+                            ? 'var(--ez-color-text-muted)'
+                            : isAhead
+                              ? 'var(--ez-pill-ok-text)'
+                              : 'var(--ez-hue-rose-text)',
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {isAhead ? t('proj.active.badge_on') : t('proj.active.badge_late')}
+                      {isAhead === null ? noScheduleText : isAhead ? t('proj.active.badge_on') : t('proj.active.badge_late')}
                     </span>
                   </div>
 
@@ -450,7 +493,7 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
                       <span style={{ fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>{t('proj.active.actual_t')}</span>
-                      <span style={{ fontWeight: 800, color: 'var(--ez-color-primary)', fontSize: '14px' }}>{progress}%</span>
+                      <span style={{ fontWeight: 800, color: 'var(--ez-color-primary)', fontSize: '14px' }}>{progress != null ? `${progress}%` : '—'}</span>
                     </div>
 
                     {/* Dual Progress Bar */}
@@ -462,8 +505,8 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                           left: 0,
                           top: 0,
                           bottom: 0,
-                          width: `${progress}%`,
-                          background: isAhead ? '#16A34A' : 'var(--ez-color-primary)',
+                          width: `${progress ?? 0}%`,
+                          background: isAhead === true ? '#16A34A' : 'var(--ez-color-primary)',
                           borderRadius: 'var(--ez-radius-pill)',
                           zIndex: 2,
                         }}
@@ -471,10 +514,12 @@ export const InProgressProjectsView: React.FC<InProgressProjectsViewProps> = ({
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
-                      <span>{t('proj.active.planned_t')}<strong>{planned}%</strong></span>
-                      <span style={{ fontWeight: 700, color: isAhead ? 'var(--ez-pill-ok-text)' : 'var(--ez-hue-rose-text)' }}>
-                        {t('proj.active.dev_t')}{deviation >= 0 ? `+${deviation}%` : `${deviation}%`}
-                      </span>
+                      <span>{t('proj.active.planned_t')}<strong>{planned != null ? `${planned}%` : '—'}</strong></span>
+                      {deviation != null && (
+                        <span style={{ fontWeight: 700, color: isAhead ? 'var(--ez-pill-ok-text)' : 'var(--ez-hue-rose-text)' }}>
+                          {t('proj.active.dev_t')}{deviation >= 0 ? `+${deviation}%` : `${deviation}%`}
+                        </span>
+                      )}
                     </div>
                   </div>
 

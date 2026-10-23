@@ -56,7 +56,7 @@ function fileOf(bytes: Uint8Array, name: string, type = 'image/png'): File {
 async function main(): Promise<void> {
   console.log('\n[1] ENHANCE — prompt & validasi service (pra-jaringan):');
   check('ENHANCE_PROMPT_VERSION = doc-enhance-v1', ENHANCE_PROMPT_VERSION === 'doc-enhance-v1');
-  check('DRAFT_PROMPT_VERSION tidak berubah', DRAFT_PROMPT_VERSION === 'doc-draft-v2');
+  check('DRAFT_PROMPT_VERSION naik ke doc-draft-v3 (klaster F2: format markdown)', DRAFT_PROMPT_VERSION === 'doc-draft-v3');
   const editorSys = systemForMode('ENHANCE');
   check('system ENHANCE = Professional Document Editor §5', editorSys.includes('EZRAB Professional Document Editor'));
   check('system ENHANCE mempertahankan fakta', editorSys.includes('Pertahankan fakta, angka, nama, tanggal'));

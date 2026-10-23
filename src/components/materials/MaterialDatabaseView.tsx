@@ -124,10 +124,12 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
     }
   }, [initialTab]);
 
-  // Base Data Fetching
-  const allMaterials = useMemo(() => matDb.getAllMaterials(), [matDb]);
-  const allLabor = useMemo(() => laborDb.getAllLabor(), [laborDb]);
-  const allEquipment = useMemo(() => equipDb.getAllEquipment(), [equipDb]);
+  // Base Data Fetching — dbVersion di-bump setiap ada penambahan data ke
+  // layanan database (impor spreadsheet / tambah material) agar memo tidak basi.
+  const [dbVersion, setDbVersion] = useState(0);
+  const allMaterials = useMemo(() => matDb.getAllMaterials(), [matDb, dbVersion]);
+  const allLabor = useMemo(() => laborDb.getAllLabor(), [laborDb, dbVersion]);
+  const allEquipment = useMemo(() => equipDb.getAllEquipment(), [equipDb, dbVersion]);
   const [priceVersion, setPriceVersion] = useState(0);
 
   useEffect(() => {
@@ -141,8 +143,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
     return currentProject ? priceRepo.getProjectPrices(currentProject.id) : [];
   }, [priceRepo, currentProject, priceVersion]);
 
-  const allSuppliers = useMemo(() => matDb.getAllSuppliers(), [matDb]);
-  const allPrices = useMemo(() => matDb.getAllPrices(), [matDb]);
+  const allSuppliers = useMemo(() => matDb.getAllSuppliers(), [matDb, dbVersion]);
+  const allPrices = useMemo(() => matDb.getAllPrices(), [matDb, dbVersion]);
 
   // Spreadsheet modal
   const [isSpreadsheetModalOpen, setIsSpreadsheetModalOpen] = useState(false);
@@ -521,7 +523,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 }}
               >
                 <CheckCircle2 size={12} />
-                Verified Database
+                Katalog Harga
               </span>
             </div>
 
@@ -1588,92 +1590,108 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
             </div>
           </div>
 
-          {/* Row 4: Active Filter Chips */}
+          {/* Row 4: Active Filter Chips — mencerminkan state filter NYATA
+              (dulu chip statis 'Bangunan / Jawa Barat / Standard / Current'
+              selalu tampil apa pun pilihan pengguna). */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', paddingTop: '8px', borderTop: '1px solid var(--ez-color-border-line)', fontSize: '11px' }}>
             <span style={{ color: 'var(--ez-color-text-faint)', fontWeight: 600 }}>Filter Aktif:</span>
 
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '3px 8px',
-                borderRadius: '8px',
-                backgroundColor: 'var(--ez-hue-blue-bg)',
-                color: 'var(--ez-color-primary-hover)',
-                fontWeight: 700,
-                border: '1px solid var(--ez-hue-blue-border)',
-              }}
-            >
-              Bangunan
-              <X size={11} style={{ cursor: 'pointer' }} onClick={() => setSelectedSector('ALL')} />
-            </span>
+            {selectedSector === 'ALL' && selectedProvince === 'Indonesia' && selectedTier === 'ALL' && selectedStatus === 'ALL' && (
+              <span style={{ color: 'var(--ez-color-text-faint)' }}>Tidak ada filter tambahan</span>
+            )}
 
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '3px 8px',
-                borderRadius: '8px',
-                backgroundColor: 'var(--ez-hue-blue-bg)',
-                color: 'var(--ez-color-primary-hover)',
-                fontWeight: 700,
-                border: '1px solid var(--ez-hue-blue-border)',
-              }}
-            >
-              Jawa Barat
-              <X size={11} style={{ cursor: 'pointer' }} onClick={() => setSelectedProvince('Indonesia')} />
-            </span>
+            {selectedSector !== 'ALL' && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '3px 8px',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--ez-hue-blue-bg)',
+                  color: 'var(--ez-color-primary-hover)',
+                  fontWeight: 700,
+                  border: '1px solid var(--ez-hue-blue-border)',
+                }}
+              >
+                {SECTOR_OPTIONS.find((s) => s.id === selectedSector)?.label || selectedSector}
+                <X size={11} style={{ cursor: 'pointer' }} onClick={() => setSelectedSector('ALL')} />
+              </span>
+            )}
 
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '3px 8px',
-                borderRadius: '8px',
-                backgroundColor: 'var(--ez-hue-blue-bg)',
-                color: 'var(--ez-color-primary-hover)',
-                fontWeight: 700,
-                border: '1px solid var(--ez-hue-blue-border)',
-              }}
-            >
-              Standard
-              <X size={11} style={{ cursor: 'pointer' }} onClick={() => setSelectedTier('ALL')} />
-            </span>
+            {selectedProvince !== 'Indonesia' && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '3px 8px',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--ez-hue-blue-bg)',
+                  color: 'var(--ez-color-primary-hover)',
+                  fontWeight: 700,
+                  border: '1px solid var(--ez-hue-blue-border)',
+                }}
+              >
+                {selectedProvince}
+                <X size={11} style={{ cursor: 'pointer' }} onClick={() => setSelectedProvince('Indonesia')} />
+              </span>
+            )}
 
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '3px 8px',
-                borderRadius: '8px',
-                backgroundColor: 'var(--ez-hue-blue-bg)',
-                color: 'var(--ez-color-primary-hover)',
-                fontWeight: 700,
-                border: '1px solid var(--ez-hue-blue-border)',
-              }}
-            >
-              Current
-              <X size={11} style={{ cursor: 'pointer' }} onClick={() => setSelectedStatus('ALL')} />
-            </span>
+            {selectedTier !== 'ALL' && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '3px 8px',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--ez-hue-blue-bg)',
+                  color: 'var(--ez-color-primary-hover)',
+                  fontWeight: 700,
+                  border: '1px solid var(--ez-hue-blue-border)',
+                }}
+              >
+                {selectedTier}
+                <X size={11} style={{ cursor: 'pointer' }} onClick={() => setSelectedTier('ALL')} />
+              </span>
+            )}
 
-            <button
-              onClick={handleClearAllFilters}
-              style={{
-                fontSize: '11.5px',
-                fontWeight: 700,
-                color: 'var(--ez-color-primary)',
-                cursor: 'pointer',
-                background: 'transparent',
-                border: 'none',
-                marginLeft: '4px',
-              }}
-            >
-              Clear All
-            </button>
+            {selectedStatus !== 'ALL' && (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '3px 8px',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--ez-hue-blue-bg)',
+                  color: 'var(--ez-color-primary-hover)',
+                  fontWeight: 700,
+                  border: '1px solid var(--ez-hue-blue-border)',
+                }}
+              >
+                {selectedStatus}
+                <X size={11} style={{ cursor: 'pointer' }} onClick={() => setSelectedStatus('ALL')} />
+              </span>
+            )}
+
+            {(selectedSector !== 'ALL' || selectedProvince !== 'Indonesia' || selectedTier !== 'ALL' || selectedStatus !== 'ALL') && (
+              <button
+                onClick={handleClearAllFilters}
+                style={{
+                  fontSize: '11.5px',
+                  fontWeight: 700,
+                  color: 'var(--ez-color-primary)',
+                  cursor: 'pointer',
+                  background: 'transparent',
+                  border: 'none',
+                  marginLeft: '4px',
+                }}
+              >
+                Clear All
+              </button>
+            )}
           </div>
         </div>
         </>
@@ -1741,7 +1759,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                   </span>
                 </div>
                 <p style={{ margin: '6px 0 0', fontSize: '12.5px', color: 'var(--ez-color-text-muted)', lineHeight: 1.5 }}>
-                  Daftar harga khusus material, upah tenaga kerja, dan peralatan untuk proyek ini. Harga override diprioritaskan saat perhitungan RAB & BOQ.
+                  Daftar harga khusus material, upah tenaga kerja, dan peralatan untuk proyek ini. Harga override menjadi prioritas pertama saat resolver harga mencari material ini untuk proyek ini (RAB, analisa AHSP, dan estimasi).
                 </p>
               </div>
 
@@ -2037,10 +2055,10 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                         {visibleColumns.spec && (
                           <td style={{ padding: `${padY} 10px` }}>
                             <div style={{ fontWeight: 600, color: 'var(--ez-color-text-body)', fontSize: '11.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={mat.specification}>
-                              {(mat as any).standard || 'SNI 7064:2014'}
+                              {(mat as any).standard || '—'}
                             </div>
                             <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-faint)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {mat.specification || 'Kemasan 50 kg'}
+                              {mat.specification || '—'}
                             </div>
                           </td>
                         )}
@@ -2058,7 +2076,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                             <div style={{ fontWeight: 900, color: isOverridden ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text)', fontFamily: 'monospace', fontSize: '12px' }}>
                               {isOverridden && activeOverride
                                 ? formatCurrencyIDR(activeOverride.price)
-                                : (basePrice > 0 ? formatCurrencyIDR(basePrice) : 'Rp 74.000')}
+                                : (basePrice > 0 ? formatCurrencyIDR(basePrice) : 'Belum tersedia')}
                             </div>
                             {isOverridden ? (
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
@@ -2066,13 +2084,21 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                                   OVERRIDE PROYEK
                                 </span>
                                 <span style={{ fontSize: '9.5px', color: 'var(--ez-color-text-faint)', textDecoration: 'line-through' }}>
-                                  {basePrice > 0 ? formatCurrencyIDR(basePrice) : 'Rp 74.000'}
+                                  {basePrice > 0 ? formatCurrencyIDR(basePrice) : 'Belum tersedia'}
                                 </span>
                               </div>
-                            ) : (
+                            ) : primaryPriceRec?.verificationStatus === 'VERIFIED' ? (
                               <div style={{ fontSize: '10px', color: 'var(--ez-hue-green-text)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px', marginTop: '1px' }}>
                                 <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--ez-hue-green-text)', display: 'inline-block' }} />
                                 Verified
+                              </div>
+                            ) : primaryPriceRec ? (
+                              <div style={{ fontSize: '10px', color: 'var(--ez-color-text-faint)', fontWeight: 600, marginTop: '1px' }}>
+                                {primaryPriceRec.verificationStatus === 'EXPIRED' ? 'Kedaluwarsa' : 'Belum terverifikasi'}
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: '10px', color: 'var(--ez-color-text-faint)', fontWeight: 600, marginTop: '1px' }}>
+                                Harga belum tersedia
                               </div>
                             )}
                           </td>
@@ -2117,25 +2143,27 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                         {visibleColumns.region && (
                           <td style={{ padding: `${padY} 10px` }}>
                             <div style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {primaryPriceRec?.region.province || 'Jawa Barat'}
+                              {primaryPriceRec?.region.province || '—'}
                             </div>
-                            <div style={{ fontSize: '10px', color: 'var(--ez-color-text-faint)' }}>
-                              (Exact region)
-                            </div>
+                            {primaryPriceRec?.region.province && (
+                              <div style={{ fontSize: '10px', color: 'var(--ez-color-text-faint)' }}>
+                                (Exact region)
+                              </div>
+                            )}
                           </td>
                         )}
 
                         {/* Sumber */}
                         {visibleColumns.source && (
                           <td style={{ padding: `${padY} 10px`, color: 'var(--ez-color-text-slate)', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {primaryPriceRec?.sourceName || 'Distributor Resmi'}
+                            {primaryPriceRec?.sourceName || '—'}
                           </td>
                         )}
 
                         {/* Updated */}
                         {visibleColumns.updated && (
                           <td style={{ padding: `${padY} 10px`, color: 'var(--ez-color-text-muted)', fontSize: '11px', whiteSpace: 'nowrap' }}>
-                            {primaryPriceRec?.priceDate || '25 Sep 2026'}
+                            {primaryPriceRec?.priceDate || '—'}
                           </td>
                         )}
 
@@ -2586,6 +2614,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
         onSave={(newMat: MaterialMaster, newPrice?: MaterialPrice) => {
           matDb.addMaterial(newMat);
           if (newPrice) matDb.addPriceRecord(newPrice);
+          setDbVersion((v) => v + 1);
           setSelectedMaterialForInspector(newMat);
           setIsInspectorOpen(true);
           setIsAddMaterialWizardOpen(false);
@@ -2608,6 +2637,26 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
         initialQuery={aiSearchPrompt}
         onClose={() => setIsAiPriceDrawerOpen(false)}
         onAdoptPrice={(mat: MaterialMaster, price: number, saveToDb: boolean) => {
+          if (!saveToDb && currentProject) {
+            // "Gunakan Proyek": terapkan NYATA sebagai harga proyek (bukan alert).
+            // Dicatat apa adanya sebagai harga dari riset — belum terverifikasi.
+            projectPriceEngine.setProjectPrice(
+              {
+                projectId: currentProject.id,
+                materialId: mat.id,
+                materialCode: mat.materialCode,
+                materialName: mat.name,
+                category: mat.category || 'MATERIAL',
+                price,
+                unit: mat.unit,
+                source: 'USER',
+                notes: 'Riset AI — perlu verifikasi. Diterapkan dari panel riset harga AI; status belum terverifikasi.',
+                status: 'ACTIVE',
+                createdBy: 'Estimator Proyek',
+              },
+              { id: 'USR-PROJ-EST', name: 'Estimator Proyek' }
+            );
+          }
           if (saveToDb) {
             const newPriceRec: MaterialPrice = {
               id: `PRC-${Date.now()}`,
@@ -2621,12 +2670,12 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
               priceTier: mat.priceTier || 'STANDARD',
               priceType: 'USER_DEFINED',
               sourceType: 'USER_INPUT',
-              sourceName: 'Riset AI Terverifikasi',
+              sourceName: 'Riset AI — perlu verifikasi',
               taxIncluded: false,
               taxRate: 0.11,
               deliveryIncluded: false,
-              confidence: 'HIGH',
-              verificationStatus: 'VERIFIED',
+              confidence: 'LOW',
+              verificationStatus: 'UNVERIFIED',
               freshness: 'CURRENT',
               priceDate: new Date().toISOString().split('T')[0],
               createdAt: new Date().toISOString(),
@@ -2641,6 +2690,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
       <SpreadsheetSyncModal
         isOpen={isSpreadsheetModalOpen}
         onClose={() => setIsSpreadsheetModalOpen(false)}
+        onDataImported={() => setDbVersion((v) => v + 1)}
         activeCategory={
           activeCategoryTab === 'LABOR'
             ? 'LABOR'

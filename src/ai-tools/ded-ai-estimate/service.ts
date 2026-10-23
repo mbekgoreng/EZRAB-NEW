@@ -18,7 +18,7 @@ import { attemptQuantityFromDimensionString } from './quantity';
 import { applyAiEstimatePrice } from './pricing';
 import { DedAiCalculator } from './calculator';
 import { deriveKolomVolume, deriveDindingNetto, derivePlester, DerivationTrail } from './derivation';
-import { selectPagesWithTrace } from './analysisTrace';
+import { selectPagesWithTrace, formatPageRanges } from './analysisTrace';
 import { buildDivisionCoverage } from './divisions';
 import { groupByWbs } from './wbsClassifier';
 import {
@@ -200,6 +200,76 @@ export type DedAiOutputEnvelope =
       details?: string[];
     };
 
+export type DedPassOutcomeStatus = 'OK' | 'EMPTY_RESPONSE' | 'MALFORMED_RESPONSE';
+
+export interface DedPassOutcome {
+  status: DedPassOutcomeStatus;
+  items: any[];
+  errorCode?: string;
+}
+
+/**
+ * F4 (3.5): klasifikasikan hasil satu pass analisis. Tiga keadaan yang dulu
+ * melebur menjadi EMPTY_RESPONSE kini dibedakan:
+ * - respons tidak ter-parse sebagai JSON / bukan objek → MALFORMED (JSON);
+ * - JSON valid tetapi `workItems` hilang atau bukan array → MALFORMED
+ *   (format keluaran model tidak sesuai skema) — BUKAN "dokumen kosong";
+ * - `workItems` array yang benar-benar kosong → EMPTY (model memang tidak
+ *   menemukan pekerjaan pada kelompok halaman ini).
+ */
+export function classifyPassOutcome(parsedAi: unknown, parseFailed: boolean): DedPassOutcome {
+  if (parseFailed || parsedAi == null || typeof parsedAi !== 'object') {
+    return { status: 'MALFORMED_RESPONSE', items: [], errorCode: 'MALFORMED_JSON' };
+  }
+  const workItems = (parsedAi as { workItems?: unknown }).workItems;
+  if (!Array.isArray(workItems)) {
+    return { status: 'MALFORMED_RESPONSE', items: [], errorCode: 'MALFORMED_RESPONSE' };
+  }
+  if (workItems.length === 0) {
+    return { status: 'EMPTY_RESPONSE', items: [] };
+  }
+  return { status: 'OK', items: workItems };
+}
+
+/**
+ * F4 (3.5): keputusan error akhir bila tidak ada satu pun item terkumpul.
+ * Kegagalan gateway (lastAiError) diteruskan apa adanya. Bila ada pass
+ * MALFORMED, errornya adalah kegagalan PEMROSESAN model — pesan tidak boleh
+ * menyalahkan isi dokumen. NO_DATA hanya bila semua pass menjawab sah
+ * dengan daftar pekerjaan yang memang kosong.
+ */
+export function decideNoItemsError(
+  passStatuses: ReadonlyArray<string>,
+  lastAiError: { errorCode: string; stage: string; message: string; retryable: boolean } | null
+): { errorCode: string; stage: string; message: string; retryable: boolean } {
+  if (lastAiError) {
+    return {
+      errorCode: lastAiError.errorCode,
+      stage: lastAiError.stage,
+      message: lastAiError.message,
+      retryable: lastAiError.retryable,
+    };
+  }
+  const malformedCount = passStatuses.filter((s) => s === 'MALFORMED_RESPONSE').length;
+  if (malformedCount > 0) {
+    return {
+      errorCode: 'MALFORMED_RESPONSE',
+      stage: 'parse-ai',
+      message:
+        `Model mengembalikan format keluaran yang tidak sesuai pada ${malformedCount} pass ` +
+        `(respons bukan daftar pekerjaan yang valid) — ini kegagalan pemrosesan model, ` +
+        `bukan berarti DED tidak memuat pekerjaan. Silakan coba lagi.`,
+      retryable: true,
+    };
+  }
+  return {
+    errorCode: 'NO_DATA',
+    stage: 'parse-ai',
+    message: 'Model tidak menemukan pekerjaan apa pun di DED.',
+    retryable: true,
+  };
+}
+
 export class DedAiEstimateService {
   public async execute(options: DedAiServiceOptions): Promise<DedAiOutputEnvelope> {
     try {
@@ -238,7 +308,9 @@ export class DedAiEstimateService {
       } as any;
     }
 
-    notify('PARSE', 'Membaca DED', 10, 'Mengekstrak teks & gambar dari PDF DED…');
+    // F4 (3.6): label jujur — pipeline ini mengekstrak TEKS saja
+    // (parseDedPdf dipanggil dengan withImages: false; gambar tidak dibaca).
+    notify('PARSE', 'Membaca DED', 10, 'Mengekstrak teks dari PDF DED…');
     const parsedResult = await parseDedPdf(options.buffer, options.fileName, { withImages: false });
     if (!parsedResult || 'success' in parsedResult) {
       return parsedResult as any; // structured error
@@ -356,39 +428,30 @@ export class DedAiEstimateService {
       }
 
       let parsedAi: DedFastOutput | DedDetailOutput | null = null;
+      let parseFailed = false;
       try {
         parsedAi =
           (aiResult.structured as any) ??
           (mode === 'FAST'
             ? aiToolsProviderClient.extractJson<DedFastOutput>(aiResult.content)
             : aiToolsProviderClient.extractJson<DedDetailOutput>(aiResult.content));
-      } catch { parsedAi = null; }
-      if (parsedAi && Array.isArray(parsedAi.workItems)) {
-        rawItems.push(...parsedAi.workItems);
-        passTrace.itemCount = parsedAi.workItems.length;
-        passTrace.status = parsedAi.workItems.length > 0 ? 'OK' : 'EMPTY_RESPONSE';
-      } else {
-        passTrace.status = 'EMPTY_RESPONSE';
+      } catch { parsedAi = null; parseFailed = true; }
+      // F4 (3.5): bedakan format keluaran rusak (MALFORMED) dari dokumen
+      // yang memang tidak menghasilkan item (EMPTY) — lihat classifyPassOutcome.
+      const outcome = classifyPassOutcome(parsedAi, parseFailed);
+      if (outcome.status === 'OK') {
+        rawItems.push(...outcome.items);
       }
+      passTrace.itemCount = outcome.items.length;
+      passTrace.status = outcome.status;
+      if (outcome.errorCode) passTrace.errorCode = outcome.errorCode;
       passTraces.push(passTrace);
     }
 
     if (rawItems.length === 0) {
-      if (lastAiError) {
-        return {
-          success: false,
-          errorCode: lastAiError.errorCode,
-          stage: lastAiError.stage,
-          message: lastAiError.message,
-          retryable: lastAiError.retryable,
-        };
-      }
       return {
         success: false,
-        errorCode: 'NO_DATA',
-        stage: 'parse-ai',
-        message: 'Model tidak menemukan pekerjaan apa pun di DED.',
-        retryable: true,
+        ...decideNoItemsError(passTraces.map((t) => t.status), lastAiError),
       };
     }
 
@@ -431,10 +494,22 @@ export class DedAiEstimateService {
         `${selection.skippedCount} halaman tidak dikirim ke model karena budget teks ${mode} (${TOTAL_TEXT_BUDGET} karakter) — lihat analysisTrace.pages berstatus SKIPPED_BUDGET.`
       );
     }
+    // F4 (3.6): halaman tanpa lapisan teks diperingatkan eksplisit dengan
+    // rentang halamannya — bukan diperlakukan sebagai halaman sah.
+    if (selection.noTextCount > 0) {
+      const noTextPages = pageTrace.filter((t) => t.status === 'NO_TEXT').map((t) => t.page);
+      traceWarnings.push(
+        `${selection.noTextCount} halaman tanpa lapisan teks tidak dapat dianalisis (kemungkinan hasil scan/gambar — butuh OCR): halaman ${formatPageRanges(noTextPages)}.`
+      );
+    }
     for (const pt of passTraces) {
       if (pt.status === 'FAILED') {
         traceWarnings.push(
           `Pass "${pt.clusterLabel}" (hal. ${pt.pages.join(', ')}) gagal diproses${pt.errorCode ? ` (${pt.errorCode})` : ''} — item dari kelompok ini mungkin tidak lengkap.`
+        );
+      } else if (pt.status === 'MALFORMED_RESPONSE') {
+        traceWarnings.push(
+          `Pass "${pt.clusterLabel}" (hal. ${pt.pages.join(', ')}) mengembalikan format keluaran yang tidak sesuai${pt.errorCode ? ` (${pt.errorCode})` : ''} — item dari kelompok ini mungkin tidak lengkap.`
         );
       } else if (pt.status === 'EMPTY_RESPONSE') {
         traceWarnings.push(

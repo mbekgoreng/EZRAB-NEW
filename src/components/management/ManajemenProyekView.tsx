@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   FolderKanban,
   LineChart,
@@ -22,6 +22,7 @@ import {
   Check,
 } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
+import { computeScheduleProgress } from '../../lib/scheduleHonesty';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { ScheduleTask } from '../../types';
 import { TutorialHelpButton } from '../onboarding/tutorials/TutorialHelpButton';
@@ -29,9 +30,29 @@ import { TutorialHelpButton } from '../onboarding/tutorials/TutorialHelpButton';
 interface ManajemenProyekViewProps {
   projects?: any[];
   onNavigateToTab?: (tab: string) => void;
+  /**
+   * Bagian awal yang dibuka/disorot saat view dimuat — membedakan pintu
+   * masuk menu "Jadwal" (bagian Time Schedule) dan "Kurva S" (bagian
+   * Kurva S) yang sama-sama me-render view gabungan ini (F6).
+   */
+  initialSection?: 'jadwal' | 'kurva-s';
 }
 
-export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projects: propProjects, onNavigateToTab }) => {
+export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projects: propProjects, onNavigateToTab, initialSection }) => {
+  const jadwalSectionRef = useRef<HTMLDivElement>(null);
+  const kurvaSSectionRef = useRef<HTMLDivElement>(null);
+
+  // Gulir ke bagian yang diminta menu asal (Jadwal → Time Schedule,
+  // Kurva S → grafik Kurva S) agar label menu sesuai isi yang terlihat.
+  useEffect(() => {
+    if (!initialSection) return;
+    const target = initialSection === 'jadwal' ? jadwalSectionRef.current : kurvaSSectionRef.current;
+    if (!target) return;
+    const t = window.setTimeout(() => {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+    return () => window.clearTimeout(t);
+  }, [initialSection]);
   const {
     currentProject,
     currentProjectId,
@@ -63,27 +84,36 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
     return projectRabItems.reduce((acc, item) => acc + (item.amount || 0), 0);
   }, [projectRabItems]);
 
-  const totalWeight = useMemo(() => {
-    return projectScheduleTasks.reduce((sum, t) => sum + (t.weightPercent || 0), 0);
-  }, [projectScheduleTasks]);
-
+  // Progres aktual total DINORMALISASI terhadap total bobot tugas
+  // (Σ bobot×progres / Σ bobot) — bukan asumsi Σ bobot = 100.
   const currentActualProgress = useMemo(() => {
-    if (projectScheduleTasks.length === 0) return currentProject?.progress || 0;
-    if (totalWeight === 0) return 0;
-    const progressAcc = projectScheduleTasks.reduce((sum, t) => {
-      return sum + (t.weightPercent * (t.actualProgressPercent / 100));
-    }, 0);
-    return Number(progressAcc.toFixed(1));
-  }, [projectScheduleTasks, totalWeight, currentProject?.progress]);
+    const normalized = computeScheduleProgress(projectScheduleTasks);
+    if (normalized != null) return normalized;
+    return projectScheduleTasks.length === 0 ? currentProject?.progress || 0 : 0;
+  }, [projectScheduleTasks, currentProject?.progress]);
 
-  // Current planned progress at current week (assuming current timeline progress)
+  // Target rencana = kumulatif rencana AKHIR dari data Kurva S nyata
+  // (dulu hardcode 100% begitu ada satu tugas).
   const currentPlannedProgress = useMemo(() => {
-    if (projectScheduleTasks.length === 0) return 0;
-    const activeTasks = projectScheduleTasks.filter((t) => t.status === 'COMPLETED' || t.actualProgressPercent > 0);
-    return activeTasks.length > 0 ? 100 : 0;
-  }, [projectScheduleTasks]);
+    if (projectKurvaSData.length === 0) return null;
+    return projectKurvaSData[projectKurvaSData.length - 1].cumulativePlannedPercent;
+  }, [projectKurvaSData]);
 
-  const deviasi = Number((currentActualProgress - (projectKurvaSData[0]?.plannedWeeklyPercent || 0)).toFixed(1));
+  // Seri realisasi: HANYA titik Kurva S yang benar-benar membawa nilai aktual
+  // (dihitung engine dari progres tugas). Tanpa titik aktual → tidak ada garis.
+  const actualSeries = useMemo(
+    () => projectKurvaSData.filter((d) => d.actualProgressPercent != null),
+    [projectKurvaSData]
+  );
+
+  // Deviasi pada pekan beraktual terakhir: aktual − rencana kumulatif pekan
+  // yang sama. null bila belum ada data realisasi (dulu dibandingkan ke pekan
+  // pertama dan tidak pernah dirender).
+  const deviasi = useMemo(() => {
+    if (actualSeries.length === 0) return null;
+    const last = actualSeries[actualSeries.length - 1];
+    return Number(((last.actualProgressPercent || 0) - last.cumulativePlannedPercent).toFixed(1));
+  }, [actualSeries]);
 
   // --- S-Curve chart enhancements: hover tooltip state ---
   const [scurveHoverIdx, setScurveHoverIdx] = useState<number | null>(null);
@@ -301,10 +331,12 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
             <Clock size={15} color="#FFFFFF" />
           </div>
           <div style={{ fontSize: '24px', fontWeight: 800, color: '#FFFFFF', marginTop: '6px' }}>
-            {projectScheduleTasks.length === 0 ? '0%' : '100%'}
+            {currentPlannedProgress != null ? `${Math.round(currentPlannedProgress)}%` : '—'}
           </div>
           <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.8)', marginTop: '4px' }}>
-            {projectScheduleTasks.length === 0 ? 'Belum ada jadwal tahapan' : `${projectScheduleTasks.length} tahapan terjadwal`}
+            {projectScheduleTasks.length === 0
+              ? 'Belum ada jadwal tahapan'
+              : `Kumulatif rencana akhir · ${projectKurvaSData.length} pekan · ${projectScheduleTasks.length} tahapan`}
           </div>
         </div>
 
@@ -356,15 +388,17 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
 
       {/* S-Curve (Kurva S) Visual Canvas */}
       <div
+        ref={kurvaSSectionRef}
         style={{
           background: 'var(--ez-color-surface)',
           borderRadius: 'var(--ez-radius-card)',
-          border: '1px solid #EEF1F6',
+          border: initialSection === 'kurva-s' ? '2px solid var(--ez-color-primary)' : '1px solid #EEF1F6',
           padding: '24px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
           display: 'flex',
           flexDirection: 'column',
           gap: '16px',
+          scrollMarginTop: '84px',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
@@ -376,7 +410,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
               </h2>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '4px 0 0' }}>
-              Grafik kumulatif bobot (%) pekerjaan selama 12 pekan masa pelaksanaan
+              Grafik kumulatif bobot (%) pekerjaan selama {projectKurvaSData.length > 0 ? projectKurvaSData.length : '—'} pekan masa pelaksanaan
             </p>
           </div>
 
@@ -385,12 +419,31 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
               <div style={{ width: '12px', height: '3px', background: 'var(--ez-color-primary)', borderRadius: '2px' }} />
               <span style={{ color: 'var(--ez-color-text-primary)' }}>Rencana (Plan)</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ width: '12px', height: '3px', background: '#16A34A', borderRadius: '2px' }} />
-              <span style={{ color: 'var(--ez-color-text-primary)' }}>Realisasi (Actual)</span>
-            </div>
+            {actualSeries.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '12px', height: '3px', background: '#16A34A', borderRadius: '2px' }} />
+                <span style={{ color: 'var(--ez-color-text-primary)' }}>Realisasi (Actual)</span>
+              </div>
+            )}
+            {deviasi != null && (
+              <span style={{ color: deviasi < 0 ? 'var(--ez-hue-red-text, #DC2626)' : 'var(--ez-hue-green-text)' }}>
+                Deviasi pekan beraktual terakhir: {deviasi > 0 ? '+' : ''}{deviasi}%
+              </span>
+            )}
           </div>
         </div>
+
+        {projectScheduleTasks.length > 0 && actualSeries.length === 0 && (
+          <div style={{
+            padding: '12px 16px', borderRadius: '12px', background: 'var(--ez-hue-amber-bg-deep)',
+            border: '1px solid var(--ez-hue-amber-border)', marginBottom: '16px',
+            fontSize: '12.5px', color: 'var(--ez-hue-amber-text-dark)', lineHeight: 1.5,
+          }}>
+            <strong>Belum ada data realisasi mingguan</strong> — garis realisasi tidak digambar. Perbarui progres
+            aktual tahapan pelaksanaan; seri realisasi dihitung dari titik aktual Kurva S, bukan disebar dari satu
+            angka snapshot.
+          </div>
+        )}
 
         {projectScheduleTasks.length === 0 && (
           <div style={{
@@ -529,21 +582,41 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
                       </g>
                     )}
 
-                    {/* Actual progress point with pulse glow */}
-                    {currentActualProgress > 0 && (
-                      <g filter="url(#scurveGlow)">
-                        <circle cx={50} cy={180 - (currentActualProgress / 100) * 160} r="8" fill="#16A34A" opacity="0.35" className="scurve-ping" />
-                        <circle
-                          cx={50}
-                          cy={180 - (currentActualProgress / 100) * 160}
-                          r="5.5"
-                          fill="#16A34A"
-                          stroke="#FFFFFF"
-                          strokeWidth="2.5"
-                          className="scurve-dot"
-                          style={{ animationDelay: '1.4s' }}
+                    {/* Actual series — HANYA dari titik aktual Kurva S nyata.
+                        Titik tunggal di pekan 1 (snapshot ditempel ke sumbu)
+                        DIHAPUS: itu fabrikasi seri waktu. */}
+                    {actualSeries.length > 0 && (
+                      <>
+                        <path
+                          d={scurveSmoothPath(
+                            actualSeries.map((d) => {
+                              const idx = projectKurvaSData.indexOf(d);
+                              return {
+                                x: 50 + (idx / Math.max(1, n - 1)) * 920,
+                                y: 180 - ((d.actualProgressPercent || 0) / 100) * 160,
+                              };
+                            })
+                          )}
+                          fill="none"
+                          stroke="#16A34A"
+                          strokeWidth="3"
+                          strokeLinecap="round"
                         />
-                      </g>
+                        {actualSeries.map((d, i) => {
+                          const idx = projectKurvaSData.indexOf(d);
+                          return (
+                            <circle
+                              key={i}
+                              cx={50 + (idx / Math.max(1, n - 1)) * 920}
+                              cy={180 - ((d.actualProgressPercent || 0) / 100) * 160}
+                              r="4.5"
+                              fill="#16A34A"
+                              stroke="#FFFFFF"
+                              strokeWidth="2"
+                            />
+                          );
+                        })}
+                      </>
                     )}
                   </>
                 );
@@ -555,18 +628,20 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
 
       {/* Milestone & Task Table */}
       <div
+        ref={jadwalSectionRef}
         style={{
           background: 'var(--ez-color-surface)',
           borderRadius: 'var(--ez-radius-card)',
-          border: '1px solid #EEF1F6',
+          border: initialSection === 'jadwal' ? '2px solid var(--ez-color-primary)' : '1px solid #EEF1F6',
           padding: '20px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.045)',
+          scrollMarginTop: '84px',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>
             <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ez-color-text-primary)', margin: 0 }}>
-              Jadwal Tahapan Pelaksanaan (Time Schedule & Gantt)
+              Jadwal Tahapan Pelaksanaan (Time Schedule)
             </h3>
             <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0' }}>
               Bobot (%) dan progres aktual tiap tahapan pekerjaan

@@ -27,10 +27,8 @@ import { QUICK_ACTIONS_LIST, QUICK_ACTION_CONTRACTS } from '../../data/quickActi
 import { AssistantWizardRenderer } from './AssistantWizardRenderer';
 import { QuickActionDialogueRenderer } from './QuickActionDialogueRenderer';
 import { QuickActionFollowUpSuggestions } from './QuickActionFollowUpSuggestions';
-import { EZRABMascot3D } from '../mascot/EZRABMascot3D';
 import { EZRABMascotLucu } from '../mascot/EZRABMascotLucu';
 import ezrabAvatarImg from '../../assets/ezrab_avatar.png';
-import mascotNewImg from '../../assets/mascot-ezrab-new.png';
 import { unifiedConversationStore } from '../../services/ai/conversation/unifiedConversationStore';
 import { useI18n } from '../../i18n/I18nContext';
 import { STT_LOCALES } from '../../i18n/dictionaries';
@@ -1389,10 +1387,12 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
                   }}
                   title="EZRAB AI"
                 >
-                  <img
-                    src={mascotNewImg}
-                    alt="EZRAB AI"
-                    style={{ width: '32px', height: '32px', objectFit: 'contain' }}
+                  <EZRABMascotLucu
+                    size={32}
+                    enableEyeTracking={false}
+                    enableFloat={false}
+                    enableBlink={true}
+                    interactive={false}
                   />
                 </div>
               )}

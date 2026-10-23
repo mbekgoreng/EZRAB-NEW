@@ -170,7 +170,7 @@ export interface DedPageTraceEntry {
   pageType: string;
   totalChars: number;
   sentChars: number;
-  status: 'SENT' | 'SKIPPED_BUDGET';
+  status: 'SENT' | 'SKIPPED_BUDGET' | 'NO_TEXT';
   reason?: string;
   passIndex?: number;
   clusterLabel?: string;
@@ -192,7 +192,7 @@ export interface DedPassTraceEntry {
   productId: string;
   mode: DedAiMode;
   maxTokens: number;
-  status: 'OK' | 'FAILED' | 'EMPTY_RESPONSE';
+  status: 'OK' | 'FAILED' | 'EMPTY_RESPONSE' | 'MALFORMED_RESPONSE';
   errorCode?: string;
   itemCount: number;
   /** FINAL REVIEW (Tugas A) — nama file sumber pada hasil gabungan multi-file. */

@@ -31,16 +31,10 @@ export const EzrabCoAssistantLauncher: React.FC<EzrabCoAssistantLauncherProps> =
   const [isHovered, setIsHovered] = useState(false);
   const [isMac, setIsMac] = useState(false);
   const [isLabelVisible, setIsLabelVisible] = useState(false);
-  const [isMascotHidden, setIsMascotHidden] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        return localStorage.getItem('ezrab_assistant_launcher_hidden') === 'true';
-      } catch {
-        return false;
-      }
-    }
-    return false;
-  });
+  // Status sembunyi maskot hanya berlaku per sesi (state React) — TIDAK
+  // dipersistenkan ke localStorage agar maskot tidak "hilang" permanen
+  // tanpa penjelasan di sesi berikutnya (aturan F6).
+  const [isMascotHidden, setIsMascotHidden] = useState<boolean>(false);
 
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== 'undefined') return window.innerWidth < 768;
@@ -85,11 +79,6 @@ export const EzrabCoAssistantLauncher: React.FC<EzrabCoAssistantLauncherProps> =
         e.preventDefault();
         if (isMascotHidden) {
           setIsMascotHidden(false);
-          try {
-            localStorage.removeItem('ezrab_assistant_launcher_hidden');
-          } catch {
-            // ignore
-          }
         }
         onClick();
       }
@@ -231,26 +220,16 @@ export const EzrabCoAssistantLauncher: React.FC<EzrabCoAssistantLauncherProps> =
     onClick();
   }, [onClick]);
 
-  // Hide mascot handler
+  // Hide mascot handler (per sesi saja — lihat catatan state di atas)
   const handleHideMascot = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     setIsMascotHidden(true);
     setIsLabelVisible(false);
-    try {
-      localStorage.setItem('ezrab_assistant_launcher_hidden', 'true');
-    } catch {
-      // ignore
-    }
   }, []);
 
   // Restore/unhide mascot handler
   const handleUnhideMascot = useCallback(() => {
     setIsMascotHidden(false);
-    try {
-      localStorage.removeItem('ezrab_assistant_launcher_hidden');
-    } catch {
-      // ignore
-    }
   }, []);
 
   if (isOpen) return null;

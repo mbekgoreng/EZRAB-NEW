@@ -733,8 +733,37 @@ const INFRASTRUCTURE_SEED_MATERIALS: Array<{
   }
 ];
 
+const USER_MATERIALS_KEY = 'ezrab_user_materials_v1';
+const USER_PRICES_KEY = 'ezrab_user_material_prices_v1';
+
+function loadUserJson<T>(key: string): T[] {
+  try {
+    if (typeof localStorage === 'undefined') return [];
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as T[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveUserJson(key: string, value: unknown): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* kuota penuh dll → abaikan */
+  }
+}
+
 export class MaterialDatabaseService {
   private static instance: MaterialDatabaseService;
+
+  // Material & harga yang ditambahkan pengguna (dipersistenkan ke localStorage —
+  // sebelumnya hilang setiap reload karena katalog hanya hidup in-memory).
+  private userAddedMaterials: MaterialMaster[] = [];
+  private userAddedPrices: MaterialPrice[] = [];
 
   private materialsById: Map<string, MaterialMaster> = new Map();
   private materialsByCode: Map<string, MaterialMaster> = new Map();
@@ -997,6 +1026,24 @@ export class MaterialDatabaseService {
         reason: 'Sama-sama semen kemasan 50kg standar SNI dengan kekuatan tekan setara.',
       }
     ]);
+
+    // 6. Muat ulang material & harga tambahan milik pengguna dari localStorage.
+    this.userAddedMaterials = loadUserJson<MaterialMaster>(USER_MATERIALS_KEY);
+    for (const mat of this.userAddedMaterials) {
+      if (mat && mat.id && !this.materialsById.has(mat.id)) {
+        this.materialsById.set(mat.id, mat);
+        if (mat.materialCode) this.materialsByCode.set(mat.materialCode.toUpperCase(), mat);
+      }
+    }
+    this.userAddedPrices = loadUserJson<MaterialPrice>(USER_PRICES_KEY);
+    for (const price of this.userAddedPrices) {
+      if (price && price.materialId) {
+        const list = this.pricesByMaterialId.get(price.materialId) || [];
+        list.unshift(price);
+        this.pricesByMaterialId.set(price.materialId, list);
+        this.allPrices.push(price);
+      }
+    }
 
     this.isInitialized = true;
   }
@@ -1621,14 +1668,28 @@ export class MaterialDatabaseService {
     list.unshift(price);
     this.pricesByMaterialId.set(price.materialId, list);
     this.allPrices.push(price);
+    // Persistenkan record yang ditambahkan setelah inisialisasi (input pengguna /
+    // adopsi riset) agar tidak hilang saat reload.
+    if (this.isInitialized) {
+      this.userAddedPrices = [price, ...this.userAddedPrices.filter((p) => p.id !== price.id)];
+      saveUserJson(USER_PRICES_KEY, this.userAddedPrices);
+    }
   }
 
   /**
-   * Registers a new material master into the in-memory canonical catalog
+   * Registers a new material master into the canonical catalog.
+   * Material tambahan pengguna dipersistenkan ke localStorage.
    */
   public addMaterial(material: MaterialMaster, initialPrice?: MaterialPrice): void {
     this.materialsById.set(material.id, material);
     this.materialsByCode.set(material.materialCode.toUpperCase(), material);
+    if (this.isInitialized) {
+      this.userAddedMaterials = [
+        material,
+        ...this.userAddedMaterials.filter((m) => m.id !== material.id),
+      ];
+      saveUserJson(USER_MATERIALS_KEY, this.userAddedMaterials);
+    }
     if (initialPrice) {
       this.addPriceRecord(initialPrice);
     }

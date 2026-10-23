@@ -14,11 +14,10 @@
  *
  * Contoh integrasi di App.tsx:
  *   const { open, closeTour } = useOnboardingTour();
- *   {!booted && <BootLoadingScreen ... onDone={...} />}
- *   {booted && <OnboardingTour open={open} onClose={closeTour} />}
+ *   <OnboardingTour open={open} onClose={closeTour} />
  */
 import { useCallback, useEffect, useState } from 'react';
-import { GreetingMascot } from '../boot/GreetingMascot';
+import { EZRABMascotLucu } from '../mascot/EZRABMascotLucu';
 
 export const ONBOARDING_FLAG = 'ezrab_onboarding_done_v1';
 export const ONBOARDING_OPEN_EVENT = 'ezrab:open-onboarding';
@@ -312,7 +311,7 @@ export function OnboardingTour({ open, onClose }: OnboardingTourProps) {
           {step === 0 && (
             <div style={{ textAlign: 'center' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                <GreetingMascot size={112} />
+                <EZRABMascotLucu size={112} enableFloat enableBlink interactive={false} />
               </div>
               <h2
                 style={{

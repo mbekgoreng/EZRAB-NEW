@@ -1,6 +1,8 @@
 /**
- * Antrean review estimator untuk referensi harga pasar (in-memory, Tahap 1).
+ * Antrean review estimator untuk referensi harga pasar.
  * ============================================================================
+ * Data antrean DIPERSISTENKAN ke localStorage (kunci ezrab_market_review_v1)
+ * agar tidak hilang saat reload; sebelumnya store ini murni in-memory.
  * Alur: MARKET_REFERENCE/NEEDS_REVIEW → (estimator setuju) → MARKET_VERIFIED
  *     → tautkan ke price_assumptions sebagai DRAFT (sumber: referensi pasar).
  *
@@ -39,9 +41,47 @@ export interface ReviewDecision {
   reason?: string;
 }
 
+const REVIEW_STORAGE_KEY = 'ezrab_market_review_v1';
+
 export class MarketReviewStore {
   private refs = new Map<string, MarketPriceReference>();
   private history: MarketPriceHistoryEntry[] = [];
+
+  constructor() {
+    this.loadPersisted();
+  }
+
+  /** Muat antrean dari localStorage (aman di lingkungan tanpa localStorage). */
+  private loadPersisted(): void {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      const raw = localStorage.getItem(REVIEW_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        refs?: MarketPriceReference[];
+        history?: MarketPriceHistoryEntry[];
+      };
+      for (const r of parsed.refs ?? []) {
+        if (r && r.id) this.refs.set(r.id, r);
+      }
+      if (Array.isArray(parsed.history)) this.history = parsed.history;
+    } catch {
+      /* data rusak → mulai kosong, jangan crash */
+    }
+  }
+
+  /** Simpan antrean ke localStorage setelah setiap mutasi. */
+  private persist(): void {
+    try {
+      if (typeof localStorage === 'undefined') return;
+      localStorage.setItem(
+        REVIEW_STORAGE_KEY,
+        JSON.stringify({ refs: [...this.refs.values()], history: this.history })
+      );
+    } catch {
+      /* kuota penuh dll → abaikan, data tetap hidup in-memory sesi ini */
+    }
+  }
 
   /** Daftarkan kandidat → referensi baru (dedup otomatis). */
   ingest(
@@ -196,6 +236,8 @@ export class MarketReviewStore {
       referenceId, changedAt: new Date().toISOString(), changedBy: by,
       changeKind: kind, oldValue, newValue, note,
     });
+    // Semua mutasi (ingest/approve/reject/updatePrice) melewati pushHistory.
+    this.persist();
   }
 }
 

@@ -27,7 +27,7 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
   onNavigateToTab,
   onOpenProject,
 }) => {
-  const { updateProject, deleteProject, backupProjectData } = useProject();
+  const { updateProject, deleteProject, backupProjectData, allRabItems } = useProject();
   const { t } = useI18n();
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,9 +77,38 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
     setProjectToDelete(proj);
   };
 
+  // F1a: Export Arsip sekarang BENAR-BENAR mengunduh berkas JSON berisi
+  // data proyek arsip (proyek + item RAB/QTO/pekerjaan/jadwal/override) —
+  // dulu hanya alert sukses palsu tanpa berkas apa pun.
   const handleExportArchiveBundle = (proj: Project) => {
-    alert(t('proj.arch.export_ok_a') + proj.name + t('proj.arch.export_ok_b'));
+    const bundle = backupProjectData(proj.id);
+    if (!bundle) return;
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ezrab-arsip-${proj.id}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
+
+  // F1a KPI nyata: proyek arsip yang memiliki item RAB (dapat dijadikan
+  // referensi harga) dan cakupan backup lokal yang benar-benar tersimpan.
+  const referenceableCount = archivedProjects.filter((p) =>
+    allRabItems.some((i) => i.projectId === p.id)
+  ).length;
+  const backedUpCount = (() => {
+    try {
+      const stored = localStorage.getItem('ezrab_project_backups');
+      const backups: Array<{ project?: { id?: string } }> = stored ? JSON.parse(stored) : [];
+      const ids = new Set(backups.map((b) => b.project?.id).filter(Boolean));
+      return archivedProjects.filter((p) => ids.has(p.id)).length;
+    } catch {
+      return 0;
+    }
+  })();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' , fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif" }}>
@@ -128,7 +157,8 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
             {t('proj.arch.kpi3_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
-            {t('proj.arch.kpi3_v')}
+            {referenceableCount}{' '}
+            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', fontWeight: 500, letterSpacing: '0' }}>{t('proj.arch.kpi1_u')}</span>
           </div>
           <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', marginTop: '6px' }}>
             {t('proj.arch.kpi3_s')}
@@ -141,7 +171,7 @@ export const ArchivedProjectsView: React.FC<ArchivedProjectsViewProps> = ({
             {t('proj.arch.kpi4_t')}
           </div>
           <div style={{ fontSize: '30px', fontWeight: 800, letterSpacing: '-1px', color: '#FFFFFF' }}>
-            {t('proj.arch.kpi4_v')}
+            {archivedProjects.length > 0 ? `${backedUpCount} / ${archivedProjects.length}` : '—'}
           </div>
           <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', marginTop: '6px' }}>
             {t('proj.arch.kpi4_s')}

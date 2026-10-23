@@ -120,6 +120,29 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'POPULAR' | 'NAME' | 'ITEMS'>('POPULAR');
 
+  // Popularitas = jumlah pemakaian NYATA di perangkat ini (localStorage),
+  // dicatat setiap template benar-benar diterapkan. Dulu sort 'POPULAR'
+  // adalah no-op (tidak ada cabang pengurutan dan tidak ada data pemakaian).
+  const [usageCounts, setUsageCounts] = useState<Record<string, number>>(() => {
+    try {
+      const raw = localStorage.getItem('ezrab_template_usage_v1');
+      return raw ? (JSON.parse(raw) as Record<string, number>) : {};
+    } catch {
+      return {};
+    }
+  });
+  const recordTemplateUsage = (templateId: string) => {
+    setUsageCounts((prev) => {
+      const next = { ...prev, [templateId]: (prev[templateId] || 0) + 1 };
+      try {
+        localStorage.setItem('ezrab_template_usage_v1', JSON.stringify(next));
+      } catch {
+        /* abaikan */
+      }
+      return next;
+    });
+  };
+
   // Pagination (tombol Sebelumnya / Berikutnya)
   const PAGE_SIZE = 12;
   const [currentPage, setCurrentPage] = useState(1);
@@ -138,15 +161,24 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
   // Universal Global Detail Level
   const [globalDetailLevel, setGlobalDetailLevel] = useState<DetailLevel>('PROFESSIONAL');
 
-  // Global Settings Modal state
+  // Global Settings Modal state — dipersistenkan ke localStorage (dulu hilang
+  // setiap reload) dan diteruskan ke konfigurator untuk perhitungan total.
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [globalSettings, setGlobalSettings] = useState<GlobalEstimationSettings>({
-    detailLevel: 'PROFESSIONAL',
-    priceSource: 'OFFICIAL_AHSP',
-    wastePercent: 5,
-    overheadPercent: 10,
-    profitPercent: 5,
-    taxPercent: 11
+  const [globalSettings, setGlobalSettings] = useState<GlobalEstimationSettings>(() => {
+    const defaults: GlobalEstimationSettings = {
+      detailLevel: 'PROFESSIONAL',
+      priceSource: 'OFFICIAL_AHSP',
+      wastePercent: 5,
+      overheadPercent: 10,
+      profitPercent: 5,
+      taxPercent: 11
+    };
+    try {
+      const raw = localStorage.getItem('ezrab_global_estimation_settings_v1');
+      return raw ? { ...defaults, ...(JSON.parse(raw) as Partial<GlobalEstimationSettings>) } : defaults;
+    } catch {
+      return defaults;
+    }
   });
 
   // Modal & Drawer States
@@ -273,10 +305,15 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
       list = [...list].sort((a, b) => a.name.localeCompare(b.name));
     } else if (sortBy === 'ITEMS') {
       list = [...list].sort((a, b) => (b.components?.length || 0) - (a.components?.length || 0));
+    } else if (sortBy === 'POPULAR') {
+      list = [...list].sort((a, b) => {
+        const diff = (usageCounts[b.id] || 0) - (usageCounts[a.id] || 0);
+        return diff !== 0 ? diff : a.name.localeCompare(b.name);
+      });
     }
 
     return list;
-  }, [templates, selectedCategory, selectedSubcategory, sourceFilter, searchQuery, sortBy]);
+  }, [templates, selectedCategory, selectedSubcategory, sourceFilter, searchQuery, sortBy, usageCounts]);
 
   // Paginated slice
   const totalPages = Math.max(1, Math.ceil(filteredTemplates.length / PAGE_SIZE));
@@ -330,6 +367,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
     detailLevel?: DetailLevel,
     selectedOptionalItemIds?: string[]
   ) => {
+    recordTemplateUsage(tpl.id);
     if (onApplyTemplate) {
       onApplyTemplate(
         tpl,
@@ -645,7 +683,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
               color: 'var(--ez-color-text-body)'
             }}
           >
-            <option value="POPULAR">Paling Populer</option>
+            <option value="POPULAR">Paling Sering Saya Gunakan</option>
             <option value="NAME">Nama (A - Z)</option>
             <option value="ITEMS">Jumlah Item Terbanyak</option>
           </select>
@@ -1388,6 +1426,7 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
           isOpen={!!applyingTemplate}
           onClose={() => setApplyingTemplate(null)}
           onConfirmApply={handleConfirmApply}
+          globalSettings={globalSettings}
         />
       )}
 
@@ -1400,6 +1439,11 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
           onSave={newSettings => {
             setGlobalSettings(newSettings);
             setGlobalDetailLevel(newSettings.detailLevel);
+            try {
+              localStorage.setItem('ezrab_global_estimation_settings_v1', JSON.stringify(newSettings));
+            } catch {
+              /* abaikan */
+            }
           }}
         />
       )}

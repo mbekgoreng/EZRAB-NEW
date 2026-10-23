@@ -1,5 +1,11 @@
 import React from 'react';
-import { X, Play, CheckCircle2, Sparkles, Cpu, Layers } from 'lucide-react';
+import { X, CheckCircle2, Sparkles } from 'lucide-react';
+
+/**
+ * DemoModal — namanya dipertahankan untuk kompatibilitas pemanggil, tetapi
+ * isinya BUKAN demo interaktif/video (F6): ini gambaran fitur statis.
+ * Judul dan isi ditulis jujur sebagai "Gambaran Fitur EZRAB".
+ */
 
 interface DemoModalProps {
   isOpen: boolean;
@@ -45,7 +51,7 @@ export const DemoModal: React.FC<DemoModalProps> = ({ isOpen, onClose, onOpenWor
             <div style={{ width: '28px', height: '28px', borderRadius: '7px', background: 'var(--ezrab-blue-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ezrab-blue)' }}>
               <Sparkles size={16} />
             </div>
-            <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ezrab-text)' }}>Demo Interaktif: EZRAB v2 Workflow</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ezrab-text)' }}>Gambaran Fitur EZRAB</h3>
           </div>
           <button
             onClick={onClose}
@@ -64,7 +70,7 @@ export const DemoModal: React.FC<DemoModalProps> = ({ isOpen, onClose, onOpenWor
           </button>
         </div>
 
-        {/* Demo Animation Simulation Container */}
+        {/* Daftar alur kerja yang didukung — deskriptif, bukan simulasi berjalan */}
         <div
           style={{
             background: 'var(--ezrab-bg)',
@@ -77,11 +83,14 @@ export const DemoModal: React.FC<DemoModalProps> = ({ isOpen, onClose, onOpenWor
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--ezrab-success)' }} />
             <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ezrab-text)' }}>
-              Simulasi Ekstraksi DED & Pencocokan AHSP 2026
+              Alur kerja yang didukung EZRAB
             </span>
           </div>
+          <p style={{ fontSize: '12.5px', color: 'var(--ezrab-text-muted)', margin: 0, lineHeight: 1.6 }}>
+            Ini gambaran singkat alur di dalam aplikasi — bukan video atau demo yang dapat dimainkan.
+            Buka workspace untuk mencobanya langsung.
+          </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--ezrab-success)' }}>

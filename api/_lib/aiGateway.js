@@ -16,7 +16,9 @@
  * Responsibilities:
  *  - CORS allowlist, token auth (fail-closed when AI_GATEWAY_TOKEN is set),
  *    per-IP rate limiting, bounded body parsing, strict input validation
- *  - Sequential provider failover (Gemini keys -> ZyRouter -> Atria keys)
+ *  - Sequential provider failover per mode (lihat executeAI); percobaan per
+ *    provider dibatasi anggaran (1 awal + maks 1 ulang setelah gagal) dan
+ *    adapter OpenAI-compatible tahan terhadap respons SSE
  *  - Structured, secret-free usage logging: requestId, ACTUAL provider/model
  *    that answered (no silent-substitution mystery), duration, prompt length/hash,
  *    per-attempt outcomes, client IP hash, auth mode
@@ -51,9 +53,10 @@ const DAHL_MODEL = 'deepseek-ai/DeepSeek-V4-Flash-0731';
 const GEMINI_OAI_MODEL = 'gemini-3.8-flash';
 const RIVER_TEXT_MODEL = 'nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4';
 const RIVER_VISION_MODEL = 'deepseek-ai/DeepSeek-V4.1-Flash';
-// Chat AI via AtmoRouter (user 2026-10-21): posisi rantai setelah River+Dahl,
-// sebelum ZyRouter — atmo/deepseek-v4.1-flash, fallback ali/deepseek-v4.1-flash
-// (provider/key sama).
+// Model AtmoRouter untuk rantai 'fast' (user 2026-10-21): atmo/deepseek-
+// v4.1-flash, fallback ali/deepseek-v4.1-flash (provider/key sama). Rantai
+// 'chat' kini memakai model advanced AtmoRouter di bawah (urutan owner
+// terbaru — lihat executeAI).
 const ATMO_CHAT_MODEL = 'atmo/deepseek-v4.1-flash';
 const ATMO_CHAT_FALLBACK_MODEL = 'ali/deepseek-v4.1-flash';
 // Advanced via AtmoRouter (user 2026-10-21): ag/gemini-3.8-flash-high,
@@ -117,6 +120,68 @@ function zyrouterKey() {
 
 function newRequestId() {
   return 'req_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+}
+
+/**
+ * Parse an OpenAI-compatible Server-Sent Events body into a single completion.
+ * Some gateways (notably ZyRouter) answer with `text/event-stream` even when
+ * the request asked for a plain JSON completion, so `res.json()` explodes
+ * with "Unexpected token 'd', "data: {..." is not valid JSON". This parser
+ * concatenates every chunk's delta.content (or message.content) and keeps
+ * the last usage block seen. Returns null when the body carries no SSE data
+ * lines at all. Exported for unit testing.
+ */
+export function parseSseStreamContent(raw) {
+  if (typeof raw !== 'string') return null;
+  let content = '';
+  let usage = null;
+  let sawData = false;
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith('data:')) continue;
+    const payload = trimmed.slice('data:'.length).trim();
+    if (!payload || payload === '[DONE]') continue;
+    let chunk;
+    try {
+      chunk = JSON.parse(payload);
+    } catch {
+      continue; // baris SSE rusak/komentar — lewati, jangan gagalkan seluruh respons
+    }
+    sawData = true;
+    const choice = (chunk.choices || [])[0] || {};
+    const delta = choice.delta || {};
+    const msg = choice.message || {};
+    if (typeof delta.content === 'string') content += delta.content;
+    else if (typeof msg.content === 'string') content += msg.content;
+    if (chunk.usage) usage = chunk.usage;
+  }
+  if (!sawData) return null;
+  return { content, usage };
+}
+
+/**
+ * Strip the AtmoRouter free-model promo footer ("Powered by AtmoRouter")
+ * from the END of a completion. Conservative on purpose: only the last
+ * non-empty line may be removed, only when it is short and carries the
+ * promo phrase, and a '---'/'***' separator directly above it goes with it.
+ * Legitimate content is never touched. Exported for unit testing.
+ */
+export function stripAtmoPromoFooter(content) {
+  if (typeof content !== 'string' || !content) return content;
+  const lines = content.split('\n');
+  let idx = lines.length - 1;
+  while (idx >= 0 && lines[idx].trim() === '') idx--;
+  if (idx < 0) return content;
+  const last = lines[idx].trim();
+  if (last.length > 100 || !/powered by atmorouter/i.test(last)) return content;
+  lines.splice(idx, 1);
+  // Garis pemisah tepat di atas footer adalah bagian dari blok promo.
+  let above = lines.length - 1;
+  while (above >= 0 && lines[above].trim() === '') above--;
+  if (above >= 0 && /^(-{3,}|\*{3,}|_{3,})$/.test(lines[above].trim())) {
+    lines.splice(above, 1);
+  }
+  return lines.join('\n').replace(/\s+$/, '');
 }
 
 async function callGemini(key, model, message, systemPrompt, temperature, maxTokens, jsonMode, media) {
@@ -195,7 +260,9 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
       body: JSON.stringify(
         Object.assign(
-          { model, messages, temperature, max_tokens: maxTokens },
+          // stream:false eksplisit: kita selalu mengonsumsi completion utuh.
+          // Sebagian gateway (ZyRouter) TETAP membalas SSE — ditangani di bawah.
+          { model, messages, temperature, max_tokens: maxTokens, stream: false },
           jsonMode ? { response_format: { type: 'json_object' } } : {}
         )
       ),
@@ -203,12 +270,37 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
     });
     clearTimeout(t);
     if (!r.ok) return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' ' + r.status };
-    const d = await r.json();
-    const text = (((d.choices || [])[0] || {}).message || {}).content || '';
+    // Baca body sebagai TEKS terlebih dahulu. r.json() langsung meledak pada
+    // respons SSE ("Unexpected token 'd', "data: {..." is not valid JSON") —
+    // akar kegagalan mode chat yang terlihat di log produksi 2026-10-23.
+    let raw = '';
+    if (typeof r.text === 'function') raw = await r.text();
+    else if (typeof r.json === 'function') raw = JSON.stringify(await r.json());
+    const contentType =
+      (r.headers && typeof r.headers.get === 'function' ? r.headers.get('content-type') : '') || '';
+    let d = null;
+    let sseUsage = null;
+    if (/text\/event-stream/i.test(contentType) || /^\s*data:/.test(raw)) {
+      const parsedSse = parseSseStreamContent(raw);
+      if (!parsedSse) {
+        return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' invalid stream response' };
+      }
+      d = { choices: [{ message: { content: parsedSse.content } }] };
+      sseUsage = parsedSse.usage;
+    } else {
+      try {
+        d = JSON.parse(raw);
+      } catch {
+        return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' invalid response' };
+      }
+    }
+    let text = (((d.choices || [])[0] || {}).message || {}).content || '';
+    // Footer promosi model gratis AtmoRouter tidak boleh sampai ke pengguna.
+    if (provider === 'atmorouter') text = stripAtmoPromoFooter(text);
     if (!text) return { ok: false, provider, model, ms: Date.now() - started, error: 'Empty' };
     // Usage meter (Phase 3): tangkap usage resmi OpenAI-compatible.
     // Hindari double-counting: cached/reasoning sudah termasuk dalam total provider.
-    const u = d.usage || {};
+    const u = sseUsage || d.usage || {};
     const details = u.prompt_tokens_details || {};
     const compDetails = u.completion_tokens_details || {};
     const usage = {
@@ -254,15 +346,17 @@ export async function executeAI(o, onAttempt) {
   // AtmoRouter: satu key utama (ATMO_API_KEY) + opsional ATMO_API_KEY_1..4.
   const atmoKeys = [String(process.env.ATMO_API_KEY || '').trim(), ...envKeys('ATMO_API_KEY', 4)].filter(Boolean);
 
+  // Setiap attempt ditandai provider+model sejak awal agar loop dapat
+  // menerapkan anggaran percobaan per provider dan log tetap akurat.
   const attempts = [];
-  const geminiCall = (k, model) => () => callGemini(k, model, message, systemPrompt, temperature, maxTokens, jsonMode, media);
-  const zyrouterCall = () => () => callOAI(ZYROUTER_BASE, zk, ADVANCED_MODEL, 'zyrouter', message, systemPrompt, temperature, maxTokens, jsonMode, media);
-  const atriaCall = (k) => () => callOAI(ATRIA_BASE, k, ATRIA_MODEL, 'atria', message, systemPrompt, temperature, maxTokens, jsonMode, media);
-  const dahlCall = (k) => () => callOAI(DAHL_BASE, k, DAHL_MODEL, 'dahl', message, systemPrompt, temperature, maxTokens, jsonMode, media);
-  const geminiOaiCall = (k) => () => callOAI(GEMINI_OAI_BASE, k, GEMINI_OAI_MODEL, 'gemini-oai', message, systemPrompt, temperature, maxTokens, jsonMode, media);
-  const riverTextCall = (k) => () => callOAI(RIVER_BASE, k, RIVER_TEXT_MODEL, 'river-text', message, systemPrompt, temperature, maxTokens, jsonMode, media);
-  const riverVisionCall = (k) => () => callOAI(RIVER_BASE, k, RIVER_VISION_MODEL, 'river-vision', message, systemPrompt, temperature, maxTokens, jsonMode, media);
-  const atmoCall = (k, model) => () => callOAI(ATMO_BASE, k, model, 'atmorouter', message, systemPrompt, temperature, maxTokens, jsonMode, media);
+  const geminiCall = (k, model) => ({ provider: 'gemini', model, run: () => callGemini(k, model, message, systemPrompt, temperature, maxTokens, jsonMode, media) });
+  const zyrouterCall = () => ({ provider: 'zyrouter', model: ADVANCED_MODEL, run: () => callOAI(ZYROUTER_BASE, zk, ADVANCED_MODEL, 'zyrouter', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
+  const atriaCall = (k) => ({ provider: 'atria', model: ATRIA_MODEL, run: () => callOAI(ATRIA_BASE, k, ATRIA_MODEL, 'atria', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
+  const dahlCall = (k) => ({ provider: 'dahl', model: DAHL_MODEL, run: () => callOAI(DAHL_BASE, k, DAHL_MODEL, 'dahl', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
+  const geminiOaiCall = (k) => ({ provider: 'gemini-oai', model: GEMINI_OAI_MODEL, run: () => callOAI(GEMINI_OAI_BASE, k, GEMINI_OAI_MODEL, 'gemini-oai', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
+  const riverTextCall = (k) => ({ provider: 'river-text', model: RIVER_TEXT_MODEL, run: () => callOAI(RIVER_BASE, k, RIVER_TEXT_MODEL, 'river-text', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
+  const riverVisionCall = (k) => ({ provider: 'river-vision', model: RIVER_VISION_MODEL, run: () => callOAI(RIVER_BASE, k, RIVER_VISION_MODEL, 'river-vision', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
+  const atmoCall = (k, model) => ({ provider: 'atmorouter', model, run: () => callOAI(ATMO_BASE, k, model, 'atmorouter', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
 
   if (mode === 'vision') {
     // Vision (urutan user 2026-10-21): Gemini native dulu (inlineData
@@ -283,30 +377,32 @@ export async function executeAI(o, onAttempt) {
     atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_FALLBACK_MODEL)));
     if (zk) attempts.push(zyrouterCall());
   } else if (mode === 'chat') {
-    // Chat AI (urutan user 2026-10-21): River -> Dahl -> AtmoRouter
-    // (atmo/deepseek-v4.1-flash, fallback ali/deepseek-v4.1-flash) -> ZyRouter.
-    rk.forEach((k) => attempts.push(riverTextCall(k)));
-    rk.forEach((k) => attempts.push(riverVisionCall(k)));
-    dk.forEach((k) => attempts.push(dahlCall(k)));
-    atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_CHAT_MODEL)));
-    atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_CHAT_FALLBACK_MODEL)));
+    // Chat AI (urutan owner terbaru, menyelaraskan chat dengan rantai
+    // advanced): Gemini native -> AtmoRouter ag/gemini-3.8-flash-high ->
+    // AtmoRouter cx/gpt-6-luna -> ZyRouter Gemini 3.8. Gemini kini ADA di
+    // rantai chat — rantai lama (River/Dahl dulu, Gemini absen) membuat
+    // chat mati total saat ZyRouter membalas SSE dan Atria 429.
+    gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
+    atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_MODEL)));
+    atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_FALLBACK_MODEL)));
     if (zk) attempts.push(zyrouterCall());
+    // Ekor cadangan terakhir (hanya chat, di BELAKANG ZyRouter): Dahl ->
+    // River DeepSeek -> River teks -> Gemini-OAI -> Atria. Atria diturunkan
+    // dari rantai utama menjadi cadangan paling akhir dan hanya memakai
+    // SATU key pertama (dulu: hingga 14 key dicoba satu per satu).
+    dk.forEach((k) => attempts.push(dahlCall(k)));
+    rk.forEach((k) => attempts.push(riverVisionCall(k)));
+    rk.forEach((k) => attempts.push(riverTextCall(k)));
+    gok.forEach((k) => attempts.push(geminiOaiCall(k)));
+    if (ak.length > 0) attempts.push(atriaCall(ak[0]));
   } else {
-    // Fast (urutan user 2026-10-21): Gemini native -> River DeepSeek V4.1
-    // -> AtmoRouter atmo/deepseek-v4.1-flash -> ali/deepseek-v4.1-flash.
+    // Fast (urutan user 2026-10-21, TIDAK diubah — terbukti sehat di log):
+    // Gemini native -> River DeepSeek V4.1 -> AtmoRouter
+    // atmo/deepseek-v4.1-flash -> ali/deepseek-v4.1-flash.
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
     rk.forEach((k) => attempts.push(riverVisionCall(k)));
     atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_CHAT_MODEL)));
     atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_CHAT_FALLBACK_MODEL)));
-  }
-  // Ekor bersama (Atria -> Dahl -> River teks -> Gemini-OAI) HANYA untuk
-  // mode chat; fast/advanced/vision memakai persis rantai mereka di atas
-  // (urutan user 2026-10-21).
-  if (mode === 'chat') {
-    ak.forEach((k) => attempts.push(atriaCall(k)));
-    dk.forEach((k) => attempts.push(dahlCall(k)));
-    rk.forEach((k) => attempts.push(riverTextCall(k)));
-    gok.forEach((k) => attempts.push(geminiOaiCall(k)));
   }
 
   if (attempts.length === 0) {
@@ -314,8 +410,20 @@ export async function executeAI(o, onAttempt) {
   }
 
   const outcomes = [];
+  // Anggaran percobaan per provider: begitu sebuah provider gagal, ia hanya
+  // mendapat MAKS 1 percobaan ulang; attempt berikutnya untuk provider yang
+  // sama dilewati dan failover lanjut ke provider berikutnya. Ini memutus
+  // pola log produksi "atria 429 | atria 429 | atria 429" (tiga percobaan
+  // terbuang di provider yang sedang rate-limit) dan mempercepat failover.
+  const providerAttempts = new Map();
+  const providerFailures = new Map();
   for (const a of attempts) {
-    const r = await a();
+    const tries = providerAttempts.get(a.provider) || 0;
+    const fails = providerFailures.get(a.provider) || 0;
+    if (fails > 0 && tries >= 2) continue;
+    providerAttempts.set(a.provider, tries + 1);
+    const r = await a.run();
+    if (!r.ok) providerFailures.set(a.provider, fails + 1);
     outcomes.push({ provider: r.provider, model: r.model, ok: r.ok, ms: r.ms, error: r.ok ? undefined : r.error, usage: r.ok ? r.usage || null : null });
     if (typeof onAttempt === 'function') {
       try { onAttempt(outcomes[outcomes.length - 1]); } catch { /* never break on logging */ }

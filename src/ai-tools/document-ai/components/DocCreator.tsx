@@ -21,7 +21,7 @@ import {
   Loader2, Save, Download, AlertTriangle, FilePlus2, Check, MoreHorizontal,
   RefreshCw, History as HistoryIcon, Focus, ListTree, FilePlus, X, CloudOff,
   Printer, LayoutTemplate, ArrowRight, Briefcase, Sparkles, ClipboardCheck,
-  Search, Eye, CheckCircle2, FileText, Lock, Building2,
+  Search, Eye, CheckCircle2, FileText, Lock, Building2, Languages,
 } from 'lucide-react';
 import { getDefaultProfile, kopHtml, listProfiles } from '../companyProfile';
 import {
@@ -41,13 +41,20 @@ import { DocStudioReview } from './DocStudioReview';
 import { DocEnhance } from './DocEnhance';
 import { documentStudioOrchestrator } from '../orchestrator';
 import { collectProjectContext, detectMissingFields } from '../contextAdapter';
-import { approveDraft, deriveDisplayStatus, pushVersion, restoreVersion } from '../store';
-import type { MissingFieldInfo, ReviewFindingStatus } from '../types';
+import { approveDraft, buildTranslatedDraft, deriveDisplayStatus, pushVersion, restoreVersion } from '../store';
+import { TRANSLATE_LANGUAGE_NAMES } from '../prompt';
+import {
+  TRANSLATE_LANGUAGE_CODES,
+  type MissingFieldInfo,
+  type ReviewFindingStatus,
+  type TranslateLanguageCode,
+} from '../types';
 import { docStatusLabel, type DocDraftStatus } from '../view';
 import type { Editor } from '@tiptap/react';
 import type { DraftRecord, HistoryEntry } from '../view';
 import { newId, formatDate } from '../view';
-import { draftFormat, toEditorHtml, toPlainText, plainToHtml } from '../richText';
+import { draftFormat, toEditorHtml, toPlainText } from '../richText';
+import { markdownToHtml } from '../markdownHtml';
 import { useProject } from '../../../context/ProjectContext';
 import { useI18n } from '../../../i18n/I18nContext';
 
@@ -163,6 +170,8 @@ export const DocCreator: React.FC<{
   const [srcProject, setSrcProject] = useState(true);
   const [srcCompany, setSrcCompany] = useState(true);
   const [genMissing, setGenMissing] = useState<MissingFieldInfo[]>([]);
+  /** true bila konteks yang dikirim ke AI pada generate terakhir dipotong service (batas karakter). */
+  const [genTruncated, setGenTruncated] = useState(false);
 
   /* Template Studio (polish §2): pencarian + filter kategori katalog. */
   const [tplQuery, setTplQuery] = useState('');
@@ -172,6 +181,12 @@ export const DocCreator: React.FC<{
   const [previewMode, setPreviewMode] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
   const [approverName, setApproverName] = useState('');
+
+  /* Terjemahan (F8): bar pemilih bahasa + proses + catatan hasil yang
+     ditampilkan setelah draf terjemahan dibuka. */
+  const [translateOpen, setTranslateOpen] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [translateInfo, setTranslateInfo] = useState<string | null>(null);
 
   /* Jalur Studio dari view.tsx mengatur mode tampil; subnav internal tetap
      bebas dipakai pengguna setelahnya (efek hanya berjalan saat jalur berubah). */
@@ -342,8 +357,11 @@ export const DocCreator: React.FC<{
     setPending(null);
     setError(null);
     setGenMissing([]);
+    setGenTruncated(false);
     setPreviewMode(false);
     setApproveOpen(false);
+    setTranslateOpen(false);
+    setTranslateInfo(null);
   };
 
   const openDraft = (target: DraftRecord) => {
@@ -361,6 +379,7 @@ export const DocCreator: React.FC<{
     setError(null);
     setPending(null);
     setGenMissing([]);
+    setGenTruncated(false);
     try {
       // Nama dokumen: jalur AI tanpa jenis terpilih = draf bebas otomatis.
       const docName =
@@ -387,8 +406,12 @@ export const DocCreator: React.FC<{
         return;
       }
       const reply = res.content || '';
-      const newHtml = plainToHtml(reply);
+      // Keluaran model adalah markdown terstruktur (kesepakatan FORMAT
+      // KELUARAN di prompt DRAFT) — konversi ke HTML editor, BUKAN
+      // plainToHtml yang memang menolak menafsirkan markdown.
+      const newHtml = markdownToHtml(reply);
       setGenMissing(res.missingFields);
+      setGenTruncated(res.truncated === true);
       if (isRegen && draft) {
         // Isi editor saat ini (termasuk edit yang belum disimpan) menjadi
         // versi sebelumnya DAN entri riwayat versi — tidak ada yang terhapus
@@ -451,13 +474,82 @@ export const DocCreator: React.FC<{
     }
   };
 
+  /* ---------------- terjemahan AI (F8) ---------------- */
+
+  /** Terjemahkan isi editor berjalan ke bahasa target lewat intent
+      TRANSLATE_DOCUMENT. Hasilnya menjadi DRAF BARU yang dibuka di editor —
+      dokumen sumber tidak ditimpa; isi editor yang belum tersimpan disimpan
+      dulu ke draf sumber agar tidak hilang. Draf terjemahan mewarisi
+      template/kop/proyek sumber, tetapi SELALU berstatus 'draft' (status
+      final & persetujuan sumber tidak diwarisi). */
+  const runTranslate = async (target: TranslateLanguageCode) => {
+    if (!draft || translating) return;
+    const source = draft;
+    const sourceHtml = html;
+    if (!toPlainText(sourceHtml, 'html').trim()) {
+      setTranslateOpen(false);
+      setError('Dokumen kosong — tidak ada isi yang bisa diterjemahkan.');
+      return;
+    }
+    setTranslating(true);
+    setError(null);
+    try {
+      const sourceNow = buildRecord({ content: sourceHtml, contentFormat: 'html', status: source.status });
+      await persist(sourceNow);
+      const res = await documentStudioOrchestrator.handle({
+        intent: 'TRANSLATE_DOCUMENT',
+        documentText: sourceHtml,
+        fileName: source.title,
+        documentName: source.title,
+        targetLanguage: target,
+      });
+      if (!res.success) {
+        setError(`${res.errorCode || 'ERROR'}: ${res.message || t('ai.doc.err_failed')}`);
+        return;
+      }
+      const translatedHtml = markdownToHtml(res.content || '');
+      const langLabel = TRANSLATE_LANGUAGE_NAMES[target].label;
+      const rec = buildTranslatedDraft(source, {
+        content: translatedHtml,
+        targetLanguage: target,
+        modelLabel: res.model ?? undefined,
+        promptVersion: res.promptVersion,
+      });
+      await persist(rec);
+      loadIntoEditor(rec);
+      setTranslateInfo(
+        `Draf terjemahan (${langLabel}) dibuat dari "${source.title}" dan tersimpan sebagai dokumen baru — dokumen sumber tidak berubah.` +
+          (res.truncated
+            ? ' Sebagian isi sumber dipotong karena batas karakter saat dikirim ke AI — periksa kelengkapan hasil terjemahan.'
+            : '') +
+          (res.model ? ` Model: ${res.model}.` : ''),
+      );
+      onAddHistory({
+        type: 'draft',
+        docIds: [],
+        docNames: [],
+        title: `Terjemahan ${langLabel}: ${rec.title}`,
+        resultPreview: (res.content || '').slice(0, 300),
+        resultFull: res.content || '',
+      });
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : t('ai.doc.err_unexpected'));
+    } finally {
+      setTranslating(false);
+      setTranslateOpen(false);
+    }
+  };
+
   /* ---------------- revisi AI & riwayat versi (Edit & Periksa) ---------------- */
 
   /** Terapkan kandidat revisi dari panel periksa: snapshot isi berjalan
-      sebagai versi 'revise' SEBELUM menimpa, lalu persist terverifikasi. */
-  const applyCandidate = async (candidatePlain: string, note: string) => {
+      sebagai versi 'revise' SEBELUM menimpa, lalu persist terverifikasi.
+      Kandidat adalah markdown (dokumen dikirim ke AI sebagai markdown-lite)
+      — dikonversi dengan markdownToHtml agar heading/tabel/tebal/daftar
+      kandidat menjadi format editor sungguhan. */
+  const applyCandidate = async (candidateMarkdown: string, note: string) => {
     if (!draft) return;
-    const candidateHtml = plainToHtml(candidatePlain);
+    const candidateHtml = markdownToHtml(candidateMarkdown);
     const current = buildRecord({ content: html, contentFormat: 'html' });
     const withVersion = pushVersion(current, 'revise', note);
     const rec: DraftRecord = {
@@ -476,9 +568,12 @@ export const DocCreator: React.FC<{
   /** Terapkan kandidat Enhance Text (DocEnhance): snapshot isi berjalan
       sebagai versi 'enhance' SEBELUM mengganti rentang, lalu ganti HANYA
       rentang terpilih di editor dan persist isi hasil edit editor.
-      Kandidat teks polos: satu baris disisipkan sebagai teks; multi-baris
-      sebagai paragraf (plainToHtml). Gagal mengganti → lempar error agar
-      panel menampilkan pesan dan dokumen tidak berubah. */
+      Kandidat berstruktur (multi-baris, heading, daftar, tabel pipa, atau
+      mengandung **tebal**) dikonversi dengan markdownToHtml — transformasi
+      'tabel' menjadi <table> sungguhan dan 'poin' menjadi <ul>; kandidat
+      satu baris polos tetap disisipkan sebagai teks agar tidak memecah
+      paragraf di tengah. Gagal mengganti → lempar error agar panel
+      menampilkan pesan dan dokumen tidak berubah. */
   const applyEnhance = async (
     range: { from: number; to: number },
     candidateText: string,
@@ -489,8 +584,13 @@ export const DocCreator: React.FC<{
     if (!ed) throw new Error('Editor tidak tersedia — kandidat tidak diterapkan.');
     const current = buildRecord({ content: html, contentFormat: 'html' });
     const withVersion = pushVersion(current, 'enhance', note);
-    const ok = /\n/.test(candidateText)
-      ? ed.commands.insertContentAt({ from: range.from, to: range.to }, plainToHtml(candidateText))
+    const structured =
+      /\n/.test(candidateText) ||
+      /(^|\n)\s*(#{1,6}\s|[-*•]\s|\d{1,3}[.)]\s)/.test(candidateText) ||
+      candidateText.includes('**') ||
+      /\|[\s:|-]+\|/.test(candidateText);
+    const ok = structured
+      ? ed.commands.insertContentAt({ from: range.from, to: range.to }, markdownToHtml(candidateText))
       : ed.commands.insertContentAt(
           { from: range.from, to: range.to },
           { type: 'text', text: candidateText },
@@ -1424,6 +1524,16 @@ export const DocCreator: React.FC<{
                 </button>
                 <button
                   role="menuitem"
+                  disabled={!draft || !toPlainText(html, 'html').trim()}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setTranslateOpen(true);
+                  }}
+                >
+                  <Languages size={14} /> Terjemahkan…
+                </button>
+                <button
+                  role="menuitem"
                   onClick={() => {
                     setMenuOpen(false);
                     if (saveState === 'dirty') setPending({ type: 'new' });
@@ -1474,6 +1584,43 @@ export const DocCreator: React.FC<{
           </div>
         </div>
       )}
+      {translateOpen && draft && (
+        <div className="docai-confirmbar" role="dialog" aria-label="Terjemahkan dokumen">
+          <Languages size={16} />
+          <span>
+            Terjemahkan dokumen ini ke bahasa lain. Hasilnya disimpan sebagai <strong>draf baru</strong>{' '}
+            (dokumen ini tidak berubah, status persetujuan tidak ikut terbawa):
+          </span>
+          <div className="docai-confirmbtns">
+            {TRANSLATE_LANGUAGE_CODES.map((code) => (
+              <button
+                key={code}
+                type="button"
+                className="docai-btn-ghost docai-mini"
+                disabled={translating}
+                onClick={() => void runTranslate(code)}
+              >
+                {translating ? <Loader2 size={13} className="spin" /> : null}
+                {TRANSLATE_LANGUAGE_NAMES[code].label} ({code.toUpperCase()})
+              </button>
+            ))}
+            <button
+              type="button"
+              className="docai-btn-ghost docai-mini"
+              disabled={translating}
+              onClick={() => setTranslateOpen(false)}
+            >
+              {t('ai.doc.create.ed_cancel')}
+            </button>
+          </div>
+          {translating && (
+            <span className="docai-hint" style={{ margin: 0 }}>
+              <Loader2 size={13} className="spin" /> Menerjemahkan dokumen — struktur, nama, nomor,
+              tanggal, dan nilai dipertahankan…
+            </span>
+          )}
+        </div>
+      )}
       {error && (
         <div className="docai-error">
           <AlertTriangle size={14} /> {error}
@@ -1484,11 +1631,33 @@ export const DocCreator: React.FC<{
           <Loader2 size={14} className="spin" /> {t('ai.doc.create.gen_busy')}
         </div>
       )}
+      {translateInfo && (
+        <div className="docai-warn" role="status">
+          <Languages size={14} /> {translateInfo}
+          <button
+            type="button"
+            className="docai-btn-ghost docai-mini"
+            onClick={() => setTranslateInfo(null)}
+          >
+            Tutup
+          </button>
+        </div>
+      )}
 
       {previewMode && (
         <div className="docai-previewbar" role="status">
           <Eye size={14} /> Mode Pratinjau — dokumen tidak dapat disunting. Matikan Pratinjau untuk
           kembali menyunting.
+        </div>
+      )}
+
+      {draft && !kopHtml(effectiveProfile) && (
+        <div className="docai-warn docai-kophint" role="note">
+          <Building2 size={14} /> Dokumen ini belum memiliki kop surat — profil perusahaan untuk
+          dokumen ini belum diisi (nama/logo kosong dan tidak ada gambar kop penuh), sehingga lembar
+          tampil tanpa kop dan hasil ekspor pun tanpa kop. Isi profil lewat tab{' '}
+          <strong>Identitas Perusahaan</strong>, atau pilih profil lain pada pemilih “Kop dokumen” di
+          atas. Pemberitahuan ini hanya tampil di layar — tidak ikut tercetak atau terekspor.
         </div>
       )}
 
@@ -1543,6 +1712,15 @@ export const DocCreator: React.FC<{
           </Suspense>
         </div>
       </div>
+
+      {genTruncated && (
+        <div className="docai-warn" role="note">
+          <AlertTriangle size={14} /> Konteks yang dikirim ke AI pada generate terakhir melebihi
+          batas 140.000 karakter dan <strong>dipotong</strong> — draf disusun dari bagian awal
+          konteks saja. Bila hasilnya terasa tidak lengkap, persempit sumber konteks (matikan salah
+          satu sumber pada ringkasan konteks) lalu buat ulang draf.
+        </div>
+      )}
 
       {genMissing.length > 0 && (
         <div className="docai-missingbox docai-genmissing">

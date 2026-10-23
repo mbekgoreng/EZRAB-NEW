@@ -31,7 +31,7 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
   onNavigateToTab,
   onOpenProject,
 }) => {
-  const { updateProject, deleteProject, backupProjectData, createProject } = useProject();
+  const { updateProject, deleteProject, backupProjectData, createProject, duplicateProjectData } = useProject();
   const { t } = useI18n();
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -93,7 +93,10 @@ export const DraftProjectsView: React.FC<DraftProjectsViewProps> = ({
       costSummary: proj.costSummary,
       sections: proj.sections,
     });
-    alert(t('proj.draft.dup_ok_a') + newProj.name + '");');
+    // F1a: salin juga item RAB & QTO (dan mapping-nya) ke duplikat — dulu
+    // duplikat tampil bernilai penuh tetapi berisi 0 item.
+    duplicateProjectData(proj.id, newProj.id);
+    alert(t('proj.draft.dup_ok_a') + newProj.name + '"');
   };
 
   const handleDeleteDraft = (proj: Project) => {

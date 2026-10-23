@@ -34,6 +34,9 @@ import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { useProject } from '../../context/ProjectContext';
 import { saveProjectAhspFromCatalog } from '../../project-data/ahspBridge';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
+import { OFFICIAL_CK_2026_DHSP_MAP } from '../../data/nationalCostDatabase/officialCiptaKaryaDhsp2026';
+import { OFFICIAL_BM_2026_DHSP_MAP } from '../../data/nationalCostDatabase/officialBinaMargaDhsp2026';
+import { CANONICAL_RESOURCE_INDEX } from '../../data/priceDatabase2026/resourceIndex.generated';
 import { getAhspDirectPrice, canFinalizeAhsp, ahspCompletenessNote } from '../../data/priceDatabase2026/ahspDisplayPolicy';
 import { applyMarketOverlay, type AugmentedComponent } from '../../engine/pricing/market/ahspMarketOverlay';
 import { MarketReferencePanel } from './MarketReferencePanel';
@@ -132,6 +135,60 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
     });
     return counts;
   }, []);
+
+  // Statistik modal Audit — SEMUA angka dihitung dari dataset nyata saat modal
+  // dibuka (dulu seluruhnya angka hardcode, termasuk klaim cakupan & SHA).
+  const auditStats = useMemo(() => {
+    if (!showAuditModal) return null;
+    const all = officialAhspRepository.getAllOfficialAhsp();
+    const perDomain = { CIPTA_KARYA: 0, SUMBER_DAYA_AIR: 0, BINA_MARGA: 0, SMKK: 0 };
+    all.forEach((item) => {
+      if (item.domain === 'CIPTA_KARYA') perDomain.CIPTA_KARYA++;
+      else if (item.domain === 'SUMBER_DAYA_AIR') perDomain.SUMBER_DAYA_AIR++;
+      else if (item.domain === 'BINA_MARGA') perDomain.BINA_MARGA++;
+      else if (item.domain === 'SMKK') perDomain.SMKK++;
+    });
+    const statusCounts = { VERIFIED: 0, UNVERIFIED: 0, REVIEW: 0, OTHER: 0 };
+    activeAhspItems.forEach((item) => {
+      if (item.status === 'VERIFIED') statusCounts.VERIFIED++;
+      else if (item.status === 'UNVERIFIED') statusCounts.UNVERIFIED++;
+      else if (item.status === 'REVIEW') statusCounts.REVIEW++;
+      else statusCounts.OTHER++;
+    });
+    // Coverage harga Cipta Karya: status harga resolver per item aktif CK.
+    const ckItems = activeAhspItems.filter((i) => i.domain === 'CIPTA_KARYA');
+    let ckFull = 0;
+    let ckPartial = 0;
+    let ckMissing = 0;
+    ckItems.forEach((item) => {
+      const comp = priceResolver2026.resolveAhspUnitPrice(item);
+      if (comp.pricingStatus === 'FULL') ckFull++;
+      else if (comp.pricingStatus === 'PARTIAL') ckPartial++;
+      else ckMissing++;
+    });
+    const resourceByType = { material: 0, labor: 0, equipment: 0, other: 0 };
+    CANONICAL_RESOURCE_INDEX.forEach((r) => {
+      if (r.type === 'material') resourceByType.material++;
+      else if (r.type === 'labor') resourceByType.labor++;
+      else if (r.type === 'equipment') resourceByType.equipment++;
+      else resourceByType.other++;
+    });
+    return {
+      totalAll: all.length,
+      activeTotal: activeAhspItems.length,
+      perDomain,
+      statusCounts,
+      ckTotal: ckItems.length,
+      ckFull,
+      ckPartial,
+      ckMissing,
+      ckCoveragePct: ckItems.length > 0 ? (ckFull / ckItems.length) * 100 : 0,
+      dhspCk: OFFICIAL_CK_2026_DHSP_MAP.size,
+      dhspBm: OFFICIAL_BM_2026_DHSP_MAP.size,
+      resourceTotal: CANONICAL_RESOURCE_INDEX.length,
+      resourceByType,
+    };
+  }, [showAuditModal, activeAhspItems]);
 
   // Available Categories for Selected Domain
   const availableCategories = useMemo(() => {
@@ -1694,7 +1751,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
                   <div><strong>Workbook:</strong> {selectedAhsp.domain === 'BINA_MARGA' ? 'AHSP 2026 Bina Marga.xlsx' : 'ahsp bina kontruksi 2026.xlsx'}</div>
                   <div><strong>Lokasi / Sheet:</strong> {selectedAhspAugmented?.provenanceSource || (selectedAhsp as any).source?.sheet || 'Analisis Resmi'}</div>
                   <div><strong>Price Master:</strong> {selectedAhsp.domain === 'BINA_MARGA' ? 'Upah Bahan & DHSP Bina Marga 2026' : 'Upah Bahan & DHSP Cipta Karya 2026'}</div>
-                  <div><strong>Status:</strong> <span style={{ color: 'var(--ez-hue-green-text-bright)', fontWeight: 700 }}>VERIFIED</span></div>
+                  <div><strong>Status:</strong> <span style={{ color: selectedAhsp.status === 'VERIFIED' ? 'var(--ez-hue-green-text-bright)' : 'var(--ez-hue-amber-text)', fontWeight: 700 }}>{selectedAhsp.status}</span></div>
                 </div>
               </div>
             </div>
@@ -2038,46 +2095,63 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '12.5px' }}>
-              <div style={{ background: 'var(--ez-pastel-cream)', padding: '12px 14px', borderRadius: 'var(--ez-radius-card)', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
-                <div style={{ color: 'var(--ez-color-text-warm)', fontWeight: 600 }}>File Sumber Resmi</div>
-                <div style={{ fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>ahsp bina kontruksi 2026.xlsx</div>
-                <div style={{ fontSize: '10.5px', color: 'var(--ez-color-text-muted)', fontFamily: 'monospace', marginTop: '4px', wordBreak: 'break-all' }}>
-                  SHA256: ee35ca4369f802e8ccced7884ceca76b7d1c5c774b5a2fccb784c48a34d1eb5a
+            {auditStats && (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '12.5px' }}>
+                  <div style={{ background: 'var(--ez-pastel-cream)', padding: '12px 14px', borderRadius: 'var(--ez-radius-card)', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+                    <div style={{ color: 'var(--ez-color-text-warm)', fontWeight: 600 }}>Sumber Regulasi</div>
+                    <div style={{ fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '2px' }}>SE DJBK No. 47/SE/Dk/2026</div>
+                    <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                      Lampiran III (SMKK), IV (SDA), V (Bina Marga), VI (Cipta Karya) — sesuai field sumber tiap item.
+                    </div>
+                  </div>
+
+                  <div style={{ background: 'var(--ez-pastel-mint)', padding: '12px 14px', borderRadius: 'var(--ez-radius-card)', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+                    <div style={{ color: 'var(--ez-color-text-warm)', fontWeight: 600 }}>Total Canonical AHSP (terhitung dari dataset)</div>
+                    <div style={{ fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', fontSize: '16px', marginTop: '2px' }}>
+                      {auditStats.totalAll.toLocaleString('id-ID')} Item
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                      CK: {auditStats.perDomain.CIPTA_KARYA.toLocaleString('id-ID')} | SDA: {auditStats.perDomain.SUMBER_DAYA_AIR.toLocaleString('id-ID')} | BM: {auditStats.perDomain.BINA_MARGA.toLocaleString('id-ID')} | SMKK: {auditStats.perDomain.SMKK.toLocaleString('id-ID')}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                      Aktif ditampilkan: {auditStats.activeTotal.toLocaleString('id-ID')} item
+                    </div>
+                  </div>
+
+                  <div style={{ background: 'var(--ez-pastel-sky)', padding: '12px 14px', borderRadius: 'var(--ez-radius-card)', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+                    <div style={{ color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>DHSP Resmi Terdaftar</div>
+                    <div style={{ fontWeight: 800, color: 'var(--ez-color-primary)', fontSize: '16px', marginTop: '2px' }}>
+                      {(auditStats.dhspCk + auditStats.dhspBm).toLocaleString('id-ID')} Entri
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                      Cipta Karya: {auditStats.dhspCk.toLocaleString('id-ID')} | Bina Marga: {auditStats.dhspBm.toLocaleString('id-ID')}
+                    </div>
+                  </div>
+
+                  <div style={{ background: 'var(--ez-pastel-peach)', padding: '12px 14px', borderRadius: 'var(--ez-radius-card)', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
+                    <div style={{ color: 'var(--ez-color-text-warm)', fontWeight: 600 }}>Indeks Resource Kanonis</div>
+                    <div style={{ fontWeight: 800, color: 'var(--ez-color-text-primary)', fontSize: '16px', marginTop: '2px' }}>
+                      {auditStats.resourceTotal.toLocaleString('id-ID')} Resource
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                      {auditStats.resourceByType.material.toLocaleString('id-ID')} Bahan, {auditStats.resourceByType.labor.toLocaleString('id-ID')} Upah, {auditStats.resourceByType.equipment.toLocaleString('id-ID')} Peralatan
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div style={{ background: 'var(--ez-pastel-mint)', padding: '12px 14px', borderRadius: 'var(--ez-radius-card)', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
-                <div style={{ color: 'var(--ez-color-text-warm)', fontWeight: 600 }}>Total Canonical AHSP</div>
-                <div style={{ fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', fontSize: '16px', marginTop: '2px' }}>5.801 Item</div>
-                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
-                  CK: 2.859 | SDA: 1.556 | BM: 1.163 | SMKK: 223
+                <div style={{ background: 'var(--ez-pastel-sky)', border: '1px solid var(--ez-color-border-strong)', borderRadius: 'var(--ez-radius-card)', padding: '14px 16px', fontSize: '12.5px', color: 'var(--ez-hue-blue-text-deep)', lineHeight: 1.6 }}>
+                  <strong>Status Dataset (dihitung langsung dari data aktif):</strong>
+                  <div style={{ marginTop: '4px' }}>
+                    • Coverage Harga Cipta Karya: <strong>{auditStats.ckCoveragePct.toLocaleString('id-ID', { maximumFractionDigits: 1 })}%</strong> terhitung PENUH ({auditStats.ckFull.toLocaleString('id-ID')} / {auditStats.ckTotal.toLocaleString('id-ID')} item CK aktif); parsial {auditStats.ckPartial.toLocaleString('id-ID')}, belum terhitung {auditStats.ckMissing.toLocaleString('id-ID')}
+                    <br />
+                    • Status provenansi item aktif — VERIFIED: {auditStats.statusCounts.VERIFIED.toLocaleString('id-ID')}, REVIEW: {auditStats.statusCounts.REVIEW.toLocaleString('id-ID')}, UNVERIFIED: {auditStats.statusCounts.UNVERIFIED.toLocaleString('id-ID')}
+                    <br />
+                    • Angka pada modal ini dihitung dari dataset yang dimuat aplikasi saat dibuka — bukan angka statis.
+                  </div>
                 </div>
-              </div>
-
-              <div style={{ background: 'var(--ez-pastel-sky)', padding: '12px 14px', borderRadius: 'var(--ez-radius-card)', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
-                <div style={{ color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>DHSP Resmi Dievaluasi</div>
-                <div style={{ fontWeight: 800, color: 'var(--ez-color-primary)', fontSize: '16px', marginTop: '2px' }}>3.148 Baris</div>
-                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>2.778 Leaf Items dengan Rumus VLOOKUP</div>
-              </div>
-
-              <div style={{ background: 'var(--ez-pastel-peach)', padding: '12px 14px', borderRadius: 'var(--ez-radius-card)', boxShadow: '0 4px 20px rgba(0,0,0,0.045)' }}>
-                <div style={{ color: 'var(--ez-color-text-warm)', fontWeight: 600 }}>Price Database Master</div>
-                <div style={{ fontWeight: 800, color: 'var(--ez-color-text-primary)', fontSize: '16px', marginTop: '2px' }}>3.324 Resource</div>
-                <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>3.075 Bahan, 45 Upah, 204 Peralatan</div>
-              </div>
-            </div>
-
-            <div style={{ background: 'var(--ez-pastel-sky)', border: '1px solid var(--ez-color-border-strong)', borderRadius: 'var(--ez-radius-card)', padding: '14px 16px', fontSize: '12.5px', color: 'var(--ez-hue-blue-text-deep)', lineHeight: 1.6 }}>
-              <strong>Status Rekonsiliasi Cipta Karya 2026:</strong>
-              <div style={{ marginTop: '4px' }}>
-                • Coverage Harga: <strong>99,2%</strong> (2.836 / 2.859 canonical items terpetakan harga)
-                <br />
-                • Invariant Testing: <strong>20/20 Test Passed</strong>, 5.801 Canonical tidak berubah
-                <br />
-                • Acceptance Test 1.1.1.1 s.d. 1.1.1.5: <strong>100% MATCH</strong>
-              </div>
-            </div>
+              </>
+            )}
 
             <button
               onClick={() => setShowAuditModal(false)}

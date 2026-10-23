@@ -31,6 +31,8 @@ export interface AIExecutionRequest {
   structuredContext?: Record<string, any>;
   bypassCache?: boolean;
   maxRetries?: number;
+  /** Browser gateway path only: per-request timeout (capped at 180s). */
+  timeoutMs?: number;
 }
 
 export interface AIExecutionResponse {
@@ -42,8 +44,140 @@ export interface AIExecutionResponse {
   evidence?: MultiProviderExecutionEvidence;
   cached: boolean;
   error?: string;
+  /** F5 (4.3): structured error code for browser-path failures. */
+  errorCode?: RouterGatewayErrorCode;
   fallbackCount?: number;
   retriesAttempted?: number;
+}
+
+// ============================================================================
+// F5 (4.3): gateway error mapping + timeout for the BROWSER path.
+// Before this fix the browser branch had NO timeout (a hung gateway hung the
+// assistant forever) and threw raw `payload.error || HTTP_<status>` strings —
+// losing the structured codes the tools path (providerClient) already maps.
+// Messages mirror providerClient.mapGatewayHttpError's wording (that module
+// is ai-tools-scoped; importing it here would create a cycle, so the small
+// mapping is duplicated deliberately).
+// ============================================================================
+
+export type RouterGatewayErrorCode =
+  | 'AUTH_REQUIRED'
+  | 'DEMO_RESTRICTED'
+  | 'RATE_LIMITED'
+  | 'ACCESS_DENIED'
+  | 'SERVICE_UNAVAILABLE'
+  | 'NETWORK_ERROR'
+  | 'TIMEOUT'
+  | 'EMPTY_RESPONSE'
+  | 'MODEL_ERROR';
+
+export interface RouterGatewayError {
+  code: RouterGatewayErrorCode;
+  message: string;
+  retryable: boolean;
+}
+
+export function mapRouterGatewayError(input: {
+  status?: number | null;
+  serverErrorCode?: string | null;
+  timedOut?: boolean;
+  networkFailed?: boolean;
+}): RouterGatewayError {
+  if (input.timedOut) {
+    return {
+      code: 'TIMEOUT',
+      message: 'Permintaan AI melebihi batas waktu. Silakan coba lagi.',
+      retryable: true,
+    };
+  }
+  if (input.networkFailed) {
+    return {
+      code: 'NETWORK_ERROR',
+      message: 'Tidak dapat terhubung ke server AI. Periksa koneksi lalu coba lagi.',
+      retryable: true,
+    };
+  }
+  const status = input.status ?? 0;
+  const serverCode = input.serverErrorCode || '';
+  if (status === 401 || serverCode === 'AUTH_REQUIRED') {
+    return {
+      code: 'AUTH_REQUIRED',
+      message:
+        'Akses AI ditolak oleh gerbang server. Coba lagi sebentar lagi; bila tetap gagal, periksa kode akses aplikasi Anda.',
+      retryable: false,
+    };
+  }
+  if (serverCode === 'DEMO_RESTRICTED') {
+    return {
+      code: 'DEMO_RESTRICTED',
+      message:
+        'Mode Demo tidak mengizinkan permintaan ini. Coba permintaan yang lebih sederhana, atau coba lagi nanti.',
+      retryable: false,
+    };
+  }
+  if (status === 429 || serverCode === 'RATE_LIMITED') {
+    return {
+      code: 'RATE_LIMITED',
+      message: 'Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.',
+      retryable: true,
+    };
+  }
+  if (status === 403) {
+    return {
+      code: 'ACCESS_DENIED',
+      message: 'AI Online sementara tidak dapat diakses. Silakan coba lagi nanti.',
+      retryable: false,
+    };
+  }
+  if (status >= 500) {
+    return {
+      code: 'SERVICE_UNAVAILABLE',
+      message: 'Layanan AI sedang gangguan. Silakan coba lagi nanti.',
+      retryable: true,
+    };
+  }
+  return {
+    code: 'MODEL_ERROR',
+    message: 'Layanan AI gagal memproses permintaan.',
+    retryable: false,
+  };
+}
+
+/** A "successful" provider response with no content and no structured data is a failure. */
+export function isEmptyProviderContent(content: unknown, structuredData?: unknown): boolean {
+  const hasContent = typeof content === 'string' && content.trim().length > 0;
+  return !hasContent && (structuredData === undefined || structuredData === null);
+}
+
+export const ROUTER_DEFAULT_TIMEOUT_MS = 120_000;
+export const ROUTER_MAX_TIMEOUT_MS = 180_000;
+
+interface TimedFetchResult {
+  response: Response | null;
+  timedOut: boolean;
+  networkError: unknown;
+}
+
+/** fetch() with an AbortController deadline; never throws — the caller maps the outcome. */
+export async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number
+): Promise<TimedFetchResult> {
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+  try {
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    return { response, timedOut: false, networkError: null };
+  } catch (err) {
+    return { response: null, timedOut, networkError: err };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export class AIProviderRouter {
@@ -82,8 +216,9 @@ export class AIProviderRouter {
     if (typeof window === 'undefined') return; // Node/tests: env-based pool is authoritative
     if (Date.now() - this.serverPoolHydratedAt < AIProviderRouter.SERVER_POOL_TTL_MS) return;
     try {
-      const res = await fetch('/api/ai/multi-provider/providers');
-      if (!res.ok) return;
+      // Bounded wait: hydration is best-effort and must never stall routing.
+      const { response: res } = await fetchWithTimeout('/api/ai/multi-provider/providers', {}, 10_000);
+      if (!res || !res.ok) return;
       const payload = await res.json().catch(() => null);
       if (!payload?.providers) return;
       this.serverPoolHydratedAt = Date.now();
@@ -128,25 +263,63 @@ export class AIProviderRouter {
           'DED_READING',
         ].includes(request.criteria?.task);
 
-        const response = await fetch('/api/ai/multi-provider/execute', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(await aiGatewayAuthHeaders()),
+        // F5 (4.3): bounded by an AbortController timeout — previously this
+        // fetch had NO deadline, so a hung gateway hung the assistant forever.
+        const timeoutMs = Math.min(
+          request.timeoutMs ?? ROUTER_DEFAULT_TIMEOUT_MS,
+          ROUTER_MAX_TIMEOUT_MS
+        );
+        const { response, timedOut, networkError } = await fetchWithTimeout(
+          '/api/ai/multi-provider/execute',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(await aiGatewayAuthHeaders()),
+            },
+            body: JSON.stringify({
+              mode,
+              prompt: request.prompt,
+              systemPrompt: request.systemPrompt,
+              imageDataBase64: request.imageDataBase64,
+              pdfDataBase64: request.pdfDataBase64,
+              jsonMode,
+            }),
           },
-          body: JSON.stringify({
-            mode,
-            prompt: request.prompt,
-            systemPrompt: request.systemPrompt,
-            imageDataBase64: request.imageDataBase64,
-            pdfDataBase64: request.pdfDataBase64,
-            jsonMode,
-          }),
-        });
+          timeoutMs
+        );
+
+        if (!response) {
+          const mapped = mapRouterGatewayError({
+            timedOut,
+            networkFailed: !timedOut,
+          });
+          throw Object.assign(new Error(mapped.message), {
+            code: mapped.code,
+            retryable: mapped.retryable,
+          });
+        }
 
         const payload = await response.json().catch(() => null);
         if (!payload?.success) {
-          throw new Error(payload?.error || `HTTP_${response.status}`);
+          const mapped = mapRouterGatewayError({
+            status: response.status,
+            serverErrorCode:
+              payload?.errorCode || (typeof payload?.error === 'string' ? payload.error : null),
+          });
+          throw Object.assign(new Error(mapped.message), {
+            code: mapped.code,
+            retryable: mapped.retryable,
+          });
+        }
+
+        // F5 (4.3): a 200/success payload with no content and no structured
+        // data is a failure, not an empty assistant answer.
+        if (isEmptyProviderContent(payload.content, payload.structuredData)) {
+          throw Object.assign(
+            new Error('Model mengembalikan respons kosong.'),
+            { code: 'EMPTY_RESPONSE' as RouterGatewayErrorCode, retryable: true }
+          );
         }
 
         const assistant =
@@ -173,16 +346,23 @@ export class AIProviderRouter {
           escalated: false,
         };
 
+        // F5 (4.1): the browser client performs NO verification of the
+        // provider's answer, so it must not claim any. Previously EVERY
+        // successful response was stamped status 'VERIFIED' / confidence
+        // 'HIGH' — a structural fabrication. Default is now an honest
+        // INFERRED/LOW ("model output, not verified by the system"); a
+        // server-supplied evidence object (payload.evidence) still wins
+        // field-by-field, because that claim is the server's own.
         const evidence: MultiProviderExecutionEvidence = {
           sourceId: request.sourceHash || 'SOURCE-STREAM',
           sourceName: request.sourceName || 'Project Source',
           sourceType: (request.sourceType as any) || 'text',
-          status: 'VERIFIED',
-          confidence: 'HIGH',
+          status: 'INFERRED',
+          confidence: 'LOW',
           extractorProvider: 'EZRAB Cloud Engine',
           extractorModel: assistant,
           calculatorEngine: 'EZRAB_DETERMINISTIC_ENGINE',
-          basis: `Diverifikasi melalui EZRAB Cloud Engine (${assistant})`,
+          basis: `Dihasilkan oleh EZRAB Cloud Engine (${assistant}) dari respons provider — belum diverifikasi oleh sistem`,
           ...payload.evidence,
         };
 
@@ -204,9 +384,16 @@ export class AIProviderRouter {
           retriesAttempted: 0,
         };
       } catch (err: any) {
+        // F5 (4.3): surface the structured code + the safe mapped message.
+        // Unknown internal errors collapse to a generic MODEL_ERROR message —
+        // raw internals (stack fragments, adapter strings) never reach the UI.
+        const knownCode = typeof err?.code === 'string' ? (err.code as RouterGatewayErrorCode) : null;
+        const safeMessage = knownCode
+          ? String(err.message || 'Layanan AI gagal memproses permintaan.')
+          : 'Layanan AI gagal memproses permintaan.';
         return {
           success: false,
-          content: `Gagal memproses permintaan AI: ${err.message || 'Layanan tidak tersedia'}.`,
+          content: `Gagal memproses permintaan AI: ${safeMessage}`,
           route: {
             providerId: 'EZRAB Cloud Engine',
             modelId: 'EZRAB AI Pro',
@@ -234,7 +421,8 @@ export class AIProviderRouter {
             durationMs: Date.now() - startMs,
           },
           cached: false,
-          error: err.message || 'EXECUTION_FAILED',
+          error: safeMessage,
+          errorCode: knownCode || 'MODEL_ERROR',
           fallbackCount: 0,
           retriesAttempted: 0,
         };
@@ -285,20 +473,28 @@ export class AIProviderRouter {
       try {
         const executionResult = await this.dispatchToProvider(route, request);
 
+        // F5 (4.3): empty success is a failure — fail over instead of
+        // returning a blank "successful" answer to the caller.
+        if (isEmptyProviderContent(executionResult.content, executionResult.structuredData)) {
+          throw new Error('EMPTY_RESPONSE: Model mengembalikan respons kosong.');
+        }
+
         // Record key & model success
         aiProviderRegistry.recordKeySuccess(route.keyAlias);
         aiProviderRegistry.recordKeyUsage(route.keyAlias, executionResult.usage.actualCostUsd);
         aiCostRouter.recordUsage(executionResult.usage.actualCostUsd, request.criteria.projectId);
 
-        // Multi-Provider Attribution with Proprietary Masking (Hide 3rd-party vendor details)
+        // F5 (4.1): same honesty rule as the browser path — the router does
+        // not verify provider output, so it does not stamp VERIFIED/HIGH.
+        // Adapter-supplied evidence (executionResult.evidence) still wins.
         const maskedModel = maskAiModelName(route.modelId);
         const maskedProvider = maskAiProviderName(route.providerId);
         const evidence: MultiProviderExecutionEvidence = {
           sourceId: request.sourceHash || 'SOURCE-STREAM',
           sourceName: request.sourceName || 'Project Source',
           sourceType: request.sourceType || 'text',
-          status: 'VERIFIED',
-          confidence: 'HIGH',
+          status: 'INFERRED',
+          confidence: 'LOW',
           extractorProvider: maskedProvider,
           extractorModel: maskedModel,
           calculatorEngine: 'EZRAB_DETERMINISTIC_ENGINE',
@@ -408,6 +604,11 @@ export class AIProviderRouter {
       },
       cached: false,
       error: lastError?.message || 'EXECUTION_FAILED',
+      errorCode: lastError?.message?.includes('EMPTY_RESPONSE')
+        ? 'EMPTY_RESPONSE'
+        : lastError?.message?.includes('TIMEOUT') || lastError?.message?.includes('timeout')
+          ? 'TIMEOUT'
+          : 'MODEL_ERROR',
       fallbackCount,
       retriesAttempted: attempts - 1,
     };

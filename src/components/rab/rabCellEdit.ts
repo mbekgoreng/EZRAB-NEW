@@ -88,3 +88,37 @@ export function buildRabCellUpdates(
   (updates as any).totalPrice = (updates as any).amount;
   return updates;
 }
+
+/**
+ * F1a — "Hitung Ulang Total" spreadsheet.
+ * Item yang harganya belum terisi (unitPrice null) DILEWATI: amount-nya
+ * tetap null. Menulis amount 0 untuk item tanpa harga melanggar kontrak
+ * null ≠ Rp0 dan membuat item tampak sudah berharga nol.
+ */
+export function recalculateRabItemAmounts(items: RabItem[]): RabItem[] {
+  return items.map((item) => {
+    if (item.unitPrice == null) return item;
+    const newAmt = Math.round((item.volume || 0) * item.unitPrice);
+    return { ...item, amount: newAmt, totalPrice: newAmt };
+  });
+}
+
+/**
+ * F1a — sisipkan baris baru relatif terhadap item jangkar di dalam array
+ * proyek (render berkelompok mengikuti urutan array, jadi posisi di array
+ * menentukan posisi di grupnya). Bila jangkar tidak ditemukan, item baru
+ * ditambahkan di akhir.
+ */
+export function insertRabItemRelative(
+  items: RabItem[],
+  referenceItemId: string,
+  newItem: RabItem,
+  position: 'above' | 'below'
+): RabItem[] {
+  const idx = items.findIndex((i) => i.id === referenceItemId);
+  if (idx === -1) return [...items, newItem];
+  const insertAt = position === 'above' ? idx : idx + 1;
+  const next = [...items];
+  next.splice(insertAt, 0, newItem);
+  return next;
+}

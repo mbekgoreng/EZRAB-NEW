@@ -26,6 +26,7 @@ import {
   AiEstimateQuantitySource,
   AiEstimatePriceSource,
   AiEstimateItemStatus,
+  AiEstimateWarning,
   QuantitySanityStatus,
 } from './types';
 import { AiEstimateCalculator } from './aiEstimateCalculator';
@@ -160,6 +161,10 @@ export class AiEstimatePipeline {
       let estimateItems: AiEstimateWorkItem[];
       let synthesis: DocumentSynthesisSummary;
 
+      // F5 (4.5): a total pricing-stage failure must reach the user as a
+      // result-level warning, not just a console.error.
+      let priceStageWarning: AiEstimateWarning | null = null;
+
       if (mode === 'FAST') {
         // --- FAST MODE (Gemini 3.5 Flash-Lite) ---
         const fastResult = await this.executeFastModeInternal({
@@ -172,6 +177,7 @@ export class AiEstimatePipeline {
         });
         estimateItems = fastResult.items;
         synthesis = fastResult.synthesis;
+        priceStageWarning = fastResult.priceStageWarning;
       } else {
         // --- DETAIL MODE (Gemini 3.8 Flash) ---
         const detailResult = await this.executeDetailModeInternal({
@@ -184,6 +190,7 @@ export class AiEstimatePipeline {
         });
         estimateItems = detailResult.items;
         synthesis = detailResult.synthesis;
+        priceStageWarning = detailResult.priceStageWarning;
       }
 
       if (!estimateItems || estimateItems.length === 0) {
@@ -231,7 +238,12 @@ export class AiEstimatePipeline {
       });
 
       // 3. Absurdity and Anomaly Checks
-      const warnings = AiEstimateSanityCheck.runAllChecks(estimateItems);
+      const sanityWarnings = AiEstimateSanityCheck.runAllChecks(estimateItems);
+      // F5 (4.5): pricing-stage failure warning comes FIRST so it is the
+      // most visible entry in the result's warning list.
+      const warnings = priceStageWarning
+        ? [priceStageWarning, ...sanityWarnings]
+        : sanityWarnings;
 
       // 4. Summaries & Breakdown
       const summary = AiEstimateCalculator.buildSummary(estimateItems);
@@ -328,7 +340,11 @@ export class AiEstimatePipeline {
     totalPages: number;
     region?: string;
     notify: (stage: any, label: string, pct: number, msg: string, counts?: any) => void;
-  }): Promise<{ items: AiEstimateWorkItem[]; synthesis: DocumentSynthesisSummary }> {
+  }): Promise<{
+    items: AiEstimateWorkItem[];
+    synthesis: DocumentSynthesisSummary;
+    priceStageWarning: AiEstimateWarning | null;
+  }> {
     const { projectId, projectName, rawPages, totalPages, region, notify } = args;
 
     // STEP 1: Membaca DED (Fast key sheet selection)
@@ -394,9 +410,9 @@ export class AiEstimatePipeline {
     const items = this.convertToEstimateItems(v3Items);
 
     // Fast AI Price Estimation using quick model (Gemini 3.5 Flash-Lite)
-    await this.estimatePricesWithAI(items, synthesis, region, 'quick');
+    const priceStageWarning = await this.estimatePricesWithAI(items, synthesis, region, 'quick');
 
-    return { items, synthesis };
+    return { items, synthesis, priceStageWarning };
   }
 
   /**
@@ -416,7 +432,11 @@ export class AiEstimatePipeline {
     totalPages: number;
     region?: string;
     notify: (stage: any, label: string, pct: number, msg: string, counts?: any) => void;
-  }): Promise<{ items: AiEstimateWorkItem[]; synthesis: DocumentSynthesisSummary }> {
+  }): Promise<{
+    items: AiEstimateWorkItem[];
+    synthesis: DocumentSynthesisSummary;
+    priceStageWarning: AiEstimateWarning | null;
+  }> {
     const { projectId, projectName, rawPages, totalPages, region, notify } = args;
 
     // STEP 1: Membaca gambar (All sheets thorough analysis)
@@ -467,9 +487,9 @@ export class AiEstimatePipeline {
     });
 
     // Deep AI Price Estimation using advanced model (Gemini 3.8 Flash)
-    await this.estimatePricesWithAI(items, synthesis, region, 'advanced');
+    const priceStageWarning = await this.estimatePricesWithAI(items, synthesis, region, 'advanced');
 
-    return { items, synthesis };
+    return { items, synthesis, priceStageWarning };
   }
 
   /**
@@ -585,7 +605,20 @@ export class AiEstimatePipeline {
     synthesis: DocumentSynthesisSummary,
     region?: string,
     capabilityMode: 'quick' | 'advanced' = 'quick'
-  ): Promise<void> {
+  ): Promise<AiEstimateWarning | null> {
+    // F5 (4.5): a TOTAL pricing-stage failure is returned as a result-level
+    // warning so the user sees WHY every price is unresolved, instead of a
+    // "successful" result with all prices silently missing.
+    let priceStageWarning: AiEstimateWarning | null = null;
+    const stageFailed = (code: string): AiEstimateWarning => ({
+      type: 'PRICE_STAGE_FAILED',
+      level: 'CRITICAL',
+      message:
+        `Tahap estimasi harga AI gagal (${code}) — seluruh item ditandai ` +
+        `PRICE_UNRESOLVED dan belum memiliki harga.`,
+      suggestedAction:
+        'Jalankan ulang analisis; bila kegagalan berulang, periksa status layanan AI.',
+    });
     const itemsList = items.map((item, idx) => ({
       idx,
       name: item.workName,
@@ -639,8 +672,16 @@ FORMAT JAWABAN (JSON array murni):
       });
 
       const response = chatRes?.content;
-      if (response && typeof response === 'string') {
-        const parsed = this.parseAiPriceResponse(response, items.length);
+      if (!response || typeof response !== 'string' || response.trim().length === 0) {
+        priceStageWarning = stageFailed('EMPTY_RESPONSE');
+      } else {
+        const { prices: parsed, sawJsonArray } = this.parseAiPriceResponse(response, items.length);
+        if (!sawJsonArray) {
+          // The model answered, but not with the required JSON array — the
+          // stage produced nothing usable. (An array whose entries all carry
+          // null prices is a legitimate model judgement, NOT a failure.)
+          priceStageWarning = stageFailed('PRICE_RESPONSE_INVALID');
+        }
 
         for (const priceResult of parsed) {
           if (priceResult.idx >= 0 && priceResult.idx < items.length) {
@@ -680,6 +721,11 @@ FORMAT JAWABAN (JSON array murni):
     } catch (err: any) {
       console.error(`[AI-ESTIMATE-TRACE] PRICE_ESTIMATION_ERROR: ${err.message}. Stage: PRICE`);
       console.warn('[AiEstimatePipeline] AI price estimation call warning:', err);
+      // F5 (4.5): was console-only — now also a user-visible result warning
+      // carrying the (coded) cause, e.g. AUTH_REQUIRED / TIMEOUT / RATE_LIMITED.
+      priceStageWarning = stageFailed(
+        typeof err?.code === 'string' ? err.code : 'PRICE_CALL_FAILED'
+      );
     }
 
     // MISSING != ZERO: For any items still without prices, strictly mark as UNRESOLVED
@@ -701,15 +747,23 @@ FORMAT JAWABAN (JSON array murni):
         item.priceSource = 'AI_ESTIMATE';
       }
     }
+
+    return priceStageWarning;
   }
 
   /**
    * Parse AI price response robustly.
+   * F5 (4.5): also reports whether a JSON array was actually present, so the
+   * caller can distinguish "stage produced an unusable answer" (failure)
+   * from "array present, prices judged null per item" (legitimate).
    */
   private parseAiPriceResponse(
     response: string,
     itemCount: number
-  ): Array<{ idx: number; estimatedUnitPrice: number; confidence?: string; reasoning?: string }> {
+  ): {
+    prices: Array<{ idx: number; estimatedUnitPrice: number; confidence?: string; reasoning?: string }>;
+    sawJsonArray: boolean;
+  } {
     try {
       let jsonStr = response.trim();
       jsonStr = jsonStr.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
@@ -722,14 +776,17 @@ FORMAT JAWABAN (JSON array murni):
       const parsed = JSON.parse(jsonStr);
 
       if (Array.isArray(parsed)) {
-        return parsed
-          .filter((item: any) => typeof item.idx === 'number' && typeof item.estimatedUnitPrice === 'number')
-          .map((item: any) => ({
-            idx: item.idx,
-            estimatedUnitPrice: Math.round(item.estimatedUnitPrice),
-            confidence: item.confidence,
-            reasoning: item.reasoning,
-          }));
+        return {
+          sawJsonArray: true,
+          prices: parsed
+            .filter((item: any) => typeof item.idx === 'number' && typeof item.estimatedUnitPrice === 'number')
+            .map((item: any) => ({
+              idx: item.idx,
+              estimatedUnitPrice: Math.round(item.estimatedUnitPrice),
+              confidence: item.confidence,
+              reasoning: item.reasoning,
+            })),
+        };
       }
     } catch (err) {
       // Fallback regex line-by-line
@@ -746,10 +803,11 @@ FORMAT JAWABAN (JSON array murni):
         }
       }
 
-      return results;
+      // Prices salvaged line-by-line still count as a usable stage output.
+      return { prices: results, sawJsonArray: results.length > 0 };
     }
 
-    return [];
+    return { prices: [], sawJsonArray: false };
   }
 }
 

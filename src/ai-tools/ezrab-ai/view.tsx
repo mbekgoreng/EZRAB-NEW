@@ -1,8 +1,7 @@
 /**
  * EzrabAiView — Ezrab Chat AI v2 (total overhaul).
- * - 3D mascot "beranda" (EZRABMascot3D, variant chatbot): hero besar saat kosong +
- *   mini di header. Ekspresi idle / thinking / happy mengikuti status chat.
- *   Eye-tracking + blink + float + glow seperti di dashboard.
+ * - Maskot kanonis EZRAB (EZRABMascotLucu): hero besar saat kosong + mini di
+ *   header. Eye-tracking + blink + float, sama seperti permukaan lain.
  * - Royal-blue brand theme (#2563EB), bubble Gemini-style.
  * - Mic voice input (Web Speech API, id-ID), lampir gambar (thumbnail di bubble
  *   user + catatan jujur ke AI bahwa gambar tak bisa dilihat model teks),
@@ -25,7 +24,7 @@ import { getLastDirectRab } from './directRab';
 import { looksLikeNeedsAnswer } from './rabNeeds';
 import { notificationBus } from '../../notifications/notificationBus';
 import { navigateTo, routeForMenu } from '../../routing/routes';
-import { EZRABMascot3D } from '../../components/mascot/EZRABMascot3D';
+import { EZRABMascotLucu } from '../../components/mascot/EZRABMascotLucu';
 import { useProject } from '../../context/ProjectContext';
 import { buildProjectSnapshot, ProjectSnapshot } from './projectContext';
 import { unifiedConversationStore } from '../../services/ai/conversation/unifiedConversationStore';
@@ -402,7 +401,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
     try {
       const res = await ezrabAiService.send({
-        messages: next.map((m) => ({ role: m.role, content: m.role === 'user' && m.imageName ? content : m.content })),
+        // F3: the "[gambar: …]" note belongs ONLY to the message just sent
+        // (the last entry in `next`). Older image messages must keep their
+        // own original content — the old map overwrote EVERY past image
+        // message's text with the newest note.
+        messages: next.map((m, idx) => ({
+          role: m.role,
+          content: idx === next.length - 1 ? content : m.content,
+        })),
         mode,
         projectSnapshot,
       } as any);
@@ -705,9 +711,6 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     setAttached({ url: trackUrl(URL.createObjectURL(f)), name: f.name });
   };
 
-  const mascotExpression: 'idle' | 'thinking' | 'happy' =
-    busy ? 'thinking' : messages.length > 0 ? 'happy' : 'idle';
-
   /* Composer dipakai dua tempat: di tengah (saat chat kosong, di bawah
    * trust badges) dan di bawah (saat sudah ada percakapan). */
   const composer = (middle: boolean) => (
@@ -781,15 +784,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       {/* ===== Header ===== */}
       <div className="ezchat2-header">
         <div className="ezchat2-mascot">
-          <EZRABMascot3D
-            variant="chatbot"
-            width={44}
-            height={44}
-            expression={mascotExpression}
-            isThinking={busy}
+          <EZRABMascotLucu
+            size={44}
             enableEyeTracking
             enableBlink
-            enableGlow
+            enableFloat={false}
+            interactive={false}
           />
         </div>
         <div className="ezchat2-title">
@@ -822,15 +822,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         {messages.length === 0 ? (
           <div className="ezchat2-empty">
             <div className="ezchat2-hero">
-              <EZRABMascot3D
-                variant="chatbot"
-                width={128}
-                height={128}
-                expression="happy"
+              <EZRABMascotLucu
+                size={128}
                 enableEyeTracking
                 enableFloat
                 enableBlink
-                enableGlow
+                interactive={false}
               />
             </div>
             <h2 className="ezchat2-greet">{greeting}</h2>

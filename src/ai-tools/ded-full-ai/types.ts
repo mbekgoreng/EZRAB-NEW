@@ -67,7 +67,7 @@ export interface FullAiItem {
   quantity: FullAiQuantityDetail;
   price: FullAiPriceDetail;
   subtotal: number | null;    // Dihitung aplikasi: qty × price (verifikasi saja)
-  subtotalVerified: boolean;  // Apakah subtotal AI cocok dengan hitungan aplikasi
+  subtotalVerified: boolean;  // true HANYA bila subtotal benar-benar dihitung aplikasi dari qty × harga yang keduanya ada; false bila subtotal null (tidak ada yang diverifikasi)
   subtotalDiscrepancy?: string; // Jika tidak cocok, jelaskan selisihnya
   status: 'READY' | 'NEEDS_CONFIRMATION' | 'UNRESOLVED' | 'EXCLUDED';
   exclusionReason: FullAiExclusionReason; // Alasan spesifik tidak masuk total
@@ -112,7 +112,12 @@ export interface FullAiOutput {
     retryable: boolean;
   };
   provenance: {
-    model: string;
+    /** Provider yang BENAR-BENAR melayani respons (dari gateway); null = respons tidak membawa identitas — jangan ditebak. */
+    provider: string | null;
+    /** Model yang BENAR-BENAR melayani respons (dari gateway); null = tidak diketahui. */
+    model: string | null;
+    /** Batas waktu pemrosesan per panggilan AI yang diterapkan (ms) — dinyatakan terbuka, bukan plafon diam-diam. */
+    timeoutLimitMs: number;
     timestamp: string;
     documentPages: number;
     documentChars: number;

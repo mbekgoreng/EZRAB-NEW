@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   LineChart,
   Calendar,
@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import { Project, RabItem } from "../../types";
 import { formatCurrencyIDR } from "../../calculations/decimalEngine";
-import { evaluateEstimatorKurvaS } from "../../lib/kurvaSHonesty";
+import { evaluateEstimatorKurvaS, buildLaporanKurvaS } from "../../lib/kurvaSHonesty";
+import { useProject } from "../../context/ProjectContext";
 
 interface EstimatorKurvaSViewProps {
   currentProject: Project | null;
@@ -23,82 +24,117 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
   items,
   onOpenExportModal,
 }) => {
-  const [totalWeeks, setTotalWeeks] = useState<number>(12);
+  // Durasi preferensi PERSISTEN per proyek (dulu state lokal yang reset ke 12
+  // setiap pindah tab karena view di-unmount).
+  const weeksStorageKey = currentProject ? `ezrab_estimator_kurva_weeks_${currentProject.id}` : null;
+  const [totalWeeks, setTotalWeeks] = useState<number>(() => {
+    try {
+      const v = weeksStorageKey ? Number(localStorage.getItem(weeksStorageKey)) : NaN;
+      return [8, 12, 16, 20, 24].includes(v) ? v : 12;
+    } catch {
+      return 12;
+    }
+  });
+  useEffect(() => {
+    if (!weeksStorageKey) return;
+    try {
+      const v = Number(localStorage.getItem(weeksStorageKey));
+      if ([8, 12, 16, 20, 24].includes(v)) setTotalWeeks(v);
+    } catch {
+      /* abaikan */
+    }
+  }, [weeksStorageKey]);
+  useEffect(() => {
+    try {
+      if (weeksStorageKey) localStorage.setItem(weeksStorageKey, String(totalWeeks));
+    } catch {
+      /* abaikan */
+    }
+  }, [totalWeeks, weeksStorageKey]);
   const [hoveredWeek, setHoveredWeek] = useState<number | null>(null);
 
-  // Group items by category and compute weights
-  const { categorySchedule, totalAmount } = useMemo(() => {
-    const map = new Map<string, { name: string; amount: number }>();
-    let total = 0;
+  // SUMBER DATA NYATA: tugas jadwal + Kurva S engine dari ProjectContext
+  // (hanya berlaku bila proyek konteks = proyek yang sedang ditampilkan).
+  const { projectScheduleTasks, projectKurvaSData, currentProjectId } = useProject();
+  const contextMatches = !!currentProject && currentProject.id === currentProjectId;
+  const scheduleTasks = contextMatches ? projectScheduleTasks : [];
+  const kurvaSData = contextMatches ? projectKurvaSData : [];
 
-    items.forEach((it) => {
-      const cat = it.category || "Pekerjaan Persiapan & Umum";
-      const amt = it.amount || (it.volume || 0) * (it.unitPrice || 0);
-      total += amt;
-      const ex = map.get(cat);
-      if (ex) ex.amount += amt;
-      else map.set(cat, { name: cat, amount: amt });
-    });
+  // Kurva rencana dari engine jadwal (buildLaporanKurvaS menolak menggambar
+  // tanpa tugas / tanpa bobot — tidak ada sintesis dari indeks kategori lagi).
+  const realKurva = useMemo(
+    () => buildLaporanKurvaS(kurvaSData, scheduleTasks),
+    [kurvaSData, scheduleTasks]
+  );
+  const hasRealSchedule = realKurva.available;
 
-    const cats = Array.from(map.values()).map((c, idx) => {
-      const weight = total > 0 ? (c.amount / total) * 100 : 0;
-      
-      // Calculate realistic staggered start and duration based on WBS sequence
-      const catCount = map.size || 1;
-      const startWeek = Math.min(Math.floor((idx / catCount) * (totalWeeks * 0.7)), totalWeeks - 2);
-      const spanWeeks = Math.max(3, Math.floor(totalWeeks * 0.4));
-      const endWeek = Math.min(startWeek + spanWeeks, totalWeeks);
-      const activeDuration = Math.max(1, endWeek - startWeek);
-      const weeklyWeight = weight / activeDuration;
+  // Total biaya rencana dari item RAB (basis kolom Biaya proporsional bobot).
+  const totalAmount = useMemo(
+    () => items.reduce((acc, it) => acc + (it.amount || (it.volume || 0) * (it.unitPrice || 0)), 0),
+    [items]
+  );
 
+  const effectiveWeeks = hasRealSchedule ? realKurva.totalWeeks : totalWeeks;
+
+  // Baris distribusi = TUGAS JADWAL nyata: bobot tugas disebar merata pada
+  // rentang pekannya (metode yang sama dengan engine Kurva S).
+  const categorySchedule = useMemo(() => {
+    if (!hasRealSchedule) return [];
+    return scheduleTasks.map((t, idx) => {
+      const startWeek = Math.max(1, t.startWeek || 1);
+      const endWeek = Math.max(startWeek, t.endWeek || startWeek);
+      const duration = Math.max(1, endWeek - startWeek + 1);
+      const weeklyWeight = (t.weightPercent || 0) / duration;
       const weeklyDistribution: number[] = [];
-      for (let w = 1; w <= totalWeeks; w++) {
-        if (w >= startWeek + 1 && w <= endWeek) {
-          weeklyDistribution.push(weeklyWeight);
-        } else {
-          weeklyDistribution.push(0);
-        }
+      for (let w = 1; w <= effectiveWeeks; w++) {
+        weeklyDistribution.push(w >= startWeek && w <= endWeek ? weeklyWeight : 0);
       }
-
       return {
-        id: `cat-${idx + 1}`,
+        id: `task-${t.id}`,
         no: idx + 1,
-        name: c.name,
-        amount: c.amount,
-        weight,
-        startWeek: startWeek + 1,
+        name: t.name,
+        amount: totalAmount * ((t.weightPercent || 0) / 100),
+        weight: t.weightPercent || 0,
+        startWeek,
         endWeek,
         weeklyDistribution,
       };
     });
+  }, [hasRealSchedule, scheduleTasks, effectiveWeeks, totalAmount]);
 
-    return { categorySchedule: cats, totalAmount: total };
-  }, [items, totalWeeks]);
-
-  // Compute Weekly Total & Cumulative % for S-Curve
+  // Seri mingguan & kumulatif rencana dari keluaran engine (bukan penjumlahan
+  // ulang distribusi sintesis).
   const { weeklyTotals, cumulativePercentages } = useMemo(() => {
-    const wTotals: number[] = [];
-    const cumPct: number[] = [];
-    let cum = 0;
+    if (!hasRealSchedule) return { weeklyTotals: [] as number[], cumulativePercentages: [] as number[] };
+    return {
+      weeklyTotals: realKurva.weeks.map((w) => w.planWeekly),
+      cumulativePercentages: realKurva.weeks.map((w) => w.planCum),
+    };
+  }, [hasRealSchedule, realKurva]);
 
-    for (let w = 0; w < totalWeeks; w++) {
-      let weekSum = 0;
-      categorySchedule.forEach((cat) => {
-        weekSum += cat.weeklyDistribution[w] || 0;
-      });
-      wTotals.push(weekSum);
-      cum += weekSum;
-      cumPct.push(Math.min(100, cum));
+  // Progres AKTUAL dari titik aktual Kurva S yang sama (engine menghitungnya
+  // dari progres tugas). null per pekan bila belum ada realisasi.
+  const actualCumulative: (number | null)[] = useMemo(
+    () => kurvaSData.map((d) => (d.actualProgressPercent != null ? d.actualProgressPercent : null)),
+    [kurvaSData]
+  );
+  const lastActual = useMemo(() => {
+    for (let i = actualCumulative.length - 1; i >= 0; i--) {
+      if (actualCumulative[i] != null) {
+        return {
+          week: i + 1,
+          actual: actualCumulative[i] as number,
+          planned: cumulativePercentages[i] ?? null,
+        };
+      }
     }
+    return null;
+  }, [actualCumulative, cumulativePercentages]);
 
-    return { weeklyTotals: wTotals, cumulativePercentages: cumPct };
-  }, [categorySchedule, totalWeeks]);
-
-  // Kejujuran data (lib/kurvaSHonesty.evaluateEstimatorKurvaS): tanpa item
-  // RAB, atau total biaya nol sehingga seluruh bobot kategori nol, kurva
-  // TIDAK digambar — panel "Data Kurva S Tidak Tersedia" ditampilkan,
-  // bukan kurva 0% datar + "Total Biaya Rencana: Rp0" seolah fakta.
+  // Kejujuran data: tanpa jadwal nyata, kurva TIDAK digambar — panel
+  // "Data Kurva S Tidak Tersedia" ditampilkan (alasan dirinci di panel).
   const kurvaSAvailability = useMemo(() => evaluateEstimatorKurvaS(items), [items]);
+  const panelAvailable = hasRealSchedule;
 
   // SVG Chart Geometry
   const chartHeight = 220;
@@ -107,7 +143,7 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
   const paddingY = 30;
 
   const getCoordinates = (weekIdx: number, pct: number) => {
-    const x = paddingX + (weekIdx / (totalWeeks - 1)) * (chartWidth - paddingX * 2);
+    const x = paddingX + (weekIdx / Math.max(1, effectiveWeeks - 1)) * (chartWidth - paddingX * 2);
     const y = chartHeight - paddingY - (pct / 100) * (chartHeight - paddingY * 2);
     return { x, y };
   };
@@ -130,15 +166,26 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
       d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
     }
     return d;
-  }, [cumulativePercentages, totalWeeks]);
+  }, [cumulativePercentages, effectiveWeeks]);
 
   const areaD = useMemo(() => {
     if (cumulativePercentages.length === 0) return "";
     const first = getCoordinates(0, cumulativePercentages[0]);
-    const last = getCoordinates(totalWeeks - 1, cumulativePercentages[totalWeeks - 1]);
+    const last = getCoordinates(effectiveWeeks - 1, cumulativePercentages[effectiveWeeks - 1]);
     const bottomY = chartHeight - paddingY;
     return `${pathD} L ${last.x} ${bottomY} L ${first.x} ${bottomY} Z`;
-  }, [pathD, cumulativePercentages, totalWeeks]);
+  }, [pathD, cumulativePercentages, effectiveWeeks]);
+
+  // Garis realisasi dari titik aktual Kurva S (hanya pekan beraktual).
+  const actualPathD = useMemo(() => {
+    const pts: { x: number; y: number }[] = [];
+    actualCumulative.forEach((v, idx) => {
+      if (v != null) pts.push(getCoordinates(idx, v));
+    });
+    if (pts.length === 0) return "";
+    if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
+    return pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+  }, [actualCumulative, effectiveWeeks]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px", width: "100%", maxWidth: "1600px", margin: "0 auto" }}>
@@ -158,27 +205,34 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
             <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12.5px", color: "var(--ez-color-text-slate)", fontWeight: 600 }}>
               <Clock size={15} color="var(--ez-hue-blue-text)" />
               <span>Durasi Proyek:</span>
-              <select
-                value={totalWeeks}
-                onChange={(e) => setTotalWeeks(Number(e.target.value))}
-                style={{
-                  height: "34px",
-                  padding: "0 10px",
-                  borderRadius: "7px",
-                  border: "1px solid var(--ez-hue-slate-border)",
-                  fontSize: "12.5px",
-                  fontWeight: 700,
-                  color: "var(--ez-hue-blue-text)",
-                  background: "var(--ez-hue-blue-bg)",
-                  outline: "none",
-                }}
-              >
-                <option value={8}>8 Minggu (2 Bulan)</option>
-                <option value={12}>12 Minggu (3 Bulan)</option>
-                <option value={16}>16 Minggu (4 Bulan)</option>
-                <option value={20}>20 Minggu (5 Bulan)</option>
-                <option value={24}>24 Minggu (6 Bulan)</option>
-              </select>
+              {hasRealSchedule ? (
+                <span style={{ fontWeight: 700, color: "var(--ez-hue-blue-text)" }}>
+                  {effectiveWeeks} Minggu (dari jadwal proyek)
+                </span>
+              ) : (
+                <select
+                  value={totalWeeks}
+                  onChange={(e) => setTotalWeeks(Number(e.target.value))}
+                  title="Preferensi durasi rencana — tersimpan per proyek"
+                  style={{
+                    height: "34px",
+                    padding: "0 10px",
+                    borderRadius: "7px",
+                    border: "1px solid var(--ez-hue-slate-border)",
+                    fontSize: "12.5px",
+                    fontWeight: 700,
+                    color: "var(--ez-hue-blue-text)",
+                    background: "var(--ez-hue-blue-bg)",
+                    outline: "none",
+                  }}
+                >
+                  <option value={8}>8 Minggu (2 Bulan)</option>
+                  <option value={12}>12 Minggu (3 Bulan)</option>
+                  <option value={16}>16 Minggu (4 Bulan)</option>
+                  <option value={20}>20 Minggu (5 Bulan)</option>
+                  <option value={24}>24 Minggu (6 Bulan)</option>
+                </select>
+              )}
             </div>
 
             {onOpenExportModal && (
@@ -206,10 +260,10 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
         </div>
       </div>
 
-      {/* Data Tidak Tersedia — pola yang sama dengan Tab Kurva S
-          LaporanView: kurva butuh item RAB berharga sebagai basis bobot.
-          Tanpa itu kurva TIDAK digambar (tidak ada kurva 0% karangan). */}
-      {!kurvaSAvailability.available ? (
+      {/* Data Tidak Tersedia — kurva hanya digambar dari JADWAL NYATA
+          (tugas + Kurva S engine). Distribusi sintesis dari indeks kategori
+          DIHAPUS: timing mingguan tanpa tugas jadwal adalah tebakan. */}
+      {!panelAvailable ? (
         <div
           style={{
             background: "var(--ez-color-surface)",
@@ -229,9 +283,13 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
             Data Kurva S Tidak Tersedia
           </div>
           <div style={{ fontSize: "12.5px", color: "var(--ez-color-text-muted)", maxWidth: "560px", lineHeight: 1.6 }}>
-            {kurvaSAvailability.reason === 'NO_WEIGHTS'
-              ? 'Item RAB ditemukan, tetapi total biaya rencana masih nol — belum ada item dengan biaya (volume × harga satuan) lebih dari nol, sehingga seluruh bobot kategori bernilai nol. Kurva rencana memerlukan item berharga agar distribusi mingguan dapat dihitung dari data nyata.'
-              : 'Proyek ini belum memiliki item RAB, sehingga distribusi bobot mingguan dan kurva rencana tidak dapat dihitung dari data nyata. Kurva tidak digambar daripada menampilkan kurva 0% datar dan total biaya Rp0 seolah-olah merupakan rencana.'}
+            {realKurva.reason === 'NO_TASKS'
+              ? 'Proyek ini belum memiliki jadwal tahapan pelaksanaan, sehingga distribusi bobot mingguan tidak punya basis nyata. Buat jadwal di menu Manajemen Proyek (tugas dengan pekan mulai/selesai dan bobot) — kurva rencana & realisasi akan dihitung dari data tersebut. Distribusi tebakan dari urutan kategori RAB tidak lagi ditampilkan sebagai kurva.'
+              : realKurva.reason === 'NO_WEIGHTS'
+                ? 'Jadwal tahapan ada, tetapi total bobot rencana masih nol — kurva 0% datar akan terbaca sebagai fakta padahal tidak ada rencana di baliknya. Lengkapi bobot tugas jadwal terlebih dahulu.'
+                : !kurvaSAvailability.available && kurvaSAvailability.reason === 'NO_WEIGHTS'
+                  ? 'Item RAB ditemukan, tetapi total biaya rencana masih nol — belum ada item dengan biaya (volume × harga satuan) lebih dari nol. Kurva rencana memerlukan item berharga dan jadwal tahapan agar dapat dihitung dari data nyata.'
+                  : 'Data Kurva S dari engine jadwal belum tersedia untuk proyek ini. Kurva tidak digambar daripada menampilkan angka karangan.'}
           </div>
         </div>
       ) : (
@@ -254,11 +312,29 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
           }
         `}</style>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#2563EB" }} />
-            <span style={{ fontSize: "13.5px", fontWeight: 750, color: "var(--ez-color-text-primary)" }}>
-              Kurva S Rencana Kumulatif (Planned Progress %)
-            </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#2563EB" }} />
+              <span style={{ fontSize: "13.5px", fontWeight: 750, color: "var(--ez-color-text-primary)" }}>
+                Kurva S Rencana Kumulatif (dari Jadwal Proyek)
+              </span>
+            </div>
+            {lastActual && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: "#16A34A" }} />
+                <span style={{ fontSize: "12.5px", fontWeight: 650, color: "var(--ez-color-text-body)" }}>
+                  Realisasi s.d. Minggu {lastActual.week}: {lastActual.actual.toFixed(1)}%
+                  {lastActual.planned != null && (
+                    <> · Rencana {lastActual.planned.toFixed(1)}% · Deviasi {(lastActual.actual - lastActual.planned >= 0 ? "+" : "")}{(lastActual.actual - lastActual.planned).toFixed(1)}%</>
+                  )}
+                </span>
+              </div>
+            )}
+            {!lastActual && (
+              <span style={{ fontSize: "12px", color: "var(--ez-color-text-muted)" }}>
+                Belum ada data realisasi mingguan — garis realisasi tidak digambar.
+              </span>
+            )}
           </div>
 
           <div style={{ fontSize: "12px", color: "#64748B" }}>
@@ -313,6 +389,14 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
             {/* S-Curve Line — smooth + draw animation */}
             {pathD && <path d={pathD} fill="none" stroke="#2563EB" strokeWidth="3.5" strokeLinecap="round" className="estkurva-line" />}
 
+            {/* Actual line — hanya dari titik aktual Kurva S nyata */}
+            {actualPathD && <path d={actualPathD} fill="none" stroke="#16A34A" strokeWidth="3" strokeLinecap="round" />}
+            {actualCumulative.map((v, idx) => {
+              if (v == null) return null;
+              const { x, y } = getCoordinates(idx, v);
+              return <circle key={`act-${idx}`} cx={x} cy={y} r="4" fill="#16A34A" stroke="#FFFFFF" strokeWidth="2" />;
+            })}
+
             {/* Week Data Points — staggered pop-in + hover tooltip */}
             {cumulativePercentages.map((pct, idx) => {
               const { x, y } = getCoordinates(idx, pct);
@@ -364,17 +448,17 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
       {/* 3. TIMELINE & WEEKLY SCHEDULE TABLE */}
       <div style={{ background: "var(--ez-color-surface)", border: "1px solid var(--ez-color-border-line)", borderRadius: "16px", padding: "20px 24px", boxShadow: "0 1px 4px rgba(15,23,42,0.04)", overflowX: "auto" }}>
         <h3 style={{ fontSize: "15px", fontWeight: 800, color: "var(--ez-color-text-primary)", marginBottom: "14px" }}>
-          Distribusi Bobot Pekerjaan Mingguan
+          Distribusi Bobot Mingguan per Tahapan Jadwal
         </h3>
 
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", minWidth: "800px" }}>
           <thead>
             <tr style={{ background: "var(--ez-color-surface-secondary)", borderBottom: "2px solid var(--ez-color-border-line)", color: "var(--ez-color-text-slate)" }}>
               <th style={{ padding: "8px 10px", textAlign: "center", width: "40px" }}>No</th>
-              <th style={{ padding: "8px 10px", textAlign: "left", width: "240px" }}>Kelompok Pekerjaan</th>
+              <th style={{ padding: "8px 10px", textAlign: "left", width: "240px" }}>Tahapan Pekerjaan</th>
               <th style={{ padding: "8px 10px", textAlign: "right", width: "130px" }}>Biaya (Rp)</th>
               <th style={{ padding: "8px 10px", textAlign: "right", width: "80px" }}>Bobot</th>
-              {Array.from({ length: totalWeeks }, (_, i) => (
+              {Array.from({ length: effectiveWeeks }, (_, i) => (
                 <th key={i} style={{ padding: "8px 4px", textAlign: "center", width: "45px" }}>
                   M{i + 1}
                 </th>
@@ -419,7 +503,9 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
               <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
                 {formatCurrencyIDR(totalAmount)}
               </td>
-              <td style={{ padding: "9px 10px", textAlign: "right", color: "var(--ez-hue-blue-text)" }}>100.00%</td>
+              <td style={{ padding: "9px 10px", textAlign: "right", color: "var(--ez-hue-blue-text)" }}>
+                {categorySchedule.reduce((s, c) => s + c.weight, 0).toFixed(2)}%
+              </td>
               {weeklyTotals.map((wTot, wIdx) => (
                 <td key={wIdx} style={{ padding: "9px 2px", textAlign: "center", fontSize: "11px", color: "var(--ez-color-text-primary)", fontWeight: 700 }}>
                   {wTot.toFixed(1)}%
@@ -433,6 +519,16 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
               {cumulativePercentages.map((cVal, cIdx) => (
                 <td key={cIdx} style={{ padding: "10px 2px", textAlign: "center", fontSize: "11px", color: "var(--ez-hue-blue-text)" }}>
                   {cVal.toFixed(1)}%
+                </td>
+              ))}
+            </tr>
+            <tr style={{ background: "var(--ez-pastel-mint, #ECFDF5)", borderTop: "1px solid var(--ez-color-border-line)", fontWeight: 700, color: "var(--ez-hue-green-text)" }}>
+              <td colSpan={4} style={{ padding: "10px 10px", textAlign: "right" }}>
+                Bobot Realisasi Kumulatif (%)
+              </td>
+              {actualCumulative.map((aVal, aIdx) => (
+                <td key={aIdx} style={{ padding: "10px 2px", textAlign: "center", fontSize: "11px" }}>
+                  {aVal != null ? `${aVal.toFixed(1)}%` : "—"}
                 </td>
               ))}
             </tr>

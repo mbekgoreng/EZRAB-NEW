@@ -8,7 +8,8 @@
 import { handleAiRequest } from '../_lib/aiGateway.js';
 
 export default async function handler(req, res) {
-  // Chat AI pakai mode 'chat': nvidia -> deepseek -> zyrouter
+  // Chat AI pakai mode 'chat': Gemini native -> AtmoRouter ag/gemini-3.8-flash-high
+  // -> AtmoRouter cx/gpt-6-luna -> ZyRouter geminiflash-3.8 (+ ekor generik)
   return handleAiRequest(req, res, {
     productIdToMode: () => 'chat',
   });

@@ -35,17 +35,19 @@ export const AiPriceResearchDrawer: React.FC<AiPriceResearchDrawerProps> = ({
 
   const [promptQuery, setPromptQuery] = useState(initialQuery);
   const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [candidates, setCandidates] = useState<Array<{
     id: string;
+    material: MaterialMaster;
     materialName: string;
     brand: string;
     spec: string;
     unit: string;
-    price: number;
+    price: number | null;
     region: string;
     source: string;
     date: string;
-    confidence: string;
+    verificationLabel: string;
   }>>([]);
 
   if (!isOpen) return null;
@@ -55,7 +57,9 @@ export const AiPriceResearchDrawer: React.FC<AiPriceResearchDrawerProps> = ({
     setIsSearching(true);
 
     setTimeout(() => {
-      // Find matches in existing materials database
+      // Cari kecocokan NYATA di database material — kandidat hanya berasal dari
+      // data yang benar-benar ada; harga/atribut yang tidak ada ditampilkan apa
+      // adanya (null/'—'), tidak pernah diisi angka atau label karangan.
       const q = promptQuery.toLowerCase();
       const matches = matDb.getAllMaterials().filter((m) => {
         return (
@@ -68,44 +72,30 @@ export const AiPriceResearchDrawer: React.FC<AiPriceResearchDrawerProps> = ({
       const candList = matches.slice(0, 5).map((m, idx) => {
         const pList = matDb.getPricesByMaterialId(m.id);
         const pRec = pList[0];
-        const basePrice = pRec?.price || 75000;
         return {
           id: `cand-${m.id}-${idx}`,
+          material: m,
           materialName: m.name,
-          brand: m.brand || 'Standar SNI',
-          spec: m.specification || 'Spesifikasi pabrikan terverifikasi',
+          brand: m.brand || '—',
+          spec: m.specification || '—',
           unit: m.unit,
-          price: basePrice,
-          region: pRec?.region.city ? `${pRec.region.city}, ${pRec.region.province}` : pRec?.region.province || 'Jawa Timur',
-          source: pRec?.sourceName || 'Katalog Resmi Distributor Regional 2026',
-          date: '2026-03-25',
-          confidence: 'HIGH_VERIFIED',
+          price: typeof pRec?.price === 'number' ? pRec.price : null,
+          region: pRec?.region.city
+            ? `${pRec.region.city}, ${pRec.region.province}`
+            : pRec?.region.province || '—',
+          source: pRec?.sourceName || '—',
+          date: pRec?.priceDate || '—',
+          verificationLabel:
+            pRec?.verificationStatus === 'VERIFIED'
+              ? 'Terverifikasi'
+              : pRec
+                ? 'Belum terverifikasi'
+                : 'Tanpa record harga',
         };
       });
 
-      // If no exact match, fallback to general items from master database
-      if (candList.length === 0) {
-        const fallbacks = matDb.getAllMaterials().slice(0, 3).map((m, idx) => {
-          const pList = matDb.getPricesByMaterialId(m.id);
-          const pRec = pList[0];
-          return {
-            id: `cand-gen-${m.id}-${idx}`,
-            materialName: m.name,
-            brand: m.brand || 'Standar SNI',
-            spec: m.specification || 'Referensi Acuan Konstruksi',
-            unit: m.unit,
-            price: pRec?.price || 65000,
-            region: 'Regional Jawa Timur',
-            source: 'Database Standar Nasional EZRAB 2026',
-            date: '2026-03-25',
-            confidence: 'REFERENCE_SHST',
-          };
-        });
-        setCandidates(fallbacks);
-      } else {
-        setCandidates(candList);
-      }
-
+      setCandidates(candList);
+      setHasSearched(true);
       setIsSearching(false);
     }, 600);
   };
@@ -124,7 +114,7 @@ export const AiPriceResearchDrawer: React.FC<AiPriceResearchDrawerProps> = ({
                 AI Material & Price Assistant
               </h3>
               <p className="text-xs text-slate-500">
-                Riset harga regional, komparasi spesifikasi & alternatif material.
+                Pencarian kandidat material & harga dari database material EZRAB.
               </p>
             </div>
           </div>
@@ -178,14 +168,14 @@ export const AiPriceResearchDrawer: React.FC<AiPriceResearchDrawerProps> = ({
           {isSearching ? (
             <div className="p-12 text-center text-slate-400 space-y-2">
               <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
-              <p className="text-xs font-semibold ez-text-body">Mencari database nasional & rekanan vendor...</p>
-              <p className="text-[11px] text-slate-400">Memeriksa resolusi harga regional & provenance resmi</p>
+              <p className="text-xs font-semibold ez-text-body">Mencari di database material...</p>
+              <p className="text-[11px] text-slate-400">Hanya kandidat yang benar-benar ada di database yang ditampilkan</p>
             </div>
           ) : candidates.length > 0 ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
-                <span>Ditemukan {candidates.length} kandidat terverifikasi:</span>
-                <span className="text-emerald-700 font-bold">100% Anti-Hallucination</span>
+                <span>Ditemukan {candidates.length} kandidat dari database material:</span>
+                <span className="text-slate-500 font-semibold">Status verifikasi per kandidat tertera di kartunya</span>
               </div>
 
               {candidates.map((c, idx) => (
@@ -208,7 +198,7 @@ export const AiPriceResearchDrawer: React.FC<AiPriceResearchDrawerProps> = ({
 
                     <div className="text-right">
                       <div className="font-mono text-sm font-black text-emerald-700">
-                        {formatCurrencyIDR(c.price)}
+                        {c.price !== null ? formatCurrencyIDR(c.price) : 'Belum tersedia'}
                       </div>
                       <span className="text-[10.5px] text-slate-400">/{c.unit}</span>
                     </div>
@@ -220,15 +210,17 @@ export const AiPriceResearchDrawer: React.FC<AiPriceResearchDrawerProps> = ({
 
                   <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[10.5px] text-slate-500">
                     <span className="truncate max-w-[200px]" title={c.source}>
-                      Sumber: {c.source}
+                      Sumber: {c.source} • {c.date} • {c.verificationLabel}
                     </span>
 
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => {
-                          alert(`Harga ${c.materialName} sebesar ${formatCurrencyIDR(c.price)} dicatat sebagai referensi!`);
+                          if (c.price !== null) onAdoptPrice?.(c.material, c.price, true);
                         }}
-                        className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition"
+                        disabled={c.price === null}
+                        title={c.price === null ? 'Kandidat ini belum memiliki harga' : 'Simpan sebagai record harga riset (belum terverifikasi)'}
+                        className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         Simpan Referensi
                       </button>
@@ -236,9 +228,11 @@ export const AiPriceResearchDrawer: React.FC<AiPriceResearchDrawerProps> = ({
                       {currentProject && (
                         <button
                           onClick={() => {
-                            alert(`Harga ${c.materialName} sebesar ${formatCurrencyIDR(c.price)} diterapkan ke proyek ${currentProject.name}!`);
+                            if (c.price !== null) onAdoptPrice?.(c.material, c.price, false);
                           }}
-                          className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold transition flex items-center gap-1"
+                          disabled={c.price === null}
+                          title={c.price === null ? 'Kandidat ini belum memiliki harga' : `Terapkan sebagai harga proyek ${currentProject.name}`}
+                          className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-bold transition flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           <Check className="w-3 h-3" />
                           Gunakan Proyek
@@ -249,14 +243,24 @@ export const AiPriceResearchDrawer: React.FC<AiPriceResearchDrawerProps> = ({
                 </div>
               ))}
             </div>
+          ) : hasSearched ? (
+            <div className="p-8 text-center text-slate-400 space-y-2">
+              <Info className="w-6 h-6 mx-auto text-slate-400" />
+              <p className="text-xs font-semibold ez-text-slate">
+                Tidak ditemukan di database material.
+              </p>
+              <p className="text-[11px] text-slate-400">
+                Tidak ada material yang cocok dengan kata kunci tersebut. Coba kata kunci lain, atau tambahkan material baru dari halaman database material.
+              </p>
+            </div>
           ) : (
             <div className="p-8 text-center text-slate-400 space-y-2">
               <Info className="w-6 h-6 mx-auto text-slate-400" />
               <p className="text-xs font-semibold ez-text-slate">
-                Ketik nama material atau kebutuhan harga untuk mulai meriset.
+                Ketik nama material atau kebutuhan harga untuk mulai mencari.
               </p>
               <p className="text-[11px] text-slate-400">
-                AI akan mencari katalog kanonikal EZRAB 2026 tanpa mengubah database global secara otomatis.
+                Pencarian menelusuri katalog material EZRAB yang tersimpan; database tidak diubah kecuali Anda memilih menyimpan/menerapkan harga.
               </p>
             </div>
           )}

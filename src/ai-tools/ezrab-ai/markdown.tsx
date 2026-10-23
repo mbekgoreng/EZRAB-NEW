@@ -1,7 +1,10 @@
 /**
  * Lightweight Gemini/ChatGPT-style markdown renderer for chat bubbles.
- * Handles: "quoted" -> bold, **bold**, *italic*, - lists, 1. numbered lists,
+ * Handles: **bold**, *italic*, - lists, 1. numbered lists,
  * ## headers, `code`, ```blocks```, tables, --- hr. No external deps.
+ * Quoted text keeps its quote marks verbatim (F3 — the old rule rewrote
+ * every "…" span into bold, silently changing the meaning of answers
+ * that quote document names, terms, or figures).
  */
 import React from 'react';
 
@@ -9,7 +12,7 @@ function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** Inline: **bold**, *italic*, `code`, "quoted" -> bold */
+/** Inline: **bold**, *italic*, `code`. Quotes are preserved as-is. */
 function inline(md: string): string {
   let s = esc(md);
   // code first (protect contents)
@@ -20,8 +23,6 @@ function inline(md: string): string {
   });
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,;:!?]|$)/g, '$1<em>$2</em>');
-  // "quoted text" -> bold (user request: no literal quote symbols)
-  s = s.replace(/"([^"\n]{2,80})"/g, '<strong>$1</strong>');
   s = s.replace(/\u0000(\d+)\u0000/g, (_, i) => `<code>${codes[Number(i)]}</code>`);
   return s;
 }
@@ -123,7 +124,10 @@ export function renderMarkdown(md: string): React.ReactNode[] {
       buf.push(lines[i]);
       i++;
     }
-    out.push(<p key={key++} className="md-p" dangerouslySetInnerHTML={{ __html: inline(buf.join('<br/>')) }} />);
+    // F3: inline() each line FIRST (it escapes its input), then join with
+    // <br/>. Joining before inline() escaped the tag itself, so users saw
+    // a literal "<br/>" in multi-line paragraphs.
+    out.push(<p key={key++} className="md-p" dangerouslySetInnerHTML={{ __html: buf.map((l) => inline(l)).join('<br/>') }} />);
   }
 
   return out;

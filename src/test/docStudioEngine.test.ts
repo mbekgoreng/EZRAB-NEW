@@ -52,7 +52,7 @@ const company = emptyProfile({ name: 'PT Contoh Konstruksi', address: 'Jl. Conto
 
 async function main(): Promise<void> {
   console.log('\n[1] prompt DRAFT = Document Assistant §D + disiplin [ISI:]:');
-  check('versi prompt diekspor', DRAFT_PROMPT_VERSION === 'doc-draft-v2');
+  check('versi prompt diekspor', DRAFT_PROMPT_VERSION === 'doc-draft-v3');
   check('system DRAFT memuat identitas Document Assistant', systemForMode('DRAFT').includes('EZRAB Document Assistant'));
   check('system DRAFT melarang karangan (kontrak tes lama)', systemForMode('DRAFT').includes('jangan mengarang'));
   check('system DRAFT mempertahankan [ISI: ...]', systemForMode('DRAFT').includes('[ISI:'));
@@ -94,7 +94,7 @@ async function main(): Promise<void> {
   check('prompt menyuntikkan konteks terverifikasi', (t1.calls[0]?.prompt ?? '').includes('KONTEKS TERVERIFIKASI'));
   check('missingFields pra-generate: Tanggal Dokumen', r1.missingFields.some((m) => m.label === 'Tanggal Dokumen'));
   check('missingFields pasca-generate: [ISI: nomor kontrak] terdeteksi', r1.missingFields.some((m) => m.label.includes('nomor kontrak')));
-  check('promptVersion tercatat', r1.promptVersion === 'doc-draft-v2');
+  check('promptVersion tercatat', r1.promptVersion === 'doc-draft-v3');
 
   const tEmpty = new MockTransport(ok('   '));
   const rEmpty = await new DocumentStudioOrchestrator(tEmpty).handle({ intent: 'CREATE_DOCUMENT', instruction: 'buat dokumen' });

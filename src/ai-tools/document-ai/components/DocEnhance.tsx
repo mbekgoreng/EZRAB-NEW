@@ -275,9 +275,10 @@ export const DocEnhance: React.FC<{
             </div>
           </div>
           <p className="docai-hint" style={{ marginTop: 0 }}>
-            Kandidat adalah teks polos dari AI; menerapkan akan mengganti HANYA rentang terpilih di
-            editor (format kaya di dalam rentang tidak dipertahankan) setelah isi saat ini disimpan
-            sebagai versi.
+            Kandidat adalah teks dari AI (markdown ringan); menerapkan akan mengganti HANYA rentang
+            terpilih di editor — tebal, daftar, dan tabel pada kandidat dikonversi menjadi format
+            editor sungguhan, sedangkan format kaya asli di dalam rentang yang diganti tidak
+            dipertahankan — setelah isi saat ini disimpan sebagai versi.
           </p>
           {applyNote && (
             <div className="docai-warn" role="alert">

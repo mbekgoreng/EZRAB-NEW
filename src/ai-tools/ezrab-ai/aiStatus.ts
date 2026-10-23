@@ -36,7 +36,11 @@ export function deriveAiStatus(input: AiStatusInput): AiStatus {
     return { label: 'AI tidak terjangkau — periksa koneksi internet', tone: 'error' };
   }
   if (input.lastOutcome === 'auth-error') {
-    return { label: 'Sesi berakhir — silakan login kembali', tone: 'error' };
+    // F3: no sign-in screen exists in this build (AUTH_ENABLED=false) —
+    // never instruct the user to "log in again". Name the real cause:
+    // the gateway refused access; the actionable check is the app
+    // access code (kode akses), plus retrying.
+    return { label: 'Akses AI ditolak server — periksa kode akses aplikasi', tone: 'error' };
   }
   if (input.lastOutcome === 'demo-restricted') {
     return { label: 'Mode Demo — permintaan terakhir di luar batas demo', tone: 'warn' };
@@ -53,7 +57,7 @@ export function deriveAiStatus(input: AiStatusInput): AiStatus {
   if (input.authKind === 'demo') {
     return { label: 'AI siap — Mode Demo (Cepat saja, terbatas)', tone: 'ok' };
   }
-  return { label: 'Gateway terjangkau — login diperlukan untuk AI Online', tone: 'warn' };
+  return { label: 'Gateway terjangkau — akses AI belum aktif untuk sesi ini', tone: 'warn' };
 }
 
 /** Map a send() failure's errorCode onto a status outcome. */

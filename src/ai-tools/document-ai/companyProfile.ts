@@ -274,12 +274,12 @@ export function kopHtml(p: CompanyProfile | null): string {
     const pct = Math.max(10, Math.min(100, p.fullKopWidthPct ?? 100));
     const marginMm = Math.max(0, p.fullKopMarginMm ?? 0);
     const style = `width:${pct}%${marginMm ? `;margin-bottom:${marginMm}mm` : ''}`;
-    return `<div class="docai-kop docai-kop-full"><img class="docai-kop-full-img" src="${p.fullKopDataUrl}" alt="" style="${style}" /></div>`;
+    return `<div class="docai-kop docai-kop-full"><img class="docai-kop-full-img" src="${escapeHtml(p.fullKopDataUrl ?? '')}" alt="" style="${style}" /></div>`;
   }
   if (!p.name.trim() && !p.logoDataUrl) return '';
   const contact = kopContactLine(p);
   const logo = p.logoDataUrl
-    ? `<img class="docai-kop-logo" src="${p.logoDataUrl}" alt="" style="width:${Math.max(14, Math.min(70, p.logoWidthMm))}mm" />`
+    ? `<img class="docai-kop-logo" src="${escapeHtml(p.logoDataUrl)}" alt="" style="width:${Math.max(14, Math.min(70, p.logoWidthMm))}mm" />`
     : '';
   const name = p.name.trim() ? `<div class="docai-kop-name">${escapeHtml(p.name)}</div>` : '';
   const contactHtml = contact ? `<div class="docai-kop-contact">${escapeHtml(contact)}</div>` : '';

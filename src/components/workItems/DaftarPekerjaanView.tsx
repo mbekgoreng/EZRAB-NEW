@@ -127,7 +127,6 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
   const [importPreviewItems, setImportPreviewItems] = useState<any[]>([]);
   const [isMagicAiDrawerOpen, setIsMagicAiDrawerOpen] = useState(false);
   const [aiPromptInput, setAiPromptInput] = useState('');
-  const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<WorkItem | null>(null);
   const [toastMsg, setToastMsg] = useState<{ text: string; type: 'success' | 'info' | 'warning' } | null>(null);
   const [inspectorItem, setInspectorItem] = useState<WorkItem | null>(null);
@@ -463,115 +462,108 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
     }));
   };
 
-  // Handle AI Work Items Generation (with strict draft disclaimer)
+  // "Contoh Draft" — DULU bernama "Magic AI" padahal isinya 5 item TETAP yang
+  // sama untuk semua prompt, berlabel TERHITUNG/CALCULATOR dengan harga karangan.
+  // Sekarang jujur: item contoh berstatus BELUM_DIHITUNG, harga 0 komponen
+  // (belum dihitung — bukan harga final), sumber MANUAL, nama berawalan CONTOH.
   const handleGenerateAiWorkItems = () => {
-    if (!aiPromptInput.trim()) {
-      showToast('Masukkan deskripsi proyek untuk Magic AI.', 'warning');
-      return;
-    }
+    const exampleDrafts: Array<Omit<WorkItem, 'id' | 'projectId' | 'createdAt' | 'updatedAt' | 'totalAmount'>> = [
+      {
+        code: '01.01',
+        category: '01. PEKERJAAN PERSIAPAN',
+        categoryNumber: 1,
+        name: 'CONTOH — Pengukuran dan Pemasangan Bowplank',
+        source: 'MANUAL',
+        calculatorId: 'BOWPLANK',
+        volume: 48.0,
+        unit: "m'",
+        ahspCode: 'A.2.2.1.4',
+        ahspDescription: 'Pengukuran & Pemasangan Bowplank (Kayu 5/7 & Paku)',
+        materialPrice: 0,
+        laborPrice: 0,
+        equipmentPrice: 0,
+        unitPrice: 0,
+        status: 'BELUM_DIHITUNG',
+        notes: 'Item contoh tetap (bukan hasil AI) — volume awal untuk diedit; harga belum dihitung.',
+      },
+      {
+        code: '02.01',
+        category: '02. PEKERJAAN TANAH',
+        categoryNumber: 2,
+        name: 'CONTOH — Galian Tanah Pondasi Batu Kali (Kedalaman 1.0 m)',
+        source: 'MANUAL',
+        calculatorId: 'GALIAN_TANAH',
+        volume: 32.5,
+        unit: 'm³',
+        ahspCode: 'A.2.3.1.1',
+        ahspDescription: 'Galian Tanah Biasa sedalam 1 meter',
+        materialPrice: 0,
+        laborPrice: 0,
+        equipmentPrice: 0,
+        unitPrice: 0,
+        status: 'BELUM_DIHITUNG',
+        notes: 'Item contoh tetap (bukan hasil AI) — volume awal untuk diedit; harga belum dihitung.',
+      },
+      {
+        code: '03.01',
+        category: '03. PEKERJAAN PONDASI',
+        categoryNumber: 3,
+        name: 'CONTOH — Pasangan Pondasi Batu Belah 1:5',
+        source: 'MANUAL',
+        calculatorId: 'PONDASI',
+        volume: 18.2,
+        unit: 'm³',
+        ahspCode: 'A.3.2.1.2',
+        ahspDescription: 'Pasangan Pondasi Batu Kali 1SP : 5PP',
+        materialPrice: 0,
+        laborPrice: 0,
+        equipmentPrice: 0,
+        unitPrice: 0,
+        status: 'BELUM_DIHITUNG',
+        notes: 'Item contoh tetap (bukan hasil AI) — volume awal untuk diedit; harga belum dihitung.',
+      },
+      {
+        code: '04.01',
+        category: '04. PEKERJAAN STRUKTUR',
+        categoryNumber: 4,
+        name: 'CONTOH — Pekerjaan Sloof Beton Bertulang 15/20 (K-225)',
+        source: 'MANUAL',
+        calculatorId: 'SLOOF',
+        volume: 2.88,
+        unit: 'm³',
+        ahspCode: 'A.4.1.1.2',
+        ahspDescription: 'Beton Sloof K-225 Besi Ulir & Begel',
+        materialPrice: 0,
+        laborPrice: 0,
+        equipmentPrice: 0,
+        unitPrice: 0,
+        status: 'BELUM_DIHITUNG',
+        notes: 'Item contoh tetap (bukan hasil AI) — volume awal untuk diedit; harga belum dihitung.',
+      },
+      {
+        code: '04.02',
+        category: '04. PEKERJAAN STRUKTUR',
+        categoryNumber: 4,
+        name: 'CONTOH — Pekerjaan Kolom Praktis 15/15',
+        source: 'MANUAL',
+        calculatorId: 'KOLOM',
+        volume: 1.45,
+        unit: 'm³',
+        ahspCode: 'A.4.1.1.5',
+        ahspDescription: 'Beton Kolom Praktis K-175',
+        materialPrice: 0,
+        laborPrice: 0,
+        equipmentPrice: 0,
+        unitPrice: 0,
+        status: 'BELUM_DIHITUNG',
+        notes: 'Item contoh tetap (bukan hasil AI) — volume awal untuk diedit; harga belum dihitung.',
+      },
+    ];
 
-    setIsAiGenerating(true);
-    setTimeout(() => {
-      // Generate standard realistic draft based on prompt
-      const generatedDrafts: Array<Omit<WorkItem, 'id' | 'projectId' | 'createdAt' | 'updatedAt' | 'totalAmount'>> = [
-        {
-          code: '01.01',
-          category: '01. PEKERJAAN PERSIAPAN',
-          categoryNumber: 1,
-          name: 'Pengukuran dan Pemasangan Bowplank',
-          source: 'CALCULATOR',
-          calculatorId: 'BOWPLANK',
-          volume: 48.0,
-          unit: "m'",
-          ahspCode: 'A.2.2.1.4',
-          ahspDescription: 'Pengukuran & Pemasangan Bowplank (Kayu 5/7 & Paku)',
-          materialPrice: 65000,
-          laborPrice: 25000,
-          equipmentPrice: 4800,
-          unitPrice: 94800,
-          status: 'TERHITUNG',
-          notes: 'Draft AI dari deskripsi denah',
-        },
-        {
-          code: '02.01',
-          category: '02. PEKERJAAN TANAH',
-          categoryNumber: 2,
-          name: 'Galian Tanah Pondasi Batu Kali (Kedalaman 1.0 m)',
-          source: 'CALCULATOR',
-          calculatorId: 'GALIAN_TANAH',
-          volume: 32.5,
-          unit: 'm³',
-          ahspCode: 'A.2.3.1.1',
-          ahspDescription: 'Galian Tanah Biasa sedalam 1 meter',
-          materialPrice: 0,
-          laborPrice: 82500,
-          equipmentPrice: 0,
-          unitPrice: 82500,
-          status: 'TERHITUNG',
-          notes: 'Draft AI tanah normal',
-        },
-        {
-          code: '03.01',
-          category: '03. PEKERJAAN PONDASI',
-          categoryNumber: 3,
-          name: 'Pasangan Pondasi Batu Belah 1:5',
-          source: 'CALCULATOR',
-          calculatorId: 'PONDASI',
-          volume: 18.2,
-          unit: 'm³',
-          ahspCode: 'A.3.2.1.2',
-          ahspDescription: 'Pasangan Pondasi Batu Kali 1SP : 5PP',
-          materialPrice: 620000,
-          laborPrice: 245000,
-          equipmentPrice: 0,
-          unitPrice: 865000,
-          status: 'TERHITUNG',
-          notes: 'Draft AI pondasi utama',
-        },
-        {
-          code: '04.01',
-          category: '04. PEKERJAAN STRUKTUR',
-          categoryNumber: 4,
-          name: 'Pekerjaan Sloof Beton Bertulang 15/20 (K-225)',
-          source: 'CALCULATOR',
-          calculatorId: 'SLOOF',
-          volume: 2.88,
-          unit: 'm³',
-          ahspCode: 'A.4.1.1.2',
-          ahspDescription: 'Beton Sloof K-225 Besi Ulir & Begel',
-          materialPrice: 3100000,
-          laborPrice: 950000,
-          equipmentPrice: 120000,
-          unitPrice: 4170000,
-          status: 'TERHITUNG',
-          notes: 'Draft AI sloof keliling',
-        },
-        {
-          code: '04.02',
-          category: '04. PEKERJAAN STRUKTUR',
-          categoryNumber: 4,
-          name: 'Pekerjaan Kolom Praktis 15/15',
-          source: 'CALCULATOR',
-          calculatorId: 'KOLOM',
-          volume: 1.45,
-          unit: 'm³',
-          ahspCode: 'A.4.1.1.5',
-          ahspDescription: 'Beton Kolom Praktis K-175',
-          materialPrice: 2800000,
-          laborPrice: 890000,
-          equipmentPrice: 90000,
-          unitPrice: 3780000,
-          status: 'TERHITUNG',
-          notes: 'Draft AI kolom praktis dinding',
-        },
-      ];
-
-      generatedDrafts.forEach((item) => createWorkItem(item));
-      setIsAiGenerating(false);
-      setIsMagicAiDrawerOpen(false);
-      setAiPromptInput('');
-      showToast('Magic AI berhasil menyusun 5 draft pekerjaan awal. Harap tinjau & sesuaikan parameter sebelum finalisasi.');
-    }, 1200);
+    exampleDrafts.forEach((item) => createWorkItem(item));
+    setIsMagicAiDrawerOpen(false);
+    setAiPromptInput('');
+    showToast('5 item CONTOH ditambahkan (status BELUM_DIHITUNG). Sesuaikan volume & hitung harganya lewat Volume Calculator / Analisa AHSP sebelum digunakan.');
   };
 
   // Helper Badge Color for Status (dashboard pastel pill tints, no heavy borders)
@@ -746,10 +738,28 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             <span>Import Excel</span>
           </button>
 
-          {/* Secondary Export */}
+          {/* Export CSV — unduhan NYATA dari data tabel (dulu hanya alert) */}
           <button
             onClick={() => {
-              alert(`Export ${projectWorkItems.length} Pekerjaan ke Excel (.xlsx) berhasil diunduh!`);
+              if (projectWorkItems.length === 0) {
+                showToast('Tidak ada pekerjaan untuk diekspor.', 'warning');
+                return;
+              }
+              const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+              const headers = ['Kode', 'Kategori', 'Uraian Pekerjaan', 'Volume', 'Satuan', 'Harga Satuan', 'Jumlah Harga', 'Status', 'Kode AHSP', 'Sumber'];
+              const lines = projectWorkItems.map((it) =>
+                [it.code, it.category, it.name, it.volume, it.unit, it.unitPrice, it.totalAmount, it.status, it.ahspCode || '', it.source].map(esc).join(',')
+              );
+              const blob = new Blob([[headers.map(esc).join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.setAttribute('download', `daftar-pekerjaan-${(currentProject?.name || 'proyek').replace(/\s+/g, '_')}.csv`);
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+              showToast(`Export ${projectWorkItems.length} pekerjaan ke CSV berhasil diunduh.`);
             }}
             style={{
               height: '40px',
@@ -767,7 +777,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             }}
           >
             <Download size={14} color="#64748B" />
-            <span>Export</span>
+            <span>Export CSV</span>
           </button>
 
           {/* Magic AI Button */}
@@ -790,7 +800,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             }}
           >
             <Sparkles size={14} color="#A5B4FC" />
-            <span>Magic AI</span>
+            <span>Contoh Draft</span>
           </button>
         </div>
       </div>
@@ -1050,7 +1060,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             <option value="ALL">Semua Sumber</option>
             <option value="CALCULATOR">Volume Calculator</option>
             <option value="MANUAL">Input Manual</option>
-            <option value="AI">Magic AI</option>
+            <option value="AI">AI</option>
             <option value="IMPORT">Import File</option>
           </select>
 
@@ -1137,7 +1147,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
             Belum ada pekerjaan
           </h3>
           <p style={{ fontSize: '13.5px', color: 'var(--ez-color-text-warm)', maxWidth: '460px', margin: '0 0 24px 0', lineHeight: 1.5 }}>
-            Mulai susun daftar pekerjaan proyek Anda. Anda dapat menambahkan pekerjaan secara manual, menggunakan Volume Calculator, mengimpor RAB, atau memanfaatkan Magic AI.
+            Mulai susun daftar pekerjaan proyek Anda. Anda dapat menambahkan pekerjaan secara manual, menggunakan Volume Calculator, mengimpor RAB, atau menyisipkan Contoh Draft.
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -1429,7 +1439,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                                       </span>
                                     ) : item.source === 'AI' ? (
                                       <span style={{ color: 'var(--ez-hue-violet-text)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                                        <Sparkles size={11} /> Magic AI
+                                        <Sparkles size={11} /> AI
                                       </span>
                                     ) : item.source === 'IMPORT' ? (
                                       <span style={{ color: '#0284C7', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
@@ -2076,7 +2086,6 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                   >
                     <option value="CALCULATOR">Volume Calculator</option>
                     <option value="MANUAL">Input Manual</option>
-                    <option value="AI">Magic AI</option>
                   </select>
                 </div>
 
@@ -2375,7 +2384,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
           <div style={{ padding: '18px 24px', borderBottom: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Sparkles size={18} color="var(--ez-hue-blue-text)" />
-              <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: 'var(--ez-color-text-primary)' }}>EZRAB Magic AI Assistant</h3>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: 'var(--ez-color-text-primary)' }}>Contoh Draft Pekerjaan</h3>
             </div>
             <button onClick={() => setIsMagicAiDrawerOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--ez-color-text-warm)', cursor: 'pointer' }}>
               <X size={18} />
@@ -2383,27 +2392,17 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
           </div>
 
           <div style={{ padding: '20px 24px', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
-            {/* Disclaimer Alert */}
-            <div style={{ background: 'var(--ez-hue-amber-bg-deep)', border: '1px solid var(--ez-hue-amber-border)', borderRadius: 'var(--ez-radius-card)', padding: '12px 14px', fontSize: '12px', color: 'var(--ez-hue-amber-text-dark)', lineHeight: 1.4 }}>
-              <strong>DRAFT — Periksa dan sesuaikan sebelum digunakan.</strong> Magic AI adalah asisten produktivitas penyusun draft pekerjaan. Seluruh kalkulasi final tetap menggunakan calculation engine deterministik.
-            </div>
-
-            <div>
-              <label style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', display: 'block', marginBottom: '6px' }}>
-                Deskripsi Proyek / Kebutuhan Pekerjaan
-              </label>
-              <textarea
-                rows={5}
-                value={aiPromptInput}
-                onChange={(e) => setAiPromptInput(e.target.value)}
-                placeholder="Contoh: Rumah tinggal 2 lantai luas 120m2 di Jakarta, struktur beton bertulang, pondasi batu kali, dinding hebel, atap baja ringan..."
-                style={{ width: '100%', borderRadius: 'var(--ez-radius-control)', border: '1px solid var(--ez-hue-slate-border)', padding: '12px', fontSize: '13px', outline: 'none' }}
-              />
+            {/* Disclaimer Alert — panel ini BUKAN AI */}
+            <div style={{ background: 'var(--ez-hue-amber-bg-deep)', border: '1px solid var(--ez-hue-amber-border)', borderRadius: 'var(--ez-radius-card)', padding: '12px 14px', fontSize: '12px', color: 'var(--ez-hue-amber-text-dark)', lineHeight: 1.5 }}>
+              <strong>BUKAN AI.</strong> Panel ini menyisipkan <strong>5 item contoh tetap</strong> (persiapan, tanah,
+              pondasi, dan struktur dasar) yang sama untuk semua proyek — tidak dihasilkan dari deskripsi apa pun.
+              Volume contoh adalah nilai awal untuk diedit, dan harga <strong>belum dihitung</strong> (status
+              BELUM_DIHITUNG). Hitung volume &amp; harga lewat Volume Calculator / Analisa AHSP sebelum item dipakai.
+              Untuk penyusunan berbantuan AI, gunakan Ezrab Chat AI.
             </div>
 
             <button
               onClick={handleGenerateAiWorkItems}
-              disabled={isAiGenerating}
               style={{
                 height: '42px',
                 borderRadius: 'var(--ez-radius-control)',
@@ -2412,7 +2411,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                 border: 'none',
                 fontSize: '14px',
                 fontWeight: 700,
-                cursor: isAiGenerating ? 'not-allowed' : 'pointer',
+                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -2420,17 +2419,8 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                 boxShadow: '0 4px 14px rgba(37,99,235,0.28)',
               }}
             >
-              {isAiGenerating ? (
-                <>
-                  <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }} />
-                  <span>Sedang Menganalisis & Menyusun Draft...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles size={15} />
-                  <span>Susun Draft Pekerjaan dengan AI</span>
-                </>
-              )}
+              <Sparkles size={15} />
+              <span>Sisipkan 5 Item Contoh</span>
             </button>
           </div>
         </div>
@@ -2540,11 +2530,16 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
               volume: item.volume,
               unit: item.unit,
               unitPrice: item.unitPrice,
-              materialPrice: Math.round(item.unitPrice * 0.6),
-              laborPrice: Math.round(item.unitPrice * 0.35),
-              equipmentPrice: Math.round(item.unitPrice * 0.05),
+              // File impor hanya membawa HARGA SATUAN TOTAL. Rincian komponen
+              // (bahan/upah/alat) TIDAK diketahui — pembagian karangan 60/35/5
+              // DIHENTIKAN. Komponen dibiarkan 0 dengan catatan eksplisit
+              // "belum dirinci" (tipe WorkItem numerik, tidak bisa null).
+              materialPrice: 0,
+              laborPrice: 0,
+              equipmentPrice: 0,
               source: 'IMPORT',
               status: item.volume > 0 ? 'TERHITUNG' : 'BELUM_DIHITUNG',
+              notes: 'Diimpor dari Excel — hanya harga satuan total yang tercatat; rincian komponen bahan/upah/alat belum dirinci dari file sumber.',
             });
           });
           showToast(`Berhasil mengimpor ${importedItems.length} item pekerjaan dari ${summary.groupsCount} grup WBS.`);

@@ -31,6 +31,34 @@ export interface PageSelectionResult {
   trace: DedPageTraceEntry[];
   totalCharsSent: number;
   skippedCount: number;
+  /** Halaman tanpa lapisan teks (scan/gambar) — dihitung terpisah dari skipped budget. */
+  noTextCount: number;
+}
+
+/**
+ * Format daftar nomor halaman menjadi rentang ringkas:
+ * [1,2,3,5,7,8,9] → "1–3, 5, 7–9". Input tidak harus terurut; duplikat dibuang.
+ */
+export function formatPageRanges(pages: number[]): string {
+  const nums = [...new Set(pages.filter((n) => Number.isFinite(n)))].sort((a, b) => a - b);
+  if (nums.length === 0) return '';
+  const parts: string[] = [];
+  let start = nums[0];
+  let prev = nums[0];
+  const flush = () => {
+    parts.push(start === prev ? `${start}` : `${start}–${prev}`);
+  };
+  for (let i = 1; i < nums.length; i++) {
+    if (nums[i] === prev + 1) {
+      prev = nums[i];
+      continue;
+    }
+    flush();
+    start = nums[i];
+    prev = nums[i];
+  }
+  flush();
+  return parts.join(', ');
 }
 
 /**
@@ -53,8 +81,26 @@ export function selectPagesWithTrace(
   const traceByPage = new Map<number, DedPageTraceEntry>();
   let usedChars = 0;
   let budgetExhausted = false;
+  let noTextCount = 0;
 
   for (const p of byPriority) {
+    // F4 (3.6): halaman tanpa lapisan teks (hasil scan/gambar raster) TIDAK
+    // diperlakukan sebagai halaman sah yang "terkirim" — ia tidak membawa
+    // konten apa pun untuk model. Catat eksplisit sebagai NO_TEXT agar
+    // terhitung terpisah dan dapat diperingatkan ke pengguna (butuh OCR).
+    if (!(p.text || '').trim()) {
+      noTextCount++;
+      traceByPage.set(p.page, {
+        page: p.page,
+        title: p.title,
+        pageType: p.pageType,
+        totalChars: 0,
+        sentChars: 0,
+        status: 'NO_TEXT',
+        reason: 'Halaman tidak memiliki lapisan teks (kemungkinan hasil scan/gambar) — tidak dapat dianalisis tanpa OCR.',
+      });
+      continue;
+    }
     const text = (p.text || '').slice(0, perPageCap);
     if (!budgetExhausted && usedChars + text.length > totalBudget && selected.length >= 4) {
       budgetExhausted = true;
@@ -89,6 +135,7 @@ export function selectPagesWithTrace(
     trace,
     totalCharsSent: usedChars,
     skippedCount: trace.filter((t) => t.status === 'SKIPPED_BUDGET').length,
+    noTextCount,
   };
 }
 

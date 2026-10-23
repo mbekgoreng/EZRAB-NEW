@@ -19,10 +19,11 @@ export interface RabSummaryContext {
 }
 
 export interface CurveSSummaryContext {
-  plannedProgress: number;
-  actualProgress: number;
-  deviation: number;
-  status: 'AHEAD_OF_SCHEDULE' | 'ON_TRACK' | 'BEHIND_SCHEDULE';
+  /** null = tidak ada data nyata (BUKAN 0% dan bukan tebakan). */
+  plannedProgress: number | null;
+  actualProgress: number | null;
+  deviation: number | null;
+  status: 'AHEAD_OF_SCHEDULE' | 'ON_TRACK' | 'BEHIND_SCHEDULE' | 'NO_DATA';
   statusLabel: string;
   totalWeeks: number;
   currentWeek: number;
@@ -43,9 +44,10 @@ export interface ReportSummaryContext {
   location: string;
   currentDate: string;
   periodLabel: string;
-  actualProgress: number;
-  plannedProgress: number;
-  deviation: number;
+  /** null = progres belum tercatat (tidak diganti angka karangan). */
+  actualProgress: number | null;
+  plannedProgress: number | null;
+  deviation: number | null;
   totalCost: number;
   completedWorks: string[];
   activeWorks: string[];
@@ -136,14 +138,31 @@ export const getCurveSContext = (
     const currentWeekPoint =
       kurvaData.find((p) => p.actualProgressPercent !== null && p.actualProgressPercent !== undefined) || lastPoint;
 
-    const planned = currentWeekPoint?.cumulativePlannedPercent || 0;
-    const actual =
+    const planned = currentWeekPoint?.cumulativePlannedPercent ?? 0;
+    const actual: number | null =
       currentWeekPoint?.actualProgressPercent !== null && currentWeekPoint?.actualProgressPercent !== undefined
         ? currentWeekPoint.actualProgressPercent
-        : fallbackProgress || 0;
+        : fallbackProgress !== undefined
+          ? fallbackProgress
+          : null;
+
+    // Tanpa realisasi tercatat, deviasi & status jadwal TIDAK dapat
+    // disimpulkan — jangan mengklaim "Sesuai Rencana".
+    if (actual === null) {
+      return {
+        plannedProgress: Number(planned.toFixed(2)),
+        actualProgress: null,
+        deviation: null,
+        status: 'NO_DATA',
+        statusLabel: 'Realisasi belum tercatat',
+        totalWeeks: kurvaData.length,
+        currentWeek: currentWeekPoint?.weekIndex || 1,
+        dataPoints: kurvaData,
+      };
+    }
 
     const deviation = Number((actual - planned).toFixed(2));
-    let status: 'AHEAD_OF_SCHEDULE' | 'ON_TRACK' | 'BEHIND_SCHEDULE' = 'ON_TRACK';
+    let status: CurveSSummaryContext['status'] = 'ON_TRACK';
     let statusLabel = 'Sesuai Rencana (On Track)';
 
     if (deviation > 1.5) {
@@ -166,29 +185,20 @@ export const getCurveSContext = (
     };
   }
 
-  // Fallback estimation from tasks or project progress
-  const planned = 45.5;
-  const actual = fallbackProgress !== undefined ? fallbackProgress : 42.6;
-  const deviation = Number((actual - planned).toFixed(2));
-
-  let status: 'AHEAD_OF_SCHEDULE' | 'ON_TRACK' | 'BEHIND_SCHEDULE' = 'ON_TRACK';
-  let statusLabel = 'Sesuai Rencana (On Track)';
-  if (deviation > 1.5) {
-    status = 'AHEAD_OF_SCHEDULE';
-    statusLabel = `Lebih Cepat (+${deviation}% Ahead of Schedule)`;
-  } else if (deviation < -1.5) {
-    status = 'BEHIND_SCHEDULE';
-    statusLabel = `Terlambat (${deviation}% Behind Schedule)`;
-  }
-
+  // TIDAK ada data Kurva S: kembalikan konteks kosong yang JUJUR.
+  // (Sebelumnya di sini terdapat placeholder karangan — planned 45.5,
+  // actual 42.6, totalWeeks 12, currentWeek 5 — yang tercetak ke jawaban
+  // AI & laporan seolah-olah data nyata. Dihapus pada F6.)
+  // fallbackProgress (progres tersimpan proyek) adalah data nyata bila ada;
+  // rencana & deviasi tetap tidak dapat disimpulkan tanpanya seri Kurva S.
   return {
-    plannedProgress: planned,
-    actualProgress: actual,
-    deviation,
-    status,
-    statusLabel,
-    totalWeeks: 12,
-    currentWeek: 5,
+    plannedProgress: null,
+    actualProgress: fallbackProgress !== undefined ? fallbackProgress : null,
+    deviation: null,
+    status: 'NO_DATA',
+    statusLabel: 'Data Kurva S belum tersedia',
+    totalWeeks: 0,
+    currentWeek: 0,
     dataPoints: [],
   };
 };
@@ -248,7 +258,7 @@ export const getReportContext = (
     clientName,
     location,
     currentDate: new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-    periodLabel: `Minggu ke-${curveSContext.currentWeek}`,
+    periodLabel: curveSContext.currentWeek > 0 ? `Minggu ke-${curveSContext.currentWeek}` : 'Periode berjalan',
     actualProgress: curveSContext.actualProgress,
     plannedProgress: curveSContext.plannedProgress,
     deviation: curveSContext.deviation,
@@ -297,6 +307,12 @@ export const getRelevantContextSlices = (
   }
 
   if (q.includes('kurva') || q.includes('terlambat') || q.includes('deviasi') || q.includes('rencana') || q.includes('progress') || q.includes('jadwal') || q.includes('minggu')) {
+    if (fullContext.curveS.status === 'NO_DATA' || fullContext.curveS.plannedProgress === null || fullContext.curveS.actualProgress === null) {
+      return {
+        domain: 'KURVA_S',
+        summary: `Data Kurva S belum tersedia untuk proyek ini (${fullContext.curveS.statusLabel}) — belum ada angka realisasi/rencana yang dapat dilaporkan.`,
+      };
+    }
     return {
       domain: 'KURVA_S',
       summary: `Realisasi: ${fullContext.curveS.actualProgress}%, Rencana: ${fullContext.curveS.plannedProgress}%, Deviasi: ${fullContext.curveS.deviation}% (${fullContext.curveS.statusLabel})`,
@@ -306,12 +322,12 @@ export const getRelevantContextSlices = (
   if (q.includes('laporan') || q.includes('mingguan') || q.includes('ringkas') || q.includes('kendala') || q.includes('resume')) {
     return {
       domain: 'REPORT',
-      summary: `Laporan ${fullContext.report.periodLabel}: Progres ${fullContext.report.actualProgress}%, Selesai: ${fullContext.report.completedWorks.length} pekerjaan, Aktif: ${fullContext.report.activeWorks.length} pekerjaan`,
+      summary: `Laporan ${fullContext.report.periodLabel}: Progres ${fullContext.report.actualProgress !== null ? `${fullContext.report.actualProgress}%` : 'belum tercatat'}, Selesai: ${fullContext.report.completedWorks.length} pekerjaan, Aktif: ${fullContext.report.activeWorks.length} pekerjaan`,
     };
   }
 
   return {
     domain: 'GENERAL',
-    summary: `Proyek: ${fullContext.project?.name || 'Aktif'}, Total: ${formatRupiah(fullContext.rab.totalRab)}, Progres: ${fullContext.curveS.actualProgress}%`,
+    summary: `Proyek: ${fullContext.project?.name || 'Aktif'}, Total: ${formatRupiah(fullContext.rab.totalRab)}, Progres: ${fullContext.curveS.actualProgress !== null ? `${fullContext.curveS.actualProgress}%` : 'belum tercatat'}`,
   };
 };

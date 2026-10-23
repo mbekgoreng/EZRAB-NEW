@@ -8,6 +8,7 @@ import { AuthModal } from './components/auth/AuthModal';
 import { AcceptInvitationPage } from './components/auth/AcceptInvitationPage';
 import { WorkspaceView } from './components/dashboard/WorkspaceView';
 import { DemoModal } from './components/common/DemoModal';
+import { AuthNoticePage, PrivacyPage, PublicNotFoundPage, TermsPage } from './components/public/PublicInfoPages';
 import { NotificationProvider } from './notifications/NotificationContext';
 import {
   OnboardingTour,
@@ -142,6 +143,17 @@ export const App: React.FC = () => {
   const isAbout = location.pathname === '/about' || location.hash === '#tentang';
   const isFeatures = location.pathname === '/fitur';
   const isAdvantages = location.pathname === '/keunggulan';
+  // Halaman publik jujur (F6): /masuk & /daftar selama login nonaktif TIDAK
+  // lagi jatuh diam-diam ke landing; /privacy & /terms punya halaman nyata;
+  // path publik lain yang tak dikenal → 404 publik.
+  const isAuthNotice =
+    location.pathname === '/masuk' ||
+    location.pathname === '/daftar' ||
+    location.pathname.startsWith('/masuk/');
+  const authNoticeTab: 'masuk' | 'daftar' = location.pathname === '/daftar' ? 'daftar' : 'masuk';
+  const isPrivacy = location.pathname === '/privacy';
+  const isTerms = location.pathname === '/terms';
+  const isHomePath = location.pathname === '/' || location.pathname === '';
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authInitialTab, setAuthInitialTab] = useState<'masuk' | 'daftar'>('daftar');
@@ -166,8 +178,12 @@ export const App: React.FC = () => {
     else if (isAbout) document.title = 'Tentang EZRAB';
     else if (isFeatures) document.title = 'Kenali EZRAB — Fitur Lengkap';
     else if (isAdvantages) document.title = 'Keunggulan EZRAB — Mengapa Memilih EZRAB';
+    else if (isPrivacy) document.title = 'Kebijakan Privasi — EZRAB';
+    else if (isTerms) document.title = 'Ketentuan Layanan — EZRAB';
+    else if (isAuthNotice) document.title = authNoticeTab === 'daftar' ? 'Daftar belum dibuka — EZRAB' : 'Masuk belum dibuka — EZRAB';
+    else if (!isHomePath) document.title = 'Halaman Tidak Ditemukan — EZRAB';
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
-  }, [isAbout, isFeatures, isAdvantages, isWorkspace, workspaceRoute]);
+  }, [isAbout, isFeatures, isAdvantages, isWorkspace, workspaceRoute, isPrivacy, isTerms, isAuthNotice, authNoticeTab, isHomePath]);
 
   useEffect(() => {
     migrateLegacyOnboardingFlag(); // idempoten: pengguna lama tidak ditanya ulang
@@ -301,6 +317,39 @@ export const App: React.FC = () => {
         onBackToLanding={handleReturnToLanding}
         onOpenWorkspace={() => handleSetWorkspace(true)}
         onOpenFeatures={handleOpenFeaturesPage}
+      />
+    );
+  } else if (isPrivacy) {
+    content = (
+      <PrivacyPage
+        onBackToLanding={handleReturnToLanding}
+        onOpenWorkspace={() => handleSetWorkspace(true)}
+      />
+    );
+  } else if (isTerms) {
+    content = (
+      <TermsPage
+        onBackToLanding={handleReturnToLanding}
+        onOpenWorkspace={() => handleSetWorkspace(true)}
+      />
+    );
+  } else if (isAuthNotice) {
+    // /masuk & /daftar: login dinonaktifkan (AUTH_ENABLED=false), jadi tampilkan
+    // pemberitahuan jujur + jalan masuk aplikasi — bukan landing diam-diam.
+    // Bila AUTH_MODE menjadi 'real-login', gerbang ini harus diganti AuthPage.
+    content = (
+      <AuthNoticePage
+        tab={authNoticeTab}
+        onBackToLanding={handleReturnToLanding}
+        onOpenWorkspace={() => handleSetWorkspace(true)}
+      />
+    );
+  } else if (!isHomePath) {
+    // Path publik tak dikenal → 404 yang jelas, bukan landing tanpa penjelasan.
+    content = (
+      <PublicNotFoundPage
+        onBackToLanding={handleReturnToLanding}
+        onOpenWorkspace={() => handleSetWorkspace(true)}
       />
     );
   } else {

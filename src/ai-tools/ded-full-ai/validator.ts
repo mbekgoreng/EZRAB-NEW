@@ -98,24 +98,29 @@ export function validatePriceDetail(p: any, qUnit: string, itemName: string): Va
 
 /**
  * Verifikasi aritmetika: subtotal = quantity × price.
- * Mengembalikan subtotal aplikasi dan apakah cocok dengan ekspektasi.
+ * Mengembalikan subtotal aplikasi dan status verifikasinya.
  * TIDAK mengganti nilai AI secara diam-diam.
+ *
+ * F4 (3.7): `verified` true HANYA bila subtotal benar-benar terhitung dari
+ * quantity × harga yang keduanya ada dan sah. Bila salah satu null / tidak
+ * positif / non-finite, subtotal null dan verified FALSE — tidak ada
+ * perhitungan yang terjadi, jadi tidak ada yang boleh diklaim terverifikasi.
  */
 export function verifySubtotal(
   quantity: number | null,
   unitPrice: number | null
 ): { subtotal: number | null; verified: boolean; note?: string } {
   if (quantity === null || quantity === undefined) {
-    return { subtotal: null, verified: true, note: 'quantity null — tidak dihitung' };
+    return { subtotal: null, verified: false, note: 'quantity null — tidak dihitung, tidak terverifikasi' };
   }
   if (unitPrice === null || unitPrice === undefined) {
-    return { subtotal: null, verified: true, note: 'harga null — tidak dihitung sebagai Rp0' };
+    return { subtotal: null, verified: false, note: 'harga null — tidak dihitung sebagai Rp0, tidak terverifikasi' };
   }
   if (!Number.isFinite(quantity) || !Number.isFinite(unitPrice)) {
-    return { subtotal: null, verified: true, note: 'nilai non-finite (NaN/Infinity) — ditolak' };
+    return { subtotal: null, verified: false, note: 'nilai non-finite (NaN/Infinity) — ditolak, tidak terverifikasi' };
   }
   if (quantity <= 0 || unitPrice <= 0) {
-    return { subtotal: null, verified: true, note: 'nilai tidak positif' };
+    return { subtotal: null, verified: false, note: 'nilai tidak positif — tidak dihitung, tidak terverifikasi' };
   }
   const subtotal = Math.round(quantity * unitPrice);
   return { subtotal, verified: true };

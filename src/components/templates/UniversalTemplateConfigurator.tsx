@@ -32,6 +32,7 @@ import {
 } from '../../types/rabTemplate';
 import { Project, RabItem } from '../../types';
 import { RabTemplateService } from '../../services/rabTemplateService';
+import type { GlobalEstimationSettings } from './GlobalEstimationSettingsModal';
 import { MaterialLibraryService } from '../../services/materialLibraryService';
 import { formatRupiah, formatNumberId } from '../../engine/formulaEngine';
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
@@ -50,6 +51,8 @@ export interface UniversalTemplateConfiguratorProps {
     detailLevel?: DetailLevel,
     selectedOptionalItemIds?: string[]
   ) => void;
+  /** Pengaturan Estimasi Global dari katalog — diterapkan pada total konfigurator. */
+  globalSettings?: GlobalEstimationSettings;
 }
 
 export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfiguratorProps> = ({
@@ -58,7 +61,8 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
   projects = [],
   isOpen,
   onClose,
-  onConfirmApply
+  onConfirmApply,
+  globalSettings
 }) => {
   // Detail Level State (Standard, Professional, Comprehensive)
   const [detailLevel, setDetailLevel] = useState<DetailLevel>(
@@ -146,6 +150,41 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
       return null;
     }
   }, [tplService, template, paramValues, targetMode, currentProject, selectedProjectId, detailLevel, selectedOptionalIds]);
+
+  // Penyesuaian Pengaturan Estimasi Global atas total konfigurator.
+  // Doktrin anti-markup-ganda: overhead/profit/waste HANYA diterapkan pada
+  // subtotal NON-RESMI (harga resmi DHSP sudah termasuk overhead & profit).
+  // PPN diterapkan pada total keseluruhan + penyesuaian. Item yang diterapkan
+  // ke RAB tetap membawa harga dasar — overhead/PPN final proyek diatur di
+  // Pengaturan RAB proyek (Rekapitulasi).
+  const globalAdjustment = useMemo(() => {
+    if (!previewResult || !globalSettings) return null;
+    let officialSubtotal = 0;
+    let nonOfficialSubtotal = 0;
+    for (const item of previewResult.items) {
+      if (item.unitPrice == null) continue;
+      const amt = SafeDecimalEngine.safeMultiply(item.volume, item.unitPrice, 0);
+      if ((item as any).priceSourceKind === 'OFFICIAL_AHSP') {
+        officialSubtotal = SafeDecimalEngine.safeAdd(officialSubtotal, amt);
+      } else {
+        nonOfficialSubtotal = SafeDecimalEngine.safeAdd(nonOfficialSubtotal, amt);
+      }
+    }
+    const waste = Math.round(nonOfficialSubtotal * (globalSettings.wastePercent / 100));
+    const overhead = Math.round(nonOfficialSubtotal * (globalSettings.overheadPercent / 100));
+    const profit = Math.round((nonOfficialSubtotal + overhead) * (globalSettings.profitPercent / 100));
+    const taxBase = previewResult.totalEstimate + waste + overhead + profit;
+    const tax = Math.round(taxBase * (globalSettings.taxPercent / 100));
+    return {
+      officialSubtotal,
+      nonOfficialSubtotal,
+      waste,
+      overhead,
+      profit,
+      tax,
+      adjustedTotal: taxBase + tax
+    };
+  }, [previewResult, globalSettings]);
 
   // Dynamic Item Counts for each Detail Level (live evaluation)
   const detailLevelCounts = useMemo(() => {
@@ -876,13 +915,13 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                       06. Spesifikasi Material (Material Library Ecosystem)
                     </span>
                   </div>
-                  <span style={{ fontSize: '11px', color: 'var(--ez-hue-green-text)', fontWeight: 700 }}>
-                    ✓ Material Terintegrasi
+                  <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', fontWeight: 700 }}>
+                    Preferensi Spesifikasi
                   </span>
                 </div>
 
                 <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', margin: '0 0 10px', lineHeight: 1.3 }}>
-                  Katalog material resmi terhubung langsung dengan sistem AHSP. Pilih spesifikasi merek dan tipe untuk menyesuaikan standar proyek.
+                  Pilih merek/spesifikasi sebagai preferensi standar proyek. Catatan jujur: pilihan merek saat ini <strong>tidak mengubah harga satuan maupun volume item</strong> — harga mengikuti sumber template/AHSP, dan pilihan ini hanya menjadi referensi spesifikasi pada sesi konfigurasi ini.
                 </p>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -1096,7 +1135,44 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
                     </div>
                   )}
                   <div style={{ color: 'var(--ez-color-text-muted)', fontSize: '11px', lineHeight: 1.5 }}>
-                    Harga resmi adalah DHSP yang sudah termasuk overhead &amp; profit (SE DJBK No. 47/SE/Dk/2026). Pengaturan Estimasi Global (overhead/profit/PPN/waste) tidak diterapkan otomatis oleh alur template ini — jangan menambahkan markup yang sama dua kali pada item berharga resmi.
+                    Harga resmi adalah DHSP yang sudah termasuk overhead &amp; profit (SE DJBK No. 47/SE/Dk/2026). Karena itu Pengaturan Estimasi Global di bawah diterapkan hanya pada subtotal non-resmi agar markup tidak ganda pada item resmi.
+                  </div>
+                </div>
+              )}
+
+              {/* Penyesuaian Pengaturan Estimasi Global — angka NYATA dari
+                  pengaturan pengguna atas subtotal hasil generate. */}
+              {globalAdjustment && globalSettings && (
+                <div style={{ background: 'var(--ez-color-surface)', borderRadius: '10px', border: '1px solid var(--ez-color-border-line)', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '11.5px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-color-text-body)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Penyesuaian Estimasi Global
+                  </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
+                    <span>Subtotal non-resmi (basis markup):</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(globalAdjustment.nonOfficialSubtotal)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
+                    <span>Waste material ({globalSettings.wastePercent}%):</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(globalAdjustment.waste)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
+                    <span>Overhead ({globalSettings.overheadPercent}%):</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(globalAdjustment.overhead)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
+                    <span>Profit ({globalSettings.profitPercent}%):</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(globalAdjustment.profit)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ez-color-text-muted)' }}>
+                    <span>PPN ({globalSettings.taxPercent}%):</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>{formatRupiah(globalAdjustment.tax)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--ez-color-border-line)', paddingTop: '6px', color: 'var(--ez-color-text-primary)' }}>
+                    <span style={{ fontWeight: 800 }}>Total + Penyesuaian Global:</span>
+                    <span style={{ fontWeight: 800 }}>{formatRupiah(globalAdjustment.adjustedTotal)}</span>
+                  </div>
+                  <div style={{ color: 'var(--ez-color-text-muted)', fontSize: '11px', lineHeight: 1.5 }}>
+                    Subtotal resmi ({formatRupiah(globalAdjustment.officialSubtotal)}) dikecualikan dari markup. Saat template diterapkan, item masuk RAB dengan harga dasar; overhead/PPN final mengikuti Pengaturan RAB proyek.
                   </div>
                 </div>
               )}

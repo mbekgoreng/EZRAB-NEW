@@ -11,6 +11,7 @@ import { getToolListText, runTool, EZRAB_AI_TOOL_MAP, setActiveProjectSnapshot }
 import { ProjectSnapshot, formatProjectSummary } from './projectContext';
 import { EzrabAiRequest, EzrabAiResponse, EzrabAiToolCall, EzrabAiToolResult } from './types';
 import { aiToolsError } from '../types';
+import { scanToolCalls } from './toolCallParser';
 
 const MAX_HISTORY_MESSAGES = 20;
 
@@ -68,37 +69,56 @@ Kemudian lanjutkan jawabanmu. Kamu harus menjawab dalam Bahasa Indonesia.`;
     // FASE 5A fix: when the model calls a tool, the DETERMINISTIC tool output
     // becomes the reply — never leak the raw tool-call JSON to the user, and
     // never let the model replace tool figures with its own arithmetic.
+    // F3: extraction is done by scanToolCalls (balanced, key-order agnostic,
+    // up to 3 sequential calls). A malformed call is NEVER executed with
+    // silently-emptied args — it is reported as not understood instead.
     let toolReply: string | null = null;
+    let fallbackText = result.content;
     try {
-      const toolPattern = /\{"tool"\s*:\s*"([^"]+)"\s*,\s*"args"\s*:\s*(\{[\s\S]*?\})\s*\}/;
-      const toolMatch = result.content.match(toolPattern);
-      if (toolMatch) {
-        const toolName = toolMatch[1];
-        let args: Record<string, unknown> = {};
-        try {
-          args = JSON.parse(toolMatch[2]);
-        } catch {
-          /* ignore malformed tool args */
+      const scan = scanToolCalls(result.content);
+      fallbackText = scan.cleanText;
+      if (scan.calls.length > 0) {
+        const outputs: string[] = [];
+        for (const call of scan.calls) {
+          toolCalls.push({ toolName: call.toolName, args: call.args });
+          if (EZRAB_AI_TOOL_MAP[call.toolName]) {
+            const out = runTool(call.toolName, call.args);
+            const output = typeof out === 'string' ? out : out.message;
+            toolResults.push({ toolName: call.toolName, ok: typeof out === 'string', output });
+            outputs.push(output);
+          } else {
+            const output = `Alat tidak dikenal: ${call.toolName}`;
+            toolResults.push({ toolName: call.toolName, ok: false, output });
+            outputs.push(output);
+          }
         }
-        toolCalls.push({ toolName, args });
-        if (EZRAB_AI_TOOL_MAP[toolName]) {
-          const out = runTool(toolName, args);
-          const output = typeof out === 'string' ? out : out.message;
-          toolResults.push({ toolName, ok: typeof out === 'string', output });
-          // Deterministic: tool output IS the answer.
-          toolReply = output;
-        } else {
-          const output = `Alat tidak dikenal: ${toolName}`;
-          toolResults.push({ toolName, ok: false, output });
-          toolReply = output;
-        }
+        // Deterministic: tool output(s) ARE the answer.
+        toolReply = outputs.join('\n\n');
+      } else if (scan.malformed) {
+        // The model tried to call a tool but the call could not be parsed.
+        // Never run it with {} args; answer with the model's remaining
+        // prose if any, else a clear "not understood" — never raw JSON.
+        toolReply =
+          scan.cleanText ||
+          'Maaf, perintah yang dibuat model tidak dapat dipahami. Coba ulangi pertanyaanmu dengan kata lain ya.';
       }
     } finally {
       // Never leak one request's project into the next.
       setActiveProjectSnapshot(null);
     }
 
-    const reply = toolReply ?? result.content;
+    const reply = toolReply ?? fallbackText;
+    // F3 guard: an empty/whitespace reply must never become an empty chat
+    // bubble that looks like a successful answer.
+    if (!reply || reply.trim() === '') {
+      return {
+        success: false,
+        reply: 'Model mengembalikan respons kosong. Silakan coba lagi.',
+        rawContent: result.content,
+        requestId: result.requestId,
+        errorCode: 'EMPTY_RESPONSE',
+      };
+    }
     return {
       success: true,
       reply,

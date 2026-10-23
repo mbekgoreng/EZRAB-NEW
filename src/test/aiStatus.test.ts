@@ -17,9 +17,11 @@ describe('deriveAiStatus — never claims more than the signals prove', () => {
     expect(s.tone).toBe('error');
     expect(s.label).not.toContain('Online');
   });
-  it('auth-error outcome asks for re-login', () => {
+  it('auth-error outcome names the real cause (gateway refusal), never a login instruction', () => {
+    // F3: this build has AUTH_ENABLED=false — there is no sign-in screen.
     const s = deriveAiStatus({ gateway: 'reachable', authKind: 'none', lastOutcome: 'auth-error', busy: false });
-    expect(s.label).toContain('login');
+    expect(s.label.toLowerCase()).not.toContain('login');
+    expect(s.label).toContain('kode akses');
     expect(s.tone).toBe('error');
   });
   it('demo-restricted outcome explains the demo boundary', () => {
@@ -44,10 +46,11 @@ describe('deriveAiStatus — never claims more than the signals prove', () => {
     const s = deriveAiStatus({ gateway: 'reachable', authKind: 'demo', lastOutcome: 'none', busy: false });
     expect(s.label).toContain('Mode Demo');
   });
-  it('reachable + no identity warns that login is required (no fake Online)', () => {
+  it('reachable + no identity warns access is not active (no fake Online, no login fiction)', () => {
     const s = deriveAiStatus({ gateway: 'reachable', authKind: 'none', lastOutcome: 'none', busy: false });
     expect(s.tone).toBe('warn');
-    expect(s.label).toContain('login diperlukan');
+    expect(s.label).toContain('belum aktif');
+    expect(s.label.toLowerCase()).not.toContain('login');
   });
 });
 
@@ -61,11 +64,18 @@ describe('outcomeFromErrorCode', () => {
 });
 
 describe('mapGatewayHttpError — gateway failures stay distinguishable (Fase 3B)', () => {
-  it('401 surfaces as AUTH_REQUIRED with a login message, not retryable', () => {
+  it('401 surfaces as AUTH_REQUIRED with the real cause + access-code action, not retryable', () => {
     const m = mapGatewayHttpError(401, 'AUTH_REQUIRED');
     expect(m.code).toBe('AUTH_REQUIRED');
-    expect(m.message).toContain('login');
+    // F3: no sign-in screen exists in this build — the message must never
+    // instruct the user to log in; it names the gateway refusal instead.
+    expect(m.message.toLowerCase()).not.toContain('login');
+    expect(m.message).toContain('kode akses');
     expect(m.retryable).toBe(false);
+  });
+  it('DEMO_RESTRICTED message also avoids the impossible login instruction', () => {
+    const m = mapGatewayHttpError(403, 'DEMO_RESTRICTED');
+    expect(m.message.toLowerCase()).not.toContain('login');
   });
   it('401 without a body code still maps to AUTH_REQUIRED by status', () => {
     expect(mapGatewayHttpError(401, '').code).toBe('AUTH_REQUIRED');

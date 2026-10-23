@@ -48,64 +48,24 @@ export const ExactFooter: React.FC<ExactFooterProps> = () => {
             <p className="ez-minimal-footer-quote">
               &ldquo;Dari gambar kerja hingga keputusan proyek.&rdquo;
             </p>
-
-            {/* Social Icons: Minimal Outlined Buttons */}
-            <div className="ez-minimal-footer-socials">
-              <a
-                href="https://x.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ez-minimal-social-btn"
-                aria-label="X"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                </svg>
-              </a>
-
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ez-minimal-social-btn"
-                aria-label="Instagram"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                  <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-                </svg>
-              </a>
-
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ez-minimal-social-btn"
-                aria-label="LinkedIn"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-                  <rect width="4" height="12" x="2" y="9" />
-                  <circle cx="4" cy="4" r="2" />
-                </svg>
-              </a>
-            </div>
+            {/* Ikon sosial DIHAPUS (F6): tidak ada akun resmi EZRAB yang
+                terkonfirmasi — tautan generik x.com/instagram/linkedin
+                hanya menyesatkan. */}
           </div>
 
           {/* Navigation Links Columns */}
           <div className="ez-minimal-footer-nav-groups">
-            {/* Product */}
+            {/* Product — hanya tautan bertarget nyata (jangkar #fitur & #harga
+                ada di landing; tautan mati #integrasi dihapus — F6) */}
             <div className="ez-minimal-footer-col">
               <h4 className="ez-minimal-footer-col-title">Product</h4>
               <ul className="ez-minimal-footer-links">
                 <li><a href="#fitur">Fitur</a></li>
                 <li><a href="#harga">Harga</a></li>
-                <li><a href="#integrasi">Integrasi</a></li>
               </ul>
             </div>
 
-            {/* Perusahaan */}
+            {/* Perusahaan — tautan mati #karier & #kontak dihapus (F6) */}
             <div className="ez-minimal-footer-col">
               <h4 className="ez-minimal-footer-col-title">Perusahaan</h4>
               <ul className="ez-minimal-footer-links">
@@ -121,12 +81,11 @@ export const ExactFooter: React.FC<ExactFooterProps> = () => {
                     Tentang EZRAB
                   </a>
                 </li>
-                <li><a href="#karier">Karier</a></li>
-                <li><a href="#kontak">Kontak</a></li>
               </ul>
             </div>
 
-            {/* Sumber Daya */}
+            {/* Sumber Daya — FAQ menuju bagian FAQ di halaman /fitur;
+                tautan mati #panduan & #dukungan dihapus (F6) */}
             <div className="ez-minimal-footer-col">
               <h4 className="ez-minimal-footer-col-title">Sumber Daya</h4>
               <ul className="ez-minimal-footer-links">
@@ -134,9 +93,20 @@ export const ExactFooter: React.FC<ExactFooterProps> = () => {
                   {/* Blog tinggal di subdomain — tautan absolut, tanpa SPA navigate */}
                   <a href={getBlogBaseUrl()}>Blog</a>
                 </li>
-                <li><a href="#faq">FAQ</a></li>
-                <li><a href="#panduan">Panduan</a></li>
-                <li><a href="#dukungan">Dukungan</a></li>
+                <li>
+                  <a
+                    href="/fitur#faq"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigateTo('/fitur');
+                      window.setTimeout(() => {
+                        document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
+                      }, 250);
+                    }}
+                  >
+                    FAQ
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
@@ -153,8 +123,28 @@ export const ExactFooter: React.FC<ExactFooterProps> = () => {
           </div>
 
           <div className="ez-minimal-footer-legal-group">
-            <a href="#privacy" className="ez-legal-link">Privacy Policy</a>
-            <a href="#terms" className="ez-legal-link">Terms of Service</a>
+            <a
+              href="/privacy"
+              className="ez-legal-link"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateTo('/privacy');
+                window.scrollTo({ top: 0 });
+              }}
+            >
+              Privacy Policy
+            </a>
+            <a
+              href="/terms"
+              className="ez-legal-link"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateTo('/terms');
+                window.scrollTo({ top: 0 });
+              }}
+            >
+              Terms of Service
+            </a>
           </div>
         </div>
 
