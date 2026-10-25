@@ -1684,6 +1684,7 @@ export const ResourceLibraryView: React.FC<ResourceLibraryViewProps> = ({
       {/* TOAST FEEDBACK */}
       {toastMessage && (
         <div
+          className="ez-toast"
           style={{
             position: 'fixed',
             bottom: '24px',

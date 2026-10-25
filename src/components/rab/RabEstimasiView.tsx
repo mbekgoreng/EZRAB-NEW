@@ -1347,6 +1347,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       {/* TOAST NOTIFICATION */}
       {toastMessage && (
         <div
+          className="ez-toast"
           style={{
             position: 'fixed',
             bottom: '48px',

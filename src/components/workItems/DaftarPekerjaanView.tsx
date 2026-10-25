@@ -615,6 +615,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
       {/* Toast Notification */}
       {toastMsg && (
         <div
+          className="ez-toast"
           style={{
             position: 'fixed',
             top: '24px',
@@ -1664,6 +1665,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
          ========================================================================= */}
       {selectedItemIds.length > 0 && (
         <div
+          className="ez-bulk-bar"
           style={{
             position: 'fixed',
             bottom: '24px',

@@ -370,6 +370,7 @@ export const EzrabCoAssistantLauncher: React.FC<EzrabCoAssistantLauncherProps> =
         {/* Hide / Dismiss Button ('×') on Mascot Corner */}
         <button
           type="button"
+          className="ezrab-launcher-hide-btn"
           onClick={handleHideMascot}
           title="Sembunyikan Assistant"
           aria-label="Sembunyikan EZRAB AI Assistant"

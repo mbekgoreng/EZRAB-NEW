@@ -161,6 +161,50 @@
   .mat-inspector-subtabs {
     grid-template-columns: repeat(3, 1fr) !important;
   }
+
+  /* --- 7. Toast: dari pojok bawah (ketutup nav/launcher) jadi banner atas - */
+  /* Toast RAB (bottom 48), Pengaturan & Resource (bottom 24), dan Daftar
+     Pekerjaan (top 24, menutup TopBar) — semuanya rawan ketutup di HP:
+     nav bawah (±58px+safe), launcher maskot (kanan bawah), atau TopBar
+     (48px). Di HP, toast jadi banner penuh di bawah TopBar: tidak ada
+     lagi yang menutupinya, dan tidak menutupi apa pun. */
+  .ez-toast {
+    top: calc(56px + env(safe-area-inset-top, 0px)) !important;
+    bottom: auto !important;
+    left: 12px !important;
+    right: 12px !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  /* --- 8. Bulk action bar: dari tengah bawah (ketutup nav) ke atas nav --- */
+  /* Bar aksi massal Daftar Pekerjaan (bottom 24, tengah) tertutup nav bawah
+     di HP. Di HP: bar penuh selebar layar di atas nav, bisa wrap. */
+  .ez-bulk-bar {
+    bottom: calc(74px + var(--ezrab-safe-bottom, 0px)) !important;
+    left: 12px !important;
+    right: 12px !important;
+    transform: none !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+
+  /* --- 9. Label melayang "EZRAB AI ASSISTANT": sembunyikan di HP --------- */
+  /* Badge ini muncul saat kursor mendekat (desktop) + membawa hint
+     keyboard ⌘J/Ctrl+J yang tidak ada artinya di layar sentuh, dengan
+     gaya gradasi gelap yang sama seperti pill lama. Di HP ia tidak ada
+     gunanya (ketuk maskot langsung membuka chat) — disembunyikan saja. */
+  .ezrab-assistant-tooltip {
+    display: none !important;
+  }
+
+  /* --- 10. Tombol sembunyikan maskot (×): target sentuh lebih besar ----- */
+  /* Dari 22px ke 28px di HP — masih kecil dan tidak mengganggu, tapi
+     tidak lagi mudah salah ketuk (yang malah membuka chat). */
+  .ezrab-launcher-hide-btn {
+    width: 28px !important;
+    height: 28px !important;
+  }
 }
 
 /* Layar sangat sempit (<=400px): grid kartu dokumen minmax(340px) juga

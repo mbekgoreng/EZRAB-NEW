@@ -568,6 +568,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       {/* Toast Notification */}
       {savedToast && (
         <div
+          className="ez-toast"
           style={{
             position: 'fixed',
             bottom: '24px',
