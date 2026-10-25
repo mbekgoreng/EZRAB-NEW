@@ -20,14 +20,20 @@
  */
 import React, { useRef, useState, useEffect, useLayoutEffect, useCallback, Suspense, lazy } from 'react';
 import {
-  Send, Sparkles, Loader2, Zap, Brain, RotateCcw,
-  Copy, Check, Mic, Paperclip, X, Plus, ImagePlus,
+  Send, Sparkles, Loader2, RotateCcw,
+  Copy, Check, Mic, Paperclip, X, Plus, FileText,
   History, Trash2,
 } from 'lucide-react';
 import { ezrabAiService } from './service';
+import {
+  TEXT_ATTACHMENT_ACCEPT,
+  buildTextAttachmentBlock,
+  formatTextAttachmentSize,
+  readTextAttachment,
+  type TextAttachment,
+} from './textAttachment';
 import { debitChatCreditOnSuccess } from './chatCreditDebit';
-import { deriveAiStatus, outcomeFromErrorCode, type GatewayReach, type LastOutcome } from './aiStatus';
-import { resolveAuthKind, type AuthKind } from '../../lib/demoSession';
+
 import { renderMarkdown } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { consumePendingAiEntry, requestAiEntry } from '../aiNavigation';
@@ -44,7 +50,6 @@ import './ezrab-ai-chat.css';
 import '../../ai-credits/ai-credits.css';
 import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
 import { tariffFor } from '../../ai-credits/config';
-import { CreditBalance } from '../../ai-credits/components/CreditBalance';
 import { CreditEstimateBadge } from '../../ai-credits/components/CreditEstimateBadge';
 import { CreditTopUpModal } from '../../ai-credits/components/CreditTopUpModal';
 
@@ -140,22 +145,15 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [messages, setMessages] = useState<ChatEntry[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
-  // Honest AI status (Fase 3B): derived only from observed signals —
-  // gateway reachability (free diagnostic), held identity, last outcome.
-  const [gatewayReach, setGatewayReach] = useState<GatewayReach>('unknown');
-  const [authKind, setAuthKind] = useState<AuthKind>('none');
-  const [lastOutcome, setLastOutcome] = useState<LastOutcome>('none');
-  useEffect(() => {
-    let cancelled = false;
-    fetch('/api/ai/engine-status')
-      .then((r) => { if (!cancelled) setGatewayReach(r.ok ? 'reachable' : 'unreachable'); })
-      .catch(() => { if (!cancelled) setGatewayReach('unreachable'); });
-    resolveAuthKind().then((k) => { if (!cancelled) setAuthKind(k); }).catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
+
   const [mode, setMode] = useState<'fast' | 'advanced'>('fast');
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
-  const [attached, setAttached] = useState<{ url: string; name: string } | null>(null);
+  /* Lampiran file TEKS (2026-10-26): isi dibaca via File.text() dan dikirim
+   * sebagai blok konteks ke AI. Jalur lampiran gambar lama dihapus — model
+   * teks tidak bisa "melihat" gambar sehingga lampiran gambar tidak berguna.
+   * Pesan penolakan format/ukuran tampil inline di `attachError`. */
+  const [attached, setAttached] = useState<TextAttachment | null>(null);
+  const [attachError, setAttachError] = useState<string | null>(null);
   // --- AI Credits (simulasi frontend) ---
   const { balance, consume } = useCreditSimulation();
   const [creditConfirm, setCreditConfirm] = useState<{ estimate: number; pending: () => void } | null>(null);
@@ -329,36 +327,19 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const sttBaseRef = useRef('');
   const sttFinalRef = useRef('');
 
-  /* P2 UI-1 fix: kelola lifecycle object URL dengan benar.
-   * Bug lama: URL di-revoke saat submit, padahal URL yang SAMA disimpan di
-   * pesan (imageUrl) -> thumbnail selalu rusak. Sekarang: URL hidup selama
-   * pemiliknya (attachment / pesan chat) hidup; di-revoke saat pemiliknya
-   * dibuang / chat dibersihkan / komponen unmount. */
-  const liveUrlsRef = useRef<Set<string>>(new Set());
-  const trackUrl = (url: string) => { liveUrlsRef.current.add(url); return url; };
-  const revokeUrl = (url?: string | null) => {
-    if (!url) return;
-    if (liveUrlsRef.current.has(url)) {
-      liveUrlsRef.current.delete(url);
-      try { URL.revokeObjectURL(url); } catch { /* abaikan */ }
-    }
-  };
-  const revokeAllUrls = () => {
-    liveUrlsRef.current.forEach((u) => { try { URL.revokeObjectURL(u); } catch { /* abaikan */ } });
-    liveUrlsRef.current.clear();
-  };
+  /* (Dihapus 2026-10-26 bersama jalur lampiran gambar: tidak ada lagi
+   * object URL yang perlu dikelola — lampiran kini teks murni di state.) */
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, busy]);
 
-  /* Bersihkan sesi STT + SEMUA object URL saat unmount (termasuk thumbnail di pesan) */
+  /* Bersihkan sesi STT saat unmount. */
   useEffect(() => {
     return () => {
       const rec = recognitionRef.current;
       recognitionRef.current = null;
       if (rec) { try { rec.abort(); } catch { /* abaikan */ } }
-      revokeAllUrls();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -377,8 +358,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     setAwaitingSubtype(false);
     setAwaitingClarify(null);
     forceAiRef.current = false;
-    revokeAllUrls();
     setAttached(null);
+    setAttachError(null);
     autoresize();
     try {
       const conv = unifiedConversationStore.createConversation(storeProjectId, 'Percakapan baru');
@@ -404,8 +385,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       unifiedConversationStore.setActiveConversationId(storeProjectId, id);
       convIdRef.current = id;
       setActiveConvId(id);
-      revokeAllUrls();
       setAttached(null);
+      setAttachError(null);
       setInput('');
       setAwaitingNeeds(false);
       setAwaitingChoice(false);
@@ -423,37 +404,6 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       autoresize();
     } catch {
       /* non-fatal — percakapan aktif tidak berubah */
-    }
-  };
-
-  /* Muat Ulang (2026-10-23): reset state tampilan yang macet TANPA
-   * menghapus percakapan — busy dibersihkan, dialog kredit ditutup,
-   * semua status menunggu direset, lalu percakapan aktif di-restore
-   * ulang dari store dengan pemetaan yang sama seperti mount /
-   * loadConversation. */
-  const reloadChat = () => {
-    setHistoryOpen(false);
-    setBusy(false);
-    setCreditConfirm(null);
-    setAwaitingNeeds(false);
-    setAwaitingChoice(false);
-    setAwaitingSubtype(false);
-    setAwaitingClarify(null);
-    forceAiRef.current = false;
-    try {
-      const conv = unifiedConversationStore.getOrCreateActiveConversation(storeProjectId);
-      convIdRef.current = conv.id;
-      setActiveConvId(conv.id);
-      const restored: ChatEntry[] = (conv.messages ?? [])
-        .filter((m) => m.role === 'user' || m.role === 'assistant')
-        .map((m) => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-          ts: m.createdAt ? Date.parse(m.createdAt) || Date.now() : Date.now(),
-        }));
-      setMessages(restored);
-    } catch {
-      /* non-fatal — tampilan saat ini dipertahankan */
     }
   };
 
@@ -493,21 +443,19 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       });
       return;
     }
-    const img = echo ? attached : null;
-    /* Catatan jujur ke model teks: ia tidak bisa melihat gambar */
-    const content = img && !msg
-      ? `🖼️ (pengguna melampirkan gambar "${img.name}" — saya tidak dapat melihat gambar, mohon minta deskripsi atau lanjutkan tanpa gambar)`
-      : img
-        ? `${msg}\n\n🖼️ (pengguna juga melampirkan gambar "${img.name}" — saya tidak dapat melihat gambar)`
-        : msg;
+    const att = echo ? attached : null;
+    /* Lampiran file teks: isinya dikirim sebagai blok konteks terdelimitasi
+     * bersama pesan lewat jalur service.send yang sama (tanpa endpoint
+     * baru). Gelembung user hanya menampilkan pesan asli; blok lampiran
+     * adalah konteks kirim, bukan teks yang ditampilkan/dipersistenkan. */
+    const content = att
+      ? (msg ? `${msg}\n\n${buildTextAttachmentBlock(att)}` : buildTextAttachmentBlock(att))
+      : msg;
     if (echo) setInput('');
-    /* P2 UI-1: JANGAN revoke di sini — URL dipakai thumbnail di pesan.
-     * Kepemilikan URL pindah ke pesan; di-revoke saat chat dibersihkan/unmount. */
-    if (img) { setAttached(null); }
+    if (att) { setAttached(null); setAttachError(null); }
     autoresize();
     const entry: ChatEntry = {
-      role: 'user', content: msg || '(gambar terlampir)', ts: Date.now(),
-      imageUrl: img?.url, imageName: img?.name,
+      role: 'user', content: msg || '(file teks terlampir)', ts: Date.now(),
     };
     let next: ChatEntry[];
     if (echo) {
@@ -678,13 +626,15 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
     // Titik ini = jalur pipeline AI: catat prompt terakhir untuk
     // tombol "Coba Lagi" (jawaban lokal registry tidak sampai ke sini).
-    lastAiPromptRef.current = msg;
+    // Disimpan `content` (bukan `msg` mentah) supaya "Coba Lagi" ikut
+    // mengirim ulang blok lampiran teks — tanpanya retry kehilangan konteks.
+    lastAiPromptRef.current = content;
     try {
       const res = await ezrabAiService.send({
-        // F3: the "[gambar: …]" note belongs ONLY to the message just sent
-        // (the last entry in `next`). Older image messages must keep their
-        // own original content — the old map overwrote EVERY past image
-        // message's text with the newest note.
+        // F3: the attachment block belongs ONLY to the message just sent
+        // (the last entry in `next`). Older messages must keep their
+        // own original content — the old map overwrote EVERY past message's
+        // text with the newest note.
         messages: next.map((m, idx) => ({
           role: m.role,
           content: idx === next.length - 1 ? content : m.content,
@@ -703,7 +653,6 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           model: mode === 'fast' ? 'FAST' : 'ADVANCED',
         }),
       );
-      setLastOutcome(res.success ? 'success' : outcomeFromErrorCode(res.errorCode));
       const assistantEntry: ChatEntry = {
         role: 'assistant',
         content: res.reply,
@@ -722,7 +671,6 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         link: 'ezrab-ai',
       });
     } catch (err: any) {
-      setLastOutcome('failure');
       const errMsg = err?.message || 'Ups! Ada gangguan. Coba lagi ya 🥺';
       setMessages((prev) => [...prev, { role: 'assistant', content: errMsg, isError: true, fromAi: true, ts: Date.now() }]);
       notificationBus.publish({
@@ -1071,13 +1019,15 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     catch { recognitionRef.current = null; setListening(false); }
   };
 
-  /* ---------- Attach image ---------- */
-  const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  /* ---------- Lampiran file teks ---------- */
+  const onPickFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f) return;
-    if (attached) revokeUrl(attached.url);
-    setAttached({ url: trackUrl(URL.createObjectURL(f)), name: f.name });
+    setAttachError(null);
+    const res = await readTextAttachment(f);
+    if (!res.ok) { setAttachError(res.error); return; }
+    setAttached(res.attachment);
   };
 
   /* Panel riwayat header: tombol Escape menutup panel. */
@@ -1131,12 +1081,16 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     <div className={`ezchat2-input-wrap${middle ? ' middle' : ''}`}>
       {attached && (
         <div className="ezchat2-attchip">
-          <img src={attached.url} alt={attached.name} />
+          <FileText size={16} />
           <span>{attached.name}</span>
-          <button onClick={() => { revokeUrl(attached.url); setAttached(null); }} title="Hapus">
+          <span className="ezchat2-attsize">{formatTextAttachmentSize(attached.size)}</span>
+          <button onClick={() => setAttached(null)} title="Hapus">
             <X size={13} />
           </button>
         </div>
+      )}
+      {attachError && (
+        <div className="ezchat2-atterr" role="alert">{attachError}</div>
       )}
       {listening && (
         <div className="ezchat2-listening"><span className="ezdot busy pulse" /> Mendengarkan… bicara sekarang 🎤</div>
@@ -1145,7 +1099,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         <button
           className="ezchat2-tool"
           onClick={() => fileRef.current?.click()}
-          title="Lampirkan gambar"
+          title="Lampirkan file teks (.txt, .md, .csv, .json, .log, .xml)"
           disabled={busy}
         >
           <Paperclip size={17} />
@@ -1153,10 +1107,21 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         <input
           ref={fileRef}
           type="file"
-          accept="image/*"
+          accept={TEXT_ATTACHMENT_ACCEPT}
           hidden
           onChange={onPickFile}
         />
+        <select
+          className="ezchat2-modepick"
+          value={mode}
+          onChange={(e) => setMode(e.target.value as 'fast' | 'advanced')}
+          title="Mode AI"
+          aria-label="Mode AI"
+          disabled={busy}
+        >
+          <option value="fast">Cepat</option>
+          <option value="advanced">Mendalam</option>
+        </select>
         <textarea
           ref={taRef}
           value={input}
@@ -1184,8 +1149,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         </button>
       </div>
       <div className="ezchat2-foot">
-        <ImagePlus size={11} /> Gambar dilampirkan sebagai catatan — model teks belum bisa "melihat" gambar
-        <span> • </span>Ezrab AI bisa salah, cek ulang angka penting 😉
+        Ezrab AI bisa salah, cek ulang angka penting 😉
       </div>
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 6 }}>
         <CreditEstimateBadge estimate={chatEstimate} />
@@ -1214,33 +1178,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         </div>
         <div className="ezchat2-title">
           <div className="ezchat2-name">Ezrab Chat AI</div>
-          <div className="ezchat2-status">
-            <span className={`ezdot ${busy ? 'busy' : ''}`} />
-            {deriveAiStatus({ gateway: gatewayReach, authKind, lastOutcome, busy }).label}
-          </div>
         </div>
         <div className="ezchat2-actions">
-          <CreditBalance compact onOpenCreditPage={() => onNavigate?.('kredit-ai')} />
-          <div className="ezchat2-modes">
-            <button className={mode === 'fast' ? 'active' : ''} onClick={() => setMode('fast')}>
-              <Zap size={13} /> Cepat
-            </button>
-            <button className={mode === 'advanced' ? 'active' : ''} onClick={() => setMode('advanced')}>
-              <Brain size={13} /> Mendalam
-            </button>
-          </div>
           <button
             className={`ezchat2-new${historyOpen ? ' active' : ''}`}
             onClick={() => setHistoryOpen((o) => !o)}
             title="Riwayat percakapan"
           >
             <History size={14} /> Riwayat
-          </button>
-          <button className="ezchat2-new" onClick={reloadChat} title="Muat ulang tampilan chat (reset status macet, percakapan tidak dihapus)">
-            <RotateCcw size={14} /> Muat Ulang
-          </button>
-          <button className="ezchat2-new" onClick={newChat} title="Percakapan baru">
-            <Plus size={15} /> Baru
           </button>
         </div>
       </div>
@@ -1273,10 +1218,6 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             </div>
             <h2 className="ezchat2-greet">Halo, saya <span className="ezchat2-greet-brand">EZRAB Chat AI</span></h2>
             {composer(true)}
-            <div className="ezhist-home">
-              {historyHead}
-              {historyList}
-            </div>
           </div>
         ) : (
           <div className="ezchat2-list">

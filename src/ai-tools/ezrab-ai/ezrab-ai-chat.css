@@ -27,15 +27,13 @@
 .ezchat2-mascot { width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; background: radial-gradient(circle at 50% 35%, var(--ez-color-info-soft), var(--ez-color-primary-soft)); border: 1.5px solid var(--ez-color-primary-soft); overflow: hidden; }
 .ezchat2-title { min-width: 0; }
 .ezchat2-name { font-size: 17px; font-weight: 800; background: linear-gradient(135deg,var(--ez-color-primary-hover),var(--ez-color-primary) 60%,var(--ez-color-primary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-.ezchat2-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ez-color-text-muted); font-weight: 500; margin-top: 2px; }
 .ezdot { width: 8px; height: 8px; border-radius: 50%; background: var(--ez-color-success); box-shadow: 0 0 0 3px rgba(5,150,105,.15); flex-shrink: 0; }
 .ezdot.busy { background: var(--ez-color-warning); box-shadow: 0 0 0 3px rgba(245,158,11,.18); }
 .ezdot.pulse { animation: ezPulse 1s infinite; }
 @keyframes ezPulse { 50% { box-shadow: 0 0 0 7px rgba(245,158,11,.08); } }
 .ezchat2-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-.ezchat2-modes { display: flex; gap: 4px; background: var(--ez-color-surface-secondary); border-radius: var(--ez-radius-pill); padding: 4px; }
-.ezchat2-modes button { display: flex; align-items: center; gap: 5px; border: none; background: none; padding: 7px 14px; border-radius: var(--ez-radius-pill); font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-muted); cursor: pointer; font-family: inherit; transition: all .2s; }
-.ezchat2-modes button.active { background: var(--ez-color-surface); color: var(--ez-color-primary-hover); box-shadow: 0 2px 8px rgba(15,23,42,.1); }
+.ezchat2-modepick { border: none; background: none; font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-muted); cursor: pointer; font-family: inherit; padding: 4px 2px; outline: none; flex-shrink: 0; }
+.ezchat2-modepick:disabled { opacity: .5; cursor: default; }
 .ezchat2-new { display: flex; align-items: center; gap: 5px; border: 1.5px solid var(--ez-color-border); background: var(--ez-color-surface); border-radius: var(--ez-radius-pill); padding: 7px 14px; font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-primary); cursor: pointer; font-family: inherit; transition: all .18s; }
 .ezchat2-new:hover { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); }
 .ezchat2-new.active { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); background: var(--ez-color-primary-soft); }
@@ -60,7 +58,6 @@
 .ezchat2-greet-brand { color: var(--ez-color-primary); }
 
 /* ===== Riwayat Percakapan (kompak — mode awal & panel header) ===== */
-.ezhist-home { width: 100%; margin-top: 28px; text-align: left; }
 .ezhist-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .ezhist-heading { font-size: 13px; font-weight: 800; color: var(--ez-color-text-primary); margin: 0; }
 .ezhist-newbtn { display: inline-flex; align-items: center; gap: 4px; border: 1.5px solid var(--ez-color-border); background: var(--ez-color-surface); border-radius: var(--ez-radius-pill); padding: 5px 11px; font-size: 11.5px; font-weight: 700; color: var(--ez-color-text-primary); cursor: pointer; font-family: inherit; transition: all .18s; flex-shrink: 0; }
@@ -110,7 +107,8 @@
 .ezchat2-input-wrap.middle { margin-top: 14px; padding-bottom: 0; text-align: left; }
 .ezchat2-input-wrap.middle .ezchat2-foot { text-align: center; }
 .ezchat2-attchip { display: inline-flex; align-items: center; gap: 8px; background: var(--ez-color-primary-soft); border: 1.5px solid var(--ez-color-primary-soft); border-radius: var(--ez-radius-control); padding: 6px 10px 6px 6px; margin-bottom: 8px; font-size: 12.5px; font-weight: 600; color: var(--ez-color-primary-hover); }
-.ezchat2-attchip img { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; }
+.ezchat2-attsize { font-weight: 500; color: var(--ez-color-text-muted); font-size: 12px; }
+.ezchat2-atterr { margin-bottom: 8px; padding: 8px 10px; border-radius: 10px; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; font-size: 12.5px; line-height: 1.45; }
 .ezchat2-attchip button { border: none; background: none; cursor: pointer; color: var(--ez-color-text-muted); display: flex; padding: 2px; }
 .ezchat2-attchip button:hover { color: var(--ez-color-danger); }
 .ezchat2-listening { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: var(--ez-color-warning); background: var(--ez-color-warning-soft); border-radius: var(--ez-radius-control); padding: 8px 14px; margin-bottom: 8px; }
@@ -156,13 +154,11 @@
   .ezchat2 { padding: 0 10px; }
   .ezchat2-col { max-width: 88%; }
   .ezchat2-bubble { font-size: 13.5px; }
-  .ezchat2-modes button { padding: 7px 10px; }
-  .ezchat2-status { display: none; }
   .ezchat2-greet { font-size: 19px; }
   .ezchat2-hist-panel { right: 0; }
 }
 
-/* Header sempit (<=480px): izinkan actions (kredit + mode + Riwayat + Muat Ulang + Baru) turun ke baris kedua daripada terjepit */
+/* Header sempit (<=480px): izinkan actions turun ke baris kedua daripada terjepit */
 @media (max-width: 480px) {
   .ezchat2-header { flex-wrap: wrap; row-gap: 8px; }
   .ezchat2-actions { flex-wrap: wrap; row-gap: 6px; }
