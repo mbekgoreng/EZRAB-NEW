@@ -32,8 +32,18 @@
 .ezdot.pulse { animation: ezPulse 1s infinite; }
 @keyframes ezPulse { 50% { box-shadow: 0 0 0 7px rgba(245,158,11,.08); } }
 .ezchat2-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-.ezchat2-modepick { border: none; background: none; font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-muted); cursor: pointer; font-family: inherit; padding: 4px 2px; outline: none; flex-shrink: 0; }
-.ezchat2-modepick:disabled { opacity: .5; cursor: default; }
+/* Dropdown mode header (satu-satunya kontrol mode; opsi nyata Cepat/Mendalam) */
+.ezchat2-modesel { border: 1.5px solid var(--ez-color-border); background: var(--ez-color-surface); border-radius: var(--ez-radius-pill); font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-primary); cursor: pointer; font-family: inherit; padding: 7px 8px 7px 12px; outline: none; flex-shrink: 0; max-width: 132px; }
+.ezchat2-modesel:disabled { opacity: .5; cursor: default; }
+/* Menu overflow header (⋮): aksi sekunder Riwayat + Muat Ulang */
+.ezchat2-menuwrap { position: relative; flex-shrink: 0; }
+.ezchat2-menubtn { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--ez-color-border); background: var(--ez-color-surface); color: var(--ez-color-text-primary); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .18s; }
+.ezchat2-menubtn:hover, .ezchat2-menubtn.active { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); background: var(--ez-color-primary-soft); }
+.ezchat2-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 50; min-width: 208px; display: flex; flex-direction: column; padding: 6px; background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: 14px; box-shadow: 0 24px 48px -16px rgba(15,23,42,.28); animation: ezFadeUp .18s ease; }
+.ezchat2-menu button { display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: none; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--ez-color-text-primary); cursor: pointer; font-family: inherit; text-align: left; }
+.ezchat2-menu button:hover { background: var(--ez-color-surface-secondary); }
+/* Fokus keyboard yang jelas di seluruh area chat */
+.ezchat2 button:focus-visible, .ezchat2 select:focus-visible, .ezchat2 textarea:focus-visible { outline: 2px solid var(--ez-color-primary); outline-offset: 2px; }
 .ezchat2-new { display: flex; align-items: center; gap: 5px; border: 1.5px solid var(--ez-color-border); background: var(--ez-color-surface); border-radius: var(--ez-radius-pill); padding: 7px 14px; font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-primary); cursor: pointer; font-family: inherit; transition: all .18s; }
 .ezchat2-new:hover { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); }
 .ezchat2-new.active { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); background: var(--ez-color-primary-soft); }
@@ -55,7 +65,7 @@
    maskot jangan dihilangkan — tampil besar di tengah, di atas sapaan). */
 .ezchat2-hero-mascot { display: flex; justify-content: center; margin-bottom: 12px; }
 .ezchat2-greet { font-size: 22px; font-weight: 800; margin: 0; color: var(--ez-color-text-primary); }
-.ezchat2-greet-brand { color: var(--ez-color-primary); }
+.ezchat2-sub { font-size: 13.5px; color: var(--ez-color-text-muted); margin: 8px 0 0; line-height: 1.5; }
 
 /* ===== Riwayat Percakapan (kompak — mode awal & panel header) ===== */
 .ezhist-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
@@ -158,10 +168,18 @@
   .ezchat2-hist-panel { right: 0; }
 }
 
-/* Header sempit (<=480px): izinkan actions turun ke baris kedua daripada terjepit */
+/* Header sempit (<=480px): TIDAK bertumpuk — semua kontrol tetap satu
+   baris dengan ukuran ringkas (maskot 36px, nama 15px, padding dipangkas).
+   Perkiraan lebar total pada 390px: 36 + 8 + ~105 + 8 + ~88 + 6 + ~64 + 6 + 36
+   + padding ≈ 370px < 390px, jadi tidak overflow. */
 @media (max-width: 480px) {
-  .ezchat2-header { flex-wrap: wrap; row-gap: 8px; }
-  .ezchat2-actions { flex-wrap: wrap; row-gap: 6px; }
+  .ezchat2-header { gap: 8px; padding: 10px 6px 8px; flex-wrap: nowrap; }
+  .ezchat2-mascot { width: 36px; height: 36px; }
+  .ezchat2-name { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ezchat2-actions { gap: 6px; flex-wrap: nowrap; }
+  .ezchat2-modesel { padding: 6px 4px 6px 10px; font-size: 12px; max-width: 108px; }
+  .ezchat2-new { padding: 7px 10px; }
+  .ezchat2-menubtn { width: 34px; height: 34px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

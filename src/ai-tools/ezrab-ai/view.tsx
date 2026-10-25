@@ -22,7 +22,7 @@ import React, { useRef, useState, useEffect, useLayoutEffect, useCallback, Suspe
 import {
   Send, Sparkles, Loader2, RotateCcw,
   Copy, Check, Mic, Paperclip, X, Plus, FileText,
-  History, Trash2,
+  History, Trash2, MoreVertical,
 } from 'lucide-react';
 import { ezrabAiService } from './service';
 import {
@@ -208,6 +208,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   /** Panel dropdown riwayat dari tombol "Riwayat" di header. */
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const refreshHistory = useCallback(() => {
     try {
@@ -404,6 +405,39 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       autoresize();
     } catch {
       /* non-fatal — percakapan aktif tidak berubah */
+    }
+  };
+
+  /* Muat Ulang (2026-10-23, direstorasi 2026-10-26 ke menu overflow):
+   * reset state tampilan yang macet TANPA menghapus percakapan — busy
+   * dibersihkan, dialog kredit ditutup, semua status menunggu direset,
+   * lalu percakapan aktif di-restore ulang dari store dengan pemetaan
+   * yang sama seperti mount / loadConversation. Sengaja TIDAK tampil
+   * sebagai tombol besar di header lagi (redesign Gemini-minimal). */
+  const reloadChat = () => {
+    setHistoryOpen(false);
+    setMenuOpen(false);
+    setBusy(false);
+    setCreditConfirm(null);
+    setAwaitingNeeds(false);
+    setAwaitingChoice(false);
+    setAwaitingSubtype(false);
+    setAwaitingClarify(null);
+    forceAiRef.current = false;
+    try {
+      const conv = unifiedConversationStore.getOrCreateActiveConversation(storeProjectId);
+      convIdRef.current = conv.id;
+      setActiveConvId(conv.id);
+      const restored: ChatEntry[] = (conv.messages ?? [])
+        .filter((m) => m.role === 'user' || m.role === 'assistant')
+        .map((m) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          ts: m.createdAt ? Date.parse(m.createdAt) || Date.now() : Date.now(),
+        }));
+      setMessages(restored);
+    } catch {
+      /* non-fatal — tampilan saat ini dipertahankan */
     }
   };
 
@@ -1111,17 +1145,6 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           hidden
           onChange={onPickFile}
         />
-        <select
-          className="ezchat2-modepick"
-          value={mode}
-          onChange={(e) => setMode(e.target.value as 'fast' | 'advanced')}
-          title="Mode AI"
-          aria-label="Mode AI"
-          disabled={busy}
-        >
-          <option value="fast">Cepat</option>
-          <option value="advanced">Mendalam</option>
-        </select>
         <textarea
           ref={taRef}
           value={input}
@@ -1180,15 +1203,59 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           <div className="ezchat2-name">Ezrab Chat AI</div>
         </div>
         <div className="ezchat2-actions">
-          <button
-            className={`ezchat2-new${historyOpen ? ' active' : ''}`}
-            onClick={() => setHistoryOpen((o) => !o)}
-            title="Riwayat percakapan"
+          {/* Satu-satunya kontrol mode: dropdown header (mode nyata:
+              Cepat/fast dan Mendalam/advanced). Bukan daftar model
+              provider — tidak ada nama model yang dikarang di sini. */}
+          <select
+            className="ezchat2-modesel"
+            value={mode}
+            onChange={(e) => setMode(e.target.value as 'fast' | 'advanced')}
+            title="Mode AI"
+            aria-label="Mode AI"
+            disabled={busy}
           >
-            <History size={14} /> Riwayat
+            <option value="fast">Cepat</option>
+            <option value="advanced">Mendalam</option>
+          </select>
+          <button
+            className="ezchat2-new"
+            onClick={() => { setMenuOpen(false); newChat(); }}
+            title="Percakapan baru"
+          >
+            <Plus size={15} /> Baru
           </button>
+          <div className="ezchat2-menuwrap">
+            <button
+              className={`ezchat2-menubtn${menuOpen ? ' active' : ''}`}
+              onClick={() => { setHistoryOpen(false); setMenuOpen((o) => !o); }}
+              title="Menu lainnya"
+              aria-label="Menu lainnya"
+              aria-expanded={menuOpen}
+            >
+              <MoreVertical size={17} />
+            </button>
+            {menuOpen && (
+              <div className="ezchat2-menu" role="menu">
+                <button
+                  role="menuitem"
+                  onClick={() => { setMenuOpen(false); setHistoryOpen(true); }}
+                >
+                  <History size={14} /> Riwayat percakapan
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => reloadChat()}
+                >
+                  <RotateCcw size={14} /> Muat Ulang
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+      {menuOpen && (
+        <div className="ezchat2-hist-veil" onClick={() => setMenuOpen(false)} />
+      )}
       {historyOpen && (
         <>
           <div className="ezchat2-hist-veil" onClick={() => setHistoryOpen(false)} />
@@ -1216,7 +1283,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 interactive
               />
             </div>
-            <h2 className="ezchat2-greet">Halo, saya <span className="ezchat2-greet-brand">EZRAB Chat AI</span></h2>
+            <h2 className="ezchat2-greet">Halo, ada yang bisa saya bantu?</h2>
+            <p className="ezchat2-sub">Tanyakan tentang estimasi, AHSP, volume pekerjaan, atau dokumen proyek.</p>
             {composer(true)}
           </div>
         ) : (
