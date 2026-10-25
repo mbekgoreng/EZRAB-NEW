@@ -368,6 +368,23 @@ export const EZRABMascotLucu: React.FC<EZRABMascotLucuProps> = ({
           <path className="fil31" d="M12461.18 9142.6c2.82,-1.24 8.59,-5.7 10.68,-8.22 2.43,-2.19 3.43,-2.46 5.04,-5.04l-68.45 1.48 4.77 2.64c1.42,0.52 2.08,0.5 3.09,0.9 5.26,2.08 5.57,3.66 5.77,8.55 16.39,0.04 9.96,-0.91 21.5,2.75 2.08,0.66 7.37,1.18 8.62,0.88 7.83,-1.83 -0.25,-3.06 8.98,-3.94z" />
         </g>
 
+        {/* Logo EZ baru di helm (owner 2026-10-26: logo EZ lama di helm
+            dihapus, diganti logo ini): logo lama menyatu dengan artwork
+            helm (bukan elemen terpisah), jadi ditutup pelat sewarna
+            pelat helm (#FEFEFE) tepat di area logo lama (10100,8900,
+            2500x1650 — area yang sama dengan perbaikan 70481a6), lalu
+            logo baru (public/logo-ez-helm-baru.png, PNG transparan)
+            ditempatkan di atasnya, dipusatkan pada area logo lama. */}
+        <rect x="10100" y="8900" width="2500" height="1650" fill="#FEFEFE" />
+        <image
+          href="/logo-ez-helm-baru.png"
+          x="10100"
+          y="8475"
+          width="2500"
+          height="2500"
+          preserveAspectRatio="xMidYMid meet"
+        />
+
         {/* 5. Click Expression Cheek Blushes */}
         {isClickExpressing && (
           <g id="lucu-expression-blush" opacity={bounceCurve * 0.85}>
