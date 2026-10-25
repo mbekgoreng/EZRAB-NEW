@@ -1509,7 +1509,7 @@ export const DocumentWorkspace: React.FC<DocumentWorkspaceProps> = ({
 
       {/* VIEW 5: RIWAYAT (Revisions & Export History) - Shown when workspaceTab === 'riwayat' */}
       {workspaceTab === 'riwayat' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 20 }}>
+        <div className="ezdw-riwayat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 20 }}>
           {/* REVISION HISTORY PANEL */}
           <div
             style={{

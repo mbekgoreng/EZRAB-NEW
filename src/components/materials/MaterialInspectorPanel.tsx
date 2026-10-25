@@ -737,6 +737,7 @@ export const MaterialInspectorPanel: React.FC<MaterialInspectorPanelProps> = ({
 
       {/* 3. Sub-tabs Segmented Control */}
       <div
+        className="mat-inspector-subtabs"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(6, 1fr)',

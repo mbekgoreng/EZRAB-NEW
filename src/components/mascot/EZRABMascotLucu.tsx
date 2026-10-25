@@ -391,6 +391,14 @@ export const EZRABMascotLucu: React.FC<EZRABMascotLucuProps> = ({
             />
           </g>
         )}
+
+        {/* Helm polos tanpa logo (user 2026-10-25: "pakai 1 logo saja, jangan
+            double" — logo utama sudah ada di TopBar, jadi helm tidak lagi
+            membawa logo EZ). Logo EZ menyatu dengan artwork vektor helm
+            (bukan elemen terpisah), jadi ia ditutup dengan bidang sewarna
+            pelat helm (#FEFEFE) tepat di area logo — terverifikasi lewat
+            render headless: pelat tampak putih bersih tanpa sambungan. */}
+        <rect x="10100" y="8900" width="2500" height="1650" fill="#FEFEFE" />
       </svg>
       <style>{`
         @keyframes ezrabMascotLucuBob {

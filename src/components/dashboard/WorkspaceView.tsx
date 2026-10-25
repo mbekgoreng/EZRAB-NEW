@@ -72,6 +72,7 @@ import {
   Folder,
   Box,
   Coins,
+  Tag,
   HelpCircle,
   Sun,
   Package,
@@ -881,12 +882,12 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
 
           <button
             type="button"
-            className={`ezrab-bottom-nav-item ${activeMenu === 'qto' || activeMenu === 'qto-vc' || activeMenu === 'qto-rekap' ? 'is-active' : ''}`}
-            onClick={() => setActiveMenu('qto')}
-            aria-label={t('nav.bottom_qto')}
+            className={`ezrab-bottom-nav-item ${activeMenu === 'material' || activeMenu === 'database-material' || activeMenu === 'material-harga' || activeMenu === 'harga' ? 'is-active' : ''}`}
+            onClick={() => setActiveMenu('material')}
+            aria-label="Harga"
           >
-            <Calculator size={18} />
-            <span>QTO</span>
+            <Tag size={18} />
+            <span>Harga</span>
           </button>
 
           <button

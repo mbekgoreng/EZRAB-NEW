@@ -287,9 +287,15 @@ return { label: t('dashboard.status_aktif'), bg: 'var(--ez-color-primary-soft)',
         @media (max-width: 767px) {
           /* Hero mobile: tumpuk vertikal — tanpa ini maskot flexShrink:0 (min 280px)
              memakan kolom teks hingga tombol terlipat & maskot terpotong tepi. */
-          .ezdb-hero { flex-direction: column !important; align-items: stretch !important; padding: 24px 20px !important; min-height: 0 !important; gap: 8px !important; }
+          .ezdb-hero { flex-direction: column !important; align-items: stretch !important; padding: 20px 16px !important; min-height: 0 !important; gap: 12px !important; }
           .ezdb-hero-text { max-width: 100% !important; }
-          .ezdb-hero-mascot { width: min(220px, 64vw) !important; height: 190px !important; margin: 0 auto !important; }
+          .ezdb-hero h1 { font-size: 26px !important; }
+          .ezdb-hero-text p { margin-bottom: 16px !important; }
+          /* Maskot diperkecil (190px -> 150px) supaya hero muat satu frame HP;
+             coretan tangan disembunyikan di HP — di layar sempit ia menumpuk
+             teks dan menambah ramai, padahal hanya dekorasi. */
+          .ezdb-hero-mascot { width: min(200px, 60vw) !important; height: 150px !important; margin: 0 auto !important; }
+          .ezdb-hero-annot { display: none !important; }
           .ezdb-hero button { white-space: nowrap; }
         }
       `}</style>

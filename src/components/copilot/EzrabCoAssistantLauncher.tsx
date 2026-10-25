@@ -250,32 +250,24 @@ export const EzrabCoAssistantLauncher: React.FC<EzrabCoAssistantLauncherProps> =
           zIndex: 9990,
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '7px',
-          padding: '8px 14px',
+          gap: '6px',
+          padding: '9px 14px',
           borderRadius: '9999px',
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 58, 138, 0.95) 100%)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid rgba(59, 130, 246, 0.45)',
-          boxShadow: '0 6px 20px rgba(0, 0, 0, 0.35), 0 0 14px rgba(37, 99, 235, 0.32)',
-          color: '#FFFFFF',
-          fontSize: '11px',
+          // Clean & simple (user 2026-10-25): putih polos, tanpa gradasi,
+          // tanpa emoji, tanpa glow — hanya teks + chevron.
+          background: '#FFFFFF',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 2px 8px rgba(15, 23, 42, 0.08)',
+          color: '#0F172A',
+          fontSize: '12px',
           fontWeight: 700,
-          letterSpacing: '0.04em',
+          letterSpacing: '0',
           cursor: 'pointer',
           transition: 'all 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        <span style={{ fontSize: '14px', lineHeight: 1 }}>🤖</span>
-        <span
-          style={{
-            background: 'linear-gradient(90deg, #60A5FA 0%, #93C5FD 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-          }}
-        >
-          EZRAB AI
-        </span>
-        <ChevronUp size={13} style={{ color: '#93C5FD' }} />
+        <span>EZRAB AI</span>
+        <ChevronUp size={14} style={{ color: '#475569' }} />
       </button>
     );
   }

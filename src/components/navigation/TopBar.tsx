@@ -289,6 +289,7 @@ const handleNotificationItemClick = (item: NotificationItem) => {
       }}
     >
       <div
+        className="ezrab-topbar-row"
         style={{
           height: isNarrowMobile ? '48px' : '54px',
           display: 'flex',
@@ -362,6 +363,7 @@ const handleNotificationItemClick = (item: NotificationItem) => {
           CENTER: GLOBAL SEARCH (CLEAN & SUBTLE)
          ======================================================================= */}
       <div
+        className="ezrab-topbar-center"
         style={{
           display: 'flex',
           justifyContent: 'center',
@@ -387,6 +389,7 @@ const handleNotificationItemClick = (item: NotificationItem) => {
           <input
             ref={searchInputRef}
             type="text"
+            className="ezrab-topbar-search-input"
             placeholder={t('nav.search_placeholder')}
           value={searchQuery}
           onChange={(e) => { onSearchChange(e.target.value); setActiveResultIdx(0); setSearchFocused(true); }}
@@ -526,7 +529,7 @@ onFocus={(e) => {
       {/* =======================================================================
           RIGHT: NOTIFICATION + HELP + PROFILE MENU
          ======================================================================= */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: isNarrowMobile ? '6px' : '10px', flexShrink: 0 }}>
+      <div className="ezrab-topbar-right" style={{ display: 'flex', alignItems: 'center', gap: isNarrowMobile ? '6px' : '10px', flexShrink: 0 }}>
         
 {/* 0. THEME TOGGLE (terang/gelap) */}
         <button

@@ -10,8 +10,8 @@
   .ezrab-dashboard-hero {
     flex-direction: column !important;
     align-items: stretch !important;
-    padding: 24px 20px !important;
-    gap: 16px !important;
+    padding: 20px 16px !important;
+    gap: 12px !important;
     min-height: 0 !important;
   }
 
@@ -19,11 +19,26 @@
     max-width: 100% !important;
   }
 
+  .ezrab-dashboard-hero h1 {
+    font-size: 26px !important;
+  }
+
+  .ezrab-dashboard-hero-text p {
+    margin-bottom: 16px !important;
+  }
+
   /* Mascot stage: shrink to fit narrow screens, centered above text fold */
   .ezrab-dashboard-hero .mascot-stage {
-    width: min(100%, 230px) !important;
-    height: 190px !important;
+    width: min(100%, 200px) !important;
+    height: 150px !important;
     margin: 0 auto;
+  }
+
+  /* Coretan tangan di samping maskot: disembunyikan di HP — di layar sempit
+     ia menumpuk teks/tombol dan (mode Klasik, left:-145px) meluber keluar
+     layar. Dekorasi saja, fungsi tidak berubah. */
+  .ezrab-dashboard-hero .mascot-annotation-badge {
+    display: none !important;
   }
 
   /* --- Dashboard split grid (Daftar Proyek + Insight): single column ---- */
@@ -41,5 +56,118 @@
   .ezrab-workspace-sidebar {
     height: 100dvh !important;
     padding-top: env(safe-area-inset-top, 0px) !important;
+  }
+}
+
+/* =========================================================================
+   SATU FRAME iPhone (audit 2026-10-25, viewport iPhone 11 Pro Max 414x896)
+   -------------------------------------------------------------------------
+   MOBILE ONLY (<=767px). Tujuan: frame aplikasi = frame layar HP yang
+   terlihat — tidak ada elemen yang meluber keluar layar, tidak ada konten
+   yang ketutup bottom nav / home indicator, dan hero lebih ringkas.
+   Desktop tidak berubah.
+   ========================================================================= */
+@media (max-width: 767px) {
+  /* --- 1. Frame dikunci ke tinggi layar dinamis (dvh), bukan 100vh ------- */
+  /* 100vh di iPhone menghitung tinggi TERMASUK address bar Safari: begitu
+     bar muncul/hilang, frame ikut loncat dan konten bawah terpotong. dvh
+     mengikuti tinggi yang benar-benar terlihat saat itu juga. */
+  .pf-page {
+    height: 100dvh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+  .pf-frame {
+    height: 100dvh !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+  }
+  .pf-panel {
+    height: 100% !important;
+    min-height: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+  /* .pf-main sudah overflow-y:auto + padding-bottom nav di tsx; di sini
+     ia dipastikan jadi satu-satunya area scroll di dalam frame. */
+  .pf-main {
+    min-height: 0 !important;
+  }
+  /* <main> tiap menu masih minHeight calc(100vh - 64px): di HP ganti ke dvh
+     supaya tidak ada ruang scroll mati saat address bar tampil. */
+  .pf-main main {
+    min-height: calc(100dvh - 64px) !important;
+  }
+
+  /* --- 2. Pengaman anti-luber horizontal --------------------------------- */
+  .pf-page,
+  .pf-main {
+    overflow-x: clip !important;
+  }
+
+  /* --- 3. TopBar muat 414px ---------------------------------------------- */
+  /* Penyebab avatar kanan terpotong di screenshot: baris TopBar berisi
+     elemen flexShrink:0 (hamburger+logo, klaster kanan) + input search yang
+     tidak bisa mengecil (min-width bawaan browser ~170px). Total minimum
+     baris > 414px sehingga elemen paling kanan terdorong keluar layar. */
+  .ezrab-topbar-row {
+    padding: 0 10px !important;
+    gap: 8px !important;
+  }
+  .ezrab-topbar-center {
+    min-width: 0 !important;
+    padding: 0 4px !important;
+  }
+  .ezrab-topbar-search-input {
+    min-width: 0 !important;
+  }
+  .ezrab-topbar-right {
+    min-width: 0 !important;
+  }
+
+  /* --- 4. Pill checklist pindah kiri -------------------------------------- */
+  /* Sebelumnya pill "Progres Kamu" (kanan, bottom ~70px+safe) bertumpuk
+     dengan launcher maskot (kanan, bottom ~76px+safe) — keduanya menabrak
+     konten hero. Di HP, pill pindah ke kiri, launcher tetap kanan. */
+  .ez-checklist-fab {
+    right: auto !important;
+    left: 12px !important;
+  }
+
+  /* --- 5. Grid riwayat dokumen: minmax(400px) meluber di bawah ~428px ----- */
+  /* repeat(auto-fit, minmax(400px,1fr)) di layar 360/414px memaksa trek
+     400px — lebih lebar dari kontainer. Di HP jadi 1 kolom penuh. */
+  .ezdw-riwayat-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* --- 6. Panel inspector material: tumpuk vertikal di HP ----------------- */
+  /* Sebelumnya: split row (tabel + panel 390px sticky). Di HP 360px, panel
+     390px saja sudah lebih lebar dari layar. Di HP: kolom penuh, panel
+     selebar layar di bawah tabel. */
+  .mat-split-workspace {
+    flex-direction: column !important;
+  }
+  .mat-inspector-panel {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+  /* 6 sub-tab panel (OVERVIEW..PROVENANCE) dalam 1 baris = ~58px/tab di HP,
+     label seperti SPESIFIKASI tidak terbaca. Di HP jadi 3x2, target sentuh
+     lebih besar dan label utuh. */
+  .mat-inspector-subtabs {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* Layar sangat sempit (<=400px): grid kartu dokumen minmax(340px) juga
+   meluber — di bawah 400px dipaksa 1 kolom. Di atas itu perilaku asli
+   (2 kolom di tablet) dipertahankan. */
+@media (max-width: 400px) {
+  .ez-tender-docs-grid {
+    grid-template-columns: 1fr !important;
   }
 }

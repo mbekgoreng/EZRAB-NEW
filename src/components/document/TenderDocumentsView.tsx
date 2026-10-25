@@ -752,7 +752,7 @@ export const TenderDocumentsView: React.FC<TenderDocumentsViewProps> = ({
 
       {/* ACTIVE DOCUMENTS LIST */}
       {activeRecords.length > 0 && filteredCardData.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+        <div className="ez-tender-docs-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
           {filteredCardData.map(({ record, def, comp, statusLabel, levelLabel }) => {
             const isReady = record.status === 'COMPLETE' || record.status === 'EXPORTED';
             const actionLabel = isReady ? 'Buka' : 'Lanjutkan';
