@@ -1,17 +1,18 @@
 /**
  * gatewayChainOrder.mjs — urutan rantai provider per mode di executeAI.
  * Fetch di-stub per host; tidak ada panggilan jaringan nyata, tidak ada key asli.
- * Urutan target:
- *  - chat     : Gemini native -> Atmo ag/gemini-3.8-flash-high -> Atmo
- *               cx/gpt-6-luna -> ZyRouter -> ekor cadangan terakhir
+ * Urutan target (user 2026-10-25: Crown = provider UTAMA untuk teks):
+ *  - chat     : Crown MiniMax M2.7 -> Crown DeepSeek V4 Flash -> Gemini native
+ *               -> Atmo ag/gemini-3.8-flash-high -> Atmo cx/gpt-6-luna
+ *               -> ZyRouter -> ekor cadangan terakhir
  *               (Dahl -> River vision -> River teks -> Gemini-OAI -> Atria 1 key)
- *               [urutan owner terbaru; sebelumnya River/Dahl dulu & Gemini
- *               absen — chat mati saat ZyRouter membalas SSE + Atria 429]
- *  - advanced : Gemini native -> Atmo ag/gemini-3.8-flash-high
- *               -> Atmo cx/gpt-6-luna -> ZyRouter
- *  - fast     : Gemini native -> River vision (DeepSeek V4.1)
+ *  - advanced : Crown MiniMax M2.7 -> Crown DeepSeek V4 Flash -> Gemini native
+ *               -> Atmo ag/gemini-3.8-flash-high -> Atmo cx/gpt-6-luna -> ZyRouter
+ *  - fast     : Crown MiniMax M2.7 -> Crown DeepSeek V4 Flash -> Gemini native
+ *               -> River vision (DeepSeek V4.1)
  *               -> Atmo atmo/deepseek-v4.1-flash -> Atmo ali/deepseek-v4.1-flash
- *  - vision   : Gemini native -> River vision -> Atmo ag/gemini-3.8-flash-high
+ *  - vision   : TIDAK BERUBAH (Crown tidak support image_url):
+ *               Gemini native -> River vision -> Atmo ag/gemini-3.8-flash-high
  *               -> ZyRouter
  */
 import assert from 'node:assert';
@@ -23,10 +24,11 @@ process.env.ATRIA_API_KEY_1 = 'dummy-atria';
 process.env.GEMINI_OAI_KEY_1 = 'dummy-gok';
 process.env.ZYROUTER_API_KEY = 'dummy-zyrouter';
 process.env.ATMO_API_KEY = 'dummy-atmo';
+process.env.CROWN_API_KEY = 'dummy-crown';
 
 // behavior per host key: 'ok' | 'fail' (diubah per skenario)
 const behavior = {};
-const HOSTS = ['gemini', 'river', 'dahl', 'atria', 'geminiOai', 'zyrouter', 'atmo'];
+const HOSTS = ['gemini', 'river', 'dahl', 'atria', 'geminiOai', 'zyrouter', 'atmo', 'crown'];
 function setAll(v) { for (const h of HOSTS) behavior[h] = v; }
 setAll('fail');
 
@@ -38,6 +40,7 @@ function hostOf(url) {
   if (url.includes('api.atria-asi.ai')) return 'atria';
   if (url.includes('api.zyrouter.com')) return 'zyrouter';
   if (url.includes('atmorouter.dev')) return 'atmo';
+  if (url.includes('crown.ai.id')) return 'crown';
   return 'unknown';
 }
 
@@ -71,7 +74,21 @@ function check(name, fn) {
 }
 const seq = (r) => r.attempts.map((a) => `${a.provider}:${a.model}`);
 
-// --- 1. Chat: fallback bekerja — Gemini gagal, AtmoRouter ag menyelamatkan
+// --- 1. Chat: Crown utama menjawab — tidak sampai ke Gemini/Atmo
+setAll('fail'); behavior.crown = 'ok';
+{
+  const r = await executeAI({ message: 'halo', mode: 'chat' });
+  check('chat crown-first: ok via crown', () => assert.equal(r.ok, true));
+  check('chat crown-first: provider crown model MiniMaxAI/MiniMax-M2.7', () => {
+    assert.equal(r.provider, 'crown');
+    assert.equal(r.model, 'MiniMaxAI/MiniMax-M2.7');
+  });
+  check('chat crown-first: hanya 1 attempt', () => assert.deepEqual(seq(r), [
+    'crown:MiniMaxAI/MiniMax-M2.7',
+  ]));
+}
+
+// --- 2. Chat: fallback bekerja — Crown + Gemini gagal, AtmoRouter ag menyelamatkan
 setAll('fail'); behavior.atmo = 'ok';
 {
   const r = await executeAI({ message: 'halo', mode: 'chat' });
@@ -81,17 +98,21 @@ setAll('fail'); behavior.atmo = 'ok';
     assert.equal(r.model, 'ag/gemini-3.8-flash-high');
   });
   check('chat fallback: urutan attempts sebelum sukses', () => assert.deepEqual(seq(r), [
+    'crown:MiniMaxAI/MiniMax-M2.7',
+    'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
     'gemini:gemini-3.5-flash-lite',
     'atmorouter:ag/gemini-3.8-flash-high',
   ]));
 }
 
-// --- 2. Chat: semua gagal -> seluruh rantai (termasuk ekor) tercatat
+// --- 3. Chat: semua gagal -> seluruh rantai (termasuk ekor) tercatat
 setAll('fail');
 {
   const r = await executeAI({ message: 'halo', mode: 'chat' });
   check('chat all-fail: ok=false', () => assert.equal(r.ok, false));
   check('chat all-fail: urutan rantai penuh', () => assert.deepEqual(seq(r), [
+    'crown:MiniMaxAI/MiniMax-M2.7',
+    'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
     'gemini:gemini-3.5-flash-lite',
     'atmorouter:ag/gemini-3.8-flash-high',
     'atmorouter:cx/gpt-6-luna',
@@ -104,11 +125,13 @@ setAll('fail');
   ]));
 }
 
-// --- 3. Advanced (baru): Gemini -> Atmo ag -> Atmo cx -> ZyRouter
+// --- 4. Advanced (baru): Crown -> Gemini -> Atmo ag -> Atmo cx -> ZyRouter
 setAll('fail');
 {
   const r = await executeAI({ message: 'halo', mode: 'advanced' });
   check('advanced: urutan baru', () => assert.deepEqual(seq(r), [
+    'crown:MiniMaxAI/MiniMax-M2.7',
+    'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
     'gemini:gemini-3.5-flash-lite',
     'atmorouter:ag/gemini-3.8-flash-high',
     'atmorouter:cx/gpt-6-luna',
@@ -116,7 +139,7 @@ setAll('fail');
   ]));
 }
 
-// --- 4. Advanced fallback bekerja: Gemini gagal, Atmo ag menjawab
+// --- 5. Advanced fallback bekerja: Crown + Gemini gagal, Atmo ag menjawab
 setAll('fail'); behavior.atmo = 'ok';
 {
   const r = await executeAI({ message: 'halo', mode: 'advanced' });
@@ -127,11 +150,13 @@ setAll('fail'); behavior.atmo = 'ok';
   });
 }
 
-// --- 5. Fast (baru): Gemini -> River vision -> Atmo atmo -> Atmo ali
+// --- 6. Fast (baru): Crown -> Gemini -> River vision -> Atmo atmo -> Atmo ali
 setAll('fail');
 {
   const r = await executeAI({ message: 'halo', mode: 'fast' });
   check('fast: urutan baru', () => assert.deepEqual(seq(r), [
+    'crown:MiniMaxAI/MiniMax-M2.7',
+    'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
     'gemini:gemini-3.5-flash-lite',
     'river-vision:deepseek-ai/DeepSeek-V4.1-Flash',
     'atmorouter:atmo/deepseek-v4.1-flash',
@@ -139,7 +164,7 @@ setAll('fail');
   ]));
 }
 
-// --- 6. Vision (baru): Gemini -> River vision -> Atmo ag -> ZyRouter
+// --- 7. Vision (TIDAK BERUBAH): Crown tidak boleh muncul di rantai vision
 setAll('fail');
 {
   const r = await executeAI({
@@ -152,6 +177,7 @@ setAll('fail');
     'atmorouter:ag/gemini-3.8-flash-high',
     'zyrouter:geminiflash-3.8',
   ]));
+  check('vision: tanpa crown', () => assert.equal(seq(r).some((s) => s.startsWith('crown:')), false));
 }
 
 console.log(`\ngatewayChainOrder: ${passed} passed, ${failed} failed`);

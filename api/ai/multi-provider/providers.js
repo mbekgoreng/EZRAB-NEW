@@ -29,6 +29,13 @@ export default async function handler(req, res) {
   if ((process.env.ZYROUTER_API_KEY || '').trim() || (process.env.ZROUTER_API_KEY || '').trim()) {
     providers.push({ id: 'zyrouter', label: 'ZyRouter', models: ['geminiflash-3.8'], available: true });
   }
+  for (let i = 0; i <= 4; i++) {
+    const k = i === 0 ? process.env.CROWN_API_KEY : process.env['CROWN_API_KEY_' + i];
+    if ((k || '').trim()) {
+      providers.push({ id: 'crown', label: 'Crown', models: ['MiniMaxAI/MiniMax-M2.7', 'deepseek-ai/DeepSeek-V4-Flash-0731'], available: true });
+      break;
+    }
+  }
   for (let i = 1; i <= 14; i++) {
     if ((process.env['ATRIA_API_KEY_' + i] || '').trim()) {
       providers.push({ id: 'atria', label: 'Atria', models: ['Atria-Dawn-Preview'], available: true });

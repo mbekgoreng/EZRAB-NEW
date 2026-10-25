@@ -46,6 +46,15 @@ const DAHL_BASE = 'https://inference.dahl.global/v1';
 const GEMINI_OAI_BASE = 'https://generativelanguage.googleapis.com/v1beta/openai';
 const RIVER_BASE = 'https://api.river.ai/v1';
 const ATMO_BASE = 'https://atmorouter.dev/v1';
+const CROWN_BASE = 'https://crown.ai.id/v1';
+// Crown (user 2026-10-25): provider UTAMA untuk AI teks (chat/advanced/fast).
+// Teruji langsung 2026-10-25 via /v1/chat/completions — kedua model menjawab.
+// Vision TIDAK support di Crown (image_url ditolak 400 upstream_error), jadi
+// Crown TIDAK PERNAH masuk rantai mode 'vision'.
+// Urutan model: MiniMax M2.7 dulu (jawaban bersih), fallback DeepSeek V4 Flash.
+// Batas rantai: maks 1 ulang per provider — jadi MAKS 2 model Crown di sini.
+const CROWN_CHAT_MODEL = 'MiniMaxAI/MiniMax-M2.7';
+const CROWN_CHAT_FALLBACK_MODEL = 'deepseek-ai/DeepSeek-V4-Flash-0731';
 const FAST_MODEL = 'gemini-3.5-flash-lite';
 const ADVANCED_MODEL = 'geminiflash-3.8';
 const ATRIA_MODEL = 'Atria-Dawn-Preview';
@@ -189,6 +198,21 @@ export function stripAtmoPromoFooter(content) {
   return lines.join('\n').replace(/\s+$/, '');
 }
 
+/**
+ * Strip MiniMax <think>...</think> reasoning blocks from Crown responses.
+ * Teruji 2026-10-25: MiniMax M2.7 membocorkan blok reasoning ke dalam
+ * content; blok itu tidak boleh sampai ke pengguna. Hanya blok <think>
+ * yang dihapus; teks jawaban dipertahankan. Blok tak tertutup (terpotong
+ * max_tokens) ikut dibuang — sisa kosong berarti 'Empty' dan failover jalan.
+ */
+function stripThinkBlocks(content) {
+  if (typeof content !== 'string' || !content) return content;
+  let out = content.replace(/<think>[\s\S]*?<\/think>/g, '');
+  const open = out.indexOf('<think>');
+  if (open !== -1) out = out.slice(0, open);
+  return out.trim();
+}
+
 async function callGemini(key, model, message, systemPrompt, temperature, maxTokens, jsonMode, media) {
   const contents = [];
   if (systemPrompt) {
@@ -302,6 +326,8 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
     let text = (((d.choices || [])[0] || {}).message || {}).content || '';
     // Footer promosi model gratis AtmoRouter tidak boleh sampai ke pengguna.
     if (provider === 'atmorouter') text = stripAtmoPromoFooter(text);
+    // Blok reasoning MiniMax (Crown) tidak boleh sampai ke pengguna.
+    if (provider === 'crown') text = stripThinkBlocks(text);
     if (!text) return { ok: false, provider, model, ms: Date.now() - started, error: 'Empty' };
     // Usage meter (Phase 3): tangkap usage resmi OpenAI-compatible.
     // Hindari double-counting: cached/reasoning sudah termasuk dalam total provider.
@@ -350,6 +376,11 @@ export async function executeAI(o, onAttempt) {
   const rk = envKeys('RIVER_API_KEY', 10);
   // AtmoRouter: satu key utama (ATMO_API_KEY) + opsional ATMO_API_KEY_1..4.
   const atmoKeys = [String(process.env.ATMO_API_KEY || '').trim(), ...envKeys('ATMO_API_KEY', 4)].filter(Boolean);
+  // Crown: satu key utama (CROWN_API_KEY) + opsional CROWN_API_KEY_1..4.
+  // Key TIDAK PERNAH ditulis di kode — diisi owner di env Vercel (key BARU
+  // hasil rotasi; key yang sempat tampil di chat 2026-10-25 tidak dipakai).
+  // Tanpa key ini, rantai Crown kosong dan perilaku kembali seperti semula.
+  const crownKeys = [String(process.env.CROWN_API_KEY || '').trim(), ...envKeys('CROWN_API_KEY', 4)].filter(Boolean);
 
   // Setiap attempt ditandai provider+model sejak awal agar loop dapat
   // menerapkan anggaran percobaan per provider dan log tetap akurat.
@@ -362,6 +393,12 @@ export async function executeAI(o, onAttempt) {
   const riverTextCall = (k) => ({ provider: 'river-text', model: RIVER_TEXT_MODEL, run: () => callOAI(RIVER_BASE, k, RIVER_TEXT_MODEL, 'river-text', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
   const riverVisionCall = (k) => ({ provider: 'river-vision', model: RIVER_VISION_MODEL, run: () => callOAI(RIVER_BASE, k, RIVER_VISION_MODEL, 'river-vision', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
   const atmoCall = (k, model) => ({ provider: 'atmorouter', model, run: () => callOAI(ATMO_BASE, k, model, 'atmorouter', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
+  const crownCall = (k, model) => ({ provider: 'crown', model, run: () => callOAI(CROWN_BASE, k, model, 'crown', message, systemPrompt, temperature, maxTokens, jsonMode, media) });
+  // Crown hanya untuk teks: bila ada gambar/PDF, Crown dilewati total
+  // (image_url ditolak gateway Crown) — vision tetap ke rantai lamanya.
+  const crownTextAttempts = (!hasImage && !hasPdf)
+    ? [...crownKeys.map((k) => crownCall(k, CROWN_CHAT_MODEL)), ...crownKeys.map((k) => crownCall(k, CROWN_CHAT_FALLBACK_MODEL))]
+    : [];
 
   if (mode === 'vision') {
     // Vision (urutan user 2026-10-21): Gemini native dulu (inlineData
@@ -375,18 +412,19 @@ export async function executeAI(o, onAttempt) {
       return { ok: false, error: 'Vision PDF membutuhkan GEMINI_API_KEY_* — tidak ada key Gemini terkonfigurasi', requestId, attempts: [] };
     }
   } else if (mode === 'advanced') {
-    // Advanced (urutan user 2026-10-21): Gemini native -> AtmoRouter
-    // ag/gemini-3.8-flash-high -> AtmoRouter cx/gpt-6-luna -> ZyRouter.
+    // Advanced (urutan user 2026-10-25): Crown MiniMax M2.7 -> Crown
+    // DeepSeek V4 Flash -> Gemini native -> AtmoRouter ag/gemini-3.8-flash-high
+    // -> AtmoRouter cx/gpt-6-luna -> ZyRouter.
+    attempts.push(...crownTextAttempts);
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
     atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_MODEL)));
     atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_FALLBACK_MODEL)));
     if (zk) attempts.push(zyrouterCall());
   } else if (mode === 'chat') {
-    // Chat AI (urutan owner terbaru, menyelaraskan chat dengan rantai
-    // advanced): Gemini native -> AtmoRouter ag/gemini-3.8-flash-high ->
-    // AtmoRouter cx/gpt-6-luna -> ZyRouter Gemini 3.8. Gemini kini ADA di
-    // rantai chat — rantai lama (River/Dahl dulu, Gemini absen) membuat
-    // chat mati total saat ZyRouter membalas SSE dan Atria 429.
+    // Chat AI (urutan owner 2026-10-25): Crown MiniMax M2.7 -> Crown
+    // DeepSeek V4 Flash -> Gemini native -> AtmoRouter ag/gemini-3.8-flash-high
+    // -> AtmoRouter cx/gpt-6-luna -> ZyRouter Gemini 3.8 (+ ekor generik).
+    attempts.push(...crownTextAttempts);
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
     atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_MODEL)));
     atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_ADVANCED_FALLBACK_MODEL)));
@@ -401,9 +439,10 @@ export async function executeAI(o, onAttempt) {
     gok.forEach((k) => attempts.push(geminiOaiCall(k)));
     if (ak.length > 0) attempts.push(atriaCall(ak[0]));
   } else {
-    // Fast (urutan user 2026-10-21, TIDAK diubah — terbukti sehat di log):
-    // Gemini native -> River DeepSeek V4.1 -> AtmoRouter
+    // Fast (urutan user 2026-10-25): Crown MiniMax M2.7 -> Crown
+    // DeepSeek V4 Flash -> Gemini native -> River DeepSeek V4.1 -> AtmoRouter
     // atmo/deepseek-v4.1-flash -> ali/deepseek-v4.1-flash.
+    attempts.push(...crownTextAttempts);
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
     rk.forEach((k) => attempts.push(riverVisionCall(k)));
     atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_CHAT_MODEL)));
