@@ -5,6 +5,8 @@
 **Basis:** `CORE_EZRAB_CHAT_AI.md` dari pengguna, konteks EZRAB yang tersedia, dan pemisahan antara implementasi yang dilaporkan ada dengan target yang perlu diverifikasi.  
 **Status:** Dokumen kerja untuk audit, implementasi, QA, dan pemeliharaan. Dokumen ini bukan bukti bahwa semua kemampuan aktif di Preview atau Production.
 
+**Ruang lingkup (tambahan 2026-10-27, perintah user):** dokumen core ini berlaku SAMA untuk **EZRAB AI Co Assistant** (panel asisten di workspace — `EzrabCoAssistantChatbox` / `EzrabAiAssistantFullView` lewat `coAssistantService`). Artinya co-assistant memakai inti yang sama dengan Chat AI: jalur server via `aiToolsProviderClient` dengan `productId EZRAB_AI` (rantai 'chat' yang sama), konteks proyek hanya-baca, dan aturan kejujuran yang sama — data/tool dulu, jangan mengarang angka, dan gagal server WAJIB tampil sebagai pesan error, bukan disamarkan menjadi jawaban lokal ("Mode lokal"). Yang tetap berbeda hanya UI dan cabang deterministik lokal (slash command, intent guard, wizard dokumen) yang memang bukan jawaban AI.
+
 ## 0. Cara membaca
 
 Gunakan label berikut:

@@ -1,13 +1,25 @@
+/**
+ * EZRAB AI Co Assistant — inti (core) SAMA dengan EZRAB Chat AI.
+ * Dokumen core yang mengikat: CORE_EZRAB_CHAT_AI.md (spesifikasi &
+ * kontrak operasi v2.0) — berlaku juga untuk co-assistant sejak 2026-10-27
+ * atas perintah user ("samakan core mdnya dengan ezrab chat ai").
+ * Di runtime itu berarti: jalur server via aiToolsProviderClient dengan
+ * productId EZRAB_AI (rantai 'chat' yang sama dengan Chat AI), konteks
+ * proyek hanya-baca, dan aturan kejujuran yang sama — data/tool dulu,
+ * jangan mengarang angka, gagal server tampil sebagai pesan error
+ * (isError), bukan disamarkan menjadi jawaban lokal ("Mode lokal").
+ * Cabang deterministik (slash command, intent guard, wizard dokumen)
+ * tetap lokal by design dan bukan jawaban AI.
+ */
 import { RabItem, Project, UserRole, QTOItem } from '../types';
-import { aiApiClient, NormalizedAiResponse, ActionProposal } from './aiApiClient';
-import { buildFullAIContext } from './aiContextService';
+import type { ActionProposal } from './aiApiClient';
 import { buildReadOnlyProjectContext } from './aiProjectContext';
 import { getCurrentSupabaseUser } from './supabaseClient';
-import { defaultAiProvider } from './aiProviderEngine';
 import { HOUSE_TYPE_CATALOG } from '../data/houseTypeCatalog';
 import { getRegionalFactor, REGIONAL_WIZARD_OPTIONS } from '../data/regionalCostFactors';
 import { unifiedConversationStore } from './ai/conversation/unifiedConversationStore';
 import { notificationBus } from '../notifications/notificationBus';
+import { aiToolsProviderClient } from '../ai-tools/providerClient';
 
 export interface CoAssistantMessage {
   id: string;
@@ -291,126 +303,63 @@ class CoAssistantService {
     const conversationIdToSend = request.conversationId || this.activeConversationId || undefined;
     const clientMessageId = `client-msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-    // First attempt: Server API Client
-    try {
-      const projectContext = request.currentProject && !isConversational && !isAutomaticRab
-        ? buildReadOnlyProjectContext({
-            project: request.currentProject,
-            rabItems: request.projectRabItems || [],
-            question: trimmedMessage,
-          })
-        : undefined;
+    // Jalur server DISAMAKAN dengan Chat AI (providerClient): endpoint
+    // /api/ai/tools/execute + aiGatewayAuthHeaders + timeout 90 dtk, rantai
+    // 'chat' yang sama (productId EZRAB_AI). Perbedaan perilaku yang lama:
+    // co-assistant menelan SEMUA error server menjadi jawaban lokal +
+    // banner "Mode lokal", sementara Chat AI menampilkan pesan errornya.
+    // Mulai sini, gagal server = pesan error yang sama seperti Chat AI
+    // (isError), TANPA fallback lokal diam-diam — supaya outage server
+    // terlihat, bukan tersamar sebagai jawaban AI.
+    const projectContext = request.currentProject && !isConversational && !isAutomaticRab
+      ? buildReadOnlyProjectContext({
+          project: request.currentProject,
+          rabItems: request.projectRabItems || [],
+          question: trimmedMessage,
+        })
+      : undefined;
+    const contextBlock = projectContext
+      ? `KONTEKS PROYEK AKTIF (hanya-baca, dari data proyek):\n${JSON.stringify(projectContext).slice(0, 8000)}\n\n`
+      : '';
+    const result = await aiToolsProviderClient.execute({
+      productId: 'EZRAB_AI',
+      mode: 'fast',
+      prompt: `${contextBlock}PERTANYAAN PENGGUNA: ${trimmedMessage}\n\nJawab dalam Bahasa Indonesia.`,
+      jsonMode: false,
+      temperature: 0.4,
+      maxTokens: 3000,
+      timeoutMs: 90000,
+      idempotencyKey: `co-asst:${conversationIdToSend || 'default'}:${clientMessageId}`,
+    });
 
-      const response: NormalizedAiResponse = await aiApiClient.sendMessage({
-        message: trimmedMessage,
-        projectId: request.currentProject?.id,
-        conversationId: conversationIdToSend,
-        currentPage: request.activeModule || 'rab-estimasi',
-        projectContext,
-        clientMessageId,
-        idempotencyKey: `co-asst:${conversationIdToSend || 'default'}:${clientMessageId}`,
-      });
-
-      if (response.conversationId) {
-        this.activeConversationId = response.conversationId;
-      }
-
-      let proposal = response.actionProposal;
-      if (isClient && proposal) {
-        proposal = undefined; // Client role has view & query permission only
-      }
-
-      const aiMsg: CoAssistantMessage = {
-        id: response.messageId || `ai-${Date.now()}`,
+    if (!result.success) {
+      const errMsg: CoAssistantMessage = {
+        id: `ai-err-${Date.now()}`,
         role: 'ai',
-        text: response.content,
+        text: result.message,
         timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-        intent: response.intent,
-        actionProposal: proposal,
-        wizardResponse: response.wizardResponse,
-        quickActionResponse: response.quickActionResponse,
-        followUpSuggestions: response.followUpSuggestions,
-        isError: response.isError,
+        isError: true,
       };
-
-      this.syncAiResponseToStore(request.currentProject?.id, aiMsg);
-
+      this.syncAiResponseToStore(request.currentProject?.id, errMsg);
       return {
-        message: aiMsg,
+        message: errMsg,
         conversationId: this.activeConversationId,
       };
-    } catch (apiErr: any) {
-      console.warn('[CoAssistantService] API Gateway returned error, routing to EZRAB Construction Copilot Core Engine:', apiErr?.message);
-
-      // Fallback to core client-side construction engine with real live project data
-      try {
-        const fullContext = buildFullAIContext(request.currentProject, request.projectRabItems || []);
-        const localResult = await defaultAiProvider.chat(
-          trimmedMessage,
-          fullContext,
-          request.onThinking
-        );
-
-        let proposal: ActionProposal | undefined = undefined;
-        if (localResult.actionProposal && !isClient) {
-          proposal = {
-            actionId: localResult.actionProposal.id,
-            toolName: localResult.actionProposal.type,
-            parameters: localResult.actionProposal.itemData || {},
-            description: localResult.actionProposal.description,
-            requiresConfirmation: true,
-          };
-        }
-
-        const fallbackMsg: CoAssistantMessage = {
-          id: `ai-core-${Date.now()}`,
-          role: 'ai',
-          // F-001: fallback lokal WAJIB terungkap ke pengguna — jawaban ini BUKAN
-          // dari model AI online, melainkan mesin lokal berbasis data proyek.
-          source: 'local-fallback',
-          text: `⚠️ **Mode lokal** — server AI tidak terjangkau. Jawaban berikut dihasilkan mesin lokal dari data proyek Anda, bukan model AI online.\n\n${localResult.content}`,
-          timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-          intent: localResult.intent,
-          wizardResponse: localResult.wizardResponse,
-          quickActionResponse: (localResult as any).quickActionResponse,
-          followUpSuggestions: (localResult as any).followUpSuggestions,
-          actionProposal: proposal,
-          table: localResult.table,
-          stats: localResult.stats,
-          isError: false,
-        };
-
-        this.syncAiResponseToStore(request.currentProject?.id, fallbackMsg);
-
-        return {
-          message: fallbackMsg,
-          conversationId: this.activeConversationId,
-        };
-      } catch (coreErr: any) {
-        const errMsg: CoAssistantMessage = {
-          id: `ai-err-${Date.now()}`,
-          role: 'ai',
-          text: coreErr?.message || 'Maaf, terjadi kendala saat menganalisis data proyek. Silakan coba kembali.',
-          timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-          isError: true,
-        };
-
-        this.syncAiResponseToStore(request.currentProject?.id, errMsg);
-
-        notificationBus.publish({
-          type: 'error',
-          title: 'Co-Assistant gagal memproses',
-          message: coreErr?.message && coreErr.message.length > 140
-            ? `${coreErr.message.slice(0, 140)}…`
-            : coreErr?.message || 'Maaf, terjadi kendala saat menganalisis data proyek. Silakan coba kembali.',
-        });
-
-        return {
-          message: errMsg,
-          conversationId: this.activeConversationId,
-        };
-      }
     }
+
+    const aiMsg: CoAssistantMessage = {
+      id: `ai-${Date.now()}`,
+      role: 'ai',
+      text: result.content,
+      timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+      intent: intent ?? undefined,
+      source: 'server',
+    };
+    this.syncAiResponseToStore(request.currentProject?.id, aiMsg);
+    return {
+      message: aiMsg,
+      conversationId: this.activeConversationId,
+    };
   }
 
   public getConversationId(): string | null {

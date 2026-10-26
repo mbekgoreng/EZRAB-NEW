@@ -555,7 +555,9 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
     setThinkingStep('Menganalisis konteks proyek...');
 
     try {
-      // Send message via coAssistantService (server first with seamless offline/mock fallback)
+      // Send message via coAssistantService — jalur server yang sama dengan
+      // Chat AI (providerClient, productId EZRAB_AI); gagal server tampil
+      // sebagai pesan error, TANPA fallback lokal diam-diam.
       const sendResult = await coAssistantService.sendMessage({
         message: text,
         currentProject,
