@@ -211,7 +211,15 @@ export class CanonicalPriceResolver {
       if (officialAhsp) {
         resolutionPath.push(`OFFICIAL_AHSP_EXACT_CODE: ${officialAhsp.code} (${officialAhsp.name})`);
         const priceComp = priceResolver2026.resolveAhspUnitPrice(officialAhsp);
-        const resolvedPrice = priceComp.hspPrice || priceComp.unitPrice;
+        // Keputusan owner 2026-10-27: jalur transfer DED → RAB memakai BIAYA
+        // LANGSUNG (priceComp.unitPrice = jumlah komponen), BUKAN total DHSP
+        // (priceComp.hspPrice / officialDhspPrice). Total DHSP sudah mengandung
+        // markup sehingga memakainya sebagai harga dasar menyebabkan markup
+        // ganda saat rekap menambahkan overhead + profit + PPN. DHSP tetap
+        // tersedia sebagai REFERENSI lewat komposisi resolver, bukan harga
+        // transfer. Bila biaya langsung null, alur jatuh ke langkah berikut
+        // (harga resource / PRICE_NOT_FOUND) — tidak pernah menebak harga.
+        const resolvedPrice = priceComp.unitPrice;
 
         if (resolvedPrice !== null && resolvedPrice > 0) {
           const effectiveUnit = officialAhsp.unit || rawUnit || 'unit';

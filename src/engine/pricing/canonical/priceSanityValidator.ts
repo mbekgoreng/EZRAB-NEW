@@ -33,6 +33,14 @@ export interface CoefficientSanityResult {
 
 interface TradePriceBenchmark {
   tradeRegex: RegExp;
+  /**
+   * Optional carve-out: names matching this pattern are NOT governed by this
+   * trade even though tradeRegex matches them. The item then falls through to
+   * the next benchmark / global bounds — it is never left unchecked.
+   * Used only where an official source proves the trade's dimension/price
+   * bounds do not fit the item class (never a blanket loosening).
+   */
+  excludeRegex?: RegExp;
   requiredDimension: string;
   minPrice: number;
   maxPrice: number;
@@ -49,9 +57,18 @@ const TRADE_BENCHMARKS: TradePriceBenchmark[] = [
     description: 'Baja Tulangan Beton (Besi Polos / Ulir)',
   },
 
-  // 2. Concrete (Beton) (m3)
+  // 2. Concrete (Beton) (m3) — BULK cast-in-place concrete only.
+  // Carve-out (bukti resmi SE DJBK No. 47/SE/Dk/2026 Lampiran V, 2026-10-27):
+  // produk beton per BUAH Divisi 9 yang namanya mengandung "beton" tetapi
+  // satuannya resmi Buah — patok (9.2.(11a) I.95 p.1957, 9.2.(13a) I.101
+  // p.1976, 9.2.(13b) I.102 p.1979), beton berpola/stamp (9.3.(27) I.242
+  // p.2350), bangku/kursi beton (9.3.(32c) I.250 p.2371). Aturan VOLUME +
+  // lantai Rp 400 ribu untuk beton curah tidak berlaku bagi produk satuan
+  // ini; mereka tetap diperiksa batas global (langkah 3). Tanpa carve-out,
+  // kelimanya ditolak INVALID secara keliru (I.95: Buah vs VOLUME).
   {
     tradeRegex: /\b(beton|cor lantai|cor balok|cor kolom|cor sloof|ready mix|site mix)\b/i,
+    excludeRegex: /\b(patok|bangku|kursi|berpola|stamp)\b/i,
     requiredDimension: 'VOLUME',
     minPrice: 400_000,
     maxPrice: 3_500_000,
@@ -215,7 +232,7 @@ export class PriceSanityValidator {
     // 2. Test against trade-specific engineering bounds
     const lowerName = itemName.toLowerCase();
     for (const benchmark of TRADE_BENCHMARKS) {
-      if (benchmark.tradeRegex.test(lowerName)) {
+      if (benchmark.tradeRegex.test(lowerName) && !(benchmark.excludeRegex?.test(lowerName))) {
         // A. Unit dimension check: If trade specifies a dimension and unit does not match
         if (unitDim !== 'UNKNOWN' && unitDim !== benchmark.requiredDimension) {
           // If the item specifically has a linear meter unit for plint or similar, handle gracefully
