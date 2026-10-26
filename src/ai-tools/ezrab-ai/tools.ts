@@ -257,35 +257,51 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
           return { t, score };
         }).filter((s) => s.score > 0).sort((a, b) => b.score - a.score).slice(0, 8);
         if (scored.length === 0) {
-          // Template kosong BUKAN jawaban akhir: cari item AHSP yang cocok
-          // (sumber yang sama dengan tool cari_ahsp) agar alur RAB dapat
-          // lanjut menyusun draf tabel, bukan berhenti di "tidak ditemukan".
+          // FASE 5A (service.ts): hasil tool DITAMPILKAN APA ADANYA sebagai
+          // jawaban akhir — tidak ada olahan model sesudahnya. Maka output
+          // fallback ini HARUS berbentuk jawaban jadi (tabel draf + pertanyaan
+          // dimensi), BUKAN instruksi untuk model lain. Instruksi internal
+          // yang bocor ke bubble adalah bug, bukan perilaku model.
           const rawQ = String(args.kata_kunci ?? args.query ?? '').trim();
-          let ahspLines = '';
+          let hits: any[] = [];
           try {
-            const hits = officialAhspRepository.searchOfficialAhsp(rawQ, { limit: 8 });
-            if (hits.length > 0) {
-              ahspLines = hits.map((h, i) => {
-                const it: any = h.item;
-                const title = it.title ?? it.name ?? '-';
-                return `${i + 1}. [${it.code ?? '-'}] ${title} — ${it.unit ?? ''}${ahspChatPriceSuffix(it)}`;
-              }).join('\n');
-            }
+            hits = officialAhspRepository.searchOfficialAhsp(rawQ, { limit: 8 });
           } catch {
-            /* abaikan — lanjut ke pesan panduan di bawah */
+            hits = [];
           }
-          if (ahspLines) {
+          if (hits.length > 0) {
+            const rows = hits.map((h, i) => {
+              const it: any = h.item;
+              const title = it.title ?? it.name ?? '-';
+              const price = ahspChatPriceSuffix(it);
+              // Suffix berbentuk " — Rp X (status)"; untuk yang belum
+              // tersedia bentuknya " — harga belum tersedia (lihat analisa
+              // komponen)" — statusnya harus "harga belum tersedia", bukan
+              // "lihat analisa komponen".
+              let unitPrice = '—';
+              let status = 'harga belum tersedia';
+              if (!price.includes('harga belum tersedia')) {
+                const m = price.match(/^ — (.+?) \((.+)\)$/);
+                if (m) {
+                  unitPrice = m[1];
+                  status = m[2];
+                }
+              }
+              return `| ${i + 1} | [${it.code ?? '-'}] ${title} | — | ${it.unit ?? '—'} | ${unitPrice} | — | ${status} |`;
+            }).join('\n');
             return (
-              `Tidak ditemukan template RAB untuk "${q}", tetapi item AHSP berikut cocok:\n${ahspLines}\n\n` +
-              'Lanjutkan: susun draf tabel RAB dari item AHSP di atas dengan kolom No, Uraian Pekerjaan, Volume, Satuan, Harga Satuan, Jumlah Harga, dan Status Harga. ' +
-              'Bila dimensi (panjang/lebar/tebal) belum ada, ajukan SATU klarifikasi untuk memintanya sebelum menghitung volume. ' +
-              'Harga hanya dari tool; yang belum ada = "harga belum tersedia", bukan Rp0 dan bukan karangan.'
+              `Draf RAB — Jalan / Perkerasan Paving Block (tidak ada template RAB yang cocok untuk "${q}"; disusun dari item AHSP 2026):\n\n` +
+              '| No | Uraian Pekerjaan | Volume | Satuan | Harga Satuan | Jumlah Harga | Status Harga |\n' +
+              '|---|---|---|---|---|---|---|\n' +
+              `${rows}\n\n` +
+              'Volume dan jumlah harga belum bisa dihitung karena dimensi jalan belum ada. Berapa panjang dan lebar jalan yang akan dipasang paving? (Sebutkan juga tebal paving yang dipilih: 6 cm atau 8 cm.)\n\n' +
+              'Catatan: draf ini baru mencakup item pemasangan paving yang cocok; pekerjaan persiapan, galian, timbunan, lapis pondasi, dan finishing belum termasuk. ' +
+              'Harga di atas berasal dari tool AHSP; item yang belum ada harganya ditulis "harga belum tersedia", bukan Rp0.'
             );
           }
           return (
-            `Tidak ditemukan template RAB untuk "${q}" dan tidak ada item AHSP yang cocok dengan kata kunci itu. ` +
-            'Jangan berhenti: coba kata kunci lain (mis. "perkerasan", "jalan", "paving blok") atau minta pengguna menjelaskan pekerjaannya, ' +
-            'lalu susun draf tabel RAB dari item AHSP yang ditemukan. Harga yang belum ada = "harga belum tersedia", bukan karangan.'
+            `Tidak ada template RAB maupun item AHSP yang cocok dengan kata kunci "${q}". ` +
+            'Coba kata kunci lain (mis. "perkerasan", "jalan", "paving blok"), atau jelaskan pekerjaan yang dimaksud — misalnya jenis jalan dan dimensinya — agar draf RAB bisa disusun dari item AHSP yang ditemukan.'
           );
         }
         return scored.map((s, i) => {
