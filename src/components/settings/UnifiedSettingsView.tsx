@@ -67,6 +67,16 @@ import { useI18n, LANG_OPTIONS, type Lang } from '../../i18n';
 import { useRole } from '../../auth/RoleContext';
 import { ONBOARDING_OPEN_EVENT } from '../onboarding/OnboardingTour';
 import { TutorialCenter } from '../onboarding/tutorials/TutorialCenter';
+import { useCurrency } from '../../context/CurrencyContext';
+import {
+  CURRENCY_DEFINITIONS,
+  SUPPORTED_CURRENCIES,
+  evaluateRate,
+  formatCurrency,
+  formatRateLine,
+  formatRateTimestamp,
+  type ForeignCurrencyCode,
+} from '../../services/currencyService';
 
 /** Versi aplikasi — tampil di section "Informasi Sistem". Sinkron dengan package.json. */
 const APP_VERSION = '2.0.0';
@@ -204,7 +214,14 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   const [profileCompany, setProfileCompany] = useState(currentUser.company || '');
 
   const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
-  const [systemCurrency, setSystemCurrency] = useState('IDR');
+  // Mata uang TAMPIL (preferensi display-only, pola ThemeContext): nilai
+  // sumber resmi tetap IDR; state lokal lama systemCurrency diganti
+  // context agar pilihan berlaku di seluruh aplikasi (RAB, ringkasan).
+  const { displayCurrency, setDisplayCurrency, rates, refreshRates, setManualRate, clearManualRate } = useCurrency();
+  const [manualRateInput, setManualRateInput] = useState('');
+  const [manualRateError, setManualRateError] = useState<string | null>(null);
+  const [rateRefreshing, setRateRefreshing] = useState(false);
+  const [rateError, setRateError] = useState<string | null>(null);
 
   const [notifProject, setNotifProject] = useState(true);
   const [notifRab, setNotifRab] = useState(true);
@@ -1185,15 +1202,114 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Mata Uang Default</label>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Mata Uang Tampil (Referensi)</label>
                     <select
-                      value={systemCurrency}
-                      onChange={(e) => setSystemCurrency(e.target.value)}
+                      value={displayCurrency}
+                      onChange={(e) => setDisplayCurrency(e.target.value as typeof displayCurrency)}
                       style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 10px', marginTop: '6px', background: 'var(--ez-color-surface)' }}
                     >
-                      <option value="IDR">Rupiah Indonesia (IDR - Rp)</option>
-                      <option value="USD">US Dollar (USD - $)</option>
+                      {SUPPORTED_CURRENCIES.map((code) => {
+                        const def = CURRENCY_DEFINITIONS[code];
+                        return (
+                          <option key={code} value={code}>
+                            {def.name} ({def.code} - {def.symbol})
+                          </option>
+                        );
+                      })}
                     </select>
+                    <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', marginTop: '6px' }}>
+                      Berlaku langsung untuk tampilan. Nilai sumber resmi tetap dalam IDR — mengubah mata uang tidak mengubah data proyek, harga AHSP, atau laporan tersimpan.
+                    </div>
+                    {displayCurrency !== 'IDR' && (() => {
+                      const code = displayCurrency as ForeignCurrencyCode;
+                      const rate = rates[code];
+                      const evaluation = evaluateRate(rate);
+                      return (
+                        <div style={{ marginTop: '12px', border: '1px solid var(--ez-color-border-strong)', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
+                            Kurs {code}: {rate ? formatRateLine(code, rate.idrPerUnit) : '—'}
+                          </div>
+                          <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
+                            Sumber: {rate ? `${rate.source}${rate.manual ? ' (manual)' : ''}` : '—'} · Diperbarui: {rate ? formatRateTimestamp(rate.retrievedAtMs) : '—'}
+                          </div>
+                          <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
+                            Status: {evaluation.state === 'available' ? 'Kurs terkini' : evaluation.state === 'stale' ? 'Kurs lama (> 24 jam) — masih dapat dipakai' : evaluation.state === 'expired' ? 'Kurs kedaluwarsa (> 7 hari) — tidak dapat dipakai' : evaluation.state === 'invalid' ? 'Kurs tidak valid' : 'Kurs belum tersedia'}
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              disabled={rateRefreshing}
+                              onClick={async () => {
+                                setRateRefreshing(true);
+                                setRateError(null);
+                                const result = await refreshRates();
+                                setRateRefreshing(false);
+                                if (result.ok) {
+                                  setToastMessage('Kurs diperbarui dari open.er-api.com (kurs manual dipertahankan).');
+                                  setSavedToast(true);
+                                } else {
+                                  setRateError(result.error || 'Gagal memperbarui kurs. Kurs lama dipertahankan.');
+                                }
+                              }}
+                              style={{ height: '32px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '12px', fontWeight: 600, cursor: rateRefreshing ? 'wait' : 'pointer' }}
+                            >
+                              {rateRefreshing ? 'Memperbarui…' : 'Perbarui kurs'}
+                            </button>
+                            {rate?.manual && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  clearManualRate(code);
+                                  setToastMessage('Kurs manual dihapus. Gunakan Perbarui kurs untuk kurs provider.');
+                                  setSavedToast(true);
+                                }}
+                                style={{ height: '32px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                              >
+                                Hapus kurs manual
+                              </button>
+                            )}
+                          </div>
+                          {rateError && (
+                            <div style={{ fontSize: '11.5px', color: '#DC2626' }}>{rateError}</div>
+                          )}
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={manualRateInput}
+                              onChange={(e) => setManualRateInput(e.target.value)}
+                              placeholder={`Kurs manual (Rp per 1 ${code})`}
+                              style={{ flex: '1 1 160px', height: '32px', borderRadius: '8px', border: '1px solid var(--ez-color-border-strong)', color: 'var(--ez-color-text-primary)', fontSize: '12px', padding: '0 10px', background: 'var(--ez-color-surface)' }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const parsed = parseFloat(manualRateInput);
+                                const result = setManualRate(code, parsed);
+                                if (!result.ok) {
+                                  setManualRateError(result.error || 'Kurs manual tidak valid.');
+                                  return;
+                                }
+                                setManualRateError(null);
+                                setManualRateInput('');
+                                setToastMessage(`Kurs manual ${code} disimpan (${formatCurrency(parsed, 'IDR')} per 1 ${code}).`);
+                                setSavedToast(true);
+                              }}
+                              style={{ height: '32px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                            >
+                              Simpan kurs manual
+                            </button>
+                          </div>
+                          {manualRateError && (
+                            <div style={{ fontSize: '11.5px', color: '#DC2626' }}>{manualRateError}</div>
+                          )}
+                          <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)' }}>
+                            Nilai konversi di aplikasi hanya estimasi referensi — bukan harga resmi AHSP. Ekspor Excel/PDF tetap dalam IDR resmi.
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

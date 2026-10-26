@@ -55,6 +55,7 @@ import { ExportProjectPackageModal } from '../export/ExportProjectPackageModal';
 import { ProjectContextHeader } from '../estimator/ProjectContextHeader';
 import { EstimatorNavigation, EstimatorTabType } from '../estimator/EstimatorNavigation';
 import { EstimatorMetrics } from '../estimator/EstimatorMetrics';
+import { ConvertedReference } from '../currency/ConvertedReference';
 import { EstimatorToolbar } from '../estimator/EstimatorToolbar';
 import { EstimatorSpreadsheetTable, GroupedWbsCategory } from '../estimator/EstimatorSpreadsheetTable';
 import { SpreadsheetFooter } from '../estimator/SpreadsheetFooter';
@@ -915,6 +916,10 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
               pendingItemsCount={0}
               unpricedCount={unpricedItemsCount}
             />
+
+            {/* Referensi konversi tampil (display-only): total resmi tetap
+                IDR; nilai asing di bawah ini hanya estimasi referensi. */}
+            <ConvertedReference idrAmount={totalRabNominal} unpricedCount={unpricedItemsCount} />
 
             {/* 3B. SPREADSHEET TOOLBAR */}
             <EstimatorToolbar

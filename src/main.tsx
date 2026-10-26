@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ThemeProvider } from './context/ThemeContext';
+import { CurrencyProvider } from './context/CurrencyContext';
 import { I18nProvider } from './i18n';
 import { RoleProvider } from './auth/RoleContext';
 import { AuthProvider } from './auth/AuthContext';
@@ -17,6 +18,7 @@ import './blog/blog.css';
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider>
+      <CurrencyProvider>
       <I18nProvider>
         <RoleProvider>
           <AuthProvider>
@@ -24,6 +26,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           </AuthProvider>
         </RoleProvider>
       </I18nProvider>
+      </CurrencyProvider>
     </ThemeProvider>
   </React.StrictMode>
 );
