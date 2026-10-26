@@ -14,6 +14,8 @@
  * - DED_AI_DETAIL                             -> 'advanced'
  * - DED_AI_FAST, DOKUMEN_AI, lainnya          -> 'fast'
  *     Gemini native -> River DeepSeek V4.1 -> AtmoRouter DeepSeek flash
+ *     -> ZyRouter + ekor chat (perbaikan 2026-10-27: fast sebelumnya mati
+ *     bila Gemini native gagal dan Crown/River/Atmo tak punya key)
  */
 import { handleAiRequest } from '../../_lib/aiGateway.js';
 

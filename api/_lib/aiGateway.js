@@ -121,6 +121,16 @@ function envKeys(prefix, count) {
     const k = String(process.env[prefix + '_' + i] || '').trim();
     if (k) out.push(k);
   }
+  // Fallback nama polos (perbaikan env 2026-10-27): bila owner memasang key
+  // tanpa nomor (mis. GEMINI_API_KEY saja, bukan GEMINI_API_KEY_1), gateway
+  // lama DIAM-DIAM mengabaikannya — rantai kehilangan kaki itu tanpa pesan
+  // apa pun, dan kegagalan tampak seperti "server AI gangguan". Key polos
+  // dipakai TERAKHIR, sesudah semua key bernomor; duplikat nilai dilewati.
+  // (Atmo/Crown/ZyRouter sudah membaca nama polos secara eksplisit di
+  // tempatnya masing-masing; fallback ini untuk GEMINI/ATRIA/DAHL/RIVER/
+  // GEMINI_OAI yang sebelumnya hanya bernomor.)
+  const bare = String(process.env[prefix] || '').trim();
+  if (bare && !out.includes(bare)) out.push(bare);
   return out;
 }
 
@@ -375,12 +385,15 @@ export async function executeAI(o, onAttempt) {
   const gok = envKeys('GEMINI_OAI_KEY', 12);
   const rk = envKeys('RIVER_API_KEY', 10);
   // AtmoRouter: satu key utama (ATMO_API_KEY) + opsional ATMO_API_KEY_1..4.
-  const atmoKeys = [String(process.env.ATMO_API_KEY || '').trim(), ...envKeys('ATMO_API_KEY', 4)].filter(Boolean);
+  // Set-dedupe WAJIB: envKeys kini ikut mengembalikan nama polos, jadi
+  // tanpa dedupe key polos muncul 2× dan anggaran percobaan per provider
+  // (maks 2 sesudah gagal) memakan model fallback-nya.
+  const atmoKeys = [...new Set([String(process.env.ATMO_API_KEY || '').trim(), ...envKeys('ATMO_API_KEY', 4)].filter(Boolean))];
   // Crown: satu key utama (CROWN_API_KEY) + opsional CROWN_API_KEY_1..4.
   // Key TIDAK PERNAH ditulis di kode — diisi owner di env Vercel (key BARU
   // hasil rotasi; key yang sempat tampil di chat 2026-10-25 tidak dipakai).
   // Tanpa key ini, rantai Crown kosong dan perilaku kembali seperti semula.
-  const crownKeys = [String(process.env.CROWN_API_KEY || '').trim(), ...envKeys('CROWN_API_KEY', 4)].filter(Boolean);
+  const crownKeys = [...new Set([String(process.env.CROWN_API_KEY || '').trim(), ...envKeys('CROWN_API_KEY', 4)].filter(Boolean))];
 
   // Setiap attempt ditandai provider+model sejak awal agar loop dapat
   // menerapkan anggaran percobaan per provider dan log tetap akurat.
@@ -442,11 +455,23 @@ export async function executeAI(o, onAttempt) {
     // Fast (urutan user 2026-10-25): Crown MiniMax M2.7 -> Crown
     // DeepSeek V4 Flash -> Gemini native -> River DeepSeek V4.1 -> AtmoRouter
     // atmo/deepseek-v4.1-flash -> ali/deepseek-v4.1-flash.
+    // Ekor cadangan (perbaikan 2026-10-27, DED_AI_FAST MODEL_ERROR di
+    // Preview): urutan utama TIDAK diubah, tapi sesudah Atmo ditambahkan
+    // ekor yang sama dengan rantai chat (ZyRouter -> Dahl -> River ->
+    // Gemini-OAI -> Atria). Sebelumnya fast MATI TOTAL bila Gemini native
+    // gagal sementara Crown/River/Atmo tak punya key di Vercel — padahal
+    // chat selamat lewat ZyRouter. DOKUMEN_AI ikut memakai rantai ini.
     attempts.push(...crownTextAttempts);
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
     rk.forEach((k) => attempts.push(riverVisionCall(k)));
     atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_CHAT_MODEL)));
     atmoKeys.forEach((k) => attempts.push(atmoCall(k, ATMO_CHAT_FALLBACK_MODEL)));
+    if (zk) attempts.push(zyrouterCall());
+    dk.forEach((k) => attempts.push(dahlCall(k)));
+    rk.forEach((k) => attempts.push(riverVisionCall(k)));
+    rk.forEach((k) => attempts.push(riverTextCall(k)));
+    gok.forEach((k) => attempts.push(geminiOaiCall(k)));
+    if (ak.length > 0) attempts.push(atriaCall(ak[0]));
   }
 
   if (attempts.length === 0) {

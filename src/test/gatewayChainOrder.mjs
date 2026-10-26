@@ -11,6 +11,8 @@
  *  - fast     : Crown MiniMax M2.7 -> Crown DeepSeek V4 Flash -> Gemini native
  *               -> River vision (DeepSeek V4.1)
  *               -> Atmo atmo/deepseek-v4.1-flash -> Atmo ali/deepseek-v4.1-flash
+ *               -> ZyRouter -> ekor chat (perbaikan 2026-10-27: fast mati
+ *               total bila Gemini native gagal; kini selamat lewat ZyRouter)
  *  - vision   : TIDAK BERUBAH (Crown tidak support image_url):
  *               Gemini native -> River vision -> Atmo ag/gemini-3.8-flash-high
  *               -> ZyRouter
@@ -150,18 +152,37 @@ setAll('fail'); behavior.atmo = 'ok';
   });
 }
 
-// --- 6. Fast (baru): Crown -> Gemini -> River vision -> Atmo atmo -> Atmo ali
+// --- 6. Fast: Crown -> Gemini -> River vision -> Atmo atmo -> Atmo ali
+//      -> ZyRouter -> ekor chat (perbaikan 2026-10-27)
 setAll('fail');
 {
   const r = await executeAI({ message: 'halo', mode: 'fast' });
-  check('fast: urutan baru', () => assert.deepEqual(seq(r), [
+  check('fast: urutan baru + ekor', () => assert.deepEqual(seq(r), [
     'crown:MiniMaxAI/MiniMax-M2.7',
     'crown:deepseek-ai/DeepSeek-V4-Flash-0731',
     'gemini:gemini-3.5-flash-lite',
     'river-vision:deepseek-ai/DeepSeek-V4.1-Flash',
     'atmorouter:atmo/deepseek-v4.1-flash',
     'atmorouter:ali/deepseek-v4.1-flash',
+    'zyrouter:geminiflash-3.8',
+    'dahl:deepseek-ai/DeepSeek-V4-Flash-0731',
+    'river-vision:deepseek-ai/DeepSeek-V4.1-Flash',
+    'river-text:nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4',
+    'gemini-oai:gemini-3.8-flash',
+    'atria:Atria-Dawn-Preview',
   ]));
+}
+
+// --- 6b. Fast fallback bekerja: Gemini (+ Crown/River/Atmo) gagal,
+//       ZyRouter menjawab — inilah kasus DED_AI_FAST MODEL_ERROR di Preview.
+setAll('fail'); behavior.zyrouter = 'ok';
+{
+  const r = await executeAI({ message: 'halo', mode: 'fast' });
+  check('fast fallback: ok via zyrouter', () => {
+    assert.equal(r.ok, true);
+    assert.equal(r.provider, 'zyrouter');
+    assert.equal(r.model, 'geminiflash-3.8');
+  });
 }
 
 // --- 7. Vision (TIDAK BERUBAH): Crown tidak boleh muncul di rantai vision
