@@ -782,8 +782,11 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
     requiredInputs: ['buildingWidth', 'buildingLength'],
     ahspCandidates: [
       {
-        ahspCode: 'A.4.4.2.4',
-        name: 'Pemasangan 1 m2 plesteran 1 SP : 4 PP tebal 15 mm',
+        // KOREKSI KODE 2026-10-26: A.4.4.2.4 (legacy) tidak ada di katalog
+        // AHSP 2026 maupun peta benchmark mesin → selalu "Belum ada harga".
+        // Padanan resmi: 3.7.4 (plesteran 1SP:4PP tebal 15 mm, OFFICIAL).
+        ahspCode: '3.7.4',
+        name: 'Pemasangan 1 m2 plesteran 1SP : 4PP tebal 15 mm',
         source: 'CIPTA_KARYA_2026',
         unit: 'm²',
         matchScore: 98,
@@ -791,7 +794,7 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
         isRecommended: true,
       },
     ],
-    defaultAhspCode: 'A.4.4.2.4',
+    defaultAhspCode: '3.7.4',
     quantityRule: (params, assumptions) => {
       const w = Number(params.buildingWidth || 6);
       const l = Number(params.buildingLength || 6);
@@ -1011,8 +1014,13 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
     requiredInputs: ['bathroomCount'],
     ahspCandidates: [
       {
-        ahspCode: 'A.4.4.3.31',
-        name: 'Pemasangan 1 m2 lantai keramik ukuran 20 cm x 20 cm',
+        // KOREKSI KODE 2026-10-26: A.4.4.3.31 (legacy) tidak ada di katalog
+        // AHSP 2026 maupun peta benchmark mesin. Padanan resmi: 3.9.8.9
+        // (lantai keramik 20x20 Unpolished = finishing matte untuk lantai
+        // basah; produk tekstur anti-slip bersertifikat khusus akan berbeda
+        // harga dan perlu diputuskan owner bila diminta).
+        ahspCode: '3.9.8.9',
+        name: 'Pemasangan 1 m2 lantai keramik uk. 20x20 cm (1SP : 2PP) Unpolished',
         source: 'CIPTA_KARYA_2026',
         unit: 'm²',
         matchScore: 98,
@@ -1020,7 +1028,7 @@ export const HOUSE_TYPE_36_WORK_ITEMS: TemplateWorkItem[] = [
         isRecommended: true,
       },
     ],
-    defaultAhspCode: 'A.4.4.3.31',
+    defaultAhspCode: '3.9.8.9',
     quantityRule: (params, _assumptions, spaces) => {
       const count = Number(params.bathroomCount || 1);
       // REMEDIASI WS-1 (S6a): luas per kamar mandi dari data ruang (spaces)

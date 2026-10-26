@@ -27,9 +27,12 @@ export const CONCRETE_ROAD_WORK_ITEMS: TemplateWorkItem[] = [
     unit: 'm²',
     requiredInputs: ['roadLength', 'roadWidth'],
     ahspCandidates: [
-      { ahspCode: 'BM.3.4.1.1', name: 'Pembersihan dan pengupasan lahan', source: 'BINA_MARGA_2026', unit: 'm²', matchScore: 98, matchRationale: 'Pembersihan trase jalan.', isRecommended: true },
+      // KOREKSI KODE 2026-10-26: skema BM.* tidak ada di katalog Bina Marga
+      // 2026 (yang memakai kode huruf + standardCode). Padanan resmi C.37
+      // (standardCode 3.4.(1), VERIFIED).
+      { ahspCode: 'C.37', name: 'Pembersihan dan Pengupasan Lahan', source: 'BINA_MARGA_2026', unit: 'm²', matchScore: 98, matchRationale: 'Pembersihan trase jalan.', isRecommended: true },
     ],
-    defaultAhspCode: 'BM.3.4.1.1',
+    defaultAhspCode: 'C.37',
     quantityRule: (params) => {
       const l = Number(params.roadLength || 500);
       const w = Number(params.roadWidth || 6);
@@ -59,9 +62,11 @@ export const CONCRETE_ROAD_WORK_ITEMS: TemplateWorkItem[] = [
     unit: 'm³',
     requiredInputs: ['roadLength', 'roadWidth'],
     ahspCandidates: [
-      { ahspCode: 'BM.5.1.1.1', name: 'Lapis Pondasi Agregat Kelas A', source: 'BINA_MARGA_2026', unit: 'm³', matchScore: 99, matchRationale: 'Lapis pondasi bawah perkerasan beton.', isRecommended: true },
+      // KOREKSI KODE 2026-10-26: padanan resmi E.1 (standardCode 5.1.(1a),
+      // Lapis Fondasi Agregat Kelas A, VERIFIED).
+      { ahspCode: 'E.1', name: 'Lapis Fondasi Agregat Kelas A', source: 'BINA_MARGA_2026', unit: 'm³', matchScore: 99, matchRationale: 'Lapis pondasi bawah perkerasan beton.', isRecommended: true },
     ],
-    defaultAhspCode: 'BM.5.1.1.1',
+    defaultAhspCode: 'E.1',
     quantityRule: (params, assumptions) => {
       const l = Number(params.roadLength || 500);
       const w = Number(params.roadWidth || 6);
@@ -90,9 +95,11 @@ export const CONCRETE_ROAD_WORK_ITEMS: TemplateWorkItem[] = [
     unit: 'm³',
     requiredInputs: ['roadLength', 'roadWidth', 'slabThickness'],
     ahspCandidates: [
-      { ahspCode: 'BM.5.3.1.1', name: 'Perkerasan Beton Semen (Rigid Pavement)', source: 'BINA_MARGA_2026', unit: 'm³', matchScore: 99, matchRationale: 'Pelat beton jalan rigid mutu tinggi.', isRecommended: true },
+      // KOREKSI KODE 2026-10-26: padanan resmi E.11 (standardCode 5.3.(1a1),
+      // Perkerasan Beton Semen fs = 4,5 MPa, VERIFIED).
+      { ahspCode: 'E.11', name: 'Perkerasan Beton Semen, fs = 4,5 MPa', source: 'BINA_MARGA_2026', unit: 'm³', matchScore: 99, matchRationale: 'Pelat beton jalan rigid mutu tinggi.', isRecommended: true },
     ],
-    defaultAhspCode: 'BM.5.3.1.1',
+    defaultAhspCode: 'E.11',
     quantityRule: (params) => {
       const l = Number(params.roadLength || 500);
       const w = Number(params.roadWidth || 6);

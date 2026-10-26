@@ -26,6 +26,7 @@ import { NationalAHSPItem } from '../../data/nationalCostDatabase/types';
 import { WORK_CATEGORIES } from '../../data/mockData';
 import { masterBuildingTemplateRegistry } from '../../data/buildingTemplates/masterTemplateRegistry';
 import { MasterBuildingTemplate, TemplateWorkItem } from '../../data/buildingTemplates/schema/types';
+import { resolveTemplatePickerPricing } from './templatePickerPricing';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
 import { honestVolume } from '../../engine/honestVolume';
@@ -177,6 +178,14 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
   const currentTemplate = useMemo(() => {
     return allTemplates.find((t: MasterBuildingTemplate) => t.id === selectedTemplateId) || allTemplates[0];
   }, [allTemplates, selectedTemplateId]);
+
+  // Harga + volume tab template dari mesin parametrik (bukan estimasi baked
+  // yang kosong). Dihitung sekali per template terpilih, dipakai tampil +
+  // simpan agar keduanya konsisten. Lihat templatePickerPricing.ts.
+  const templatePricing = useMemo(
+    () => resolveTemplatePickerPricing(currentTemplate),
+    [currentTemplate],
+  );
 
   // Duplicate State
   const [duplicateSearch, setDuplicateSearch] = useState<string>('');
@@ -530,25 +539,29 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga. Jika volume ti
       const itemsToInsert: Omit<RabItem, 'id'>[] = [];
       (currentTemplate.workItems || []).forEach((item: TemplateWorkItem, idx: number) => {
         if (selectedTemplateItemIds.has(item.stableId)) {
-          // Phase 2J P1 fix: no fabricated fallback price. Null stays null.
-          const estPrice = item.ahspCandidates?.[0]?.unitPriceEstimate ?? null;
-          const defaultVol = 1;
-          const amount = estPrice == null ? null : Math.round(defaultVol * estPrice);
+          // Harga + volume dari mesin parametrik (lihat templatePickerPricing).
+          // Phase 2J P1 tetap berlaku: null stays null, tidak dikarang.
+          // Benchmark → PRICE_ESTIMATED + NEEDS_VERIFICATION (bukan VERIFIED);
+          // volume dari mesin = CALCULATOR (bukan lagi 'AHSP 2026' palsu).
+          const pricing = templatePricing.get(item.stableId);
+          const estPrice = pricing?.unitPrice ?? null;
+          const vol = pricing?.volume ?? 1;
+          const amount = estPrice == null ? null : Math.round(vol * estPrice);
           itemsToInsert.push({
             no: existingItems.length + itemsToInsert.length + 1,
             sectionName: targetCategory,
             category: targetCategory,
             code: item.wbsCode || `TPL.${(idx + 1).toString().padStart(2, '0')}`,
             description: item.name,
-            volume: defaultVol,
+            volume: vol,
             unit: item.unit || 'm²',
             unitPrice: estPrice,
             amount,
             totalPrice: amount,
-            volumeSource: 'AHSP 2026' as any,
+            volumeSource: 'CALCULATOR',
             ahspCode: item.defaultAhspCode || '',
-            verificationStatus: 'VERIFIED',
-            priceStatus: estPrice == null ? 'PRICE_UNRESOLVED' : 'PRICE_RESOLVED',
+            verificationStatus: 'NEEDS_VERIFICATION',
+            priceStatus: pricing?.priceStatus ?? (estPrice == null ? 'PRICE_UNRESOLVED' : 'PRICE_RESOLVED'),
           });
         }
       });
@@ -1865,6 +1878,11 @@ value={manualUnitPriceRaw}
                 </div>
               </div>
 
+              <div style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', lineHeight: 1.45 }}>
+                Volume dihitung dari parameter default template (mis. Tipe 36 = 6×6 m) — sesuaikan dengan proyek Anda di spreadsheet.
+                Harga bertanda (est.) adalah benchmark, bukan harga resmi AHSP 2026; item tanpa harga tetap "Belum ada harga", bukan karangan.
+              </div>
+
               {/* Template Items List */}
               <div style={{ border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', maxHeight: '360px', overflowY: 'auto' }}>
                 {(!currentTemplate?.workItems || currentTemplate.workItems.length === 0) ? (
@@ -1874,7 +1892,9 @@ value={manualUnitPriceRaw}
                 ) : (
                   currentTemplate.workItems.map((item: TemplateWorkItem, idx: number) => {
                     const isChecked = selectedTemplateItemIds.has(item.stableId);
-                    const estPrice = item.ahspCandidates?.[0]?.unitPriceEstimate ?? null;
+                    const pricing = templatePricing.get(item.stableId);
+                    const estPrice = pricing?.unitPrice ?? null;
+                    const dispVol = pricing?.volume ?? 1;
                     return (
                       <div
                         key={item.stableId + idx}
@@ -1907,9 +1927,9 @@ value={manualUnitPriceRaw}
                           {item.wbsCode || 'WBS.' + (idx + 1)}
                         </div>
 <div style={{ flex: 1, fontWeight: 550, color: '#334155' }}>{item.name}</div>
-                        <div style={{ color: '#64748B', width: '70px' }}>1 {item.unit}</div>
+                        <div style={{ color: '#64748B', width: '70px' }}>{dispVol} {item.unit}</div>
                         <div style={{ fontWeight: 700, color: '#0F172A', width: '110px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                          {estPrice == null ? 'Belum ada harga' : formatCurrencyIDR(estPrice)}
+                          {estPrice == null ? 'Belum ada harga' : formatCurrencyIDR(estPrice) + (pricing?.priceKind === 'BENCHMARK' ? ' (est.)' : '')}
                         </div>
                       </div>
                     );
