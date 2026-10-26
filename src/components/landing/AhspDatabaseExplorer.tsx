@@ -24,7 +24,7 @@ export const AhspDatabaseExplorer: React.FC = () => {
         );
       }
       return true;
-    }).slice(0, 50);
+    });
   }, [searchTerm, selectedDomain]);
 
   const selectedItemComposition = useMemo(() => {
@@ -201,8 +201,12 @@ export const AhspDatabaseExplorer: React.FC = () => {
               />
             </div>
 
+            <div style={{ fontSize: '12.5px', color: 'var(--ezrab-text-muted)' }}>
+              Menampilkan {Math.min(50, filteredItems.length)} dari {filteredItems.length} item
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto' }}>
-              {filteredItems.map((item) => (
+              {filteredItems.slice(0, 50).map((item) => (
                 <div
                   key={item.id}
                   onClick={() => setSelectedItem(item)}

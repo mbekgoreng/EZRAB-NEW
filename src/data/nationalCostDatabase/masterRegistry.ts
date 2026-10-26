@@ -65,6 +65,7 @@ function mapBinaMargaToNational(item: import('./binaMarga2026Master.generated').
     id: `BM2026-${item.code}`,
     code: item.code,
     codeNormalized: item.codeNormalized,
+    standardCode: item.standardCode,
     name: item.name,
     unit: item.unit,
     unitRaw: item.unit,

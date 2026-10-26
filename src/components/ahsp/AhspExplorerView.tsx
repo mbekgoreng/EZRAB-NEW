@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Database,
   Search,
@@ -22,7 +22,6 @@ import {
   HardHat,
   Compass,
   ArrowUpDown,
-  Download,
   Copy,
   ExternalLink,
   FileText,
@@ -39,12 +38,39 @@ import { OFFICIAL_BM_2026_DHSP_MAP } from '../../data/nationalCostDatabase/offic
 import { CANONICAL_RESOURCE_INDEX } from '../../data/priceDatabase2026/resourceIndex.generated';
 import { getAhspDirectPrice, canFinalizeAhsp, ahspCompletenessNote } from '../../data/priceDatabase2026/ahspDisplayPolicy';
 import { applyMarketOverlay, type AugmentedComponent } from '../../engine/pricing/market/ahspMarketOverlay';
+import { marketReviewStore } from '../../engine/pricing/market/reviewStore';
+
+/**
+ * Resolusi harga untuk kartu/filter/urut (F-04): SAMA dengan modal detail —
+ * overlay harga pasar terverifikasi diterapkan, sehingga badge kartu dan filter
+ * "Belum Ada Harga" konsisten dengan modal setelah verifikasi.
+ * Jalur cepat: bila tidak ada referensi MARKET_VERIFIED sama sekali, overlay
+ * adalah identitas → dilewati agar daftar 5.732 item tidak membayar biaya
+ * overlay per render.
+ */
+function resolveWithMarket(item: NationalAHSPItem) {
+  const comp = priceResolver2026.resolveAhspUnitPrice(item);
+  try {
+    if (marketReviewStore.list('MARKET_VERIFIED').length === 0) return comp;
+  } catch {
+    return comp;
+  }
+  return applyMarketOverlay(comp);
+}
 import { MarketReferencePanel } from './MarketReferencePanel';
 import type { AhspUnitPriceComposition } from '../../data/priceDatabase2026/types';
+import { navigateTo, type AhspRouteParams } from '../../routing/routes';
 
 interface AhspExplorerViewProps {
-  onAddAhspToRab?: (ahsp: NationalAHSPItem, volume: number) => void;
+  /** Parameter state dari URL /app/ahsp (F-05). Dipakai sebagai state awal dan disinkronkan saat back/forward. */
+  routeParams?: AhspRouteParams;
+  onAddAhspToRab?: (ahsp: NationalAHSPItem, volume: number) => boolean;
 }
+
+/** Domain AHSP yang sah sebagai parameter URL (selain itu → 'ALL'). */
+const AHSP_ROUTE_DOMAINS: string[] = ['SMKK', 'SUMBER_DAYA_AIR', 'BINA_MARGA', 'CIPTA_KARYA'];
+const isValidAhspDomain = (d: string | undefined): d is AHSPDomain =>
+  !!d && AHSP_ROUTE_DOMAINS.includes(d);
 
 const ITEMS_PER_PAGE_OPTIONS = [24, 48, 96, 192];
 
@@ -84,21 +110,67 @@ const DOMAIN_COLOR_MAP: Record<string, { bg: string; text: string; border: strin
   SMKK: { bg: 'var(--ez-pastel-cream)', text: 'var(--ez-hue-amber-text-deep)', border: 'var(--ez-pastel-cream)' },
 };
 
-export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToRab }) => {
+export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams, onAddAhspToRab }) => {
   const { currentProject, projectRabItems, createRabItemDirect } = useProject();
 
-  // Filters State
-  const [selectedDomain, setSelectedDomain] = useState<AHSPDomain | 'ALL'>('ALL');
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  // Filters State (F-05: nilai awal dari parameter URL bila ada).
+  const [selectedDomain, setSelectedDomain] = useState<AHSPDomain | 'ALL'>(() =>
+    isValidAhspDomain(routeParams?.domain) ? (routeParams!.domain as AHSPDomain) : 'ALL');
+  const [selectedCategory, setSelectedCategory] = useState<string>(routeParams?.kategori ?? 'ALL');
   const [selectedMethod, setSelectedMethod] = useState<string>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [priceStatusFilter, setPriceStatusFilter] = useState<'ALL' | 'FULL' | 'PARTIAL' | 'MISSING'>('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(routeParams?.q ?? '');
   const [sortBy, setSortBy] = useState<'code' | 'name' | 'priceAsc' | 'priceDesc'>('code');
 
   // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(routeParams?.page && routeParams.page > 0 ? routeParams.page : 1);
   const [pageSize, setPageSize] = useState(24);
+
+  // F-05: sinkronisasi state explorer ↔ URL (?q=&domain=&kategori=&page=).
+  // Kunci serial dipakai karena objek routeParams baru tiap render App — efek
+  // hanya berjalan bila NILAI parameter berubah (back/forward, navigasi chat).
+  // Write-back menandai kunci yang sudah diterapkan agar tidak ada loop.
+  const routeParamsKey = [
+    routeParams?.q ?? '',
+    routeParams?.domain ?? '',
+    routeParams?.kategori ?? '',
+    routeParams?.page ? String(routeParams.page) : '',
+  ].join('|');
+  const lastAppliedRouteParams = useRef('');
+  useEffect(() => {
+    if (routeParamsKey === lastAppliedRouteParams.current) return;
+    lastAppliedRouteParams.current = routeParamsKey;
+    const [q, domain, kategori, page] = routeParamsKey.split('|');
+    setSearchQuery(q);
+    setSelectedDomain(isValidAhspDomain(domain) ? (domain as AHSPDomain) : 'ALL');
+    setSelectedCategory(kategori || 'ALL');
+    const p = parseInt(page, 10);
+    setCurrentPage(Number.isFinite(p) && p > 0 ? p : 1);
+  }, [routeParamsKey]);
+  // Tulis state kembali ke URL (replace — tanpa menambah entri history per
+  // ketikan) agar tautan/bookmark/back-forward memulihkan state explorer.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.location.pathname !== '/app/ahsp') return;
+    const params = new URLSearchParams();
+    const q = searchQuery.trim();
+    if (q) params.set('q', q);
+    if (selectedDomain !== 'ALL') params.set('domain', selectedDomain);
+    if (selectedCategory !== 'ALL') params.set('kategori', selectedCategory);
+    if (currentPage > 1) params.set('page', String(currentPage));
+    const qs = params.toString();
+    const current = window.location.search.replace(/^\?/, '');
+    if (qs !== current) {
+      lastAppliedRouteParams.current = [
+        q,
+        selectedDomain !== 'ALL' ? selectedDomain : '',
+        selectedCategory !== 'ALL' ? selectedCategory : '',
+        currentPage > 1 ? String(currentPage) : '',
+      ].join('|');
+      navigateTo(`/app/ahsp${qs ? `?${qs}` : ''}`, { replace: true });
+    }
+  }, [searchQuery, selectedDomain, selectedCategory, currentPage]);
 
   // Modals & Interactive State
   const [selectedAhsp, setSelectedAhsp] = useState<NationalAHSPItem | null>(null);
@@ -224,15 +296,16 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
       // Normative Status filter
       if (selectedStatus !== 'ALL' && item.normativeStatus !== selectedStatus) return false;
 
-      // Price Status filter
+      // Price Status filter (F-04: pakai komposisi ber-overlay seperti modal,
+      // agar item yang sudah terverifikasi pasar tidak lagi lolos filter ini).
       if (priceStatusFilter !== 'ALL') {
-        const comp = priceResolver2026.resolveAhspUnitPrice(item);
+        const comp = resolveWithMarket(item);
         if (comp.pricingStatus !== priceStatusFilter) return false;
       }
 
       // Query Search
       if (qClean) {
-        const matchCode = item.code.toLowerCase().includes(qClean) || item.codeNormalized.toLowerCase().includes(qClean);
+        const matchCode = item.code.toLowerCase().includes(qClean) || item.codeNormalized.toLowerCase().includes(qClean) || (item.standardCode || '').toLowerCase().includes(qClean);
         const matchName = item.name.toLowerCase().includes(qClean);
         const matchCat = (item.category || '').toLowerCase().includes(qClean);
         const matchSub = (item.subDomain || '').toLowerCase().includes(qClean);
@@ -255,22 +328,22 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
       if (sortBy === 'code') return a.codeNormalized.localeCompare(b.codeNormalized, undefined, { numeric: true });
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       if (sortBy === 'priceAsc') {
-        const ca = priceResolver2026.resolveAhspUnitPrice(a);
-        const cb = priceResolver2026.resolveAhspUnitPrice(b);
+        const ca = resolveWithMarket(a);
+        const cb = resolveWithMarket(b);
         const pa = getAhspDirectPrice(ca) ?? Number.POSITIVE_INFINITY;
         const pb = getAhspDirectPrice(cb) ?? Number.POSITIVE_INFINITY;
         return pa - pb;
       }
       if (sortBy === 'priceDesc') {
-        const ca = priceResolver2026.resolveAhspUnitPrice(a);
-        const cb = priceResolver2026.resolveAhspUnitPrice(b);
+        const ca = resolveWithMarket(a);
+        const cb = resolveWithMarket(b);
         const pa = getAhspDirectPrice(ca) ?? -1;
         const pb = getAhspDirectPrice(cb) ?? -1;
         return pb - pa;
       }
       return 0;
     });
-  }, [selectedDomain, selectedCategory, selectedMethod, selectedStatus, priceStatusFilter, searchQuery, sortBy]);
+  }, [selectedDomain, selectedCategory, selectedMethod, selectedStatus, priceStatusFilter, searchQuery, sortBy, marketTick]);
 
   // Total pages & Current page slice
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
@@ -344,8 +417,12 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
       totalEquipment: addToRabAugmented?.equipment.subtotalPerUnit || 0,
     };
 
+    // onAddAhspToRab mengembalikan true hanya bila item benar-benar
+    // ditambahkan (regresi F-01: dulu selalu toast sukses meski tidak ada
+    // proyek aktif sehingga handler diam-diam tidak menambahkan apa-apa).
+    let added = false;
     if (onAddAhspToRab) {
-      onAddAhspToRab(enrichedItem, inputVolume);
+      added = onAddAhspToRab(enrichedItem, inputVolume);
     } else if (currentProject && createRabItemDirect) {
       createRabItemDirect({
         code: addToRabModalItem.code,
@@ -361,6 +438,12 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
         materialPrice: addToRabAugmented?.material.subtotalPerUnit || 0,
         equipmentPrice: addToRabAugmented?.equipment.subtotalPerUnit || 0,
       });
+      added = true;
+    }
+
+    if (!added) {
+      showToast('Pilih atau buka proyek terlebih dahulu untuk menambahkan ke RAB!');
+      return;
     }
 
     showToast(`Berhasil menambahkan ${addToRabModalItem.code} (${inputVolume} ${addToRabModalItem.unit}) ke RAB!${marketNote}`);
@@ -1171,7 +1254,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
           }}
         >
           {paginatedItems.map((item) => {
-            const composition = priceResolver2026.resolveAhspUnitPrice(item);
+            const composition = resolveWithMarket(item);
             const laborTotal = composition.labor.subtotalPerUnit || (item.totalLabor ?? 0);
             const materialTotal = composition.material.subtotalPerUnit || (item.totalMaterial ?? 0);
             const equipTotal = composition.equipment.subtotalPerUnit || (item.totalEquipment ?? 0);
@@ -1614,7 +1697,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ onAddAhspToR
               {selectedAhspAugmented?.pricingStatus === 'MISSING' && (
                 <div style={{ background: 'var(--ez-hue-slate-bg)', border: '1px solid var(--ez-color-border-soft)', color: 'var(--ez-color-text-slate)', padding: '10px 14px', borderRadius: 'var(--ez-radius-card)', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Info size={15} style={{ flexShrink: 0 }} />
-                  <span><strong>Harga Belum Tersedia:</strong> Belum ada data harga satuan untuk komponen pada analisa ini di database standar 2026. Anda dapat menyesuaikan harga secara manual setelah menambahkan ke proyek.</span>
+                  <span><strong>Harga Belum Tersedia:</strong> Belum ada data harga satuan untuk komponen pada analisa ini di database standar 2026. Lengkapi lewat tombol &ldquo;Cari Referensi Harga&rdquo; pada komponen yang kosong — referensi pasar yang terverifikasi akan mengisi komponen tersebut, dan setelah semua komponen terisi, item ini dapat ditambahkan ke RAB.</span>
                 </div>
               )}
 

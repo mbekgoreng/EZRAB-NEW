@@ -36,12 +36,13 @@ import { debitChatCreditOnSuccess } from './chatCreditDebit';
 
 import { renderMarkdown } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
+import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, type NavEntry } from './navRegistry';
 import { consumePendingAiEntry, requestAiEntry } from '../aiNavigation';
 import { executeIntent, continueRabNeeds, continueRabChoice, tryContinueRabSubtype, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
 import { getLastDirectRab } from './directRab';
 import { looksLikeNeedsAnswer } from './rabNeeds';
 import { notificationBus } from '../../notifications/notificationBus';
-import { navigateTo, routeForMenu } from '../../routing/routes';
+import { navigateTo, paths, routeForMenu } from '../../routing/routes';
 import { EZRABMascotLucu } from '../../components/mascot/EZRABMascotLucu';
 import { useProject } from '../../context/ProjectContext';
 import { buildProjectSnapshot, ProjectSnapshot } from './projectContext';
@@ -466,10 +467,18 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
      * memasangnya lagi sebelum memanggil ulang submit. */
     const forcedAi = forceAiRef.current;
     forceAiRef.current = false;
+    closeSlash();
+    /* Command Router (2026-10-26): resolver navigasi deterministik.
+     * TIDAK PERNAH membajak prompt Full AI (forcedAi). Hasil non-'none'
+     * juga membebaskan dari dialog kredit: navigasi itu gratis, dan tanpa
+     * pengecualian ini perintah baru (slash baru / sinonim alami) akan
+     * tertahan dialog karena preRouted-nya UNKNOWN/needsClarification. */
+    const navEarly = forcedAi ? null : resolveNavCommand(msg);
+    const navHit = navEarly && navEarly.mode !== 'none' ? navEarly : null;
     // --- AI Credits: intent lokal tidak memanggil AI → tanpa biaya ---
     const preRouted = routeIntent(msg);
     const needsAi = forcedAi || (!(preRouted.localOnly && preRouted.intent !== 'UNKNOWN') && !preRouted.needsClarification);
-    if (needsAi && balance.total < chatEstimate.max) {
+    if (needsAi && !navHit && balance.total < chatEstimate.max) {
       // Saldo simulasi tidak cukup → dialog konfirmasi (bukan blokir diam-diam).
       setCreditConfirm({
         estimate: chatEstimate.max,
@@ -573,12 +582,15 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
      * klarifikasi dan diproses normal di bawah. */
     if (!forcedAi && awaitingClarify) {
       const routedClarify = routeIntent(msg);
-      if (routedClarify.localOnly && routedClarify.intent !== 'UNKNOWN' && routedClarify.intent !== 'CLARIFY_TOPIC') {
+      // Perintah navigasi asli (Command Router) juga menggugurkan mode
+      // klarifikasi — kalau tidak, perintah target baru ditelan sebagai
+      // CLARIFY_QUERY karena routeIntent mengembalikan UNKNOWN untuknya.
+      if (navHit || (routedClarify.localOnly && routedClarify.intent !== 'UNKNOWN' && routedClarify.intent !== 'CLARIFY_TOPIC')) {
         setAwaitingClarify(null);
       } else {
         try {
           const res = executeIntent('CLARIFY_QUERY', msg, {
-            navigate: onNavigate ?? (() => {}),
+            navigate: (menu: string) => navigateChat(menu),
             rawText: msg,
             currentMenu,
             activeProject,
@@ -597,12 +609,46 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         return;
       }
     }
+    /* ---- Command Router (Fase 3/5): navigasi deterministik ----
+     * Berjalan SETELAH waiting-state (pilihan/subtipe/needs/klarifikasi) dan
+     * SEBELUM Phase-1 routeIntent, agar slash baru tidak ditelan klarifikasi
+     * "perintah tidak dikenal" dan sinonim alami tidak ditelan AI.
+     * Direct = navigasi LANGSUNG tanpa konfirmasi kedua (perintah eksplisit
+     * "buka" + intent pasti); suggest/ambiguous = pesan + chip saja, tanpa
+     * pindah halaman. Pesan asisten dipersistenkan supaya terlihat di
+     * riwayat saat pengguna kembali ke chat. */
+    if (!forcedAi && navHit) {
+      try {
+        if (navHit.mode === 'direct') {
+          const navText = `Membuka ${navHit.entry.label}…`;
+          setMessages((prev) => [...prev, { role: 'assistant', content: navText, ts: Date.now() }]);
+          persistMessage('assistant', navText);
+          // F-06: perintah AHSP dengan kata kunci sisa → katalog sudah
+          // terfilter (?q=) lewat parameter URL F-05, bukan katalog default.
+          if (navHit.entry.id === 'ahsp' && navHit.ahspQuery) {
+            navigateTo(`${paths.ahsp()}?q=${encodeURIComponent(navHit.ahspQuery)}`);
+          } else {
+            navigateNavEntry(navHit.entry);
+          }
+        } else {
+          const acts: ChatActionButton[] = navHit.candidates.map((c) => ({
+            label: `Buka ${c.label}`,
+            action: { kind: 'nav-entry', entryId: c.id },
+          }));
+          setMessages((prev) => [...prev, { role: 'assistant', content: navHit.message, ts: Date.now(), actions: acts }]);
+          persistMessage('assistant', navHit.message);
+        }
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     /* ---- Phase 1: local intent router runs BEFORE any AI provider call ---- */
     const routed = routeIntent(msg);
     if (!forcedAi && routed.localOnly && routed.intent !== 'UNKNOWN') {
       try {
         const ctx: ChatActionContext = {
-          navigate: onNavigate ?? (() => {}),
+          navigate: (menu: string) => navigateChat(menu),
           rawText: msg,
           currentMenu,
           activeProject,
@@ -851,6 +897,15 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       setAwaitingSubtype(false);
       setAwaitingClarify(null);
       navigateChat(btn.action.menu);
+    } else if (btn.action.kind === 'nav-entry') {
+      // Chip Command Router: satu entry registry (termasuk filter proyek
+      // dan aksi tutorial) — tidak bisa diungkapkan hanya dengan menu.
+      const entry = NAV_BY_ID[btn.action.entryId];
+      if (entry) {
+        setAwaitingSubtype(false);
+        setAwaitingClarify(null);
+        navigateNavEntry(entry);
+      }
     } else if (btn.action.intent === 'START_RAB_WIZARD') {
       // Chat-to-RAB Fase 2: tombol "Rumah tinggal" TIDAK lagi membuka wizard
       // langsung — tampilkan ringkasan kebutuhan dulu (lewat router).
@@ -875,7 +930,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // Pilihan selesai → status menunggu koreksi kartu ditutup.
       setAwaitingChoice(false);
       const res = executeIntent('GENERATE_RAB_TEMPLATE', btn.action.param, {
-        navigate: onNavigate ?? (() => {}),
+        navigate: (menu: string) => navigateChat(menu),
         rawText: btn.action.param,
         currentMenu,
         activeProject,
@@ -894,7 +949,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       setAwaitingSubtype(false);
       setAwaitingClarify(null);
       const res = executeIntent(btn.action.intent as never, btn.action.param, {
-        navigate: onNavigate ?? (() => {}),
+        navigate: (menu: string) => navigateChat(menu),
         currentMenu,
         activeProject,
         projects,
@@ -916,7 +971,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       setAwaitingSubtype(false);
       setAwaitingClarify(null);
       const res = executeIntent('RAB_FULL_AI', btn.action.param, {
-        navigate: onNavigate ?? (() => {}),
+        navigate: (menu: string) => navigateChat(menu),
         currentMenu,
         activeProject,
         projects,
@@ -942,7 +997,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // awaitClarify — keduanya lokal penuh, tanpa panggilan AI/kredit.
       // Mode menunggu disetel dari hasil (awaitClarify baru) atau ditutup.
       const res = executeIntent('CLARIFY_PICK', btn.action.param, {
-        navigate: onNavigate ?? (() => {}),
+        navigate: (menu: string) => navigateChat(menu),
         currentMenu,
         activeProject,
         projects,
@@ -962,7 +1017,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       void submit(btn.action.param ?? btn.label);
     } else if (btn.action.intent === 'RAB_NEEDS_REFINE') {
       const res = executeIntent('RAB_NEEDS_REFINE', undefined, {
-        navigate: onNavigate ?? (() => {}),
+        navigate: (menu: string) => navigateChat(menu),
         currentMenu,
         activeProject,
         projects,
@@ -984,6 +1039,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   // chat gagal dengan "Tidak dapat membuka menu" (bug terbukti di Preview 2026-10-21).
   // Proyek aktif diteruskan agar menu bermuatan proyek (ded-ai, rab-estimasi)
   // membuka varian di dalam proyek, bukan keluar ke halaman global.
+  // PERBAIKAN 2026-10-26 (Command Router): ctx.navigate di executeIntent
+  // sebelumnya memakai prop onNavigate yang TIDAK PERNAH dipasok mount nyata
+  // (<EzrabAiView /> tanpa props) sehingga intent navigasi hanya mencetak
+  // "Membuka …" tanpa benar-benar pindah. Semua situs ctx.navigate kini
+  // memakai navigateChat ini (jalur router resmi yang sama dengan tombol
+  // aksi) — bukan window.open/popup/reload.
   const navigateChat = (menu: string) => {
     try {
       navigateTo(routeForMenu(menu as never, effProject?.id ?? null));
@@ -992,7 +1053,53 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
   };
 
+  // Navigasi satu entry registry (Command Router): filter proyek di-dispatch
+  // dulu (event bridge ke WorkspaceView — filter BUKAN parameter URL), lalu
+  // pindah menu. Tutorial bukan navigasi: cukup dispatch event onboarding.
+  const navigateNavEntry = (entry: NavEntry) => {
+    if (entry.special === 'tutorial') {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('ezrab:open-onboarding'));
+      }
+      return;
+    }
+    if (entry.projectFilter && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('ezrab:set-project-filter', { detail: entry.projectFilter }));
+    }
+    if (entry.menu) navigateChat(entry.menu);
+  };
+
+  // ---- Slash menu composer (Command Router Fase 4) ----
+  const [slashOpen, setSlashOpen] = useState(false);
+  const [slashQuery, setSlashQuery] = useState('');
+  const [slashIndex, setSlashIndex] = useState(0);
+  const slashEntries = filterSlashEntries(slashQuery);
+  const updateSlashState = (value: string, cursor: number | null) => {
+    const token = extractSlashToken(value, cursor);
+    if (token == null) {
+      if (slashOpen) setSlashOpen(false);
+      return;
+    }
+    setSlashQuery(token);
+    setSlashIndex(0);
+    if (!slashOpen) setSlashOpen(true);
+  };
+  const closeSlash = () => { if (slashOpen) setSlashOpen(false); };
+
   const onKey = (e: React.KeyboardEvent) => {
+    // Menu slash terbuka → keyboard mengendalikan menu, bukan submit.
+    if (slashOpen) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setSlashIndex((i) => (slashEntries.length ? (i + 1) % slashEntries.length : 0)); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setSlashIndex((i) => (slashEntries.length ? (i - 1 + slashEntries.length) % slashEntries.length : 0)); return; }
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const picked = slashEntries[slashIndex];
+        closeSlash();
+        if (picked) void submit(picked.slash);
+        return;
+      }
+      if (e.key === 'Escape') { e.preventDefault(); closeSlash(); return; }
+    }
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
   };
 
@@ -1113,6 +1220,29 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * sapaan) dan di bawah (saat sudah ada percakapan). */
   const composer = (middle: boolean) => (
     <div className={`ezchat2-input-wrap${middle ? ' middle' : ''}`}>
+      {/* Menu slash (Command Router Fase 4): muncul saat "/" diketik sebelum
+       * kursor; melayang di atas composer selebar wrap (aman di 390px).
+       * onMouseDown + preventDefault agar klik tidak membuat textarea blur
+       * sebelum pilihan terkirim lewat submit(slash) langsung. */}
+      {slashOpen && slashEntries.length > 0 && (
+        <div className="ezchat2-slashmenu" role="listbox" aria-label="Perintah cepat" id="ezchat2-slashmenu">
+          {slashEntries.map((entry, i) => (
+            <button
+              key={entry.id}
+              type="button"
+              className={`ezchat2-slashopt${i === slashIndex ? ' active' : ''}`}
+              role="option"
+              aria-selected={i === slashIndex}
+              id={`ezchat2-slashopt-${entry.id}`}
+              onMouseDown={(e) => { e.preventDefault(); closeSlash(); void submit(entry.slash); }}
+            >
+              <span className="ezchat2-slashcmd">{entry.slash}</span>
+              <span className="ezchat2-slashlabel">{entry.label}</span>
+              <span className="ezchat2-slashdesc">{entry.description}</span>
+            </button>
+          ))}
+        </div>
+      )}
       {attached && (
         <div className="ezchat2-attchip">
           <FileText size={16} />
@@ -1148,11 +1278,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         <textarea
           ref={taRef}
           value={input}
-          onChange={(e) => { setInput(e.target.value); autoresize(); }}
+          onChange={(e) => { setInput(e.target.value); autoresize(); updateSlashState(e.target.value, e.target.selectionStart); }}
           onKeyDown={onKey}
           placeholder={listening ? 'Mendengarkan…' : 'Ketik pesan atau perintah, misalnya /template'}
           rows={1}
           disabled={busy}
+          aria-expanded={slashOpen}
+          aria-controls="ezchat2-slashmenu"
+          aria-activedescendant={slashOpen && slashEntries[slashIndex] ? `ezchat2-slashopt-${slashEntries[slashIndex].id}` : undefined}
         />
         <button
           className={`ezchat2-tool ${listening ? 'listening' : ''}`}

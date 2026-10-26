@@ -81,6 +81,8 @@ export interface NationalAHSPItem {
   id: string;
   code: string;                  // e.g. "A.1.01.a.1" or "A.3.08.3.1.a" — "" when the source prints none
   codeNormalized: string;        // Clean stripped code for exact matching
+  /** Kode resmi SE DJBK (mis. "2.1.(1)" untuk Bina Marga) — dibawa agar pencarian kode resmi menemukan itemnya (F-08). */
+  standardCode?: string;
   name: string;                  // e.g. "1 m2 Pembersihan dan pengupasan permukaan tanah (striping)..."
   unit: string;                  // e.g. "m2", "m3", "m'", "buah", "ls", "kg", "unit", "jam"
   /** Unit exactly as printed in the source, before unit normalization (§13). */

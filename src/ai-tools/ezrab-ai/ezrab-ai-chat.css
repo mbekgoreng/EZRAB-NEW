@@ -112,7 +112,18 @@
 .ezchat2-thinking { font-size: 12.5px; color: var(--ez-color-text-muted); font-weight: 600; margin-left: 6px; }
 
 /* ===== Composer ===== */
-.ezchat2-input-wrap { padding: 6px 0 calc(14px + env(safe-area-inset-bottom, 0px)); flex-shrink: 0; }
+/* position: relative = jangkar menu slash (Command Router Fase 4). */
+.ezchat2-input-wrap { position: relative; padding: 6px 0 calc(14px + env(safe-area-inset-bottom, 0px)); flex-shrink: 0; }
+/* Menu slash: selebar wrap (tidak terpotong di 390px), tinggi dibatasi +
+ * scroll internal, melayang di atas composer. Token sistem agar mode
+ * terang/gelap mengikuti otomatis. */
+.ezchat2-slashmenu { position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 6px; z-index: 30; max-height: 280px; overflow-y: auto; background: var(--ez-color-surface); border: 1px solid var(--ez-color-border); border-radius: 14px; box-shadow: 0 12px 32px rgba(15, 40, 80, 0.16); padding: 6px; }
+.ezchat2-slashopt { display: flex; align-items: baseline; gap: 10px; width: 100%; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 10px; padding: 8px 10px; cursor: pointer; }
+.ezchat2-slashopt.active { background: var(--ez-color-primary-soft); border-color: var(--ez-color-primary-soft); }
+.ezchat2-slashopt:focus-visible { outline: 2px solid var(--ez-color-primary); outline-offset: 1px; }
+.ezchat2-slashcmd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-weight: 700; color: var(--ez-color-primary); white-space: nowrap; }
+.ezchat2-slashlabel { font-size: 13px; font-weight: 600; color: var(--ez-color-text); white-space: nowrap; }
+.ezchat2-slashdesc { font-size: 12px; color: var(--ez-color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: auto; }
 /* Composer di tengah (saat chat kosong): di bawah sapaan */
 .ezchat2-input-wrap.middle { margin-top: 14px; padding-bottom: 0; text-align: left; }
 .ezchat2-input-wrap.middle .ezchat2-foot { text-align: center; }

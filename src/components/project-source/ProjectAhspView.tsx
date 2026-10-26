@@ -25,6 +25,9 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
   // Search in catalog modal
   const [catalogSearch, setCatalogSearch] = useState('');
   const [catalogDomain, setCatalogDomain] = useState<string>('ALL');
+  // F-09: batas tampil bertahap (bukan potongan diam-diam 30).
+  const [catalogVisibleCount, setCatalogVisibleCount] = useState(30);
+  useEffect(() => { setCatalogVisibleCount(30); }, [catalogSearch, catalogDomain]);
 
   // Custom Form states
   const [ahspCode, setAhspCode] = useState('');
@@ -58,15 +61,46 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
         item.name.toLowerCase().includes(catalogSearch.toLowerCase());
       const matchDomain = catalogDomain === 'ALL' || item.domain === catalogDomain;
       return matchSearch && matchDomain;
-    }).slice(0, 30);
+    });
   }, [catalogSearch, catalogDomain, activeAhspItems]);
+  // F-09: yang dirender hanya jendela pertama; totalnya selalu ditampilkan.
+  const visibleCatalog = filteredCatalog.slice(0, catalogVisibleCount);
 
   const handleSelectCatalogItem = (catItem: NationalAHSPItem) => {
     if (!projectId) return;
+    // Gate yang sama semantiknya dengan jalur explorer (regresi F-03):
+    // MISSING — atau tanpa harga tampil — tidak boleh masuk daftar AHSP
+    // Proyek sebagai final. PARTIAL tetap boleh dipilih, tapi wajib bertanda
+    // parsial (lihat badge di picker dan tabel tersimpan).
+    const comp = priceResolver2026.resolveAhspUnitPrice(catItem);
+    if (comp.pricingStatus === 'MISSING' || comp.unitPrice == null || comp.unitPrice <= 0) return;
     saveProjectAhspFromCatalog(projectId, catItem);
     setShowCatalogModal(false);
     loadData();
     onDataChanged?.();
+  };
+
+  // Peta kode → item katalog untuk derivasi status baris tersimpan (F-03).
+  const catalogByCode = useMemo(() => {
+    const m = new Map<string, NationalAHSPItem>();
+    for (const it of activeAhspItems) if (!m.has(it.code)) m.set(it.code, it);
+    return m;
+  }, [activeAhspItems]);
+
+  // Status kelengkapan baris tersimpan: resolve langsung dari katalog bila ada
+  // (paling segar, dan menutupi baris lama yang tersimpan tanpa status);
+  // bila tidak ada di katalog, pakai status yang tersimpan di bridge.
+  // Item kustom tanpa katalog → null (tanpa badge).
+  const savedItemStatus = (item: ProjectAhspItem): { status: string; missing: number; total: number } | null => {
+    const cat = catalogByCode.get(item.ahspCode);
+    if (cat) {
+      const comp = priceResolver2026.resolveAhspUnitPrice(cat);
+      return { status: comp.pricingStatus, missing: comp.missingComponents, total: comp.totalComponents };
+    }
+    if (item.pricingStatus) {
+      return { status: item.pricingStatus, missing: item.missingComponents ?? 0, total: item.totalComponents ?? 0 };
+    }
+    return null;
   };
 
   const handleOpenCustomAdd = () => {
@@ -230,6 +264,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
             <tbody>
               {items.map((item, idx) => {
                 const totalUnitPrice = (item.materialCost || 0) + (item.laborCost || 0) + (item.equipmentCost || 0);
+                const st = savedItemStatus(item);
                 return (
                   <tr key={item.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                     <td style={{ padding: '10px 12px', color: 'var(--ez-color-text-muted)' }}>{idx + 1}</td>
@@ -249,6 +284,16 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                     </td>
                     <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--ez-hue-green-text-bright)' }}>
                       Rp {totalUnitPrice.toLocaleString('id-ID')}
+                      {st && st.status === 'PARTIAL' ? (
+                        <div title={`Harga parsial — ${st.total - st.missing}/${st.total} komponen terisi`} style={{ fontSize: 11, fontWeight: 700, color: 'var(--ez-hue-amber-text)' }}>
+                          ◐ Harga parsial*
+                        </div>
+                      ) : null}
+                      {st && st.status === 'MISSING' ? (
+                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>
+                          — Harga belum tersedia
+                        </div>
+                      ) : null}
                     </td>
                     <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                       <div style={{ display: 'inline-flex', gap: 6 }}>
@@ -346,6 +391,7 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                   Tidak ada analisa yang sesuai dengan pencarian.
                 </div>
               ) : (
+                <>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                   <thead>
                     <tr style={{ background: 'var(--ez-color-surface-secondary)', borderBottom: '1px solid var(--ez-color-border-line)', position: 'sticky', top: 0 }}>
@@ -357,9 +403,12 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredCatalog.map((catItem) => {
+                    {visibleCatalog.map((catItem) => {
                       const comp = priceResolver2026.resolveAhspUnitPrice(catItem);
                       const unitPrice = comp.unitPrice;
+                      // MISSING — atau tanpa harga tampil — tidak dapat dipilih
+                      // sebagai final (F-03). PARTIAL boleh dipilih, bertanda.
+                      const selectable = comp.pricingStatus !== 'MISSING' && unitPrice != null && unitPrice > 0;
                       return (
                         <tr key={catItem.id} style={{ borderBottom: '1px solid var(--ez-color-surface-tertiary)' }}>
                           <td style={{ padding: '8px 10px', fontWeight: 700, color: 'var(--ez-color-primary)' }}>{catItem.code}</td>
@@ -367,10 +416,17 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                           <td style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--ez-color-text-muted)' }}>{catItem.unit}</td>
                           <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 650, color: unitPrice ? 'var(--ez-hue-green-text-bright)' : '#94A3B8' }}>
                             {unitPrice ? `Rp ${unitPrice.toLocaleString('id-ID')}` : 'Belum ada harga'}
+                            {comp.pricingStatus === 'PARTIAL' && unitPrice ? (
+                              <div title={`Harga parsial — ${comp.resolvedComponents}/${comp.totalComponents} komponen terisi`} style={{ fontSize: 11, fontWeight: 700, color: 'var(--ez-hue-amber-text)' }}>
+                                ◐ Harga parsial*
+                              </div>
+                            ) : null}
                           </td>
                           <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                             <button
                               onClick={() => handleSelectCatalogItem(catItem)}
+                              disabled={!selectable}
+                              title={selectable ? 'Pilih analisa ini' : 'Harga belum tersedia — tidak dapat dipilih sebagai final'}
                               style={{
                                 background: 'var(--ez-color-primary)',
                                 color: '#FFFFFF',
@@ -379,7 +435,8 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                                 padding: '5px 10px',
                                 fontSize: 11.5,
                                 fontWeight: 650,
-                                cursor: 'pointer',
+                                cursor: selectable ? 'pointer' : 'not-allowed',
+                                opacity: selectable ? 1 : 0.6,
                               }}
                             >
                               Pilih
@@ -390,6 +447,19 @@ export const ProjectAhspView: React.FC<ProjectAhspViewProps> = ({
                     })}
                   </tbody>
                 </table>
+                <div style={{ padding: '10px 12px', fontSize: 12, color: 'var(--ez-color-text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                  <span>Menampilkan {visibleCatalog.length} dari {filteredCatalog.length} analisa</span>
+                  {visibleCatalog.length < filteredCatalog.length && (
+                    <button
+                      type="button"
+                      onClick={() => setCatalogVisibleCount((c) => c + 30)}
+                      style={{ background: 'transparent', border: '1px solid var(--ez-color-border-line)', borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 650, color: 'var(--ez-color-primary)', cursor: 'pointer' }}
+                    >
+                      Muat lebih banyak
+                    </button>
+                  )}
+                </div>
+                </>
               )}
             </div>
 

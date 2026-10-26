@@ -58,6 +58,11 @@ export const saveProjectAhspFromCatalog = (
       laborCost: labCost,
       equipmentCost: eqCost,
       sourceReferenceId: catalogItem.id,
+      // Status kelengkapan ikut disimpan agar jumlah parsial tidak tampil
+      // sebagai harga final di downstream (dokumen tender) — regresi F-03.
+      pricingStatus: resolved.pricingStatus,
+      missingComponents: resolved.missingComponents,
+      totalComponents: resolved.totalComponents,
       ...customization,
     });
     return updated!;
@@ -72,6 +77,9 @@ export const saveProjectAhspFromCatalog = (
     laborCost: labCost,
     equipmentCost: eqCost,
     sourceReferenceId: catalogItem.id,
+    pricingStatus: resolved.pricingStatus,
+    missingComponents: resolved.missingComponents,
+    totalComponents: resolved.totalComponents,
     ...customization,
   });
 

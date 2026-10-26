@@ -52,7 +52,11 @@ import { ProjectsView } from '../projects/ProjectsView';
 import { FirstProjectChecklist } from '../onboarding/FirstProjectChecklist';
 import { RabEstimasiView } from '../rab/RabEstimasiView';
 import { ManajemenProyekView } from '../management/ManajemenProyekView';
-import { AhspExplorerView } from '../ahsp/AhspExplorerView';
+// AHSP explorer lazy (F-12): data kanonis ±19 MB tidak ikut bundle awal,
+// mengikuti pola ChatToRabWorkspaceLazy di bawah.
+const AhspExplorerViewLazy = lazy(() =>
+  import('../ahsp/AhspExplorerView').then(m => ({ default: m.AhspExplorerView })),
+);
 import { DaftarPekerjaanView } from '../workItems/DaftarPekerjaanView';
 import { QtoCalculatorView } from '../qto/QtoCalculatorView';
 import { QtoRekapVolumeView } from '../qto/QtoRekapVolumeView';
@@ -260,6 +264,27 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
     window.addEventListener('ezrab:open-settings-tab', handler);
     return () => window.removeEventListener('ezrab:open-settings-tab', handler);
   }, [setActiveMenu]);
+
+  // Event global (Command Router 2026-10-26): set filter status proyek dari
+  // Chat AI. Filter BUKAN parameter URL (parseWorkspaceRoute membuang
+  // ?status=), jadi dipakai event yang sama polanya dengan
+  // ezrab:open-settings-tab di atas. Allowlist ketat: nilai di luar daftar
+  // diabaikan. Pengirim (chat) men-dispatch SEBELUM navigateTo, dan
+  // ProjectsView menyinkronkan initialFilter lewat useEffect, sehingga
+  // filter berlaku baik saat halaman proyek baru di-mount maupun saat
+  // sudah terbuka. Sidebar TIDAK diubah sama sekali.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const filter = typeof detail === 'string' ? detail : undefined;
+      const allowed = ['Semua Proyek', 'Draft', 'Sedang Dikerjakan', 'Selesai', 'Arsip'];
+      if (filter && allowed.includes(filter)) {
+        setProjectFilter(filter);
+      }
+    };
+    window.addEventListener('ezrab:set-project-filter', handler);
+    return () => window.removeEventListener('ezrab:set-project-filter', handler);
+  }, []);
 
   // Dynamic calculations (100% genuine - 0 dummy data)
   const totalProjects = projects.length;
@@ -592,7 +617,9 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           </main>
         ) : (activeMenu === 'ahsp-2026' || activeMenu === 'ahsp' || activeMenu === 'analisa-ahsp') ? (
           <main style={{ padding: '20px 24px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>
-            <AhspExplorerView
+            <Suspense fallback={null}>
+            <AhspExplorerViewLazy
+              routeParams={route.ahsp}
               onAddAhspToRab={(ahsp, volume) => {
                 if (currentProject) {
                   createRabItemDirect({
@@ -611,9 +638,14 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
                     materialPrice: ahsp.totalMaterial || 0,
                     equipmentPrice: ahsp.totalEquipment || 0,
                   });
+                  return true;
                 }
+                // Tanpa proyek aktif: kembalikan false agar explorer menampilkan
+                // peringatan, bukan toast sukses palsu (regresi F-01).
+                return false;
               }}
             />
+            </Suspense>
           </main>
         ) : (activeMenu === 'qto' || activeMenu === 'qto-rekap') ? (
           <main style={{ minHeight: 'calc(100vh - 64px)' }}>

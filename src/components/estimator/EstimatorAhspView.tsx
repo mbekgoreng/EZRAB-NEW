@@ -13,6 +13,7 @@ import { Project, RabItem } from "../../types";
 import { formatCurrencyIDR, formatNumberID } from "../../calculations/decimalEngine";
 import { officialAhspRepository } from "../../data/nationalCostDatabase/officialAhspRepository";
 import { priceResolver2026 } from "../../data/priceDatabase2026/resolver";
+import { getAhspDirectPrice } from "../../data/priceDatabase2026/ahspDisplayPolicy";
 
 interface EstimatorAhspViewProps {
   currentProject: Project | null;
@@ -156,6 +157,12 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
             const matchOfficial = officialAhspRepository.getOfficialAhsp(code);
             const resolvedOfficial = matchOfficial ? priceResolver2026.resolveAhspUnitPrice(matchOfficial) : null;
             const unitPrice = (item.unitPrice && item.unitPrice > 0) ? item.unitPrice : (resolvedOfficial?.unitPrice ?? (item.unitPrice ?? null));
+            // F-11: badge status + sumber + penanda basi. Harga tampil TIDAK
+            // diubah (tetap mengutamakan harga tersimpan item) — hanya diberi label.
+            const storedPrice = (item.unitPrice && item.unitPrice > 0) ? item.unitPrice : null;
+            const catalogPrice = resolvedOfficial ? (getAhspDirectPrice(resolvedOfficial) ?? resolvedOfficial.unitPrice ?? null) : null;
+            const statusBadge = !matchOfficial ? 'MISSING' : (resolvedOfficial?.pricingStatus ?? 'MISSING');
+            const isStale = storedPrice != null && catalogPrice != null && storedPrice !== catalogPrice;
 
             const materials = (snap?.materialComponents && snap.materialComponents.length > 0)
               ? snap.materialComponents
@@ -226,8 +233,29 @@ export const EstimatorAhspView: React.FC<EstimatorAhspViewProps> = ({
                         {item.description}
                       </div>
                       <div style={{ fontSize: "11.5px", color: "#64748B", marginTop: "2px" }}>
-                        Kategori: {item.category} • Satuan: <strong>{item.unit || "m²"}</strong> • Sumber:{" "}
+                        Kategori: {item.category} • Satuan: <strong>{item.unit || "—"}</strong> • Sumber:{" "}
                         {snap?.sourceDocument || (matchOfficial ? "Database AHSP Resmi EZRAB" : "Belum terhubung ke AHSP resmi")}
+                      </div>
+                      <div style={{ fontSize: "11.5px", marginTop: "3px", display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                        <span
+                          style={{
+                            fontWeight: 700,
+                            padding: "1px 8px",
+                            borderRadius: "999px",
+                            background: statusBadge === 'FULL' ? "#DCFCE7" : statusBadge === 'PARTIAL' ? "#FEF3C7" : "#F1F5F9",
+                            color: statusBadge === 'FULL' ? "#15803D" : statusBadge === 'PARTIAL' ? "#B45309" : "#64748B",
+                          }}
+                        >
+                          {statusBadge === 'FULL' ? "Harga lengkap" : statusBadge === 'PARTIAL' ? "Harga parsial*" : "Harga belum tersedia"}
+                        </span>
+                        <span style={{ color: "#64748B" }}>
+                          Sumber harga: {storedPrice != null ? "tersimpan di item" : "katalog AHSP terbaru"}
+                        </span>
+                        {isStale && (
+                          <span style={{ color: "#B45309" }}>
+                            Harga tersimpan berbeda dari katalog terbaru ({formatCurrencyIDR(catalogPrice)}).
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>

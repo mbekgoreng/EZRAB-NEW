@@ -8,6 +8,7 @@
 import { aiToolsError, AIToolsStructuredError } from '../types';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
+import { ahspChatPriceSuffix } from './ahspChatPrice';
 import { masterBuildingTemplateRegistry } from '../../data/buildingTemplates/masterTemplateRegistry';
 import { ProjectSnapshot, formatIDR } from './projectContext';
 
@@ -165,20 +166,13 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
         if (hits.length === 0) return `Tidak ditemukan AHSP untuk "${q}".`;
         return hits.map((h, i) => {
           const it: any = h.item;
-          let price: number | null = Number(it.unitPrice) || null;
-          if (!price && it.code) {
-            try {
-              const r: any = priceResolver2026.resolveAhspUnitPrice(it.code, it.unit);
-              if (r?.unitPrice) price = Number(r.unitPrice);
-            } catch { /* ignore */ }
-          }
           const title = it.title ?? it.name ?? '-';
           // Provenance diteruskan apa adanya dari record kanonis (dokumen
           // sumber + status verifikasi item) — tidak dinaikkan/diturunkan.
           const prov: string[] = [];
           if (it.sourceDocument) prov.push(`Sumber: ${it.sourceDocument}`);
           if (it.status) prov.push(`Status verifikasi: ${it.status}`);
-          const head = `${i + 1}. [${it.code ?? '-'}] ${title} — ${it.unit ?? ''}${price ? ` — ${fmtIDR(Math.round(price))}` : ' — harga belum tersedia (lihat analisa komponen)'}`;
+          const head = `${i + 1}. [${it.code ?? '-'}] ${title} — ${it.unit ?? ''}${ahspChatPriceSuffix(it)}`;
           return prov.length ? `${head}\n   ${prov.join(' · ')}` : head;
         }).join('\n');
       } catch (e: any) {

@@ -2,11 +2,21 @@ export type WorkspaceMenu = string;
 
 export type RouteScope = 'public' | 'global' | 'project' | 'account';
 
+/** Parameter state explorer AHSP di URL (F-05). Hanya field yang terisi yang ditulis ke URL. */
+export interface AhspRouteParams {
+  q?: string;
+  domain?: string;
+  kategori?: string;
+  page?: number;
+}
+
 export interface WorkspaceRoute {
   scope: Exclude<RouteScope, 'public'>;
   menu: WorkspaceMenu;
   projectId?: string;
   mode?: 'chat' | 'ded-rab' | 'dokumen-ai';
+  /** Hadir hanya bila /app/ahsp dibuka dengan ≥1 parameter — tanpanya hasil parse tak berubah (kompatibilitas tes round-trip). */
+  ahsp?: AhspRouteParams;
   status: 'ok' | 'not-found';
 }
 
@@ -47,7 +57,15 @@ export const paths = {
   kreditAi: () => `${APP_PREFIX}/kredit-ai`,
   volumeCalculation: () => `${APP_PREFIX}/volume-calculation`,
   templates: () => `${APP_PREFIX}/template-rab`,
-  ahsp: () => `${APP_PREFIX}/ahsp`,
+  ahsp: (params?: AhspRouteParams) => {
+    const qs = new URLSearchParams();
+    if (params?.q?.trim()) qs.set('q', params.q.trim());
+    if (params?.domain && params.domain !== 'ALL') qs.set('domain', params.domain);
+    if (params?.kategori && params.kategori !== 'ALL') qs.set('kategori', params.kategori);
+    if (params?.page && params.page > 1) qs.set('page', String(params.page));
+    const s = qs.toString();
+    return `${APP_PREFIX}/ahsp${s ? `?${s}` : ''}`;
+  },
   qto: () => `${APP_PREFIX}/qto`,
   management: () => `${APP_PREFIX}/management`,
   reports: (view?: 'rab' | 'boq' | 'recap' | 'ahsp') => `${APP_PREFIX}/reports${view && view !== 'rab' ? `/${view}` : ''}`,
@@ -253,6 +271,21 @@ const estimateTabToMenu = (tab: string | null): WorkspaceMenu => {
   }
 };
 
+const AHSP_ROUTE_DOMAINS = ['SMKK', 'SUMBER_DAYA_AIR', 'BINA_MARGA', 'CIPTA_KARYA'];
+
+/** Parse ?q=&domain=&kategori=&page= untuk /app/ahsp (F-05). Nilai tak valid dibuang; undefined bila tak ada parameter. */
+const parseAhspParams = (query: URLSearchParams): AhspRouteParams | undefined => {
+  const q = query.get('q')?.trim() || undefined;
+  const rawDomain = query.get('domain');
+  const domain = rawDomain && AHSP_ROUTE_DOMAINS.includes(rawDomain) ? rawDomain : undefined;
+  const kategori = query.get('kategori')?.trim() || undefined;
+  const rawPage = query.get('page');
+  const pageNum = rawPage ? parseInt(rawPage, 10) : NaN;
+  const page = Number.isFinite(pageNum) && pageNum > 0 ? pageNum : undefined;
+  if (!q && !domain && !kategori && !page) return undefined;
+  return { ...(q ? { q } : {}), ...(domain ? { domain } : {}), ...(kategori ? { kategori } : {}), ...(page ? { page } : {}) };
+};
+
 export const parseWorkspaceRoute = (pathname: string, search: string = ''): WorkspaceRoute => {
   let cleanPath = pathname;
   let cleanSearch = search;
@@ -282,7 +315,10 @@ export const parseWorkspaceRoute = (pathname: string, search: string = ''): Work
   // route ini 404). Di-render oleh DaftarPekerjaanView via menu 'daftar-pekerjaan'.
   if (path === `${APP_PREFIX}/pekerjaan`) return { scope: 'global', menu: 'daftar-pekerjaan', status: 'ok' };
   if (path === `${APP_PREFIX}/template-rab` || path === `${APP_PREFIX}/templates`) return { scope: 'global', menu: 'template-rab', status: 'ok' };
-  if (path === `${APP_PREFIX}/ahsp`) return { scope: 'global', menu: 'ahsp-2026', status: 'ok' };
+  if (path === `${APP_PREFIX}/ahsp`) {
+    const ahsp = parseAhspParams(query);
+    return { scope: 'global', menu: 'ahsp-2026', status: 'ok', ...(ahsp ? { ahsp } : {}) };
+  }
   if (path === `${APP_PREFIX}/qto`) return { scope: 'global', menu: 'qto', status: 'ok' };
   if (path === `${APP_PREFIX}/management`) return { scope: 'global', menu: 'manajemen-proyek', status: 'ok' };
   if (path === `${APP_PREFIX}/schedule`) return { scope: 'global', menu: 'jadwal', status: 'ok' };

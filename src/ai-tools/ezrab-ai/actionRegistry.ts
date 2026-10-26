@@ -19,7 +19,7 @@ import {
 import { RabTemplateService } from '../../services/rabTemplateService';
 import { listUnifiedTemplates } from '../../services/rabTemplateCatalogAdapter';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
-import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
+import { ahspChatPriceSuffix } from './ahspChatPrice';
 import { clarifyTopicCard, clarifyPickResult } from './clarifyTopics';
 import { evaluateCalculation } from './calcIntent';
 import { buildDirectRab, displayTemplateBasisName, findDirectTemplate, formatDirectRabMessage, matchDirectRegion } from './directRab';
@@ -62,9 +62,13 @@ export interface ChatActionContext {
 export interface ChatActionButton {
   /** Label tombol */
   label: string;
-  /** Aksi: navigasi ke menu, atau intent untuk diproses ulang */
+  /** Aksi: navigasi ke menu, atau intent untuk diproses ulang.
+   * 'nav-entry' (Command Router 2026-10-26): chip menuju satu entry registry
+   * (navRegistry.ts) — diperlukan karena filter proyek dan aksi tutorial
+   * tidak bisa diungkapkan hanya dengan string menu. */
   action:
     | { kind: 'navigate'; menu: string }
+    | { kind: 'nav-entry'; entryId: string }
     | { kind: 'intent'; intent: string; param?: string }
     | { kind: 'push-rab' };
 }
@@ -525,18 +529,11 @@ function clarifyAhspQueryResult(query: string): ActionResult {
   // diteruskan apa adanya dari record kanonis.
   const lines = hits.map((h, i) => {
     const it: any = h.item;
-    let price: number | null = Number(it.unitPrice) || null;
-    if (!price && it.code) {
-      try {
-        const r: any = priceResolver2026.resolveAhspUnitPrice(it.code, it.unit);
-        if (r?.unitPrice) price = Number(r.unitPrice);
-      } catch { /* abaikan — tampilkan belum tersedia */ }
-    }
     const title = it.title ?? it.name ?? '-';
     const prov: string[] = [];
     if (it.sourceDocument) prov.push(`Sumber: ${it.sourceDocument}`);
     if (it.status) prov.push(`Status verifikasi: ${it.status}`);
-    const head = `${i + 1}. [${it.code ?? '-'}] ${title} — ${it.unit ?? ''}${price ? ` — ${fmtIDR(Math.round(price))}` : ' — harga belum tersedia (lihat analisa komponen)'}`;
+    const head = `${i + 1}. [${it.code ?? '-'}] ${title} — ${it.unit ?? ''}${ahspChatPriceSuffix(it)}`;
     return prov.length ? `${head}\n   ${prov.join(' · ')}` : head;
   });
   return {

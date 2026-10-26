@@ -339,6 +339,34 @@ export const HELP_TEXT = `Perintah yang tersedia:
 /dashboard — Kembali ke dashboard
 /game — Buka EZRAB Game Space 🎮
 
+🧭 Navigasi lanjutan (Command Router — ketik "/" di composer untuk daftar lengkap):
+/beranda — Kembali ke Beranda
+/proyek-draft — Proyek Draft
+/proyek-aktif — Proyek Sedang Dikerjakan
+/proyek-selesai — Proyek Selesai
+/proyek-arsip — Proyek Arsip
+/kalkulator — Kalkulator Volume
+/jadwal — Jadwal
+/jadwal-manajemen — Jadwal & Manajemen
+/spreadsheet — Spreadsheet RAB
+/rekap-rab — Rekapitulasi RAB
+/analisa-harga — Analisa Harga RAB
+/kurva-s — Kurva S & Jadwal
+/catatan — Catatan Estimasi
+/pengaturan-rab — Pengaturan RAB
+/chat-ai — Kembali ke Chat AI
+/dokumen-ai — AI Document
+/dokumen-proyek — Dokumen Proyek
+/database — Database (Material & Harga)
+/material — Material & Harga
+/upah — Upah
+/alat — Peralatan
+/harga-proyek — Harga Proyek
+/laporan — Laporan
+/keuangan — Keuangan Proyek
+/pengaturan — Pengaturan
+/tutorial — Buka Tutorial
+
 🔍 Pencarian:
 "cari ahsp [kata kunci]" — Cari harga satuan AHSP 2026
 
