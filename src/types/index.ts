@@ -536,6 +536,15 @@ export interface Project {
   versions?: ProjectVersion[];
   members?: ProjectMember[];
   notesList?: ProjectNote[];
+  /**
+   * Nama-nama kelompok WBS yang diketik manual oleh user lewat tombol
+   * "Tambah Kelompok" di spreadsheet. Kelompok di spreadsheet selama ini
+   * hanya turunan dari item (sectionName/category), sehingga kelompok
+   * kosong tidak bisa ada — daftar ini membuat header kelompok kosong
+   * tetap tampil (dengan tombol + tambah item di dalamnya) dan bertahan
+   * lewat penyimpanan proyek. Bukan data AHSP, bukan harga.
+   */
+  customWbsGroups?: string[];
   shareToken?: string;
   sharePermission?: 'VIEW_ONLY' | 'CAN_COMMENT' | 'CAN_EDIT';
   isShareActive?: boolean;
@@ -917,8 +926,16 @@ export interface RabItem {
   priceSourceExplanation?: string;
   /** Katalog 180: status pemetaan AHSP terhadap katalog kanonis 2026 (diisi generator template). */
   ahspMappingStatus?: 'VERIFIED' | 'MAPPED_UNPRICED' | 'UNIT_MISMATCH' | 'NEEDS_MAPPING' | 'NOT_APPLICABLE';
-  /** Katalog 180: nama/dokumen sumber harga resmi bila priceSourceKind = OFFICIAL_AHSP. */
+  /** Katalog 180: nama sumber harga — dokumen resmi (OFFICIAL_AHSP) atau pemasok katalog material (MARKET_REFERENCE); null bila tak tercatat. */
   priceSourceName?: string | null;
+  /**
+   * Katalog 180 (Final Fix): metadata sumber harga pasar dari katalog
+   * material — null bila tak tercatat. Cabang seed template (comp.unitPrice)
+   * dan cabang resmi TIDAK punya metadata ini dan tetap null (tidak dikarang).
+   */
+  priceSourceSupplier?: string | null;
+  priceSourceDate?: string | null;
+  priceSourceRegion?: string | null;
   /**
    * AHSP identity safety (audit 2026-10-18). Set by rabItemFactory when
    * ahspCode is present. 'UNSAFE' = parsing fragment / artefak / identitas

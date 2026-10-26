@@ -14,6 +14,12 @@ import {
 } from './types';
 import { extractConversionTrail } from './conversionTrail';
 import {
+  isExportPriceValid,
+  exportItemAmount,
+  summarizeExportSections,
+  exportTotalNote,
+} from './priceIntegrity';
+import {
   EXCEL_COLORS,
   FONT_FAMILY,
   FONT_HIERARCHY,
@@ -114,11 +120,25 @@ export async function exportRABToProfessionalExcel(
   const normalizedSections = UnifiedProjectEngine.normalizeSections(project);
   const costSummary = UnifiedProjectEngine.computeCostSummaryFromSections(project, normalizedSections);
 
+  // P0 ekspor 2026-10-26: ringkasan harga digating STATUS (priceIntegrity),
+  // dipakai semua sheet untuk total per seksi, label PARSIAL, dan validasi.
+  // costSummary.directCost/grandTotal sudah digating di
+  // computeCostSummaryFromSections; ringkasan ini menambah hitungan item
+  // tanpa harga + per-bucket (resmi/pasar/manual/lainnya).
+  const exportSummary = summarizeExportSections(normalizedSections as any);
+  const exportPartialNote = exportTotalNote(exportSummary);
+
   const taxPercent = costSummary.taxPercent ?? 11;
   const pphPercent = project.costSummary?.pphPercent ?? 1.75;
   const overheadPercent = costSummary.overheadPercent ?? 5;
   const profitPercent = costSummary.profitPercent ?? 5;
-  const grandTotal = costSummary.grandTotal || 1;
+  // Perbaikan final: HAPUS fabrikasi Rp1. Bila seluruh item tanpa harga,
+  // total berharga = 0 (jujur) dan sel display memakai teks HARGA BELUM
+  // TERSEDIA (lihat noPricedTotal di bawah). Guard pembagi internal tetap
+  // memakai || 1 di tempatnya masing-masing (tidak pernah ditampilkan
+  // sebagai total).
+  const grandTotal = costSummary.grandTotal ?? 0;
+  const noPricedTotal = exportSummary.pricedCount === 0;
   const directCost = costSummary.directCost || grandTotal;
 
   const isBoqMc0Only = preset === 'BOQ_MC0';
@@ -189,6 +209,18 @@ export async function exportRABToProfessionalExcel(
     }
 
     const totalRabItemsCount = normalizedSections.reduce((s, sec) => s + sec.items.length, 0);
+    // P0 ekspor 2026-10-26: pisahkan HARGA BELUM TERSEDIA dari harga Rp0
+    // valid — sebelumnya keduanya tercampur dalam satu WARNING "Harga 0"
+    // (unitPrice <= 0), sehingga sentinel unresolved tampak seperti harga
+    // nol dan harga nol valid tampak seperti masalah.
+    const unresolvedCostItems = normalizedSections.reduce(
+      (n, sec) => n + sec.items.filter((it: any) => !isExportPriceValid(it)).length,
+      0
+    );
+    const validZeroCostItems = normalizedSections.reduce(
+      (n, sec) => n + sec.items.filter((it: any) => isExportPriceValid(it) && Number(it.unitPrice) === 0).length,
+      0
+    );
     const hasZeroCostItems = normalizedSections.some((sec) => sec.items.some((it) => (it.volume || 0) <= 0 || (it.unitPrice || 0) <= 0));
     const scheduleCheck = UnifiedProjectEngine.validateScheduleReadiness(project, (project as any).scheduleTasks || []);
 
@@ -207,9 +239,13 @@ export async function exportRABToProfessionalExcel(
       },
       {
         param: 'Integritas Volume & Harga Satuan',
-        status: hasZeroCostItems ? 'WARNING' : 'PASS',
-        val: hasZeroCostItems ? 'Terdapat Volume/Harga 0' : 'Valid Tanpa Nilai Kosong',
-        notes: hasZeroCostItems ? 'Periksa item tanpa harga/volume pada sheet 05_RAB_Detail.' : 'Seluruh baris memiliki volume & harga positif.',
+        status: unresolvedCostItems > 0 ? 'WARNING' : 'PASS',
+        val: unresolvedCostItems > 0
+          ? `${unresolvedCostItems} item HARGA BELUM TERSEDIA (bukan Rp0)`
+          : (validZeroCostItems > 0 ? `${validZeroCostItems} item harga Rp0 valid` : 'Valid Tanpa Nilai Kosong'),
+        notes: unresolvedCostItems > 0
+          ? 'Item tersebut tidak termasuk dalam total; periksa sheet 05_RAB_Detail (harga ditandai HARGA BELUM TERSEDIA, bukan Rp0).'
+          : (hasZeroCostItems ? 'Periksa item tanpa volume pada sheet 05_RAB_Detail.' : 'Seluruh baris memiliki volume & harga positif.'),
       },
       {
         param: 'Total Akumulasi Bobot WBS',
@@ -220,7 +256,7 @@ export async function exportRABToProfessionalExcel(
       {
         param: 'Konsistensi Grand Total (Excel/PDF)',
         status: 'PASS',
-        val: `Rp ${grandTotal.toLocaleString('id-ID')}`,
+        val: noPricedTotal ? 'HARGA BELUM TERSEDIA' : `Rp ${grandTotal.toLocaleString('id-ID')}`,
         notes: 'Dihitung via UnifiedProjectEngine dengan presisi 1:1.',
       },
       {
@@ -354,20 +390,22 @@ export async function exportRABToProfessionalExcel(
     // Executive Cost Card (ONLY for non-MC0 packages)
     if (!isBoqMc0Only) {
       wsCover.mergeCells('B19:E19');
-      wsCover.getCell('B19').value = 'TOTAL ESTIMASI ANGGARAN BIAYA (RAB)';
+      wsCover.getCell('B19').value = exportSummary.isPartial
+        ? `TOTAL ESTIMASI ANGGARAN BIAYA (RAB) — PARSIAL (${exportSummary.unpricedCount} item belum memiliki harga)`
+        : 'TOTAL ESTIMASI ANGGARAN BIAYA (RAB)';
       wsCover.getCell('B19').font = { name: FONT_FAMILY, size: 9, bold: true, color: { argb: EXCEL_COLORS.PRIMARY_BLUE } };
       wsCover.getCell('B19').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: EXCEL_COLORS.BG_SUBTLE_BLUE } };
       wsCover.getCell('B19').alignment = { horizontal: 'center' };
 
       wsCover.mergeCells('B20:E21');
-      wsCover.getCell('B20').value = grandTotal;
+      wsCover.getCell('B20').value = noPricedTotal ? 'HARGA BELUM TERSEDIA' : grandTotal;
       wsCover.getCell('B20').numFmt = NUMBER_FORMATS.CURRENCY;
       wsCover.getCell('B20').font = { name: FONT_FAMILY, size: 20, bold: true, color: { argb: EXCEL_COLORS.PRIMARY_BLUE_DARK } };
       wsCover.getCell('B20').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: EXCEL_COLORS.BG_SUBTLE_BLUE } };
       wsCover.getCell('B20').alignment = { vertical: 'middle', horizontal: 'center' };
 
       wsCover.mergeCells('B22:E22');
-      wsCover.getCell('B22').value = `Terbilang: ${terbilangIndo(grandTotal)}`;
+      wsCover.getCell('B22').value = noPricedTotal ? 'Terbilang: HARGA BELUM TERSEDIA' : `Terbilang: ${terbilangIndo(grandTotal)}`;
       wsCover.getCell('B22').font = { name: FONT_FAMILY, size: 8.5, italic: true, color: { argb: EXCEL_COLORS.SLATE_MUTED } };
       wsCover.getCell('B22').alignment = { horizontal: 'center' };
     } else {
@@ -502,7 +540,7 @@ export async function exportRABToProfessionalExcel(
       { label: 'BIAYA LANGSUNG (DIRECT)', val: directCost },
       { label: 'OVERHEAD & PROFIT', val: (costSummary.overheadAmount || 0) + (costSummary.profitAmount || 0) },
       { label: 'TOTAL PAJAK (PPN+PPH)', val: (costSummary.taxAmount || 0) + Math.round(directCost * (pphPercent / 100)) },
-      { label: 'GRAND TOTAL RAB', val: grandTotal },
+      { label: exportSummary.isPartial ? 'GRAND TOTAL RAB (PARSIAL)' : 'GRAND TOTAL RAB', val: grandTotal },
     ];
 
     cards.forEach((c, idx) => {
@@ -536,7 +574,9 @@ export async function exportRABToProfessionalExcel(
     const totRow = 10 + normalizedSections.length;
     normalizedSections.forEach((sec, idx) => {
       const r = 10 + idx;
-      const secTotal = sec.items.reduce((s, itm) => s + (itm.totalPrice || 0), 0);
+      // P0 ekspor 2026-10-26: total seksi digating status, bukan jumlah
+      // totalPrice mentah (total basi item UNRESOLVED ikut bocor sebelumnya).
+      const secTotal = exportSummary.sections[idx]?.pricedTotal ?? sec.items.reduce((s, itm) => s + (itm.totalPrice || 0), 0);
       const weight = secTotal / (directCost || 1);
 
       wsSum.getCell(`B${r}`).value = idx + 1;
@@ -559,7 +599,9 @@ export async function exportRABToProfessionalExcel(
 
     wsSum.getCell(`B${totRow}`).value = '';
     wsSum.getCell(`C${totRow}`).value = '';
-    wsSum.getCell(`D${totRow}`).value = 'TOTAL BIAYA LANGSUNG (DIRECT COST)';
+    wsSum.getCell(`D${totRow}`).value = exportSummary.isPartial
+      ? `TOTAL BIAYA LANGSUNG (DIRECT COST) — PARSIAL (${exportSummary.unpricedCount} item belum memiliki harga)`
+      : 'TOTAL BIAYA LANGSUNG (DIRECT COST)';
     wsSum.getCell(`D${totRow}`).font = FONT_HIERARCHY.BODY_BOLD;
     if (useLiveFormulas) {
       const sumRange = totRow > 10 ? `E10:E${totRow - 1}` : `E10`;
@@ -626,7 +668,8 @@ export async function exportRABToProfessionalExcel(
     normalizedSections.forEach((sec, idx) => {
       const r = 6 + idx;
       const coords = sectionCoordinates[sec.code];
-      const secTotal = sec.items.reduce((s, itm) => s + (itm.totalPrice || 0), 0);
+      // P0 ekspor 2026-10-26: total seksi digating status (lihat sheet ringkasan).
+      const secTotal = exportSummary.sections[idx]?.pricedTotal ?? sec.items.reduce((s, itm) => s + (itm.totalPrice || 0), 0);
 
       wsRecap.getCell(`B${r}`).value = idx + 1;
       wsRecap.getCell(`C${r}`).value = sec.code;
@@ -664,7 +707,7 @@ export async function exportRABToProfessionalExcel(
       { label: 'SUBTOTAL SEBELUM PAJAK', formula: `SUM(E${rStart}:E${rStart + 2})`, val: subtotalPreTaxVal, bold: true },
       { label: `Pajak Pertambahan Nilai PPN (${taxPercent}%)`, formula: `E${rStart + 3}*${taxPercent / 100}`, val: costSummary.taxAmount || 0 },
       { label: `Pajak Penghasilan PPh (${pphPercent}%)`, formula: `E${rStart}*${pphPercent / 100}`, val: pphVal },
-      { label: 'TOTAL ESTIMASI ANGGARAN BIAYA (GRAND TOTAL)', formula: `E${rStart + 3}+E${rStart + 4}+E${rStart + 5}`, val: grandTotal, isGrandTotal: true },
+      { label: noPricedTotal ? 'TOTAL ESTIMASI ANGGARAN BIAYA (GRAND TOTAL) — HARGA BELUM TERSEDIA' : 'TOTAL ESTIMASI ANGGARAN BIAYA (GRAND TOTAL)', formula: `E${rStart + 3}+E${rStart + 4}+E${rStart + 5}`, val: grandTotal, isGrandTotal: true },
     ];
 
     summaryRows.forEach((sr, sIdx) => {
@@ -699,7 +742,7 @@ export async function exportRABToProfessionalExcel(
     // Terbilang Note
     const terbilangRow = rStart + summaryRows.length + 1;
     wsRecap.mergeCells(`B${terbilangRow}:F${terbilangRow}`);
-    wsRecap.getCell(`B${terbilangRow}`).value = `Terbilang: ${terbilangIndo(grandTotal)}`;
+    wsRecap.getCell(`B${terbilangRow}`).value = noPricedTotal ? 'Terbilang: HARGA BELUM TERSEDIA' : `Terbilang: ${terbilangIndo(grandTotal)}`;
     wsRecap.getCell(`B${terbilangRow}`).font = { name: FONT_FAMILY, size: 9.5, italic: true, bold: true, color: { argb: EXCEL_COLORS.NAVY_DARK } };
 
     // Signatures
@@ -773,24 +816,40 @@ export async function exportRABToProfessionalExcel(
         iRow.getCell(2).value = itm.code || `${sec.code}.${itmIdx + 1}`;
         iRow.getCell(3).value = itm.description || (itm as any).name;
         const numVol = Number(itm.volume) || 0;
+        // P0 ekspor 2026-10-26: baris tanpa harga TIDAK ditulis Rp0.
+        // Sel harga = teks 'HARGA BELUM TERSEDIA', sel jumlah = '–'
+        // (teks diabaikan SUM Excel, jadi subtotal formula tidak ikut
+        // menghitungnya; sebelumnya formula D*F menghitungnya sebagai 0
+        // dan tampil sebagai harga Rp0 yang sah).
+        const itemValid = isExportPriceValid(itm as any);
         const numPrice = Number(itm.unitPrice) || 0;
-        const numTotal = Number(itm.totalPrice) || (numVol * numPrice);
+        const numTotal = itemValid ? (exportItemAmount(itm as any) ?? 0) : 0;
 
         iRow.getCell(4).value = numVol;
         iRow.getCell(4).numFmt = NUMBER_FORMATS.QUANTITY;
         iRow.getCell(5).value = itm.unit;
-        iRow.getCell(6).value = numPrice;
-        iRow.getCell(6).numFmt = NUMBER_FORMATS.CURRENCY;
+        if (itemValid) {
+          iRow.getCell(6).value = numPrice;
+          iRow.getCell(6).numFmt = NUMBER_FORMATS.CURRENCY;
+        } else {
+          iRow.getCell(6).value = 'HARGA BELUM TERSEDIA';
+        }
 
-        if (useLiveFormulas) {
+        if (!itemValid) {
+          iRow.getCell(7).value = '–';
+          iRow.getCell(8).value = 0;
+          iRow.getCell(8).numFmt = NUMBER_FORMATS.PERCENT;
+        } else if (useLiveFormulas) {
           iRow.getCell(7).value = { formula: `IFERROR(D${detailCurRow}*F${detailCurRow},0)`, result: numTotal };
           iRow.getCell(8).value = { formula: `IFERROR(G${detailCurRow}/$G$${rabDetailGrandTotalRow},0)`, result: numTotal / (grandTotal || 1) };
+          iRow.getCell(7).numFmt = NUMBER_FORMATS.CURRENCY;
+          iRow.getCell(8).numFmt = NUMBER_FORMATS.PERCENT;
         } else {
           iRow.getCell(7).value = numTotal;
+          iRow.getCell(7).numFmt = NUMBER_FORMATS.CURRENCY;
           iRow.getCell(8).value = numTotal / (grandTotal || 1);
+          iRow.getCell(8).numFmt = NUMBER_FORMATS.PERCENT;
         }
-        iRow.getCell(7).numFmt = NUMBER_FORMATS.CURRENCY;
-        iRow.getCell(8).numFmt = NUMBER_FORMATS.PERCENT;
         // Fase 4A: tandai item yang harganya belum tersedia secara eksplisit,
         // jangan biarkan Rp0 terlihat seperti harga resmi.
         // Price Fallback Layer: tampilkan label sumber harga.
@@ -809,7 +868,9 @@ export async function exportRABToProfessionalExcel(
       subRow.getCell(3).value = `SUBTOTAL ${sec.name.toUpperCase()}`;
       subRow.getCell(3).font = FONT_HIERARCHY.SUBTOTAL;
 
-      const secSubtotalVal = sec.items.reduce((s, itm) => s + (itm.totalPrice || 0), 0);
+      // P0 ekspor 2026-10-26: subtotal digating status; formula SUM
+      // mengabaikan sel teks '–' pada baris tanpa harga.
+      const secSubtotalVal = exportSummary.sections[secIdx]?.pricedTotal ?? sec.items.reduce((s, itm) => s + (itm.totalPrice || 0), 0);
       if (useLiveFormulas) {
         subRow.getCell(7).value = { formula: `SUM(G${itmStart}:G${itmEnd})`, result: secSubtotalVal };
       } else {
@@ -834,13 +895,13 @@ export async function exportRABToProfessionalExcel(
     const pphVal = Math.round(directCost * (pphPercent / 100));
 
     const sumDetails = [
-      { label: 'TOTAL BIAYA LANGSUNG (DIRECT COST)', formula: directCostFormula, val: directCost, bold: true },
+      { label: exportSummary.isPartial ? 'TOTAL BIAYA LANGSUNG (DIRECT COST) — PARSIAL' : 'TOTAL BIAYA LANGSUNG (DIRECT COST)', formula: directCostFormula, val: directCost, bold: true },
       { label: `Overhead Cost (${overheadPercent}%)`, formula: `G${rabDetailDirectCostRow}*${overheadPercent / 100}`, val: costSummary.overheadAmount || 0 },
       { label: `Profit Margin (${profitPercent}%)`, formula: `G${rabDetailDirectCostRow}*${profitPercent / 100}`, val: costSummary.profitAmount || 0 },
       { label: 'SUBTOTAL SEBELUM PAJAK', formula: `SUM(G${rabDetailDirectCostRow}:G${rabDetailProfitRow})`, val: directCost + (costSummary.overheadAmount || 0) + (costSummary.profitAmount || 0), bold: true },
       { label: `Pajak Pertambahan Nilai PPN (${taxPercent}%)`, formula: `G${rabDetailSubtotalPreTaxRow}*${taxPercent / 100}`, val: costSummary.taxAmount || 0 },
       { label: `Pajak Penghasilan PPh (${pphPercent}%)`, formula: `G${rabDetailDirectCostRow}*${pphPercent / 100}`, val: pphVal },
-      { label: 'TOTAL ESTIMASI ANGGARAN BIAYA (GRAND TOTAL)', formula: `G${rabDetailSubtotalPreTaxRow}+G${rabDetailTaxRow}+G${rabDetailPphRow}`, val: grandTotal, isGrandTotal: true },
+      { label: noPricedTotal ? 'TOTAL ESTIMASI ANGGARAN BIAYA (GRAND TOTAL) — HARGA BELUM TERSEDIA' : 'TOTAL ESTIMASI ANGGARAN BIAYA (GRAND TOTAL)', formula: `G${rabDetailSubtotalPreTaxRow}+G${rabDetailTaxRow}+G${rabDetailPphRow}`, val: grandTotal, isGrandTotal: true },
     ];
 
     sumDetails.forEach((sd, idx) => {
@@ -938,21 +999,30 @@ export async function exportRABToProfessionalExcel(
         const bqVol = Number(itm.volume) || 0;
         // Phase 2I.2: harga null ditandai eksplisit di kolom Keterangan,
         // tidak diam-diam menjadi Rp0.
-        const isUnresolved = itm.unitPrice == null || (itm as any).priceStatus === 'PRICE_UNRESOLVED';
+        // P0 ekspor 2026-10-26: penanda saja tidak cukup — sel harga &
+        // jumlah baris tanpa harga kini teks, bukan 0 + formula D*F
+        // (sebelumnya baris unresolved tetap berkontribusi 0 yang tampil
+        // sebagai harga sah dan ikut SUM saat dibuka di Excel).
+        const isUnresolved = !isExportPriceValid(itm as any);
         const bqPrice = Number(itm.unitPrice) || 0;
-        const bqTotal = Number(itm.totalPrice) || (bqVol * bqPrice);
+        const bqTotal = isUnresolved ? 0 : (exportItemAmount(itm as any) ?? 0);
 
         r.getCell(4).value = bqVol;
         r.getCell(4).numFmt = NUMBER_FORMATS.QUANTITY;
         r.getCell(5).value = itm.unit;
-        r.getCell(6).value = bqPrice;
-        r.getCell(6).numFmt = NUMBER_FORMATS.CURRENCY;
-        if (useLiveFormulas) {
-          r.getCell(7).value = { formula: `IFERROR(D${bqRowIdx}*F${bqRowIdx},0)`, result: bqTotal };
+        if (isUnresolved) {
+          r.getCell(6).value = 'HARGA BELUM TERSEDIA';
+          r.getCell(7).value = '–';
         } else {
-          r.getCell(7).value = bqTotal;
+          r.getCell(6).value = bqPrice;
+          r.getCell(6).numFmt = NUMBER_FORMATS.CURRENCY;
+          if (useLiveFormulas) {
+            r.getCell(7).value = { formula: `IFERROR(D${bqRowIdx}*F${bqRowIdx},0)`, result: bqTotal };
+          } else {
+            r.getCell(7).value = bqTotal;
+          }
+          r.getCell(7).numFmt = NUMBER_FORMATS.CURRENCY;
         }
-        r.getCell(7).numFmt = NUMBER_FORMATS.CURRENCY;
         r.getCell(8).value = (isUnresolved ? 'HARGA BELUM TERSEDIA — ' : '') + (itm.notes || '');
 
         for (let c = 1; c <= 8; c++) {
@@ -1553,7 +1623,8 @@ export async function exportRABToProfessionalExcel(
 
       dRow.getCell(1).value = sec.code;
       dRow.getCell(3).value = sec.name.toUpperCase();
-      const secTotal = sec.items.reduce((acc, it) => acc + (it.totalPrice || 0), 0);
+      // P0 ekspor 2026-10-26: total divisi digating status.
+      const secTotal = exportSummary.sections[sIdx]?.pricedTotal ?? sec.items.reduce((acc, it) => acc + (it.totalPrice || 0), 0);
       dRow.getCell(4).value = secTotal;
       dRow.getCell(4).numFmt = NUMBER_FORMATS.CURRENCY;
       if (useLiveFormulas) {
@@ -1577,12 +1648,19 @@ export async function exportRABToProfessionalExcel(
         const curR = schedRowIdx;
         itemRowIndices.push(curR);
 
-        const itmWeight = (itm.totalPrice || 0) / (directCost || 1);
+        // P0 ekspor 2026-10-26: bobot & jumlah item tanpa harga digating
+        // status (sebelumnya totalPrice mentah, termasuk total basi).
+        const schedAmt = exportItemAmount(itm as any);
+        const itmWeight = (schedAmt ?? 0) / (directCost || 1);
         r.getCell(1).value = itmIdx + 1;
         r.getCell(2).value = itm.code || `${sec.code}.${itmIdx + 1}`;
         r.getCell(3).value = itm.description || (itm as any).name;
-        r.getCell(4).value = itm.totalPrice || 0;
-        r.getCell(4).numFmt = NUMBER_FORMATS.CURRENCY;
+        if (schedAmt == null) {
+          r.getCell(4).value = '–';
+        } else {
+          r.getCell(4).value = schedAmt;
+          r.getCell(4).numFmt = NUMBER_FORMATS.CURRENCY;
+        }
 
         if (useLiveFormulas) {
           r.getCell(5).value = { formula: `IFERROR(D${curR}/$D$${totalSchedRow}, 0)`, result: itmWeight };
@@ -1773,7 +1851,7 @@ export async function exportRABToProfessionalExcel(
     const kurvaBasisLabel = Array.isArray((project as any).scheduleTasks) && (project as any).scheduleTasks.length > 0
       ? 'Baseline dari tugas jadwal tersimpan'
       : 'Baseline estimasi dari distribusi bobot seksi RAB (tugas jadwal belum tersimpan)';
-    wsKurva.getCell('A3').value = `${kurvaBasisLabel} • Total RAB: Rp ${grandTotal.toLocaleString('id-ID')} • Durasi: ${project.startDate || '-'} s/d ${project.targetDate || '-'} • Rev: ${project.currentVersion || 'Rev 00'}`;
+    wsKurva.getCell('A3').value = `${kurvaBasisLabel} • ${noPricedTotal ? 'Total RAB: HARGA BELUM TERSEDIA' : `Total RAB: Rp ${grandTotal.toLocaleString('id-ID')}`} • Durasi: ${project.startDate || '-'} s/d ${project.targetDate || '-'} • Rev: ${project.currentVersion || 'Rev 00'}`;
     wsKurva.getCell('A3').font = FONT_HIERARCHY.DOC_SUBTITLE;
 
     const kHead = wsKurva.getRow(5);
@@ -1967,6 +2045,11 @@ export async function exportRABToProfessionalExcel(
       ['Pekerjaan Tambah Kurang', 'Pekerjaan tambah/kurang hanya sah apabila disetujui secara tertulis melalui Berita Acara Site Instruction (SI) yang ditandatangani Pengawas Lapangan.'],
       ['Integritas Formula Matematika', 'Seluruh lembar kerja Excel ini menggunakan formula aktif live (SUM, Perkalian Kuantitas, Pembobotan %, dan Rekapitulasi Otomatis).'],
       ['Jaminan Mutu & Retensi', 'Kontraktor wajib memberikan jaminan masa pemeliharaan selama minimal 90 hari kalender terhitung sejak Berita Acara Serah Terima Pertama (PHO).'],
+      // P0 ekspor 2026-10-26: jejak audit parsial — total pada dokumen ini
+      // tidak mencakup item tanpa harga (bukan total resmi final).
+      ...(exportSummary.isPartial
+        ? [['Status Total Dokumen', exportPartialNote + '. Perincian per sumber: resmi Rp ' + exportSummary.officialTotal.toLocaleString('id-ID') + '; referensi pasar Rp ' + exportSummary.marketTotal.toLocaleString('id-ID') + '; manual Rp ' + exportSummary.manualTotal.toLocaleString('id-ID') + '; lainnya Rp ' + exportSummary.otherTotal.toLocaleString('id-ID') + '.'] as [string, string]]
+        : []),
     ];
 
     notesList.forEach((n, idx) => {
@@ -2020,6 +2103,10 @@ export function buildExcelSourceText(itm: {
   priceSourceKind?: string;
   priceSourceLabel?: string;
   priceSourceExplanation?: string;
+  priceSourceName?: string | null;
+  priceSourceSupplier?: string | null;
+  priceSourceDate?: string | null;
+  priceSourceRegion?: string | null;
   volumeSource?: string;
   ahspCode?: string;
 }): string {
@@ -2037,7 +2124,11 @@ export function buildExcelSourceText(itm: {
     return `ASUMSI — PERLU VERIFIKASI${srcExpl ? ' — ' + srcExpl : ''}`;
   }
   if (srcKind === 'MARKET_REFERENCE') {
-    return `REFERENSI PASAR${srcExpl ? ' — ' + srcExpl : ''}`;
+    // Final Fix: metadata pasar tampil bila tercatat; tanpa metadata tetap
+    // tampil polos (tidak dikarang).
+    const supplier = itm.priceSourceSupplier || itm.priceSourceName || '';
+    const meta = [supplier, itm.priceSourceDate ? `berlaku ${itm.priceSourceDate}` : '', itm.priceSourceRegion || ''].filter(Boolean).join(' · ');
+    return `REFERENSI PASAR${meta ? ` (${meta})` : ''}${srcExpl ? ' — ' + srcExpl : ''}`;
   }
   if (srcKind === 'OFFICIAL_AHSP') {
     const base = itm.volumeSource || itm.ahspCode || 'RESMI AHSP';

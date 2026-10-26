@@ -37,9 +37,10 @@ import { debitChatCreditOnSuccess } from './chatCreditDebit';
 import { renderMarkdown } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, type NavEntry } from './navRegistry';
-import { consumePendingAiEntry, requestAiEntry } from '../aiNavigation';
+import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext, type EzrabAiMode } from '../aiNavigation';
 import { executeIntent, continueRabNeeds, continueRabChoice, tryContinueRabSubtype, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
 import { getLastDirectRab } from './directRab';
+import { getLastUniversalDraft, setLastUniversalDraft, looksLikeUniversalRevision, reviseUniversalDraft, buildPushPreview, formatPushPreviewMessage, buildPushPayload, dedupePushPayload, validateTransfer, draftReadiness } from './universalRab';
 import { looksLikeNeedsAnswer } from './rabNeeds';
 import { notificationBus } from '../../notifications/notificationBus';
 import { navigateTo, paths, routeForMenu } from '../../routing/routes';
@@ -643,6 +644,27 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       }
       return;
     }
+    /* ---- Revisi draft universal (2026-10-26) ----
+     * Bila draft universal aktif dan pesan ini perintah revisi (bukan
+     * permintaan RAB baru / navigasi), terapkan revisi lokal tanpa AI
+     * dan tanpa kredit. Revisi yang tidak dikenali jatuh ke routing
+     * normal di bawah (tidak ditelan). */
+    if (!forcedAi && getLastUniversalDraft() && looksLikeUniversalRevision(msg)) {
+      const draftRev = getLastUniversalDraft()!;
+      const rev = reviseUniversalDraft(draftRev, msg);
+      if (rev) {
+        const acts: ChatActionButton[] | undefined = rev.changed
+          ? [
+              { label: 'Push ke Spreadsheet', action: { kind: 'push-universal' } },
+              { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+            ]
+          : undefined;
+        setMessages((prev) => [...prev, { role: 'assistant', content: rev.message, ts: Date.now(), actions: acts }]);
+        persistMessage('assistant', rev.message);
+        setBusy(false);
+        return;
+      }
+    }
     /* ---- Phase 1: local intent router runs BEFORE any AI provider call ---- */
     const routed = routeIntent(msg);
     if (!forcedAi && routed.localOnly && routed.intent !== 'UNKNOWN') {
@@ -777,24 +799,56 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     text: string;
     sendMode: 'prefill' | 'autosend';
   } | null>(null);
+  /* ---- Fase 1 unifikasi AI: mode + banner konteks entry (hanya area
+   * tampilan; handler transfer/push, submit(), hook universal, dan logika
+   * draft TIDAK disentuh). Mode default 'chat'; entry sekali-pakai dari
+   * resolver mengisi banner + (bila ada prompt) prefill input. */
+  const [aiEntryContext, setAiEntryContext] = useState<EzrabAiEntryContext | null>(null);
   const mountConsumeRef = useRef(false);
-  const takePendingEntry = useCallback(() => {
-    const entry = consumePendingAiEntry('chat_agent');
+  // Timer kedaluwarsa banner: konteks yang ditampilkan harus ikut hilang
+  // saat entry kedaluwarsa, bukan menempel selamanya di view ter-mount.
+  const bannerExpiryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearBannerTimer = useCallback(() => {
+    if (bannerExpiryRef.current) {
+      clearTimeout(bannerExpiryRef.current);
+      bannerExpiryRef.current = null;
+    }
+  }, []);
+  const takePendingEntry = useCallback((clearOnMismatch: boolean) => {
+    const peeked = peekPendingEzrabAiEntry();
+    const ezEntry = consumePendingEzrabAiEntry();
+    if (ezEntry) {
+      setAiEntryContext(ezEntry);
+      clearBannerTimer();
+      const remaining = peeked ? ezrabAiEntryRemainingMs(peeked.createdAt) : 60_000;
+      if (remaining > 0) {
+        bannerExpiryRef.current = setTimeout(() => setAiEntryContext(null), remaining);
+      } else {
+        setAiEntryContext(null);
+      }
+    }
+    const entry = consumePendingAiEntry('chat_agent', { clearOnMismatch });
     const text = entry?.initialPrompt?.trim();
     if (!text) return;
     setInjectedPrompt({ text, sendMode: entry?.sendMode ?? 'prefill' });
-  }, []);
-  // Jalur 1: view baru di-mount setelah navigasi.
+  }, [clearBannerTimer]);
+  // Jalur 1: view baru di-mount setelah navigasi — entry tujuan lain
+  // dibersihkan agar prefill basi tidak muncul kembali (<60 detik).
   useEffect(() => {
     if (mountConsumeRef.current) return;
     mountConsumeRef.current = true;
-    takePendingEntry();
+    takePendingEntry(true);
   }, [takePendingEntry]);
-  // Jalur 2: view SUDAH ter-mount saat entry didaftarkan (tanpa navigasi ulang).
+  // Jalur 2: view SUDAH ter-mount saat entry didaftarkan (tanpa navigasi
+  // ulang) — mismatch TIDAK dibersihkan: listener ini tidak boleh
+  // menghapus entry permukaan lain (mis. entry ded dari switcher).
   useEffect(() => {
-    const onEntry = () => takePendingEntry();
+    const onEntry = () => takePendingEntry(false);
     window.addEventListener('ezrab:ai-entry', onEntry);
-    return () => window.removeEventListener('ezrab:ai-entry', onEntry);
+    return () => {
+      window.removeEventListener('ezrab:ai-entry', onEntry);
+      if (bannerExpiryRef.current) clearTimeout(bannerExpiryRef.current);
+    };
   }, [takePendingEntry]);
   // Pemrosesan: tunggu percakapan siap + tidak sibuk.
   useEffect(() => {
@@ -878,6 +932,98 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
   };
 
+  /* ---------- Universal Direct RAB: preview transfer + konfirmasi ---------- */
+  /**
+   * Preview transfer draft universal: hitungan dan daftar perbaikan TANPA
+   * menulis apa pun. Konfirmasi terjadi hanya lewat tombol
+   * "Konfirmasi Transfer" (push-universal-confirm).
+   */
+  const pushUniversalToSpreadsheetPreview = () => {
+    const appendMsg = (content: string, actions?: ChatActionButton[], isError = false) => {
+      const entry: ChatEntry = { role: 'assistant', content, ts: Date.now(), actions, isError };
+      setMessages((prev) => [...prev, entry]);
+      persistMessage('assistant', content);
+    };
+    const d = getLastUniversalDraft();
+    if (!d) {
+      appendMsg('Tidak ada draft RAB universal yang aktif untuk di-push. Buat dulu dengan perintah seperti "buatkan RAB jalan paving 300 m2" atau "buatkan RAB drainase U-Ditch 500 m".', undefined, true);
+      return;
+    }
+    const preview = buildPushPreview(d);
+    const readiness = draftReadiness(d);
+    const previewActions: ChatActionButton[] = [
+      ...(effProject && readiness.status !== 'BLOCKED' ? [{ label: 'Konfirmasi Transfer', action: { kind: 'push-universal-confirm' as const } }] : []),
+      { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+    ];
+    appendMsg(formatPushPreviewMessage(d, preview, effProject?.name ?? null), previewActions);
+  };
+
+  /**
+   * Eksekusi transfer draft universal ke Spreadsheet proyek aktif.
+   * Provenance dipertahankan (factory kini meneruskan priceSourceKind /
+   * label / explanation / mappingStatus / priceSourceName); item belum
+   * berharga masuk sebagai PRICE_UNRESOLVED. Idempotensi: versi draft
+   * yang sama ke proyek yang sama tidak ditulis dua kali; duplikat
+   * berdasarkan kode+uraian dilewati dan dilaporkan.
+   */
+  const pushUniversalToSpreadsheet = () => {
+    const appendMsg = (content: string, actions?: ChatActionButton[], isError = false) => {
+      const entry: ChatEntry = { role: 'assistant', content, ts: Date.now(), actions, isError };
+      setMessages((prev) => [...prev, entry]);
+      persistMessage('assistant', content);
+    };
+    const d = getLastUniversalDraft();
+    if (!d) {
+      appendMsg('Tidak ada draft RAB universal yang aktif untuk di-push.', undefined, true);
+      return;
+    }
+    if (!effProject) {
+      appendMsg('Tidak ada proyek aktif. Buat atau buka proyek dulu di menu Proyek, lalu klik "Push ke Spreadsheet" lagi.', undefined, true);
+      return;
+    }
+    if (d.lastTransfer && d.lastTransfer.projectId === effProject.id && d.lastTransfer.version === d.version) {
+      appendMsg(`Draft "${d.title}" versi ${d.version} sudah ditransfer ke proyek "${effProject.name}" (${d.lastTransfer.pushed} item) — tidak ada penulisan ganda.`, [
+        { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+      ]);
+      return;
+    }
+    // Guard transfer (hardening): draft BLOCKED ditolak dengan pesan ramah
+    // SEBELUM buildPushPayload (yang melempar untuk draft BLOCKED). Duplikat
+    // dibiarkan jatuh ke cabang di atas agar pesannya tetap spesifik.
+    const validation = validateTransfer(d, effProject.id);
+    if (!validation.allowed && !validation.duplicate) {
+      appendMsg(`Draft "${d.title}" belum dapat ditransfer: ${validation.reasons.join('; ')}. Lengkapi spesifikasi yang diminta, lalu coba lagi dari preview.`, undefined, true);
+      return;
+    }
+    let payload;
+    try {
+      payload = buildPushPayload(d);
+    } catch (e) {
+      appendMsg(`Draft "${d.title}" belum dapat ditransfer: ${(e as Error).message} — draft tetap tersimpan dan bisa dicoba lagi setelah spesifikasi dilengkapi.`, undefined, true);
+      return;
+    }
+    const { newItems, dupCount } = dedupePushPayload(payload, (projectRabItems || []) as Array<{ code?: string; description?: string }>);
+    if (newItems.length === 0) {
+      appendMsg(`Semua ${payload.length} item draft "${d.title}" sudah ada di Spreadsheet RAB proyek "${effProject.name}" (duplikat dicegah).`, [
+        { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+      ]);
+      return;
+    }
+    try {
+      const added = bulkAddRabItems(newItems);
+      d.lastTransfer = { projectId: effProject.id, version: d.version, pushed: added.length, skipped: dupCount, at: new Date().toISOString() };
+      setLastUniversalDraft(d);
+      appendMsg(
+        `✅ ${added.length} item draft "${d.title}" (versi ${d.version}) berhasil di-push ke Spreadsheet RAB proyek "${effProject.name}".` +
+          (dupCount > 0 ? ` ${dupCount} item dilewati karena sudah ada.` : '') +
+          ' Status harga dipertahankan per item (RESMI AHSP / HARGA DATABASE / HARGA MANUAL / BELUM TERSEDIA) — tidak ada yang diam-diam berubah menjadi resmi.',
+        [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }]
+      );
+    } catch (e) {
+      appendMsg(`Gagal mem-push ke Spreadsheet RAB: ${(e as Error).message} — draft tetap tersimpan dan bisa dicoba lagi.`, undefined, true);
+    }
+  };
+
   /* Coba Lagi (2026-10-23): kirim ulang prompt AI terakhir lewat jalur
    * submit yang sama, dengan bendera paksa-AI (prompt-nya memang untuk
    * pipeline AI) dan echo=false (tanpa gelembung user duplikat; entry
@@ -892,6 +1038,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const handleActionButton = (btn: ChatActionButton) => {
     if (btn.action.kind === 'push-rab') {
       pushDirectRabToSpreadsheet();
+    } else if (btn.action.kind === 'push-universal') {
+      pushUniversalToSpreadsheetPreview();
+    } else if (btn.action.kind === 'push-universal-confirm') {
+      pushUniversalToSpreadsheet();
     } else if (btn.action.kind === 'navigate') {
       // Navigasi meninggalkan alur chat — status menunggu subtipe gugur.
       setAwaitingSubtype(false);
@@ -1399,6 +1549,74 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         </>
       )}
       </div>{/* /.ezchat2-headerwrap */}
+
+      {/* ===== Fase 1 unifikasi AI: switcher mode + banner konteks =====
+          Hanya tampilan: switcher bernavigasi lewat resolver (bukan
+          setActiveMenu langsung); DED/Dokumen meninggalkan view ini ke
+          menu masing-masing; Chat/Generator tetap di chat ini. */}
+      {(() => {
+        const modeLabels: Record<EzrabAiMode, string> = {
+          chat: 'Chat',
+          'rab-generator': 'Generator RAB',
+          ded: 'Analisis DED',
+          document: 'Dokumen AI',
+        };
+        const activeAiMode: EzrabAiMode = aiEntryContext?.mode ?? 'chat';
+        const switcherModes: EzrabAiMode[] = ['chat', 'rab-generator', 'ded', 'document'];
+        const contextBits: string[] = [];
+        if (aiEntryContext?.rabItemId) contextBits.push(`Item RAB: ${aiEntryContext.rabItemId}`);
+        if (aiEntryContext?.documentId) contextBits.push(`Dokumen: ${aiEntryContext.documentId}`);
+        if (aiEntryContext?.dedRef) contextBits.push(`DED: ${aiEntryContext.dedRef}`);
+        if (aiEntryContext?.prompt) {
+          const p = aiEntryContext.prompt.trim();
+          contextBits.push(`Prompt awal: ${p.length > 80 ? `${p.slice(0, 80)}…` : p}`);
+        }
+        return (
+          <div style={{ padding: '8px 12px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div role="tablist" aria-label="Mode AI" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {switcherModes.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeAiMode === m}
+                  onClick={() => openEzrabAI({
+                    mode: m,
+                    // Perbaikan final: switcher meneruskan konteks PENUH
+                    // entry saat ini (prompt/rabItemId/documentId/dedRef),
+                    // bukan hanya projectId — konteks tidak boleh hilang
+                    // saat ganti mode. Proyek mengikuti proyek aktif saat
+                    // ini (fallback ke proyek entry bila tidak ada).
+                    projectId: effProject?.id ?? aiEntryContext?.projectId ?? null,
+                    projectName: effProject?.name ?? aiEntryContext?.projectName,
+                    prompt: aiEntryContext?.prompt,
+                    rabItemId: aiEntryContext?.rabItemId,
+                    documentId: aiEntryContext?.documentId,
+                    dedRef: aiEntryContext?.dedRef,
+                    source: 'other',
+                  })}
+                  style={{
+                    padding: '6px 12px', borderRadius: '999px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 700,
+                    border: activeAiMode === m ? '1px solid var(--ez-color-primary)' : '1px solid var(--ez-color-border)',
+                    background: activeAiMode === m ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
+                    color: activeAiMode === m ? '#FFFFFF' : 'var(--ez-color-text-primary)',
+                  }}
+                >
+                  {modeLabels[m]}
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: '12.5px', lineHeight: 1.5, color: 'var(--ez-color-text-secondary)', padding: '2px 4px' }}>
+              <strong style={{ color: 'var(--ez-color-text-primary)' }}>Mode: {modeLabels[activeAiMode]}</strong>
+              {' • '}
+              Proyek: {aiEntryContext?.projectName ?? effProject?.name ?? 'Tidak ada proyek aktif'}
+              {contextBits.length > 0 ? ` • ${contextBits.join(' • ')}` : ''}
+              {!aiEntryContext && ' • Tidak ada konteks masuk — chat kosong, mulai dari menu lain atau ketik kebutuhan RAB di sini.'}
+              {activeAiMode === 'rab-generator' && ' • Generator RAB berjalan di chat ini (universal direct RAB): tulis kebutuhan + dimensi, draf tabel dibuat di sini, lalu Push ke Spreadsheet.'}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ===== Body ===== */}
       <div className="ezchat2-body" ref={scrollRef}>

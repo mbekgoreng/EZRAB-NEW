@@ -18,7 +18,7 @@ interface CreateProjectModalProps {
   onClose: () => void;
   onCreateProject: (projectData: Partial<Project>) => Project;
   onNavigateToTab: (tab: string, projectId?: string | null) => void;
-  onOpenMagicAiWithPrompt?: (prompt: string) => void;
+  onOpenMagicAiWithPrompt?: (prompt: string, projectId: string, projectName: string) => void;
 }
 
 export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
@@ -110,7 +110,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
 
     handleClose();
     if (onOpenMagicAiWithPrompt) {
-      onOpenMagicAiWithPrompt(aiPrompt);
+      // R1: teruskan ID + nama proyek BARU ke handler — handler tidak boleh
+      // menebak dari proyek aktif lama (closure render sebelum pembuatan).
+      onOpenMagicAiWithPrompt(aiPrompt, newProj.id, newProj.name);
     } else {
       onNavigateToTab('magic-ai', newProj.id);
     }

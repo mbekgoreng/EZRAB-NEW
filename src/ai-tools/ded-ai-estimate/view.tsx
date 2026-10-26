@@ -18,6 +18,7 @@ import { DedAiResultView } from './DedAiResultView';
 import { fullAiDedService, FULL_AI_TIMEOUT_MS } from '../ded-full-ai/service';
 import { FullAiOutput, FullAiItem } from '../ded-full-ai/types';
 import { FullAiResultView } from '../ded-full-ai/FullAiResultView';
+import { consumePendingAiEntry } from '../aiNavigation';
 import { notificationBus } from '../../notifications/notificationBus';
 import { useProject } from '../../context/ProjectContext';
 import { useI18n } from '../../i18n/I18nContext';
@@ -71,6 +72,35 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const [draftSaved, setDraftSaved] = useState(false);
   const [finalized, setFinalized] = useState(false);
   const cancelRef = useRef(false);
+
+  // Perbaikan final: konsumsi entry DED. Sebelumnya view ini TIDAK PERNAH
+  // mengonsumsi entry klasik — hanya projectId via URL yang bertahan,
+  // sehingga dedRef/initialPrompt dari resolver tidak pernah tampil.
+  const [dedEntryBanner, setDedEntryBanner] = useState<{ label: string; prompt?: string } | null>(null);
+  const dedMountConsumeRef = useRef(false);
+  const takeDedEntry = useCallback((clearOnMismatch: boolean) => {
+    const entry = consumePendingAiEntry('ded_rab_ai', { clearOnMismatch });
+    if (!entry) return;
+    setDedEntryBanner({
+      label: entry.contextLabel || 'Konteks DED dari EZRAB AI',
+      prompt: entry.initialPrompt,
+    });
+    const text = entry.initialPrompt?.trim();
+    if (text) {
+      setSession((prev) => (prev.description ? prev : { ...prev, description: text }));
+    }
+  }, []);
+  // Jalur mount: mismatch dibersihkan. Jalur event (view ter-mount): tidak.
+  useEffect(() => {
+    if (dedMountConsumeRef.current) return;
+    dedMountConsumeRef.current = true;
+    takeDedEntry(true);
+  }, [takeDedEntry]);
+  useEffect(() => {
+    const onEntry = () => takeDedEntry(false);
+    window.addEventListener('ezrab:ai-entry', onEntry);
+    return () => window.removeEventListener('ezrab:ai-entry', onEntry);
+  }, [takeDedEntry]);
 
   const persistDrafts = (d: DraftRecord[]) => {
     setDrafts(d);
@@ -575,7 +605,14 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   }
 
   return (
-    <DedAiInputView
+    <>
+      {dedEntryBanner && (
+        <div style={{ margin: '12px 16px 0', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--ez-color-border)', background: 'var(--ez-color-surface)', fontSize: '12.5px', lineHeight: 1.5 }}>
+          <strong>Konteks DED: {dedEntryBanner.label}</strong>
+          {dedEntryBanner.prompt ? <div style={{ marginTop: '4px', whiteSpace: 'pre-wrap' }}>{dedEntryBanner.prompt}</div> : null}
+        </div>
+      )}
+      <DedAiInputView
       initialSession={session}
       projects={projects.map((p) => ({ id: p.id, name: p.name }))}
       drafts={drafts.map((d) => ({
@@ -585,7 +622,8 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       onStart={handleStart}
       onLoadDraft={handleLoadDraft}
       onDeleteDraft={handleDeleteDraft}
-    />
+      />
+    </>
   );
 };
 

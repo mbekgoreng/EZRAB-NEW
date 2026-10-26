@@ -44,10 +44,11 @@ const ChatToRabWorkspaceLazy = lazy(() =>
 );
 import { DedAiEstimateView } from '../../ai-tools/ded-ai-estimate/view';
 import { DokumenAiView } from '../../ai-tools/document-ai/view';
+import { exportItemAmount } from '../../export/priceIntegrity';
 import { CreditPage } from '../../ai-credits/CreditPage';
 import '../../ai-credits/ai-credits.css';
 import { MagicAiSuperView } from '../magic-ai/MagicAiSuperView';
-import { RabGeneratorModal } from '../magic-ai/RabGeneratorModal';
+
 import { ProjectsView } from '../projects/ProjectsView';
 import { FirstProjectChecklist } from '../onboarding/FirstProjectChecklist';
 import { RabEstimasiView } from '../rab/RabEstimasiView';
@@ -92,7 +93,8 @@ import {
 
 import { useProject } from '../../context/ProjectContext';
 import { useI18n } from '../../i18n';
-import { routeLabel, navigateTo, routeForMenu, type WorkspaceRoute } from '../../routing/routes';
+import { routeLabel, type WorkspaceRoute } from '../../routing/routes';
+import { openEzrabAI } from '../../ai-tools/aiNavigation';
 import '../layout/menu-animations.css';
 import '../layout/premium-frame.css';
 import '../../styles/dashboard-refined.css';
@@ -146,10 +148,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
 
   // Sidebar Layout State (collapsible to 72px)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  // RAB Generator Modal state
-  const [rabGeneratorOpen, setRabGeneratorOpen] = useState(false);
-  const [rabGeneratorPrompt, setRabGeneratorPrompt] = useState('');
 
   // Grouped Submenu Expand/Collapse States
   const [proyekSubmenuOpen, setProyekSubmenuOpen] = useState(true);
@@ -329,8 +327,11 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
       .map(({ text, time, type }) => ({ text, time, type }));
   }, [projects]);
 
-  // Total RAB from real items
-  const totalRabDetail = projectRabItems.reduce((acc, item) => acc + (item.amount || 0), 0);
+  // Total RAB from real items — digating STATUS (priceIntegrity): item
+  // PRICE_UNRESOLVED dengan total basi tidak ikut (nilai 0 valid tetap 0).
+  // Catatan: nilai ini saat ini belum dirender di view manapun — gating
+  // dipasang agar tetap jujur bila suatu saat dipakai.
+  const totalRabDetail = projectRabItems.reduce((acc, item) => acc + (exportItemAmount(item as any) ?? 0), 0);
 
   // Currency Formatter
   const formatRupiah = (val: number) => {
@@ -518,7 +519,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
               initialFilter={projectFilter}
               onFilterChange={(f) => setProjectFilter(f)}
               onCreateProject={() => setCreateModalOpen(true)}
-              onOpenMagicAi={() => setActiveMenu('ezrab-ai')}
+              onOpenMagicAi={() => openEzrabAI({ mode: 'chat', projectId: currentProjectId, projectName: currentProject?.name, source: 'other' })}
               onNavigateToTab={(tab) => setActiveMenu(tab)}
               onOpenProject={(projectId, menu = 'manajemen-proyek') => {
                 setCurrentProjectId(projectId);
@@ -607,7 +608,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
                   ? 'pengaturan'
                   : 'spreadsheet'
               }
-              onOpenMagicAi={() => setActiveMenu('ezrab-ai')}
               onNavigateToTab={(tab) => setActiveMenu(tab)}
             />
           </main>
@@ -827,12 +827,15 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
                 setActiveMenu('proyek', null);
               }}
               onOpenMagicAi={(mode?: 'chat' | 'ded-rab') => {
+                // Fase 1: semua pintu dashboard lewat resolver. DED eksplisit
+                // (kartu Upload DED) → ded-ai; generik → chat ezrab-ai.
+                // Catatan: ini mengubah tujuan DED dashboard dari SuperView
+                // (magic-ai) ke DedAiEstimateView (ded-ai) — dua permukaan
+                // DED belum digabung, route /app/magic-ai tetap SuperView.
                 if (mode === 'ded-rab') {
-                  // Pintu DED eksplisit (kartu Upload DED) — tetap ke Analisis DED.
-                  navigateTo(routeForMenu('magic-ai', currentProjectId, mode));
+                  openEzrabAI({ mode: 'ded', projectId: currentProjectId, projectName: currentProject?.name, source: 'dashboard' });
                 } else {
-                  // Pintu AI generik -> Ezrab Chat AI (bukan Analisis DED).
-                  setActiveMenu('ezrab-ai');
+                  openEzrabAI({ mode: 'chat', projectId: currentProjectId, projectName: currentProject?.name, source: 'dashboard' });
                 }
               }}
               onOpenSubscription={() => setActiveMenu('subscription')}
@@ -855,24 +858,16 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           return newProj;
         }}
         onNavigateToTab={(tab, projId) => setActiveMenu(tab, projId)}
-        onOpenMagicAiWithPrompt={(prompt) => {
-          setRabGeneratorPrompt(prompt);
-          setRabGeneratorOpen(true);
+        onOpenMagicAiWithPrompt={(prompt, projectId, projectName) => {
+          // Fase 1: kartu Magic AI di CreateProjectModal TIDAK lagi membuka
+          // RabGeneratorModal langsung — generatornya adalah chat dengan
+          // mode rab-generator (prefill prompt, universal direct RAB).
+          // R1: pakai ID + nama proyek BARU yang diteruskan modal — JANGAN
+          // currentProject dari closure render sebelum pembuatan (itu proyek
+          // aktif lama; draft akan ter-push ke proyek yang salah).
+          openEzrabAI({ mode: 'rab-generator', prompt, projectId: projectId ?? null, projectName, source: 'create-project' });
         }}
       />
-
-      {rabGeneratorOpen && (
-        <RabGeneratorModal
-          initialPrompt={rabGeneratorPrompt}
-          projectId={currentProject?.id || ''}
-          onClose={() => setRabGeneratorOpen(false)}
-          onAddItems={async (items) => {
-            // Use bulkAddRabItems from context
-            await bulkAddRabItems(items, currentProject?.id);
-            setActiveMenu('rab-estimasi');
-          }}
-        />
-      )}
 
       {/* =========================================================================
           LIGHTWEIGHT ONBOARDING TOUR MODAL (DISMISSIBLE / RE-TRIGGERABLE)
@@ -905,7 +900,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           <button
             type="button"
             className="ezrab-bottom-nav-ai-btn"
-            onClick={() => setActiveMenu('ezrab-ai')}
+            onClick={() => openEzrabAI({ mode: 'chat', projectId: currentProjectId, projectName: currentProject?.name, source: 'mobile' })}
             title={t('nav.bottom_magic_ai')}
             aria-label={t('nav.bottom_magic_ai')}
           >
@@ -963,7 +958,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             onAddRabItemDirect={createRabItemDirect}
             onOpenSuperView={() => {
               setCoAssistantMode('closed');
-              setActiveMenu('ezrab-ai');
+              openEzrabAI({ mode: 'chat', projectId: currentProjectId, projectName: currentProject?.name, source: 'copilot' });
             }}
           />
         </>

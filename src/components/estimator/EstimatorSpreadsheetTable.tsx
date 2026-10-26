@@ -55,8 +55,11 @@ interface EstimatorSpreadsheetTableProps {
   onContextMenu: (e: React.MouseEvent, item: RabItem) => void;
   onAddNewItem?: (mode?: AddItemMode, categoryContext?: string) => void;
   onOpenTemplates?: () => void;
-  onOpenMagicAi?: () => void;
   visibleColumns?: Record<string, boolean>;
+  /** Nama kelompok WBS manual (customWbsGroups proyek) — dipakai untuk tombol hapus. */
+  customGroupNames?: string[];
+  /** Hapus kelompok kustom kosong. Hanya dipanggil untuk header kelompok kustom tanpa item. */
+  onDeleteCustomGroup?: (categoryName: string) => void;
 }
 
 export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps> = ({
@@ -84,7 +87,8 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
   onContextMenu,
   onAddNewItem,
   onOpenTemplates,
-  onOpenMagicAi,
+  customGroupNames = [],
+  onDeleteCustomGroup,
   visibleColumns = {
     no: true,
     code: true,
@@ -500,6 +504,36 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                             <span>Tambah</span>
                           </button>
                         )}
+                        {/* Hapus kelompok kustom kosong (salah ketik bisa
+                            dibatalkan). Kelompok berisi item tidak dapat
+                            tombol ini — hapus itemnya dulu. */}
+                        {onDeleteCustomGroup &&
+                          group.items.length === 0 &&
+                          customGroupNames.some(
+                            (n) => n.trim().toLowerCase() === group.categoryName.trim().toLowerCase()
+                          ) && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteCustomGroup(group.categoryName);
+                              }}
+                              title={`Hapus kelompok kosong "${group.categoryName}"`}
+                              style={{
+                                height: '24px',
+                                padding: '0 8px',
+                                marginLeft: '6px',
+                                borderRadius: '4px',
+                                background: 'var(--ez-color-surface)',
+                                border: '1px solid #FECDD3',
+                                color: '#BE123C',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Hapus
+                            </button>
+                          )}
                       </td>
                     </tr>
 

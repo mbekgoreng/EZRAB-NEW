@@ -10,6 +10,7 @@ import { loadOfficialEzrabEmblem, loadOfficialEzrabLogo } from './pdfAssets';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
 import { loadVersioned } from '../engine/storage/hardenedStorage';
 import { extractConversionTrail } from './conversionTrail';
+import { isExportPriceValid, exportItemAmount, summarizeExportSections } from './priceIntegrity';
 
 /**
  * Bangun anotasi sumber harga untuk sel deskripsi item di PDF.
@@ -125,6 +126,11 @@ export async function exportProjectToPDF(
   }
 
   const costs = UnifiedProjectEngine.computeCostSummaryFromSections(project, sections);
+
+  // P0 ekspor 2026-10-26: ringkasan digating STATUS (priceIntegrity) —
+  // total per seksi, bobot, dan hitungan item tanpa harga tidak lagi
+  // memakai subtotal/totalPrice tersimpan mentah.
+  const exportSummary = summarizeExportSections(sections as any);
 
   // 2. Resolve Subscription & Watermark Entitlement (FAIL-CLOSED SECURITY)
   const plan = options?.subscriptionPlan || 'free';
@@ -285,7 +291,9 @@ export async function exportProjectToPDF(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.5);
   doc.setTextColor(...DOC_COLORS.BLUE_ACCENT);
-  doc.text('TOTAL ESTIMASI ANGGARAN BIAYA (TERMASUK PPN)', pageWidth / 2, totalCardY + 6.5, { align: 'center' });
+  doc.text(exportSummary.isPartial
+    ? `TOTAL ESTIMASI ANGGARAN BIAYA (TERMASUK PPN) — PARSIAL (${exportSummary.unpricedCount} item belum memiliki harga)`
+    : 'TOTAL ESTIMASI ANGGARAN BIAYA (TERMASUK PPN)', pageWidth / 2, totalCardY + 6.5, { align: 'center' });
 
   doc.setFontSize(16);
   doc.setTextColor(...DOC_COLORS.NAVY_PRIMARY);
@@ -368,12 +376,14 @@ export async function exportProjectToPDF(
   // WBS Category Summary Rows
   const recapRows: any[] = [];
   sections.forEach((sec, idx) => {
-    const weightPercent = costs.directCost > 0 ? (sec.subtotal / costs.directCost) * 100 : 0;
+    // P0 ekspor 2026-10-26: total & bobot seksi digating status.
+    const gatedSecTotal = exportSummary.sections[idx]?.pricedTotal ?? sec.subtotal;
+    const weightPercent = costs.directCost > 0 ? (gatedSecTotal / costs.directCost) * 100 : 0;
     recapRows.push([
       (idx + 1).toString(),
       sec.name,
       `${formatNumberId(weightPercent, 2)} %`,
-      formatRupiah(sec.subtotal),
+      formatRupiah(gatedSecTotal),
     ]);
   });
 
@@ -545,8 +555,10 @@ export async function exportProjectToPDF(
   const detailRows: any[] = [];
   let globalItemIndex = 1;
 
-  sections.forEach((section) => {
-    const secWeight = costs.directCost > 0 ? (section.subtotal / costs.directCost) * 100 : 0;
+  sections.forEach((section, secIdx) => {
+    // P0 ekspor 2026-10-26: subtotal & bobot header seksi digating status.
+    const gatedSectionTotal = exportSummary.sections[secIdx]?.pricedTotal ?? section.subtotal;
+    const secWeight = costs.directCost > 0 ? (gatedSectionTotal / costs.directCost) * 100 : 0;
 
     // Section Category Header Row
     detailRows.push([
@@ -560,7 +572,7 @@ export async function exportProjectToPDF(
         styles: { fontStyle: 'bold', fillColor: DOC_COLORS.SLATE_LIGHT, textColor: DOC_COLORS.NAVY_PRIMARY },
       },
       {
-        content: formatRupiah(section.subtotal),
+        content: formatRupiah(gatedSectionTotal),
         styles: { fontStyle: 'bold', halign: 'right', fillColor: DOC_COLORS.SLATE_LIGHT, textColor: DOC_COLORS.NAVY_PRIMARY },
       },
       {
@@ -571,12 +583,17 @@ export async function exportProjectToPDF(
 
     // Items within section
     (section.items || []).forEach((item) => {
-      const itemTotalPrice = Number(item.totalPrice) || (Number(item.volume) * Number(item.unitPrice)) || 0;
+      // P0 ekspor 2026-10-26: jumlah & bobot item digating status —
+      // sebelumnya itemTotalPrice mentah (totalPrice basi item unresolved
+      // ikut membobot, walau sel tampil '–').
+      const itemTotalPrice = isExportPriceValid(item as any) ? (exportItemAmount(item as any) ?? 0) : 0;
       const itemWeight = costs.directCost > 0 ? (itemTotalPrice / costs.directCost) * 100 : 0;
       // FASE 5D: bedakan harga belum tersedia dari harga nol yang valid.
-      // priceStatus kanonis — bukan sekadar unitPrice === 0.
+      // P0 ekspor 2026-10-26: gerbang = priceIntegrity (status, bukan
+      // sekadar unitPrice === 0), sehingga item berharga null tanpa status
+      // pun tidak tampil Rp0.
       // Price Fallback Layer: label asumsi.
-      const isUnresolved = (item as any).priceStatus === 'PRICE_UNRESOLVED';
+      const isUnresolved = !isExportPriceValid(item as any);
       const unitPriceCell = isUnresolved
         ? { content: 'HARGA BELUM TERSEDIA', styles: { halign: 'center' as const, textColor: [180, 83, 9] } }
         : formatRupiah(item.unitPrice);
@@ -602,7 +619,7 @@ export async function exportProjectToPDF(
   // Direct Cost Subtotal Row
   detailRows.push([
     '',
-    { content: 'SUBTOTAL BIAYA LANGSUNG FISIK (DIRECT COST)', colSpan: 5, styles: { fontStyle: 'bold', halign: 'right' } },
+    { content: exportSummary.isPartial ? `SUBTOTAL BIAYA LANGSUNG FISIK (DIRECT COST) — PARSIAL (${exportSummary.unpricedCount} item belum memiliki harga)` : 'SUBTOTAL BIAYA LANGSUNG FISIK (DIRECT COST)', colSpan: 5, styles: { fontStyle: 'bold', halign: 'right' } },
     { content: formatRupiah(costs.directCost), styles: { fontStyle: 'bold', halign: 'right' } },
     { content: '100,00 %', styles: { fontStyle: 'bold', halign: 'right' } },
   ]);
@@ -650,11 +667,10 @@ export async function exportProjectToPDF(
     },
   ]);
 
-  // FASE 5D: hitung item unresolved untuk catatan peringatan (dari field kanonis).
-  const unresolvedCount = sections.reduce(
-    (n, s) => n + (s.items || []).filter((it: any) => it.priceStatus === 'PRICE_UNRESOLVED').length,
-    0
-  );
+  // FASE 5D: hitung item tanpa harga untuk catatan peringatan.
+  // P0 ekspor 2026-10-26: dari ringkasan digating status (mencakup juga
+  // harga null tanpa status, bukan hanya PRICE_UNRESOLVED).
+  const unresolvedCount = exportSummary.unpricedCount;
 
   // Landscape Table Widths: Total 273 mm (fits in 297 mm with 12 mm margins)
   safeAutoTable(doc, {

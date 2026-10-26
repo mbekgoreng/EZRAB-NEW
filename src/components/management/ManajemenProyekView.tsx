@@ -24,6 +24,7 @@ import {
 import { useProject } from '../../context/ProjectContext';
 import { computeScheduleProgress } from '../../lib/scheduleHonesty';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
+import { exportItemAmount } from '../../export/priceIntegrity';
 import { ScheduleTask } from '../../types';
 import { TutorialHelpButton } from '../onboarding/tutorials/TutorialHelpButton';
 
@@ -79,9 +80,11 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
   const [editProgress, setEditProgress] = useState<number>(0);
   const [editStatus, setEditStatus] = useState<ScheduleTask['status']>('ON_TRACK');
 
-  // Calculate live project metrics from active project data
+  // Calculate live project metrics from active project data — digating
+  // STATUS (priceIntegrity): item PRICE_UNRESOLVED dengan amount basi
+  // tidak ikut total.
   const totalDirectCost = useMemo(() => {
-    return projectRabItems.reduce((acc, item) => acc + (item.amount || 0), 0);
+    return projectRabItems.reduce((acc, item) => acc + (exportItemAmount(item as any) ?? 0), 0);
   }, [projectRabItems]);
 
   // Progres aktual total DINORMALISASI terhadap total bobot tugas
@@ -144,7 +147,7 @@ export const ManajemenProyekView: React.FC<ManajemenProyekViewProps> = ({ projec
     const catMap = new Map<string, number>();
     projectRabItems.forEach((itm) => {
       const cat = itm.category || 'Pekerjaan Utama';
-      catMap.set(cat, (catMap.get(cat) || 0) + (itm.amount ?? 0));
+      catMap.set(cat, (catMap.get(cat) || 0) + (exportItemAmount(itm as any) ?? 0));
     });
 
     const categories = Array.from(catMap.entries());

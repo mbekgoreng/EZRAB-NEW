@@ -24,6 +24,7 @@ import { clarifyTopicCard, clarifyPickResult } from './clarifyTopics';
 import { evaluateCalculation } from './calcIntent';
 import { buildDirectRab, displayTemplateBasisName, findDirectTemplate, formatDirectRabMessage, matchDirectRegion } from './directRab';
 import { buildSpecRab } from './specRab';
+import { buildUniversalDraft, formatUniversalDraftMessage } from './universalRab';
 
 export interface ChatActionContext {
   /** Navigate to a menu id (WorkspaceView.setActiveMenu) */
@@ -70,7 +71,9 @@ export interface ChatActionButton {
     | { kind: 'navigate'; menu: string }
     | { kind: 'nav-entry'; entryId: string }
     | { kind: 'intent'; intent: string; param?: string }
-    | { kind: 'push-rab' };
+    | { kind: 'push-rab' }
+    | { kind: 'push-universal' }
+    | { kind: 'push-universal-confirm' };
 }
 
 export interface ActionResult {
@@ -366,6 +369,48 @@ function directRabTableResult(built: BuiltRab): ActionResult {
       { label: 'Buka Workspace Desain & RAB', action: { kind: 'navigate', menu: 'desain-rab' } },
     ],
   };
+}
+
+/**
+ * Hasil draft universal (katalog template 180) sebagai jawaban chat.
+ * Mengembalikan null bila teks bukan permintaan universal yang bisa
+ * dibangun — pemanggil WAJIB jatuh ke alur lama (ringkasan/LLM), bukan
+ * memaksa hasil. Draft yang berhasil menjadi draft aktif modul universal
+ * (target revisi chat dan tombol Push); pertanyaan ambiguitas membawa
+ * tombol pilih template; kekurangan data membawa SATU pertanyaan inti.
+ */
+function universalResultFor(raw: string, forcedTemplateId?: string): ActionResult | null {
+  const res = buildUniversalDraft(raw, forcedTemplateId);
+  if (res.kind === 'draft') {
+    return {
+      ok: true,
+      message: formatUniversalDraftMessage(res.draft),
+      actions: [
+        { label: 'Push ke Spreadsheet', action: { kind: 'push-universal' } },
+        { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+      ],
+    };
+  }
+  if (res.kind === 'needs-spec') {
+    return {
+      ok: true,
+      message:
+        `${res.reason}\n\nYang masih dibutuhkan:\n${res.missing.map((m) => `• ${m}`).join('\n')}\n\nKirim ulang permintaan lengkap dengan data itu — draft tidak dibuat dari tebakan.`,
+    };
+  }
+  return null;
+}
+
+/** Teks sintetis minimal dari kebutuhan tersimpan untuk jalur universal. */
+function syntheticUniversalRawText(n: RabNeeds): string | null {
+  const parts: string[] = ['buatkan rab'];
+  if (n.kindLabel) parts.push(n.kindLabel);
+  if (n.lengthM) parts.push(`sepanjang ${n.lengthM} m`);
+  else if (n.buildingArea) parts.push(`luas ${n.buildingArea} m2`);
+  if (n.floors) parts.push(`${n.floors} lantai`);
+  if (n.location) parts.push(`di ${n.location}`);
+  if (!n.kindLabel && !n.lengthM && !n.buildingArea && !n.floors) return null;
+  return parts.join(' ');
 }
 
 /**
@@ -787,6 +832,11 @@ export function executeIntent(
           ],
         };
       }
+      // Cakupan universal (2026-10-26): teks DIRECT yang bukan rumah
+      // bertipe/spek bebas dicoba lewat katalog template 180 sebelum
+      // jatuh ke ringkasan kebutuhan.
+      const uniDirect = universalResultFor(raw);
+      if (uniDirect) return uniDirect;
       return rabSummaryResult(raw);
     }
 
@@ -816,9 +866,19 @@ export function executeIntent(
       };
     }
 
-    case 'CREATE_RAB_SUMMARY':
+    case 'CREATE_RAB_SUMMARY': {
+      // Universal (2026-10-26): permintaan non-rumah yang terukur langsung
+      // dicoba menjadi draft katalog; rumah tetap ringkasan dulu (desain
+      // owner) karena jalur rumah (typed/spec/workspace) yang memilikinya.
+      const rawSummary = ctx.rawText ?? param ?? '';
+      const needsSummary = extractRabNeeds(stripLandPhrases(rawSummary));
+      if (needsSummary.kind !== 'rumah') {
+        const uniSummary = universalResultFor(rawSummary);
+        if (uniSummary) return uniSummary;
+      }
       // Fase 2: ringkasan kebutuhan dulu — TIDAK membuka wizard/studio.
-      return rabSummaryResult(ctx.rawText ?? param ?? '');
+      return rabSummaryResult(rawSummary);
+    }
 
     case 'RAB_SUBTYPE_SELECT': {
       // Klik tombol subtipe pada pertanyaan klarifikasi ("Jalan apa?").
@@ -933,6 +993,19 @@ export function executeIntent(
           ? buildDirectRab(synthetic, n) ?? buildSpecRab(synthetic)
           : null;
         if (built) return directRabTableResult(built);
+      }
+
+      // (d) Kebutuhan terakhir yang bisa dikomposisi katalog universal
+      // (jalan/drainase/jembatan/gedung/MEP/dll.) — sebelum LLM fallback.
+      // Ini menutup celah komentar lama "pekerjaan infra belum punya mesin
+      // parametrik": mesinnya kini katalog template 180.
+      const nUniversal = lastRabNeeds;
+      if (nUniversal) {
+        const syntheticUniversal = syntheticUniversalRawText(nUniversal);
+        if (syntheticUniversal) {
+          const uni = universalResultFor(syntheticUniversal);
+          if (uni) return uni;
+        }
       }
 
       // Fallback — perilaku lama PERSIS: prompt terkumpul diteruskan ke

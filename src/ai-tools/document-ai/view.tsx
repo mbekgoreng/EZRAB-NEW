@@ -20,7 +20,7 @@
  * - Tidak ada dua chatbot bersamaan; riwayat chat tidak dicampur.
  * DokumenAiView melaporkan status workspace via onAnalysisActiveChange.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FolderOpen, ScanSearch, History, Sparkles, LayoutTemplate, ClipboardCheck } from 'lucide-react';
 import type { DraftVersion } from './store';
 import type { ContextField } from './types';
@@ -33,6 +33,7 @@ import { DocHistory } from './components/DocHistory';
 import { useI18n } from '../../i18n/I18nContext';
 import './document-ai.css';
 import { TutorialHelpButton } from '../../components/onboarding/tutorials/TutorialHelpButton';
+import { consumePendingAiEntry } from '../aiNavigation';
 
 /* ------------------------------------------------------------------ */
 /* Tipe & helper bersama (dipakai komponen di ./components)            */
@@ -211,6 +212,33 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
   const [docs, setDocs] = useState<DocRecord[]>(() => readLS<DocRecord[]>(LS_DOCS, []));
   const [history, setHistory] = useState<HistoryEntry[]>(() => readLS<HistoryEntry[]>(LS_HISTORY, []));
   const [drafts, setDrafts] = useState<DraftRecord[]>(() => readLS<DraftRecord[]>(LS_DRAFTS, []));
+  // Perbaikan final: konsumsi entry Dokumen AI. Sebelumnya view ini TIDAK
+  // PERNAH mengonsumsi entry klasik — hanya projectId via URL yang bertahan,
+  // sehingga documentId/prompt dari resolver tidak pernah tampil. DocCreator
+  // tidak punya prop instruksi awal, jadi konteks tampil sebagai banner
+  // (bukan prefill ke dalam editor) — tanpa refactor Studio.
+  const [docEntryBanner, setDocEntryBanner] = useState<{ label: string; prompt?: string; documentId?: string } | null>(null);
+  const docMountConsumeRef = useRef(false);
+  const takeDocEntry = useCallback((clearOnMismatch: boolean) => {
+    const entry = consumePendingAiEntry('document_ai', { clearOnMismatch });
+    if (!entry) return;
+    setDocEntryBanner({
+      label: entry.contextLabel || 'Konteks Dokumen AI dari EZRAB AI',
+      prompt: entry.initialPrompt,
+      documentId: entry.documentId,
+    });
+  }, []);
+  // Jalur mount: mismatch dibersihkan. Jalur event (view ter-mount): tidak.
+  useEffect(() => {
+    if (docMountConsumeRef.current) return;
+    docMountConsumeRef.current = true;
+    takeDocEntry(true);
+  }, [takeDocEntry]);
+  useEffect(() => {
+    const onEntry = () => takeDocEntry(false);
+    window.addEventListener('ezrab:ai-entry', onEntry);
+    return () => window.removeEventListener('ezrab:ai-entry', onEntry);
+  }, [takeDocEntry]);
 
   useEffect(() => { writeLS(LS_DOCS, docs); }, [docs]);
   useEffect(() => { writeLS(LS_HISTORY, history); }, [history]);
@@ -257,6 +285,13 @@ export const DokumenAiView: React.FC<DokumenAiViewProps> = ({ onAnalysisActiveCh
       <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px 12px 0' }}>
         <TutorialHelpButton tutorialId="dokumen-ai" label="Buka tutorial AI Dokumen" />
       </div>
+      {docEntryBanner && (
+        <div style={{ margin: '8px 12px 0', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--ez-color-border)', background: 'var(--ez-color-surface)', fontSize: '12.5px', lineHeight: 1.5 }}>
+          <strong>Konteks Dokumen AI: {docEntryBanner.label}</strong>
+          {docEntryBanner.documentId ? <div>Dokumen: {docEntryBanner.documentId}</div> : null}
+          {docEntryBanner.prompt ? <div style={{ marginTop: '4px', whiteSpace: 'pre-wrap' }}>{docEntryBanner.prompt}</div> : null}
+        </div>
+      )}
       <nav className="docai-tabs" aria-label={t('ai.doc.tab_menu_label')}>
         {[
           { id: 'buat-ai', label: 'Buat dengan AI', icon: Sparkles },

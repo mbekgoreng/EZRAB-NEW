@@ -237,6 +237,11 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
         price: item.unitPrice,
         // null = harga belum tersedia (BUKAN 0) — sel dirender "Harga belum diisi".
         amount: resolveItemAmount(item),
+        // P0 ekspor 2026-10-26: status & provenance diteruskan ke jalur
+        // ekspor — sebelumnya hilang di sini, sehingga sheet Excel/PDF
+        // tidak bisa membedakan sentinel 0 dari harga Rp0 valid.
+        priceStatus: (item as any).priceStatus,
+        priceSourceKind: (item as any).priceSourceKind,
         // Harga komponen & status verifikasi ASLI dari item (untuk ekspor);
         // tidak lagi dipecah karangan 70/30 atau diklaim VERIFIED.
         materialPrice: item.materialPrice,
@@ -588,6 +593,10 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
               equipmentPrice: it.equipmentPrice ?? 0,
               unitPrice: it.price,
               totalPrice: it.amount,
+              // P0 ekspor 2026-10-26: status diteruskan agar gerbang
+              // ekspor bisa mengecualikan item tanpa harga.
+              priceStatus: it.priceStatus,
+              priceSourceKind: it.priceSourceKind,
               verificationStatus: it.verificationStatus ?? 'NEEDS_VERIFICATION',
             })),
           }))

@@ -33,7 +33,7 @@ import { aiEstimatePipeline } from '../ai-estimate/aiEstimatePipeline';
 import {
   mapAiGeneratedItems,
   missingVolumeIndexes,
-} from '../components/magic-ai/RabGeneratorModal';
+} from '../components/magic-ai/rabGeneratorMapping';
 import {
   mapAiGeneratedItem,
   aiItemSaveGate,

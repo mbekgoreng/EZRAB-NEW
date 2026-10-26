@@ -466,14 +466,15 @@ export class MaterialLibraryService {
     materialId: string,
     preferredSupplier?: string,
     preferredLocation?: string
-  ): { unitPrice: number; supplier: string; source: string; effectiveDate: string } {
+  ): { unitPrice: number; supplier: string; source: string; effectiveDate: string; location: string } {
     const refs = this.priceReferences.get(materialId) || [];
     if (refs.length === 0) {
       return {
         unitPrice: 0,
         supplier: 'PRICE_NOT_FOUND',
         source: 'NO_REFERENCE',
-        effectiveDate: new Date().toISOString()
+        effectiveDate: new Date().toISOString(),
+        location: ''
       };
     }
 
@@ -484,7 +485,8 @@ export class MaterialLibraryService {
           unitPrice: match.unitPrice,
           supplier: match.supplier,
           source: 'SUPPLIER_MATCH',
-          effectiveDate: match.effectiveDate
+          effectiveDate: match.effectiveDate,
+          location: match.location
         };
       }
     }
@@ -496,7 +498,8 @@ export class MaterialLibraryService {
           unitPrice: match.unitPrice,
           supplier: match.supplier,
           source: 'REGIONAL_MATCH',
-          effectiveDate: match.effectiveDate
+          effectiveDate: match.effectiveDate,
+          location: match.location
         };
       }
     }
@@ -507,7 +510,8 @@ export class MaterialLibraryService {
       unitPrice: defaultRef.unitPrice,
       supplier: defaultRef.supplier,
       source: 'OFFICIAL_PRICE_REFERENCE',
-      effectiveDate: defaultRef.effectiveDate
+      effectiveDate: defaultRef.effectiveDate,
+      location: defaultRef.location
     };
   }
 

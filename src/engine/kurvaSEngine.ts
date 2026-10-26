@@ -225,7 +225,13 @@ export function generateCashFlowData(
       const lab = ((itm.laborPrice || 0) + (itm.equipmentPrice || 0)) * (itm.volume || 0);
       totalMaterial += mat;
       totalLabor += lab;
-      totalAll += (itm.totalPrice || 0);
+      // P0 ekspor 2026-10-26: penyebut rasio digating status — totalPrice
+      // basi item UNRESOLVED tidak boleh menggeser rasio material/tenaga
+      // pada cashflow. (Komponen mat/lab sendiri tetap apa adanya: itu
+      // harga komponen AHSP, bukan harga satuan item.)
+      if ((itm as any).priceStatus !== 'PRICE_UNRESOLVED') {
+        totalAll += (itm.totalPrice || 0);
+      }
     });
   });
 

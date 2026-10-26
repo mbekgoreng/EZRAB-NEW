@@ -92,6 +92,19 @@ export function createRabItemRecord(
     volumeSource:
       itemData.volumeSource || opts.defaultVolumeSource || ('MANUAL' as VolumeSourceType),
     ahspCode: itemData.ahspCode || '',
+    // Provenance harga (Universal Direct RAB 2026-10-26): field-field ini
+    // sudah ada di tipe RabItem tetapi sebelumnya DIBUANG factory — item
+    // yang di-push dari chat/katalog kehilangan status sumbernya di
+    // Spreadsheet. Diteruskan apa adanya bila pemanggil mengisinya; bila
+    // tidak diisi, field tetap tidak ada (tidak ada default karangan).
+    ...(itemData.priceSourceKind ? { priceSourceKind: itemData.priceSourceKind } : {}),
+    ...(itemData.priceSourceLabel ? { priceSourceLabel: itemData.priceSourceLabel } : {}),
+    ...(itemData.priceSourceExplanation ? { priceSourceExplanation: itemData.priceSourceExplanation } : {}),
+    ...(itemData.priceSourceName !== undefined ? { priceSourceName: itemData.priceSourceName } : {}),
+    ...(itemData.priceSourceSupplier !== undefined ? { priceSourceSupplier: itemData.priceSourceSupplier } : {}),
+    ...(itemData.priceSourceDate !== undefined ? { priceSourceDate: itemData.priceSourceDate } : {}),
+    ...(itemData.priceSourceRegion !== undefined ? { priceSourceRegion: itemData.priceSourceRegion } : {}),
+    ...(itemData.ahspMappingStatus ? { ahspMappingStatus: itemData.ahspMappingStatus } : {}),
     verificationStatus:
       itemData.verificationStatus ||
       (priceStatus === 'PRICE_UNRESOLVED' ? 'NEEDS_VERIFICATION' : 'VERIFIED'),

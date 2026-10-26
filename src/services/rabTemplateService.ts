@@ -1752,6 +1752,11 @@ export class RabTemplateService {
       }
 
       let materialReferencePrice: number | null = null;
+      // Final Fix: metadata hulu JANGAN dibuang — diteruskan ke resolver
+      // (hanya bila harga ditemukan; cabang PRICE_NOT_FOUND ber-unitPrice 0
+      // tidak lolos guard di bawah, sehingga tanggal "now" daruratnya tidak
+      // pernah diplumbing).
+      let materialMeta: { supplier: string; effectiveDate: string; location: string } | null = null;
       if (targetMaterialId) {
         const mat = materialService.getMaterialById(targetMaterialId);
         if (mat) {
@@ -1760,12 +1765,17 @@ export class RabTemplateService {
             const matPriceRes = materialService.getMaterialPrice(targetMaterialId);
             if (matPriceRes.unitPrice > 0) {
               materialReferencePrice = matPriceRes.unitPrice;
+              materialMeta = {
+                supplier: matPriceRes.supplier,
+                effectiveDate: matPriceRes.effectiveDate,
+                location: matPriceRes.location
+              };
             }
           }
         }
       }
 
-      const resolution = this.resolveTemplateComponentPrice(comp, materialReferencePrice);
+      const resolution = this.resolveTemplateComponentPrice(comp, materialReferencePrice, materialMeta);
       const unitPrice = resolution.unitPrice;
       const total = unitPrice == null ? null : SafeDecimalEngine.safeMultiply(volume, unitPrice, 0);
 
@@ -1790,6 +1800,9 @@ export class RabTemplateService {
         priceSourceLabel: resolution.label,
         priceSourceExplanation: resolution.explanation,
         priceSourceName: resolution.sourceName,
+        priceSourceSupplier: resolution.sourceSupplier,
+        priceSourceDate: resolution.sourceDate,
+        priceSourceRegion: resolution.sourceRegion,
         ahspMappingStatus: resolution.mappingStatus,
         ahspCode: ahspCode || undefined,
         notes: `Rule: ${formulaUsed} | Detail: ${compLevel}${materialName ? ` | Material: ${materialName}` : ''} | Harga: ${resolution.label}${volumeValid ? '' : ' | Volume: INVALID (formula menghasilkan nilai tak valid)'}`
@@ -1819,13 +1832,18 @@ export class RabTemplateService {
    */
   private resolveTemplateComponentPrice(
     comp: ConstructionComponentTemplate,
-    materialReferencePrice: number | null
+    materialReferencePrice: number | null,
+    materialMeta?: { supplier: string; effectiveDate: string; location: string } | null
   ): {
     unitPrice: number | null;
     kind: 'OFFICIAL_AHSP' | 'MARKET_REFERENCE' | 'UNRESOLVED';
     label: string;
     explanation: string;
     sourceName: string | null;
+    /** Final Fix: metadata sumber pasar — null di semua cabang non-material. */
+    sourceSupplier: string | null;
+    sourceDate: string | null;
+    sourceRegion: string | null;
     mappingStatus: AhspMappingStatus;
     splits?: { labor: number; material: number; equipment: number };
   } {
@@ -1848,6 +1866,9 @@ export class RabTemplateService {
                 label: 'Harga Resmi AHSP 2026',
                 explanation: `Kode ${comp.ahspCode} terverifikasi di katalog AHSP 2026 kanonis; komposisi resolver FULL (${composition.resolvedComponents}/${composition.totalComponents} komponen). Harga DHSP termasuk overhead & profit (SE DJBK No. 47/SE/Dk/2026).`,
                 sourceName: composition.provenanceSource || 'SE DJBK No. 47/SE/Dk/2026',
+                sourceSupplier: null,
+                sourceDate: null,
+                sourceRegion: null,
                 mappingStatus: 'VERIFIED',
                 splits: {
                   labor: composition.labor.subtotalPerUnit,
@@ -1866,12 +1887,21 @@ export class RabTemplateService {
     }
 
     if (materialReferencePrice != null && materialReferencePrice > 0) {
+      // Final Fix: cabang material kini membawa metadata hulu (pemasok /
+      // tanggal berlaku / wilayah) lewat field khusus — bukan lagi
+      // sourceName null. Nama pemasok juga menjadi priceSourceName agar
+      // preview & ekspor yang sudah membaca field itu menampilkan sumbernya.
+      // Explanation sengaja TIDAK mengulang metadata (field khusus sudah
+      // membawanya; preview & kolom Sumber Excel merender dari field).
       return {
         unitPrice: materialReferencePrice,
         kind: 'MARKET_REFERENCE',
         label: 'Harga Referensi Material',
         explanation: 'Harga dari ekosistem material tertaut komponen — harga referensi, bukan harga resmi AHSP.',
-        sourceName: null,
+        sourceName: materialMeta?.supplier ?? null,
+        sourceSupplier: materialMeta?.supplier ?? null,
+        sourceDate: materialMeta?.effectiveDate ?? null,
+        sourceRegion: materialMeta?.location || null,
         mappingStatus
       };
     }
@@ -1885,6 +1915,9 @@ export class RabTemplateService {
           ? `Kode ${comp.ahspCode} belum terpetakan ke katalog AHSP 2026 kanonis (status: ${mappingStatus}); harga yang dipakai adalah harga referensi template, BUKAN harga resmi AHSP.`
           : 'Komponen tanpa kode AHSP; harga referensi template, bukan harga resmi AHSP.',
         sourceName: null,
+        sourceSupplier: null,
+        sourceDate: null,
+        sourceRegion: null,
         mappingStatus
       };
     }
@@ -1897,6 +1930,9 @@ export class RabTemplateService {
         ? `Kode ${comp.ahspCode} berstatus ${mappingStatus} dan komponen tidak memiliki harga referensi — harga dibiarkan kosong (null), bukan Rp0.`
         : 'Komponen tidak memiliki kode AHSP maupun harga referensi — harga dibiarkan kosong (null), bukan Rp0.',
       sourceName: null,
+      sourceSupplier: null,
+      sourceDate: null,
+      sourceRegion: null,
       mappingStatus
     };
   }

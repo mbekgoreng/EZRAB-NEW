@@ -8,7 +8,6 @@ import {
   ChevronRight,
   RefreshCw,
   Box,
-  Compass,
   FileSpreadsheet,
   ArrowRight,
   History,
@@ -35,8 +34,6 @@ import {
   ChevronUp,
   Maximize2,
   Minimize2,
-  ZoomIn,
-  ZoomOut,
   X,
   ArrowLeft,
   DollarSign,
@@ -67,23 +64,10 @@ import {
 } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';
 import { CONSTRUCTION_CALCULATORS, getCalculatorById } from '../../engine/constructionCalculators/registry';
-import {
-  BowplankDiagram,
-  PondasiDiagram,
-  FootPlateDiagram,
-  SloofDiagram,
-  KolomDiagram,
-  DindingDiagram,
-  AtapBajaRinganDiagram,
-  FinishingDiagram,
-  GenericCalculatorDiagram,
-  BajaWfDiagram,
-} from '../../engine/constructionCalculators/diagrams';
 import { MASTER_VOLUME_CALCULATOR_SPEC } from '../../engine/constructionCalculators/masterJsonSpec';
 import { getCalculatorIllustration } from './calculatorIllustrations';
 import { formatRupiah, formatNumberId } from '../../engine/formulaEngine';
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
-import { TechnicalReferenceViewer } from './TechnicalReferenceViewer';
 import { MASTER_PRICE_ITEMS } from '../../data/indonesianPrices';
 import { useScopeBasedCost } from '../../hooks/useScopeBasedCost';
 import { PriceContext } from '../../engine/pricing/contracts/types';
@@ -534,7 +518,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   const [filterUnit, setFilterUnit] = useState<string>('ALL');
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
-  const [showCadDiagram, setShowCadDiagram] = useState<boolean>(true);
 
   const recordRecent = (id: string) => {
     setRecentIds((prev) => {
@@ -618,8 +601,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
 
   // Fullscreen & Lightbox States
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-  const [lightboxOpen, setLightboxOpen] = useState<boolean>(false);
-  const [zoomLevel, setZoomLevel] = useState<number>(1);
 
   // Magic Takeoff & Preset States
   const [showFormulaDrawer, setShowFormulaDrawer] = useState<boolean>(false);
@@ -1240,60 +1221,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   // Ilustrasi statis pekerjaan terpilih (bila ada di peta ilustrasi final).
   const activeIllustration = getCalculatorIllustration(selectedCalcId);
 
-  // Render Diagram Component
-  const renderDiagram = () => {
-    switch (selectedCalcId) {
-      case 'BOWPLANK':
-        return <BowplankDiagram activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'PONDASI':
-        return <PondasiDiagram activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'FOOT_PLATE':
-        return <FootPlateDiagram activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'SLOOF':
-      case 'BALOK':
-        return <SloofDiagram activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'BAJA_WF':
-        return <BajaWfDiagram activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'KOLOM':
-        return <KolomDiagram activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'BATA_RINGAN':
-        return <DindingDiagram type="hebel" activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'BATA_MERAH':
-        return <DindingDiagram type="merah" activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'BATAKO':
-        return <DindingDiagram type="batako" activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'ATAP_BAJA_RINGAN':
-        return <AtapBajaRinganDiagram activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'PINTU_JENDELA':
-        return <FinishingDiagram title={activeSpec.title} category="kusen" activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'PLESTERAN_ACIAN':
-        return <FinishingDiagram title={activeSpec.title} category="plesteran" activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'PENUTUP_LANTAI':
-      case 'PENUTUP_DINDING':
-        return <FinishingDiagram title={activeSpec.title} category="lantai" activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'PLAFON':
-        return <FinishingDiagram title={activeSpec.title} category="plafon" activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'PENGECATAN':
-        return <FinishingDiagram title={activeSpec.title} category="cat" activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'KELISTRIKAN':
-        return <FinishingDiagram title={activeSpec.title} category="listrik" activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'INSTALASI_AIR':
-        return <FinishingDiagram title={activeSpec.title} category="pipa" activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      case 'SANITAIR':
-        return <FinishingDiagram title={activeSpec.title} category="sanitair" activeParam={activeParam} onSelectParam={(p) => setActiveParam(p)} inputs={inputs} />;
-      default:
-        return (
-          <GenericCalculatorDiagram
-            title={activeSpec.title}
-            primaryUnit={activeSpec.primaryUnit}
-            activeParam={activeParam}
-            onSelectParam={(p) => setActiveParam(p)}
-            inputs={inputs}
-          />
-        );
-    }
-  };
-
   return (
     <div
       onPaste={handlePasteExcelData}
@@ -1421,68 +1348,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               >
                 Reset Sekarang
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Lightbox Modal for Diagram */}
-      {lightboxOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(11,19,43,0.95)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            flexDirection: 'column',
-            zIndex: 100000,
-            padding: '24px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', color: '#FFFFFF' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Compass size={20} color="#38BDF8" />
-              <span style={{ fontSize: '15px', fontWeight: 800 }}>
-                Gambar Teknik CAD: {activeSpec.title} ({activeSpec.excelSheetName})
-              </span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button
-                onClick={() => setZoomLevel((z) => Math.min(2.5, z + 0.25))}
-                style={{ background: '#1E293B', color: '#FFFFFF', border: '1px solid #334155', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                title="Zoom In"
-              >
-                <ZoomIn size={16} />
-              </button>
-              <button
-                onClick={() => setZoomLevel((z) => Math.max(0.5, z - 0.25))}
-                style={{ background: '#1E293B', color: '#FFFFFF', border: '1px solid #334155', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                title="Zoom Out"
-              >
-                <ZoomOut size={16} />
-              </button>
-              <button
-                onClick={() => setZoomLevel(1)}
-                style={{ background: '#1E293B', color: '#FFFFFF', border: '1px solid #334155', borderRadius: '8px', padding: '0 12px', height: '36px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-              >
-                Reset Zoom ({Math.round(zoomLevel * 100)}%)
-              </button>
-              <button
-                onClick={() => setLightboxOpen(false)}
-                style={{ background: '#EF4444', color: '#FFFFFF', border: 'none', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginLeft: '8px' }}
-                title="Tutup"
-              >
-                <X size={18} />
-              </button>
-            </div>
-          </div>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            <div style={{ transform: `scale(${zoomLevel})`, transition: 'transform 0.15s ease', maxWidth: '90%', maxHeight: '90%' }}>
-              {renderDiagram()}
             </div>
           </div>
         </div>
@@ -2365,28 +2230,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               </button>
 
               <button
-                onClick={() => setShowCadDiagram((v) => !v)}
-                style={{
-                  height: '32px',
-                  padding: '0 10px',
-                  borderRadius: '6px',
-                  background: showCadDiagram ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                  border: showCadDiagram ? '1px solid #2563EB' : '1px solid var(--ez-hue-slate-border)',
-                  color: showCadDiagram ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-slate)',
-                  fontSize: '11.5px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-                title="Tampilkan / sembunyikan gambar teknik CAD"
-              >
-                <Compass size={13} />
-                <span>Gambar CAD ({showCadDiagram ? 'Tutup' : 'Buka'})</span>
-              </button>
-
-              <button
                 onClick={handleResetClick}
                 style={{
                   height: '32px',
@@ -2410,10 +2253,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             </div>
           </div>
 
-          {/* Ilustrasi Pekerjaan — gambar statis render-style, menonjol di atas
-              diagram CAD. Diagram CAD di bawahnya TETAP dipertahankan karena
-              interaktif/fungsional (klik anotasi memilih parameter form,
-              label menampilkan nilai input live) — ilustrasi tidak menggantikannya. */}
+          {/* Ilustrasi Pekerjaan — gambar render-style sebagai satu-satunya
+              visual kalkulator (diagram CAD sudah diganti ilustrasi). */}
           {activeIllustration && (
             <figure
               style={{
@@ -2433,19 +2274,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 style={{ width: '100%', height: 'auto', display: 'block' }}
               />
             </figure>
-          )}
-
-          {/* Technical CAD Diagram Viewer (Collapsible) */}
-          {showCadDiagram && (
-            <div style={{ border: '1px solid #EEF1F6', borderRadius: '20px', overflow: 'hidden' }}>
-              <TechnicalReferenceViewer
-                workId={selectedCalcId}
-                categoryName={activeSpec.category}
-                workName={activeSpec.title}
-                renderCadDiagram={renderDiagram}
-                activeParamLabel={activeSpec.parameters.find((p) => p.id === activeParam)?.label}
-              />
-            </div>
           )}
 
           {/* Two-Column Grid: Left Inputs / Right Results & Actions */}

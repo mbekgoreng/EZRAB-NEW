@@ -2,7 +2,7 @@
  * DED-AI Estimate — Tampilan 1: INPUT.
  * Upload multi-file (drag & drop) + deskripsi proyek + pilihan proyek + tipe + mode AI.
  */
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   UploadCloud, FileText, X, Zap, Brain, FolderOpen, PlusCircle,
   ArrowRight, AlertTriangle, History, Trash2, RotateCcw,
@@ -78,6 +78,14 @@ export const DedAiInputView: React.FC<Props> = ({
   const [fullAi, setFullAi] = useState(initialSession.fullAi ?? false);
   const [targetProjectId, setTargetProjectId] = useState<string | null>(initialSession.targetProjectId);
   const [useExisting, setUseExisting] = useState(initialSession.targetProjectId !== null);
+  // Perbaikan final: sinkronkan prefill deskripsi dari entry DED yang tiba
+  // setelah mount (hanya bila kolom masih kosong — tidak menimpa ketikan).
+  useEffect(() => {
+    if (initialSession.description && !description) {
+      setDescription(initialSession.description);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSession.description]);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   // --- AI Credits (simulasi): kategori dipilih user, bukan dideteksi AI ---

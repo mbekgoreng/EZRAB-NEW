@@ -1,4 +1,5 @@
 import { RabItem, EstimateVersion, VersionDiffItem, EstimateScenario } from '../types';
+import { exportItemAmount } from '../export/priceIntegrity';
 import { formatCurrencyIDR } from '../calculations/decimalEngine';
 
 export class VersionAndScenarioEngine {
@@ -47,7 +48,7 @@ export class VersionAndScenarioEngine {
       processedTargetIds.add(tItem.id);
       const bItem = baseMap.get(tItem.id) || (tItem.code ? baseMap.get(tItem.code) : undefined);
 
-      const tAmount = tItem.amount ?? tItem.totalPrice ?? (tItem.unitPrice != null ? tItem.volume * tItem.unitPrice : null);
+      const tAmount = exportItemAmount(tItem as any);
 
       if (!bItem) {
         // Item is Added
@@ -66,7 +67,7 @@ export class VersionAndScenarioEngine {
           notes: 'Item baru ditambahkan pada versi ini',
         });
       } else {
-        const bAmount = bItem.amount ?? bItem.totalPrice ?? (bItem.unitPrice != null ? bItem.volume * bItem.unitPrice : null);
+        const bAmount = exportItemAmount(bItem as any);
         const deltaAmt = (tAmount ?? 0) - (bAmount ?? 0);
         const deltaPct = (bAmount ?? 0) > 0 ? (deltaAmt / (bAmount ?? 0)) * 100 : 0;
 
@@ -113,7 +114,7 @@ export class VersionAndScenarioEngine {
       const existsInTarget = targetMap.has(bItem.id) || (bItem.code ? targetMap.has(bItem.code) : false);
       if (!existsInTarget) {
         removedCount++;
-        const bAmount = bItem.amount ?? bItem.totalPrice ?? (bItem.unitPrice != null ? bItem.volume * bItem.unitPrice : null);
+        const bAmount = exportItemAmount(bItem as any);
         diffItems.push({
           id: bItem.id,
           code: bItem.code || 'ITEM.DEL',
@@ -130,8 +131,8 @@ export class VersionAndScenarioEngine {
       }
     });
 
-    const baseTotal = baseItems.reduce((acc, i) => acc + (i.amount ?? i.totalPrice ?? i.volume * (i.unitPrice ?? 0)), 0);
-    const targetTotal = targetItems.reduce((acc, i) => acc + (i.amount ?? i.totalPrice ?? i.volume * (i.unitPrice ?? 0)), 0);
+    const baseTotal = baseItems.reduce((acc, i) => acc + (exportItemAmount(i as any) ?? 0), 0);
+    const targetTotal = targetItems.reduce((acc, i) => acc + (exportItemAmount(i as any) ?? 0), 0);
     const totalDelta = targetTotal - baseTotal;
     const percentageDelta = baseTotal > 0 ? (totalDelta / baseTotal) * 100 : 0;
 
@@ -156,7 +157,7 @@ export class VersionAndScenarioEngine {
     projectId: string,
     baselineItems: RabItem[]
   ): EstimateScenario[] {
-    const baselineDirect = baselineItems.reduce((acc, i) => acc + (i.amount ?? i.totalPrice ?? i.volume * (i.unitPrice ?? 0)), 0);
+    const baselineDirect = baselineItems.reduce((acc, i) => acc + (exportItemAmount(i as any) ?? 0), 0);
     const baselineTotal = Math.round(baselineDirect * 1.15); // +5% overhead +10% profit
 
     // 1. BASELINE SCENARIO
@@ -195,7 +196,7 @@ export class VersionAndScenarioEngine {
         totalPrice: newAmount,
       };
     });
-    const scenADirect = scenarioAItems.reduce((acc, i) => acc + (i.amount || i.totalPrice || 0), 0);
+    const scenADirect = scenarioAItems.reduce((acc, i) => acc + (exportItemAmount(i as any) ?? 0), 0);
     const scenATotal = Math.round(scenADirect * 1.15);
 
     const scenarioA: EstimateScenario = {
@@ -233,7 +234,7 @@ export class VersionAndScenarioEngine {
         totalPrice: newAmount,
       };
     });
-    const scenBDirect = scenarioBItems.reduce((acc, i) => acc + (i.amount || i.totalPrice || 0), 0);
+    const scenBDirect = scenarioBItems.reduce((acc, i) => acc + (exportItemAmount(i as any) ?? 0), 0);
     const scenBTotal = Math.round(scenBDirect * 1.14); // 4% overhead 10% profit
 
     const scenarioB: EstimateScenario = {
@@ -267,7 +268,7 @@ export class VersionAndScenarioEngine {
         totalPrice: newAmount,
       };
     });
-    const scenCDirect = scenarioCItems.reduce((acc, i) => acc + (i.amount || i.totalPrice || 0), 0);
+    const scenCDirect = scenarioCItems.reduce((acc, i) => acc + (exportItemAmount(i as any) ?? 0), 0);
     const scenCTotal = Math.round(scenCDirect * 1.11); // 3% overhead 8% profit
 
     const scenarioC: EstimateScenario = {

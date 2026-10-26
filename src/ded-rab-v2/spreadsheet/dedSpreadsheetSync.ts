@@ -23,6 +23,7 @@ import {
   SourceDocument,
   GoogleSheetsSyncResult,
 } from '../types';
+import { exportItemAmount } from '../../export/priceIntegrity';
 
 export class DedSpreadsheetSync {
   private static instance: DedSpreadsheetSync;
@@ -76,7 +77,16 @@ export class DedSpreadsheetSync {
       },
       {
         Field: 'Estimated Grand Total',
-        Value: workItems.reduce((acc, i) => acc + (i.price?.totalPrice || 0), 0),
+        // Digating STATUS: item PRICE_UNRESOLVED (di price maupun item)
+        // dengan total basi tidak ikut (item DED tanpa status tetap dihitung).
+        Value: workItems.reduce(
+          (acc, i) => acc + (exportItemAmount({
+            totalPrice: i.price?.totalPrice ?? null,
+            unitPrice: i.price?.unitPrice ?? null,
+            priceStatus: i.price?.priceStatus ?? i.priceStatus ?? null,
+          }) ?? 0),
+          0
+        ),
       },
     ];
 

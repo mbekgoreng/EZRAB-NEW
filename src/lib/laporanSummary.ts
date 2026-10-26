@@ -57,6 +57,8 @@ export interface LaporanSummaryItem {
   unit?: string | null;
   unitPrice?: number | null;
   amount?: number | null;
+  /** Status harga kanonis; UNRESOLVED = sentinel 0, bukan harga valid. */
+  priceStatus?: string | null;
 }
 
 export type RabTotalState = 'EMPTY' | 'UNPRICED' | 'PARTIAL' | 'COMPLETE';
@@ -100,9 +102,16 @@ const isFiniteNumber = (v: unknown): v is number =>
 
 /**
  * Resolusi amount satu item. null berarti harga belum tersedia —
- * BUKAN nol. `amount` terekam selalu menang (termasuk 0 yang sah).
+ * BUKAN nol. `amount` bila berupa angka finite (termasuk 0 yang sah);
+ * bila `amount` null, hasil kali volume × unitPrice bila keduanya finite;
+ * selain itu null (item BELUM BERHARGA — harga belum tersedia, mis. alur
+ * DED menghasilkan unitPrice null lewat ahspPriceResolver).
+ * P0 2026-10-26: PRICE_UNRESOLVED selalu null — record pasca-transfer
+ * membawa amount sentinel 0 dari rabItemFactory, dan 0 itu sebelumnya
+ * terhitung sebagai "berharga" di ringkasan laporan.
  */
 export function resolveItemAmount(item: LaporanSummaryItem): number | null {
+  if (item.priceStatus === 'PRICE_UNRESOLVED') return null;
   if (isFiniteNumber(item.amount)) return item.amount;
   if (isFiniteNumber(item.volume) && isFiniteNumber(item.unitPrice)) {
     return item.volume * item.unitPrice;

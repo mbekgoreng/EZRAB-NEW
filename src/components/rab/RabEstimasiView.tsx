@@ -41,7 +41,9 @@ import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterR
 import { NationalAHSPItem } from '../../data/nationalCostDatabase/types';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { exportProjectToExcel } from '../../export/excelExportEngine';
+import { exportItemAmount } from '../../export/priceIntegrity';
 import { useProject } from '../../context/ProjectContext';
+import { openEzrabAI } from '../../ai-tools/aiNavigation';
 import { ProjectHistory } from '../../lib/projectHistory';
 import {
   buildRabCellUpdates,
@@ -79,7 +81,6 @@ import { AiConstructionReviewEngine } from '../../../server/services/aiConstruct
 
 interface EstimatorSpreadsheetProps {
   projects?: Project[];
-  onOpenMagicAi?: () => void;
   onNavigateToTab?: (tab: string) => void;
   initialTab?: EstimatorTabType;
 }
@@ -124,7 +125,6 @@ const DEFAULT_COMPANY: Company = {
 
 export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
   projects: propProjects,
-  onOpenMagicAi,
   onNavigateToTab,
   initialTab,
 }) => {
@@ -211,6 +211,13 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
   const [smartAddModalOpen, setSmartAddModalOpen] = useState(false);
   const [smartAddInitialMode, setSmartAddInitialMode] = useState<AddItemMode>('selector');
   const [smartAddCategoryContext, setSmartAddCategoryContext] = useState<string>('Pekerjaan Persiapan & Bowplank');
+
+  // Dialog "Tambah Kelompok" manual (WBS): user mengetik sendiri nama
+  // kelompoknya. Bukan modal tambah item — dulu tombol ini salah membuka
+  // handleOpenSmartAdd('selector') yang sama dengan "Tambah Item".
+  const [groupDialogOpen, setGroupDialogOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [groupNameError, setGroupNameError] = useState<string | null>(null);
 
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [isColumnsModalOpen, setIsColumnsModalOpen] = useState(false);
@@ -327,6 +334,47 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
     setSmartAddModalOpen(true);
   };
 
+  // Tambah Kelompok WBS manual: user mengetik nama kelompoknya sendiri.
+  // Disimpan di proyek (customWbsGroups, ikut tersimpan ke localStorage
+  // lewat updateProject) sehingga header kosong bertahan sampai ada item.
+  const handleSaveCustomGroup = () => {
+    const name = newGroupName.trim();
+    if (!currentProject) {
+      setGroupNameError('Pilih atau buka proyek terlebih dahulu.');
+      return;
+    }
+    if (!name) {
+      setGroupNameError('Nama kelompok wajib diisi.');
+      return;
+    }
+    const taken = groupedWbsCategories.map((g) => g.categoryName.trim().toLowerCase());
+    if (taken.includes(name.toLowerCase())) {
+      setGroupNameError(`Kelompok "${name}" sudah ada di spreadsheet ini.`);
+      return;
+    }
+    updateProject(currentProject.id, {
+      customWbsGroups: [...(currentProject.customWbsGroups ?? []), name],
+    });
+    setGroupDialogOpen(false);
+    setNewGroupName('');
+    setGroupNameError(null);
+    setIsGrouped(true);
+    showToast(`Kelompok "${name}" ditambahkan. Klik + di header kelompok untuk mengisi item.`);
+  };
+
+  // Hapus kelompok kustom — hanya bila masih kosong (tidak ada item).
+  // Kelompok dari item tidak bisa dihapus lewat sini; hapus itemnya dulu
+  // sampai kelompoknya hilang sendiri.
+  const handleDeleteCustomGroup = (categoryName: string) => {
+    if (!currentProject) return;
+    updateProject(currentProject.id, {
+      customWbsGroups: (currentProject.customWbsGroups ?? []).filter(
+        (n) => n.trim().toLowerCase() !== categoryName.trim().toLowerCase()
+      ),
+    });
+    showToast(`Kelompok "${categoryName}" dihapus.`);
+  };
+
   // Compute active filters count
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -382,7 +430,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
   // melaporkan hasil AKTUAL — bukan sekadar toast.
   const handleRefreshData = () => {
     const total = projectRabItems.reduce(
-      (s, i) => s + (i.amount || (i.volume || 0) * (i.unitPrice || 0) || 0),
+      (s, i) => s + (exportItemAmount(i as any) ?? 0),
       0
     );
     showToast(`Data termutakhir: ${projectRabItems.length} item, total ${formatCurrencyIDR(total)}`);
@@ -488,9 +536,10 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
   // Group items by WBS Categories
   const groupedWbsCategories = useMemo((): GroupedWbsCategory[] => {
     if (!isGrouped) {
-      // Flat list mode: single pseudo group
+      // Flat list mode: single pseudo group — subtotal digating STATUS
+      // (priceIntegrity): item PRICE_UNRESOLVED dengan total basi tidak ikut.
       const subtotal = filteredItems.reduce(
-        (sum, item) => sum + (item.amount ?? item.totalPrice ?? item.volume * (item.unitPrice ?? 0)),
+        (sum, item) => sum + (exportItemAmount(item as any) ?? 0),
         0
       );
       const subtotalVolume = filteredItems.reduce((sum, item) => sum + (item.volume || 0), 0);
@@ -530,7 +579,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       };
 
       const subtotal = items.reduce(
-        (sum, item) => sum + (item.amount ?? item.totalPrice ?? item.volume * (item.unitPrice ?? 0)),
+        (sum, item) => sum + (exportItemAmount(item as any) ?? 0),
         0
       );
       const subtotalVolume = items.reduce((sum, item) => sum + (item.volume || 0), 0);
@@ -547,13 +596,54 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       letterIndex++;
     });
 
-    return result;
-  }, [filteredItems, isGrouped]);
+    // Kelompok WBS yang diketik manual user (customWbsGroups proyek) tetap
+    // tampil meski belum ada itemnya — selama ini kelompok hanya turunan
+    // dari item, sehingga "Tambah Kelompok" tidak mungkin membuat header
+    // kosong. Duplikat (sudah ada dari item) tidak digandakan.
+    if (isGrouped) {
+      const existingNames = new Set(result.map((g) => g.categoryName.trim().toLowerCase()));
+      for (const customName of currentProject?.customWbsGroups ?? []) {
+        const name = customName.trim();
+        if (!name || existingNames.has(name.toLowerCase())) continue;
+        existingNames.add(name.toLowerCase());
+        const letterInfo = WBS_LETTER_MAP[name] || {
+          letter: String.fromCharCode(65 + (letterIndex % 26)),
+          bg: 'var(--ez-color-surface-tertiary)',
+          text: '#334155',
+          border: 'var(--ez-color-border)',
+        };
+        letterIndex++;
+        result.push({
+          categoryName: name,
+          codeLetter: letterInfo.letter,
+          badgeColor: { bg: letterInfo.bg, text: letterInfo.text, border: letterInfo.border },
+          items: [],
+          subtotal: 0,
+          subtotalVolume: 0,
+        });
+      }
+    }
 
-  // Overall Totals
+    return result;
+  }, [filteredItems, isGrouped, currentProject?.customWbsGroups]);
+
+  // Daftar tujuan kelompok untuk bulk-action: kategori tetap + kelompok
+  // ketikan user, supaya item bisa dipindahkan ke kelompok manual.
+  const wbsTargetCategories = useMemo(() => {
+    const merged = [...WORK_CATEGORIES];
+    for (const c of currentProject?.customWbsGroups ?? []) {
+      const name = c.trim();
+      if (name && !merged.includes(name)) merged.push(name);
+    }
+    return merged;
+  }, [currentProject?.customWbsGroups]);
+
+  // Overall Totals — digating STATUS (priceIntegrity): item
+  // PRICE_UNRESOLVED dengan total basi tidak ikut; label PARSIAL sudah ada
+  // lewat unpricedItemsCount di bawah (Phase 2I.2).
   const totalRabNominal = useMemo(() => {
     return projectRabItems.reduce(
-      (acc, item) => acc + (item.amount ?? item.totalPrice ?? item.volume * (item.unitPrice ?? 0)),
+      (acc, item) => acc + (exportItemAmount(item as any) ?? 0),
       0
     );
   }, [projectRabItems]);
@@ -998,8 +1088,9 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
               }}
               onAddNewItem={(mode, catContext) => handleOpenSmartAdd(mode || 'selector', catContext)}
               onOpenTemplates={() => handleOpenSmartAdd('template')}
-              onOpenMagicAi={() => handleOpenSmartAdd('ai')}
               visibleColumns={visibleColumns}
+              customGroupNames={currentProject?.customWbsGroups ?? []}
+              onDeleteCustomGroup={handleDeleteCustomGroup}
             />
 
             {/* 3D. BOTTOM SUMMARY & PAGINATION */}
@@ -1007,7 +1098,11 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
               groupsCount={groupedWbsCategories.length}
               totalItemsCount={totalItemsCount}
               totalRab={totalRabNominal}
-              onAddGroup={() => handleOpenSmartAdd('selector')}
+              onAddGroup={() => {
+                setNewGroupName('');
+                setGroupNameError(null);
+                setGroupDialogOpen(true);
+              }}
               isSaving={saveStatus === 'saving'}
             />
           </>
@@ -1097,7 +1192,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
           setSelectedItemIds(new Set());
           showToast('Item terpilih dipindahkan ke kelompok ' + targetCategory);
         }}
-        categories={WORK_CATEGORIES}
+        categories={wbsTargetCategories}
       />
 
       {/* =====================================================================
@@ -1114,6 +1209,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
           initialMode={smartAddInitialMode}
           currentProjectId={currentProjectId || currentProject?.id || (allProjects.length > 0 ? allProjects[0].id : null)}
           activeCategory={smartAddCategoryContext}
+          customCategories={currentProject?.customWbsGroups ?? []}
           existingItems={projectRabItems}
           onAddItem={(itemData) => {
             try {
@@ -1142,6 +1238,77 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         />
       </ErrorBoundary>
 
+      {/* 1b. DIALOG TAMBAH KELOMPOK WBS MANUAL — user mengetik sendiri nama
+          kelompoknya. Header kelompok langsung tampil di spreadsheet (kosong,
+          0 item) dan bisa diisi lewat tombol + di headernya. */}
+      {groupDialogOpen && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(15, 23, 42, 0.45)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '16px',
+          }}
+          onClick={() => setGroupDialogOpen(false)}
+        >
+          <div
+            style={{
+              width: '100%', maxWidth: '420px',
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-color-border-line)',
+              borderRadius: '12px', padding: '20px',
+              boxShadow: '0 16px 48px rgba(15, 23, 42, 0.25)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 4px 0' }}>
+              Tambah Kelompok WBS
+            </h3>
+            <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '0 0 14px 0', lineHeight: 1.5 }}>
+              Ketik nama kelompoknya sendiri, mis. “Pekerjaan Tanah &amp; Pondasi”.
+              Kelompok langsung tampil di spreadsheet meski belum ada itemnya.
+            </p>
+            <label style={{ fontSize: '11.5px', fontWeight: 700, display: 'block', marginBottom: '4px' }}>
+              Nama Kelompok *
+            </label>
+            <input
+              type="text"
+              autoFocus
+              placeholder="mis. Pekerjaan Tanah & Pondasi"
+              value={newGroupName}
+              onChange={(e) => {
+                setNewGroupName(e.target.value);
+                setGroupNameError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveCustomGroup();
+                if (e.key === 'Escape') setGroupDialogOpen(false);
+              }}
+              style={{ width: '100%', height: '38px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '13px' }}
+            />
+            {groupNameError && (
+              <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 600, color: '#BE123C' }}>
+                {groupNameError}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '10px', marginTop: '16px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setGroupDialogOpen(false)}
+                style={{ height: '36px', padding: '0 16px', borderRadius: '8px', background: 'var(--ez-color-surface)', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSaveCustomGroup}
+                disabled={!newGroupName.trim()}
+                style={{ height: '36px', padding: '0 18px', borderRadius: '8px', background: 'var(--ez-color-primary)', color: '#FFFFFF', border: 'none', fontSize: '12.5px', fontWeight: 750, cursor: newGroupName.trim() ? 'pointer' : 'not-allowed', opacity: newGroupName.trim() ? 1 : 0.55 }}
+              >
+                Tambah Kelompok
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* 2. ADVANCED FILTER MODAL */}
       <EstimatorAdvancedFilterModal
         isOpen={isFilterModalOpen}
@@ -1203,8 +1370,19 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
           setInspectorItem(updated as RabItem);
           showToast('Analisa AHSP berhasil disimpan');
         }}
-        onAskAiWithContext={() => {
-          onOpenMagicAi?.();
+        onAskAiWithContext={(prompt, itemData) => {
+          // Fase 1: Ask AI inspector lewat resolver — chat + rabItemId +
+          // prompt audit item sebagai PREFILL (bukan autosend): pengguna
+          // meninjau prompt di chat sebelum mengirim. Item hanya dibawa
+          // sebagai id, bukan objek utuh.
+          openEzrabAI({
+            mode: 'chat',
+            projectId: currentProjectId,
+            projectName: currentProject?.name,
+            prompt,
+            rabItemId: itemData?.item?.id ?? inspectorItem?.id,
+            source: 'inspector',
+          });
           setInspectorDrawerOpen(false);
         }}
       />

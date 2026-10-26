@@ -1,4 +1,5 @@
 import { RABSection, RABItem } from '../types';
+import { exportItemAmount } from '../export/priceIntegrity';
 
 export interface CellCoordinate {
   col: string; // e.g. "F", "K", "L"
@@ -61,7 +62,13 @@ export function evaluateSpreadsheetFormula(
             if (item.unitPrice == null) hasIncomplete = true;
             else totalSum += item.unitPrice;
           }
-          else if (col === 'L') totalSum += item.totalPrice || 0;
+          // Kolom L digating STATUS: item PRICE_UNRESOLVED dengan total
+          // basi tidak ikut (dan menandai hasIncomplete, seperti K).
+          else if (col === 'L') {
+            const amt = exportItemAmount(item as any);
+            if (amt == null) hasIncomplete = true;
+            else totalSum += amt;
+          }
         }
       }
       return { value: Math.round(totalSum * 100) / 100, error: null, hasIncomplete };
@@ -75,18 +82,24 @@ export function evaluateSpreadsheetFormula(
       const endRow = parseInt(avgMatch[4]);
       let totalSum = 0;
       let count = 0;
+      let hasIncomplete = false;
 
       for (let r = Math.min(startRow, endRow); r <= Math.max(startRow, endRow); r++) {
         const item = rowItemMap[r];
         if (item) {
-          if (col === 'F') totalSum += item.volume || 0;
-          else if (col === 'K') totalSum += item.unitPrice || 0;
-          else if (col === 'L') totalSum += item.totalPrice || 0;
-          count++;
+          if (col === 'F') { totalSum += item.volume || 0; count++; }
+          else if (col === 'K') { totalSum += item.unitPrice || 0; count++; }
+          // Kolom L: rata-rata hanya atas item berharga (item unresolved
+          // tidak ikut pembilang maupun penyebut).
+          else if (col === 'L') {
+            const amt = exportItemAmount(item as any);
+            if (amt == null) hasIncomplete = true;
+            else { totalSum += amt; count++; }
+          }
         }
       }
       const val = count > 0 ? totalSum / count : 0;
-      return { value: Math.round(val * 100) / 100, error: null };
+      return { value: Math.round(val * 100) / 100, error: null, hasIncomplete };
     }
 
     // 3. Replace Cell References like F12, K12, $L$TOTAL with numeric values
@@ -105,7 +118,7 @@ export function evaluateSpreadsheetFormula(
         case 'I': return (item.laborPrice || 0).toString();
         case 'J': return (item.equipmentPrice || 0).toString();
         case 'K': return (item.unitPrice || 0).toString();
-        case 'L': return (item.totalPrice || 0).toString();
+        case 'L': return (exportItemAmount(item as any) ?? 0).toString();
         case 'M': return (item.weightPercent || 0).toString();
         default: return '0';
       }

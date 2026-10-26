@@ -39,6 +39,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import { Project, RABSection, RabItem, ProjectDocument } from '../../types';
+import { exportItemAmount } from '../../export/priceIntegrity';
 import { useProject } from '../../context/ProjectContext';
 import { dedRabPipeline, PipelineExecutionOutput } from '../../ded-rab-v2/pipeline/dedRabPipeline';
 import { DedProcessingMode, PipelineProgressEvent, PipelineStage } from '../../ded-rab-v2/types';
@@ -599,7 +600,9 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
     }
 
     itemsToSave.forEach((item) => {
-      grandTotal += item.totalPrice || item.amount || 0;
+      // Grand total digating STATUS: item PRICE_UNRESOLVED dengan total basi
+      // tidak ikut (item DED tanpa status diperlakukan teresolusi — kompat).
+      grandTotal += exportItemAmount(item as any) ?? 0;
       const secName = item.sectionName || item.category || 'Pekerjaan Utama';
       const existing = sectionMap.get(secName) || [];
       existing.push(item);
@@ -631,7 +634,7 @@ export const DedRabWorkflowView: React.FC<DedRabWorkflowViewProps> = ({
           verificationStatus: 'NEEDS_VERIFICATION',
           ahspCode: it.ahspCode,
         })),
-        subtotal: items.reduce((sum, it) => sum + (it.totalPrice || 0), 0),
+        subtotal: items.reduce((sum, it) => sum + (exportItemAmount(it as any) ?? 0), 0),
       };
     });
 

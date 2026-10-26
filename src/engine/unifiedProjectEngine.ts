@@ -13,6 +13,7 @@ import {
 } from '../types';
 import { SafeDecimalEngine } from './safeDecimalEngine';
 import { loadVersioned } from './storage/hardenedStorage';
+import { exportItemAmount } from '../export/priceIntegrity';
 
 export class UnifiedProjectEngine {
   /**
@@ -116,8 +117,13 @@ export class UnifiedProjectEngine {
     let secIdx = 1;
     for (const [catName, items] of groups.entries()) {
       const code = `DIV-${secIdx < 10 ? '0' + secIdx : secIdx}`;
+      // P0 ekspor 2026-10-26: subtotal rekonstruksi digating STATUS, bukan
+      // nilai mentah — item PRICE_UNRESOLVED (termasuk totalPrice basi
+      // nonzero dari jalur tulis non-factory) tidak masuk subtotal. Untuk
+      // record factory nilainya sama (sentinel amount 0), jadi tidak ada
+      // perubahan angka pada data normal.
       const subtotal = items.reduce(
-        (acc, it) => acc + (Number(it.amount || it.totalPrice) || (Number(it.volume) * Number(it.unitPrice)) || 0),
+        (acc, it) => acc + (exportItemAmount(it as any) ?? 0),
         0
       );
       sections.push({
@@ -140,6 +146,18 @@ export class UnifiedProjectEngine {
           unitPrice: Number(it.unitPrice) || 0,
           totalPrice: Number(it.amount || it.totalPrice) || (Number(it.volume) * Number(it.unitPrice)) || 0,
           verificationStatus: it.verificationStatus || 'VERIFIED',
+          // P0 ekspor 2026-10-26: status & provenance HARUS diteruskan —
+          // sebelumnya mapping ini membuang priceStatus/priceSourceKind,
+          // sehingga sheet ekspor/PDF yang menerima seksi rekonstruksi
+          // tidak bisa membedakan sentinel 0 dari harga Rp0 valid.
+          // Field tambahan runtime (di luar tipe RABItem) dibaca jalur
+          // ekspor via cast, seperti yang sudah dilakukan pdfExporter.
+          ...((it as any).priceStatus ? { priceStatus: (it as any).priceStatus } : {}),
+          ...((it as any).priceSourceKind ? { priceSourceKind: (it as any).priceSourceKind } : {}),
+          ...((it as any).priceSourceLabel ? { priceSourceLabel: (it as any).priceSourceLabel } : {}),
+          ...((it as any).priceSourceExplanation ? { priceSourceExplanation: (it as any).priceSourceExplanation } : {}),
+          ...((it as any).priceSourceName !== undefined ? { priceSourceName: (it as any).priceSourceName } : {}),
+          ...((it as any).ahspMappingStatus ? { ahspMappingStatus: (it as any).ahspMappingStatus } : {}),
         })),
       });
       secIdx++;
@@ -156,7 +174,22 @@ export class UnifiedProjectEngine {
     project: Project,
     sections: RABSection[]
   ): ProjectCostSummary {
-    const directCost = sections.reduce((sum, s) => sum + (s.subtotal || 0), 0);
+    // P0 ekspor 2026-10-26: directCost TIDAK lagi percaya subtotal
+    // tersimpan mentah. Bila seksi punya item, total dihitung ulang
+    // digating status (exportItemAmount) sehingga totalPrice basi pada
+    // item UNRESOLVED tidak bocor ke directCost/grandTotal. Seksi tanpa
+    // item tetap memakai subtotal tersimpan (total seksi yang diinput
+    // manual tanpa rincian item tidak dihapus).
+    const directCost = sections.reduce((sum, s) => {
+      if (s.items && s.items.length > 0) {
+        return sum + s.items.reduce((a, it) => a + (exportItemAmount(it as any) ?? 0), 0);
+      }
+      return sum + (s.subtotal || 0);
+    }, 0);
+    const unresolvedItems = sections.reduce(
+      (n, s) => n + (s.items || []).filter((it: any) => it.priceStatus === 'PRICE_UNRESOLVED').length,
+      0
+    );
     const cost = project.costSummary || ({} as any);
 
     const overheadPercent = typeof cost.overheadPercent === 'number' ? cost.overheadPercent : 5;
@@ -190,6 +223,7 @@ export class UnifiedProjectEngine {
       taxAmount,
       grandTotal,
       costPerM2: cost.costPerM2 || (project.buildingArea ? Math.round(grandTotal / project.buildingArea) : 0),
+      unresolvedItems,
     };
   }
 
