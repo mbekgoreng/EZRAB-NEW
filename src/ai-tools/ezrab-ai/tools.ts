@@ -256,7 +256,38 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
           for (const w of words) if (hay.includes(w)) score++;
           return { t, score };
         }).filter((s) => s.score > 0).sort((a, b) => b.score - a.score).slice(0, 8);
-        if (scored.length === 0) return `Tidak ditemukan template RAB untuk "${q}".`;
+        if (scored.length === 0) {
+          // Template kosong BUKAN jawaban akhir: cari item AHSP yang cocok
+          // (sumber yang sama dengan tool cari_ahsp) agar alur RAB dapat
+          // lanjut menyusun draf tabel, bukan berhenti di "tidak ditemukan".
+          const rawQ = String(args.kata_kunci ?? args.query ?? '').trim();
+          let ahspLines = '';
+          try {
+            const hits = officialAhspRepository.searchOfficialAhsp(rawQ, { limit: 8 });
+            if (hits.length > 0) {
+              ahspLines = hits.map((h, i) => {
+                const it: any = h.item;
+                const title = it.title ?? it.name ?? '-';
+                return `${i + 1}. [${it.code ?? '-'}] ${title} — ${it.unit ?? ''}${ahspChatPriceSuffix(it)}`;
+              }).join('\n');
+            }
+          } catch {
+            /* abaikan — lanjut ke pesan panduan di bawah */
+          }
+          if (ahspLines) {
+            return (
+              `Tidak ditemukan template RAB untuk "${q}", tetapi item AHSP berikut cocok:\n${ahspLines}\n\n` +
+              'Lanjutkan: susun draf tabel RAB dari item AHSP di atas dengan kolom No, Uraian Pekerjaan, Volume, Satuan, Harga Satuan, Jumlah Harga, dan Status Harga. ' +
+              'Bila dimensi (panjang/lebar/tebal) belum ada, ajukan SATU klarifikasi untuk memintanya sebelum menghitung volume. ' +
+              'Harga hanya dari tool; yang belum ada = "harga belum tersedia", bukan Rp0 dan bukan karangan.'
+            );
+          }
+          return (
+            `Tidak ditemukan template RAB untuk "${q}" dan tidak ada item AHSP yang cocok dengan kata kunci itu. ` +
+            'Jangan berhenti: coba kata kunci lain (mis. "perkerasan", "jalan", "paving blok") atau minta pengguna menjelaskan pekerjaannya, ' +
+            'lalu susun draf tabel RAB dari item AHSP yang ditemukan. Harga yang belum ada = "harga belum tersedia", bukan karangan.'
+          );
+        }
         return scored.map((s, i) => {
           const t: any = s.t;
           const items = Array.isArray(t.workItems) ? t.workItems.length : 0;

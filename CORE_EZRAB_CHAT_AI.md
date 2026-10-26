@@ -299,6 +299,9 @@ Aturan:
 
 Jangan mengklaim jadwal, QTO, dokumen, atau file tersedia sebagai tool jika belum ada di registry aktual. Navigasi ke fitur tidak membuktikan operasi di fitur itu berhasil.
 
+### Template kosong bukan jawaban akhir
+Bila `cari_template_rab` tidak menemukan template, alur RAB tidak boleh berhenti di "tidak ditemukan": tool mengembalikan item AHSP yang cocok (fallback deterministik), lalu chat menyusun draf tabel RAB lengkap (kolom: No, Uraian Pekerjaan, Volume, Satuan, Harga Satuan, Jumlah Harga, Status Harga) dan mengajukan SATU klarifikasi untuk dimensi yang belum ada (panjang/lebar/tebal) sebelum menghitung volume. Harga hanya dari tool; yang belum ada = "harga belum tersedia", bukan Rp0 dan bukan karangan. (Kontrak ini diimplementasikan di `prompt.ts` aturan 17 dan fallback tool `cari_template_rab` di `tools.ts`.)
+
 ## 13. Prosedur audit dan implementasi
 
 Sebelum perubahan:
