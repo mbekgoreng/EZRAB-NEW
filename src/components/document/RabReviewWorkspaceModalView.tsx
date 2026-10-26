@@ -43,6 +43,7 @@ import { SpreadsheetApprovalEngine } from '../../../server/services/spreadsheetA
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
+import { isQuarantined } from '../../data/nationalCostDatabase/ahspQuarantine';
 // The canonical AHSP is price-free: an AHSP price may ONLY come from the price resolver.
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
 import { RABSection } from '../../types';
@@ -1481,9 +1482,13 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
 
 <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', padding: '8px' }}>
               {ALL_OFFICIAL_AHSP_ITEMS.filter(a =>
-                !ahspSearch ||
-                a.code.toLowerCase().includes(ahspSearch.toLowerCase()) ||
-                a.name.toLowerCase().includes(ahspSearch.toLowerCase())
+                // P0.1: item karantina (mis. E.2–E.8) tidak boleh dipilih —
+// memilihnya akan menyimpan harga sampah sebagai "AHSP resmi".
+                !isQuarantined(a.code) && (
+                  !ahspSearch ||
+                  a.code.toLowerCase().includes(ahspSearch.toLowerCase()) ||
+                  a.name.toLowerCase().includes(ahspSearch.toLowerCase())
+                )
               ).slice(0, 30).map((ahsp, i) => {
                 const ahspPrice = priceResolver2026.resolveAhspUnitPrice(ahsp as any).unitPrice;
                 return (

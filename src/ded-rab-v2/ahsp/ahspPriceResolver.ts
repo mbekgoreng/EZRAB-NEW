@@ -27,6 +27,7 @@ import {
   PriceStatusCode,
 } from '../types';
 import { officialAhspRepository, ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/officialAhspRepository';
+import { isQuarantined } from '../../data/nationalCostDatabase/ahspQuarantine';
 import { RabItem } from '../../types';
 import { PriceResolver } from '../../engine/pricing/resolver/priceResolver';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
@@ -275,7 +276,8 @@ export class AhspPriceResolver {
     // =========================================================================
     if (cleanCode && !candidateRecipe) {
       const matchNational = ALL_OFFICIAL_AHSP_ITEMS.find(
-        (a) => a.code.toLowerCase() === cleanCode || a.codeNormalized?.toLowerCase() === cleanCode
+        // P0.1: item karantina tidak boleh menjadi harga OFFICIAL_DATABASE.
+        (a) => !isQuarantined(a.code) && (a.code.toLowerCase() === cleanCode || a.codeNormalized?.toLowerCase() === cleanCode)
       );
       if (matchNational) {
         scopes.regional = true;

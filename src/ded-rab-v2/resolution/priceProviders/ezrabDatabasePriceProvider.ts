@@ -5,6 +5,7 @@
 
 import { PriceProvider, PriceSearchInput, PriceCandidate } from '../providerContracts';
 import { officialAhspRepository, ALL_OFFICIAL_AHSP_ITEMS } from '../../../data/nationalCostDatabase/officialAhspRepository';
+import { isQuarantined } from '../../../data/nationalCostDatabase/ahspQuarantine';
 import { priceResolver2026 } from '../../../data/priceDatabase2026/resolver';
 import { PriceResolver } from '../../../engine/pricing/resolver/priceResolver';
 import { SafeDecimalEngine } from '../../../engine/safeDecimalEngine';
@@ -53,7 +54,8 @@ export class EzrabDatabasePriceProvider implements PriceProvider {
     // 2. Try Historical National Cost Database
     if (cleanCode) {
       const national = ALL_OFFICIAL_AHSP_ITEMS.find(
-        (a) => a.code.toLowerCase() === cleanCode || a.codeNormalized?.toLowerCase() === cleanCode
+        // P0.1: item karantina tidak boleh menjadi harga EZRAB_DATABASE.
+        (a) => !isQuarantined(a.code) && (a.code.toLowerCase() === cleanCode || a.codeNormalized?.toLowerCase() === cleanCode)
       );
       if (national) {
         const comp = priceResolver2026.resolveAhspUnitPrice(national);

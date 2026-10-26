@@ -9,6 +9,7 @@
  */
 
 import { BINA_MARGA_2026_MASTER } from './binaMarga2026Master.generated';
+import { isQuarantined } from './ahspQuarantine';
 
 export interface BinaMargaPriceEntry {
   code: string;
@@ -32,7 +33,18 @@ const labor: BinaMargaPriceEntry[] = [];
 const material: BinaMargaPriceEntry[] = [];
 const equipment: BinaMargaPriceEntry[] = [];
 
-for (const item of BINA_MARGA_2026_MASTER) {
+/**
+ * P0 (2026-10-26): item karantina TIDAK BOLEH menyumbang record harga resource
+ * maupun entri DHSP. Tanpa filter ini, komponen sentinel baris korup (mis. E.2–E.8:
+ * unitPrice = 2) masuk ke indeks resolver dan dapat memenangi seleksi harga
+ * untuk item sehat yang memakai kode resource sama (kasus terbukti: E13/E19 di E.1).
+ * Daftar katalog lengkap (BINA_MARGA_AHSP_2026_OFFICIAL di bawah) sengaja TIDAK
+ * difilter — repository-lah yang menutup akses UI ke item karantina; yang
+ * ditutup di sini hanyalah jalur pembentukan harga.
+ */
+const PRICING_MASTER = BINA_MARGA_2026_MASTER.filter((item) => !isQuarantined(item.code));
+
+for (const item of PRICING_MASTER) {
   for (const c of item.laborComponents) {
     const e = toEntry(c.resourceCode, c.description, c.unit, c.unitPrice, 'labor');
     if (e) labor.push(e);
@@ -62,9 +74,9 @@ export const OFFICIAL_BM_2026_LABOR = dedupe(labor);
 export const OFFICIAL_BM_2026_MATERIALS = dedupe(material);
 export const OFFICIAL_BM_2026_EQUIPMENT = dedupe(equipment);
 
-/** DHSP map: code -> unit price (null prices excluded). */
+/** DHSP map: code -> unit price (null prices excluded; quarantined items excluded — see PRICING_MASTER). */
 export const OFFICIAL_BM_2026_DHSP_MAP = new Map<string, number>();
-for (const item of BINA_MARGA_2026_MASTER) {
+for (const item of PRICING_MASTER) {
   if (item.unitPrice != null) {
     OFFICIAL_BM_2026_DHSP_MAP.set(item.code, item.unitPrice);
     if (item.codeNormalized && item.codeNormalized !== item.code) {

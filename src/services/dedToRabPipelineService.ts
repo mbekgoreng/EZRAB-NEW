@@ -39,6 +39,7 @@ import { AIEvidence } from './aiEvidenceService';
 import { aiProviderRouter } from './aiProviderRouter';
 import { aiCostRouter } from './aiCostRouter';
 import { officialAhspRepository, ALL_OFFICIAL_AHSP_ITEMS } from '../data/nationalCostDatabase/officialAhspRepository';
+import { isQuarantined } from '../data/nationalCostDatabase/ahspQuarantine';
 import { priceResolver2026 } from '../data/priceDatabase2026/resolver';
 import { PrecisionEngine } from '../engine/calculatorCore/precision/precisionEngine';
 import { RabItem } from '../types';
@@ -706,8 +707,9 @@ export class DedToRabPipelineService {
     }
 
     // 4. Order 4: Reference Database
+    // P0.1: item karantina tidak boleh menjadi kandidat referensi.
     const refMatch = ALL_OFFICIAL_AHSP_ITEMS.find((item) =>
-      item.name.toLowerCase().includes(name.toLowerCase())
+      !isQuarantined(item.code) && item.name.toLowerCase().includes(name.toLowerCase())
     );
     if (refMatch) {
       const candidate: AHSPMappingCandidate = {

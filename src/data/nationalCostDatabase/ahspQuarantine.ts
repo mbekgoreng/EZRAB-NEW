@@ -61,6 +61,63 @@ const ARTIFACT_QUARANTINE: QuarantineRecord[] = [
     provenance: 'Phase 2D §3.1 — tidak ada di workbook; tidak dapat direkonstruksi pasti',
     confidence: 'HIGH',
   },
+  // ---- Bina Marga E.2–E.8: baris hasil parse PDF yang gagal (P0 audit 2026-10-26) ----
+  // Bukti: SEMUA komponen (7 per item, 6 untuk E.8; total 48) membawa sentinel
+  // koefisien = 5, unitPrice = 2, amount = 3, dan nama-nama berisi angka
+  // tersangkut ("734,421.88 111,832.60 Motor Grader", "27,643.54 1,110.18 Mandor").
+  // Record sentinel ini meracuni indeks harga resource (E13/E19 ikut berharga Rp 2).
+  // TIDAK ada pengganti bersih di master untuk varian-varian ini (standardCode
+  // 5.1.(1b)/(2b)/(3b)/(4b) dsb. hanya diwakili baris korup ini) — jadi tidak
+  // ada supersededBy; item-item ini unresolved sampai master diekstraksi ulang.
+  {
+    code: 'E.2',
+    reason: 'PARSING_ARTIFACT',
+    detail: 'Lapis Fondasi Agregat Kelas A dengan Mesin Gilas: 7/7 komponen sentinel (koef 5, harga 2, amount 3); nama berisi angka tersangkut',
+    provenance: 'P0 AHSP 2026 Live Price Integrity Audit 2026-10-26 — scan master Bina Marga (48 komponen sentinel di E.2–E.8)',
+    confidence: 'HIGH',
+  },
+  {
+    code: 'E.3',
+    reason: 'PARSING_ARTIFACT',
+    detail: 'Lapis Fondasi Agregat Kelas B: 7/7 komponen sentinel (koef 5, harga 2, amount 3); nama berisi angka tersangkut',
+    provenance: 'P0 AHSP 2026 Live Price Integrity Audit 2026-10-26 — scan master Bina Marga (48 komponen sentinel di E.2–E.8)',
+    confidence: 'HIGH',
+  },
+  {
+    code: 'E.4',
+    reason: 'PARSING_ARTIFACT',
+    detail: 'Lapis Fondasi Agregat Kelas B dengan Mesin Gilas: 7/7 komponen sentinel (koef 5, harga 2, amount 3); nama berisi angka tersangkut',
+    provenance: 'P0 AHSP 2026 Live Price Integrity Audit 2026-10-26 — scan master Bina Marga (48 komponen sentinel di E.2–E.8)',
+    confidence: 'HIGH',
+  },
+  {
+    code: 'E.5',
+    reason: 'PARSING_ARTIFACT',
+    detail: 'Lapis Fondasi Agregat Kelas S: 7/7 komponen sentinel (koef 5, harga 2, amount 3); nama berisi angka tersangkut',
+    provenance: 'P0 AHSP 2026 Live Price Integrity Audit 2026-10-26 — scan master Bina Marga (48 komponen sentinel di E.2–E.8)',
+    confidence: 'HIGH',
+  },
+  {
+    code: 'E.6',
+    reason: 'PARSING_ARTIFACT',
+    detail: 'Lapis Fondasi Agregat Kelas S dengan Mesin Gilas: 7/7 komponen sentinel (koef 5, harga 2, amount 3); nama berisi angka tersangkut',
+    provenance: 'P0 AHSP 2026 Live Price Integrity Audit 2026-10-26 — scan master Bina Marga (48 komponen sentinel di E.2–E.8)',
+    confidence: 'HIGH',
+  },
+  {
+    code: 'E.7',
+    reason: 'PARSING_ARTIFACT',
+    detail: 'Lapis Fondasi Agregat Kelas C: 7/7 komponen sentinel (koef 5, harga 2, amount 3); nama berisi angka tersangkut',
+    provenance: 'P0 AHSP 2026 Live Price Integrity Audit 2026-10-26 — scan master Bina Marga (48 komponen sentinel di E.2–E.8)',
+    confidence: 'HIGH',
+  },
+  {
+    code: 'E.8',
+    reason: 'PARSING_ARTIFACT',
+    detail: 'Lapis Fondasi Agregat Kelas C dengan Mesin Gilas: 6/6 komponen sentinel (koef 5, harga 2, amount 3); nama berisi angka tersangkut',
+    provenance: 'P0 AHSP 2026 Live Price Integrity Audit 2026-10-26 — scan master Bina Marga (48 komponen sentinel di E.2–E.8)',
+    confidence: 'HIGH',
+  },
 ];
 
 /**
@@ -81,18 +138,25 @@ export const QUARANTINE_REGISTRY: QuarantineRecord[] = [
   ...DUPLICATE_QUARANTINE,
 ];
 
+// P0.1: pencocokan karantina TIDAK peka kapitalisasi. Kode AHSP unik secara
+// case-insensitive di seluruh sistem (lookup byCode sudah mengecilkan huruf
+// query), dan tidak ada dua kode registry yang hanya berbeda kapitalisasi —
+// jadi normalisasi ke huruf-kecil tidak dapat menimbulkan tabrakan. Tanpa ini,
+// getOfficialAhsp('e.2') lolos karena cek karantina memakai query mentah
+// sementara lookup memakai query yang dikecilkan (dan WorkItemInspectorDrawer
+// memang mengecilkan huruf kode sebelum lookup).
 const quarantineMap = new Map<string, QuarantineRecord>(
-  QUARANTINE_REGISTRY.map(q => [q.code, q]),
+  QUARANTINE_REGISTRY.map(q => [q.code.trim().toLowerCase(), q]),
 );
 
-/** True if the code is quarantined (excluded from search/AI matching). */
+/** True if the code is quarantined (excluded from search/AI matching). Case-insensitive. */
 export function isQuarantined(code: string): boolean {
-  return quarantineMap.has(code.trim());
+  return quarantineMap.has(code.trim().toLowerCase());
 }
 
-/** Get the quarantine record for a code, if quarantined. */
+/** Get the quarantine record for a code, if quarantined. Case-insensitive. */
 export function getQuarantineRecord(code: string): QuarantineRecord | undefined {
-  return quarantineMap.get(code.trim());
+  return quarantineMap.get(code.trim().toLowerCase());
 }
 
 /**

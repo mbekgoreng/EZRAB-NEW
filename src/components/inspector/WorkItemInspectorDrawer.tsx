@@ -1421,6 +1421,16 @@ export const WorkItemInspectorDrawer: React.FC<WorkItemInspectorDrawerProps> = (
                       {formatCurrencyIDR(calculatedUnitPrice)}
                     </span>
                   </div>
+                  {/* P0 (2026-10-26): definisi harga di sini BERBEDA dari spreadsheet.
+                      Harga final ini = biaya langsung + overhead + profit yang diatur
+                      di panel ini. Spreadsheet RAB memakai biaya langsung saja
+                      (tanpa overhead/profit). Menyimpan dari panel ini MENIMPA harga
+                      item menjadi harga final di atas — bukan lagi biaya langsung. */}
+                  <div style={{ fontSize: '11.5px', color: '#B45309', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '6px', padding: '8px 10px', marginTop: '8px', lineHeight: 1.5 }}>
+                    Perhatian: harga final di atas sudah termasuk overhead {overheadPct}% + profit {profitPct}% (dan komponen lain {otherPct}%)
+                    sehingga nilainya BERBEDA dari harga spreadsheet yang memakai biaya langsung saja.
+                    Menyimpan dari panel ini akan mengganti harga item menjadi harga final ini.
+                  </div>
                 </div>
               </div>
             </div>

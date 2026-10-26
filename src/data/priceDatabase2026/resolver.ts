@@ -689,18 +689,27 @@ export class PriceResolver2026 {
     const ckEntry = OFFICIAL_CK_2026_DHSP_MAP.get(item.code);
     const dhspEntry = itemDomain === 'BINA_MARGA' ? (bmEntry || ckEntry) : (ckEntry || bmEntry);
 
-    const officialDhspPrice = dhspEntry?.unitPrice ?? null;
+    // P0 (2026-10-26): peta DHSP Bina Marga bernilai NUMBER (harga langsung),
+    // sedangkan peta Cipta Karya bernilai OBJEK { unitPrice, sourceSheet, sourceRow }.
+    // Sebelum perbaikan ini, `dhspEntry?.unitPrice` untuk item BM selalu undefined
+    // sehingga officialDhspPrice selalu null dan provenanceSource menampilkan
+    // "(undefined, Baris undefined)" — padahal nilai DHSP-nya ada di map.
+    const officialDhspPrice =
+      typeof dhspEntry === 'number' ? dhspEntry : (dhspEntry?.unitPrice ?? null);
     const hspPrice = officialDhspPrice ?? (unitPrice !== null ? unitPrice : (typeof (item as any).unitPrice === 'number' && (item as any).unitPrice > 0 ? (item as any).unitPrice : null));
     const overheadAmount = dhspEntry?.overheadAmount ?? (
       (officialDhspPrice !== null && unitPrice !== null && officialDhspPrice >= unitPrice)
         ? Math.round(officialDhspPrice - unitPrice)
         : null
     );
-    const provenanceSource = dhspEntry
-      ? `SE DJBK No. 47/SE/Dk/2026 (${dhspEntry.sourceSheet}, Baris ${dhspEntry.sourceRow})`
-      : (item.domain === 'SMKK' || (item as any).domain === 'SMKK'
-          ? ((item as any).sourceDocument || 'Lampiran III SE DJBK No. 47/SE/Dk/2026 (SMKK K3)')
-          : null);
+    const provenanceSource =
+      typeof dhspEntry === 'number'
+        ? 'SE DJBK No. 47/SE/Dk/2026 Lampiran V (MASTER_AHSP_BINA_MARGA_2026)'
+        : dhspEntry
+          ? `SE DJBK No. 47/SE/Dk/2026 (${dhspEntry.sourceSheet}, Baris ${dhspEntry.sourceRow})`
+          : (item.domain === 'SMKK' || (item as any).domain === 'SMKK'
+              ? ((item as any).sourceDocument || 'Lampiran III SE DJBK No. 47/SE/Dk/2026 (SMKK K3)')
+              : null);
 
     let pricingStatus: PricingStatus;
     if (totalComponents === 0) {

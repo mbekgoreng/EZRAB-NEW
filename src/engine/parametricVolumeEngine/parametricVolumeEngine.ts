@@ -10,6 +10,7 @@ import {
 } from '../../data/buildingTemplates/schema/types';
 import { masterBuildingTemplateRegistry } from '../../data/buildingTemplates/masterTemplateRegistry';
 import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
+import { isQuarantined } from '../../data/nationalCostDatabase/ahspQuarantine';
 import { MASTER_PRICE_ITEMS } from '../../data/indonesianPrices';
 
 export interface RegionalIndex {
@@ -243,7 +244,8 @@ export class ParametricVolumeEngine {
 
     // Search official AHSP item
     // Phase 3E: First check for exact ID match (IDs are unique)
-    const idMatch = ALL_OFFICIAL_AHSP_ITEMS.find((it) => it.id === ahspCode);
+    // P0.1: item karantina tidak boleh menjadi harga OFFICIAL.
+    const idMatch = ALL_OFFICIAL_AHSP_ITEMS.find((it) => it.id === ahspCode && !isQuarantined(it.code));
     if (idMatch) {
       if (idMatch.unitPrice && idMatch.unitPrice > 0) {
         return {
@@ -270,7 +272,7 @@ export class ParametricVolumeEngine {
     }
 
     // Phase 3E: For code lookup, check for ambiguity
-    const codeMatches = ALL_OFFICIAL_AHSP_ITEMS.filter((it) => it.code === ahspCode);
+    const codeMatches = ALL_OFFICIAL_AHSP_ITEMS.filter((it) => it.code === ahspCode && !isQuarantined(it.code));
     if (codeMatches.length === 1) {
       const officialItem = codeMatches[0];
       if (officialItem.unitPrice && officialItem.unitPrice > 0) {

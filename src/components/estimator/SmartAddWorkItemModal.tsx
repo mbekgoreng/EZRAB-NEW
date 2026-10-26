@@ -1333,7 +1333,7 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga. Jika volume ti
                   </div>
                   <div>
                     <span style={{ color: 'var(--ez-color-text-muted)' }}>Sumber: </span>
-                    <span style={{ fontWeight: 700, color: 'var(--ez-hue-green-text)' }}>AHSP 2024 / PUPR</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ez-hue-green-text)' }}>AHSP 2026 / PUPR</span>
                   </div>
                 </div>
               </div>

@@ -214,6 +214,35 @@ export const DESCRIPTION_CORRECTIONS: DescriptionCorrection[] = [
     pdfPage: 1216,
     reason: 'PDF persis; typo "velve" diperbaiki',
   },
+
+  // ---- Bina Marga I.44 / I.64: qualifier varian tersangkut ke kolom satuan (P0 audit 2026-10-26) ----
+  // Sumber verifikasi: master audit kanonis data/ahsp2026/validated/ahsp_2026_master.json
+  // (SE DJBK No. 47/SE/Dk/2026 Lampiran V — BUKAN lampiran-VI seperti koreksi lain di
+  // file ini; angka pdfPage di bawah adalah halaman Lampiran V tersebut).
+  // I.44: master BM menulis satuan "(Penerapan Umum)" — padahal itu qualifier varian
+  // di depan uraian kanonis, dan satuan kanonisnya "Meter Persegi" (Lampiran V hal. 1824).
+  {
+    code: 'I.44', field: 'unit',
+    oldValue: '(Penerapan Umum)', newValue: 'Meter Persegi',
+    pdfPage: 1824,
+    reason: 'Kanonis Lampiran V hal. 1824: uraian "(Penerapan Umum) Marka Jalan Termoplastik Non Glow in The Dark", satuan "Meter Persegi"; master BM salah letak qualifier ke kolom satuan',
+  },
+  // I.64: master BM menulis satuan "Engineering Grade, Ukuran Sedang" (qualifier varian)
+  // dan memenggal nama ("Rambu Peringatan/Larangan/Perintah, Tunggal,"); kanonis
+  // Lampiran V hal. 1877: uraian lengkap + satuan "Buah".
+  {
+    code: 'I.64', field: 'unit',
+    oldValue: 'Engineering Grade, Ukuran Sedang', newValue: 'Buah',
+    pdfPage: 1877,
+    reason: 'Kanonis Lampiran V hal. 1877: satuan "Buah"; master BM salah letak qualifier varian ke kolom satuan',
+  },
+  {
+    code: 'I.64', field: 'name',
+    oldValue: 'Rambu Peringatan/Larangan/Perintah, Tunggal,',
+    newValue: 'Engineering Grade, Ukuran Sedang Rambu Peringatan/Larangan/Perintah, Tunggal,',
+    pdfPage: 1877,
+    reason: 'Kanonis Lampiran V hal. 1877: uraian lengkap diawali qualifier varian; master BM memenggal qualifier dari nama',
+  },
 ];
 
 /** code -> corrections lookup */

@@ -12,6 +12,7 @@
  *   never produces PRICE_MANUAL (manual edits are a separate, labeled path).
  */
 import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
+import { isQuarantined } from '../../data/nationalCostDatabase/ahspQuarantine';
 import type { PriceStatus } from '../../types';
 
 /**
@@ -78,6 +79,21 @@ export function resolveOfficialPriceForMappedItem(
       domain,
       unitPrice: null,
       explanation: `Kode "${cleanCode}" tidak ditemukan pada AHSP resmi 2026 (domain:${domain || '-'}) — harga tidak diisi, bukan Rp0.`,
+    };
+  }
+
+  // P0.1: item karantina (mis. baris parse gagal E.2–E.8) tidak boleh
+  // menghasilkan harga resmi — perlakukan seperti tidak ditemukan.
+  if (isQuarantined(hit.code)) {
+    return {
+      status: 'PRICE_UNRESOLVED',
+      priceSource: 'PRICE_NOT_FOUND',
+      code: hit.code,
+      domain: String(hit.domain),
+      name: hit.name,
+      unit: hit.unit,
+      unitPrice: null,
+      explanation: `Item [${hit.code}] ${hit.name} dikarantina (data tidak valid) — harga tidak diisi, bukan Rp0.`,
     };
   }
 
