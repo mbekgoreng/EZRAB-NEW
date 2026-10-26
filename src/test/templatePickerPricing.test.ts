@@ -28,14 +28,14 @@ describe('templatePickerPricing — semua template', () => {
     'template-shophouse-2-floor',
   ];
   for (const id of houseIds) {
-    it(`${id}: 21 ber-harga (19 benchmark + 2 official), 4 jujur kosong`, () => {
+    it(`${id}: 24 ber-harga (22 benchmark + 2 official), 1 jujur kosong`, () => {
       const tpl = byId(id);
       const map = resolveTemplatePickerPricing(tpl);
       expect(map.size).toBe(25);
       for (const p of map.values()) expect(p.engineOk).toBe(true);
       const priced = [...map.values()].filter((p) => p.unitPrice != null);
-      expect(priced.length).toBe(21);
-      expect(priced.filter((p) => p.priceKind === 'BENCHMARK').length).toBe(19);
+      expect(priced.length).toBe(24);
+      expect(priced.filter((p) => p.priceKind === 'BENCHMARK').length).toBe(22);
       const official = [...map.entries()].filter(
         ([, p]) => p.priceKind === 'OFFICIAL',
       );
@@ -47,15 +47,23 @@ describe('templatePickerPricing — semua template', () => {
       );
       expect(byCode.get('3.7.4')?.unitPrice).toBeGreaterThan(0);
       expect(byCode.get('3.9.8.9')?.unitPrice).toBeGreaterThan(0);
-      // Sisa yang jujur kosong: komposit + kloset ambigu.
+      // Komposit pasar (perintah user 2026-10-27): benchmark (est.),
+      // BUKAN resmi — harga eksak, label estimasi.
+      expect(byCode.get('A.4.1.1.28')?.unitPrice).toBe(4000000);
+      expect(byCode.get('A.4.1.1.28')?.priceKind).toBe('BENCHMARK');
+      expect(byCode.get('A.4.1.1.28')?.priceStatus).toBe('PRICE_ESTIMATED');
+      expect(byCode.get('A.4.1.1.35')?.unitPrice).toBe(4500000);
+      expect(byCode.get('A.4.1.1.35')?.priceKind).toBe('BENCHMARK');
+      expect(byCode.get('A.4.1.1.35')?.priceStatus).toBe('PRICE_ESTIMATED');
+      expect(byCode.get('A.4.1.1.36')?.unitPrice).toBe(4500000);
+      expect(byCode.get('A.4.1.1.36')?.priceKind).toBe('BENCHMARK');
+      expect(byCode.get('A.4.1.1.36')?.priceStatus).toBe('PRICE_ESTIMATED');
+      // Sisa yang jujur kosong: kloset ambigu saja.
       const unpriced = tpl.workItems
         .filter((w) => map.get(w.stableId)?.unitPrice == null)
         .map((w) => w.defaultAhspCode)
         .sort();
       expect(unpriced).toEqual([
-        'A.4.1.1.28',
-        'A.4.1.1.35',
-        'A.4.1.1.36',
         'A.5.1.1.2',
       ]);
     });

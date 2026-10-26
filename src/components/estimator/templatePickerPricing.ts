@@ -24,12 +24,13 @@
  *   template (2026-10-26): plesteran 1:4 → 3.7.4, keramik lantai KM 20x20
  *   → 3.9.8.9 (Unpolished), jalan: clearing → C.37, agregat kelas A →
  *   E.1, rigid fs 4,5 → E.11. Yang masih tanpa padanan dan tetap kosong:
- *   sloof/kolom/ring balok (A.4.1.1.28/35/36 — item komposit, perlu
- *   rakitan beton+bekisting+pembesian), kloset (A.5.1.1.2 — ambigu
- *   jongkok/duduk dalam satu item), wiremesh jalan (BM.5.3.1.5) dan
- *   joint sealant jalan (BM.5.3.1.8 — tidak ada item mandiri padanannya
- *   di master Bina Marga). Memetakan sisanya adalah pekerjaan pemetaan
- *   terpisah, bukan bagian dari helper ini.
+ *   kloset (A.5.1.1.2 — ambigu jongkok/duduk dalam satu item), wiremesh
+ *   jalan (BM.5.3.1.5) dan joint sealant jalan (BM.5.3.1.8 — tidak ada
+ *   item mandiri padanannya di master Bina Marga).
+ * - PENGECUALIAN atas perintah user (2026-10-27): sloof/kolom/ring balok
+ *   (A.4.1.1.28/35/36 — item komposit tanpa kode tunggal resmi) kini
+ *   memakai tarif benchmark pasar (MARKET_ESTIMATE_2026) di mesin, BUKAN
+ *   harga resmi — picker tetap menampilkannya "(est.)" + PRICE_ESTIMATED.
  * - Volume dari parameter DEFAULT template (mis. T36 = 6×6 m). Bukan volume
  *   proyek pengguna — UI wajib menampilkan catatan itu, dan spreadsheet
  *   tetap tempat penyesuaiannya.

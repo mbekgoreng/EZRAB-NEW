@@ -320,6 +320,21 @@ export class ParametricVolumeEngine {
       'A.4.1.1.5': { price: 1320000, name: '1 m3 Membuat beton mutu f\'c = 21.7 MPa (K 250)', source: 'CIPTA_KARYA_2026', unit: 'm3' },
       'A.4.1.1.17': { price: 16500, name: '1 kg Pembesian besi beton ulir / polos', source: 'CIPTA_KARYA_2026', unit: 'kg' },
       'A.4.1.1.20': { price: 195000, name: '1 m2 Pasang bekisting untuk sloof / kolom', source: 'CIPTA_KARYA_2026', unit: 'm2' },
+      // KOMPOSIT PASAR (perintah user 2026-10-27 — BUKAN harga resmi AHSP
+      // 2026; mesin menandainya BENCHMARK/isFabricated → picker menampilkan
+      // "(est.)" + PRICE_ESTIMATED). Sloof/kolom/ring balok tidak punya kode
+      // tunggal resmi (harus dirakit beton+bekisting+pembesian), jadi tarif
+      // per m3 dirakit dari komponen pasar saat ini: beton K-225
+      // ~Rp1.050.000/m3 + bekisting ~Rp105.000/m2 + besi ~Rp14.000/kg.
+      // Sloof 15/20: bekisting 2 sisi 13,33 m2 + besi ~112 kg per m3
+      // ≈ Rp4.018.000 → dibulatkan Rp4.000.000. Kolom praktis & ring balok
+      // 15/15: bekisting 13,33 m2 + besi ~149 kg per m3 ≈ Rp4.540.000 →
+      // dibulatkan Rp4.500.000. Ketiganya di dalam rentang komposit pasar
+      // yang teramati (Rp3,2–6,2 jt/m3). Source MARKET_ESTIMATE_2026
+      // sengaja BEDA dari CIPTA_KARYA_2026 agar tak terbaca sebagai resmi.
+      'A.4.1.1.28': { price: 4000000, name: '1 m3 Pembuatan sloof beton bertulang 15/20 K-225 (komposit)', source: 'MARKET_ESTIMATE_2026', unit: 'm3' },
+      'A.4.1.1.35': { price: 4500000, name: '1 m3 Pembuatan kolom praktis beton bertulang 15/15 K-225 (komposit)', source: 'MARKET_ESTIMATE_2026', unit: 'm3' },
+      'A.4.1.1.36': { price: 4500000, name: '1 m3 Pembuatan ring balok beton bertulang 15/15 K-225 (komposit)', source: 'MARKET_ESTIMATE_2026', unit: 'm3' },
       'A.4.4.1.1': { price: 142000, name: '1 m2 Pasang dinding bata ringan hebel t=10cm mortar instan', source: 'CIPTA_KARYA_2026', unit: 'm2' },
       'A.4.4.1.9': { price: 165000, name: '1 m2 Pasang dinding bata merah tebal 1/2 bata 1:5', source: 'CIPTA_KARYA_2026', unit: 'm2' },
       'A.4.4.2.2': { price: 48500, name: '1 m2 Plesteran 1:5 tebal 15 mm', source: 'CIPTA_KARYA_2026', unit: 'm2' },

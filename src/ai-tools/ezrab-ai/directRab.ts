@@ -38,8 +38,10 @@ import {
 export interface DirectRabResult {
   houseType: number;
   floors: number;
-  /** Total luas seluruh lantai (tipe × lantai) — semantik engine. */
+  /** Total luas seluruh lantai (tipe × lantai; jalur fallback luas = luas permintaan). */
   totalArea: number;
+  /** Fallback luas R1 (null = tipe eksak) — transparansi basis perhitungan. */
+  areaFallback: { requestedArea: number; basisArea: number } | null;
   catalogLabel: string;
   templateName: string;
   region: string;
@@ -99,6 +101,13 @@ export interface TypedTemplateMatch {
   floorsMentioned: boolean;
   region: string;
   regionIsDefault: boolean;
+  /**
+   * Fallback luas (R1, 2026-10-27): null = kecocokan tipe eksak; terisi =
+   * prompt hanya menyebut luas tanpa tipe katalog, sehingga dipakai basis
+   * tipe TERDEKAT + luas sesuai permintaan (bukan luas tipe). Hanya untuk
+   * prompt tanpa penyebutan lantai (1 lantai, semantik luas total jelas).
+   */
+  areaFallback: { requestedArea: number; basisArea: number } | null;
 }
 
 /**
@@ -106,7 +115,9 @@ export interface TypedTemplateMatch {
  * ada di registry engine. Dipakai actionRegistry untuk kartu pilihan owner
  * (2026-10-22): permintaan bertipe TIDAK langsung di-generate dari teks —
  * pengguna memilih "Pakai Template" (generate) atau "Pakai AI Full"
- * (workspace desain) lewat klik eksplisit.
+ * (workspace desain) lewat klik eksplisit. Sejak R1 (2026-10-27): prompt
+ * rumah yang hanya menyebut luas (tanpa tipe, tanpa lantai) juga cocok
+ * lewat fallback tipe terdekat — kartu pilihan yang sama berlaku.
  */
 export function findDirectTemplate(rawText: string): TypedTemplateMatch | null {
   const text = (rawText || '').trim();
@@ -118,22 +129,67 @@ export function findDirectTemplate(rawText: string): TypedTemplateMatch | null {
   if (needs.kind && needs.kind !== 'rumah') return null;
 
   const found = HouseTypeCatalog.findFromQuery(text);
-  if (!found.item || !found.item.templateId || found.item.area == null) return null;
+  if (found.item && found.item.templateId && found.item.area != null) {
+    const template = masterBuildingTemplateRegistry.getTemplateById(found.item.templateId);
+    if (template) {
+      const floors = needs.floors ?? found.extractedFloors ?? found.item.defaultFloorCount;
+      const { region, isDefault } = matchDirectRegion(needs.location);
+      return {
+        item: found.item as RegisteredHouseTypeItem,
+        template,
+        needs,
+        floors,
+        floorsMentioned: needs.floors != null || found.extractedFloors != null,
+        region,
+        regionIsDefault: isDefault,
+        areaFallback: null,
+      };
+    }
+  }
 
-  const template = masterBuildingTemplateRegistry.getTemplateById(found.item.templateId);
-  if (!template) return null;
-
-  const floors = needs.floors ?? found.extractedFloors ?? found.item.defaultFloorCount;
-  const { region, isDefault } = matchDirectRegion(needs.location);
-  return {
-    item: found.item as RegisteredHouseTypeItem,
-    template,
-    needs,
-    floors,
-    floorsMentioned: needs.floors != null || found.extractedFloors != null,
-    region,
-    regionIsDefault: isDefault,
-  };
+  // Fallback luas (R1, perintah user 2026-10-27): prompt rumah yang hanya
+  // menyebut luas ("luas bangunan 75m2") tanpa tipe katalog — sebelumnya
+  // findDirectTemplate mengembalikan null TOTAL sehingga tidak ada RAB
+  // sama sekali (pengguna jatuh ke modal AI lama yang itemnya tanpa
+  // volume/harga). Sekarang: pakai tipe 1-lantai TERDEKAT sebagai basis
+  // template, tapi hitung dengan luas SESUAI PERMINTAAN (buildDirectRab
+  // menurunkan denah dari default template menjaga proporsi). Batas yang
+  // dijaga: hanya bila TIDAK ada penyebutan lantai (luas = total, 1
+  // lantai, unambiguous). Prompt berlantai tanpa tipe eksak tetap null
+  // (perilaku lama) agar tidak menebak semantik luas per-lantai vs total.
+  // Seri jarak (mis. tepat di tengah dua tipe) → basis yang LEBIH BESAR
+  // (mencakup luas permintaan).
+  const floorsMentioned = needs.floors != null || found.extractedFloors != null;
+  if (!floorsMentioned && found.extractedArea != null && Number.isFinite(found.extractedArea)) {
+    const requestedArea = found.extractedArea;
+    const candidates = HouseTypeCatalog.getAll().filter(
+      (h) => h.templateId && h.area != null && h.defaultFloorCount === 1,
+    );
+    candidates.sort((a, b) => {
+      const da = Math.abs((a.area as number) - requestedArea);
+      const db = Math.abs((b.area as number) - requestedArea);
+      if (da !== db) return da - db;
+      return (b.area as number) - (a.area as number);
+    });
+    const nearest = candidates[0];
+    if (nearest && nearest.templateId) {
+      const template = masterBuildingTemplateRegistry.getTemplateById(nearest.templateId);
+      if (template) {
+        const { region, isDefault } = matchDirectRegion(needs.location);
+        return {
+          item: nearest as RegisteredHouseTypeItem,
+          template,
+          needs,
+          floors: 1,
+          floorsMentioned: false,
+          region,
+          regionIsDefault: isDefault,
+          areaFallback: { requestedArea, basisArea: nearest.area as number },
+        };
+      }
+    }
+  }
+  return null;
 }
 
 /**
@@ -166,11 +222,38 @@ export function buildDirectRab(rawText: string, needsOverride?: RabNeeds): Direc
   // buildingArea adalah TOTAL luas seluruh lantai, dan quantity rules
   // digerakkan oleh luas total itu — bukan oleh floorCount. Konvensi katalog
   // EZRAB: angka tipe = luas per lantai, jadi total = tipe × jumlah lantai.
-  const totalArea = found.item.area * floors;
+  // Jalur fallback luas (R1): total = luas permintaan (koreksi user lewat
+  // needsOverride.buildingArea menang bila ada), dan denah diturunkan dari
+  // default template menjaga proporsi — karena quantityRule rumah memakai
+  // lebar×panjang, bukan buildingArea mentah.
+  const isFallback = match.areaFallback != null;
+  const totalArea = isFallback
+    ? (needsOverride?.buildingArea ?? match.areaFallback!.requestedArea)
+    : found.item.area * floors;
   const parameters: Record<string, unknown> = {
     buildingArea: totalArea,
     floorCount: floors,
   };
+  let scaledFootprint: string | null = null;
+  if (isFallback) {
+    const wParam = template.parameters?.buildingWidth;
+    const lParam = template.parameters?.buildingLength;
+    const w0 = typeof wParam?.defaultValue === 'number' ? wParam.defaultValue : null;
+    const l0 = typeof lParam?.defaultValue === 'number' ? lParam.defaultValue : null;
+    if (w0 && l0 && w0 > 0 && l0 > 0) {
+      const scale = Math.sqrt(totalArea / (w0 * l0));
+      const clamp = (v: number, p: { min?: number; max?: number } | undefined) => {
+        if (typeof p?.min === 'number') v = Math.max(v, p.min);
+        if (typeof p?.max === 'number') v = Math.min(v, p.max);
+        return Math.round(v * 100) / 100;
+      };
+      const w = clamp(w0 * scale, wParam);
+      const l = clamp(l0 * scale, lParam);
+      parameters.buildingWidth = w;
+      parameters.buildingLength = l;
+      scaledFootprint = `${w}×${l} m (default template ${w0}×${l0} m)`;
+    }
+  }
   if (needs.bedrooms) parameters.bedroomCount = needs.bedrooms;
   if (needs.bathrooms) parameters.bathroomCount = needs.bathrooms;
   if (needs.landLength && needs.landWidth) {
@@ -201,11 +284,17 @@ export function buildDirectRab(rawText: string, needsOverride?: RabNeeds): Direc
       `Indeks harga regional untuk "${needs.location}" tidak ditemukan — memakai indeks DKI Jakarta.`
     );
   }
+  if (isFallback) {
+    warnings.push(
+      `Luas ${totalArea} m² tidak sama persis dengan tipe katalog — dipakai basis template Tipe ${match.areaFallback!.basisArea} (terdekat)${scaledFootprint ? ` dengan denah diskalakan ${scaledFootprint} menjaga proporsi template` : ''}; periksa kembali di spreadsheet.`
+    );
+  }
 
   const result: DirectRabResult = {
     houseType: found.item.area,
     floors,
     totalArea,
+    areaFallback: match.areaFallback,
     catalogLabel: found.item.label,
     templateName: template.name,
     region,
@@ -214,7 +303,9 @@ export function buildDirectRab(rawText: string, needsOverride?: RabNeeds): Direc
     generation: calc.generationResult,
     warnings,
     sourceKind: 'template',
-    displayLabel: `Rumah Type ${found.item.area}`,
+    displayLabel: isFallback
+      ? `Rumah Type ${match.areaFallback!.basisArea} — dihitung ${totalArea} m²`
+      : `Rumah Type ${found.item.area}`,
     assumptions: [],
   };
   setLastDirectRab(result);

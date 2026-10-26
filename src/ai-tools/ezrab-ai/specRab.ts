@@ -335,6 +335,7 @@ export function buildSpecRab(rawText: string): DirectRabResult | null {
     sourceKind: 'spec',
     displayLabel,
     assumptions,
+    areaFallback: null,
   };
   setLastDirectRab(result);
   return result;
