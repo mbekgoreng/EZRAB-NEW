@@ -161,6 +161,15 @@ const PATTERNS: Pattern[] = [
   { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b(?!.*\bdesain\b)(?!.*\bdesign\b).*\brumah\b.*\d+\s*[x×]\s*\d+/ },
   { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\brumah\b.*(?:luas(?:\s+bangunan)?|lb)\s*(?:=|sekitar)?\s*\d+/ },
   { intent: 'CREATE_RAB_DIRECT', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\brumah\b.*\d+\s*m(?:2|²)/ },
+  // Perbaikan 2026-10-27 (prompt user "rab rumah di probolinggo luas
+  // bangunan 70m2" jatuh ke UNKNOWN → agen LLM hanya menampilkan daftar
+  // template, bukan tabel): perintah RAB rumah TANPA kata kerja
+  // "buatkan/bikin" pun perintah generate — cerminan dua pola di atas
+  // tanpa verba. Ditempatkan di kelompok DIRECT, sebelum checklist,
+  // agar tidak tertelan CREATE_RAB_SUMMARY. Prompt checklist ("buat
+  // checklist ...") tidak cocok karena tanpa luas/Nm2.
+  { intent: 'CREATE_RAB_DIRECT', re: /\brab\b.*\brumah\b.*(?:luas(?:\s+bangunan)?|lb)\s*(?:=|sekitar)?\s*\d+/ },
+  { intent: 'CREATE_RAB_DIRECT', re: /\brab\b.*\brumah\b.*\d+\s*m(?:2|²)/ },
   // Checklist data persiapan RAB (kasus A3): permintaan DOKUMEN/PENGETAHUAN
   // ("Buat checklist data sebelum menyusun RAB rumah…") BUKAN intake
   // pembuatan RAB — pola CREATE_RAB_* di bawah hanya mensyaratkan

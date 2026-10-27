@@ -37,9 +37,10 @@ import { debitChatCreditOnSuccess } from './chatCreditDebit';
 import { renderMarkdown } from './markdown';
 import { routeIntent, localGreeting, HELP_TEXT } from './intentRouter';
 import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, type NavEntry } from './navRegistry';
-import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext, type EzrabAiMode } from '../aiNavigation';
+import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext } from '../aiNavigation';
 import { executeIntent, continueRabNeeds, continueRabChoice, tryContinueRabSubtype, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
 import { getLastDirectRab } from './directRab';
+import { mapDirectRabPushItems } from './directRabPush';
 import { getLastUniversalDraft, setLastUniversalDraft, looksLikeUniversalRevision, reviseUniversalDraft, buildPushPreview, formatPushPreviewMessage, buildPushPayload, dedupePushPayload, validateTransfer, draftReadiness } from './universalRab';
 import { looksLikeNeedsAnswer } from './rabNeeds';
 import { notificationBus } from '../../notifications/notificationBus';
@@ -894,20 +895,15 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       appendMsg('Tidak ada proyek aktif. Buat atau buka proyek dulu di menu Proyek, lalu klik "Push ke Spreadsheet RAB" lagi.', undefined, true);
       return;
     }
-    const items = r.generation.workItems.filter((w) => Number.isFinite(w.quantity) && w.quantity > 0);
     const existingCodes = new Set(
       ((projectRabItems || []) as Array<{ code?: string }>).map((i) => i.code).filter(Boolean) as string[]
     );
-    const payload = items.map((wi) => ({
-      description: `[Chat AI] ${wi.name}`,
-      volume: wi.quantity,
-      unit: wi.unit,
-      code: wi.ahspCode ?? wi.workItemId,
-      category: wi.category,
-      priceStatus: 'PRICE_UNRESOLVED' as const,
-      volumeSource: 'AI_GENERATED' as const,
-      ...(wi.ahspCode ? { ahspCode: wi.ahspCode } : {}),
-    }));
+    // Perbaikan 2026-10-27 (keluhan user: push ke spreadsheet = Rp0):
+    // harga ikut ter-push dari calc.items dengan status jujur — lihat
+    // directRabPush.ts (modul murni, dites langsung). Payload lama tidak
+    // membawa harga + memaksa PRICE_UNRESOLVED sehingga factory
+    // meng-nol-kan semua, termasuk item berharga resmi (3.7.4).
+    const payload = mapDirectRabPushItems(r);
     const newItems = payload.filter((p) => !existingCodes.has(p.code));
     const dupCount = payload.length - newItems.length;
     if (newItems.length === 0) {
@@ -921,10 +917,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       appendMsg(
         `✅ ${added.length} item RAB ${r.displayLabel} (${r.floors} lantai) berhasil di-push ke Spreadsheet RAB proyek "${effProject.name}".` +
           (dupCount > 0 ? ` ${dupCount} item dilewati karena sudah ada.` : '') +
-          // Kalimat akurat (remediasi S10): item membawa KODE KANDIDAT dari
-          // template berstatus PRICE_UNRESOLVED — harga TIDAK ikut ter-push
-          // dan kode belum terverifikasi terhadap registri AHSP resmi.
-          ' Item masuk dengan kode AHSP kandidat dari template (status PRICE_UNRESOLVED) — harga tidak ikut ter-push dan belum terverifikasi; tetapkan harga resmi lewat pencarian AHSP di spreadsheet sebelum dipakai.',
+          // Pesan jujur pasca-perbaikan 2026-10-27: harga ikut ter-push
+          // sesuai statusnya (bukan lagi "tidak ikut ter-push" ala S10).
+          // Estimasi tampil "Perlu verifikasi" di spreadsheet — bukan
+          // harga resmi; yang belum berharga tetap "Harga belum diisi".
+          ` Harga ikut ter-push: ${added.filter((a) => a.priceStatus === 'PRICE_RESOLVED').length} resmi AHSP, ${added.filter((a) => a.priceStatus === 'PRICE_ESTIMATED').length} estimasi (perlu verifikasi, bukan harga resmi), ${added.filter((a) => a.priceStatus === 'PRICE_UNRESOLVED').length} belum berharga.`,
         [{ label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } }]
       );
     } catch (e) {
@@ -1549,74 +1546,6 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         </>
       )}
       </div>{/* /.ezchat2-headerwrap */}
-
-      {/* ===== Fase 1 unifikasi AI: switcher mode + banner konteks =====
-          Hanya tampilan: switcher bernavigasi lewat resolver (bukan
-          setActiveMenu langsung); DED/Dokumen meninggalkan view ini ke
-          menu masing-masing; Chat/Generator tetap di chat ini. */}
-      {(() => {
-        const modeLabels: Record<EzrabAiMode, string> = {
-          chat: 'Chat',
-          'rab-generator': 'Generator RAB',
-          ded: 'Analisis DED',
-          document: 'Dokumen AI',
-        };
-        const activeAiMode: EzrabAiMode = aiEntryContext?.mode ?? 'chat';
-        const switcherModes: EzrabAiMode[] = ['chat', 'rab-generator', 'ded', 'document'];
-        const contextBits: string[] = [];
-        if (aiEntryContext?.rabItemId) contextBits.push(`Item RAB: ${aiEntryContext.rabItemId}`);
-        if (aiEntryContext?.documentId) contextBits.push(`Dokumen: ${aiEntryContext.documentId}`);
-        if (aiEntryContext?.dedRef) contextBits.push(`DED: ${aiEntryContext.dedRef}`);
-        if (aiEntryContext?.prompt) {
-          const p = aiEntryContext.prompt.trim();
-          contextBits.push(`Prompt awal: ${p.length > 80 ? `${p.slice(0, 80)}…` : p}`);
-        }
-        return (
-          <div style={{ padding: '8px 12px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div role="tablist" aria-label="Mode AI" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {switcherModes.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeAiMode === m}
-                  onClick={() => openEzrabAI({
-                    mode: m,
-                    // Perbaikan final: switcher meneruskan konteks PENUH
-                    // entry saat ini (prompt/rabItemId/documentId/dedRef),
-                    // bukan hanya projectId — konteks tidak boleh hilang
-                    // saat ganti mode. Proyek mengikuti proyek aktif saat
-                    // ini (fallback ke proyek entry bila tidak ada).
-                    projectId: effProject?.id ?? aiEntryContext?.projectId ?? null,
-                    projectName: effProject?.name ?? aiEntryContext?.projectName,
-                    prompt: aiEntryContext?.prompt,
-                    rabItemId: aiEntryContext?.rabItemId,
-                    documentId: aiEntryContext?.documentId,
-                    dedRef: aiEntryContext?.dedRef,
-                    source: 'other',
-                  })}
-                  style={{
-                    padding: '6px 12px', borderRadius: '999px', cursor: 'pointer', fontSize: '12.5px', fontWeight: 700,
-                    border: activeAiMode === m ? '1px solid var(--ez-color-primary)' : '1px solid var(--ez-color-border)',
-                    background: activeAiMode === m ? 'var(--ez-color-primary)' : 'var(--ez-color-surface)',
-                    color: activeAiMode === m ? '#FFFFFF' : 'var(--ez-color-text-primary)',
-                  }}
-                >
-                  {modeLabels[m]}
-                </button>
-              ))}
-            </div>
-            <div style={{ fontSize: '12.5px', lineHeight: 1.5, color: 'var(--ez-color-text-secondary)', padding: '2px 4px' }}>
-              <strong style={{ color: 'var(--ez-color-text-primary)' }}>Mode: {modeLabels[activeAiMode]}</strong>
-              {' • '}
-              Proyek: {aiEntryContext?.projectName ?? effProject?.name ?? 'Tidak ada proyek aktif'}
-              {contextBits.length > 0 ? ` • ${contextBits.join(' • ')}` : ''}
-              {!aiEntryContext && ' • Tidak ada konteks masuk — chat kosong, mulai dari menu lain atau ketik kebutuhan RAB di sini.'}
-              {activeAiMode === 'rab-generator' && ' • Generator RAB berjalan di chat ini (universal direct RAB): tulis kebutuhan + dimensi, draf tabel dibuat di sini, lalu Push ke Spreadsheet.'}
-            </div>
-          </div>
-        );
-      })()}
 
       {/* ===== Body ===== */}
       <div className="ezchat2-body" ref={scrollRef}>

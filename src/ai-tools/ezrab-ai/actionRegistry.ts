@@ -796,6 +796,31 @@ export function executeIntent(
       // komposisi deterministik langsung di chat: tabel + Push ke
       // Spreadsheet; LLM hanya fallback bila komposisi tak bisa dibuat).
       const typed = findDirectTemplate(raw);
+      // Perbaikan 2026-10-27 (keluhan user: prompt "rab rumah ...
+      // luas bangunan 70m2" hanya berujung daftar template, tanpa
+      // tabel): kecocokan EKS AK (luas = tipe katalog persis, bukan
+      // fallback) LANGSUNG jadi tabel + tombol Push — tanpa kartu
+      // pilihan. Kartu pilihan dipertahankan hanya untuk basis
+      // fallback (luas permintaan ≠ tipe katalog) yang memang perlu
+      // konfirmasi pengguna, sesuai desain owner 2026-10-22.
+      if (typed && !typed.areaFallback) {
+        const built = buildDirectRab(raw, typed.needs);
+        if (built) {
+          pendingChoice = null;
+          pendingSubtypeNeeds = null;
+          return {
+            ok: true,
+            message: formatDirectRabMessage(built),
+            actions: [
+              { label: 'Push ke Spreadsheet RAB', action: { kind: 'push-rab' } },
+              { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
+              { label: 'Buka Workspace Desain & RAB', action: { kind: 'navigate', menu: 'desain-rab' } },
+            ],
+          };
+        }
+        // Bila build gagal, jatuh ke kartu pilihan di bawah (bukan
+        // diam-diam ke ringkasan).
+      }
       if (typed) {
         // D1: kartu kini dibangun choiceCardResult — semua parameter
         // berlabel Dari Anda/Asumsi, KT/KM default template DITAMPILKAN,
