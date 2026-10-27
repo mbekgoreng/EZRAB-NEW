@@ -126,6 +126,41 @@ export function verifySubtotal(
   return { subtotal, verified: true };
 }
 
+/**
+ * Bandingkan subtotal/total USULAN AI dengan nilai TERVERIFIKASI aplikasi.
+ * Mengembalikan null bila tidak bisa dibandingkan (salah satu null /
+ * non-finite) atau bila sama setelah pembulatan rupiah. Bila berbeda,
+ * mengembalikan penjelasan selisih — nilai terverifikasi TIDAK PERNAH
+ * ditimpa usulan AI, dan keduanya TIDAK PERNAH diklaim cocok.
+ * Catatan: selisih bisa berasal dari aritmetika AI maupun dari substitusi
+ * harga kanonis atas harga AI — pemanggil wajib menyebut sumbernya bila
+ * diketahui (lihat service: subtotal memakai finalPrice pasca-adapter).
+ */
+export function describeProposedDiscrepancy(
+  proposed: number | null | undefined,
+  verified: number | null | undefined
+): string | null {
+  if (typeof proposed !== 'number' || !Number.isFinite(proposed)) return null;
+  if (typeof verified !== 'number' || !Number.isFinite(verified)) return null;
+  if (Math.round(proposed) === Math.round(verified)) return null;
+  const diff = Math.round(proposed) - Math.round(verified);
+  return `Usulan AI Rp${Math.round(proposed).toLocaleString('id-ID')} berbeda dari nilai terverifikasi aplikasi Rp${Math.round(verified).toLocaleString('id-ID')} (selisih Rp${diff.toLocaleString('id-ID')}); nilai aplikasi yang dipakai.`;
+}
+
+/**
+ * Bersihkan usulan AI yang basi (per-item): bila kuantitas/satuan/harga/
+ * kecocokan kanonis berubah lewat edit atau konfirmasi kandidat, nilai
+ * proposedSubtotal dan selisihnya yang lama tidak boleh lagi dibandingkan
+ * dengan subtotal baru. Dipakai handler edit/konfirmasi FullAiResultView.
+ */
+export function clearAiProposal<T extends {
+  aiProposedSubtotal?: number | null;
+  subtotalDiscrepancy?: string;
+}>(item: T): T {
+  if (item.aiProposedSubtotal === undefined && item.subtotalDiscrepancy === undefined) return item;
+  return { ...item, aiProposedSubtotal: undefined, subtotalDiscrepancy: undefined };
+}
+
 export function validateFullAiItem(raw: any, index: number): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];

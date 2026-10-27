@@ -9,7 +9,7 @@ import { ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, HelpCircle, XCi
 import { FullAiOutput, FullAiItem } from './types';
 import { resolveCanonicalCode, getDedPriceSourceLabel, DED_PRICE_SOURCE_LABELS } from '../ded-canonical/canonicalDedPricing';
 import { resolveFullAiItemStatus } from './service';
-import { verifySubtotal } from './validator';
+import { verifySubtotal, clearAiProposal } from './validator';
 
 interface Props {
   output: FullAiOutput;
@@ -79,14 +79,15 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
       { unitPrice: newPrice.unitPrice, unit: newPrice.unit, source: newPrice.source },
     );
     const includeInTotal = status === 'READY' && subtotal != null && subtotal > 0;
-    onUpdate({
+    // Harga berubah jadi kanonis → usulan AI lama basi, dibersihkan.
+    onUpdate(clearAiProposal({
       ...item,
       price: newPrice,
       subtotal: includeInTotal ? subtotal : null,
       subtotalVerified: verified && includeInTotal,
       status: includeInTotal ? 'READY' : status,
       exclusionReason: includeInTotal ? null : exclusionReason,
-    });
+    }));
     setConfirmMsg('');
   };
 
@@ -152,6 +153,18 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
           {q.notes && <div style={{ marginBottom: 6 }}><strong>Catatan:</strong> {q.notes}</div>}
 
           {p.notes && <div style={{ marginBottom: 6 }}><strong>Catatan harga:</strong> {p.notes}</div>}
+
+          {item.subtotalDiscrepancy && (
+            <div style={{ marginBottom: 6, color: '#92400E', background: '#FFFBEB', padding: '6px 8px', borderRadius: 6 }}>
+              <strong>Selisih usulan AI:</strong> {item.subtotalDiscrepancy}
+              {item.price.source === 'AHSP_2026'
+                ? ' Selisih ini kemungkinan karena harga kanonis menggantikan estimasi AI, bukan semata kesalahan hitung AI.'
+                : ' Selisih ini adalah perbedaan hitung AI atas subtotal ini.'}
+              {item.aiProposedSubtotal != null && (
+                <> Usulan AI: {fmtRp(item.aiProposedSubtotal)}; terverifikasi aplikasi: {item.subtotal != null ? fmtRp(item.subtotal) : '—'}.</>
+              )}
+            </div>
+          )}
 
           {item.price.ahspMatch && item.price.ahspMatch.status === 'NEEDS_REVIEW' && item.price.ahspMatch.candidates.length > 0 && (
             <div style={{ marginTop: 8, padding: 10, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8 }}>
@@ -272,7 +285,8 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
 
                   const includeInTotal = newStatus === 'READY' && newSubtotal != null && newSubtotal > 0;
 
-                  onUpdate({
+                  // Edit kuantitas/harga → usulan AI lama basi, dibersihkan.
+                  onUpdate(clearAiProposal({
                     ...item,
                     quantity: {
                       ...item.quantity,
@@ -301,7 +315,7 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
                     subtotalVerified: includeInTotal && newSubtotal != null,
                     status: includeInTotal ? 'READY' : newStatus,
                     exclusionReason: includeInTotal ? null : newExclusion,
-                  });
+                  }));
                   setEditing(false);
                 }}
                 style={{
@@ -335,6 +349,16 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack }
   const grandTotal = items
     .filter((it) => it.subtotal != null && it.subtotal > 0)
     .reduce((sum, it) => sum + (it.subtotal || 0), 0);
+
+  // Total usulan AI dihitung LANGSUNG dari item saat ini (bukan dari prop
+  // output yang bisa basi sesudah edit — edit membersihkan usulan item).
+  const proposedGrandTotalLive = items
+    .map((it) => it.aiProposedSubtotal)
+    .filter((v): v is number => typeof v === 'number' && Number.isFinite(v) && v > 0)
+    .reduce((a, b) => a + b, 0);
+  const hasCanonicalSubstitution = items.some(
+    (it) => it.price.source === 'AHSP_2026' && it.aiProposedSubtotal != null
+  );
 
   const s = {
     totalItems: items.length,
@@ -494,6 +518,14 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack }
               {s.excludedFromTotal > 0 && (
                 <div style={{ fontSize: 12, color: '#fbbf24', marginTop: 4 }}>
                   Mengecualikan {s.excludedFromTotal} item yang belum lengkap.
+                </div>
+              )}
+              {proposedGrandTotalLive > 0 && Math.round(proposedGrandTotalLive) !== Math.round(grandTotal) && (
+                <div style={{ fontSize: 12, color: '#fbbf24', marginTop: 4 }}>
+                  Total usulan AI: {fmtRp(proposedGrandTotalLive)} (untuk perbandingan; total terverifikasi di atas yang dipakai).
+                  {hasCanonicalSubstitution
+                    ? ' Selisih dapat mencerminkan substitusi harga kanonis atas estimasi AI, bukan semata kesalahan hitung.'
+                    : ' Selisih ini adalah perbedaan hitung AI.'}
                 </div>
               )}
             </div>

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { DedAiItem, DedAiOutput } from './types';
-import { DedAiCalculator, applyUnitChange } from './calculator';
+import { DedAiCalculator, applyUnitChange, clearStaleProposal } from './calculator';
 import { resolveCanonicalCode } from '../ded-canonical/canonicalDedPricing';
 import { groupByWbs, WbsGroup } from './wbsClassifier';
 import { useI18n } from '../../i18n/I18nContext';
@@ -143,8 +143,10 @@ export const DedAiResultView: React.FC<Props> = ({
         const newName = editVals.name.trim() || it.name;
         // Ganti satuan membatalkan harga kanonis (applyUnitChange) — harga
         // per satuan lama tidak boleh bertahan dengan label AHSP untuk
-        // satuan baru.
-        const base = applyUnitChange(it, newUnits);
+        // satuan baru. Edit kuantitas/satuan apa pun juga membatalkan
+        // usulan AI lama (clearStaleProposal) agar tidak dibandingkan
+        // dengan subtotal baru.
+        const base = clearStaleProposal(applyUnitChange(it, newUnits));
         return {
           ...base,
           name: newName,
@@ -187,6 +189,8 @@ export const DedAiResultView: React.FC<Props> = ({
           priceSource: 'AHSP_2026' as const,
           ahspCode: resolved.matchedCode,
           ahspMatch: resolved,
+          // Harga berubah jadi kanonis → usulan AI lama basi.
+          aiProposedSubtotal: undefined,
           priceAssumptionNote: `AHSP kanonis ${resolved.matchedCode} (${resolved.sourceDocument}, biaya langsung) — dikonfirmasi pengguna dari kandidat review.`,
           provenance: [...it.provenance, `ahsp:${resolved.matchedCode}`],
         }
@@ -208,6 +212,8 @@ export const DedAiResultView: React.FC<Props> = ({
           quantity,
           quantityFormula: `${t('ai.ded.result.formula_input_a')} ${fmtQty(quantity)} ${it.units}`,
           provenance: [...it.provenance, 'bulk-fill'],
+          // Kuantitas berubah → usulan AI lama basi.
+          aiProposedSubtotal: undefined,
         };
       });
       // Hitung ulang subtotal & stage via logika kanonis (sama seperti pipeline).
@@ -313,7 +319,7 @@ export const DedAiResultView: React.FC<Props> = ({
         ) : (
           <div className="dedai-notice blue">
             <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 2 }} />
-            <span><b>Mode: Estimasi Database EZRAB.</b> Estimasi harga AI ditolak di mode ini — {canonCount} item teratasi dari AHSP kanonis, {calculableCount} item terhitung, {excluded} item belum lengkap / tanpa harga.{reviewNote}{incompleteNote} Total di bawah bersifat <b>parsial</b> sampai harga yang hilang dilengkapi (mis. lewat AHSP picker setelah push ke spreadsheet).</span>
+            <span><b>Mode: Estimasi Database EZRAB.</b> Harga diutamakan dari AHSP kanonis — {canonCount} item teratasi dari AHSP kanonis, {aiCount} item memakai estimasi AI berlabel sebagai fallback karena tidak ada di database (bukan harga database), {excluded} item belum lengkap / tanpa harga.{reviewNote}{incompleteNote} Total di bawah bersifat <b>parsial</b> sampai harga yang hilang dilengkapi (mis. lewat AHSP picker setelah push ke spreadsheet).</span>
           </div>
         );
       })()}
@@ -323,6 +329,24 @@ export const DedAiResultView: React.FC<Props> = ({
         <div className="lbl">{t('ai.ded.result.stat_valid_total')}</div>
         <div className="val">{fmtRp(grandTotal)}</div>
         <div className="hint">{calculableCount} {t('ai.ded.result.stat_valid_total_hint_a')} {items.length} {t('ai.ded.result.stat_valid_total_hint_b')}</div>
+        {(() => {
+          // Total usulan AI dihitung LANGSUNG dari item saat ini (bukan dari
+          // prop output.totalDiscrepancyNote yang bisa basi sesudah edit —
+          // edit membersihkan usulan item, sehingga catatan ini hilang
+          // dengan sendirinya bila dasarnya berubah).
+          const proposed = items
+            .map((it) => it.aiProposedSubtotal)
+            .filter((v): v is number => typeof v === 'number' && Number.isFinite(v) && v > 0)
+            .reduce((a, b) => a + b, 0);
+          if (proposed <= 0 || Math.round(proposed) === Math.round(grandTotal)) return null;
+          const hasCanon = items.some((it) => it.priceSource === 'AHSP_2026' && it.aiProposedSubtotal != null);
+          return (
+            <div className="hint">
+              Total usulan AI: {fmtRp(proposed)} (untuk perbandingan; total terverifikasi di atas yang dipakai).
+              {hasCanon ? ' Selisih dapat mencerminkan substitusi harga kanonis atas estimasi AI.' : ' Selisih ini adalah perbedaan hitung AI.'}
+            </div>
+          );
+        })()}
         {volumeByUnit.length > 0 && (
           <div className="vol">
             <Info size={13} style={{ verticalAlign: -2 }} /> {t('ai.ded.result.vol_per_unit')}{' '}

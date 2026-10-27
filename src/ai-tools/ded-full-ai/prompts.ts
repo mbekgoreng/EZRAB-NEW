@@ -6,25 +6,34 @@
  */
 
 import { formatPriceReferenceForPrompt } from './jakartaPrices';
+import { fullAiPricingPolicySection, normalizePromptPolicy, type DedPromptPricingPolicy } from '../ded-ai-estimate/prompts/policy';
 
 export interface FullAiPromptInput {
   projectType: string;
   documentText: string;       // Teks DED (dengan strategi chunking)
   pageCount: number;
   mode: 'FAST' | 'ADVANCED';
+  /** Kebijakan harga yang dipilih pengguna (default 'FULL_AI' = perilaku lama). */
+  pricingPolicy?: DedPromptPricingPolicy;
 }
 
-export function buildFullAiSystemPrompt(projectType: string, mode: 'FAST' | 'ADVANCED'): string {
+export function buildFullAiSystemPrompt(projectType: string, mode: 'FAST' | 'ADVANCED', pricingPolicy?: DedPromptPricingPolicy): string {
   const depth = mode === 'ADVANCED'
     ? `Lakukan analisis MENDALAM: periksa setiap halaman, rekonsiliasi dimensi antar gambar,
        identifikasi konflik, dan berikan penjelasan detail untuk setiap asumsi.`
     : `Lakukan analisis CEPAT namun teliti: identifikasi item utama, hitung volume
        dari dimensi yang jelas, dan estimasi yang kurang jelas dengan asumsi.`;
 
-  const priceRef = formatPriceReferenceForPrompt();
+  const policy = normalizePromptPolicy(pricingPolicy);
+  // Tabel referensi harga Jakarta HANYA untuk mode FULL_AI. Mode DATABASE
+  // tidak menerima tabel ini sama sekali (bukan disembunyikan di balik
+  // klaim override) — harga resmi hanya dari database kanonis aplikasi.
+  const priceRef = policy === 'FULL_AI' ? formatPriceReferenceForPrompt() : '';
 
   return `Kamu adalah Quantity Surveyor AI senior untuk proyek konstruksi tipe "${projectType}".
 ${depth}
+
+${fullAiPricingPolicySection(policy)}
 
 Kamu adalah MESIN ESTIMASI UTAMA. Tugasmu menghasilkan RAB yang LENGKAP dan BERGUNA,
 bukan yang "aman" tapi kosong. Estimator manusia selalu bekerja dengan asumsi —
@@ -56,13 +65,20 @@ METODOLOGI ESTIMASI STANDAR:
 - Atap: luas denah / cos(sudut). Jika sudut tidak ada, asumsi 30° dan label ASSUMPTION
 - Kusen: hitung dari denah pintu/jendela, atau estimasi dari jumlah ruangan
 
-${priceRef}
+DUPLIKAT & KONFLIK (wajib):
+- Pekerjaan yang sama di beberapa halaman = SATU item, jangan digandakan; pekerjaan yang tumpang tindih ruang lingkupnya harus dipisahkan agar kuantitas tidak dihitung dua kali.
+- Gambar/spesifikasi yang bertentangan: sebutkan kedua versi di assumptions, pilih satu dengan alasan, dan turunkan keyakinanmu — jangan diam-diam menggabungkan angka yang bertentangan.
+- Bedakan fakta DED (EXPLICIT/DERIVED) dari estimasi (ASSUMPTION); angka tanpa dasar tidak boleh disajikan sebagai fakta pasti.
+
+${policy === 'FULL_AI' ? `${priceRef}
 
 ATURAN HARGA:
 - WAJIB isi unitPrice untuk SEMUA item standar menggunakan referensi di atas
 - source: "AI_ESTIMATE", region: "Jakarta", period: "2026"
 - Jika item tidak ada di referensi, pakai yang paling dekat dan jelaskan di notes
-- unitPrice = null HANYA untuk item yang benar-benar tidak ada acuan sama sekali
+- unitPrice = null HANYA untuk item yang benar-benar tidak ada acuan sama sekali` : `ATURAN HARGA FALLBACK (MODE DATABASE — tidak ada tabel referensi harga di mode ini):
+- Field price HANYA kandidat fallback: isi bila ada perkiraan masuk akal dari DED/spesifikasi, boleh null bila tidak ada dasar. TIDAK ADA kewajiban mengisi harga untuk semua item dan TIDAK ADA tabel referensi yang harus diikuti.
+- Perkiraanmu BUKAN harga resmi dan BUKAN harga database: sumber harga final ditentukan aplikasi — kanonis bila item cocok, estimasi AI berlabel bila tidak ada di database. Jangan pernah menyebut perkiraanmu sebagai harga AHSP/resmi.`}
 
 STRUKTUR OUTPUT (SEDERHANA - PENTING!):
 {
@@ -90,7 +106,7 @@ STRUKTUR OUTPUT (SEDERHANA - PENTING!):
 }
 
 ATURAN JSON (WAJIB DIPATUHI):
-- Hanya field di atas. JANGAN tambah field lain.
+${policy === 'FULL_AI' ? `- Field di atas WAJIB, ditambah DUA field usulan: "proposedSubtotal" per item (qty × price, null bila salah satunya null) dan "proposedGrandTotal" tingkat atas (jumlah semua proposedSubtotal). Selain ketiga kelompok field itu, JANGAN tambah field lain.` : `- Hanya field di atas. JANGAN tambah field lain, dan JANGAN mengeluarkan proposedSubtotal/proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.`}
 - "qty" = angka saja (contoh: 9.6), bukan object
 - "price" = angka saja (contoh: 85000), bukan object
 - "provenance": salah satu dari EXPLICIT, DERIVED, ASSUMPTION
@@ -103,11 +119,11 @@ ATURAN JSON (WAJIB DIPATUHI):
 PENTING:
 - Target: MINIMAL 15 item untuk rumah tinggal
 - Setiap item HARUS punya qty dan price (kecuali benar-benar tidak mungkin)
-- Jangan hitung subtotal — aplikasi yang memverifikasi.`;
+${policy === 'FULL_AI' ? `- Hitung proposedSubtotal per item dan proposedGrandTotal sebagai USULAN AI (lihat kebijakan harga di atas); subtotal/total terverifikasi tetap dihitung aplikasi dan dibandingkan dengan usulanmu.` : `- Jangan hitung subtotal/total resmi — aplikasi yang menghitung dari data tervalidasi.`}`;
 }
 
 export function buildFullAiPrompt(input: FullAiPromptInput): { system: string; prompt: string } {
-  const system = buildFullAiSystemPrompt(input.projectType, input.mode);
+  const system = buildFullAiSystemPrompt(input.projectType, input.mode, input.pricingPolicy);
 
   const prompt = `Analisis DED berikut untuk proyek tipe "${input.projectType}".
 Mode: ${input.mode}

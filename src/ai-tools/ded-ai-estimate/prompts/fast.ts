@@ -4,10 +4,14 @@
  * null when unvoided (never 0).
  */
 
+import { standardPricingPolicySection, normalizePromptPolicy, type DedPromptPricingPolicy } from './policy';
+
 export interface DedFastPromptInput {
   projectType: string;
   buildingType: string;
   pageSummaries: Array<{ page: number; title: string; text: string }>;
+  /** Kebijakan harga yang dipilih pengguna (default 'FULL_AI' = perilaku lama). */
+  pricingPolicy?: DedPromptPricingPolicy;
 }
 
 export interface DedFastPromptResult {
@@ -15,9 +19,13 @@ export interface DedFastPromptResult {
   prompt: string;
 }
 
-export function createFastSystemPrompt(ctx: { projectType: string }): string {
+export function createFastSystemPrompt(ctx: { projectType: string; pricingPolicy?: DedPromptPricingPolicy }): string {
   const projectType = ctx.projectType || 'BANGUNAN';
+  const policy = normalizePromptPolicy(ctx.pricingPolicy);
   return `Kamu adalah estimator DED (DED AI Estimate — mode CEPAT). Peranmu: mengidentifikasi pekerjaan konstruksi untuk proyek tipe "${projectType}" dan menyusun daftar pekerjaan dengan detail dasar.
+
+${standardPricingPolicySection(policy)}
+${policy === 'FULL_AI' ? `FIELD TAMBAHAN MODE FULL_AI (di luar struktur di bawah): setiap workItem boleh berisi "proposedSubtotal": quantity × estimatedUnitPrice (null bila salah satunya null), dan tingkat atas berisi "proposedGrandTotal": jumlah semua proposedSubtotal.` : `MODE DATABASE: JANGAN mengeluarkan field proposedSubtotal atau proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.`}
 
 ATURAN WAJIB:
 - Keluarkan JSON MURNI (tanpa teks lain, tanpa markdown).
@@ -58,6 +66,11 @@ CATATAN DERIVATION (opsional tapi dianjurkan untuk item compound):
 - Source: "DED" (dari dokumen), "ASSUMPTION" (asumsi), "USER" (input pengguna).
 - Jika inputs tidak lengkap, JANGAN sertakan derivation — biarkan quantity=null.
 
+DUPLIKAT & KONFLIK (wajib):
+- Pekerjaan yang sama di beberapa halaman = SATU item dengan sourcePages lengkap, jangan digandakan.
+- Bila dua gambar/spesifikasi bertentangan, sebutkan keduanya di specification, pilih satu dengan alasan di quantityFormula, dan turunkan confidence ke LOW — jangan diam-diam menggabungkan angka yang bertentangan.
+- Bedakan fakta DED (quantitySource DED_EXPLICIT/DED_GEOMETRIC) dari inferensi/asumsi (AI_INFERENCE/ASSUMPTION) — jangan menaikkan status bukti demi terlihat pasti.
+
 CHECKLIST CAKUPAN — periksa SETIAP kelompok berikut terhadap isi DED, dan masukkan item HANYA bila didukung teks/bukti DED (jangan mengarang kelompok yang tidak ada):
 persiapan & pekerjaan tanah; pondasi; struktur (sloof, kolom, balok, pelat, ring balk); dinding, plesteran, acian; lantai & finishing; kusen, pintu, jendela; atap, plafon, talang; instalasi listrik; plumbing, sanitair, sanitasi; pengecatan; pembersihan akhir.
 Untuk setiap item WAJIB isi quantitySource (DED_EXPLICIT bila angka tertulis di DED; DED_GEOMETRIC bila dihitung dari dimensi DED; AI_INFERENCE/ASSUMPTION bila estimasi), sourcePages (nomor halaman bukti), dan sourceEvidence.
@@ -93,7 +106,7 @@ CONTOH ESTIMASI YANG BAIK:
 - "Pondasi Batu Gunung": quantity 8.5, quantityFormula: "Estimasi: keliling 34m × 0.5m × 0.5m (asumsi rumah 36m²)", confidence: "MEDIUM"
 - "Sloof 15×20": quantity 1.02, quantityFormula: "15×20cm × 34m keliling (dari nama item + estimasi panjang)", confidence: "MEDIUM"
 
-ATURAN ESTIMASI HARGA:
+${policy === 'FULL_AI' ? `ATURAN ESTIMASI HARGA:
 - estimatedUnitPrice = estimasi harga satuan (Rupiah) berdasarkan pengetahuan pasar konstruksi Indonesia 2026.
 - WAJIB isi estimatedUnitPrice untuk SEMUA item yang umum. Jangan biarkan kosong untuk item standar.
 - Referensi harga tipikal 2026:
@@ -106,7 +119,11 @@ ATURAN ESTIMASI HARGA:
   * Jembatan kecil: estimasi berdasarkan bentang
 - estimatedUnitPrice = null HANYA untuk item sangat kustom tanpa referensi pasar sama sekali.
 - unitPriceNote = alasan singkat (mis. "pasaran Jawa 2026", "estimasi dimensi").
-- Harga adalah ESTIMASI AI, bukan harga resmi — aplikasi akan menandainya dengan jelas.
+- Harga adalah ESTIMASI AI, bukan harga resmi — aplikasi akan menandainya dengan jelas.` : `ATURAN HARGA FALLBACK (MODE DATABASE — tidak ada tabel harga pasar di mode ini):
+- estimatedUnitPrice HANYA kandidat fallback: isi bila kamu punya perkiraan yang masuk akal dari DED/spesifikasi; boleh null bila tidak ada dasar.
+- TIDAK ADA kewajiban mengisi harga untuk semua item, dan TIDAK ADA tabel harga pasar yang harus diikuti di mode ini — harga resmi hanya dari database kanonis yang divalidasi aplikasi.
+- Perkiraanmu BUKAN harga resmi dan BUKAN harga database: aplikasi mengutamakan harga kanonis bila item cocok, dan hanya memakai perkiraanmu bila tidak ada di database, dengan label "Estimasi AI".
+- unitPriceNote = alasan singkat perkiraan (atau kosong bila null).`}
 
 ATURAN SATUAN DIMENSI (WAJIB):
 - Setiap dimensi WAJIB menyertakan penanda satuan eksplisit: mm, cm, atau m.
@@ -134,7 +151,7 @@ Analisis halaman-halaman ini dan buat daftar pekerjaan estimasi awal (cepat). Ik
     (m) => (/\d/.test(m) ? 'EZRAB VISION' : m)
   );
 
-  return { system: createFastSystemPrompt({ projectType: input.projectType }), prompt: safePrompt };
+  return { system: createFastSystemPrompt({ projectType: input.projectType, pricingPolicy: input.pricingPolicy }), prompt: safePrompt };
 }
 
 export interface DedFastOutput {
@@ -154,5 +171,9 @@ export interface DedFastOutput {
     confidence?: 'HIGH' | 'MEDIUM' | 'LOW';
     estimatedUnitPrice?: number | null;
     unitPriceNote?: string;
+    /** Usulan AI (mode FULL_AI saja): quantity × estimatedUnitPrice, null bila salah satunya null. */
+    proposedSubtotal?: number | null;
   }>;
+  /** Usulan AI (mode FULL_AI saja): jumlah semua proposedSubtotal. */
+  proposedGrandTotal?: number | null;
 }

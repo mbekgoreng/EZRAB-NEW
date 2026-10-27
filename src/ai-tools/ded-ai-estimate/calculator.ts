@@ -42,12 +42,27 @@ export type QuantityVerdict =
  * keputusan pengguna atas itemnya sendiri. Perubahan nama saja tidak
  * membatalkan (tidak mengubah arti per-satuan).
  */
+/**
+ * Bersihkan usulan AI yang basi: bila dasar hitung (kuantitas/satuan/harga/
+ * kecocokan kanonis) berubah, proposedSubtotal lama tidak boleh lagi
+ * dibandingkan dengan subtotal baru. Dipakai commitEdit/bulkFill/konfirmasi
+ * kandidat di DedAiResultView (di luar applyUnitChange yang sudah
+ * membersihkan sendiri bila satuan berubah).
+ */
+export function clearStaleProposal(item: DedAiItem): DedAiItem {
+  if (item.aiProposedSubtotal === undefined) return item;
+  return { ...item, aiProposedSubtotal: undefined };
+}
+
 export function applyUnitChange(item: DedAiItem, newUnits: string): DedAiItem {
   if (newUnits === item.units) return item;
-  if (item.priceSource !== 'AHSP_2026') return { ...item, units: newUnits };
+  // Satuan berubah = dasar hitung berubah → usulan AI ikut dibersihkan
+  // (baik untuk harga estimasi maupun kanonis yang dibatalkan di bawah).
+  if (item.priceSource !== 'AHSP_2026') return { ...item, units: newUnits, aiProposedSubtotal: undefined };
   return {
     ...item,
     units: newUnits,
+    aiProposedSubtotal: undefined,
     unitPrice: null,
     priceSource: 'UNRESOLVED' as const,
     ahspCode: undefined,
@@ -202,6 +217,20 @@ export class DedAiCalculator {
     const finalized = this.finalizeItems(base.items);
     const categorySummaries = this.buildCategorySummaries(finalized);
     const grandTotal = categorySummaries.reduce((acc, c) => acc + c.subtotal, 0);
+    // Total usulan AI (mode FULL_AI saja): dijumlah dari aiProposedSubtotal
+    // item, TIDAK PERNAH dipakai sebagai grandTotal resmi. Bila ada dan
+    // berbeda dari total terverifikasi, selisihnya dicatat eksplisit —
+    // bukan ditimpa diam-diam, bukan pula diklaim cocok.
+    const proposedParts = finalized
+      .map((i) => i.aiProposedSubtotal)
+      .filter((v): v is number => typeof v === 'number' && Number.isFinite(v) && v > 0);
+    const aiProposedGrandTotal = proposedParts.length > 0
+      ? proposedParts.reduce((a, b) => a + b, 0)
+      : null;
+    const totalDiscrepancyNote =
+      aiProposedGrandTotal !== null && Math.round(aiProposedGrandTotal) !== Math.round(grandTotal)
+        ? `Total usulan AI Rp${Math.round(aiProposedGrandTotal).toLocaleString('id-ID')} berbeda dari total terverifikasi aplikasi Rp${Math.round(grandTotal).toLocaleString('id-ID')} (selisih Rp${Math.round(aiProposedGrandTotal - grandTotal).toLocaleString('id-ID')}); total aplikasi yang dipakai.`
+        : undefined;
     const itemsWithQuantity = finalized.filter((i) => i.quantity !== null && i.quantity > 0).length;
     const itemsWithPrice = finalized.filter((i) => i.unitPrice !== null && i.unitPrice! > 0).length;
     const fully = finalized.filter((i) => i.subtotal !== null && i.subtotal > 0).length;
@@ -216,6 +245,8 @@ export class DedAiCalculator {
       pageCount: base.pageCount,
       items: finalized,
       grandTotal,
+      aiProposedGrandTotal,
+      totalDiscrepancyNote,
       categorySummaries,
       coverage: {
         totalItems: finalized.length,

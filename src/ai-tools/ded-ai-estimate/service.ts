@@ -202,6 +202,12 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: import('
     ahspMatch: price.ahspMatch,
     priceAssumptionNote: price.notes,
     subtotal: null,
+    // Usulan AI (mode FULL_AI saja; prompt DATABASE tidak memintanya):
+    // disimpan terpisah, tidak pernah dipakai sebagai subtotal resmi.
+    aiProposedSubtotal:
+      typeof raw.proposedSubtotal === 'number' && Number.isFinite(raw.proposedSubtotal)
+        ? raw.proposedSubtotal
+        : null,
     sourcePages: Array.isArray(raw.sourcePages) ? raw.sourcePages.map(Number).filter(Number.isFinite) : [],
     sourceEvidence: raw.sourceEvidence || undefined,
     provenance: [
@@ -437,9 +443,11 @@ export class DedAiEstimateService {
     let lastAiError: any = null;
 
     for (let gi = 0; gi < groups.length; gi++) {
+      // Kebijakan harga DIPAKAIKAN ke prompt (sebelumnya prompt tidak
+      // menerima policy sehingga selalu meminta harga AI apa pun modenya).
       const built = mode === 'FAST'
-        ? buildFastPrompt({ projectType, buildingType, pageSummaries: groups[gi].pages })
-        : buildDetailPrompt({ projectType, buildingType, pageSummaries: groups[gi].pages });
+        ? buildFastPrompt({ projectType, buildingType, pageSummaries: groups[gi].pages, pricingPolicy: options.policy ?? 'FULL_AI' })
+        : buildDetailPrompt({ projectType, buildingType, pageSummaries: groups[gi].pages, pricingPolicy: options.policy ?? 'FULL_AI' });
 
       notify('ANALYZE', mode === 'FAST' ? 'Menganalisis DED' : 'Analisis mendalam',
         50 + Math.round((gi / groups.length) * 25),
@@ -554,6 +562,9 @@ export class DedAiEstimateService {
         `${selection.noTextCount} halaman tanpa lapisan teks tidak dapat dianalisis (kemungkinan hasil scan/gambar — butuh OCR): halaman ${formatPageRanges(noTextPages)}.`
       );
     }
+    // Selisih total usulan AI vs total terverifikasi (bila ada) ikut
+    // jejak sebagai peringatan — bukan ditimpa diam-diam.
+    if (output.totalDiscrepancyNote) traceWarnings.push(output.totalDiscrepancyNote);
     for (const pt of passTraces) {
       if (pt.status === 'FAILED') {
         traceWarnings.push(

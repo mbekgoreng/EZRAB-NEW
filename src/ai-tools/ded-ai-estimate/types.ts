@@ -28,15 +28,16 @@ export type DedAiMode = 'FAST' | 'DETAIL';
  *   tidak tersedia (perilaku lama mesin standar — semua harga adalah
  *   AI_ESTIMATE atau UNRESOLVED). Estimasi selalu dilabel AI_ESTIMATE,
  *   divalidasi isSaneEstimate, dan TIDAK PERNAH menimpa data master.
- * - 'DATABASE': estimasi harga AI DITOLAK di service layer — harga yang
- *   tidak terverifikasi menjadi UNRESOLVED (null, bukan Rp0) dan total
- *   menjadi parsial. Kebijakan ini ditegakkan di pricing.ts, bukan hanya
- *   di instruksi UI/prompt. CATATAN KEJUJURAN: mesin standar tidak
- *   mengkueri master AHSP (kontrak isolasi modul ini), sehingga di mode
- *   DATABASE harga yang lolos hanyalah USER_INPUT (edit pengguna pasca
- *   analisis); sisanya UNRESOLVED. Integrasi lookup AHSP kanonis adalah
- *   tindak lanjut terpisah (butuh matcher + ambang kepercayaan + aturan
- *   DHSP-vs-direct + quarantine) — bukan bagian dari change ini.
+ * - 'DATABASE': harga diutamakan dari database AHSP kanonis lewat adapter
+ *   ded-canonical (kanonis RESOLVED menang). Bila item tidak ada di
+ *   database, estimasi AI dipakai sebagai FALLBACK berlabel jelas
+ *   AI_ESTIMATE (keputusan owner 2026-10-27 malam, dikonfirmasi
+ *   2026-10-27 23:33 saat misi pemisahan mode DED-to-RAB — fallback ini
+ *   dipertahankan atas perintah eksplisit owner, bukan harga database).
+ *   Estimasi hilang/tidak wajar tetap UNRESOLVED (null, bukan Rp0) dan
+ *   total yang memakai item unresolved menjadi parsial. Prompt mode
+ *   DATABASE melarang AI menulis kode/koefisien/harga resmi (lihat
+ *   prompts/policy.ts); gerbang ini + adapter yang menegakkannya.
  * Default: 'FULL_AI' (mempertahankan perilaku lama bila pengguna tidak
  * memilih; mode DATABASE adalah opt-in eksplisit).
  */
@@ -100,6 +101,13 @@ export interface DedAiItem {
   ahspMatch?: CanonicalDedMatch;
   priceAssumptionNote?: string;
   subtotal: number | null;
+  /**
+   * Usulan AI (mode FULL_AI saja, dari field proposedSubtotal model):
+   * quantity × estimatedUnitPrice versi AI. TIDAK PERNAH dipakai sebagai
+   * subtotal resmi — subtotal resmi selalu dihitung aplikasi (calcSubtotal).
+   * Disimpan agar selisih dengan subtotal terverifikasi bisa ditandai.
+   */
+  aiProposedSubtotal?: number | null;
   sourcePages: number[];
   sourceEvidence?: string;
   provenance: string[];
@@ -130,6 +138,16 @@ export interface DedAiOutput {
   pageCount: number;
   items: DedAiItem[];
   grandTotal: number;
+  /**
+   * Total usulan AI (mode FULL_AI saja): jumlah aiProposedSubtotal item;
+   * null bila tidak satu pun item membawa usulan. Bukan total resmi.
+   */
+  aiProposedGrandTotal?: number | null;
+  /**
+   * Bila aiProposedGrandTotal ada dan berbeda dari grandTotal terverifikasi,
+   * berisi penjelasan selisihnya. GrandTotal aplikasi yang dipakai.
+   */
+  totalDiscrepancyNote?: string;
   categorySummaries: DedAiCategorySummary[];
   coverage: {
     totalItems: number;

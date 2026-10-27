@@ -12,7 +12,7 @@ import { waitForMinimum, minDelayFor } from '../aiResponseTiming';
 import { parseDedPdf } from '../ded-ai-estimate/parser';
 import { PAGE_TYPE_PRIORITY, formatPageRanges } from '../ded-ai-estimate/analysisTrace';
 import { buildFullAiPrompt } from './prompts';
-import { validateFullAiItem, verifySubtotal } from './validator';
+import { validateFullAiItem, verifySubtotal, describeProposedDiscrepancy } from './validator';
 import {
   FullAiOutput, FullAiItem, FullAiServiceOptions, FullAiSummary, DedEstimationPolicy, FullAiPriceSource,
 } from './types';
@@ -242,6 +242,7 @@ export class FullAiDedService {
         documentText: docText,
         pageCount: pages.length,
         mode,
+        pricingPolicy: policy,
       });
 
       const productId = mode === 'FAST' ? 'DED_AI_FAST' : 'DED_AI_DETAIL';
@@ -375,6 +376,15 @@ export class FullAiDedService {
           typeof q.value === 'number' ? q.value : null,
           finalPrice.unitPrice
         );
+        // Usulan AI (mode FULL_AI saja; prompt DATABASE tidak memintanya):
+        // disimpan terpisah, tidak pernah dipakai sebagai subtotal resmi.
+        // Selisih vs subtotal terverifikasi dicatat — selisih dapat berasal
+        // dari aritmetika AI maupun substitusi harga kanonis atas harga AI.
+        const aiProposedSubtotal =
+          typeof raw.proposedSubtotal === 'number' && Number.isFinite(raw.proposedSubtotal)
+            ? raw.proposedSubtotal
+            : null;
+        const subtotalDiscrepancy = describeProposedDiscrepancy(aiProposedSubtotal, subtotal) || undefined;
 
         // Tentukan status dan alasan eksklusi (diagnostik spesifik) —
         // satu fungsi murni agar layar hasil (konfirmasi kandidat) memakai
@@ -420,6 +430,9 @@ export class FullAiDedService {
             ahspMatch,
           },
           subtotal: includeInTotal ? subtotal : null,
+          aiProposedSubtotal,
+          // Selisih hanya bermakna bila subtotal terverifikasi ikut total.
+          subtotalDiscrepancy: includeInTotal ? subtotalDiscrepancy : undefined,
           // F4 (3.7): hanya true bila subtotal item ini benar-benar terhitung
           // & terverifikasi dari qty × harga yang keduanya ada. Item yang
           // subtotalnya null (harga/volume hilang atau tereksklusi) TIDAK
@@ -465,6 +478,21 @@ export class FullAiDedService {
           `${summary.excludedFromTotal} item yang belum lengkap.`;
       }
 
+      // Total usulan AI (mode FULL_AI saja): dari proposedGrandTotal model,
+      // atau jumlah aiProposedSubtotal item. Disimpan terpisah; selisih vs
+      // total terverifikasi dicatat sebagai peringatan, bukan ditimpa.
+      const modelProposedTotal =
+        typeof parsedAi.proposedGrandTotal === 'number' && Number.isFinite(parsedAi.proposedGrandTotal)
+          ? parsedAi.proposedGrandTotal
+          : null;
+      const summedProposed = items
+        .map((it) => it.aiProposedSubtotal)
+        .filter((v): v is number => typeof v === 'number' && Number.isFinite(v) && v > 0)
+        .reduce((a, b) => a + b, 0);
+      const aiProposedGrandTotal = modelProposedTotal ?? (summedProposed > 0 ? summedProposed : null);
+      const grandDiscrepancy = describeProposedDiscrepancy(aiProposedGrandTotal, grandTotal);
+      if (grandDiscrepancy) warnings.push(`Total usulan AI vs terverifikasi: ${grandDiscrepancy}`);
+
       notify('DONE', 100, 'Analisis selesai');
 
       return {
@@ -483,6 +511,7 @@ export class FullAiDedService {
         },
         items,
         grandTotal,
+        aiProposedGrandTotal,
         grandTotalNote,
         summary,
         // F4 (3.7): error validator per item WAJIB tampil di hasil akhir;

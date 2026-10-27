@@ -82,6 +82,8 @@ export interface FullAiItem {
   price: FullAiPriceDetail;
   subtotal: number | null;    // Dihitung aplikasi: qty × price (verifikasi saja)
   subtotalVerified: boolean;  // true HANYA bila subtotal benar-benar dihitung aplikasi dari qty × harga yang keduanya ada; false bila subtotal null (tidak ada yang diverifikasi)
+  /** Usulan AI (mode FULL_AI saja, field proposedSubtotal model) — tidak pernah dipakai sebagai subtotal resmi. */
+  aiProposedSubtotal?: number | null;
   subtotalDiscrepancy?: string; // Jika tidak cocok, jelaskan selisihnya
   status: 'READY' | 'NEEDS_CONFIRMATION' | 'UNRESOLVED' | 'EXCLUDED';
   exclusionReason: FullAiExclusionReason; // Alasan spesifik tidak masuk total
@@ -119,6 +121,8 @@ export interface FullAiOutput {
   projectInfo: FullAiProjectInfo;
   items: FullAiItem[];
   grandTotal: number | null;
+  /** Total usulan AI (mode FULL_AI saja): dari proposedGrandTotal model, atau jumlah aiProposedSubtotal; null bila tak ada usulan. Bukan total resmi. */
+  aiProposedGrandTotal?: number | null;
   grandTotalNote?: string;    // Peringatan jika ada item yang dikecualikan
   summary: FullAiSummary;
   warnings: string[];

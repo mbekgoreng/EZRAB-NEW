@@ -6,6 +6,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { dedAiEstimateService, DedAiOutputEnvelope } from './service';
 import { DedAiCalculator } from './calculator';
+import { mapDedAiItemToRabInput, mapFullAiItemToRabInput } from './finalizeMapping';
 import { mergeAnalysisTraces, FileTraceInput } from './analysisTrace';
 import { buildDivisionCoverage } from './divisions';
 import { groupByWbs } from './wbsClassifier';
@@ -480,15 +481,15 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         const existing = projects.find((p) => p.id === projectId);
         if (existing) projectName = existing.name;
       }
+      // Provenance lewat helper pemetaan (finalizeMapping), BUKAN string
+      // `notes` — factory tidak menyimpan `notes`, dan tanpa pemetaan ini
+      // baris fallback "Estimasi AI" kehilangan labelnya di spreadsheet.
+      // Item yang helpernya mengembalikan null (tanpa harga) tidak jadi baris.
       const added = bulkAddRabItems(
-        savable.map((it) => ({
-          description: it.name,
-          volume: it.quantity as number,
-          unit: it.units,
-          unitPrice: it.unitPrice as number,
-          category: it.category,
-          notes: `DED-AI · ${it.quantitySource}${it.quantityFormula ? ` · ${it.quantityFormula}` : ''} · Harga: ${it.priceSource}${it.ahspCode ? ` · AHSP: ${it.ahspCode}` : ''} · Mode: ${result?.policy ?? 'FULL_AI'}`,
-        })),
+        savable.flatMap((it) => {
+          const mapped = mapDedAiItemToRabInput(it, result?.policy ?? 'FULL_AI');
+          return mapped ? [mapped] : [];
+        }),
         projectId
       );
       setCurrentProjectId(projectId);
@@ -537,15 +538,13 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
         const existing = projects.find((p) => p.id === projectId);
         if (existing) projectName = existing.name;
       }
+      // Provenance lewat helper pemetaan (finalizeMapping) — alasan sama
+      // seperti jalur standar di atas: `notes` tidak disimpan factory.
       const added = bulkAddRabItems(
-        savable.map((it) => ({
-          description: it.name,
-          volume: it.quantity.value as number,
-          unit: it.quantity.unit,
-          unitPrice: it.price.unitPrice as number,
-          category: it.category,
-          notes: `FullAI · ${it.quantity.provenance}${it.quantity.formula ? ` · ${it.quantity.formula}` : ''} · Harga: ${it.price.source}${it.price.ahspCode ? ` · AHSP: ${it.price.ahspCode}` : ''} · Mode: ${fullAiOutput?.policy ?? 'FULL_AI'}`,
-        })),
+        savable.flatMap((it) => {
+          const mapped = mapFullAiItemToRabInput(it, fullAiOutput?.policy ?? 'FULL_AI');
+          return mapped ? [mapped] : [];
+        }),
         projectId
       );
       setCurrentProjectId(projectId);
