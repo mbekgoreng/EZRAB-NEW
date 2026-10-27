@@ -30,6 +30,16 @@
       "source": "/sitemap.xml"
     },
     {
+      "destination": "/blog/index.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "blog.ezrab.site"
+        }
+      ],
+      "source": "/"
+    },
+    {
       "destination": "/blog/$1",
       "has": [
         {
