@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Info,
   FileSpreadsheet,
   FileCheck,
   Calculator,
@@ -9,12 +10,13 @@ import {
 } from 'lucide-react';
 
 export type EstimatorTabType =
+  | 'informasi-proyek'
   | 'spreadsheet'
   | 'rekapitulasi'
   | 'analisa-harga'
   | 'kurva-s'
-  | 'catatan'
-  | 'pengaturan';
+  | 'pengaturan'
+  | 'catatan';
 
 interface EstimatorNavigationProps {
   activeTab: EstimatorTabType;
@@ -25,13 +27,18 @@ export const EstimatorNavigation: React.FC<EstimatorNavigationProps> = ({
   activeTab,
   onTabChange,
 }) => {
+  /* Urutan baru (owner 2026-10-27): Informasi Proyek pertama, lalu
+   * Spreadsheet, Rekapitulasi, Analisa Harga, Kurva S, Pengaturan.
+   * Catatan TIDAK dihapus (isinya data user) — dipindah ke posisi
+   * TERAKHIR karena tidak disebut dalam urutan baru user. */
   const tabs = [
+    { id: 'informasi-proyek' as EstimatorTabType, label: 'Informasi Proyek', icon: Info },
     { id: 'spreadsheet' as EstimatorTabType, label: 'Spreadsheet', icon: FileSpreadsheet },
     { id: 'rekapitulasi' as EstimatorTabType, label: 'Rekapitulasi', icon: FileCheck },
     { id: 'analisa-harga' as EstimatorTabType, label: 'Analisa Harga', icon: Calculator },
     { id: 'kurva-s' as EstimatorTabType, label: 'Kurva S', icon: LineChart },
-    { id: 'catatan' as EstimatorTabType, label: 'Catatan', icon: FileText },
     { id: 'pengaturan' as EstimatorTabType, label: 'Pengaturan', icon: Settings },
+    { id: 'catatan' as EstimatorTabType, label: 'Catatan', icon: FileText },
   ];
 
   return (

@@ -255,13 +255,19 @@ export const DedAiResultView: React.FC<Props> = ({
         </div>
       )}
 
-      {/* ---- Ringkasan ---- */}
+      {/* ---- Ringkasan: total hero + kartu hitung ---- */}
+      <div className="dedai-hero-total">
+        <div className="lbl">{t('ai.ded.result.stat_valid_total')}</div>
+        <div className="val">{fmtRp(grandTotal)}</div>
+        <div className="hint">{calculableCount} {t('ai.ded.result.stat_valid_total_hint_a')} {items.length} {t('ai.ded.result.stat_valid_total_hint_b')}</div>
+        {volumeByUnit.length > 0 && (
+          <div className="vol">
+            <Info size={13} style={{ verticalAlign: -2 }} /> {t('ai.ded.result.vol_per_unit')}{' '}
+            {volumeByUnit.map(([u, v]) => <b key={u}>{fmtQty(v)} {u}</b>).reduce((a, b) => <>{a} · {b}</>)}
+          </div>
+        )}
+      </div>
       <div className="dedai-stats">
-        <div className="dedai-stat">
-          <div className="lbl">{t('ai.ded.result.stat_valid_total')}</div>
-          <div className="val blue">{fmtRp(grandTotal)}</div>
-          <div className="hint">{calculableCount} {t('ai.ded.result.stat_valid_total_hint_a')} {items.length} {t('ai.ded.result.stat_valid_total_hint_b')}</div>
-        </div>
         <div className="dedai-stat">
           <div className="lbl">{t('ai.ded.result.stat_valid')}</div>
           <div className="val green">{counts.valid}</div>
@@ -288,13 +294,6 @@ export const DedAiResultView: React.FC<Props> = ({
           <div className="hint">{output.pageCount} {t('ai.ded.result.stat_total_hint_a')}</div>
         </div>
       </div>
-      {volumeByUnit.length > 0 && (
-        <p style={{ fontSize: 12.5, color: 'var(--ez-color-text-muted)', margin: '-6px 0 16px' }}>
-          <Info size={13} style={{ verticalAlign: -2 }} /> {t('ai.ded.result.vol_per_unit')}{' '}
-          {volumeByUnit.map(([u, v]) => <b key={u} style={{ color: 'var(--ez-color-text-primary)' }}>{fmtQty(v)} {u}</b>).reduce((a, b) => <>{a} · {b}</>)}
-        </p>
-      )}
-
       {/* ---- FASE P0: Cakupan 12 Divisi & Jejak Analisis ---- */}
       {output.divisionCoverage && output.divisionCoverage.length > 0 && (
         <div className="aic-card" style={{ margin: '0 0 16px' }}>
@@ -586,19 +585,21 @@ export const DedAiResultView: React.FC<Props> = ({
         </div>
       )}
 
-      {/* ---- Aksi ---- */}
+      {/* ---- Aksi: utama dulu, sekunder sesudahnya ---- */}
+      <div className="dedai-actions-primary">
+        <button className="dedai-btn primary" disabled={finalizing || finalized || calculableCount === 0} onClick={handleFinalize}>
+          <FolderCheck size={16} /> {finalized ? t('ai.ded.result.act_finalized') : finalizing ? t('ai.ded.result.act_finalizing') : t('ai.ded.result.act_finalize')}
+        </button>
+        <button className="dedai-btn ghost" onClick={onOpenSpreadsheet}>
+          <Table2 size={16} /> {t('ai.ded.result.act_open_rab')}
+        </button>
+      </div>
       <div className="dedai-actions">
         <button className="dedai-btn ghost" onClick={() => onSaveDraft(items)}>
           <Save size={16} /> {draftSaved ? t('ai.ded.result.act_saved_draft') : t('ai.ded.result.act_save_draft')}
         </button>
         <button className="dedai-btn ghost" onClick={onBackToInput}>
           <ArrowLeft size={16} /> {t('ai.ded.result.act_back_input')}
-        </button>
-        <button className="dedai-btn primary" disabled={finalizing || finalized || calculableCount === 0} onClick={handleFinalize}>
-          <FolderCheck size={16} /> {finalized ? t('ai.ded.result.act_finalized') : finalizing ? t('ai.ded.result.act_finalizing') : t('ai.ded.result.act_finalize')}
-        </button>
-        <button className="dedai-btn ghost" onClick={onOpenSpreadsheet}>
-          <Table2 size={16} /> {t('ai.ded.result.act_open_rab')}
         </button>
         <button className="dedai-btn ghost" onClick={exportExcel}>
           <FileSpreadsheet size={16} /> {t('ai.ded.result.act_export_excel')}
@@ -607,6 +608,7 @@ export const DedAiResultView: React.FC<Props> = ({
           <FileJson size={16} /> {t('ai.ded.result.act_export_json')}
         </button>
       </div>
+
       {!finalized && (
         <p style={{ fontSize: 12, color: 'var(--ez-color-text-muted)', marginTop: 10, lineHeight: 1.6 }}>
           {t('ai.ded.result.footnote_a')} {calculableCount} {t('ai.ded.result.footnote_b')} ({counts.blocked}) {t('ai.ded.result.footnote_c')} ({counts['no-price']}) {t('ai.ded.result.footnote_d')}

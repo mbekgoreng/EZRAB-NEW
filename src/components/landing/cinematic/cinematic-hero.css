@@ -174,14 +174,15 @@
   perspective: 1600px;
 }
 
-/* ---- Cahaya gradasi di belakang stage (dekorasi murni) ------------------ */
-/* Lapisan utama: conic berputar (biru elektrik -> sky -> cyan -> ungu ->
-   pink -> kembali biru) yang di-blur tebal sehingga tampak seperti cahaya
-   yang keluar dari belakang frame. Warna juga bergeser pelan lewat
-   hue-rotate, dan napas (scale/opacity) membuatnya terasa hidup. Dua blob
-   tambahan melayang berlawanan arah agar cahayanya tidak monoton.
-   Hanya transform/opacity/filter yang dianimasikan (ramah GPU); tidak
-   ada perubahan layout. */
+/* ---- Sinar aurora di belakang stage (dekorasi murni) ------------------ */
+/* BUKAN blob rounded: sinar matahari yang kaku — repeating-conic dengan
+   jeda transparan sehingga tiap berkas tampak sebagai garis cahaya tegas.
+   Titik pancar di kanan (belakang frame), berkas mengarah ke kiri; sisi
+   kanan hanya dapat sedikit cahaya lewat mask yang memudar ke kanan.
+   Urutan warna aurora: biru -> hijau -> emas -> merah, berulang.
+   Ayunan sudut pelan (bukan putaran penuh) agar cahaya tetap mengarah
+   ke kiri. Hanya transform/opacity/filter yang dianimasikan (ramah GPU);
+   tidak ada perubahan layout. */
 @property --glow-angle {
   syntax: '<angle>';
   initial-value: 0deg;
@@ -190,60 +191,55 @@
 
 .ch-stage-glow {
   position: absolute;
-  inset: -14% -10% -18% -10%;
+  inset: -10% -6% -10% -70%;
   z-index: 0;
   pointer-events: none;
-  border-radius: 40%;
-  background: conic-gradient(
-    from var(--glow-angle),
-    #2563eb, #38bdf8, #22d3ee, #8b5cf6, #e879f9, #2563eb
+  transform-origin: 88% 50%;
+  background: repeating-conic-gradient(
+    from var(--glow-angle) at 88% 50%,
+    #2563eb 0deg 5deg,
+    transparent 5deg 13deg,
+    #22c55e 13deg 18deg,
+    transparent 18deg 26deg,
+    #f59e0b 26deg 31deg,
+    transparent 31deg 39deg,
+    #ef4444 39deg 44deg,
+    transparent 44deg 56deg
   );
-  filter: blur(48px) hue-rotate(0deg);
-  opacity: 0.8;
+  -webkit-mask-image: linear-gradient(to right, #000 30%, transparent 96%);
+  mask-image: linear-gradient(to right, #000 30%, transparent 96%);
+  filter: blur(8px);
+  opacity: 0.85;
   animation:
-    ch-glow-angle 16s linear infinite,
-    ch-glow-breathe 7s ease-in-out infinite,
-    ch-glow-hue 28s linear infinite;
+    ch-glow-sway 12s ease-in-out infinite alternate,
+    ch-glow-breathe 7s ease-in-out infinite;
 }
 
-.ch-stage-glow::before,
-.ch-stage-glow::after {
+/* Selubung pudar ke putih: dari pusat di belakang frame, warna aurora
+   masih pekat; semakin ke luar (ujung berkas), semakin pudar menjadi
+   putih. Lapisan ini ikut termask oleh mask induk, jadi sisi kanan
+   tetap hanya dapat sedikit cahaya. */
+.ch-stage-glow::before {
   content: '';
   position: absolute;
-  border-radius: 50%;
+  inset: 0;
   pointer-events: none;
+  background: radial-gradient(
+    ellipse at 88% 50%,
+    transparent 35%,
+    rgba(255, 255, 255, 0.25) 65%,
+    rgba(255, 255, 255, 0.85) 100%
+  );
 }
 
-.ch-stage-glow::before {
-  inset: 8% 52% 48% -4%;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.9), transparent 70%);
-  filter: blur(30px);
-  animation: ch-glow-drift 11s ease-in-out infinite alternate;
-}
-
-.ch-stage-glow::after {
-  inset: 42% -4% 4% 52%;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.85), transparent 70%);
-  filter: blur(30px);
-  animation: ch-glow-drift 13s ease-in-out infinite alternate-reverse;
-}
-
-@keyframes ch-glow-angle {
-  to { --glow-angle: 360deg; }
+@keyframes ch-glow-sway {
+  from { --glow-angle: -6deg; }
+  to   { --glow-angle: 10deg; }
 }
 
 @keyframes ch-glow-breathe {
   0%, 100% { transform: scale(1); opacity: 0.7; }
-  50%      { transform: scale(1.12); opacity: 0.95; }
-}
-
-@keyframes ch-glow-hue {
-  to { filter: blur(48px) hue-rotate(360deg); }
-}
-
-@keyframes ch-glow-drift {
-  from { transform: translate(0, 0) scale(1); }
-  to   { transform: translate(4%, -6%) scale(1.18); }
+  50%      { transform: scale(1.04); opacity: 0.95; }
 }
 
 .ch-stage-frame {
@@ -1054,7 +1050,7 @@
   .ch-hero-stage { order: 2; }
   /* Cahaya tetap ada di mobile, tapi lebih kecil & redup agar tidak
      memberatkan dan tidak mengganggu keterbacaan. */
-  .ch-stage-glow { inset: -8% -6% -10% -6%; filter: blur(32px); opacity: 0.6; }
+  .ch-stage-glow { inset: -8% -4% -10% -45%; filter: blur(6px); opacity: 0.6; }
   .ch-stage-frame { transform: none; animation: none; }
   .ch-stage-frame::after { display: none; }
   .ch-stage-orbit { display: none; }
@@ -1081,10 +1077,7 @@
   .ch-hero-bg-img { animation: none; }
   /* Cahaya diam sebagai halo biru lembut — tidak berputar, tidak berubah
      warna, tidak bernapas. */
-  .ch-stage-glow,
-  .ch-stage-glow::before,
-  .ch-stage-glow::after { animation: none; }
-  .ch-stage-glow { opacity: 0.55; }
+  .ch-stage-glow { animation: none; opacity: 0.55; }
   .ch-stage-frame { animation: none; }
   .ch-float-badge { animation: none; }
   .ch-ai-spinner { animation: none; }

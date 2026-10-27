@@ -200,18 +200,19 @@ const manyPages = [
   mkPage(4, 'DENAH', 1000), mkPage(5, 'STRUKTUR', 1000), mkPage(6, 'DENAH', 1000),
   mkPage(7, 'SPESIFIKASI', 1000), mkPage(8, 'DENAH', 1000),
 ];
-const sel = selectPagesWithTrace(manyPages as never, 4500, 3000);
+/* TANPA BATAS BUANG (owner 2026-10-27): tidak ada budget total, tidak
+ * ada potong per-halaman — semua halaman berteks terkirim utuh. */
+const sel = selectPagesWithTrace(manyPages as never);
 check('6.1 semua halaman tercatat di jejak', sel.trace.length === 8);
-check('6.2 halaman prioritas rendah terlewat tercatat SKIPPED_BUDGET + alasan',
-  sel.trace.filter((t) => t.status === 'SKIPPED_BUDGET').every((t) => !!t.reason && t.sentChars === 0));
-check('6.3 selected + skipped = total', sel.selected.length + sel.skippedCount === 8);
-check('6.4 prioritas jenis mengalahkan nomor halaman (DENAH hal.8 terpilih, HALAMAN hal.1 terlewat)',
-  sel.trace.find((t) => t.page === 8)?.status === 'SENT' && sel.trace.find((t) => t.page === 1)?.status === 'SKIPPED_BUDGET');
-const selAll = selectPagesWithTrace(manyPages as never, 45000, 3000);
-check('6.5 budget besar: semua SENT, 0 terlewat', selAll.skippedCount === 0 && selAll.selected.length === 8);
-const selCap = selectPagesWithTrace([mkPage(1, 'DENAH', 5000)] as never, 45000, 3000);
-check('6.6 teks dipotong per-halaman tercatat jujur (sent 3000 dari 5000)',
-  selCap.trace[0].sentChars === 3000 && selCap.trace[0].totalChars === 5000);
+check('6.2 tanpa batas buang: 0 terlewat, tidak ada SKIPPED_BUDGET',
+  sel.skippedCount === 0 && sel.trace.every((t) => t.status !== 'SKIPPED_BUDGET'));
+check('6.3 selected = total (tidak ada yang dibuang)', sel.selected.length === 8);
+check('6.4 prioritas jenis tetap mengurutkan (DENAH sebelum HALAMAN)',
+  sel.selected.findIndex((x) => x.page === 8) < sel.selected.findIndex((x) => x.page === 1));
+const selCap = selectPagesWithTrace([mkPage(1, 'DENAH', 5000)] as never);
+check('6.5 teks panjang terkirim utuh tanpa potong (sent 5000 dari 5000)',
+  selCap.trace[0].sentChars === 5000 && selCap.trace[0].totalChars === 5000);
+check('6.6 semua halaman berstatus SENT', sel.trace.every((t) => t.status === 'SENT'));
 
 console.log(`\n=== HASIL: ${pass} PASS, ${fail} FAIL ===`);
 if (fail > 0) process.exit(1);

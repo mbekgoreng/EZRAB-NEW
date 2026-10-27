@@ -153,7 +153,7 @@ describe('F4 3.6 — halaman tanpa lapisan teks (butuh OCR)', () => {
   });
 
   it('halaman kosong tercatat NO_TEXT, tidak masuk seleksi, terhitung terpisah', () => {
-    const sel = selectPagesWithTrace([page(1, ''), page(2, 'denah lantai 1'), page(3, '   ')], 45000, 3000);
+    const sel = selectPagesWithTrace([page(1, ''), page(2, 'denah lantai 1'), page(3, '   ')]);
     expect(sel.noTextCount).toBe(2);
     expect(sel.selected.map((s) => s.page)).toEqual([2]);
     const t1 = sel.trace.find((t) => t.page === 1);

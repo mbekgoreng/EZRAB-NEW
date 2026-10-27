@@ -6,7 +6,7 @@
 .dedai-head h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin: 0 0 8px; }
 .dedai-head h1 .accent { color: var(--ez-color-primary); }
 .dedai-head p { color: var(--ez-color-text-muted); font-size: 14px; margin: 0 auto; max-width: 640px; line-height: 1.6; }
-.dedai-steps { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 28px; }
+.dedai-steps { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-card); padding: 14px 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
 .dedai-step { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-muted); }
 .dedai-step .n { width: 26px; height: 26px; border-radius: 50%; background: var(--ez-color-border); color: var(--ez-color-text-muted); display: flex; align-items: center; justify-content: center; font-size: 12px; }
 .dedai-step.active { color: var(--ez-color-primary-hover); }
@@ -43,6 +43,9 @@
 
 /* Form */
 .dedai-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+/* Input: kartu Proyek & Kredit berdampingan (desktop), bertumpuk di HP */
+.dedai-input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; margin-bottom: 18px; }
+.dedai-input-grid > .dedai-card { margin-bottom: 0; }
 .dedai-field { margin-bottom: 16px; }
 .dedai-field label { display: block; font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-primary); margin-bottom: 7px; }
 .dedai-field input[type=text], .dedai-field textarea, .dedai-field select { width: 100%; border: 1.5px solid var(--ez-color-border); border-radius: var(--ez-radius-control); padding: 11px 14px; font-size: 14px; font-family: inherit; color: var(--ez-color-text-primary); background: var(--ez-color-surface); outline: none; transition: border-color .15s; box-sizing: border-box; }
@@ -91,7 +94,8 @@
 .dedai-stage .s-badge.active { background: var(--ez-color-primary-soft); color: var(--ez-color-primary-hover); }
 .dedai-stage .s-badge.done { background: var(--ez-color-success-soft); color: var(--ez-color-success); }
 .dedai-stage .s-badge.failed { background: var(--ez-color-danger-soft); color: var(--ez-color-danger); }
-.dedai-bar { height: 10px; background: var(--ez-color-surface-secondary); border-radius: var(--ez-radius-pill); overflow: hidden; margin: 8px 0 4px; }
+.dedai-bar { height: 12px; background: var(--ez-color-surface-secondary); border-radius: var(--ez-radius-pill); overflow: hidden; margin: 8px 0 4px; }
+.dedai-progress-head { flex-wrap: wrap; }
 .dedai-bar > div { height: 100%; background: var(--ez-color-primary); border-radius: var(--ez-radius-pill); transition: width .5s ease; }
 .dedai-summary { background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-card); padding: 20px; position: sticky; top: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
 .dedai-summary h3 { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ez-color-text-muted); margin: 0 0 14px; }
@@ -105,7 +109,13 @@
 .dedai-error code { font-size: 11px; background: var(--ez-color-danger-soft); padding: 2px 8px; border-radius: var(--ez-radius-chip); color: var(--ez-color-danger); }
 
 /* Result */
-.dedai-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+.dedai-hero-total { background: var(--ez-color-primary-soft); border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-card); padding: 22px 24px; margin-bottom: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
+.dedai-hero-total .lbl { font-size: 11.5px; font-weight: 700; color: var(--ez-color-text-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+.dedai-hero-total .val { font-size: 34px; font-weight: 800; letter-spacing: -0.5px; color: var(--ez-color-primary-hover); font-variant-numeric: tabular-nums; line-height: 1.1; word-break: break-word; }
+.dedai-hero-total .hint { font-size: 12.5px; color: var(--ez-color-text-muted); margin-top: 6px; }
+.dedai-hero-total .vol { font-size: 12.5px; color: var(--ez-color-text-muted); margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--ez-color-border); }
+.dedai-hero-total .vol b { color: var(--ez-color-text-primary); }
+.dedai-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 18px; }
 .dedai-stat { background: var(--ez-color-surface); border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-card); padding: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
 .dedai-stat .lbl { font-size: 11.5px; font-weight: 700; color: var(--ez-color-text-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
 .dedai-stat .val { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
@@ -114,9 +124,9 @@
 .dedai-stat .val.slate { color: var(--ez-color-text-secondary); }
 .dedai-stat .hint { font-size: 11px; color: var(--ez-color-text-muted); margin-top: 4px; }
 .dedai-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-.dedai-table-wrap { overflow-x: auto; border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-card); background: var(--ez-color-surface); box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
+.dedai-table-wrap { overflow: auto; max-height: 560px; border: 1px solid var(--ez-color-border-soft); border-radius: var(--ez-radius-card); background: var(--ez-color-surface); box-shadow: 0 4px 20px rgba(0,0,0,0.045); }
 .dedai-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 860px; }
-.dedai-table th { background: var(--ez-color-surface-secondary); text-align: left; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--ez-color-text-muted); padding: 11px 12px; border-bottom: 1px solid var(--ez-color-border-soft); white-space: nowrap; }
+.dedai-table th { position: sticky; top: 0; z-index: 1; background: var(--ez-color-surface-secondary); text-align: left; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--ez-color-text-muted); padding: 11px 12px; border-bottom: 1px solid var(--ez-color-border-soft); white-space: nowrap; }
 .dedai-table td { padding: 11px 12px; border-bottom: 1px solid var(--ez-color-surface-secondary); vertical-align: top; }
 .dedai-table tr:last-child td { border-bottom: none; }
 .dedai-table tr.detail-row td { background: var(--ez-color-surface-secondary); }
@@ -136,7 +146,9 @@
 .dedai-detail .dl-row:last-child { border-bottom: none; }
 .dedai-detail .dl-k { font-weight: 700; color: var(--ez-color-text-muted); min-width: 130px; flex-shrink: 0; }
 .dedai-detail code { background: var(--ez-color-surface-secondary); padding: 1px 6px; border-radius: var(--ez-radius-chip); font-size: 11.5px; }
-.dedai-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 18px; }
+.dedai-actions-primary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+.dedai-actions-primary .dedai-btn { padding: 13px 12px; font-size: 13.5px; }
+.dedai-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
 .dedai-actions .dedai-btn { padding: 13px 12px; font-size: 13.5px; }
 .dedai-empty { text-align: center; padding: 40px 20px; color: var(--ez-color-text-muted); font-size: 13.5px; }
 .dedai-drafts { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
@@ -152,9 +164,13 @@
   .dedai-stats { grid-template-columns: repeat(2, 1fr); }
   .dedai-actions { grid-template-columns: 1fr 1fr; }
   .dedai-grid2 { grid-template-columns: 1fr; }
+  .dedai-input-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {
   .dedai { padding: 20px 14px 56px; }
+  .dedai-head h1 { font-size: 22px; }
+  .dedai-hero-total .val { font-size: 28px; }
   .dedai-actions { grid-template-columns: 1fr; }
+  .dedai-actions-primary { grid-template-columns: 1fr; }
   .dedai-cta { flex-direction: column; }
 }

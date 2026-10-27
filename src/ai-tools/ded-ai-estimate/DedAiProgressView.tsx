@@ -90,14 +90,14 @@ export const DedAiProgressView: React.FC<Props> = ({
 
       <div className="dedai-progress-wrap">
         <div className="dedai-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            {!error && !resultReady && <Loader2 size={18} className="spin" color="var(--ez-color-primary)" />}
-            {resultReady && <CheckCircle2 size={18} color="var(--ez-color-success)" />}
-            {error && <XCircle size={18} color="var(--ez-color-danger)" />}
-            <span style={{ fontWeight: 800, fontSize: 15 }}>
+          <div className="dedai-progress-head" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            {!error && !resultReady && <Loader2 size={20} className="spin" color="var(--ez-color-primary)" />}
+            {resultReady && <CheckCircle2 size={20} color="var(--ez-color-success)" />}
+            {error && <XCircle size={20} color="var(--ez-color-danger)" />}
+            <span style={{ fontWeight: 800, fontSize: 16 }}>
               {error ? t('ai.ded.status_failed') : resultReady ? t('ai.ded.status_done') : statusLine}
             </span>
-            <span style={{ marginLeft: 'auto', fontWeight: 800, color: 'var(--ez-color-primary-hover)', fontSize: 15 }}>{Math.round(percent)}%</span>
+            <span className="dedai-progress-pct" style={{ marginLeft: 'auto', fontWeight: 800, color: 'var(--ez-color-primary-hover)', fontSize: 28, fontVariantNumeric: 'tabular-nums' }}>{Math.round(percent)}%</span>
           </div>
           <div className="dedai-bar"><div style={{ width: `${Math.min(100, Math.max(0, percent))}%` }} /></div>
           {summary.currentFile && !error && !resultReady && (

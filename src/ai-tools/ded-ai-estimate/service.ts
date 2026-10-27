@@ -337,25 +337,23 @@ export class DedAiEstimateService {
       totalPages: parsed.pages.length,
     });
 
-    // === Seleksi halaman berbasis jenis halaman (patch kelengkapan 2026-10-21) ===
-    // Cara lama memotong teks global 15.000 karakter dari halaman pertama,
-    // sehingga hanya ±8 dari 32 halaman yang pernah sampai ke model.
-    // Sekarang: halaman dipilih menurut prioritas jenisnya (denah & struktur
-    // lebih dulu; MEP/kusen/atap tidak lagi terbuang), budget jauh lebih
-    // besar, lalu dianalisis per kelompok (multi-pass) dan digabung.
-    // FASE P0: seleksi kini menghasilkan JEJAK per halaman — halaman yang
-    // terlewat budget tercatat SKIPPED_BUDGET + alasan, tidak hilang diam-diam.
-    const TOTAL_TEXT_BUDGET = mode === 'FAST' ? 45000 : 90000;
-    const PER_PAGE_TEXT = mode === 'FAST' ? 3000 : 4500;
-    const selection = selectPagesWithTrace(parsed.pages, TOTAL_TEXT_BUDGET, PER_PAGE_TEXT);
+    // === Seleksi halaman TANPA batas buang (owner 2026-10-27) ===
+    // Dulu: budget teks (FAST 45.000 / DETAIL 90.000 karakter) + potong
+    // per halaman membuang halaman dan memotong item — daftar pekerjaan
+    // hasil DED AI jadi sedikit dibanding model lain yang membaca seluruh
+    // dokumen. Sekarang: SEMUA halaman berteks dikirim utuh (tidak ada
+    // SKIPPED_BUDGET, tidak ada potong per halaman). Halaman dipilih
+    // menurut prioritas jenisnya hanya untuk urutan pass. FASE P0: jejak
+    // per halaman tetap dicatat lengkap.
+    const selection = selectPagesWithTrace(parsed.pages);
     const pageSummaries = selection.selected;
     const pageTrace = selection.trace;
     const buildingType = options.projectType;
 
     // === Analisis multi-pass per kelompok pekerjaan (FASE P0) ===
     // Satu panggilan dengan plafon token kecil memotong daftar pekerjaan;
-    // per kelompok, setiap panggilan punya budget sendiri (FAST 8.000 /
-    // DETAIL 12.000 token) dan hasilnya digabung dengan dedup.
+    // per kelompok, setiap panggilan punya plafon sendiri (FAST 16.000 /
+    // DETAIL 24.000 token) dan hasilnya digabung dengan dedup.
     // Kelompok mengikuti kelompok pekerjaan; satu halaman masuk satu pass,
     // tetapi item hasilnya dapat memetakan ke beberapa divisi (klasifikasi
     // WBS per item) dan duplikasi antar-pass dibuang oleh dedup di bawah.
@@ -376,6 +374,28 @@ export class DedAiEstimateService {
     if (pageSummaries.length <= 10 || groups.length <= 1) {
       groups = [{ label: 'Semua Halaman', pages: pageSummaries }];
     }
+    // Pecah kelompok besar menjadi pass-pass berurutan — INI BUKAN batas
+    // buang: semua halaman tetap diproses, hanya dibagi panggilannya agar
+    // satu panggilan model tidak timeout dan tidak terpotong token.
+    // Ambang 60.000 karakter per pass (~15 ribu token teks) jauh di bawah
+    // konteks model, jadi pemecahan ini murni pengaman latensi.
+    const PASS_TEXT_CHUNK = 60000;
+    const chunkedGroups: typeof groups = [];
+    for (const g of groups) {
+      let chunk: typeof g.pages = [];
+      let chars = 0;
+      for (const pg of g.pages) {
+        if (chunk.length > 0 && chars + pg.text.length > PASS_TEXT_CHUNK) {
+          chunkedGroups.push({ label: g.label, pages: chunk });
+          chunk = [];
+          chars = 0;
+        }
+        chunk.push(pg);
+        chars += pg.text.length;
+      }
+      if (chunk.length > 0) chunkedGroups.push({ label: g.label, pages: chunk });
+    }
+    groups = chunkedGroups;
     // Tautkan halaman terpilih ke pass-nya di jejak.
     const traceByPage = new Map(pageTrace.map(t => [t.page, t]));
     groups.forEach((g, gi) => {
@@ -385,7 +405,7 @@ export class DedAiEstimateService {
       }
     });
 
-    const maxTokens = mode === 'FAST' ? 8000 : 12000;
+    const maxTokens = mode === 'FAST' ? 16000 : 24000;
     const productId = mode === 'FAST' ? 'DED_AI_FAST' : 'DED_AI_DETAIL';
     const rawItems: any[] = [];
     const passTraces: DedPassTraceEntry[] = [];
@@ -496,7 +516,7 @@ export class DedAiEstimateService {
     const traceWarnings: string[] = [];
     if (selection.skippedCount > 0) {
       traceWarnings.push(
-        `${selection.skippedCount} halaman tidak dikirim ke model karena budget teks ${mode} (${TOTAL_TEXT_BUDGET} karakter) — lihat analysisTrace.pages berstatus SKIPPED_BUDGET.`
+        `${selection.skippedCount} halaman tidak dikirim ke model — lihat analysisTrace.pages berstatus SKIPPED_BUDGET.`
       );
     }
     // F4 (3.6): halaman tanpa lapisan teks diperingatkan eksplisit dengan
@@ -526,7 +546,8 @@ export class DedAiEstimateService {
       totalPages: parsed.pages.length,
       selectedPageCount: pageSummaries.length,
       skippedPageCount: selection.skippedCount,
-      totalCharsBudget: TOTAL_TEXT_BUDGET,
+      // Tanpa budget terpisah lagi: yang tercatat adalah yang terkirim.
+      totalCharsBudget: selection.totalCharsSent,
       totalCharsSent: selection.totalCharsSent,
       pages: pageTrace,
       passes: passTraces,

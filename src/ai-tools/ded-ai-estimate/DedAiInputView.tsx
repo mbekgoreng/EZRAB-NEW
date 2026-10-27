@@ -211,6 +211,8 @@ export const DedAiInputView: React.FC<Props> = ({
         </div>
       </div>
 
+      {/* ---- Proyek & tipe + Kredit berdampingan (desktop) ---- */}
+      <div className="dedai-input-grid">
       {/* ---- Proyek & tipe ---- */}
       <div className="dedai-card">
         <h2><span className="ico"><FolderOpen size={18} /></span> {t('ai.ded.input.card_proj_title')}</h2>
@@ -285,7 +287,7 @@ export const DedAiInputView: React.FC<Props> = ({
       </div>
 
       {/* ---- Estimasi Kredit AI (simulasi) ---- */}
-      <div className="dedai-card" style={{ marginTop: 18 }}>
+      <div className="dedai-card">
         <h2><span className="ico"><Zap size={18} /></span> Estimasi Kredit AI</h2>
         <p className="sub">
           Pilih kategori yang paling mendekati dokumen Anda. Kategori ini pilihan Anda —
@@ -344,6 +346,8 @@ export const DedAiInputView: React.FC<Props> = ({
             simulasi frontend, bukan penagihan nyata.
           </span>
         </label>
+      </div>
+
       </div>
 
       <div className="dedai-cta">

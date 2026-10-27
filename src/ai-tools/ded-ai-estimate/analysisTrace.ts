@@ -1,15 +1,22 @@
 /**
  * DED AI ESTIMATE — Seleksi Halaman & Jejak Analisis (FASE P0)
  *
- * Menggantikan potongan seleksi inline di service: halaman dipilih menurut
- * prioritas jenisnya dalam budget karakter, dan SETIAP halaman tercatat —
- * yang terlewat budget membawa status SKIPPED_BUDGET + alasan, bukan hilang
- * diam-diam. Fungsi murni agar dapat diuji tanpa provider AI.
+ * TANPA BATAS BUANG (owner 2026-10-27): semua halaman berteks dikirim
+ * UTUH ke model — tidak ada budget karakter total, tidak ada potong
+ * per halaman, tidak ada SKIPPED_BUDGET. Alasannya: budget lama (FAST
+ * 45.000 / DETAIL 90.000 karakter + potong 3.000/4.500 per halaman)
+ * membuang halaman dan memotong item, sehingga daftar pekerjaan hasil
+ * DED AI jauh lebih sedikit dibanding model lain yang membaca seluruh
+ * dokumen. Satu-satunya yang tetap tidak terkirim: halaman tanpa lapisan
+ * teks (hasil scan/gambar) — itu bukan batas, melainkan ketiadaan OCR.
+ * Agar satu panggilan model tidak timeout, service memecah kelompok
+ * besar menjadi beberapa pass berurutan (tidak ada yang dibuang).
+ * Fungsi murni agar dapat diuji tanpa provider AI.
  */
 import { DedParsedPage } from './parser';
 import { DedAnalysisTrace, DedPageTraceEntry, DedPassTraceEntry } from './types';
 
-/** Prioritas jenis halaman untuk seleksi dalam budget (lebih kecil = lebih dulu). */
+/** Prioritas jenis halaman untuk urutan pass (lebih kecil = lebih dulu). */
 export const PAGE_TYPE_PRIORITY: Record<string, number> = {
   DENAH: 0, STRUKTUR: 1, POTONGAN: 2,
   JADWAL_KUSEN: 3, DETAIL_KUSEN: 3,
@@ -62,14 +69,13 @@ export function formatPageRanges(pages: number[]): string {
 }
 
 /**
- * Pilih halaman dalam budget. Perilaku seleksi mempertahankan logika lama:
- * urut prioritas jenis lalu nomor halaman; berhenti menambah bila budget
- * terlampaui DAN minimal 4 halaman sudah terpilih.
+ * Pilih halaman TANPA batas buang: urut prioritas jenis lalu nomor
+ * halaman; semua halaman berteks terkirim utuh (sentChars = totalChars).
+ * Status SKIPPED_BUDGET dipertahankan di tipe hanya untuk kompatibilitas
+ * jejak lama — seleksi ini tidak pernah menghasilkannya lagi.
  */
 export function selectPagesWithTrace(
-  pages: DedParsedPage[],
-  totalBudget: number,
-  perPageCap: number
+  pages: DedParsedPage[]
 ): PageSelectionResult {
   const byPriority = [...pages].sort(
     (a, b) =>
@@ -80,7 +86,6 @@ export function selectPagesWithTrace(
   const selected: SelectedPage[] = [];
   const traceByPage = new Map<number, DedPageTraceEntry>();
   let usedChars = 0;
-  let budgetExhausted = false;
   let noTextCount = 0;
 
   for (const p of byPriority) {
@@ -101,22 +106,8 @@ export function selectPagesWithTrace(
       });
       continue;
     }
-    const text = (p.text || '').slice(0, perPageCap);
-    if (!budgetExhausted && usedChars + text.length > totalBudget && selected.length >= 4) {
-      budgetExhausted = true;
-    }
-    if (budgetExhausted) {
-      traceByPage.set(p.page, {
-        page: p.page,
-        title: p.title,
-        pageType: p.pageType,
-        totalChars: (p.text || '').length,
-        sentChars: 0,
-        status: 'SKIPPED_BUDGET',
-        reason: `Melebihi budget teks analisis (${totalBudget} karakter); halaman prioritas lebih tinggi didahulukan.`,
-      });
-      continue;
-    }
+    // TANPA potong per-halaman: teks dikirim utuh apa adanya.
+    const text = p.text || '';
     usedChars += text.length;
     selected.push({ page: p.page, title: p.title, text, pageType: p.pageType });
     traceByPage.set(p.page, {

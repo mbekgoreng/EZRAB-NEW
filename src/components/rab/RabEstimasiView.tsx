@@ -56,6 +56,7 @@ import { EstimateVersionAndScenarioModal } from '../versioning/EstimateVersionAn
 import { ExportProjectPackageModal } from '../export/ExportProjectPackageModal';
 import { ProjectContextHeader } from '../estimator/ProjectContextHeader';
 import { EstimatorNavigation, EstimatorTabType } from '../estimator/EstimatorNavigation';
+import { ProjectInfoTab } from '../estimator/ProjectInfoTab';
 import { EstimatorMetrics } from '../estimator/EstimatorMetrics';
 import { ConvertedReference } from '../currency/ConvertedReference';
 import { EstimatorToolbar } from '../estimator/EstimatorToolbar';
@@ -988,6 +989,23 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         />
 
         {/* 3. ACTIVE TAB VIEW */}
+        {/* 3A. INFORMASI PROYEK VIEW (owner 2026-10-27, tab pertama):
+            profil lengkap proyek, tersimpan di objek proyek lewat jalur
+            yang sama dengan Pengaturan (updateProject + refresh totals). */}
+        {activeEstimatorTab === 'informasi-proyek' && (
+          <ProjectInfoTab
+            currentProject={currentProject}
+            items={projectRabItems}
+            onSave={(fields) => {
+              if (currentProject) {
+                updateProject(currentProject.id, fields as any);
+                refreshProjectTotals(currentProject.id);
+                showToast('Informasi proyek berhasil disimpan');
+              }
+            }}
+          />
+        )}
+
         {activeEstimatorTab === 'spreadsheet' && (
           <>
             {/* 3A. 5 ESSENTIAL PROJECT METRICS — values always from real data.
