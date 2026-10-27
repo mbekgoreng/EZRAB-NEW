@@ -6,13 +6,9 @@ import {
   FolderOpen,
   Database,
   Upload,
-  Download,
-
-  ChevronDown,
   GitBranch,
 } from 'lucide-react';
 import { Project } from '../../types';
-import projectThumb from '../../assets/template-bertingkat.jpg';
 
 interface ProjectContextHeaderProps {
   currentProject: Project | null;
@@ -20,6 +16,9 @@ interface ProjectContextHeaderProps {
   onImportAhsp: () => void;
   onImportExcel: () => void;
   onOpenVersionsAndScenarios: () => void;
+  /* onExport dipertahankan di interface agar call-site lama tidak rusak,
+   * tetapi tombol Export di header DIHAPUS (owner 2026-10-27) — Export
+   * kini di Pengaturan Estimasi, di kanan tombol Simpan. */
   onExport: () => void;
   latestVersionLabel?: string;
 }
@@ -30,13 +29,17 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
   onImportAhsp,
   onImportExcel,
   onOpenVersionsAndScenarios,
-  onExport,
   latestVersionLabel = 'v1.0',
 }) => {
-  const projectName = currentProject?.name || 'Rumah Tinggal Modern Tropis 2 Lantai';
-  const projectLocation = currentProject?.location || 'BSD City, Tangerang Selatan';
+  /* Fallback jujur (owner 2026-10-27): bila field proyek kosong, tampilkan
+   * "Belum diisi" — BUKAN contoh proyek orang lain. Ini murni presentasi:
+   * tidak ada nilai tersimpan yang diubah, dan komponen ini tidak menulis
+   * ke proyek. Tipe bangunan dibiarkan apa adanya karena itu kategori
+   * generik, bukan data spesifik proyek. */
+  const projectName = currentProject?.name || 'Belum diisi';
+  const projectLocation = currentProject?.location || 'Belum diisi';
   const projectBuildingType = currentProject?.buildingType || 'Rumah Tinggal';
-  const projectClient = currentProject?.client || currentProject?.clientName || 'Ir. Hendra Kusuma';
+  const projectClient = currentProject?.client || currentProject?.clientName || 'Belum diisi';
   const isCompleted = currentProject?.status === 'completed' || currentProject?.status === 'approved';
 
   return (
@@ -77,32 +80,26 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
       >
         {/* Left: Thumbnail & Project Metadata */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0, flex: '1 1 240px' }}>
-          {/* Project Image Thumbnail */}
+          {/* Ikon proyek netral — foto kiri DIHAPUS (owner 2026-10-27):
+              foto contoh gedung bertingkat itu menyesatkan karena bukan
+              foto proyek user. */}
           <div
             style={{
               width: '56px',
               height: '56px',
               borderRadius: '10px',
-              overflow: 'hidden',
               flexShrink: 0,
               boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
               border: '1px solid var(--ez-color-border-line)',
-              background: 'var(--ez-color-surface-tertiary)',
+              background: 'var(--ez-hue-blue-bg)',
+              color: 'var(--ez-hue-blue-text)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
+            title={projectName}
           >
-            <img
-              src={projectThumb}
-              alt={projectName}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                display: 'block',
-              }}
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
+            <Building size={26} />
           </div>
 
           {/* Titles & Metadata */}
@@ -283,47 +280,11 @@ export const ProjectContextHeader: React.FC<ProjectContextHeaderProps> = ({
             onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface)')}
           >
             <GitBranch size={14} color="var(--ez-hue-blue-text)" />
-            <span>Versi & Skenario</span>
-            <span
-              style={{
-                fontSize: '10px',
-                fontWeight: 800,
-                background: 'var(--ez-pastel-sky)',
-                color: 'var(--ez-hue-blue-text-deep)',
-                padding: '1px 6px',
-                borderRadius: 'var(--ez-radius-pill)',
-              }}
-            >
-              {latestVersionLabel}
-            </span>
+            <span>Versi &amp; Skenario</span>
           </button>
 
-          {/* Export Button (Primary Blue) */}
-          <button
-            onClick={onExport}
-            style={{
-              height: '34px',
-              padding: '0 14px',
-              borderRadius: '8px',
-              background: 'var(--ez-color-primary)',
-              border: '1px solid #1D4ED8',
-              fontSize: '12px',
-              fontWeight: 700,
-              color: '#FFFFFF',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 1px 3px rgba(37, 99, 235, 0.25)',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-primary-hover)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--ez-color-primary)')}
-          >
-            <Download size={14} color="#FFFFFF" />
-            <span>Export</span>
-            <ChevronDown size={13} color="#FFFFFF" />
-          </button>
+          {/* Tombol Export di header DIHAPUS (owner 2026-10-27) —
+              pindah ke Pengaturan Estimasi, di kanan tombol Simpan. */}
 
         </div>
       </div>

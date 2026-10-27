@@ -130,7 +130,9 @@ export async function exportRABToProfessionalExcel(
 
   const taxPercent = costSummary.taxPercent ?? 11;
   const pphPercent = project.costSummary?.pphPercent ?? 1.75;
-  const overheadPercent = costSummary.overheadPercent ?? 5;
+  /* Fallback tampilan selaras keputusan overhead 10% (compute di atas
+   * selalu mengembalikan angka, jadi fallback ini praktis tidak terpicu). */
+  const overheadPercent = costSummary.overheadPercent ?? 10;
   const profitPercent = costSummary.profitPercent ?? 5;
   // Perbaikan final: HAPUS fabrikasi Rp1. Bila seluruh item tanpa harga,
   // total berharga = 0 (jujur) dan sel display memakai teks HARGA BELUM
@@ -366,7 +368,7 @@ export async function exportRABToProfessionalExcel(
     wsCover.getCell('B12').value = 'LOKASI PEKERJAAN';
     wsCover.getCell('B12').font = { name: FONT_FAMILY, size: 8.5, bold: true, color: { argb: EXCEL_COLORS.SLATE_MUTED } };
     wsCover.mergeCells('B13:C13');
-    wsCover.getCell('B13').value = project.location || 'Indonesia';
+    wsCover.getCell('B13').value = project.location || 'Belum diisi';
     wsCover.getCell('B13').font = { name: FONT_FAMILY, size: 10.5, bold: true, color: { argb: EXCEL_COLORS.NAVY_DARK } };
 
     wsCover.getCell('D12').value = 'PEMILIK / KLIEN';
@@ -378,7 +380,7 @@ export async function exportRABToProfessionalExcel(
     wsCover.getCell('B15').value = 'NOMOR DOKUMEN';
     wsCover.getCell('B15').font = { name: FONT_FAMILY, size: 8.5, bold: true, color: { argb: EXCEL_COLORS.SLATE_MUTED } };
     wsCover.mergeCells('B16:C16');
-    wsCover.getCell('B16').value = project.projectNumber || 'EZR-RAB-2026-001';
+    wsCover.getCell('B16').value = project.projectNumber || 'Belum diisi';
     wsCover.getCell('B16').font = { name: FONT_FAMILY, size: 10.5, bold: true, color: { argb: EXCEL_COLORS.NAVY_DARK } };
 
     wsCover.getCell('D15').value = 'STATUS REVISI & TANGGAL';
@@ -464,14 +466,20 @@ export async function exportRABToProfessionalExcel(
     wsInfo.getCell('E5').font = FONT_HIERARCHY.SUBSECTION_TITLE;
     wsInfo.getCell('E5').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: EXCEL_COLORS.BG_SECTION } };
 
+    /* Fallback jujur di ekspor dokumen (owner 2026-10-27): nilai kosong
+     * TIDAK diganti data karangan. Nomor registrasi karangan, luas 250
+     * karangan, tanggal hari ini, dan lokasi contoh dihapus — semuanya
+     * menjadi "Belum diisi". Placeholder generik ('Klien Proyek',
+     * 'Rumah Tinggal Modern', '-') dipertahankan karena itu label,
+     * bukan data spesifik yang menyerupai milik pengguna. */
     const leftData = [
-      ['Nama Proyek', project.name],
-      ['Nomor Registrasi', project.projectNumber || 'EZR-RAB-001'],
+      ['Nama Proyek', project.name || 'Belum diisi'],
+      ['Nomor Registrasi', project.projectNumber || 'Belum diisi'],
       ['Pemilik / Klien', project.clientName || (project as any).client || 'Klien Proyek'],
       ['Tipe Bangunan', project.buildingType || 'Rumah Tinggal Modern'],
-      ['Luas Bangunan', `${project.buildingArea || 250} m²`],
-      ['Lokasi Pekerjaan', project.location || 'BSD City, Tangerang Selatan'],
-      ['Tanggal Mulai', project.startDate || new Date().toISOString().substring(0, 10)],
+      ['Luas Bangunan', project.buildingArea ? `${project.buildingArea} m²` : 'Belum diisi'],
+      ['Lokasi Pekerjaan', project.location || 'Belum diisi'],
+      ['Tanggal Mulai', project.startDate || 'Belum diisi'],
       ['Target Selesai', project.targetDate || '-'],
     ];
 
@@ -651,7 +659,7 @@ export async function exportRABToProfessionalExcel(
     wsRecap.getCell('B2').font = FONT_HIERARCHY.SECTION_TITLE;
 
     wsRecap.mergeCells('B3:F3');
-    wsRecap.getCell('B3').value = `Proyek: ${project.name} • Lokasi: ${project.location || 'Indonesia'} • Rev: ${project.currentVersion || 'Rev 00'}`;
+    wsRecap.getCell('B3').value = `Proyek: ${project.name} • Lokasi: ${project.location || 'Belum diisi'} • Rev: ${project.currentVersion || 'Rev 00'}`;
     wsRecap.getCell('B3').font = FONT_HIERARCHY.DOC_SUBTITLE;
 
     const rHead = wsRecap.getRow(5);
@@ -782,7 +790,7 @@ export async function exportRABToProfessionalExcel(
     wsDetail.getCell('A2').font = FONT_HIERARCHY.SECTION_TITLE;
 
     wsDetail.mergeCells('A3:I3');
-    wsDetail.getCell('A3').value = `Proyek: ${project.name} • Lokasi: ${project.location || 'Indonesia'} • Versi: ${project.currentVersion || 'Rev 00'}`;
+    wsDetail.getCell('A3').value = `Proyek: ${project.name} • Lokasi: ${project.location || 'Belum diisi'} • Versi: ${project.currentVersion || 'Rev 00'}`;
     wsDetail.getCell('A3').font = FONT_HIERARCHY.DOC_SUBTITLE;
 
     const dHead = wsDetail.getRow(5);
@@ -966,7 +974,7 @@ export async function exportRABToProfessionalExcel(
     wsBoq.getCell('A2').font = FONT_HIERARCHY.SECTION_TITLE;
 
     wsBoq.mergeCells('A3:H3');
-    wsBoq.getCell('A3').value = `Proyek: ${project.name} • Lokasi: ${project.location || 'Indonesia'} • Rev: ${project.currentVersion || 'Rev 00'}`;
+    wsBoq.getCell('A3').value = `Proyek: ${project.name} • Lokasi: ${project.location || 'Belum diisi'} • Rev: ${project.currentVersion || 'Rev 00'}`;
     wsBoq.getCell('A3').font = FONT_HIERARCHY.DOC_SUBTITLE;
 
     const bqHead = wsBoq.getRow(5);
@@ -1068,7 +1076,7 @@ export async function exportRABToProfessionalExcel(
     wsMc0.getCell('A2').font = FONT_HIERARCHY.SECTION_TITLE;
 
     wsMc0.mergeCells('A3:I3');
-    wsMc0.getCell('A3').value = `Nomor Dokumen: MC-0 (Baseline Fisik 0%) • Proyek: ${project.name} • Lokasi: ${project.location || 'Indonesia'} • Rev: ${project.currentVersion || 'Rev 00'}`;
+    wsMc0.getCell('A3').value = `Nomor Dokumen: MC-0 (Baseline Fisik 0%) • Proyek: ${project.name} • Lokasi: ${project.location || 'Belum diisi'} • Rev: ${project.currentVersion || 'Rev 00'}`;
     wsMc0.getCell('A3').font = FONT_HIERARCHY.DOC_SUBTITLE;
 
     const mc0Head = wsMc0.getRow(5);
@@ -1374,7 +1382,7 @@ export async function exportRABToProfessionalExcel(
       r.getCell(4).value = lab.unit || 'OH';
       r.getCell(5).value = lab.price || 0;
       r.getCell(5).numFmt = NUMBER_FORMATS.CURRENCY;
-      r.getCell(6).value = lab.location || project.location || 'Indonesia';
+      r.getCell(6).value = lab.location || project.location || 'Belum diisi';
       r.getCell(7).value = lab.source || 'SK Gubernur / SHST 2026';
 
       for (let c = 1; c <= 7; c++) {
@@ -1433,7 +1441,7 @@ export async function exportRABToProfessionalExcel(
       r.getCell(4).value = eq.unit || 'Sewa-Jam';
       r.getCell(5).value = eq.price || 0;
       r.getCell(5).numFmt = NUMBER_FORMATS.CURRENCY;
-      r.getCell(6).value = eq.location || project.location || 'Indonesia';
+      r.getCell(6).value = eq.location || project.location || 'Belum diisi';
       r.getCell(7).value = eq.source || 'Vendor Rental';
 
       for (let c = 1; c <= 7; c++) {
@@ -1548,7 +1556,7 @@ export async function exportRABToProfessionalExcel(
     wsSched.getCell('A2').font = FONT_HIERARCHY.SECTION_TITLE;
 
     wsSched.mergeCells(`A3:${endColLetter}3`);
-    wsSched.getCell('A3').value = `Proyek: ${project.name.toUpperCase()} • Lokasi: ${project.location || 'Indonesia'} • Periode: ${project.startDate || '-'} s/d ${project.targetDate || '-'} • Rev: ${project.currentVersion || 'Rev 00'}`;
+    wsSched.getCell('A3').value = `Proyek: ${project.name.toUpperCase()} • Lokasi: ${project.location || 'Belum diisi'} • Periode: ${project.startDate || '-'} s/d ${project.targetDate || '-'} • Rev: ${project.currentVersion || 'Rev 00'}`;
     wsSched.getCell('A3').font = FONT_HIERARCHY.DOC_SUBTITLE;
 
     // Table Header Row 5: Top Categories & Months

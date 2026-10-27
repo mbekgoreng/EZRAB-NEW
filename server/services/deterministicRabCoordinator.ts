@@ -19,6 +19,10 @@ export interface ProcessRabDraftInput {
   entities: CanonicalEntity[];
   templateContext?: TemplateMappingContext;
   ppnPercent?: number;
+  /** Pajak opt-in (owner 2026-10-27): default NONAKTIF. */
+  ppnEnabled?: boolean;
+  pphEnabled?: boolean;
+  pphPercent?: number;
   allowAiEstimatedPrice?: boolean;
 }
 
@@ -46,6 +50,9 @@ export class DeterministicRabCoordinator {
       entities,
       templateContext,
       ppnPercent = 11,
+      ppnEnabled = false,
+      pphEnabled = false,
+      pphPercent = 0,
       allowAiEstimatedPrice = false
     } = input;
 
@@ -57,6 +64,9 @@ export class DeterministicRabCoordinator {
       templateContext,
       entities,
       ppnPercent,
+      ppnEnabled,
+      pphEnabled,
+      pphPercent,
       allowAiEstimatedPrice
     });
 

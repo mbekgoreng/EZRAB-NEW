@@ -691,7 +691,12 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
       try {
         const activeSession = sessions.find((s) => s.id === (activeSessionId || s.id));
         const lastWizMsg = activeSession?.messages.filter((m) => !!m.wizardResponse).pop();
-        const fallbackResp = resolveClientWizardStep(sessionId, choiceId, parameters, lastWizMsg?.wizardResponse);
+        const fallbackResp = resolveClientWizardStep(sessionId, choiceId, parameters, lastWizMsg?.wizardResponse, {
+          ppnEnabled: (currentProject as any)?.ppnEnabled === true,
+          ppnPercent: (currentProject as any)?.ppnPercent,
+          pphEnabled: (currentProject as any)?.pphEnabled === true,
+          pphPercent: (currentProject as any)?.pphPercent,
+        });
         const aiMsg: ChatMessage = {
           id: `ai-wiz-${Date.now()}`,
           sender: 'assistant',

@@ -318,9 +318,16 @@ export class SpreadsheetApprovalEngine {
     items: RabReviewRowItem[];
     draftVersion?: string;
     ppnPercent?: number;
+    /** Pajak opt-in (owner 2026-10-27): default NONAKTIF. */
+    ppnEnabled?: boolean;
+    pphEnabled?: boolean;
+    pphPercent?: number;
     idempotencyKey?: string;
   }): SpreadsheetImportProposal {
     const ppnPercent = params.ppnPercent ?? 11;
+    const ppnEnabled = params.ppnEnabled === true;
+    const pphEnabled = params.pphEnabled === true;
+    const pphPercent = params.pphPercent ?? 0;
     const activeItems = params.items.filter(i => !i.isExcluded && i.status !== 'REJECTED');
     const rejectedItems = params.items.filter(i => i.isExcluded || i.status === 'REJECTED');
 
@@ -333,12 +340,20 @@ export class SpreadsheetApprovalEngine {
       0
     );
 
-    const ppnAmount = SafeDecimalEngine.safeRound(
-      SafeDecimalEngine.safeMultiply(subtotal, ppnPercent / 100),
-      0
-    );
+    const ppnAmount = ppnEnabled
+      ? SafeDecimalEngine.safeRound(
+          SafeDecimalEngine.safeMultiply(subtotal, ppnPercent / 100),
+          0
+        )
+      : 0;
+    const pphAmount = pphEnabled
+      ? SafeDecimalEngine.safeRound(
+          SafeDecimalEngine.safeMultiply(subtotal, pphPercent / 100),
+          0
+        )
+      : 0;
 
-    const grandTotal = SafeDecimalEngine.safeAdd(subtotal, ppnAmount);
+    const grandTotal = SafeDecimalEngine.safeAdd(SafeDecimalEngine.safeAdd(subtotal, ppnAmount), pphAmount);
 
     const proposalId = `prop_${params.projectId}_${Date.now()}`;
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
@@ -364,6 +379,10 @@ export class SpreadsheetApprovalEngine {
       subtotal,
       ppnPercent,
       ppnAmount,
+      ppnEnabled,
+      pphEnabled,
+      pphPercent,
+      pphAmount,
       grandTotal,
       status: 'PENDING',
       createdAt: new Date().toISOString()
@@ -521,11 +540,23 @@ export class SpreadsheetApprovalEngine {
       });
     }
 
-    const finalPpn = SafeDecimalEngine.safeRound(
-      SafeDecimalEngine.safeMultiply(cumulativeDirectCost, proposal.ppnPercent / 100),
-      0
-    );
-    const finalGrandTotal = SafeDecimalEngine.safeAdd(cumulativeDirectCost, finalPpn);
+    /* Hasil import memakai flag proposal yang sama dengan preview-nya,
+     * agar preview dan hasil final tidak berbeda hanya karena satu jalur
+     * mengaktifkan pajak secara implisit. Item yang diimpor tidak berubah
+     * (biaya langsung); hanya total yang dilaporkan yang tunduk opt-in. */
+    const finalPpn = proposal.ppnEnabled === true
+      ? SafeDecimalEngine.safeRound(
+          SafeDecimalEngine.safeMultiply(cumulativeDirectCost, proposal.ppnPercent / 100),
+          0
+        )
+      : 0;
+    const finalPph = proposal.pphEnabled === true
+      ? SafeDecimalEngine.safeRound(
+          SafeDecimalEngine.safeMultiply(cumulativeDirectCost, (proposal.pphPercent ?? 0) / 100),
+          0
+        )
+      : 0;
+    const finalGrandTotal = SafeDecimalEngine.safeAdd(SafeDecimalEngine.safeAdd(cumulativeDirectCost, finalPpn), finalPph);
 
     proposal.status = 'COMMITTED';
     proposal.executedAt = new Date().toISOString();
@@ -540,6 +571,10 @@ export class SpreadsheetApprovalEngine {
       createdItemsCount: activeItems.length - blockedUnpricedItems.length,
       subtotal: cumulativeDirectCost,
       ppnAmount: finalPpn,
+      ppnEnabled: proposal.ppnEnabled,
+      pphEnabled: proposal.pphEnabled,
+      pphPercent: proposal.pphPercent,
+      pphAmount: finalPph,
       grandTotal: finalGrandTotal,
       importedSections,
       blockedUnpricedItems,

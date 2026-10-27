@@ -83,29 +83,62 @@ export function renderMarkdown(md: string): React.ReactNode[] {
 
     // unordered list
     if (/^\s*[-*•]\s+/.test(line)) {
-      const items: string[] = [];
-      while (i < lines.length && /^\s*[-*•]\s+/.test(lines[i])) {
-        items.push(lines[i].replace(/^\s*[-*•]\s+/, ''));
-        i++;
+      const items: string[][] = [];
+      while (i < lines.length) {
+        const m = lines[i].match(/^\s*[-*•]\s+(.*)/);
+        if (m) {
+          items.push([m[1]]);
+          i++;
+          continue;
+        }
+        // Baris lanjutan menjorok = bagian item terakhir, bukan pemutus daftar.
+        if (items.length > 0 && /^\s{2,}\S/.test(lines[i]) && !lines[i].trim().startsWith('```')) {
+          items[items.length - 1].push(lines[i].trim());
+          i++;
+          continue;
+        }
+        break;
       }
       out.push(
         <ul key={key++} className="md-ul">
-          {items.map((it, ii) => <li key={ii} dangerouslySetInnerHTML={{ __html: inline(it) }} />)}
+          {items.map((it, ii) => <li key={ii} dangerouslySetInnerHTML={{ __html: it.map((l) => inline(l)).join('<br/>') }} />)}
         </ul>
       );
       continue;
     }
 
     // ordered list
+    // Perbaikan 2026-10-27 (jawaban chat bernomor 1, 1, 1): daftar terputus
+    // oleh baris lanjutan menjorok (mis. "   Sumber: ..." dari tool
+    // cari_ahsp) menjadi beberapa <ol> yang masing-masing mulai dari 1,
+    // karena nomor tertulis dibuang. Sekarang: (a) baris lanjutan
+    // menjorok ikut ke item sebelumnya, dan (b) <ol> memakai start dari
+    // nomor tertulis item pertama, sehingga daftar yang terputus pun
+    // penomorannya tetap berlanjut.
     if (/^\s*\d+[.)]\s+/.test(line)) {
-      const items: string[] = [];
-      while (i < lines.length && /^\s*\d+[.)]\s+/.test(lines[i])) {
-        items.push(lines[i].replace(/^\s*\d+[.)]\s+/, ''));
-        i++;
+      const items: string[][] = [];
+      let start = 1;
+      const m0 = line.match(/^\s*(\d+)[.)]\s+/);
+      if (m0) start = parseInt(m0[1], 10);
+      while (i < lines.length) {
+        const m = lines[i].match(/^\s*\d+[.)]\s+(.*)/);
+        if (m) {
+          items.push([m[1]]);
+          i++;
+          continue;
+        }
+        // Baris lanjutan menjorok (bukan pagar kode) = bagian dari item
+        // terakhir, bukan pemutus daftar.
+        if (items.length > 0 && /^\s{2,}\S/.test(lines[i]) && !lines[i].trim().startsWith('```')) {
+          items[items.length - 1].push(lines[i].trim());
+          i++;
+          continue;
+        }
+        break;
       }
       out.push(
-        <ol key={key++} className="md-ol">
-          {items.map((it, ii) => <li key={ii} dangerouslySetInnerHTML={{ __html: inline(it) }} />)}
+        <ol key={key++} className="md-ol" start={start}>
+          {items.map((it, ii) => <li key={ii} dangerouslySetInnerHTML={{ __html: it.map((l) => inline(l)).join('<br/>') }} />)}
         </ol>
       );
       continue;

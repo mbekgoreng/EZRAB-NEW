@@ -21,7 +21,10 @@ import {
   Palette,
   ChevronDown,
   Check,
+  Loader2,
 } from 'lucide-react';
+import { useCurrency } from '../../context/CurrencyContext';
+import { SUPPORTED_CURRENCIES, CURRENCY_DEFINITIONS, type CurrencyCode } from '../../services/currencyService';
 import { NotificationBell } from '../../notifications/NotificationBell';
 import type { NotificationItem } from '../../notifications/NotificationContext';
 import { setBrowserNotifyNavigationHandler } from '../../notifications/browserNotify';
@@ -112,6 +115,27 @@ const { t, lang, setLang } = useI18n();
   const [profileOpen, setProfileOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  /* Menu ganti kurs di Top Bar (owner 2026-10-27): satu-satunya tempat
+   * ganti mata uang tampil yang mudah dijangkau (sebelumnya hanya di
+   * Pengaturan). Default IDR; pilih kurs lain -> mata uang tampil
+   * berubah seketika + animasi loading berputar selama kurs provider
+   * dimuat ulang (best-effort; gagal fetch tidak membatalkan pilihan,
+   * kurs lama/manual tetap dipakai). */
+  const { displayCurrency, setDisplayCurrency, refreshRates } = useCurrency();
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [currencyLoading, setCurrencyLoading] = useState(false);
+  const currencyMountedRef = useRef(true);
+  useEffect(() => () => { currencyMountedRef.current = false; }, []);
+  const handleCurrencyChange = (code: CurrencyCode) => {
+    setCurrencyOpen(false);
+    if (code === displayCurrency) return;
+    setDisplayCurrency(code);
+    setCurrencyLoading(true);
+    void (async () => {
+      try { await refreshRates(); } catch { /* best-effort: kurs lama tetap dipakai */ }
+      if (currencyMountedRef.current) setCurrencyLoading(false);
+    })();
+  };
 
   // ---------- Global search palette ----------
   const [searchFocused, setSearchFocused] = useState(false);
@@ -213,6 +237,7 @@ const handleNotificationItemClick = (item: NotificationItem) => {
   const helpRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const langRef = useRef<HTMLDivElement>(null);
+  const currencyRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
   useEffect(() => {
@@ -227,6 +252,9 @@ const handleNotificationItemClick = (item: NotificationItem) => {
       if (langRef.current && !langRef.current.contains(event.target as Node)) {
         setLangOpen(false);
       }
+      if (currencyRef.current && !currencyRef.current.contains(event.target as Node)) {
+        setCurrencyOpen(false);
+      }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -235,6 +263,7 @@ const handleNotificationItemClick = (item: NotificationItem) => {
         setProfileOpen(false);
         setThemeOpen(false);
         setLangOpen(false);
+        setCurrencyOpen(false);
       }
     };
 
@@ -553,6 +582,105 @@ onFocus={(e) => {
         >
           {isDark ? <Sun size={17} /> : <Moon size={17} />}
         </button>
+
+        {/* 0a. CURRENCY SELECTOR — ganti kurs tampil dari Top Bar (owner 2026-10-27).
+            Animasi loading: Loader2 berputar selama refreshRates berjalan. */}
+        <div style={{ position: 'relative' }} ref={currencyRef}>
+          <style>{`@keyframes ezTopbarSpin { to { transform: rotate(360deg); } }`}</style>
+          <button
+            type="button"
+            onClick={() => {
+              setCurrencyOpen(!currencyOpen);
+              setHelpOpen(false);
+              setProfileOpen(false);
+              setLangOpen(false);
+            }}
+            title="Ganti mata uang tampil (default: IDR)"
+            aria-label="Ganti mata uang tampil"
+            aria-expanded={currencyOpen}
+            disabled={currencyLoading}
+            style={{
+              height: '32px',
+              minWidth: '64px',
+              padding: '0 8px',
+              borderRadius: '8px',
+              border: '1px solid var(--ez-color-border-line)',
+              background: currencyOpen ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+              color: currencyOpen ? 'var(--ez-color-primary)' : 'var(--ez-color-text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+              cursor: currencyLoading ? 'wait' : 'pointer',
+              fontSize: '12px',
+              fontWeight: 800,
+              letterSpacing: '0.03em',
+              fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
+              transition: 'all 0.15s ease',
+              opacity: currencyLoading ? 0.75 : 1,
+            }}
+          >
+            {currencyLoading ? (
+              <Loader2 size={14} style={{ animation: 'ezTopbarSpin 0.9s linear infinite' }} />
+            ) : null}
+            {displayCurrency}
+            {!currencyLoading && <ChevronDown size={13} />}
+          </button>
+
+          {currencyOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                right: 0,
+                width: '220px',
+                background: 'var(--ez-color-surface)',
+                borderRadius: '14px',
+                border: '1px solid var(--ez-color-border-line)',
+                boxShadow: 'var(--ez-shadow-popover)',
+                zIndex: 100,
+                overflow: 'hidden',
+                padding: '6px',
+                animation: 'ezrabFadeIn 0.18s ease-out',
+              }}
+            >
+              {SUPPORTED_CURRENCIES.map((code) => {
+                const def = CURRENCY_DEFINITIONS[code];
+                const isActive = code === displayCurrency;
+                return (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => handleCurrencyChange(code)}
+                    style={{
+                      width: '100%',
+                      height: '38px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0 10px',
+                      borderRadius: '8px',
+                      background: isActive ? 'var(--ez-hue-blue-bg)' : 'transparent',
+                      border: 'none',
+                      color: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-text-body)',
+                      fontSize: '12.5px',
+                      fontWeight: isActive ? 700 : 500,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'background 0.12s ease',
+                    }}
+                  >
+                    <span>{def.symbol} {code} — {def.name}</span>
+                    {isActive && <Check size={14} />}
+                  </button>
+                );
+              })}
+              <div style={{ padding: '6px 10px 2px', fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
+                Nilai tersimpan tetap IDR; yang berubah hanya tampilan.
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* 0b. LANGUAGE SELECTOR (compact dropdown, wired to I18nContext) */}
         <div style={{ position: 'relative' }} ref={langRef}>

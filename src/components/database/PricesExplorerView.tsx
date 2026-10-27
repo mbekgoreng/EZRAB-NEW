@@ -241,29 +241,9 @@ export const PricesExplorerView: React.FC<PricesExplorerViewProps> = ({
             <span>Tambah {category === 'MATERIAL' ? 'Material' : category === 'LABOR' ? 'Upah' : 'Alat'}</span>
           </button>
 
-          <button
-            onClick={() => {
-              alert(`Export Master Database ${category} 2026 (.xlsx) berhasil diunduh!`);
-            }}
-            style={{
-              height: '38px',
-              padding: '0 16px',
-              borderRadius: '10px',
-              background: 'var(--ez-color-surface)',
-              border: '1px solid var(--ez-color-border-line)',
-              color: 'var(--ez-color-text-body)',
-              fontSize: '12.5px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-            }}
-          >
-            <Download size={14} color="var(--ez-hue-blue-text)" />
-            <span>Export Excel</span>
-          </button>
+          {/* Tombol Export Excel DIHAPUS (owner 2026-10-27): database
+              cukup Impor saja. Tombol ini dulu hanya menampilkan alert
+              "berhasil diunduh" tanpa benar-benar mengunduh berkas. */}
         </div>
       </div>
 

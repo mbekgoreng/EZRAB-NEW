@@ -4,8 +4,10 @@ import {
   type ExchangeRateSnapshot,
   type ForeignCurrencyCode,
   type RateEvaluation,
+  convertIdrToDisplay,
   evaluateRate,
   fetchRatesFromProvider,
+  formatCurrency,
   isSupportedCurrency,
   loadDisplayCurrency,
   loadStoredRates,
@@ -36,6 +38,12 @@ interface CurrencyContextType {
   clearManualRate: (code: ForeignCurrencyCode) => void;
   getRate: (code: ForeignCurrencyCode) => ExchangeRateSnapshot | undefined;
   evaluateDisplayRate: () => RateEvaluation & { rate?: ExchangeRateSnapshot };
+  /** Format tampil global (owner 2026-10-27): IDR default; bila
+   * displayCurrency asing dan kurs usable, tampilkan konversi; bila
+   * kurs tidak usable, FALLBACK ke format IDR (tidak pernah angka
+   * tebakan, tidak pernah Rp0). Input non-finite/null -> '—'.
+   * DISPLAY-ONLY: nilai sumber tidak pernah ditulis ulang. */
+  formatDisplay: (idrAmount: number | null | undefined) => string;
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
@@ -107,6 +115,20 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return { ...evaluateRate(rate), rate };
   }, [displayCurrency, rates]);
 
+  const formatDisplay = React.useCallback((idrAmount: number | null | undefined): string => {
+    if (idrAmount == null || !Number.isFinite(idrAmount)) return '—';
+    if (displayCurrency === 'IDR') return formatCurrency(idrAmount, 'IDR');
+    const rate = rates[displayCurrency as ForeignCurrencyCode];
+    const res = convertIdrToDisplay(
+      { amount: idrAmount, currency: 'IDR', kind: 'mixed' },
+      displayCurrency,
+      rate,
+    );
+    if (res.ok && res.converted) return formatCurrency(res.value.value, displayCurrency);
+    // Kurs tidak usable: fallback jujur ke IDR, bukan angka tebakan.
+    return formatCurrency(idrAmount, 'IDR');
+  }, [displayCurrency, rates]);
+
   return (
     <CurrencyContext.Provider
       value={{
@@ -118,6 +140,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         clearManualRate,
         getRate,
         evaluateDisplayRate,
+        formatDisplay,
       }}
     >
       {children}

@@ -23,7 +23,6 @@ import {
   FolderPlus,
   Copy,
   Search,
-  Download,
   Code,
   FileText,
   Printer,
@@ -1119,45 +1118,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
     };
   }, [calculationResult, activeSpec, selectedCalcId]);
 
-  // Export to Excel / CSV
-  const handleExportExcel = () => {
-    const rows = [
-      ['EZRAB — VOLUME CALCULATOR & AHSP CALCULATION SHEET'],
-      [`Proyek: ${currentProject?.name || 'Proyek EZRAB'}`],
-      [`Modul: ${activeSpec.title} (${activeSpec.excelSheetName})`],
-      [`Tanggal: ${new Date().toLocaleDateString('id-ID')}`],
-      [''],
-      ['4.1 DIMENSI UTAMA (INPUT PARAMETERS)'],
-      ['Parameter', 'Simbol', 'Nilai', 'Satuan'],
-      ...activeSpec.parameters.map((p) => [p.label, p.id, inputs[p.id] ?? p.defaultValue, p.unit]),
-      [''],
-      ['4.2 VOLUME (INTERMEDIATE CALCULATIONS)'],
-      ['Uraian Hasil Antara', 'Nilai', 'Satuan'],
-      ...Object.entries(calculationResult.breakdown).map(([k, v]) => [k, v, '']),
-      [''],
-      ['4.3 RESULT & REKAPITULASI BIAYA (AHSP S.E. BINA KONSTRUKSI 2025/2026)'],
-      ['Kategori', 'Uraian', 'Volume', 'Satuan', 'Harga Satuan (Rp)', 'Jumlah Harga (Rp)'],
-      ...priceBreakdown.laborRows.map((r) => ['TENAGA KERJA', r.uraian, r.volume, r.satuan, r.hargaSatuan ?? '', r.jumlahHarga ?? '']),
-      ['', 'SUBTOTAL TENAGA KERJA', '', '', '', priceBreakdown.subtotalLabor],
-      ...priceBreakdown.materialRows.map((r) => ['BAHAN', r.uraian, r.volume, r.satuan, r.hargaSatuan ?? '', r.jumlahHarga ?? '']),
-      ['', 'SUBTOTAL BAHAN', '', '', '', priceBreakdown.subtotalMaterials],
-      ...priceBreakdown.equipmentRows.map((r) => ['PERALATAN', r.uraian, r.volume, r.satuan, r.hargaSatuan ?? '', r.jumlahHarga ?? '']),
-      ['', 'SUBTOTAL PERALATAN', '', '', '', priceBreakdown.subtotalEquipment],
-      ['', 'TOTAL BIAYA PEKERJAAN', '', '', '', priceBreakdown.grandTotal],
-    ];
-
-    const csvContent = rows.map((e) => e.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `EZRAB_VC_${activeSpec.shortName.replace(/\s+/g, '_')}_${effectiveProject?.name?.replace(/\s+/g, '_') || 'PROYEK'}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('File kalkulasi Volume Calculator berhasil diexport!');
-  };
-
   // Empty State if No Project Available
   if (!effectiveProject) {
     return (
@@ -1463,26 +1423,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             <span>Reset {hasUnsavedChanges ? '(*)' : ''}</span>
           </button>
 
-          <button
-            onClick={handleExportExcel}
-            style={{
-              height: '36px',
-              padding: '0 14px',
-              borderRadius: 'var(--ez-radius-control)',
-              background: 'var(--ez-color-surface)',
-              border: '1px solid var(--ez-color-border-line)',
-              color: 'var(--ez-hue-green-text)',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-            }}
-          >
-            <Download size={13} />
-            <span>Export CSV</span>
-          </button>
+
 
           <button
             onClick={() => setIsFullscreen(!isFullscreen)}
@@ -2312,7 +2253,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                       onClick={() => setActiveParam(param.id)}
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: 'minmax(0, 1fr) 100px 38px',
+                        gridTemplateColumns: 'minmax(0, 1fr) 88px 30px',
                         alignItems: 'center',
                         gap: '8px',
                         padding: '6px 8px',
@@ -2326,7 +2267,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                         transition: 'all 0.1s ease',
                       }}
                     >
-                      <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                      <div style={{ minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span
                             style={{
@@ -2342,11 +2283,11 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                           >
                             {param.id}
                           </span>
-                          <span style={{ fontSize: '12px', fontWeight: isFocused ? 700 : 600, color: isFocused ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-strong)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <span style={{ fontSize: '12px', fontWeight: isFocused ? 700 : 600, color: isFocused ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-strong)', lineHeight: 1.35, overflowWrap: 'break-word' }}>
                             {param.label}
                           </span>
                         </div>
-                        <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px', lineHeight: 1.35, overflowWrap: 'break-word' }}>
                           {param.description}
                         </div>
                       </div>

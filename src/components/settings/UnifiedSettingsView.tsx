@@ -71,6 +71,7 @@ import { useCurrency } from '../../context/CurrencyContext';
 import {
   CURRENCY_DEFINITIONS,
   SUPPORTED_CURRENCIES,
+  convertIdrToDisplay,
   evaluateRate,
   formatCurrency,
   formatRateLine,
@@ -82,6 +83,7 @@ import {
 const APP_VERSION = '2.0.0';
 const APP_BUILD = 'Production';
 import { settingsAuditService, SettingsAuditEntry, SettingsCategory, SettingsScope } from '../../services/settingsAuditService';
+import { computeProjectInfoTotal } from '../../services/projectInfoTotal';
 import { BrowserNotifyControl } from '../../notifications/BrowserNotifyControl';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 
@@ -148,7 +150,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   initialScope,
   onNavigateTab,
 }) => {
-  const { currentProject, projects, setCurrentProjectId, updateProject } = useProject();
+  const { currentProject, projects, setCurrentProjectId, updateProject, refreshProjectTotals } = useProject();
   const { t, lang, setLang } = useI18n();
   const { activeRole, logoutRole, hasCapability } = useRole();
 
@@ -286,13 +288,16 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   // FORM STATES: LEVEL 2 (WORKSPACE DEFAULTS)
   // -------------------------------------------------------------
   // P2 UI-2: workspace defaults kosong — bukan identitas contoh.
+  // (Owner 2026-10-27: dua field di bawah sebelumnya masih terisi nama
+  // contoh — dikosongkan agar konsisten; nilai perusahaan yang sudah
+  // tersimpan tidak diubah oleh perubahan default ini.)
   const [workspaceName, setWorkspaceName] = useState('');
   const [companyAddress, setCompanyAddress] = useState('');
   const [companyPhone, setCompanyPhone] = useState('');
   const [companyEmail, setCompanyEmail] = useState('');
   const [companyNpwp, setCompanyNpwp] = useState('');
-  const [companyDirector, setCompanyDirector] = useState('Ir. Hendra Kusuma, MT.');
-  const [companyLeadEstimator, setCompanyLeadEstimator] = useState('Ahmad Yusuf, ST.');
+  const [companyDirector, setCompanyDirector] = useState('');
+  const [companyLeadEstimator, setCompanyLeadEstimator] = useState('');
 
   // Master Data & Estimator Defaults
   const [defaultAhspSource, setDefaultAhspSource] = useState('pupr-2026');
@@ -334,6 +339,23 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   const [projVolumeDecimals, setProjVolumeDecimals] = useState(2);
   const [projStartDate, setProjStartDate] = useState(activeProject?.startDate || '2026-04-01');
   const [projTargetDate, setProjTargetDate] = useState(activeProject?.targetDate || '2026-10-31');
+  /* Informasi Proyek lengkap (owner 2026-10-27, dari daftar screenshot):
+   * semua field sudah ada di tipe Project — form lama hanya menampilkan 6.
+   * Durasi proyek tidak disimpan terpisah: diturunkan dari
+   * startDate → targetDate di tampilan. */
+  const [projProvince, setProjProvince] = useState(activeProject?.province || '');
+  const [projCityRegency, setProjCityRegency] = useState(activeProject?.cityRegency || '');
+  const [projInstitution, setProjInstitution] = useState(activeProject?.institution || '');
+  const [projContractType, setProjContractType] = useState(activeProject?.contractType || '');
+  const [projFundingSource, setProjFundingSource] = useState(activeProject?.fundingSource || '');
+  const [projOwnerName, setProjOwnerName] = useState(activeProject?.ownerName || '');
+  const [projConsultantName, setProjConsultantName] = useState(activeProject?.consultantName || '');
+  const [projContractorName, setProjContractorName] = useState(activeProject?.contractorName || '');
+  const [projBudgetYear, setProjBudgetYear] = useState(activeProject?.budgetYear || new Date().getFullYear());
+  /* Pajak opt-in (sinkron dengan EstimatorSettingsView + Rekap): */
+  const [projPpnEnabled, setProjPpnEnabled] = useState((activeProject as any)?.ppnEnabled === true);
+  const [projPphEnabled, setProjPphEnabled] = useState((activeProject as any)?.pphEnabled === true);
+  const [projPph, setProjPph] = useState((activeProject as any)?.pphPercent ?? 0);
 
   // Sync project form when activeProject changes
   useEffect(() => {
@@ -351,6 +373,18 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       setProjWaste((activeProject as any)?.wastePercent ?? 5);
       setProjStartDate(activeProject.startDate || '2026-04-01');
       setProjTargetDate(activeProject.targetDate || '2026-10-31');
+      setProjProvince(activeProject.province || '');
+      setProjCityRegency(activeProject.cityRegency || '');
+      setProjInstitution(activeProject.institution || '');
+      setProjContractType(activeProject.contractType || '');
+      setProjFundingSource(activeProject.fundingSource || '');
+      setProjOwnerName(activeProject.ownerName || '');
+      setProjConsultantName(activeProject.consultantName || '');
+      setProjContractorName(activeProject.contractorName || '');
+      setProjBudgetYear(activeProject.budgetYear || new Date().getFullYear());
+      setProjPpnEnabled((activeProject as any)?.ppnEnabled === true);
+      setProjPphEnabled((activeProject as any)?.pphEnabled === true);
+      setProjPph((activeProject as any)?.pphPercent ?? 0);
     }
   }, [activeProject]);
 
@@ -369,13 +403,28 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
         buildingArea: Number(projBuildingArea),
         startDate: projStartDate,
         targetDate: projTargetDate,
+        province: projProvince,
+        cityRegency: projCityRegency,
+        institution: projInstitution,
+        contractType: projContractType,
+        fundingSource: projFundingSource,
+        ownerName: projOwnerName,
+        consultantName: projConsultantName,
+        contractorName: projContractorName,
+        budgetYear: Number(projBudgetYear),
         overheadPercent: Number(projOverhead),
         profitPercent: Number(projProfit),
         ppnPercent: Number(projPpn),
+        ppnEnabled: projPpnEnabled,
+        pphEnabled: projPphEnabled,
+        pphPercent: Number(projPph),
         taxPercent: Number(projPpn),
         roundingScheme: projRounding,
         wastePercent: Number(projWaste),
       } as any);
+      /* Selaraskan kartu total proyek dengan flag/persen pajak yang baru
+       * disimpan (lihat refreshProjectTotals di ProjectContext). */
+      refreshProjectTotals(activeProject.id);
 
       // Record audit log
       settingsAuditService.recordChange({
@@ -386,8 +435,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
         category: 'ESTIMATOR',
         field: 'project_parameters',
         fieldLabel: `Parameter Proyek: ${projName}`,
-        oldValue: { overhead: (activeProject as any)?.overheadPercent, ppn: (activeProject as any)?.ppnPercent },
-        newValue: { overhead: projOverhead, ppn: projPpn, profit: projProfit, rounding: projRounding },
+        oldValue: { overhead: (activeProject as any)?.overheadPercent, ppn: (activeProject as any)?.ppnPercent, ppnEnabled: (activeProject as any)?.ppnEnabled, pphEnabled: (activeProject as any)?.pphEnabled, pph: (activeProject as any)?.pphPercent },
+        newValue: { overhead: projOverhead, ppn: projPpn, ppnEnabled: projPpnEnabled, pphEnabled: projPphEnabled, pph: projPph, profit: projProfit, rounding: projRounding },
         reason: 'Pembaruan konfigurasi estimator khusus proyek',
       });
 
@@ -2395,7 +2444,128 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
                 </div>
+
+                {/* Field lengkap (owner 2026-10-27) — sebelumnya form ini
+                    hanya menampilkan 6 field padahal tipe Project sudah
+                    punya semuanya; field kosong dibiarkan kosong (jujur),
+                    tidak diisi contoh. */}
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Provinsi</label>
+                  <input type="text" value={projProvince} onChange={(e) => setProjProvince(e.target.value)} placeholder="cth: Jawa Timur" style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Kabupaten / Kota</label>
+                  <input type="text" value={projCityRegency} onChange={(e) => setProjCityRegency(e.target.value)} placeholder="cth: Probolinggo" style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Institusi</label>
+                  <input type="text" value={projInstitution} onChange={(e) => setProjInstitution(e.target.value)} placeholder="cth: Dinas PU Daerah / Swasta" style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Jenis Kontrak</label>
+                  <input type="text" value={projContractType} onChange={(e) => setProjContractType(e.target.value)} placeholder="cth: Harga Satuan (Unit Price) / Lump Sum" style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Sumber Dana</label>
+                  <input type="text" value={projFundingSource} onChange={(e) => setProjFundingSource(e.target.value)} placeholder="cth: APBN / APBD / Swasta" style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Pemilik (Owner / PPK)</label>
+                  <input type="text" value={projOwnerName} onChange={(e) => setProjOwnerName(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Konsultan Pengawas</label>
+                  <input type="text" value={projConsultantName} onChange={(e) => setProjConsultantName(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Kontraktor Pelaksana</label>
+                  <input type="text" value={projContractorName} onChange={(e) => setProjContractorName(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tahun Anggaran</label>
+                  <input type="number" value={projBudgetYear} onChange={(e) => setProjBudgetYear(Number(e.target.value))} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tanggal Mulai</label>
+                  <input type="date" value={projStartDate} onChange={(e) => setProjStartDate(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Target Selesai</label>
+                  <input type="date" value={projTargetDate} onChange={(e) => setProjTargetDate(e.target.value)} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Durasi Proyek (otomatis)</label>
+                  <input type="text" readOnly value={(() => {
+                    const s = new Date(projStartDate);
+                    const t = new Date(projTargetDate);
+                    if (isNaN(s.getTime()) || isNaN(t.getTime()) || t < s) return '—';
+                    const days = Math.round((t.getTime() - s.getTime()) / 86400000);
+                    return `${days} hari (± ${Math.max(1, Math.ceil(days / 7))} minggu)`;
+                  })()} style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface-secondary)', color: 'var(--ez-color-text-slate)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }} />
+                </div>
               </div>
+
+              {/* Total Nilai RAB — TERHITUNG (read-only, bukan input) dari
+                  item RAB proyek, dengan aturan pajak yang SAMA seperti
+                  Rekapitulasi (PPN/PPh hanya bila dicentang di tab
+                  Estimator & Pajak; item yang sudah termasuk pajak tidak
+                  dihitung lagi). Bila proyek belum punya item, tampil
+                  jujur "Belum ada item RAB", bukan Rp0. */}
+              {(() => {
+                const sections: any[] = (activeProject as any)?.sections || [];
+                const items: any[] = sections.flatMap((s: any) => s?.items || []);
+                /* Rumus dihitung helper bersama (services/projectInfoTotal)
+                 * agar kartu ini, Rekapitulasi, dan mesin memakai satu
+                 * aturan pajak yang sama dan bisa diuji tanpa React. */
+                const info = computeProjectInfoTotal(items, activeProject as any);
+                if (!info) {
+                  return (
+                    <div style={{ padding: '14px 16px', borderRadius: '12px', background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Total Nilai RAB (terhitung)</div>
+                      <div style={{ fontSize: '13px', color: 'var(--ez-color-text-slate)', marginTop: '4px' }}>Belum ada item RAB di proyek ini.</div>
+                    </div>
+                  );
+                }
+                const { total, overheadPercent: ohPct, ppn, pph } = info;
+                const converted = (() => {
+                  if (displayCurrency === 'IDR') return null;
+                  const code = displayCurrency as ForeignCurrencyCode;
+                  const res = convertIdrToDisplay({ amount: total, currency: 'IDR', kind: 'mixed' }, code, rates[code]);
+                  return res.ok && res.converted ? res.value.value : null;
+                })();
+                return (
+                  <div style={{ padding: '14px 16px', borderRadius: '12px', background: 'var(--ez-color-surface-secondary)', border: '1px solid var(--ez-color-border-line)' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>Total Nilai RAB (terhitung)</div>
+                        <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ez-color-text-primary)', marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>
+                          {formatCurrencyIDR(total)}
+                        </div>
+                        <div style={{ fontSize: '11.5px', color: '#94A3B8', marginTop: '2px' }}>
+                          Dari {items.length} item · biaya langsung + overhead {ohPct}%{ppn > 0 ? ` + PPN` : ''}{pph > 0 ? ` + PPh` : ''} — sama seperti Rekapitulasi. Nilai tersimpan tetap IDR.
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tampil dalam</label>
+                        <select
+                          value={displayCurrency}
+                          onChange={(e) => setDisplayCurrency(e.target.value as any)}
+                          style={{ height: '34px', borderRadius: '8px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', fontWeight: 700, padding: '0 8px' }}
+                        >
+                          {SUPPORTED_CURRENCIES.map((c) => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                        {converted != null && (
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ez-hue-blue-text)', fontVariantNumeric: 'tabular-nums' }}>
+                            ≈ {formatCurrency(converted, displayCurrency)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -2455,6 +2625,27 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     onChange={(e) => setProjPpn(Number(e.target.value))}
                     style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
                   />
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', cursor: 'pointer', marginTop: '8px' }}>
+                    <input type="checkbox" checked={projPpnEnabled} onChange={(e) => setProjPpnEnabled(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#2563EB' }} />
+                    Tambahkan PPN di Rekapitulasi (bila mati, Rekap tidak menambah PPN)
+                  </label>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--ez-color-text-body)' }}>Tarif Pajak PPh Proyek (%)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={25}
+                    step={0.5}
+                    value={projPph}
+                    onChange={(e) => setProjPph(Number(e.target.value))}
+                    style={{ width: '100%', height: '38px', borderRadius: '10px', border: '1px solid var(--ez-color-border-strong)', background: 'var(--ez-color-surface)', color: 'var(--ez-color-text-primary)', fontSize: '13px', padding: '0 12px', marginTop: '6px', fontFamily: 'inherit' }}
+                  />
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', fontWeight: 650, color: 'var(--ez-color-text-body)', cursor: 'pointer', marginTop: '8px' }}>
+                    <input type="checkbox" checked={projPphEnabled} onChange={(e) => setProjPphEnabled(e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#2563EB' }} />
+                    Tambahkan PPh di Rekapitulasi (tarif diisi sendiri — tidak ada default resmi)
+                  </label>
                 </div>
 
                 <div>

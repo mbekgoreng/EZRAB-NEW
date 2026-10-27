@@ -9,7 +9,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { Project, RabItem } from "../../types";
-import { formatCurrencyIDR } from "../../calculations/decimalEngine";
+import { useCurrency } from "../../context/CurrencyContext";
 import { evaluateEstimatorKurvaS, buildLaporanKurvaS } from "../../lib/kurvaSHonesty";
 import { useProject } from "../../context/ProjectContext";
 
@@ -24,6 +24,7 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
   items,
   onOpenExportModal,
 }) => {
+  const { formatDisplay } = useCurrency();
   // Durasi preferensi PERSISTEN per proyek (dulu state lokal yang reset ke 12
   // setiap pindah tab karena view di-unmount).
   const weeksStorageKey = currentProject ? `ezrab_estimator_kurva_weeks_${currentProject.id}` : null;
@@ -235,27 +236,11 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
               )}
             </div>
 
-            {onOpenExportModal && (
-              <button
-                onClick={onOpenExportModal}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "7px 14px",
-                  borderRadius: "8px",
-                  border: "1px solid var(--ez-hue-slate-border)",
-                  background: "var(--ez-color-surface)",
-                  color: "var(--ez-color-text-body)",
-                  fontSize: "12.5px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                <Download size={14} />
-                <span>Ekspor Kurva S</span>
-              </button>
-            )}
+            {/* Tombol "Ekspor Kurva S" DIHAPUS (owner 2026-10-27) — ia
+                hanya memanggil modal Export yang sama dengan di mana-mana;
+                Export kini satu pintu di Pengaturan Estimasi. Prop
+                onOpenExportModal dipertahankan di interface agar call-site
+                tidak perlu diubah. */}
           </div>
         </div>
       </div>
@@ -338,7 +323,7 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
           </div>
 
           <div style={{ fontSize: "12px", color: "#64748B" }}>
-            Total Biaya Rencana: <strong style={{ color: "var(--ez-color-text-primary)" }}>{formatCurrencyIDR(totalAmount)}</strong>
+            Total Biaya Rencana: <strong style={{ color: "var(--ez-color-text-primary)" }}>{formatDisplay(totalAmount)}</strong>
           </div>
         </div>
 
@@ -471,7 +456,7 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
                 <td style={{ padding: "8px 10px", textAlign: "center", color: "#94A3B8" }}>{cat.no}</td>
                 <td style={{ padding: "8px 10px", fontWeight: 600, color: "var(--ez-color-text-primary)" }}>{cat.name}</td>
                 <td style={{ padding: "8px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
-                  {formatCurrencyIDR(cat.amount)}
+                  {formatDisplay(cat.amount)}
                 </td>
                 <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700, color: "var(--ez-hue-blue-text)", fontVariantNumeric: "tabular-nums" }}>
                   {cat.weight.toFixed(2)}%
@@ -501,7 +486,7 @@ export const EstimatorKurvaSView: React.FC<EstimatorKurvaSViewProps> = ({
                 Bobot Rencana Mingguan (%)
               </td>
               <td style={{ padding: "9px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
-                {formatCurrencyIDR(totalAmount)}
+                {formatDisplay(totalAmount)}
               </td>
               <td style={{ padding: "9px 10px", textAlign: "right", color: "var(--ez-hue-blue-text)" }}>
                 {categorySchedule.reduce((s, c) => s + c.weight, 0).toFixed(2)}%

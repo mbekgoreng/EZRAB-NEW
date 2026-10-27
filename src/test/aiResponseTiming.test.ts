@@ -22,6 +22,9 @@ import {
   minDelayFor,
   statusTextFor,
   waitForMinimum,
+  waitForRabMinimum,
+  rabMinDelayMs,
+  rabMinDelayMsForItems,
   createRequestCoordinator,
   isAbortError,
   AbortedTimingError,
@@ -172,6 +175,36 @@ async function main(): Promise<void> {
     assert(rejected, 'gated harus menolak dengan AbortedTiming');
     assert(el < 1000, `abort harus cepat, elapsed=${el}ms`);
     assert((await late) === 'telat', 'provider tetap selesai di latar, tapi tidak disampaikan');
+  });
+
+  // RAB (owner 2026-10-27): 5 detik hasil pendek, 10 detik hasil besar.
+  await check('13. RAB: hasil pendek -> 5000ms, hasil besar -> 10000ms', async () => {
+    assert(rabMinDelayMs('ok') === 5000, 'pendek = 5000');
+    assert(rabMinDelayMs('x'.repeat(9000)) === 10000, 'besar = 10000');
+    assert(rabMinDelayMsForItems(3) === 5000, '3 item = 5000');
+    assert(rabMinDelayMsForItems(40) === 10000, '40 item = 10000');
+    const mid = rabMinDelayMs('x'.repeat(4750));
+    assert(mid > 5000 && mid < 10000, `tengah harus di antara, dapat ${mid}`);
+    const t0 = Date.now();
+    const out = await waitForRabMinimum(t0, Promise.resolve('ok'), undefined, (v) => v);
+    const el = Date.now() - t0;
+    assert(out === 'ok', 'hasil diteruskan');
+    assert(el >= 4900 && el < 6500, `RAB pendek elapsed=${el}ms`);
+  });
+
+  await check('14. RAB besar: waitForRabMinimum -> tampil >= 10000ms', async () => {
+    const big = 'x'.repeat(9000);
+    const t0 = Date.now();
+    await waitForRabMinimum(t0, Promise.resolve(big), undefined, (v) => v);
+    const el = Date.now() - t0;
+    assert(el >= 9900 && el < 11500, `RAB besar elapsed=${el}ms`);
+  });
+
+  await check('15. jalur chat RAB memakai waitForRabMinimum', () => {
+    const view = read('src/ai-tools/ezrab-ai/view.tsx');
+    assert(view.includes('waitForRabMinimum'), 'view.tsx memakai gerbang RAB');
+    const co = read('src/services/coAssistantService.ts');
+    assert(co.includes('waitForRabMinimum'), 'coAssistantService memakai gerbang RAB');
   });
 
   // §8.11 — navigasi menu biasa tidak terkena delay.

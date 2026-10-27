@@ -441,6 +441,11 @@ export interface ProjectCostSummary {
   subtotalBeforeTax: number;
   taxPercent: number;
   taxAmount: number;
+  /** Kebijakan pajak opt-in (owner 2026-10-27): PPN/PPh hanya dihitung
+   * bila flag-nya true; default false. Flag ini ikut tersimpan di
+   * ringkasan agar recalculate berikutnya mempertahankannya. */
+  ppnEnabled?: boolean;
+  pphEnabled?: boolean;
   pphPercent?: number;
   pphAmount?: number;
   grandTotal: number;

@@ -593,7 +593,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                 >
                   <FolderKanban size={13} color="var(--ez-color-primary)" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
                   <span style={{ maxWidth: '170px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {currentProject ? currentProject.name : 'Rumah Tinggal Modern Tropis'}
+                    {currentProject ? currentProject.name : 'Pilih proyek'}
                   </span>
                   <ChevronDown size={13} color="var(--ez-color-text-faint)" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)' }} />
                 </div>
@@ -2508,7 +2508,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
               equipment={activeCategoryTab === 'EQUIPMENT' ? selectedEquipmentForInspector : undefined}
               selectedProvince={selectedProvince}
               projectId={currentProject ? currentProject.id : 'PROJ-DEMO-01'}
-              projectName={currentProject ? currentProject.name : 'Rumah Tinggal Modern Tropis'}
+              projectName={currentProject ? currentProject.name : 'Pilih proyek'}
               onClose={() => setIsInspectorOpen(false)}
               onEditMaterial={(mat) => setIsAddMaterialWizardOpen(true)}
               onAddPrice={(mat) => setIsAddMaterialWizardOpen(true)}
@@ -2718,7 +2718,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
         material={targetMaterialForProjectPrice}
         resource={targetResourceForOverride}
         projectId={currentProject ? currentProject.id : 'PROJ-DEMO-01'}
-        projectName={currentProject ? currentProject.name : 'Rumah Tinggal Modern Tropis'}
+        projectName={currentProject ? currentProject.name : 'Pilih proyek'}
         referencePrice={
           targetResourceForOverride
             ? targetResourceForOverride.masterPrice

@@ -52,6 +52,11 @@ interface RabReviewWorkspaceModalViewProps {
   summary: DeterministicRabDraftSummary;
   projectId: string;
   projectName: string;
+  /** Pajak opt-in proyek (owner 2026-10-27): default nonaktif. */
+  ppnEnabled?: boolean;
+  ppnPercent?: number;
+  pphEnabled?: boolean;
+  pphPercent?: number;
   workspaceId?: string;
   userId?: string;
   userName?: string;
@@ -66,6 +71,10 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
   summary,
   projectId,
   projectName,
+  ppnEnabled,
+  ppnPercent,
+  pphEnabled,
+  pphPercent,
   workspaceId = 'ws-default',
   userId = 'usr-admin',
   userName = 'Estimator Pro',
@@ -269,7 +278,10 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
         userName,
         items,
         draftVersion: summary.rabDraftId || 'v1.0.0',
-        ppnPercent: 11
+        ppnPercent: ppnPercent ?? 11,
+        ppnEnabled: ppnEnabled === true,
+        pphEnabled: pphEnabled === true,
+        pphPercent: pphPercent ?? 0
       });
 
       const result = await engine.executeImportToSpreadsheet({

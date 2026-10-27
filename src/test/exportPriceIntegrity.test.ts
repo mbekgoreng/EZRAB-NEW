@@ -96,6 +96,7 @@ function mixedProject(): Project {
   return {
     id: 'proj-exp-1', projectNumber: 'PRJ-EXP-001', name: 'Proyek Uji Ekspor',
     location: 'Jakarta', clientName: 'Klien Uji', status: 'draft',
+    overheadPercent: 5, ppnEnabled: true,
     currentVersion: 'Rev 00',
     costSummary: { overheadPercent: 5, profitPercent: 5, taxPercent: 11 } as any,
     sections: [

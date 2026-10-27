@@ -55,6 +55,12 @@ import { aiConstructionInterpreter } from './aiConstructionInterpreter';
 export interface ProcessPipelineInput {
   projectId: string;
   projectName?: string;
+  /** Pajak opt-in proyek (owner 2026-10-27): default NONAKTIF bila
+   * tidak diberikan. Persen saja bukan bukti pajak aktif. */
+  ppnEnabled?: boolean;
+  ppnPercent?: number;
+  pphEnabled?: boolean;
+  pphPercent?: number;
   files: Array<{
     fileName: string;
     buffer: ArrayBuffer | Uint8Array | Buffer | string;
@@ -1227,6 +1233,10 @@ export class DedToRabPipelineService {
       forceVision,
       preferredProvider,
       preferredModel,
+      ppnEnabled = false,
+      ppnPercent = 11,
+      pphEnabled = false,
+      pphPercent = 0,
     } = input;
 
     if (!projectId || projectId.trim() === '') {
@@ -1652,12 +1662,22 @@ export class DedToRabPipelineService {
         }),
     };
 
-    const ppnPercent = 11;
-    const ppnAmount = PrecisionEngine.applyPolicy(
-      PrecisionEngine.divide(PrecisionEngine.multiply(subtotal, ppnPercent), 100),
-      'INTEGER_ROUND'
-    );
-    const grandTotal = PrecisionEngine.add(subtotal, ppnAmount);
+    /* Pajak opt-in (owner 2026-10-27): PPN/PPh hanya bila flag-nya
+     * === true; bila tidak, jumlahnya 0 dan grand total = subtotal.
+     * Persen yang tersimpan bukan bukti pajak aktif. */
+    const ppnAmount = ppnEnabled === true
+      ? PrecisionEngine.applyPolicy(
+          PrecisionEngine.divide(PrecisionEngine.multiply(subtotal, ppnPercent), 100),
+          'INTEGER_ROUND'
+        )
+      : 0;
+    const pphAmount = pphEnabled === true
+      ? PrecisionEngine.applyPolicy(
+          PrecisionEngine.divide(PrecisionEngine.multiply(subtotal, pphPercent), 100),
+          'INTEGER_ROUND'
+        )
+      : 0;
+    const grandTotal = PrecisionEngine.add(PrecisionEngine.add(subtotal, ppnAmount), pphAmount);
 
     emitProgress('PREPARING_REVIEW', 'Menyusun dataset review dan sinkronisasi workspace spreadsheet...');
 
@@ -1697,6 +1717,10 @@ export class DedToRabPipelineService {
       subtotal,
       ppnPercent,
       ppnAmount,
+      ppnEnabled,
+      pphEnabled,
+      pphPercent,
+      pphAmount,
       grandTotal,
       missingDataSummary,
       analysisStatus,
@@ -1874,11 +1898,7 @@ export class DedToRabPipelineService {
     });
 
     draft.subtotal = subtotal;
-    draft.ppnAmount = PrecisionEngine.applyPolicy(
-      PrecisionEngine.divide(PrecisionEngine.multiply(subtotal, draft.ppnPercent), 100),
-      'INTEGER_ROUND'
-    );
-    draft.grandTotal = PrecisionEngine.add(subtotal, draft.ppnAmount);
+    this.recomputeDraftTax(draft);
     draft.verifiedCount = verifiedCount;
     draft.needsReviewCount = needsReviewCount;
     draft.missingCount = missingCount;
@@ -1976,15 +1996,33 @@ export class DedToRabPipelineService {
       };
     }
 
-    // Recalculate totals
+    // Recalculate totals (pajak mengikuti flag yang tersimpan di draf)
     draft.subtotal = draft.rows.reduce((sum, r) => PrecisionEngine.add(sum, r.amount ?? 0), 0);
-    draft.ppnAmount = PrecisionEngine.applyPolicy(
-      PrecisionEngine.divide(PrecisionEngine.multiply(draft.subtotal, draft.ppnPercent), 100),
-      'INTEGER_ROUND'
-    );
-    draft.grandTotal = PrecisionEngine.add(draft.subtotal, draft.ppnAmount);
+    this.recomputeDraftTax(draft);
 
     return draft;
+  }
+
+  /**
+   * Hitung ulang pajak draf dari flag opt-in yang tersimpan di draf itu
+   * sendiri (owner 2026-10-27). Satu-satunya tempat hitung ulang pajak
+   * draf pasca-pembuatan, agar pembuatan draf, auto-fill, dan override
+   * user tidak bisa berbeda kebijakan.
+   */
+  private recomputeDraftTax(draft: DEDRabDraftSummary): void {
+    draft.ppnAmount = draft.ppnEnabled === true
+      ? PrecisionEngine.applyPolicy(
+          PrecisionEngine.divide(PrecisionEngine.multiply(draft.subtotal, draft.ppnPercent), 100),
+          'INTEGER_ROUND'
+        )
+      : 0;
+    draft.pphAmount = draft.pphEnabled === true
+      ? PrecisionEngine.applyPolicy(
+          PrecisionEngine.divide(PrecisionEngine.multiply(draft.subtotal, draft.pphPercent ?? 0), 100),
+          'INTEGER_ROUND'
+        )
+      : 0;
+    draft.grandTotal = PrecisionEngine.add(PrecisionEngine.add(draft.subtotal, draft.ppnAmount), draft.pphAmount ?? 0);
   }
 
   /**

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Plus, Check } from 'lucide-react';
-import { formatCurrencyIDR } from '../../calculations/decimalEngine';
+import { useCurrency } from '../../context/CurrencyContext';
 
 interface SpreadsheetFooterProps {
   groupsCount: number;
@@ -18,6 +18,10 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
   onAddGroup,
   isSaving = false,
 }) => {
+  /* Kurs tampil global: total biaya langsung ikut mata uang Top Bar
+   * (default IDR). Input harga satuan per baris tetap IDR (nilai sumber)
+   * — hanya total tampil yang dikonversi. */
+  const { formatDisplay } = useCurrency();
   return (
     <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {/* 1. Summary Bar (+ Tambah Kelompok, counts, Total Biaya Langsung) */}
@@ -83,7 +87,7 @@ export const SpreadsheetFooter: React.FC<SpreadsheetFooterProps> = ({
               letterSpacing: '-0.02em',
             }}
           >
-{formatCurrencyIDR(totalRab)}
+{formatDisplay(totalRab)}
           </span>
         </div>
       </div>

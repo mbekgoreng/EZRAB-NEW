@@ -466,6 +466,12 @@ export interface DEDRabDraftSummary {
   subtotal: number;
   ppnPercent: number;
   ppnAmount: number;
+  /** Pajak opt-in (owner 2026-10-27): hanya flag === true yang
+   * mengaktifkan perhitungan; persen saja bukan bukti aktif. */
+  ppnEnabled?: boolean;
+  pphEnabled?: boolean;
+  pphPercent?: number;
+  pphAmount?: number;
   grandTotal: number;
   missingDataSummary: MissingDataSummary;
   analysisStatus?: 'COMPLETE' | 'PARTIAL' | 'FAILED' | 'NO_ITEMS_FOUND';

@@ -171,7 +171,8 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
       wastePercent: 5,
       overheadPercent: 10,
       profitPercent: 5,
-      taxPercent: 11
+      taxPercent: 11,
+      taxEnabled: false
     };
     try {
       const raw = localStorage.getItem('ezrab_global_estimation_settings_v1');

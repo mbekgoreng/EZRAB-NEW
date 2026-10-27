@@ -396,64 +396,6 @@ export const EstimatorToolbar: React.FC<EstimatorToolbarProps> = ({
           <span>Kolom</span>
           <ChevronDown size={11} color="#64748B" />
         </button>
-
-        {/* Undo & Redo Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '3px', marginLeft: '4px', borderLeft: '1px solid var(--ez-color-border-line)', paddingLeft: '8px' }}>
-          <button
-            type="button"
-            onClick={onUndo}
-            disabled={!canUndo}
-            title={canUndo ? 'Undo (Ctrl+Z)' : 'Tidak ada riwayat untuk Undo'}
-            style={{
-              height: '34px',
-              width: '34px',
-              borderRadius: '6px',
-              border: '1px solid var(--ez-hue-slate-border)',
-              background: canUndo ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)',
-              color: canUndo ? 'var(--ez-color-text-strong)' : '#94A3B8',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: canUndo ? 'pointer' : 'not-allowed',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={(e) => {
-              if (canUndo) e.currentTarget.style.background = 'var(--ez-hue-blue-bg)';
-            }}
-            onMouseLeave={(e) => {
-              if (canUndo) e.currentTarget.style.background = 'var(--ez-color-surface)';
-            }}
-          >
-            <Undo2 size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={onRedo}
-            disabled={!canRedo}
-            title={canRedo ? 'Redo (Ctrl+Y / Ctrl+Shift+Z)' : 'Tidak ada riwayat untuk Redo'}
-            style={{
-              height: '34px',
-              width: '34px',
-              borderRadius: '6px',
-              border: '1px solid var(--ez-hue-slate-border)',
-              background: canRedo ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)',
-              color: canRedo ? 'var(--ez-color-text-strong)' : '#94A3B8',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: canRedo ? 'pointer' : 'not-allowed',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={(e) => {
-              if (canRedo) e.currentTarget.style.background = 'var(--ez-hue-blue-bg)';
-            }}
-            onMouseLeave={(e) => {
-              if (canRedo) e.currentTarget.style.background = 'var(--ez-color-surface)';
-            }}
-          >
-            <Redo2 size={14} />
-          </button>
-        </div>
       </div>
 
       {/* Right controls */}

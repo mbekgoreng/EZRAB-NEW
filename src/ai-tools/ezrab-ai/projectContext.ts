@@ -102,11 +102,20 @@ export function buildProjectSnapshot(
       amount: s.totalPrice,
     }));
     const cs = (project?.costSummary ?? {}) as Record<string, unknown>;
+    const pj = (project ?? {}) as Record<string, unknown>;
     const summary = recalculateCostSummary(engineItems as never, {
-      overheadPercent: typeof cs.overheadPercent === 'number' ? cs.overheadPercent : undefined,
+      /* Overhead: field proyek dulu; bila tak ada, mesin memakai fallback
+       * 10 (bukan persen ringkasan lama 5 — itu default pembuatan, bukan
+       * konfigurasi). Selaras dengan kartu total & Rekapitulasi. */
+      overheadPercent: typeof pj.overheadPercent === 'number' ? pj.overheadPercent : undefined,
       profitPercent: typeof cs.profitPercent === 'number' ? cs.profitPercent : undefined,
       taxPercent: typeof cs.taxPercent === 'number' ? cs.taxPercent : undefined,
       contingencyPercent: typeof cs.contingencyPercent === 'number' ? cs.contingencyPercent : undefined,
+      /* Kebijakan pajak opt-in: snapshot AI memakai flag proyek yang sama
+       * dengan Rekap/kartu; tanpa flag, pajak default MATI. */
+      ppnEnabled: pj.ppnEnabled === true,
+      pphEnabled: pj.pphEnabled === true,
+      pphPercent: typeof pj.pphPercent === 'number' ? pj.pphPercent : (typeof cs.pphPercent === 'number' ? cs.pphPercent : 0),
     } as never);
     costBreakdown = {
       directCost: summary.directCost,

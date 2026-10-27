@@ -33,6 +33,7 @@ import {
 import { Project, RabItem } from '../../types';
 import { RabTemplateService } from '../../services/rabTemplateService';
 import type { GlobalEstimationSettings } from './GlobalEstimationSettingsModal';
+import { templatePreviewTax } from '../../services/templatePreviewTax';
 import { MaterialLibraryService } from '../../services/materialLibraryService';
 import { formatRupiah, formatNumberId } from '../../engine/formulaEngine';
 import { SafeDecimalEngine } from '../../engine/safeDecimalEngine';
@@ -174,7 +175,8 @@ export const UniversalTemplateConfigurator: React.FC<UniversalTemplateConfigurat
     const overhead = Math.round(nonOfficialSubtotal * (globalSettings.overheadPercent / 100));
     const profit = Math.round((nonOfficialSubtotal + overhead) * (globalSettings.profitPercent / 100));
     const taxBase = previewResult.totalEstimate + waste + overhead + profit;
-    const tax = Math.round(taxBase * (globalSettings.taxPercent / 100));
+    /* Pajak opt-in preview template: hanya bila taxEnabled === true. */
+    const tax = templatePreviewTax(taxBase, globalSettings);
     return {
       officialSubtotal,
       nonOfficialSubtotal,

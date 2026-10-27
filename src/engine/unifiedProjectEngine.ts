@@ -30,7 +30,14 @@ export class UnifiedProjectEngine {
     const unresolved = items.filter((itm) => itm.priceStatus === 'PRICE_UNRESOLVED');
     const pricedItems = items.filter((itm) => itm.priceStatus !== 'PRICE_UNRESOLVED');
     const directCost = pricedItems.reduce((acc, itm) => acc + (itm.amount || 0), 0);
-    const overheadPercent = currentSummary?.overheadPercent ?? 5;
+    /* Fallback overhead 10% (owner 2026-10-27, selaras Rekapitulasi):
+     * berlaku bila pemanggil tidak memberi overheadPercent SAMA SEKALI
+     * (undefined/null). Nilai eksplisit — termasuk 0% — dipertahankan
+     * karena ?? tidak mengubah 0. Nilai ini BUKAN konfigurasi tersimpan:
+     * pemanggil jalur proyek (ProjectContext) selalu memberi nilai dari
+     * field proyek bila ada, sehingga fallback ini hanya menyentuh
+     * proyek yang memang belum dikonfigurasi. */
+    const overheadPercent = currentSummary?.overheadPercent ?? 10;
     const profitPercent = currentSummary?.profitPercent ?? 5;
     const taxPercent = currentSummary?.taxPercent ?? 11;
     const contingencyPercent = currentSummary?.contingencyPercent ?? 0;
@@ -43,8 +50,39 @@ export class UnifiedProjectEngine {
 
     const subtotalBeforeTax =
       directCost + overheadAmount + profitAmount + contingencyAmount + directorMarkupTotal;
-    const taxAmount = Math.round(subtotalBeforeTax * (taxPercent / 100));
-    const grandTotal = subtotalBeforeTax + taxAmount;
+
+    /* KEBIJAKAN PAJAK OPT-IN (owner 2026-10-27, selaras dengan Rekapitulasi):
+     * - PPN/PPh hanya dihitung bila flag-nya === true; default MATI.
+     *   Persentase diambil dari proyek (taxPercent untuk PPN, pphPercent
+     *   untuk PPh — PPh tidak punya default karangan, default 0).
+     * - Basis pajak mengikuti Rekapitulasi: item yang sudah termasuk pajak
+     *   itu (taxIncludedPpn / taxIncludedPph, dari input manual) TIDAK
+     *   kena pajak itu lagi. Karena mesin ini punya komponen pra-pajak
+     *   lebih banyak dari Rekap (profit, kontingensi, markup), tiap
+     *   komponen dialokasikan proporsional ke basis kena pajak
+     *   (faktor = direct kena pajak / direct total). Bila komponen
+     *   tambahan itu 0, rumusnya persis sama dengan Rekapitulasi.
+     * - Nilai sumber item TIDAK PERNAH diubah; yang berubah hanya pajak
+     *   yang ditambahkan di atas subtotal. */
+    const ppnEnabled = currentSummary?.ppnEnabled === true;
+    const pphEnabled = currentSummary?.pphEnabled === true;
+    const pphPercent = currentSummary?.pphPercent ?? 0;
+    const itemAmount = (itm: RabItem) => itm.amount || 0;
+    const taxableDirect = (flag: 'taxIncludedPpn' | 'taxIncludedPph') =>
+      pricedItems
+        .filter((itm) => (itm as any)?.[flag] !== true)
+        .reduce((acc, itm) => acc + itemAmount(itm), 0);
+    const taxableSubtotal = (flag: 'taxIncludedPpn' | 'taxIncludedPph') => {
+      if (directCost <= 0) return 0;
+      return (subtotalBeforeTax * taxableDirect(flag)) / directCost;
+    };
+    const taxAmount = ppnEnabled
+      ? Math.round((taxableSubtotal('taxIncludedPpn') * taxPercent) / 100)
+      : 0;
+    const pphAmount = pphEnabled
+      ? Math.round((taxableSubtotal('taxIncludedPph') * pphPercent) / 100)
+      : 0;
+    const grandTotal = subtotalBeforeTax + taxAmount + pphAmount;
 
     return {
       directCost,
@@ -62,6 +100,10 @@ export class UnifiedProjectEngine {
       subtotalBeforeTax,
       taxPercent,
       taxAmount,
+      ppnEnabled,
+      pphEnabled,
+      pphPercent,
+      pphAmount,
       grandTotal,
       costPerM2: 0,
       unresolvedItems: unresolved.length,
@@ -191,8 +233,22 @@ export class UnifiedProjectEngine {
       0
     );
     const cost = project.costSummary || ({} as any);
+    const pj = project as any;
 
-    const overheadPercent = typeof cost.overheadPercent === 'number' ? cost.overheadPercent : 5;
+    /* Penyelarasan 2026-10-27 (owner): ringkasan ekspor ini adalah
+     * "ringkasan proyek" yang sama dengan kartu/Rekap, jadi memakai
+     * aturan yang sama — sebelumnya ia memakai default sendiri
+     * (overhead 5, PPN 11% otomatis) sehingga total ekspor selalu
+     * berbeda dari layar.
+     * - Overhead: field proyek (ditulis Pengaturan); bila tidak ada,
+     *   fallback 10. Angka 5 di costSummary adalah default pembuatan
+     *   proyek, bukan konfigurasi — tidak dipakai sebagai fallback.
+     *   Nilai eksplisit 0% dipertahankan (typeof-check, bukan truthy).
+     * - Pajak opt-in: PPN/PPh hanya bila flag === true (field proyek
+     *   ATAU salinan ringkasan dari recalculate sebelumnya); persen dari
+     *   proyek, PPh default 0. Basis pajak proporsional seperti mesin
+     *   utama (item sudah-termasuk-pajak dikeluarkan). */
+    const overheadPercent = typeof pj?.overheadPercent === 'number' ? pj.overheadPercent : 10;
     const overheadAmount = Math.round(directCost * (overheadPercent / 100));
 
     const profitPercent = typeof cost.profitPercent === 'number' ? cost.profitPercent : 5;
@@ -200,10 +256,26 @@ export class UnifiedProjectEngine {
 
     const subtotalBeforeTax = directCost + overheadAmount + profitAmount;
 
-    const taxPercent = typeof cost.taxPercent === 'number' ? cost.taxPercent : 11;
-    const taxAmount = Math.round(subtotalBeforeTax * (taxPercent / 100));
+    /* Seksi tanpa item memakai subtotal tersimpan (tidak ada flag pajak
+     * yang bisa dibaca) sehingga nilainya sepenuhnya masuk basis pajak;
+     * hanya seksi ber-item yang bisa dikecualikan per flag. */
+    const taxableDirect = (flag: string) =>
+      sections.reduce((sum, s: any) => {
+        if (s?.items && s.items.length > 0) {
+          return sum + s.items.filter((it: any) => it?.[flag] !== true).reduce((a: number, it: any) => a + (exportItemAmount(it as any) ?? 0), 0);
+        }
+        return sum + (s?.subtotal || 0);
+      }, 0);
+    const taxableSubtotal = (flag: string) =>
+      directCost > 0 ? (subtotalBeforeTax * taxableDirect(flag)) / directCost : 0;
+    const taxPercent = typeof pj?.ppnPercent === 'number' ? pj.ppnPercent : (typeof cost.taxPercent === 'number' ? cost.taxPercent : 11);
+    const ppnEnabled = pj?.ppnEnabled === true || cost.ppnEnabled === true;
+    const taxAmount = ppnEnabled ? Math.round((taxableSubtotal('taxIncludedPpn') * taxPercent) / 100) : 0;
+    const pphPercent = typeof pj?.pphPercent === 'number' ? pj.pphPercent : (typeof cost.pphPercent === 'number' ? cost.pphPercent : 0);
+    const pphEnabled = pj?.pphEnabled === true || cost.pphEnabled === true;
+    const pphAmount = pphEnabled ? Math.round((taxableSubtotal('taxIncludedPph') * pphPercent) / 100) : 0;
 
-    const grandTotal = subtotalBeforeTax + taxAmount;
+    const grandTotal = subtotalBeforeTax + taxAmount + pphAmount;
 
     return {
       directCost,
@@ -221,6 +293,10 @@ export class UnifiedProjectEngine {
       subtotalBeforeTax,
       taxPercent,
       taxAmount,
+      ppnEnabled,
+      pphEnabled,
+      pphPercent,
+      pphAmount,
       grandTotal,
       costPerM2: cost.costPerM2 || (project.buildingArea ? Math.round(grandTotal / project.buildingArea) : 0),
       unresolvedItems,

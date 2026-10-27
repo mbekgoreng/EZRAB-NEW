@@ -38,7 +38,7 @@ function treeSummary(overrides: Partial<ProjectCostSummary> = {}): ProjectCostSu
     directCost: 0, overheadPercent: 5, overheadAmount: 0, profitPercent: 5, profitAmount: 0,
     contingencyPercent: 0, contingencyAmount: 0, directorMarkupPercent: 0, directorMarkupNominal: 0,
     directorMarkupTotal: 0, showMarkupToEditor: false, showMarkupToClient: false,
-    subtotalBeforeTax: 0, taxPercent: 11, taxAmount: 0, pphPercent: 0, pphAmount: 0,
+    subtotalBeforeTax: 0, taxPercent: 11, taxAmount: 0, ppnEnabled: true, pphPercent: 0, pphAmount: 0,
     grandTotal: 0, costPerM2: 0, ...overrides,
   };
 }

@@ -51,6 +51,12 @@ interface DocumentReviewWorkspaceModalProps {
   onClose: () => void;
   projectName: string;
   projectId: string;
+  /** Pajak opt-in proyek (owner 2026-10-27): default nonaktif bila tidak
+   * diberikan. Diteruskan ke draf deterministik dan ke review import. */
+  ppnEnabled?: boolean;
+  ppnPercent?: number;
+  pphEnabled?: boolean;
+  pphPercent?: number;
   documents: ProjectDocument[];
   entities: ConstructionEntity[];
   qtoItems: GeneratedQtoItem[];
@@ -70,6 +76,10 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
   onClose,
   projectName,
   projectId,
+  ppnEnabled,
+  ppnPercent,
+  pphEnabled,
+  pphPercent,
   documents,
   entities,
   qtoItems,
@@ -202,13 +212,16 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
         projectName,
         templateContext: activeTemplateMappingContext,
         entities: canonicalResolutionSummary.entities,
-        ppnPercent: 11
+        ppnPercent: ppnPercent ?? 11,
+        ppnEnabled: ppnEnabled === true,
+        pphEnabled: pphEnabled === true,
+        pphPercent: pphPercent ?? 0
       });
     } catch (e) {
       console.warn('Deterministic RAB Draft generation failed:', e);
       return null;
     }
-  }, [activeTemplateMappingContext, canonicalResolutionSummary, projectId, projectName]);
+  }, [activeTemplateMappingContext, canonicalResolutionSummary, projectId, projectName, ppnEnabled, ppnPercent, pphEnabled, pphPercent]);
 
   const highFindingsCount = findings.filter(f => f.severity === 'HIGH' && f.status === 'OPEN').length;
 
@@ -837,6 +850,10 @@ export const DocumentReviewWorkspaceModal: React.FC<DocumentReviewWorkspaceModal
                 summary={deterministicRabSummary}
                 projectId={projectId}
                 projectName={projectName}
+                ppnEnabled={ppnEnabled}
+                ppnPercent={ppnPercent}
+                pphEnabled={pphEnabled}
+                pphPercent={pphPercent}
                 totalPages={documents.reduce((sum, d) => sum + (d.pageCount || 1), 0)}
                 totalEntities={entities.length}
                 onCommitSuccess={(sections, grandTotal) => {

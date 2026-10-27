@@ -8,7 +8,7 @@ import {
   PieChart as PieChartIcon,
 } from "lucide-react";
 import { Project, RabItem } from "../../types";
-import { formatCurrencyIDR } from "../../calculations/decimalEngine";
+import { useCurrency } from "../../context/CurrencyContext";
 
 interface EstimatorRekapitulasiViewProps {
   currentProject: Project | null;
@@ -21,15 +21,36 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
   items,
   onOpenExportModal,
 }) => {
-  const { categoryList, directCost, overheadNominal, ppnNominal, grandTotal, overheadPct, ppnPct } = useMemo(() => {
+  const { formatDisplay } = useCurrency();
+  /* PAJAK OPT-IN (owner 2026-10-27): PPN/PPh TIDAK PERNAH otomatis.
+   * - ppnEnabled/pphEnabled (default MATI) + pphPercent (default 0 —
+   *   tarif PPh bervariasi menurut jenis pekerjaan, TIDAK dikarang)
+   *   diatur di Pengaturan (EstimatorSettingsView / Pengaturan Terpadu).
+   * - Anti hitung ganda: item manual yang dicentang "harga sudah
+   *   termasuk PPN/PPh" (taxIncludedPpn/taxIncludedPph) DIKELUARKAN
+   *   dari basis pajak itu (beserta overhead proporsionalnya).
+   *   Spreadsheet sendiri tidak pernah menambah pajak (footer =
+   *   biaya langsung saja), jadi tanpa centang itu pun tidak ada
+   *   pajak ganda dari spreadsheet — ganda hanya mungkin bila harga
+   *   input memang sudah termasuk pajak, dan itulah yang dicegah
+   *   centang per-item ini. */
+  const { categoryList, directCost, overheadNominal, ppnNominal, pphNominal, grandTotal, overheadPct, ppnPct, pphPct, ppnEnabled, pphEnabled, ppnExcludedCount, pphExcludedCount } = useMemo(() => {
     const map = new Map<string, { name: string; total: number; count: number }>();
     let direct = 0;
+    let directPpnTaxable = 0;
+    let directPphTaxable = 0;
+    let ppnExcluded = 0;
+    let pphExcluded = 0;
 
     items.forEach((item) => {
       // F1a: kunci pengelompokan sama dengan spreadsheet (sectionName || category).
       const cat = item.sectionName || item.category || "Pekerjaan Persiapan & Umum";
       const amt = item.amount || (item.volume || 0) * (item.unitPrice || 0);
       direct += amt;
+      if ((item as any)?.taxIncludedPpn === true) ppnExcluded += 1;
+      else directPpnTaxable += amt;
+      if ((item as any)?.taxIncludedPph === true) pphExcluded += 1;
+      else directPphTaxable += amt;
 
       const existing = map.get(cat);
       if (existing) {
@@ -50,20 +71,33 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
 
     const overheadPct = (currentProject as any)?.overheadPercent ?? 10;
     const ppnPct = (currentProject as any)?.ppnPercent ?? 11;
+    const ppnEnabled = (currentProject as any)?.ppnEnabled === true;
+    const pphEnabled = (currentProject as any)?.pphEnabled === true;
+    const pphPct = (currentProject as any)?.pphPercent ?? 0;
 
     const overhead = (direct * overheadPct) / 100;
-    const subtotalAfterOverhead = direct + overhead;
-    const ppn = (subtotalAfterOverhead * ppnPct) / 100;
-    const total = subtotalAfterOverhead + ppn;
+    // Overhead dialokasikan proporsional ke basis kena pajak, supaya
+    // item yang sudah termasuk pajak tidak ikut kena pajak lewat overhead.
+    const overheadPpn = direct > 0 ? (overhead * directPpnTaxable) / direct : 0;
+    const overheadPph = direct > 0 ? (overhead * directPphTaxable) / direct : 0;
+    const ppn = ppnEnabled ? ((directPpnTaxable + overheadPpn) * ppnPct) / 100 : 0;
+    const pph = pphEnabled ? ((directPphTaxable + overheadPph) * pphPct) / 100 : 0;
+    const total = direct + overhead + ppn + pph;
 
     return {
       categoryList: categories,
       directCost: direct,
       overheadNominal: overhead,
       ppnNominal: ppn,
+      pphNominal: pph,
       grandTotal: total,
       overheadPct,
       ppnPct,
+      pphPct,
+      ppnEnabled,
+      pphEnabled,
+      ppnExcludedCount: ppnExcluded,
+      pphExcludedCount: pphExcluded,
     };
   }, [items, currentProject]);
 
@@ -85,7 +119,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
             </div>
           </div>
           <div style={{ fontSize: "20px", fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
-            {formatCurrencyIDR(directCost)}
+            {formatDisplay(directCost)}
           </div>
           <span style={{ fontSize: "11.5px", color: "rgba(255, 255, 255, 0.8)", marginTop: "4px", display: "block" }}>
             Total dari {items.length} item pekerjaan
@@ -101,14 +135,15 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
             </div>
           </div>
           <div style={{ fontSize: "20px", fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
-            {formatCurrencyIDR(overheadNominal)}
+            {formatDisplay(overheadNominal)}
           </div>
           <span style={{ fontSize: "11.5px", color: "rgba(255, 255, 255, 0.8)", marginTop: "4px", display: "block" }}>
             Margin jasa pelaksana & manajemen
           </span>
         </div>
 
-        {/* Card 3: PPN 11% */}
+        {/* Card 3: PPN — hanya tampil nominal bila ppnEnabled; bila
+            mati, kartu jujur "Nonaktif" (bukan Rp0 yang menyesatkan). */}
         <div className="ez-stat" style={{ background: "var(--ez-stat-cream)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
             <span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255, 255, 255, 0.88)" }}>PPN {ppnPct}%</span>
@@ -117,12 +152,32 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
             </div>
           </div>
           <div style={{ fontSize: "20px", fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
-            {formatCurrencyIDR(ppnNominal)}
+            {ppnEnabled ? formatDisplay(ppnNominal) : "Nonaktif"}
           </div>
           <span style={{ fontSize: "11.5px", color: "rgba(255, 255, 255, 0.8)", marginTop: "4px", display: "block" }}>
-            Pajak pertambahan nilai resmi
+            {ppnEnabled
+              ? (ppnExcludedCount > 0 ? `Tidak dihitung untuk ${ppnExcludedCount} item yang harganya sudah termasuk PPN` : "Pajak pertambahan nilai resmi")
+              : "Tidak ditambahkan — nyalakan di Pengaturan bila kontrak kena PPN"}
           </span>
         </div>
+
+        {/* Card 3b: PPh — hanya bila pphEnabled (tarif diisi user, default 0). */}
+        {pphEnabled && (
+        <div className="ez-stat" style={{ background: "var(--ez-stat-cream)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+            <span style={{ fontSize: "12px", fontWeight: 600, color: "rgba(255, 255, 255, 0.88)" }}>PPh {pphPct}%</span>
+            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "var(--ez-color-surface)", color: "var(--ez-hue-amber-text)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <ShieldCheck size={16} />
+            </div>
+          </div>
+          <div style={{ fontSize: "20px", fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
+            {formatDisplay(pphNominal)}
+          </div>
+          <span style={{ fontSize: "11.5px", color: "rgba(255, 255, 255, 0.8)", marginTop: "4px", display: "block" }}>
+            {pphExcludedCount > 0 ? `Tidak dihitung untuk ${pphExcludedCount} item yang harganya sudah termasuk PPh` : "Pajak penghasilan (tarif diisi di Pengaturan)"}
+          </span>
+        </div>
+        )}
 
         {/* Card 4: Grand Total RAB */}
         <div className="ez-stat" style={{ background: "var(--ez-stat-mint)", color: "var(--ez-color-text-primary)", borderRadius: "20px", padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.045)" }}>
@@ -133,10 +188,10 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
             </div>
           </div>
           <div style={{ fontSize: "21px", fontWeight: 800, color: "#FFFFFF", fontVariantNumeric: "tabular-nums" }}>
-            {formatCurrencyIDR(grandTotal)}
+            {formatDisplay(grandTotal)}
           </div>
           <span style={{ fontSize: "11.5px", color: "rgba(255, 255, 255, 0.8)", marginTop: "4px", display: "block" }}>
-            Termasuk seluruh pajak & overhead
+            {ppnEnabled || pphEnabled ? "Termasuk overhead + pajak yang diaktifkan" : "Biaya langsung + overhead saja (pajak nonaktif)"}
           </span>
         </div>
       </div>
@@ -237,7 +292,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
                       {cat.count}
                     </td>
                     <td style={{ padding: "11px 14px", textAlign: "right", fontWeight: 700, color: "var(--ez-color-text-primary)", fontVariantNumeric: "tabular-nums" }}>
-                      {formatCurrencyIDR(cat.total)}
+                      {formatDisplay(cat.total)}
                     </td>
                     <td style={{ padding: "11px 14px", textAlign: "right", fontWeight: 600, color: "var(--ez-hue-blue-text)", fontVariantNumeric: "tabular-nums" }}>
                       {cat.weight.toFixed(2)}%
@@ -253,7 +308,7 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
                     Jumlah Biaya Langsung (A)
                   </td>
                   <td style={{ padding: "11px 14px", textAlign: "right", color: "var(--ez-color-text-primary)", fontVariantNumeric: "tabular-nums" }}>
-                    {formatCurrencyIDR(directCost)}
+                    {formatDisplay(directCost)}
                   </td>
                   <td style={{ padding: "11px 14px", textAlign: "right", color: "var(--ez-hue-blue-text)" }}>
                     100.00%
@@ -264,25 +319,40 @@ export const EstimatorRekapitulasiView: React.FC<EstimatorRekapitulasiViewProps>
                     Jasa Overhead & Keuntungan Pelaksana ({overheadPct}%) (B)
                   </td>
                   <td style={{ padding: "9px 14px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
-                    {formatCurrencyIDR(overheadNominal)}
+                    {formatDisplay(overheadNominal)}
                   </td>
                   <td style={{ padding: "9px 14px", textAlign: "right", color: "#94A3B8" }}>—</td>
                 </tr>
+                {ppnEnabled && (
                 <tr style={{ background: "var(--ez-color-surface)", borderTop: "1px solid var(--ez-color-surface-tertiary)", color: "var(--ez-color-text-slate)" }}>
                   <td colSpan={3} style={{ padding: "9px 14px", textAlign: "right" }}>
                     Pajak Pertambahan Nilai (PPN {ppnPct}%) (C)
+                    {ppnExcludedCount > 0 ? ` — ${ppnExcludedCount} item sudah termasuk PPN, tidak dihitung lagi` : ""}
                   </td>
                   <td style={{ padding: "9px 14px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
-                    {formatCurrencyIDR(ppnNominal)}
+                    {formatDisplay(ppnNominal)}
                   </td>
                   <td style={{ padding: "9px 14px", textAlign: "right", color: "#94A3B8" }}>—</td>
                 </tr>
+                )}
+                {pphEnabled && (
+                <tr style={{ background: "var(--ez-color-surface)", borderTop: "1px solid var(--ez-color-surface-tertiary)", color: "var(--ez-color-text-slate)" }}>
+                  <td colSpan={3} style={{ padding: "9px 14px", textAlign: "right" }}>
+                    Pajak Penghasilan (PPh {pphPct}%) (D)
+                    {pphExcludedCount > 0 ? ` — ${pphExcludedCount} item sudah termasuk PPh, tidak dihitung lagi` : ""}
+                  </td>
+                  <td style={{ padding: "9px 14px", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+                    {formatDisplay(pphNominal)}
+                  </td>
+                  <td style={{ padding: "9px 14px", textAlign: "right", color: "#94A3B8" }}>—</td>
+                </tr>
+                )}
                 <tr style={{ background: "var(--ez-hue-blue-bg)", borderTop: "2px solid var(--ez-hue-blue-border)", fontWeight: 800, fontSize: "14px" }}>
                   <td colSpan={3} style={{ padding: "13px 14px", textAlign: "right", color: "var(--ez-hue-blue-text-deep)" }}>
-                    TOTAL BIAYA PROYEK (A + B + C)
+                    TOTAL BIAYA PROYEK (A + B{ppnEnabled ? " + C" : ""}{pphEnabled ? " + D" : ""})
                   </td>
                   <td style={{ padding: "13px 14px", textAlign: "right", color: "var(--ez-hue-blue-text)", fontVariantNumeric: "tabular-nums" }}>
-                    {formatCurrencyIDR(grandTotal)}
+                    {formatDisplay(grandTotal)}
                   </td>
                   <td style={{ padding: "13px 14px", textAlign: "right", color: "var(--ez-hue-blue-text)" }}>
                     100.00%

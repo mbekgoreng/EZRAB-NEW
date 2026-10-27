@@ -146,6 +146,7 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
     restoreEstimateVersion,
     applyScenarioToActiveProject,
     updateProject,
+    refreshProjectTotals,
   } = useProject();
 
   const allProjects = propProjects || contextProjects;
@@ -282,10 +283,14 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
       entities
     });
 
-    // 4. Formulate RAB Draft
+    // 4. Formulate RAB Draft (pajak opt-in proyek; default nonaktif)
     const rabDraft = AutomaticRabDraftEngine.getInstance().generateRabDraft({
       projectId: projId,
-      qtoItems: qtoReport.items
+      qtoItems: qtoReport.items,
+      taxPercent: (currentProject as any)?.ppnPercent ?? 11,
+      ppnEnabled: (currentProject as any)?.ppnEnabled === true,
+      pphEnabled: (currentProject as any)?.pphEnabled === true,
+      pphPercent: (currentProject as any)?.pphPercent ?? 0
     });
 
     // 5. Cross Audit against current Project RAB
@@ -1156,9 +1161,14 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         {activeEstimatorTab === 'pengaturan' && (
           <EstimatorSettingsView
             currentProject={currentProject}
+            onOpenExportModal={() => setIsExportPackageModalOpen(true)}
             onUpdateSettings={(st) => {
               if (currentProject) {
                 updateProject(currentProject.id, st);
+                /* Segera selaraskan kartu total proyek dengan flag pajak
+                 * baru (updater setProjects dieksekusi berurutan, jadi
+                 * refresh membaca flag yang baru disimpan). */
+                refreshProjectTotals(currentProject.id);
                 showToast('Pengaturan estimasi berhasil diperbarui');
               }
             }}
@@ -1519,6 +1529,10 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
         onClose={() => setIsDocumentReviewModalOpen(false)}
         projectName={currentProject?.name || 'Proyek Tanpa Nama'}
         projectId={currentProjectId || 'PRJ-DEFAULT'}
+        ppnEnabled={(currentProject as any)?.ppnEnabled === true}
+        ppnPercent={(currentProject as any)?.ppnPercent}
+        pphEnabled={(currentProject as any)?.pphEnabled === true}
+        pphPercent={(currentProject as any)?.pphPercent}
         documents={reviewWorkspaceData.documents}
         entities={reviewWorkspaceData.entities}
         qtoItems={reviewWorkspaceData.qtoItems}

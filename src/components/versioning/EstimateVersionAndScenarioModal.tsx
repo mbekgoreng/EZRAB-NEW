@@ -177,15 +177,17 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
         {/* ---------------------------------------------------------------------
             1. MODAL HEADER & TAB SWITCHER
            --------------------------------------------------------------------- */}
+        {/* Header dibuat clean (owner 2026-10-27): mengikuti arah
+            dashboard terang — tanpa blok navy, tanpa gradien, tanpa
+            huruf kapital semua, tanpa badge tambahan. */}
         <div
           style={{
             padding: '16px 24px',
-            background: '#0F172A',
-            color: '#FFFFFF',
+            background: 'var(--ez-color-surface)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            borderBottom: '1px solid #1E293B',
+            borderBottom: '1px solid var(--ez-color-border-line)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -194,36 +196,21 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
                 width: '38px',
                 height: '38px',
                 borderRadius: '10px',
-                background: 'linear-gradient(135deg, #2563EB, #7C3AED)',
+                background: 'var(--ez-hue-blue-bg)',
+                color: 'var(--ez-hue-blue-text)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 0 14px rgba(37, 99, 235, 0.4)',
               }}
             >
-              <History size={20} color="#FFFFFF" />
+              <History size={20} />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '0.02em' }}>
-                  ESTIMATE VERSION CONTROL & SCENARIOS
-                </span>
-                <span
-                  style={{
-                    fontSize: '10px',
-                    fontWeight: 800,
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    background: 'rgba(59, 130, 246, 0.2)',
-                    color: '#60A5FA',
-                    border: '1px solid rgba(59, 130, 246, 0.4)',
-                  }}
-                >
-                  VALUE ENGINEERING
-                </span>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--ez-color-text-primary)' }}>
+                Versi &amp; Skenario
               </div>
-              <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px' }}>
-                Pelacakan riwayat versi, komparasi diff perubahan, dan pengujian skenario value engineering
+              <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                Riwayat versi, bandingkan perubahan, dan uji skenario — baseline asli tidak pernah ditimpa.
               </div>
             </div>
           </div>
@@ -233,7 +220,7 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#94A3B8',
+              color: 'var(--ez-color-text-muted)',
               cursor: 'pointer',
               padding: '6px',
               borderRadius: '6px',
@@ -1131,13 +1118,9 @@ export const EstimateVersionAndScenarioModal: React.FC<EstimateVersionAndScenari
             borderTop: '1px solid var(--ez-color-border-line)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-end',
           }}
         >
-          <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
-            🔒 Baseline asli tidak pernah ditimpa saat menguji skenario Value Engineering
-          </div>
-
           <button
             onClick={onClose}
             style={{

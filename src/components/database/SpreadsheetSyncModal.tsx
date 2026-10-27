@@ -33,7 +33,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
   activeCategory = 'MATERIALS',
   onDataImported,
 }) => {
-  const [activeTab, setActiveTab] = useState<'EXPORT' | 'IMPORT' | 'GOOGLE_SHEETS'>('EXPORT');
+  const [activeTab, setActiveTab] = useState<'IMPORT' | 'GOOGLE_SHEETS'>('IMPORT'); // Menu Ekspor DIHAPUS (owner 2026-10-27): database cukup Impor saja.
 
   // Export State
   const [exportScope, setExportScope] = useState<'CURRENT' | 'ALL'>('CURRENT');
@@ -49,7 +49,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
   // Google Sheets State — CATATAN KEJUJURAN: integrasi Google Sheets TIDAK
   // terhubung di aplikasi ini. URL hanya disimpan sebagai preferensi lokal;
   // tidak ada sinkronisasi yang dijalankan (dulu tombolnya berpura-pura
-  // berhasil lewat setTimeout). Pindah data dilakukan via Ekspor/Impor CSV.
+  // berhasil lewat setTimeout). Pindah data dilakukan via Impor CSV.
   const [sheetsUrl, setSheetsUrl] = useState(() => {
     try {
       return localStorage.getItem('ezrab_gsheets_db_url') || '';
@@ -65,7 +65,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
   if (!isOpen) return null;
 
   // ---------------------------------------------------------------------------
-  // Ekspor dari dataset yang BENAR-BENAR ditampilkan pengguna (layanan
+  // (Dulu: ekspor dari dataset yang ditampilkan pengguna — dihapus 2026-10-27.)
   // Material/Labor/Equipment), bukan dataset repository terpisah.
   // ---------------------------------------------------------------------------
   const csvCell = (v: unknown): string => {
@@ -324,7 +324,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
       localStorage.setItem('ezrab_gsheets_db_url', sheetsUrl);
     } catch {}
     setSyncFeedback(
-      'Belum terhubung: integrasi Google Sheets belum tersedia di aplikasi ini, jadi tidak ada sinkronisasi yang dijalankan. URL di atas hanya disimpan sebagai preferensi. Untuk memindahkan data, gunakan tab Ekspor/Impor CSV.'
+      'Belum terhubung: integrasi Google Sheets belum tersedia di aplikasi ini, jadi tidak ada sinkronisasi yang dijalankan. URL di atas hanya disimpan sebagai preferensi. Untuk memindahkan data, gunakan tab Impor CSV.'
     );
   };
 
@@ -402,7 +402,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                 </span>
               </div>
               <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: 'var(--ez-color-text-muted)' }}>
-                Ekspor katalog atau unggah berkas CSV dari dataset yang ditampilkan. Integrasi Google Sheets belum terhubung.
+                Unggah berkas CSV dari dataset yang ditampilkan. Integrasi Google Sheets belum terhubung.
               </p>
             </div>
           </div>
@@ -430,27 +430,6 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
             padding: '0 24px',
           }}
         >
-          <button
-            onClick={() => setActiveTab('EXPORT')}
-            style={{
-              padding: '12px 18px',
-              fontSize: '13.5px',
-              fontWeight: activeTab === 'EXPORT' ? 700 : 500,
-              color: activeTab === 'EXPORT' ? 'var(--ez-hue-green-text)' : 'var(--ez-color-text-muted)',
-              borderBottom: activeTab === 'EXPORT' ? '2px solid #059669' : '2px solid transparent',
-              background: 'none',
-              borderTop: 'none',
-              borderLeft: 'none',
-              borderRight: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <Download size={15} />
-            Ekspor Spreadsheet
-          </button>
           <button
             onClick={() => setActiveTab('IMPORT')}
             style={{
@@ -497,128 +476,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
 
         {/* Content Body */}
         <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-          {/* TAB 1: EXPORT */}
-          {activeTab === 'EXPORT' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '8px' }}>
-                  Pilih Cakupan Data yang Akan Diekspor:
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div
-                    onClick={() => setExportScope('CURRENT')}
-                    style={{
-                      border: exportScope === 'CURRENT' ? '2px solid #059669' : '1px solid var(--ez-hue-slate-border)',
-                      backgroundColor: exportScope === 'CURRENT' ? 'var(--ez-hue-green-bg)' : 'var(--ez-color-surface)',
-                      borderRadius: '10px',
-                      padding: '14px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '4px' }}>
-                      Kategori Aktif ({activeCategory})
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
-                      Hanya mengekspor item dari tab yang sedang dibuka saat ini.
-                    </div>
-                  </div>
-                  <div
-                    onClick={() => setExportScope('ALL')}
-                    style={{
-                      border: exportScope === 'ALL' ? '2px solid #059669' : '1px solid var(--ez-hue-slate-border)',
-                      backgroundColor: exportScope === 'ALL' ? 'var(--ez-hue-green-bg)' : 'var(--ez-color-surface)',
-                      borderRadius: '10px',
-                      padding: '14px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)', marginBottom: '4px' }}>
-                      Seluruh Database Master
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)' }}>
-                      Gabungan Material, Upah Tenaga Kerja, dan Peralatan dari database yang ditampilkan.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ez-color-text-body)', display: 'block', marginBottom: '8px' }}>
-                  Format Berkas Ekspor:
-                </label>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
-                    <input
-                      type="radio"
-                      name="fmt"
-                      checked={exportFormat === 'CSV'}
-                      onChange={() => setExportFormat('CSV')}
-                    />
-                    <span>Comma Separated Values (.CSV) — Kompatibel Excel, Google Sheets, LibreOffice</span>
-                  </label>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  backgroundColor: 'var(--ez-color-surface-secondary)',
-                  borderRadius: '10px',
-                  padding: '14px',
-                  border: '1px solid var(--ez-color-border-line)',
-                  fontSize: '12.5px',
-                  color: 'var(--ez-color-text-slate)',
-                }}
-              >
-                <div style={{ fontWeight: 600, color: 'var(--ez-color-text-primary)', marginBottom: '4px' }}>Kolom Standar Output:</div>
-                <code>Kode, Nama Material/Tenaga/Alat, Kategori, Subkategori, Spesifikasi, Brand, Unit, Harga Acuan, Wilayah, Sumber, Tanggal Update</code>
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-                <button
-                  onClick={handleDownloadExport}
-                  style={{
-                    flex: 1,
-                    backgroundColor: '#059669',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '11px 16px',
-                    fontSize: '13.5px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    boxShadow: '0 2px 4px rgba(5, 150, 105, 0.2)',
-                  }}
-                >
-                  <Download size={16} />
-                  Unduh Berkas Spreadsheet (.CSV)
-                </button>
-                <button
-                  onClick={handleCopyClipboard}
-                  style={{
-                    backgroundColor: 'var(--ez-color-surface-tertiary)',
-                    color: 'var(--ez-color-text-body)',
-                    border: '1px solid var(--ez-hue-slate-border)',
-                    borderRadius: '8px',
-                    padding: '11px 16px',
-                    fontSize: '13.5px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                >
-                  {copiedClipboard ? <Check size={16} color="var(--ez-hue-green-text)" /> : <Copy size={16} />}
-                  {copiedClipboard ? 'Disalin ke Clipboard!' : 'Salin ke Clipboard'}
-                </button>
-              </div>
-            </div>
-          )}
-
+          {/* TAB 1: IMPORT (tab Ekspor dihapus 2026-10-27) */}
           {/* TAB 2: IMPORT */}
           {activeTab === 'IMPORT' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -781,7 +639,7 @@ export const SpreadsheetSyncModal: React.FC<SpreadsheetSyncModalProps> = ({
                 <div style={{ padding: '12px 16px', fontSize: '12.5px', color: 'var(--ez-color-text-body)', lineHeight: 1.6 }}>
                   Aplikasi ini belum memiliki integrasi Google Sheets (tidak ada kredensial/OAuth yang dikonfigurasi), sehingga
                   sheet <strong>01_MATERIAL</strong>, <strong>02_UPAH</strong>, <strong>03_ALAT</strong>, dan <strong>04_HARGA_PROYEK</strong> tidak
-                  tersinkron dengan database lokal. Gunakan tab <strong>Ekspor</strong> dan <strong>Impor CSV</strong> untuk memindahkan data secara manual.
+                  tersinkron dengan database lokal. Gunakan tab <strong>Impor CSV</strong> untuk memindahkan data secara manual.
                 </div>
               </div>
 

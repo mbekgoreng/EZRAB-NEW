@@ -197,6 +197,11 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
   // R2 (2026-10-27): rincian komponen upah/material/alat + sambungan DB.
   const [manualComponents, setManualComponents] = useState<ManualComponentRow[]>([]);
   const [manualSaveToDb, setManualSaveToDb] = useState<boolean>(true);
+  /* Pajak per-item (owner 2026-10-27): centang ini artinya harga satuan
+   * yang diinput SUDAH termasuk pajak itu, sehingga Rekapitulasi TIDAK
+   * menambahkannya lagi (anti hitung ganda). Default tidak dicentang. */
+  const [manualTaxIncludedPpn, setManualTaxIncludedPpn] = useState<boolean>(false);
+  const [manualTaxIncludedPph, setManualTaxIncludedPph] = useState<boolean>(false);
   const manualCompSummary = useMemo(() => sumManualComponents(manualComponents), [manualComponents]);
 
   // AI State
@@ -560,7 +565,9 @@ export const SmartAddWorkItemModal: React.FC<SmartAddWorkItemModalProps> = ({
         volumeSource: 'MANUAL',
         ahspCode: '',
         verificationStatus: 'NEEDS_VERIFICATION',
-      });
+        ...(manualTaxIncludedPpn ? { taxIncludedPpn: true } : {}),
+        ...(manualTaxIncludedPph ? { taxIncludedPph: true } : {}),
+      } as any);
       if (dbInput) {
         const rec = createCustomAhspRecord(dbInput);
         const next = [...customAhsp, rec];
@@ -1907,6 +1914,26 @@ Jika harga tidak pasti, unitPrice = null. Jangan mengarang harga. Jika volume ti
                   onChange={(e) => setManualNotes(e.target.value)}
                   style={{ width: '100%', height: '36px', padding: '0 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
                 />
+              </div>
+
+              {/* Pajak per-item (owner 2026-10-27): harga sudah termasuk
+                  pajak → Rekap tidak menambah pajak itu lagi. */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '10px 12px', border: '1px solid var(--ez-color-border-line)', borderRadius: '8px', background: 'var(--ez-color-surface-secondary)' }}>
+                <div style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--ez-color-text-slate)' }}>
+                  Pajak (centang bila harga satuan di atas sudah termasuk pajak):
+                </div>
+                <label style={{ display: 'flex', gap: '8px', alignItems: 'center', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={manualTaxIncludedPpn} onChange={(e) => setManualTaxIncludedPpn(e.target.checked)} />
+                  <span style={{ fontSize: '12px', color: 'var(--ez-color-text-slate)' }}>
+                    Harga sudah termasuk PPN — Rekap tidak menambah PPN untuk item ini
+                  </span>
+                </label>
+                <label style={{ display: 'flex', gap: '8px', alignItems: 'center', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={manualTaxIncludedPph} onChange={(e) => setManualTaxIncludedPph(e.target.checked)} />
+                  <span style={{ fontSize: '12px', color: 'var(--ez-color-text-slate)' }}>
+                    Harga sudah termasuk PPh — Rekap tidak menambah PPh untuk item ini
+                  </span>
+                </label>
               </div>
 
               {/* R2: sambungan database EZRAB (AHSP Custom) */}

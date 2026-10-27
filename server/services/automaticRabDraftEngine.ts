@@ -36,6 +36,11 @@ export interface RabDraftSummary {
   totalItems: number;
   subtotal: number;
   ppnAmount: number;
+  /** Pajak opt-in (owner 2026-10-27): lihat GenerateRabDraft params. */
+  ppnEnabled?: boolean;
+  pphEnabled?: boolean;
+  pphPercent?: number;
+  pphAmount?: number;
   grandTotal: number;
   unmappedAhspCount: number;
   itemsRequiringPriceVerification: number;
@@ -100,8 +105,13 @@ export class AutomaticRabDraftEngine {
     projectId: string;
     qtoItems: GeneratedQtoItem[];
     taxPercent?: number;
+    /** Pajak opt-in (owner 2026-10-27): default NONAKTIF. taxPercent
+     * saja (termasuk 11) tidak mengaktifkan pajak. */
+    ppnEnabled?: boolean;
+    pphEnabled?: boolean;
+    pphPercent?: number;
   }): RabDraftSummary {
-    const { projectId, qtoItems, taxPercent = 11 } = params;
+    const { projectId, qtoItems, taxPercent = 11, ppnEnabled = false, pphEnabled = false, pphPercent = 0 } = params;
 
     const items: RabDraftItem[] = [];
     let unmappedCount = 0;
@@ -178,14 +188,19 @@ export class AutomaticRabDraftEngine {
       }
     });
 
-    const ppnAmount = SafeDecimalEngine.safeMultiply(subtotal, taxPercent / 100);
-    const grandTotal = SafeDecimalEngine.safeAdd(subtotal, ppnAmount);
+    const ppnAmount = ppnEnabled === true ? SafeDecimalEngine.safeMultiply(subtotal, taxPercent / 100) : 0;
+    const pphAmount = pphEnabled === true ? SafeDecimalEngine.safeMultiply(subtotal, pphPercent / 100) : 0;
+    const grandTotal = SafeDecimalEngine.safeAdd(SafeDecimalEngine.safeAdd(subtotal, ppnAmount), pphAmount);
 
     return {
       projectId,
       totalItems: items.length,
       subtotal,
       ppnAmount,
+      ppnEnabled,
+      pphEnabled,
+      pphPercent,
+      pphAmount,
       grandTotal,
       unmappedAhspCount: unmappedCount,
       itemsRequiringPriceVerification: priceVerificationCount,

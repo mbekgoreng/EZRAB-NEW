@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { RabItem, VolumeSourceType } from '../../types';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
+import { useCurrency } from '../../context/CurrencyContext';
+import { CURRENCY_DEFINITIONS } from '../../services/currencyService';
 import { AddItemMode } from './SmartAddWorkItemModal';
 
 export interface GroupedWbsCategory {
@@ -100,6 +102,12 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
     volumeSource: true,
   },
 }) => {
+  /* Kurs tampil global: kolom Jumlah & subtotal kelompok ikut mata uang
+   * Top Bar (default IDR). Kolom Harga Satuan tetap IDR karena nilainya
+   * adalah input sumber yang bisa diedit — mengedit angka hasil konversi
+   * akan merusak nilai sumber. Header Jumlah menampilkan simbol aktif. */
+  const { formatDisplay, displayCurrency } = useCurrency();
+  const displaySymbol = CURRENCY_DEFINITIONS[displayCurrency]?.symbol ?? 'Rp';
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState<boolean>(() => {
     if (typeof window !== 'undefined') return window.innerWidth < 768;
@@ -215,10 +223,10 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
               )}
               {/* Harga Satuan */}
               {visibleColumns.unitPrice !== false && (
-                <th className="tablet-up" style={{ width: '130px', padding: '10px 12px', textAlign: 'right' }}>Harga Satuan (Rp)</th>
+                <th className="tablet-up" style={{ width: '130px', padding: '10px 12px', textAlign: 'right' }}>Harga Satuan (IDR, sumber)</th>
               )}
               {/* Jumlah (Mandatory) */}
-              <th style={{ width: '130px', padding: '10px 12px', textAlign: 'right' }}>Jumlah (Rp)</th>
+              <th style={{ width: '130px', padding: '10px 12px', textAlign: 'right' }}>Jumlah ({displaySymbol})</th>
               {/* Sumber */}
               {visibleColumns.volumeSource !== false && (
                 <th className="tablet-up" style={{ width: '95px', padding: '10px 8px', textAlign: 'center' }}>Sumber</th>
@@ -468,7 +476,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                           fontVariantNumeric: 'tabular-nums',
                         }}
                       >
-                        {formatCurrencyIDR(group.subtotal)}
+                        {formatDisplay(group.subtotal)}
                       </td>
 
                       {/* Source column spacer if visible */}
@@ -824,7 +832,7 @@ export const EstimatorSpreadsheetTable: React.FC<EstimatorSpreadsheetTableProps>
                                 fontVariantNumeric: 'tabular-nums',
                               }}
                             >
-                              {formatCurrencyIDR(itemTotal)}
+                              {formatDisplay(itemTotal)}
                             </td>
 
                             {/* 9. Sumber Data */}

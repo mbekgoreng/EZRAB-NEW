@@ -178,6 +178,12 @@ export interface DeterministicRabDraftSummary {
   subtotal: number;
   ppnPercent: number;
   ppnAmount: number;
+  /** Pajak opt-in (owner 2026-10-27): jumlah pajak hanya dihitung bila
+   * flag-nya === true; persen saja bukan bukti pajak aktif. */
+  ppnEnabled?: boolean;
+  pphEnabled?: boolean;
+  pphPercent?: number;
+  pphAmount?: number;
   grandTotal: number;
   items: DeterministicRabDraftItem[];
   validationFindings: string[];

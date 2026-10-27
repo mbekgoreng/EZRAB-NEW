@@ -9,6 +9,9 @@ export interface GlobalEstimationSettings {
   overheadPercent: number;
   profitPercent: number;
   taxPercent: number;
+  /** Pajak opt-in preview template (owner 2026-10-27): bila tidak true,
+   * preview template tidak menambah PPN walau taxPercent terisi. */
+  taxEnabled?: boolean;
 }
 
 interface GlobalEstimationSettingsModalProps {
@@ -161,6 +164,14 @@ export const GlobalEstimationSettingsModal: React.FC<GlobalEstimationSettingsMod
                 onChange={e => setFormData({ ...formData, taxPercent: Number(e.target.value) })}
                 style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--ez-hue-slate-border)', fontSize: '12px' }}
               />
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', fontSize: '11.5px', color: 'var(--ez-color-text-slate)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={formData.taxEnabled === true}
+                  onChange={e => setFormData({ ...formData, taxEnabled: e.target.checked })}
+                />
+                Hitung PPN di preview template (default nonaktif)
+              </label>
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 650, color: 'var(--ez-color-text-slate)', marginBottom: '4px' }}>

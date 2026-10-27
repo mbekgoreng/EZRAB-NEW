@@ -27,6 +27,12 @@ export interface GenerateRabDraftInput {
   entities?: CanonicalEntity[];
   qtoItems?: DeterministicQuantityItem[];
   ppnPercent?: number;
+  /** Pajak opt-in (owner 2026-10-27): default NONAKTIF. Persen yang
+   * tersedia — termasuk 11 — bukan bukti pajak aktif; hanya flag
+   * === true yang mengaktifkan perhitungan. */
+  ppnEnabled?: boolean;
+  pphEnabled?: boolean;
+  pphPercent?: number;
   allowAiEstimatedPrice?: boolean;
 }
 
@@ -52,6 +58,9 @@ export class DeterministicRabDraftEngine {
       templateContext,
       entities = [],
       ppnPercent = 11,
+      ppnEnabled = false,
+      pphEnabled = false,
+      pphPercent = 0,
       allowAiEstimatedPrice = false
     } = input;
 
@@ -213,12 +222,22 @@ export class DeterministicRabDraftEngine {
       }
     }
 
-    // Calculate PPN and Grand Total
-    const ppnAmount = SafeDecimalEngine.safeRound(
-      SafeDecimalEngine.safeDivide(SafeDecimalEngine.safeMultiply(calculatedSubtotal, ppnPercent), 100),
-      0
-    );
-    const grandTotal = SafeDecimalEngine.safeAdd(calculatedSubtotal, ppnAmount);
+    // Pajak opt-in: PPN/PPh hanya bila flag-nya === true; bila tidak,
+    // jumlahnya 0 dan grand total = subtotal (tanpa pajak). Subtotal
+    // item tidak berubah oleh kebijakan ini.
+    const ppnAmount = ppnEnabled === true
+      ? SafeDecimalEngine.safeRound(
+          SafeDecimalEngine.safeDivide(SafeDecimalEngine.safeMultiply(calculatedSubtotal, ppnPercent), 100),
+          0
+        )
+      : 0;
+    const pphAmount = pphEnabled === true
+      ? SafeDecimalEngine.safeRound(
+          SafeDecimalEngine.safeDivide(SafeDecimalEngine.safeMultiply(calculatedSubtotal, pphPercent), 100),
+          0
+        )
+      : 0;
+    const grandTotal = SafeDecimalEngine.safeAdd(SafeDecimalEngine.safeAdd(calculatedSubtotal, ppnAmount), pphAmount);
 
     // Total Consistency Assertion Check
     const sumWbsSubtotals = Object.values(wbsSubtotals).reduce((sum, g) => SafeDecimalEngine.safeAdd(sum, g.subtotal), 0);
@@ -253,6 +272,10 @@ export class DeterministicRabDraftEngine {
       subtotal: calculatedSubtotal,
       ppnPercent,
       ppnAmount,
+      ppnEnabled,
+      pphEnabled,
+      pphPercent,
+      pphAmount,
       grandTotal,
       items: draftItems,
       validationFindings,

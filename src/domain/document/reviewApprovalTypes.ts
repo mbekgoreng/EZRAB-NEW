@@ -97,6 +97,12 @@ export interface SpreadsheetImportProposal {
   subtotal: number;
   ppnPercent: number;
   ppnAmount: number;
+  /** Pajak opt-in (owner 2026-10-27): hanya flag === true yang
+   * mengaktifkan perhitungan; persen saja bukan bukti aktif. */
+  ppnEnabled?: boolean;
+  pphEnabled?: boolean;
+  pphPercent?: number;
+  pphAmount?: number;
   grandTotal: number;
   status: 'PENDING' | 'EXECUTING' | 'COMMITTED' | 'FAILED' | 'EXPIRED';
   createdAt: string;
@@ -114,6 +120,10 @@ export interface SpreadsheetImportResult {
   createdItemsCount: number;
   subtotal: number;
   ppnAmount: number;
+  ppnEnabled?: boolean;
+  pphEnabled?: boolean;
+  pphPercent?: number;
+  pphAmount?: number;
   grandTotal: number;
   importedSections: RABSection[];
   /** Rows excluded from the RAB because they carry no resolvable price (fail closed). */

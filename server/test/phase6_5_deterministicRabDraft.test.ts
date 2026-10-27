@@ -308,7 +308,8 @@ export async function runPhase65Tests(): Promise<boolean> {
       const draft = rabEngine.generateRabDraft({
         projectId: 'p_total_test',
         entities: [entSloof, entCol],
-        ppnPercent: 11
+        ppnPercent: 11,
+        ppnEnabled: true
       });
 
       const manualSubtotal = draft.items.reduce((sum, item) => SafeDecimalEngine.safeAdd(sum, item.totalPrice), 0);

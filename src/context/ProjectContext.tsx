@@ -67,6 +67,9 @@ interface ProjectContextType {
   setCurrentProjectId: (id: string | null) => void;
   createProject: (projectData: Partial<Project>) => Project;
   updateProject: (id: string, projectData: Partial<Project>) => void;
+  /** Hitung ulang total proyek dari item RAB + flag pajak proyek saat ini
+   * (dipanggil sesudah updateProject mengubah flag/persen pajak). */
+  refreshProjectTotals: (id: string) => void;
   deleteProject: (id: string) => void;
   /** F1a: salin item RAB, QTO, dan mapping milik proyek sumber ke proyek tujuan (id baru). */
   duplicateProjectData: (sourceProjectId: string, targetProjectId: string) => void;
@@ -832,15 +835,36 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   }, []);
 
-  // Recalculate and update project summary
+  // Recalculate and update project summary.
+  // Kebijakan pajak opt-in (owner 2026-10-27): perhitungan kartu total
+  // proyek memakai flag + persen PAJAK PROYEK ITU SENDIRI (bukan default
+  // mesin). Komputasi dilakukan di dalam updater setProjects agar flag
+  // yang baru saja disimpan lewat updateProject (mis. centang PPN di
+  // Pengaturan) ikut terbaca — updater fungsional dieksekusi berurutan.
+  // Fallback overhead 10% (owner 2026-10-27, selaras Rekapitulasi):
+  // overhead proyek diambil dari FIELD PROYEK (yang ditulis Pengaturan);
+  // bila field itu undefined/null (belum dikonfigurasi), mesin memakai
+  // fallback 10 — BUKAN persen ringkasan lama (5, default pembuatan
+  // proyek). Operator ?? mempertahankan nilai eksplisit 0%. Recalculate
+  // tidak pernah menulis field proyek, jadi fallback tidak menimpa
+  // konfigurasi tersimpan apa pun.
   const recalculateProjectSummary = useCallback(
     (projId: string, updatedRabItemsList: RabItem[]) => {
       const pItems = updatedRabItemsList.filter((i) => i.projectId === projId);
-      const updatedCostSummary = UnifiedProjectEngine.recalculateCostSummary(pItems);
 
       setProjects((prev) =>
         prev.map((p) => {
           if (p.id !== projId) return p;
+          const cs = p.costSummary ?? ({} as any);
+          const updatedCostSummary = UnifiedProjectEngine.recalculateCostSummary(pItems, {
+            ...cs,
+            overheadPercent: (p as any)?.overheadPercent ?? undefined,
+            profitPercent: (p as any)?.profitPercent ?? cs.profitPercent,
+            taxPercent: (p as any)?.ppnPercent ?? cs.taxPercent,
+            ppnEnabled: (p as any)?.ppnEnabled === true,
+            pphEnabled: (p as any)?.pphEnabled === true,
+            pphPercent: (p as any)?.pphPercent ?? cs.pphPercent ?? 0,
+          });
           return {
             ...p,
             totalRab: updatedCostSummary.grandTotal,
@@ -852,6 +876,17 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       );
     },
     []
+  );
+
+  // Dipanggil sesudah updateProject mengubah flag/persen pajak atau
+  // overhead, agar kartu total proyek langsung selaras dengan Rekap —
+  // tanpa menunggu ada item yang diubah. Dipakai di handler simpan
+  // Pengaturan Estimasi dan Pengaturan Terpadu.
+  const refreshProjectTotals = useCallback(
+    (projId: string) => {
+      recalculateProjectSummary(projId, allRabItems);
+    },
+    [allRabItems, recalculateProjectSummary]
   );
 
   // 1. Create Project (Standardized PRJ-YYYYMM-XXXX Contract)
@@ -2433,6 +2468,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setCurrentProjectId,
       createProject,
       updateProject,
+      refreshProjectTotals,
       deleteProject,
       duplicateProjectData,
       backupProjectData,
@@ -2499,6 +2535,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setCurrentProjectId,
       createProject,
       updateProject,
+      refreshProjectTotals,
       deleteProject,
       duplicateProjectData,
       backupProjectData,

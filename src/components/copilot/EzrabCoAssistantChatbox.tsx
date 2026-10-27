@@ -602,7 +602,12 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
       console.warn('Wizard answer error, using fallback:', err);
       try {
         const lastWizMsg = [...messages].reverse().find((m) => !!m.wizardResponse);
-        const fallbackResp = resolveClientWizardStep(sessionId, choiceId, parameters, lastWizMsg?.wizardResponse);
+        const fallbackResp = resolveClientWizardStep(sessionId, choiceId, parameters, lastWizMsg?.wizardResponse, {
+          ppnEnabled: (currentProject as any)?.ppnEnabled === true,
+          ppnPercent: (currentProject as any)?.ppnPercent,
+          pphEnabled: (currentProject as any)?.pphEnabled === true,
+          pphPercent: (currentProject as any)?.pphPercent,
+        });
         const aiMsg: CoAssistantMessage = {
           id: `ai-wiz-${Date.now()}`,
           role: 'ai',

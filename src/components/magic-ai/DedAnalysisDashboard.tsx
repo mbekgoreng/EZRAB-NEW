@@ -33,6 +33,7 @@ import {
 } from '../../ai-estimate';
 import { DocumentViewer } from './DocumentViewer';
 import { useProject } from '../../context/ProjectContext';
+import { useCurrency } from '../../context/CurrencyContext';
 import { honestVolume } from '../../engine/honestVolume';
 
 export interface DedAnalysisDashboardProps {
@@ -65,6 +66,7 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
   onOpenRabDetail,
 }) => {
   const { createRabItemDirect, bulkAddRabItems } = useProject();
+  const { formatDisplay } = useCurrency();
 
   // Mode: FAST (Gemini 3.5 Flash-Lite) vs DETAIL (Gemini 3.8 Flash)
   const [selectedMode, setSelectedMode] = useState<AiEstimateAnalysisMode>('FAST');
@@ -397,9 +399,12 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
     }
   };
 
+  /* Kurs tampil global (owner 2026-10-27): angka hasil DED ikut
+   * mata uang yang dipilih di Top Bar (default IDR); nilai sumber
+   * tetap IDR, unresolved tetap "Harga belum tersedia". */
   const formatRupiah = (val?: number | null) => {
     if (val === null || val === undefined || isNaN(val)) return 'Harga belum tersedia';
-    return `Rp ${val.toLocaleString('id-ID')}`;
+    return formatDisplay(val);
   };
 
   return (
@@ -420,6 +425,11 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
 /* deddash-x5 <- max-w-[1440px] p-6 space-y-6 */
 .deddash-x5 { max-width: 1440px; padding: 1.5rem; }
 .deddash-x5 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.5rem; }
+/* Ringkas di HP (2026-10-27): padding + jarak antar-seksi lebih kecil */
+@media (max-width: 640px) {
+  .deddash-x5 { padding: 1rem; }
+  .deddash-x5 > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem; }
+}
 /* deddash-x6 <- sm:flex-row */
 @media (min-width: 640px) { .deddash-x6 { flex-direction: row; } }
 /* deddash-x7 <- gap-3.5 */
@@ -439,8 +449,10 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
 @media (min-width: 1024px) { .deddash-x13 { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
 /* deddash-x14 <- lg:col-span-7 */
 @media (min-width: 1024px) { .deddash-x14 { grid-column: span 7 / span 7; } }
-/* deddash-x15 <- lg:col-span-5 min-h-[620px] */
-.deddash-x15 { min-height: 620px; }
+/* deddash-x15 <- lg:col-span-5 (min-height 620px DIHAPUS 2026-10-27:
+   panel proses dulu dipaksa setinggi viewer sehingga di HP ada ruang
+   kosong panjang; sekarang tingginya mengikuti isi) */
+.deddash-x15 { }
 @media (min-width: 1024px) { .deddash-x15 { grid-column: span 5 / span 5; } }
 /* deddash-x16 <- pb-3 */
 .deddash-x16 { padding-bottom: 0.75rem; }
@@ -488,6 +500,12 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
 .deddash-x36 { margin-top: 0.125rem; }
 /* deddash-x37 <- mt-0.5 */
 .deddash-x37 { margin-top: 0.125rem; }
+/* deddash-x38 <- tabel hasil: scroll INTERNAL, bukan halaman.
+   Tabel RAB yang panjang dulu mendorong seluruh halaman ke bawah;
+   sekarang tabel dibatasi 480px dengan header sticky, halaman
+   tidak memanjang oleh tabel. */
+.deddash-x38 { max-height: 480px; overflow-y: auto; }
+.deddash-x38 thead th { position: sticky; top: 0; background: var(--ez-hue-slate-bg); z-index: 1; }
       `}</style>
       {/* =========================================================================
           PAGE HEADER (Section 7)
@@ -639,47 +657,31 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
         </div>
 
         {/* =========================================================================
-            SECTION 9: ANALYSIS PROGRESS (Horizontal Stepper with Thin Progress Line)
+            SECTION 9: ANALYSIS PROGRESS — ringkas (owner 2026-10-27:
+            UI lebih sederhana, minimalkan scroll). Detail 4 tahap TIDAK
+            dihapus, hanya dipindah: daftar lengkapnya tetap ada di panel
+            "Proses Analisis" di bawah; di sini cukup satu baris chip
+            tahap + baris progres, sehingga halaman jauh lebih pendek
+            (di HP, grid 4 kartu bertumpuk sebelumnya memakan ±400px).
            ========================================================================= */}
-        <div className="ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] p-5 shadow-2xs space-y-4">
-          {/* Stepper Columns */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="ez-bg-surface border border-[var(--ez-color-border-line)] rounded-[12px] p-4 shadow-2xs space-y-3">
+          {/* Stepper ringkas: satu baris chip, bukan 4 kartu bertumpuk */}
+          <div className="flex flex-wrap items-center gap-2">
             {steps.map((st) => (
-              <div
+              <span
                 key={st.id}
-                className={`p-3 rounded-[10px] border transition-all ${
-                  st.status === 'PROCESSING'
-                    ? 'border-[var(--ez-hue-blue-border)] bg-[var(--ez-hue-blue-bg)]'
-                    : st.status === 'SUCCESS'
-                    ? 'border-[var(--ez-color-border-line)] bg-[var(--ez-hue-slate-bg)]'
-                    : 'border-transparent bg-transparent opacity-60'
+                title={`${st.title} — ${st.subtitle}${st.detail ? ` · ${st.detail}` : ''}`}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-bold border ${
+                  st.status === 'SUCCESS'
+                    ? 'bg-[var(--ez-hue-green-bg)] text-[var(--ez-hue-green-text-bright)] border-[var(--ez-hue-green-border)]'
+                    : st.status === 'PROCESSING'
+                    ? 'bg-[var(--ez-hue-blue-bg)] text-[var(--ez-hue-blue-text)] border-[var(--ez-hue-blue-border)]'
+                    : 'bg-[var(--ez-color-surface-tertiary)] text-[#94A3B8] border-[var(--ez-color-border-line)]'
                 }`}
               >
-                <div className="flex items-center justify-between deddash-x10">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-mono text-[11px] font-bold text-[#64748B]">{st.number}</span>
-                    <span className="text-[13px] font-bold text-[var(--ez-color-text-primary)]">{st.title}</span>
-                  </div>
-                  {/* Status Indicator */}
-                  {st.status === 'SUCCESS' ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--ez-hue-green-text-bright)]">
-                      <CheckCircle2 size={13} />
-                      {st.duration || 'Selesai'}
-                    </span>
-                  ) : st.status === 'PROCESSING' ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--ez-hue-blue-text)]">
-                      <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-ping" />
-                      {st.duration || 'Berjalan'}
-                    </span>
-                  ) : (
-                    <span className="text-[11px] font-semibold text-[#94A3B8]">Menunggu</span>
-                  )}
-                </div>
-                <div className="text-[11.5px] text-[#64748B]">{st.subtitle}</div>
-                {st.detail && (
-                  <div className="text-[10.5px] text-[#94A3B8] mt-1 font-mono truncate">{st.detail}</div>
-                )}
-              </div>
+                {st.status === 'SUCCESS' ? <CheckCircle2 size={12} /> : st.status === 'PROCESSING' ? <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-ping" /> : <span className="w-1.5 h-1.5 rounded-full bg-[#94A3B8]" />}
+                {st.number} {st.title}
+              </span>
             ))}
           </div>
 
@@ -967,8 +969,8 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                 </div>
               </div>
 
-              {/* Data Table */}
-              <div className="border border-[var(--ez-color-border-line)] rounded-[8px] overflow-x-auto">
+              {/* Data Table — scroll internal (deddash-x38), header sticky */}
+              <div className="border border-[var(--ez-color-border-line)] rounded-[8px] overflow-x-auto deddash-x38">
                 <table className="w-full text-left border-collapse text-[12.5px]">
                   <thead>
                     <tr className="bg-[var(--ez-hue-slate-bg)] border-b border-[var(--ez-color-border-line)] text-[#64748B] text-[11px] font-bold uppercase tracking-wider">

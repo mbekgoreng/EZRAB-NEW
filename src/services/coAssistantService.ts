@@ -20,7 +20,7 @@ import { getRegionalFactor, REGIONAL_WIZARD_OPTIONS } from '../data/regionalCost
 import { unifiedConversationStore } from './ai/conversation/unifiedConversationStore';
 import { notificationBus } from '../notifications/notificationBus';
 import { aiToolsProviderClient } from '../ai-tools/providerClient';
-import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, activityForRequest } from '../ai-tools/aiResponseTiming';
+import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, waitForRabMinimum, activityForRequest } from '../ai-tools/aiResponseTiming';
 
 export interface CoAssistantMessage {
   id: string;
@@ -210,6 +210,10 @@ class CoAssistantService {
     const complexity = classifyRequest(trimmed, activity);
     request.onThinking?.(statusTextFor(complexity, activity));
     const startedAt = Date.now();
+    // RAB (owner 2026-10-27): 5–10 detik dari besarnya hasil, bukan 3 detik.
+    if (activity === 'rab') {
+      return waitForRabMinimum(startedAt, this.runSendMessage(request), request.signal, (r) => r?.message?.text ?? '');
+    }
     return waitForMinimum(startedAt, minDelayFor(complexity), this.runSendMessage(request), request.signal);
   }
 
@@ -439,7 +443,10 @@ export function resolveClientWizardStep(
   sessionId: string,
   choiceId?: string,
   parameters?: Record<string, any>,
-  lastWizardData?: any
+  lastWizardData?: any,
+  /* Pajak opt-in proyek (owner 2026-10-27): bila tidak diberikan, pajak
+   * NONAKTIF. Persen yang tersedia bukan bukti pajak aktif. */
+  projectTax?: { ppnEnabled?: boolean; ppnPercent?: number; pphEnabled?: boolean; pphPercent?: number }
 ): any {
   // 1. House type selection
   const houseItem = choiceId ? HOUSE_TYPE_CATALOG.find((h: any) => h.id === choiceId || h.value === choiceId || h.templateId === choiceId) : undefined;
@@ -1268,8 +1275,16 @@ export function resolveClientWizardStep(
   const overheadAmount = Math.round(directCost * 0.05);
   const profitAmount = Math.round(directCost * 0.05);
   const subtotalBeforeTax = directCost + overheadAmount + profitAmount;
-  const taxAmount = Math.round(subtotalBeforeTax * 0.11);
-  const grandTotal = subtotalBeforeTax + taxAmount;
+  /* Pajak opt-in wizard: overhead/profit 5% di sini adalah asumsi
+   * estimasi template (bukan fallback overhead proyek — itu urusan
+   * permukaan proyek), sedangkan pajak mengikuti flag proyek. */
+  const wizardPpnPercent = projectTax?.ppnPercent ?? 11;
+  const wizardPpnEnabled = projectTax?.ppnEnabled === true;
+  const wizardPphPercent = projectTax?.pphPercent ?? 0;
+  const wizardPphEnabled = projectTax?.pphEnabled === true;
+  const taxAmount = wizardPpnEnabled ? Math.round(subtotalBeforeTax * (wizardPpnPercent / 100)) : 0;
+  const pphAmount = wizardPphEnabled ? Math.round(subtotalBeforeTax * (wizardPphPercent / 100)) : 0;
+  const grandTotal = subtotalBeforeTax + taxAmount + pphAmount;
 
   return {
     responseType: 'wizard',
@@ -1291,8 +1306,12 @@ export function resolveClientWizardStep(
       profitPercent: 5,
       profitAmount,
       subtotalBeforeTax,
-      taxPercent: 11,
+      taxPercent: wizardPpnPercent,
       taxAmount,
+      ppnEnabled: wizardPpnEnabled,
+      pphEnabled: wizardPphEnabled,
+      pphPercent: wizardPphPercent,
+      pphAmount,
       grandTotal,
       regionInfo: {
         key: locationKey,

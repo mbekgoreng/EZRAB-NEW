@@ -40,7 +40,7 @@ import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, ty
 import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext } from '../aiNavigation';
 import { executeIntent, continueRabNeeds, continueRabChoice, tryContinueRabSubtype, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
 import { getLastDirectRab } from './directRab';
-import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, createRequestCoordinator, isAbortError, type AiActivity } from '../aiResponseTiming';
+import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, waitForRabMinimum, rabMinDelayMs, activityForRequest, createRequestCoordinator, isAbortError, type AiActivity } from '../aiResponseTiming';
 import { mapDirectRabPushItems } from './directRabPush';
 import { getLastUniversalDraft, setLastUniversalDraft, looksLikeUniversalRevision, reviseUniversalDraft, buildPushPreview, formatPushPreviewMessage, buildPushPayload, dedupePushPayload, validateTransfer, draftReadiness } from './universalRab';
 import { looksLikeNeedsAnswer } from './rabNeeds';
@@ -301,6 +301,28 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
    * yang menggeser rect sementara), resize, dan rotasi layar. */
   const rootRef = useRef<HTMLDivElement>(null);
   const [availH, setAvailH] = useState<number | null>(null);
+  /* Kunci scroll shell (owner 2026-10-27): menu Chat AI TIDAK boleh
+   * discroll sebagai halaman — yang boleh discroll hanya daftar
+   * percakapan di dalam (.ezchat2-body, overflow-y auto, scrollbar
+   * disembunyikan). Selama view ini aktif, .pf-main dikunci ke
+   * overflow-y hidden + scrollTop 0 (composer jadi selalu terlihat di
+   * bawah, tidak terdorong ke bawah lipatan); saat view dilepas,
+   * overflow + posisi scroll shell dikembalikan persis seperti semula
+   * agar menu lain tetap bisa discroll normal. */
+  useLayoutEffect(() => {
+    const el = rootRef.current;
+    if (!el) return undefined;
+    const container = el.closest('.pf-main') as HTMLElement | null;
+    if (!container) return undefined;
+    const prevOverflowY = container.style.overflowY;
+    const prevScrollTop = container.scrollTop;
+    container.style.overflowY = 'hidden';
+    container.scrollTop = 0;
+    return () => {
+      container.style.overflowY = prevOverflowY;
+      container.scrollTop = prevScrollTop;
+    };
+  }, []);
   useLayoutEffect(() => {
     const el = rootRef.current;
     if (!el) return undefined;
@@ -542,7 +564,8 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     const timingActivity: AiActivity =
       preRouted.intent === 'CREATE_RAB_DIRECT' ||
       preRouted.intent === 'GENERATE_RAB_TEMPLATE' ||
-      preRouted.intent === 'RAB_FULL_AI'
+      preRouted.intent === 'RAB_FULL_AI' ||
+      activityForRequest(msg) === 'rab'
         ? 'rab'
         : 'chat';
     const timingComplexity = classifyRequest(msg, timingActivity);
@@ -551,9 +574,13 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // Gerbang penampil hasil: menunggu sisa minimum (paralel dengan
     // provider, bukan sesudahnya); false = dibatalkan (unmount) atau
     // disalip permintaan yang lebih baru → hasil TIDAK ditampilkan.
-    const gateWait = async (): Promise<boolean> => {
+    // RAB (owner 2026-10-27): minimum 5–10 detik dari BESARNYA HASIL,
+    // bukan dari prompt — jadi gateWait menerima teks balasan dan
+    // menghitung rabMinDelayMs dari situ. Non-RAB tetap 1/2/3 detik.
+    const gateWait = async (resultText?: string): Promise<boolean> => {
       try {
-        await waitForMinimum(timingStart, timingMinDelay, Promise.resolve(), submitAbort.signal);
+        const minMs = timingActivity === 'rab' ? rabMinDelayMs(resultText ?? '') : timingMinDelay;
+        await waitForMinimum(timingStart, minMs, Promise.resolve(), submitAbort.signal);
       } catch (e) {
         if (isAbortError(e)) return false;
         throw e;
@@ -561,10 +588,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       return timingCoordinatorRef.current.isLatest(timingRequestId);
     };
     // Satu-satunya jalan menampilkan balasan asisten di cabang-cabang
-    // lokal/revisi di bawah (LLM memakai gateWait langsung karena
+    // lokal/revisi di bawah (LLM memakai gerbang langsung karena
     // entrinya membawa field tambahan fromAi/model/creditsUsed).
     const postAssistant = async (content: string, actions?: ChatActionButton[]): Promise<boolean> => {
-      if (!(await gateWait())) return false;
+      if (!(await gateWait(content))) return false;
       setMessages((prev) => [...prev, { role: 'assistant', content, ts: Date.now(), actions }]);
       persistMessage('assistant', content);
       return true;
@@ -783,8 +810,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     try {
       // Provider berjalan PARALEL dengan timer minimum (dihitung sejak
       // kirim): hasil cepat menunggu sisa minimum, hasil lambat tidak
-      // ditambah delay.
-      const res = await waitForMinimum(timingStart, timingMinDelay, ezrabAiService.send({
+      // ditambah delay. RAB: minimum 5–10 detik dari besarnya hasil
+      // (waitForRabMinimum), bukan 3 detik complex.
+      const sendPromise = ezrabAiService.send({
         // F3: the attachment block belongs ONLY to the message just sent
         // (the last entry in `next`). Older messages must keep their
         // own original content — the old map overwrote EVERY past message's
@@ -795,9 +823,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         })),
         mode,
         projectSnapshot,
-      } as any), submitAbort.signal);
+      } as any);
+      const res = timingActivity === 'rab'
+        ? await waitForRabMinimum(timingStart, sendPromise, submitAbort.signal, (r: any) => r?.reply ?? '')
+        : await waitForMinimum(timingStart, timingMinDelay, sendPromise, submitAbort.signal);
       // Hasil basi (disalip permintaan baru) tidak ditampilkan dan
-      // tidak didebit — minimum sudah terpenuhi oleh waitForMinimum
+      // tidak didebit — minimum sudah terpenuhi oleh gerbang
       // di atas, jadi di sini hanya cek keaslian.
       if (!timingCoordinatorRef.current.isLatest(timingRequestId)) return;
       // --- AI Credits: catat pemakaian SIMULASI (batas atas estimasi, transparan) ---
@@ -1424,9 +1455,13 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   );
 
   /* Composer dipakai dua tempat: di tengah (saat chat kosong, di bawah
-   * sapaan) dan di bawah (saat sudah ada percakapan). */
+   * sapaan) dan di bawah (saat sudah ada percakapan). Varian bawah
+   * memakai kelas `docked`: footer menempel di dasar kolom chat
+   * (flex-shrink 0 + latar + garis atas), tidak ikut discroll bersama
+   * daftar pesan — owner 2026-10-27: kalau sudah ada percakapan,
+   * chatbox berada di bawah saja. */
   const composer = (middle: boolean) => (
-    <div className={`ezchat2-input-wrap${middle ? ' middle' : ''}`}>
+    <div className={`ezchat2-input-wrap${middle ? ' middle' : ' docked'}`}>
       {/* Menu slash (Command Router Fase 4): muncul saat "/" diketik sebelum
        * kursor; melayang di atas composer selebar wrap (aman di 390px).
        * onMouseDown + preventDefault agar klik tidak membuat textarea blur
@@ -1467,21 +1502,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         <div className="ezchat2-listening"><span className="ezdot busy pulse" /> Mendengarkan… bicara sekarang 🎤</div>
       )}
       <div className="ezchat2-pill">
-        <button
-          className="ezchat2-tool"
-          onClick={() => fileRef.current?.click()}
-          title="Lampirkan file teks (.txt, .md, .csv, .json, .log, .xml)"
-          disabled={busy}
-        >
-          <Paperclip size={17} />
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept={TEXT_ATTACHMENT_ACCEPT}
-          hidden
-          onChange={onPickFile}
-        />
+        {/* Tombol lampirkan file DIHAPUS (owner 2026-10-27): tidak ada
+            lagi pemicu lampiran di Chat AI. Jalur lampiran teks lama
+            (onPickFile/fileRef) tidak lagi dirender dari composer ini. */}
         <textarea
           ref={taRef}
           value={input}

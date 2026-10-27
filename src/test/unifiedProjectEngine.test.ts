@@ -88,9 +88,12 @@ export function runUnifiedProjectTests() {
     };
 
     // Step 1: Check initial summary
+    // Kebijakan pajak opt-in (owner 2026-10-27): PPN hanya dihitung bila
+    // ppnEnabled true — asersi aritmetika di bawah tidak diubah.
     let summary = recalculateCostSummary([rabItem], {
       profitPercent: 10,
       taxPercent: 11,
+      ppnEnabled: true,
       overheadPercent: 0,
       contingencyPercent: 0,
       directorMarkupPercent: 0,
@@ -113,6 +116,7 @@ export function runUnifiedProjectTests() {
     summary = recalculateCostSummary([cascadedRabItem], {
       profitPercent: 10,
       taxPercent: 11,
+      ppnEnabled: true,
       overheadPercent: 0,
       contingencyPercent: 0,
       directorMarkupPercent: 0,

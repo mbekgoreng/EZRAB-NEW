@@ -15,7 +15,7 @@
    menyuntikkannya sebagai --ezchat2-avail; rumus calc() di bawah hanya
    fallback sebelum pengukuran pertama selesai. */
 .ezchat2 { display: flex; flex-direction: column; height: var(--ezchat2-avail, calc(100dvh - 64px)); min-height: 0; overflow: hidden; width: 100%; margin: 0 auto; padding: 0 20px; box-sizing: border-box; font-family: 'Plus Jakarta Sans','Inter',system-ui,sans-serif; }
-.ezchat2-main { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; width: 100%; max-width: 920px; margin: 0 auto; }
+.ezchat2-main { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; width: 100%; max-width: 920px; margin: 0 auto; overflow: hidden; }
 /* Ruang untuk bottom-nav mobile agar composer tidak tertutup / terpotong tepi viewport */
 @media (max-width: 767px) {
   .ezchat2 { height: calc(var(--ezchat2-avail, calc(100dvh - 64px)) - 58px - var(--ezrab-safe-bottom, 0px)); }
@@ -126,6 +126,11 @@
 .ezchat2-slashdesc { font-size: 12px; color: var(--ez-color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: auto; }
 /* Composer di tengah (saat chat kosong): di bawah sapaan */
 .ezchat2-input-wrap.middle { margin-top: 14px; padding-bottom: 0; text-align: left; }
+/* Chatbox docked (owner 2026-10-27): kalau sudah ada percakapan,
+   composer adalah footer tetap di dasar kolom chat — flex-shrink 0
+   (tidak ikut discroll), latar solid + garis atas agar pesan tidak
+   tampak menembus di belakangnya. */
+.ezchat2-input-wrap.docked { background: var(--ez-color-surface); border-top: 1px solid var(--ez-color-border-soft); padding-top: 10px; z-index: 20; }
 .ezchat2-input-wrap.middle .ezchat2-foot { text-align: center; }
 .ezchat2-attchip { display: inline-flex; align-items: center; gap: 8px; background: var(--ez-color-primary-soft); border: 1.5px solid var(--ez-color-primary-soft); border-radius: var(--ez-radius-control); padding: 6px 10px 6px 6px; margin-bottom: 8px; font-size: 12.5px; font-weight: 600; color: var(--ez-color-primary-hover); }
 .ezchat2-attsize { font-weight: 500; color: var(--ez-color-text-muted); font-size: 12px; }

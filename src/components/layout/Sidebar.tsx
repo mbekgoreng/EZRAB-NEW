@@ -29,10 +29,13 @@ import {
   HelpCircle,
   LogOut,
   User as UserIcon,
+  Zap,
+  Crown,
 } from 'lucide-react';
 import { Project } from '../../types';
 import { useI18n } from '../../i18n';
 import { RabTemplateService } from '../../services/rabTemplateService';
+import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
 
 export interface SidebarProps {
   activeMenu: string;
@@ -77,6 +80,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenSettingsTab,
 }) => {
   const { t } = useI18n();
+  /* Billing aktif (owner 2026-10-27): kartu bawah sidebar BUKAN lagi
+   * teks hardcode "Estimator Pro / estimator@ezrab.id", melainkan paket
+   * yang sedang dipakai menurut simulasi kredit (satu-satunya sumber
+   * paket di frontend saat ini; backend billing belum live, jadi
+   * selalu dilabeli simulasi). Default mock = starter. */
+  const { balance } = useCreditSimulation();
+  const billingPlan = balance.plan;
   const [proyekSubmenuOpen, setProyekSubmenuOpen] = useState(true);
   // Floating pill toggle: slides sidebar completely away (manual only, no auto-expand)
   const [isHidden, setIsHidden] = useState(false);
@@ -1218,16 +1228,46 @@ export const Sidebar: React.FC<SidebarProps> = ({
             background: isMobile ? 'var(--ez-color-surface)' : 'var(--ez-color-sidebar)',
           }}
         >
-          {(!sidebarCollapsed || isMobile) && (
+          {(!sidebarCollapsed || isMobile) && (() => {
+            /* Tampilan kotak BERBEDA per paket (owner 2026-10-27):
+               Free = polos sederhana; Starter = biru muda berbingkai;
+               Pro = gradien biru premium. Judul = paket aktif, bukan
+               nama hardcode; angka = saldo kredit simulasi saat ini. */
+            const planStyle = billingPlan === 'pro'
+              ? {
+                  box: { background: 'linear-gradient(135deg, var(--ez-color-primary-hover), var(--ez-color-primary))', border: 'none', boxShadow: '0 6px 18px -4px rgba(37,99,235,0.55)' },
+                  avatar: { background: 'rgba(255,255,255,0.22)', color: '#FFFFFF' },
+                  title: { color: '#FFFFFF' },
+                  sub: { color: 'rgba(255,255,255,0.85)' },
+                  icon: <Crown size={16} />,
+                }
+              : billingPlan === 'starter'
+              ? {
+                  box: { background: 'var(--ez-color-primary-soft)', border: '1.5px solid var(--ez-color-primary)', boxShadow: 'none' },
+                  avatar: { background: 'var(--ez-color-surface)', color: 'var(--ez-color-primary)' },
+                  title: { color: 'var(--ez-color-text-primary)' },
+                  sub: { color: 'var(--ez-color-text-muted)' },
+                  icon: <Zap size={16} />,
+                }
+              : {
+                  /* Free: polos, tanpa aksen — sesuai permintaan "simple aja". */
+                  box: { background: 'var(--ez-color-surface)', border: '1px solid var(--ez-color-border-soft)', boxShadow: 'none' },
+                  avatar: { background: 'var(--ez-color-surface-secondary)', color: 'var(--ez-color-text-muted)' },
+                  title: { color: 'var(--ez-color-text-primary)' },
+                  sub: { color: 'var(--ez-color-text-muted)' },
+                  icon: <UserIcon size={16} />,
+                };
+            const planLabel = billingPlan === 'pro' ? 'Pro' : billingPlan === 'starter' ? 'Starter' : 'Gratis';
+            return (
             <div
+              title={`Billing saat ini: Paket ${planLabel} (simulasi — backend billing belum live)`}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
-                padding: '6px 8px',
+                padding: '8px 10px',
                 borderRadius: '12px',
-                background: 'var(--ez-color-surface)',
-                border: '1px solid var(--ez-color-border-soft)',
+                ...planStyle.box,
               }}
             >
               <div
@@ -1235,43 +1275,43 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   width: '32px',
                   height: '32px',
                   borderRadius: '50%',
-                  background: 'var(--ez-color-primary-soft)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'var(--ez-color-primary)',
                   flexShrink: 0,
+                  ...planStyle.avatar,
                 }}
               >
-                <UserIcon size={16} />
+                {planStyle.icon}
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div
                   style={{
                     fontSize: '12px',
                     fontWeight: 700,
-                    color: 'var(--ez-color-text-primary)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
+                    ...planStyle.title,
                   }}
                 >
-                  Estimator Pro
+                  Billing: Paket {planLabel}
                 </div>
                 <div
                   style={{
                     fontSize: '10.5px',
-                    color: 'var(--ez-color-text-muted)',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
+                    ...planStyle.sub,
                   }}
                 >
-                  estimator@ezrab.id
+                  {balance.total.toLocaleString('id-ID')} kredit (simulasi)
                 </div>
               </div>
             </div>
-          )}
+            );
+          })()}
 
           <button
             type="button"
