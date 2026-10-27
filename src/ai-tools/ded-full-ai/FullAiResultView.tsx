@@ -385,10 +385,12 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack }
     setFinalizing(false);
   };
 
-  // Kelompokkan per WBS
+  // Kelompokkan per WBS. Bila model tidak mengisi wbsGroup, pakai label
+  // kategori asli item (bukan "Lain-lain" generik) agar kategori model
+  // tetap terlihat — "Lain-lain" hanya bila keduanya kosong.
   const groups = new Map<string, FullAiItem[]>();
   for (const it of items) {
-    const key = it.wbsGroup || 'Lain-lain';
+    const key = it.wbsGroup || it.category || 'Lain-lain';
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(it);
   }

@@ -42,9 +42,15 @@ const PROJECT_TYPES: ReadonlyArray<string> = [
   'BANGUNAN AIR',
   'JALAN',
   'PAVING',
+  // Readiness WBS 2026-10-28: tipe eksplisit bendung & irigasi.
+  // Tanpa ini, service menolak tipe baru dengan PROJECT_TYPE_UNSUPPORTED
+  // meski katalog & prompt sudah mendukungnya.
+  'BENDUNGAN',
+  'IRIGASI',
 ];
 
-function isProjectTypeSupported(v: string): v is DedAiProjectType {
+// Diekspor agar gate validasi ini dapat diuji langsung (tanpa model live).
+export function isProjectTypeSupported(v: string): v is DedAiProjectType {
   return PROJECT_TYPES.includes(v);
 }
 

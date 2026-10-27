@@ -18,6 +18,8 @@ export type DedAiProjectType =
   | 'BANGUNAN AIR'
   | 'JALAN'
   | 'PAVING'
+  | 'BENDUNGAN'
+  | 'IRIGASI'
   | (string & {});
 
 export type DedAiMode = 'FAST' | 'DETAIL';

@@ -5,6 +5,7 @@
  */
 
 import { standardPricingPolicySection, normalizePromptPolicy, type DedPromptPricingPolicy } from './policy';
+import { WORK_CLASSIFICATION_SPEC } from './work-classification.generated';
 
 export interface DedFastPromptInput {
   projectType: string;
@@ -26,6 +27,9 @@ export function createFastSystemPrompt(ctx: { projectType: string; pricingPolicy
 
 ${standardPricingPolicySection(policy)}
 ${policy === 'FULL_AI' ? `FIELD TAMBAHAN MODE FULL_AI (di luar struktur di bawah): setiap workItem boleh berisi "proposedSubtotal": quantity × estimatedUnitPrice (null bila salah satunya null), dan tingkat atas berisi "proposedGrandTotal": jumlah semua proposedSubtotal.` : `MODE DATABASE: JANGAN mengeluarkan field proposedSubtotal atau proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.`}
+
+SPESIFIKASI KLASIFIKASI & WBS DED–RAB (wajib diikuti; katalog di bawah adalah daftar kandidat, bukan daftar wajib — kelompok dipilih dinamis sesuai tipe proyek dan bukti, bukan disalin semua):
+${WORK_CLASSIFICATION_SPEC}
 
 ATURAN WAJIB:
 - Keluarkan JSON MURNI (tanpa teks lain, tanpa markdown).
@@ -70,10 +74,6 @@ DUPLIKAT & KONFLIK (wajib):
 - Pekerjaan yang sama di beberapa halaman = SATU item dengan sourcePages lengkap, jangan digandakan.
 - Bila dua gambar/spesifikasi bertentangan, sebutkan keduanya di specification, pilih satu dengan alasan di quantityFormula, dan turunkan confidence ke LOW — jangan diam-diam menggabungkan angka yang bertentangan.
 - Bedakan fakta DED (quantitySource DED_EXPLICIT/DED_GEOMETRIC) dari inferensi/asumsi (AI_INFERENCE/ASSUMPTION) — jangan menaikkan status bukti demi terlihat pasti.
-
-CHECKLIST CAKUPAN — periksa SETIAP kelompok berikut terhadap isi DED, dan masukkan item HANYA bila didukung teks/bukti DED (jangan mengarang kelompok yang tidak ada):
-persiapan & pekerjaan tanah; pondasi; struktur (sloof, kolom, balok, pelat, ring balk); dinding, plesteran, acian; lantai & finishing; kusen, pintu, jendela; atap, plafon, talang; instalasi listrik; plumbing, sanitair, sanitasi; pengecatan; pembersihan akhir.
-Untuk setiap item WAJIB isi quantitySource (DED_EXPLICIT bila angka tertulis di DED; DED_GEOMETRIC bila dihitung dari dimensi DED; AI_INFERENCE/ASSUMPTION bila estimasi), sourcePages (nomor halaman bukti), dan sourceEvidence.
 
 ATURAN PENDEKATAN KUANTITAS:
 - Prioritas 1: Pakai angka eksplisit dari DED (tabel BOQ, dimensi tertulis).

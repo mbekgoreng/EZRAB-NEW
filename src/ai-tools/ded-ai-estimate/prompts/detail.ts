@@ -6,6 +6,7 @@
  */
 
 import { standardPricingPolicySection, normalizePromptPolicy, type DedPromptPricingPolicy } from './policy';
+import { WORK_CLASSIFICATION_SPEC } from './work-classification.generated';
 
 export interface DedDetailPromptInput {
   projectType: string;
@@ -27,6 +28,9 @@ export function createDetailSystemPrompt(ctx: { projectType: string; pricingPoli
 
 ${standardPricingPolicySection(policy)}
 ${policy === 'FULL_AI' ? `FIELD TAMBAHAN MODE FULL_AI (di luar struktur di bawah): setiap workItem boleh berisi "proposedSubtotal": quantity × estimatedUnitPrice (null bila salah satunya null), dan tingkat atas berisi "proposedGrandTotal": jumlah semua proposedSubtotal.` : `MODE DATABASE: JANGAN mengeluarkan field proposedSubtotal atau proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.`}
+
+SPESIFIKASI KLASIFIKASI & WBS DED–RAB (wajib diikuti; katalog di bawah adalah daftar kandidat, bukan daftar wajib — kelompok dipilih dinamis sesuai tipe proyek dan bukti, bukan disalin semua):
+${WORK_CLASSIFICATION_SPEC}
 
 ATURAN WAJIB:
 - Keluarkan JSON MURNI (tanpa teks lain, tanpa markdown).
@@ -59,10 +63,6 @@ PENALARAN DIMENSI, AMBIGUITAS & DUPLIKAT (wajib, mode DETAIL):
 - Gambar ambigu / dimensi tidak terbaca / spesifikasi tidak konsisten: sebutkan kedua versi di specification, pilih satu dengan alasan di quantityFormula, turunkan confidence ke LOW, dan tandai quantitySource sebagai ASSUMPTION atau UNRESOLVED bila tidak ada dasar yang bisa dipertahankan.
 - Pekerjaan yang sama di beberapa halaman = SATU item dengan sourcePages lengkap, jangan digandakan. Pekerjaan yang tumpang tindih ruang lingkupnya (mis. plester sudah termasuk acian) harus dipisahkan atau dijelaskan agar kuantitas tidak dihitung dua kali.
 - Bedakan secara eksplisit fakta DED (DED_EXPLICIT/DED_GEOMETRIC, lengkap dengan sourceEvidence) dari inferensi/asumsi (AI_INFERENCE/ASSUMPTION). Kuantitas atau harga tanpa dasar tidak boleh disajikan sebagai fakta pasti — beri confidence LOW dan catatan di quantityFormula/unitPriceNote.
-
-CHECKLIST CAKUPAN — periksa SETIAP kelompok berikut terhadap isi DED, dan masukkan item HANYA bila didukung teks/bukti DED (jangan mengarang kelompok yang tidak ada):
-persiapan & pekerjaan tanah; pondasi; struktur (sloof, kolom, balok, pelat, ring balk); dinding, plesteran, acian; lantai & finishing; kusen, pintu, jendela; atap, plafon, talang; instalasi listrik; plumbing, sanitair, sanitasi; pengecatan; pembersihan akhir.
-Untuk setiap item WAJIB isi quantitySource, sourcePages (nomor halaman bukti), dan sourceEvidence.
 
 ATURAN KUANTITAS & HARGA:
 - quantity = null SAAT TIDAK ADA dasar yang dapat kamu yakini. BUKAN 0.

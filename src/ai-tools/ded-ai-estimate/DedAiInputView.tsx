@@ -71,6 +71,10 @@ export const DedAiInputView: React.FC<Props> = ({
     { value: 'BANGUNAN AIR', label: t('ai.ded.input.type_bangunan_air') },
     { value: 'JALAN', label: t('ai.ded.input.type_jalan') },
     { value: 'PAVING', label: t('ai.ded.input.type_paving') },
+    // Readiness WBS 2026-10-28: ditambahkan di AKHIR agar urutan & posisi
+    // kelima opsi lama tidak bergeser bagi pengguna yang sudah terbiasa.
+    { value: 'BENDUNGAN', label: t('ai.ded.input.type_bendungan') },
+    { value: 'IRIGASI', label: t('ai.ded.input.type_irigasi') },
   ];
   const [files, setFiles] = useState<DedAiFileItem[]>(initialSession.files);
   const [description, setDescription] = useState(initialSession.description);

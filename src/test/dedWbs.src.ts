@@ -32,7 +32,7 @@ check('1.2 JALAN ada', getWbsCatalog('JALAN').length > 0);
 check('1.3 BANGUNAN AIR ada', getWbsCatalog('BANGUNAN AIR').length > 0);
 check('1.4 JEMBATAN ada', getWbsCatalog('JEMBATAN').length > 0);
 const bgnGroups = getWbsCatalog('BANGUNAN').filter((n) => n.level === 'kelompok');
-check('1.5 BANGUNAN punya 11 kelompok', bgnGroups.length === 11, `got ${bgnGroups.length}`);
+check('1.5 BANGUNAN punya 12 kelompok (11 lama + BGN-12 Interior, alignment WBS 2026-10-28)', bgnGroups.length === 12, `got ${bgnGroups.length}`);
 // WBS jalan tidak dipakai untuk bangunan
 const jlnCodes = new Set(getWbsCatalog('JALAN').map((n) => n.code));
 const bgnCodes = new Set(getWbsCatalog('BANGUNAN').map((n) => n.code));

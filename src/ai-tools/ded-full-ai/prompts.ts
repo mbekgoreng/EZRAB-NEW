@@ -7,6 +7,7 @@
 
 import { formatPriceReferenceForPrompt } from './jakartaPrices';
 import { fullAiPricingPolicySection, normalizePromptPolicy, type DedPromptPricingPolicy } from '../ded-ai-estimate/prompts/policy';
+import { WORK_CLASSIFICATION_SPEC } from '../ded-ai-estimate/prompts/work-classification.generated';
 
 export interface FullAiPromptInput {
   projectType: string;
@@ -34,6 +35,9 @@ export function buildFullAiSystemPrompt(projectType: string, mode: 'FAST' | 'ADV
 ${depth}
 
 ${fullAiPricingPolicySection(policy)}
+
+SPESIFIKASI KLASIFIKASI & WBS DED–RAB (wajib diikuti; katalog di bawah adalah daftar kandidat, bukan daftar wajib — kelompok dipilih dinamis sesuai tipe proyek dan bukti, bukan disalin semua; field keluaran tetap yang sudah ditentukan di bawah, jangan tambah field baru):
+${WORK_CLASSIFICATION_SPEC}
 
 Kamu adalah MESIN ESTIMASI UTAMA. Tugasmu menghasilkan RAB yang LENGKAP dan BERGUNA,
 bukan yang "aman" tapi kosong. Estimator manusia selalu bekerja dengan asumsi —

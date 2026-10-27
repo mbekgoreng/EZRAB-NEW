@@ -126,6 +126,8 @@ export const aiModelRegistry = {
       'BANGUNAN AIR': 'Bangunan Air',
       JALAN: 'Jalan',
       PAVING: 'Paving',
+      BENDUNGAN: 'Bendungan',
+      IRIGASI: 'Irigasi',
     };
     return map[type] || type;
   },
