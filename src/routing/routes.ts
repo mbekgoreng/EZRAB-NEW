@@ -120,6 +120,7 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
       case 'dashboard': return paths.dashboard();
       case 'proyek': return paths.projects();
       case 'rab-estimasi': return paths.estimate();
+      case 'rab-informasi-proyek': return paths.estimate('informasi-proyek');
       case 'rab-spreadsheet': return paths.estimate('spreadsheet');
       case 'rab-rekapitulasi': return paths.estimate('rekapitulasi');
       case 'rab-analisa-harga': return paths.estimate('analisa-harga');
@@ -206,6 +207,7 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
     // Kredit AI selalu halaman global (bukan per-proyek).
     case 'kredit-ai': return paths.kreditAi();
     case 'rab-estimasi': return paths.project.estimate(project);
+    case 'rab-informasi-proyek': return paths.project.estimate(project, undefined, 'informasi-proyek');
     case 'rab-spreadsheet': return paths.project.estimate(project, undefined, 'spreadsheet');
     case 'rab-rekapitulasi': return paths.project.estimate(project, undefined, 'rekapitulasi');
     case 'rab-analisa-harga': return paths.project.estimate(project, undefined, 'analisa-harga');
@@ -261,6 +263,7 @@ export const routeForMenu = (menu: WorkspaceMenu, projectId?: string | null, mod
 /** Peta ?tab= pada route estimate -> id menu sidebar RAB yang tepat. */
 const estimateTabToMenu = (tab: string | null): WorkspaceMenu => {
   switch (tab) {
+    case 'informasi-proyek': return 'rab-informasi-proyek';
     case 'spreadsheet': return 'rab-spreadsheet';
     case 'rekapitulasi': return 'rab-rekapitulasi';
     case 'analisa-harga': return 'rab-analisa-harga';

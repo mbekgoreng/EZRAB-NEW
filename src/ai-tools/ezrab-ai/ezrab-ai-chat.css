@@ -136,7 +136,15 @@
    composer adalah footer tetap di dasar kolom chat — flex-shrink 0
    (tidak ikut discroll), latar solid + garis atas agar pesan tidak
    tampak menembus di belakangnya. */
-.ezchat2-input-wrap.docked { background: var(--ez-color-surface); border-top: 1px solid var(--ez-color-border-soft); padding-top: 10px; z-index: 20; }
+/* Kotak putih di belakang composer (owner 2026-10-27): wrapper docked dulu
+   mengecat latar putih penuh selebar kolom DI BELAKANG pill input yang
+   juga putih — jadi terlihat kotak putih ganda. Sekarang wrapper memakai
+   latar aplikasi (--ez-color-background, biru pucat yang sama dengan
+   halaman di sekelilingnya) dan tanpa border atas, sehingga kotaknya
+   menyatu dengan halaman. Wrapper tetap opaque (bukan transparan) agar
+   pesan yang di-scroll ke bawah tetap tertutup rapi di balik composer,
+   bukan mengintip di sela pill. */
+.ezchat2-input-wrap.docked { background: var(--ez-color-background); padding-top: 10px; z-index: 20; }
 .ezchat2-input-wrap.middle .ezchat2-foot { text-align: center; }
 .ezchat2-attchip { display: inline-flex; align-items: center; gap: 8px; background: var(--ez-color-primary-soft); border: 1.5px solid var(--ez-color-primary-soft); border-radius: var(--ez-radius-control); padding: 6px 10px 6px 6px; margin-bottom: 8px; font-size: 12.5px; font-weight: 600; color: var(--ez-color-primary-hover); }
 .ezchat2-attsize { font-weight: 500; color: var(--ez-color-text-muted); font-size: 12px; }

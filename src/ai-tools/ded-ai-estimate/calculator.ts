@@ -4,7 +4,7 @@
  * NEVER `Rp0 + SUCCESS`. Coverage is honest.
  */
 
-import { DedAiItem, DedAiCategorySummary, DedAiOutput } from './types';
+import { DedAiItem, DedAiCategorySummary, DedAiOutput, DedEstimationPolicy } from './types';
 import { isSaneEstimate } from './pricing';
 import { shapeForUnit } from './quantity';
 
@@ -32,6 +32,32 @@ export type QuantityVerdict =
  * - unitPrice null → subtotal null (bukan 0)
  * - Pembulatan: Math.round (konsisten di semua tempat)
  */
+/**
+ * Perubahan satuan oleh pengguna (audit QA 2026-10-27): harga adalah harga
+ * PER SATUAN — mengganti satuan membuat harga kanonis tidak berlaku lagi.
+ * Bila item memakai harga AHSP_2026 dan satuannya berubah, harga + kode +
+ * match kanonis DIBATALKAN (kembali UNRESOLVED, bukan dipertahankan dengan
+ * label kanonis untuk satuan yang salah). Harga estimasi AI / input user
+ * tidak dibatalkan: estimasi bukan klaim kanonis, dan harga manual adalah
+ * keputusan pengguna atas itemnya sendiri. Perubahan nama saja tidak
+ * membatalkan (tidak mengubah arti per-satuan).
+ */
+export function applyUnitChange(item: DedAiItem, newUnits: string): DedAiItem {
+  if (newUnits === item.units) return item;
+  if (item.priceSource !== 'AHSP_2026') return { ...item, units: newUnits };
+  return {
+    ...item,
+    units: newUnits,
+    unitPrice: null,
+    priceSource: 'UNRESOLVED' as const,
+    ahspCode: undefined,
+    ahspMatch: undefined,
+    priceAssumptionNote:
+      'Harga AHSP kanonis dibatalkan karena satuan diubah oleh pengguna — harga per satuan lama tidak berlaku untuk satuan baru.',
+    provenance: [...item.provenance, 'unit-change-clears-canonical-price'],
+  };
+}
+
 export function calcSubtotal(quantity: number | null, unitPrice: number | null): number | null {
   if (quantity === null || quantity === undefined) return null;
   if (unitPrice === null || unitPrice === undefined) return null;
@@ -167,6 +193,7 @@ export class DedAiCalculator {
     jobId: string;
     projectType: string;
     mode: 'FAST' | 'DETAIL';
+    policy?: DedEstimationPolicy;
     projectName: string;
     fileName?: string;
     pageCount: number;
@@ -183,6 +210,7 @@ export class DedAiCalculator {
       jobId: base.jobId,
       projectType: base.projectType,
       mode: base.mode,
+      policy: base.policy ?? 'FULL_AI',
       projectName: base.projectName,
       fileName: base.fileName,
       pageCount: base.pageCount,

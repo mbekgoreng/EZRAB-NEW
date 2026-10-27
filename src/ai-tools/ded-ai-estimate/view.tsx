@@ -56,7 +56,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const [screen, setScreen] = useState<Screen>('input');
   const [session, setSession] = useState<DedAiSession>({
     files: [], description: '', projectName: '',
-    projectType: 'BANGUNAN', mode: 'FAST', targetProjectId: null,
+    projectType: 'BANGUNAN', mode: 'FAST', policy: 'FULL_AI', targetProjectId: null,
   });
   const [stages, setStages] = useState<DedAiStage[]>(() => initialStages(t));
   const [percent, setPercent] = useState(0);
@@ -153,6 +153,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           buffer,
           projectType: sess.projectType,
           mode: sess.mode === 'FAST' ? 'FAST' : 'ADVANCED',
+          policy: sess.policy ?? 'FULL_AI',
           projectName: sess.projectName,
           onProgress: (stage, pct, msg) => {
             if (cancelRef.current) return;
@@ -208,6 +209,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       const combined: FullAiOutput = {
         success: true,
         mode: sess.mode === 'FAST' ? 'FAST' : 'ADVANCED',
+        policy: sess.policy ?? 'FULL_AI',
         projectInfo: projectInfo || { projectType: sess.projectType, scopeSummary: '' },
         items: allItems,
         grandTotal,
@@ -300,6 +302,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           mimeType: f.file.type,
           projectType: sess.projectType,
           mode: sess.mode,
+          policy: sess.policy ?? 'FULL_AI',
           projectName: sess.projectName,
           onProgress: (e) => {
             if (cancelRef.current) return;
@@ -443,7 +446,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     setResultReady(true);
     setDraftSaved(true);
     setFinalized(false);
-    setSession((s) => ({ ...s, projectName: d.projectName, projectType: d.projectType, mode: d.mode, files: [] }));
+    setSession((s) => ({ ...s, projectName: d.projectName, projectType: d.projectType, mode: d.mode, policy: d.output.policy ?? 'FULL_AI', files: [] }));
     setSummary((s) => ({ ...s, projectName: d.projectName, fileCount: d.fileNames.length, mode: d.mode }));
     setScreen('result');
   };
@@ -484,7 +487,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           unit: it.units,
           unitPrice: it.unitPrice as number,
           category: it.category,
-          notes: `DED-AI · ${it.quantitySource}${it.quantityFormula ? ` · ${it.quantityFormula}` : ''}`,
+          notes: `DED-AI · ${it.quantitySource}${it.quantityFormula ? ` · ${it.quantityFormula}` : ''} · Harga: ${it.priceSource}${it.ahspCode ? ` · AHSP: ${it.ahspCode}` : ''} · Mode: ${result?.policy ?? 'FULL_AI'}`,
         })),
         projectId
       );
@@ -541,7 +544,7 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
           unit: it.quantity.unit,
           unitPrice: it.price.unitPrice as number,
           category: it.category,
-          notes: `FullAI · ${it.quantity.provenance}${it.quantity.formula ? ` · ${it.quantity.formula}` : ''} · Harga: ${it.price.source}`,
+          notes: `FullAI · ${it.quantity.provenance}${it.quantity.formula ? ` · ${it.quantity.formula}` : ''} · Harga: ${it.price.source}${it.price.ahspCode ? ` · AHSP: ${it.price.ahspCode}` : ''} · Mode: ${fullAiOutput?.policy ?? 'FULL_AI'}`,
         })),
         projectId
       );

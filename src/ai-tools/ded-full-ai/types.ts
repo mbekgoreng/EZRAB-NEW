@@ -15,8 +15,20 @@ export type FullAiProvenance =
   | 'UNRESOLVED'         // Belum dapat ditentukan
   | 'USER_INPUT';        // Diedit/dimasukkan oleh pengguna
 
+/**
+ * Kebijakan harga DED-to-RAB — konsep yang sama dengan DedEstimationPolicy
+ * mesin standar, diduplikasi di sini agar modul ini tetap terisolasi
+ * (tidak mengimpor pipeline lama). FULL_AI = estimasi AI boleh dipakai
+ * (perilaku lama); DATABASE = estimasi AI ditolak di service layer,
+ * hanya VERIFIED_SOURCE (dengan ahspCode) dan USER_INPUT yang lolos.
+ */
+export type DedEstimationPolicy = 'FULL_AI' | 'DATABASE';
+
+import type { CanonicalDedMatch } from '../ded-canonical/canonicalDedPricing';
+
 export type FullAiPriceSource =
-  | 'VERIFIED_SOURCE'    // Dari AHSP/database terverifikasi
+  | 'AHSP_2026'          // Harga kanonis EZRAB (SE DJBK 47/2026, biaya langsung) — SATU-SATUNYA nilai yang berarti "terverifikasi database" untuk hasil baru; hanya diproduksi lewat resolveDedPriceWithCanonical
+  | 'VERIFIED_SOURCE'    // LEGASI — klaim model lama yang belum dikonfirmasi database. TIDAK LAGI diproduksi (service menurunkannya ke AI_ESTIMATE/UNRESOLVED); dipertahankan di union agar draft & riwayat lama tetap terbaca, dan UI menampilkannya sebagai "belum terverifikasi independen", bukan "Terverifikasi"
   | 'USER_INPUT'         // Dari pengguna
   | 'AI_ESTIMATE'        // Estimasi AI
   | 'UNRESOLVED';        // Belum tersedia (bukan Rp0)
@@ -42,6 +54,8 @@ export interface FullAiPriceDetail {
   period?: string;            // Mis. "2026"
   ahspCode?: string;
   notes?: string;
+  /** Hasil resolusi kanonis terakhir (status, kandidat review, alasan). */
+  ahspMatch?: CanonicalDedMatch;
 }
 
 export type FullAiExclusionReason =
@@ -100,6 +114,8 @@ export interface FullAiSummary {
 export interface FullAiOutput {
   success: boolean;
   mode: 'FAST' | 'ADVANCED';
+  /** Kebijakan harga yang dipakai estimasi ini (tersimpan bersama hasil). */
+  policy: DedEstimationPolicy;
   projectInfo: FullAiProjectInfo;
   items: FullAiItem[];
   grandTotal: number | null;
@@ -129,6 +145,8 @@ export interface FullAiServiceOptions {
   buffer: ArrayBuffer | Uint8Array | Buffer | string;
   projectType: string;
   mode: 'FAST' | 'ADVANCED';
+  /** Kebijakan harga (default 'FULL_AI' bila tidak diisi — perilaku lama). */
+  policy?: DedEstimationPolicy;
   projectName?: string;
   onProgress?: (stage: string, percent: number, message: string) => void;
 }

@@ -487,7 +487,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
 
   // Active Calculator & Domain Selector (Default: BOWPLANK in BUILDING)
   const [selectedCalcId, setSelectedCalcId] = useState<string>(initialCalcId || 'BOWPLANK');
-  const [activeDomain, setActiveDomain] = useState<string>('BUILDING');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Workstation Favorites & Recents Persistence (Real localStorage integration)
@@ -515,8 +514,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   // Workstation Filter States
   const [filterFavoritesOnly, setFilterFavoritesOnly] = useState<boolean>(false);
   const [filterUnit, setFilterUnit] = useState<string>('ALL');
-  const [filterCategory, setFilterCategory] = useState<string>('ALL');
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+  const [collapsedDomains, setCollapsedDomains] = useState<Record<string, boolean>>({});
 
   const recordRecent = (id: string) => {
     setRecentIds((prev) => {
@@ -559,27 +558,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
     setEditingQtoId(null);
     recordRecent(id);
 
-    // Auto-switch domain if active domain doesn't contain this calculator
-    if (activeDomain !== 'ALL') {
-      const currentDomainDef = CIVIL_DOMAINS.find((d) => d.id === activeDomain);
-      const currentPacks = currentDomainDef ? currentDomainDef.packs : [activeDomain];
-      const isVisibleInCurrent = CALCULATOR_CATEGORIES.some(
-        (cat) => currentPacks.includes(cat.pack) && cat.items.some((it) => it.id === id)
-      );
-      if (!isVisibleInCurrent) {
-        const targetDomain = CIVIL_DOMAINS.find((d) =>
-          CALCULATOR_CATEGORIES.some(
-            (cat) => d.packs.includes(cat.pack) && cat.items.some((it) => it.id === id)
-          )
-        );
-        if (targetDomain) {
-          setActiveDomain(targetDomain.id);
-        } else {
-          setActiveDomain('ALL');
-        }
-      }
-    }
-
     const cat = CALCULATOR_CATEGORIES.find((c) => c.items.some((it) => it.id === id));
     if (cat) {
       setCollapsedCategories((prev) => {
@@ -618,16 +596,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   useEffect(() => {
     if (initialCalcId && initialCalcId !== selectedCalcId) {
       setSelectedCalcId(initialCalcId);
-      // Auto-detect domain if needed
-      for (const domain of CIVIL_DOMAINS) {
-        const found = CALCULATOR_CATEGORIES.some(
-          (cat) => domain.packs.includes(cat.pack) && cat.items.some((it) => it.id === initialCalcId)
-        );
-        if (found) {
-          setActiveDomain(domain.id);
-          break;
-        }
-      }
     }
   }, [initialCalcId]);
 
@@ -834,22 +802,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
     return counts;
   }, []);
 
-  // Available categories for current domain filter
-  const domainCategoryOptions = useMemo(() => {
-    if (activeDomain === 'ALL') return CALCULATOR_CATEGORIES;
-    const domainDef = CIVIL_DOMAINS.find((d) => d.id === activeDomain);
-    const packs = domainDef ? domainDef.packs : [activeDomain];
-    return CALCULATOR_CATEGORIES.filter((c) => packs.includes(c.pack));
-  }, [activeDomain]);
-
-  // Reset category filter if it doesn't belong to the active domain
-  useEffect(() => {
-    if (filterCategory !== 'ALL') {
-      const exists = domainCategoryOptions.some((c) => c.id === filterCategory);
-      if (!exists) setFilterCategory('ALL');
-    }
-  }, [activeDomain, domainCategoryOptions, filterCategory]);
-
   // Unique available units across all registered calculators
   const availableUnits = useMemo(() => {
     const units = new Set<string>();
@@ -866,16 +818,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   const groupedCalculators = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     let candidateCategories = CALCULATOR_CATEGORIES;
-
-    if (activeDomain !== 'ALL') {
-      const domainDef = CIVIL_DOMAINS.find((d) => d.id === activeDomain);
-      const packs = domainDef ? domainDef.packs : [activeDomain];
-      candidateCategories = candidateCategories.filter((c) => packs.includes(c.pack));
-    }
-
-    if (filterCategory !== 'ALL') {
-      candidateCategories = candidateCategories.filter((c) => c.id === filterCategory);
-    }
 
     return candidateCategories
       .map((cat) => {
@@ -921,29 +863,69 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         };
       })
       .filter((cat) => cat.items.length > 0);
-  }, [activeDomain, searchQuery, filterCategory, filterUnit, filterFavoritesOnly, favoriteIds]);
+  }, [searchQuery, filterUnit, filterFavoritesOnly, favoriteIds]);
+
+  // Satu daftar gabungan: Domain -> Kategori -> Item (pengganti strip
+  // domain terpisah + filter kategori). Satu kategori bisa muncul di lebih
+  // dari satu domain bila pack-nya diklaim beberapa domain (mis. LEGACY di
+  // Bangunan & Master SNI) — sama seperti semantik hitungan domain lama.
+  // Kategori yang tidak diklaim domain mana pun masuk kelompok "Lainnya".
+  const domainGroups = useMemo(() => {
+    const groups = CIVIL_DOMAINS.map((domain) => ({
+      ...domain,
+      categories: groupedCalculators.filter((cat) => domain.packs.includes(cat.pack)),
+    })).filter((d) => d.categories.length > 0);
+    const covered = new Set(groups.flatMap((d) => d.categories.map((c) => c.id)));
+    const others = groupedCalculators.filter((c) => !covered.has(c.id));
+    if (others.length > 0) {
+      groups.push({
+        id: 'OTHER',
+        name: 'Lainnya',
+        subtitle: 'Other',
+        icon: LayoutGrid,
+        packs: [] as string[],
+        categories: others,
+      });
+    }
+    return groups;
+  }, [groupedCalculators]);
+
+  const toggleDomainCollapse = (domainId: string) => {
+    setCollapsedDomains((prev) => ({
+      ...prev,
+      [domainId]: !prev[domainId],
+    }));
+  };
 
   const totalFilteredCount = useMemo(() => {
     return groupedCalculators.reduce((sum, g) => sum + g.items.length, 0);
   }, [groupedCalculators]);
 
   const allCategoriesCollapsed = useMemo(() => {
-    return groupedCalculators.length > 0 && groupedCalculators.every((g) => !!collapsedCategories[g.id]);
-  }, [groupedCalculators, collapsedCategories]);
+    return groupedCalculators.length > 0
+      && domainGroups.every((d) => !!collapsedDomains[d.id])
+      && groupedCalculators.every((g) => !!collapsedCategories[g.id]);
+  }, [groupedCalculators, collapsedCategories, domainGroups, collapsedDomains]);
 
   const toggleAllCategories = () => {
     if (allCategoriesCollapsed) {
       setCollapsedCategories({});
+      setCollapsedDomains({});
     } else {
       const next: Record<string, boolean> = {};
       groupedCalculators.forEach((g) => {
         next[g.id] = true;
       });
       setCollapsedCategories(next);
+      const nextDomains: Record<string, boolean> = {};
+      domainGroups.forEach((d) => {
+        nextDomains[d.id] = true;
+      });
+      setCollapsedDomains(nextDomains);
     }
   };
 
-  // Filtered calculators based on active domain and search
+  // Filtered calculators (semua domain, sesuai filter aktif)
   const filteredCalculators = useMemo(() => {
     return groupedCalculators.flatMap((g) => g.items);
   }, [groupedCalculators]);
@@ -1534,183 +1516,13 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         </div>
       </div>
 
-      {/* 3. KELOMPOK DOMAIN — strip kartu menonjol full-width di atas.
-          Satu klik memfilter daftar kalkulator persis seperti perilaku
-          activeDomain sebelumnya (hanya tampilannya yang diperbesar:
-          kartu + ikon + nama + jumlah kalkulator, status aktif jelas). */}
-      <div
-        style={{
-          background: 'var(--ez-color-surface)',
-          borderRadius: 'var(--ez-radius-card)',
-          border: '1px solid #EEF1F6',
-          boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
-          padding: '16px 18px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-        }}
-      >
-        <div>
-          <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            Kelompok Domain
-          </div>
-          <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0', lineHeight: 1.4 }}>
-            Pilih satu kelompok — daftar kalkulator di bawah akan ikut terfilter. Total {domainCounts.ALL} kalkulator.
-          </p>
-        </div>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(158px, 1fr))',
-            gap: '10px',
-          }}
-        >
-          {/* Kartu Semua Domain */}
-          <button
-            onClick={() => setActiveDomain('ALL')}
-            aria-pressed={activeDomain === 'ALL'}
-            style={{
-              textAlign: 'left',
-              padding: '12px',
-              borderRadius: '12px',
-              background: activeDomain === 'ALL' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-              border: activeDomain === 'ALL' ? '2px solid #2563EB' : '1px solid var(--ez-color-border-line)',
-              color: activeDomain === 'ALL' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-              boxShadow: activeDomain === 'ALL' ? '0 6px 16px rgba(37,99,235,0.14)' : 'none',
-              transition: 'all 0.12s ease',
-              minWidth: 0,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '10px',
-                  background: activeDomain === 'ALL' ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
-                  color: activeDomain === 'ALL' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <LayoutGrid size={16} />
-              </span>
-              {activeDomain === 'ALL' ? (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-primary-hover)' }}>
-                  <Check size={11} /> Aktif
-                </span>
-              ) : (
-                <span
-                  style={{
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    background: 'var(--ez-color-surface-tertiary)',
-                    color: 'var(--ez-color-text-muted)',
-                    padding: '1px 6px',
-                    borderRadius: 'var(--ez-radius-pill)',
-                  }}
-                >
-                  {domainCounts.ALL}
-                </span>
-              )}
-            </div>
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: 700, lineHeight: 1.3, overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-                Semua Domain
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
-                Seluruh kalkulator
-              </div>
-            </div>
-          </button>
-
-          {/* Kartu per domain */}
-          {CIVIL_DOMAINS.map((domain) => {
-            const isActive = activeDomain === domain.id;
-            const count = domainCounts[domain.id] || 0;
-            return (
-              <button
-                key={domain.id}
-                onClick={() => setActiveDomain(domain.id)}
-                aria-pressed={isActive}
-                style={{
-                  textAlign: 'left',
-                  padding: '12px',
-                  borderRadius: '12px',
-                  background: isActive ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                  border: isActive ? '2px solid #2563EB' : '1px solid var(--ez-color-border-line)',
-                  color: isActive ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                  boxShadow: isActive ? '0 6px 16px rgba(37,99,235,0.14)' : 'none',
-                  transition: 'all 0.12s ease',
-                  minWidth: 0,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span
-                    style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '10px',
-                      background: isActive ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
-                      color: isActive ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <domain.icon size={16} />
-                  </span>
-                  {isActive ? (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-primary-hover)' }}>
-                      <Check size={11} /> Aktif
-                    </span>
-                  ) : (
-                    <span
-                      style={{
-                        fontSize: '10px',
-                        fontWeight: 700,
-                        background: 'var(--ez-color-surface-tertiary)',
-                        color: 'var(--ez-color-text-muted)',
-                        padding: '1px 6px',
-                        borderRadius: 'var(--ez-radius-pill)',
-                      }}
-                    >
-                      {count}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, lineHeight: 1.3, overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-                    {domain.name}
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
-                    {domain.subtitle} · {count} kalkulator
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 4. WORKSTATION SPLIT VIEW (LEFT: CATALOG TREE, RIGHT: ACTIVE WORKBENCH) */}
+      {/* 3. WORKSTATION SPLIT VIEW (LEFT: SATU DAFTAR DOMAIN -> KATEGORI -> ITEM, RIGHT: ACTIVE WORKBENCH) */}
       <div className="ezrab-workstation-split">
         {/* =========================================================================
             LEFT COLUMN: CALCULATOR CATALOG & REALTIME FILTER PANE
            ========================================================================= */}
         <div className="ezrab-workstation-sidebar">
-          {/* Top Controls: Search + Category/Unit Filters + Status & Expand/Collapse */}
+          {/* Top Controls: Search + Unit Filter + Status & Expand/Collapse */}
           <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {/* Search Bar */}
             <div style={{ position: 'relative', width: '100%' }}>
@@ -1785,38 +1597,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
               )}
             </div>
 
-            {/* Compact Filters Row: Category & Unit Dropdowns */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-              {/* Category Dropdown */}
-              <div>
-                <label htmlFor="filter-work-category" style={{ display: 'none' }}>Kelompok Pekerjaan</label>
-                <select
-                  id="filter-work-category"
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '32px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--ez-color-border-line)',
-                    background: 'var(--ez-color-surface)',
-                    fontSize: '11px',
-                    color: 'var(--ez-color-text-body)',
-                    padding: '0 6px',
-                    outline: 'none',
-                    cursor: 'pointer',
-                    fontWeight: filterCategory !== 'ALL' ? 700 : 500,
-                  }}
-                >
-                  <option value="ALL">Semua Kelompok</option>
-                  {domainCategoryOptions.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name.replace(/^[A-Z][.]\s*/, '')}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
+            {/* Compact Filters Row: Unit Dropdown */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '6px' }}>
               {/* Unit Dropdown */}
               <div>
                 <label htmlFor="filter-work-unit" style={{ display: 'none' }}>Satuan</label>
@@ -1851,7 +1633,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             {/* Filter Status, Collapse/Expand All & Reset Action */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', color: 'var(--ez-color-text-muted)', paddingTop: '2px' }}>
               <span>
-                Menampilkan <strong>{totalFilteredCount}</strong> dari {domainCounts[activeDomain] || domainCounts.ALL} kalkulator
+                Menampilkan <strong>{totalFilteredCount}</strong> dari {domainCounts.ALL} kalkulator
               </span>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1873,14 +1655,13 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   {allCategoriesCollapsed ? 'Buka Semua' : 'Tutup Semua'}
                 </button>
 
-                {(searchQuery || filterCategory !== 'ALL' || filterUnit !== 'ALL' || filterFavoritesOnly) && (
+                {(searchQuery || filterUnit !== 'ALL' || filterFavoritesOnly) && (
                   <>
                     <span style={{ color: '#CBD5E1' }}>•</span>
                     <button
                       type="button"
                       onClick={() => {
                         setSearchQuery('');
-                        setFilterCategory('ALL');
                         setFilterUnit('ALL');
                         setFilterFavoritesOnly(false);
                       }}
@@ -1923,8 +1704,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                   Coba:
                   <ul style={{ margin: '4px 0 10px 16px', padding: 0 }}>
                     <li>Gunakan kata kunci pencarian yang lebih umum</li>
-                    <li>Pilih domain yang berbeda</li>
-                    <li>Hapus filter satuan atau kategori</li>
+                    <li>Hapus filter satuan</li>
                   </ul>
                 </div>
                 <div>
@@ -1932,7 +1712,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                     type="button"
                     onClick={() => {
                       setSearchQuery('');
-                      setFilterCategory('ALL');
                       setFilterUnit('ALL');
                       setFilterFavoritesOnly(false);
                     }}
@@ -1953,7 +1732,83 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 </div>
               </div>
             ) : (
-              groupedCalculators.map((group) => {
+              domainGroups.map((domain) => {
+                const isDomainCollapsed = !!collapsedDomains[domain.id];
+                const domainItemCount = domain.categories.reduce((n, c) => n + c.items.length, 0);
+                return (
+                  <div
+                    key={domain.id}
+                    style={{
+                      flexShrink: 0,
+                      border: '1px solid #EEF1F6',
+                      borderRadius: 'var(--ez-radius-card)',
+                      overflow: 'hidden',
+                      background: 'var(--ez-color-surface)',
+                      boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
+                    }}
+                  >
+                    {/* Header Domain — satu kelompok, isinya langsung di bawah */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => toggleDomainCollapse(domain.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') toggleDomainCollapse(domain.id);
+                      }}
+                      style={{
+                        padding: '10px 12px',
+                        background: 'var(--ez-hue-blue-bg)',
+                        borderBottom: isDomainCollapsed ? 'none' : '1px solid #EEF1F6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                        <span
+                          style={{
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '9px',
+                            background: 'var(--ez-hue-blue-bg-deep)',
+                            color: 'var(--ez-color-primary-hover)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <domain.icon size={15} />
+                        </span>
+                        <span style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--ez-color-text-strong)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                          {domain.name}
+                        </span>
+                        <span style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)' }}>
+                          {domain.subtitle}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            background: 'var(--ez-color-surface)',
+                            color: 'var(--ez-color-text-slate)',
+                            padding: '1px 6px',
+                            borderRadius: 'var(--ez-radius-pill)',
+                            border: '1px solid var(--ez-color-border-line)',
+                          }}
+                        >
+                          {domainItemCount}
+                        </span>
+                        {isDomainCollapsed ? <ChevronDown size={14} color="#64748B" /> : <ChevronUp size={14} color="#64748B" />}
+                      </div>
+                    </div>
+                    {!isDomainCollapsed && (
+                      <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {domain.categories.map((group) => {
                 const isCollapsed = !!collapsedCategories[group.id];
                 return (
                   <div
@@ -2117,6 +1972,11 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                     )}
                   </div>
                 );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
               })
             )}
           </div>
@@ -2238,20 +2098,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             </div>
           </div>
 
-          {/* Detail kalkulator terpilih: ilustrasi + formula berdampingan.
-              Desktop: ilustrasi kiri, formula kanan. Sempit: bertumpuk otomatis
-              (auto-fit minmax) tanpa media query. Formula SELALU TERLIHAT —
-              tidak lagi tersembunyi di balik drawer collapsed; isi langkahnya
-              sama persis dengan drawer lama (step, deskripsi, nilai, teks
-              formula), hanya dipindah ke sini. */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '16px',
-              alignItems: 'start',
-            }}
-          >
+          {/* Ilustrasi Pekerjaan — BESAR satu kolom penuh di atas formulir. */}
             {/* Ilustrasi Pekerjaan — gambar render-style sebagai satu-satunya
                 visual kalkulator (diagram CAD sudah diganti ilustrasi). */}
             {activeIllustration && (
@@ -2281,66 +2128,13 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                     src={activeIllustration.src}
                     alt={activeIllustration.title}
                     title={activeIllustration.title}
-                    loading="lazy"
+                    loading="eager"
                     style={{ width: '100%', height: 'auto', display: 'block' }}
                   />
                 </figure>
               </div>
             )}
 
-            {/* Formula & Langkah Perhitungan — selalu terlihat */}
-            <div
-              style={{
-                background: 'var(--ez-color-surface)',
-                border: '1px solid #EEF1F6',
-                borderRadius: '20px',
-                padding: '14px',
-                boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
-                minWidth: 0,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                <Calculator size={14} color="var(--ez-hue-blue-text)" />
-                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                  Formula &amp; Langkah Perhitungan
-                </span>
-              </div>
-              <p style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', margin: '0 0 10px', lineHeight: 1.4 }}>
-                Selalu terlihat — hasil audit engine untuk kalkulator terpilih.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {calculationResult.formulaSteps.length === 0 ? (
-                  <div style={{ fontSize: '12px', color: '#94A3B8', fontStyle: 'italic' }}>
-                    Belum ada langkah formula untuk kalkulator ini.
-                  </div>
-                ) : (
-                  calculationResult.formulaSteps.map((step) => (
-                    <div
-                      key={step.stepNumber}
-                      style={{
-                        background: 'var(--ez-color-surface-secondary)',
-                        borderRadius: '10px',
-                        padding: '8px 10px',
-                        border: '1px solid #EEF1F6',
-                        fontSize: '11.5px',
-                        minWidth: 0,
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontWeight: 700, color: 'var(--ez-color-text-strong)' }}>
-                        <span style={{ minWidth: 0, overflowWrap: 'break-word', wordBreak: 'break-word' }}>{step.stepNumber}. {step.description}</span>
-                        <span style={{ color: 'var(--ez-color-primary)', fontFamily: 'monospace', flexShrink: 0, whiteSpace: 'nowrap' }}>
-                          {formatNumberId(step.calculatedValue, 2)} {step.unit}
-                        </span>
-                      </div>
-                      <div style={{ fontFamily: 'monospace', color: 'var(--ez-color-text-muted)', fontSize: '11px', marginTop: '2px', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-                        = {step.formulaText}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
 
           {/* Two-Column Grid: Left Inputs / Right Results & Actions */}
           <div className="ezrab-volume-bottom-grid">
@@ -2797,10 +2591,64 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
 
             </div>
           </div>
+
+          {/* Formula & Langkah Perhitungan — selalu terlihat, di bawah formulir */}
+            {/* Formula & Langkah Perhitungan — selalu terlihat */}
+            <div
+              style={{
+                background: 'var(--ez-color-surface)',
+                border: '1px solid #EEF1F6',
+                borderRadius: '20px',
+                padding: '14px',
+                boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
+                minWidth: 0,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                <Calculator size={14} color="var(--ez-hue-blue-text)" />
+                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  Formula &amp; Langkah Perhitungan
+                </span>
+              </div>
+              <p style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', margin: '0 0 10px', lineHeight: 1.4 }}>
+                Selalu terlihat — hasil audit engine untuk kalkulator terpilih.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {calculationResult.formulaSteps.length === 0 ? (
+                  <div style={{ fontSize: '12px', color: '#94A3B8', fontStyle: 'italic' }}>
+                    Belum ada langkah formula untuk kalkulator ini.
+                  </div>
+                ) : (
+                  calculationResult.formulaSteps.map((step) => (
+                    <div
+                      key={step.stepNumber}
+                      style={{
+                        background: 'var(--ez-color-surface-secondary)',
+                        borderRadius: '10px',
+                        padding: '8px 10px',
+                        border: '1px solid #EEF1F6',
+                        fontSize: '11.5px',
+                        minWidth: 0,
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontWeight: 700, color: 'var(--ez-color-text-strong)' }}>
+                        <span style={{ minWidth: 0, overflowWrap: 'break-word', wordBreak: 'break-word' }}>{step.stepNumber}. {step.description}</span>
+                        <span style={{ color: 'var(--ez-color-primary)', fontFamily: 'monospace', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                          {formatNumberId(step.calculatedValue, 2)} {step.unit}
+                        </span>
+                      </div>
+                      <div style={{ fontFamily: 'monospace', color: 'var(--ez-color-text-muted)', fontSize: '11px', marginTop: '2px', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+                        = {step.formulaText}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
         </div>
       </div>
 
-      {/* 5. SAVED QTO PREVIEW TABLE AT BOTTOM */}
+      {/* 4. SAVED QTO PREVIEW TABLE AT BOTTOM */}
       <div
         style={{
           background: 'var(--ez-color-surface)',

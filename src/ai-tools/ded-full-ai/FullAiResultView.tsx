@@ -7,6 +7,9 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, HelpCircle, XCircle } from 'lucide-react';
 import { FullAiOutput, FullAiItem } from './types';
+import { resolveCanonicalCode, getDedPriceSourceLabel, DED_PRICE_SOURCE_LABELS } from '../ded-canonical/canonicalDedPricing';
+import { resolveFullAiItemStatus } from './service';
+import { verifySubtotal } from './validator';
 
 interface Props {
   output: FullAiOutput;
@@ -23,12 +26,10 @@ const PROVENANCE_LABEL: Record<string, { label: string; color: string }> = {
   USER_INPUT: { label: 'Input User', color: '#7C3AED' },
 };
 
-const PRICE_LABEL: Record<string, { label: string; color: string }> = {
-  VERIFIED_SOURCE: { label: 'Terverifikasi', color: '#16a34a' },
-  USER_INPUT: { label: 'Input User', color: '#2563EB' },
-  AI_ESTIMATE: { label: 'Estimasi AI', color: '#d97706' },
-  UNRESOLVED: { label: 'Belum Ada', color: '#6b7280' },
-};
+// Label sumber harga dari adapter kanonis (satu sumber). VERIFIED_SOURCE
+// lama tampil netral ("belum terverifikasi independen") — nilainya tidak
+// diubah, hanya labelnya, agar draft & riwayat lama tidak direlabel diam-diam.
+const PRICE_LABEL = DED_PRICE_SOURCE_LABELS;
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
   READY: <CheckCircle2 size={14} color="#16a34a" />,
@@ -48,8 +49,46 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
   const q = item.quantity;
   const p = item.price;
   const prov = PROVENANCE_LABEL[q.provenance] || PROVENANCE_LABEL.UNRESOLVED;
-  const priceSrc = PRICE_LABEL[p.source] || PRICE_LABEL.UNRESOLVED;
+  const priceSrc = getDedPriceSourceLabel(p.source);
   const isEdited = q.provenance === 'USER_INPUT' || p.source === 'USER_INPUT';
+  const [confirmMsg, setConfirmMsg] = useState('');
+
+  // Konfirmasi kandidat AHSP (review): resolusi ulang lewat jalur kode
+  // eksak adapter — kandidat PARTIAL / satuan tak cocok / karantina akan
+  // ditolak di sini, tidak pernah langsung dipakai.
+  const handleConfirmCandidate = (code: string) => {
+    const resolved = resolveCanonicalCode(code, item.quantity.unit);
+    if (resolved.status !== 'RESOLVED' || resolved.unitPrice == null) {
+      setConfirmMsg(`Kandidat ${code} tidak bisa dipakai: ${resolved.reason}`);
+      return;
+    }
+    const newPrice = {
+      ...item.price,
+      unitPrice: resolved.unitPrice,
+      unit: resolved.unit || item.quantity.unit,
+      source: 'AHSP_2026' as const,
+      region: 'Nasional',
+      period: '2026',
+      ahspCode: resolved.matchedCode,
+      notes: `AHSP kanonis ${resolved.matchedCode} (${resolved.sourceDocument}, biaya langsung) — dikonfirmasi pengguna dari kandidat review.`,
+      ahspMatch: resolved,
+    };
+    const { subtotal, verified } = verifySubtotal(item.quantity.value, newPrice.unitPrice);
+    const { status, exclusionReason } = resolveFullAiItemStatus(
+      { value: item.quantity.value, unit: item.quantity.unit, provenance: item.quantity.provenance },
+      { unitPrice: newPrice.unitPrice, unit: newPrice.unit, source: newPrice.source },
+    );
+    const includeInTotal = status === 'READY' && subtotal != null && subtotal > 0;
+    onUpdate({
+      ...item,
+      price: newPrice,
+      subtotal: includeInTotal ? subtotal : null,
+      subtotalVerified: verified && includeInTotal,
+      status: includeInTotal ? 'READY' : status,
+      exclusionReason: includeInTotal ? null : exclusionReason,
+    });
+    setConfirmMsg('');
+  };
 
   return (
     <div className="fullai-item" style={{
@@ -83,6 +122,7 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
               {p.unitPrice != null ? `${fmtRp(p.unitPrice)}/${p.unit}` : <em>belum ada</em>}
               {' '}
               <span style={{ fontSize: 11, color: priceSrc.color }}>({priceSrc.label})</span>
+              {p.ahspCode ? <span style={{ fontSize: 11, color: '#6b7280' }}> · AHSP {p.ahspCode}</span> : null}
             </div>
           </div>
 
@@ -112,6 +152,33 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
           {q.notes && <div style={{ marginBottom: 6 }}><strong>Catatan:</strong> {q.notes}</div>}
 
           {p.notes && <div style={{ marginBottom: 6 }}><strong>Catatan harga:</strong> {p.notes}</div>}
+
+          {item.price.ahspMatch && item.price.ahspMatch.status === 'NEEDS_REVIEW' && item.price.ahspMatch.candidates.length > 0 && (
+            <div style={{ marginTop: 8, padding: 10, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8 }}>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>Padanan AHSP menunggu konfirmasi — pilih satu (tidak ada yang dipilih otomatis):</div>
+              <div style={{ fontSize: 12, color: '#92400E', marginBottom: 6 }}>{item.price.ahspMatch.reason}</div>
+              {item.price.ahspMatch.candidates.map((c) => (
+                <div key={c.code} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', padding: '6px 0', borderTop: '1px solid #FDE68A', fontSize: 12 }}>
+                  <span><b>{c.code}</b> — {c.name} ({c.unit})
+                    {c.priceStatus === 'FULL' && c.canonicalPrice != null ? ` — ${fmtRp(c.canonicalPrice)}/${c.unit}` : c.priceStatus === 'PARTIAL' ? ' — komponen belum lengkap' : c.priceStatus === 'UNPRICED' ? ' — tanpa rincian komponen' : ''}
+                    {!c.unitExact ? ' — satuan berbeda' : ''}</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleConfirmCandidate(c.code); }}
+                    style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: '1px solid #2563EB', background: '#EFF6FF', color: '#1D4ED8', cursor: 'pointer', flexShrink: 0 }}
+                  >
+                    Pilih
+                  </button>
+                </div>
+              ))}
+              {confirmMsg && <div style={{ color: '#dc2626', marginTop: 6, fontSize: 12 }}>{confirmMsg}</div>}
+            </div>
+          )}
+          {item.price.ahspMatch && item.price.ahspMatch.status !== 'RESOLVED' && item.price.ahspMatch.status !== 'NEEDS_REVIEW' && (
+            <div style={{ marginTop: 8, padding: 10, background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12, color: '#6b7280' }}>
+              <strong>AHSP:</strong> {item.price.ahspMatch.reason}
+              {item.price.ahspMatch.matchedCode ? ` (kode: ${item.price.ahspMatch.matchedCode})` : ''}
+            </div>
+          )}
 
           {item.sourcePages && item.sourcePages.length > 0 && (
             <div style={{ marginBottom: 6, fontSize: 12, color: '#6b7280' }}>
@@ -218,6 +285,12 @@ function ItemCard({ item, onUpdate }: { item: FullAiItem; onUpdate: (updated: Fu
                       ...item.price,
                       unitPrice: validPrice,
                       source: validPrice != null ? 'USER_INPUT' : item.price.source,
+                      // Edit harga mengganti harga itu sendiri: kode + match
+                      // kanonis lama TIDAK boleh bertahan (nanti tampil
+                      // "AHSP 3.7.4" dan masuk catatan finalisasi untuk
+                      // harga yang bukan lagi harga kanonis).
+                      ahspCode: undefined,
+                      ahspMatch: undefined,
                       notes: validPrice != null
                         ? `${item.price.notes || ''} [Diedit user: harga asli ${item.price.unitPrice} (${item.price.source})]`.trim()
                         : item.price.notes,
@@ -269,7 +342,10 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack }
     itemsWithAssumption: items.filter((it) => it.quantity.provenance === 'ASSUMPTION').length,
     itemsNeedConfirmation: items.filter((it) => it.status === 'NEEDS_CONFIRMATION').length,
     itemsWithAiPrice: items.filter((it) => it.price.source === 'AI_ESTIMATE').length,
+    itemsWithCanonicalPrice: items.filter((it) => it.price.source === 'AHSP_2026').length,
     itemsWithVerifiedPrice: items.filter((it) => it.price.source === 'VERIFIED_SOURCE').length,
+    itemsNeedAhspReview: items.filter((it) => it.price.ahspMatch?.status === 'NEEDS_REVIEW').length,
+    itemsAhspIncomplete: items.filter((it) => it.price.ahspMatch?.status === 'INCOMPLETE_COMPONENTS').length,
     itemsUnresolved: items.filter((it) => it.status === 'UNRESOLVED').length,
     excludedFromTotal: items.filter((it) => it.subtotal == null).length,
   };
@@ -311,6 +387,23 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack }
         </span>
       </div>
 
+      {/* ---- Banner kebijakan harga (Full AI vs Database) ---- */}
+      {(() => {
+        const policy = output.policy ?? 'FULL_AI';
+        const canonNote = s.itemsWithCanonicalPrice > 0 ? ` ${s.itemsWithCanonicalPrice} item memakai harga AHSP kanonis (SE 47/2026, biaya langsung).` : '';
+        const reviewNote = s.itemsNeedAhspReview > 0 ? ` ${s.itemsNeedAhspReview} item menunggu konfirmasi padanan AHSP.` : '';
+        const incompleteNote = s.itemsAhspIncomplete > 0 ? ` ${s.itemsAhspIncomplete} item AHSP-nya belum lengkap komponennya.` : '';
+        return policy === 'FULL_AI' ? (
+          <div style={{ padding: '12px 14px', borderRadius: 12, background: '#FFFBEB', border: '1px solid #FDE68A', fontSize: 13, lineHeight: 1.55, marginBottom: 16 }}>
+            <b>Mode: Estimasi Full AI.</b> {s.itemsWithAiPrice} item memakai harga estimasi AI (AI_ESTIMATE) — bukan harga resmi AHSP.{canonNote}{reviewNote}{incompleteNote} {s.excludedFromTotal} item dikecualikan dari total. Periksa dan validasi sebelum RAB dipakai untuk pengadaan, tender, atau kontrak.
+          </div>
+        ) : (
+          <div style={{ padding: '12px 14px', borderRadius: 12, background: '#EFF6FF', border: '1px solid #BFDBFE', fontSize: 13, lineHeight: 1.55, marginBottom: 16 }}>
+            <b>Mode: Estimasi Database EZRAB.</b> Estimasi harga AI ditolak di mode ini — {s.itemsWithCanonicalPrice} item teratasi dari AHSP kanonis, {s.itemsUnresolved} item belum tersedia, {s.excludedFromTotal} item dikecualikan dari total.{reviewNote}{incompleteNote} Total di bawah bersifat <b>parsial</b> sampai harga yang hilang dilengkapi.
+          </div>
+        );
+      })()}
+
       {output.error ? (
         <div style={{ padding: 24, background: '#fef2f2', borderRadius: 8, border: '1px solid #fecaca' }}>
           <h3 style={{ color: '#dc2626', margin: '0 0 8px' }}>Analisis Gagal</h3>
@@ -331,7 +424,9 @@ export const FullAiResultView: React.FC<Props> = ({ output, onFinalize, onBack }
               ['Asumsi', s.itemsWithAssumption],
               ['Perlu Konfirmasi', s.itemsNeedConfirmation],
               ['Harga Estimasi AI', s.itemsWithAiPrice],
-              ['Harga Terverifikasi', s.itemsWithVerifiedPrice],
+              ['Harga AHSP Kanonis', s.itemsWithCanonicalPrice],
+              ['Harga Terverifikasi (lama)', s.itemsWithVerifiedPrice],
+              ['Perlu Konfirmasi AHSP', s.itemsNeedAhspReview],
               ['Belum Jelas', s.itemsUnresolved],
               ['Dikecualikan', s.excludedFromTotal],
             ].map(([label, val]) => (

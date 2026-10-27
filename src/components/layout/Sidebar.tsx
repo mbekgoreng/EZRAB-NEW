@@ -27,6 +27,7 @@ import {
   Plus,
   Check,
   HelpCircle,
+  Info,
   LogOut,
   User as UserIcon,
   Zap,
@@ -116,6 +117,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // RAB & Estimasi Submenu Items
   const rabSubItems = [
+    {
+      id: 'rab-informasi-proyek',
+      label: t('nav.informasi_proyek'),
+      icon: Info,
+      match: (m: string) => m === 'rab-informasi-proyek',
+    },
     {
       id: 'rab-spreadsheet',
       label: t('nav.rab_spreadsheet'),

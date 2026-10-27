@@ -5,9 +5,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   UploadCloud, FileText, X, Zap, Brain, FolderOpen, PlusCircle,
-  ArrowRight, AlertTriangle, History, Trash2, RotateCcw,
+  ArrowRight, AlertTriangle, History, Trash2, RotateCcw, Scale,
 } from 'lucide-react';
-import { DedAiMode, DedAiProjectType } from './types';
+import { DedAiMode, DedAiProjectType , DedEstimationPolicy } from './types';
 import { useI18n } from '../../i18n/I18nContext';
 import './dedAi.css';
 import '../../ai-credits/ai-credits.css';
@@ -28,6 +28,8 @@ export interface DedAiSession {
   projectName: string;
   projectType: DedAiProjectType;
   mode: DedAiMode;
+  /** Kebijakan harga: FULL_AI (default, perilaku lama) atau DATABASE (ketat). */
+  policy?: DedEstimationPolicy;
   /** null = buat proyek baru saat finalisasi; string = pakai proyek existing */
   targetProjectId: string | null;
   /** true = gunakan pipeline Full AI (terisolasi), false = pipeline lama */
@@ -75,6 +77,7 @@ export const DedAiInputView: React.FC<Props> = ({
   const [projectName, setProjectName] = useState(initialSession.projectName);
   const [projectType, setProjectType] = useState<DedAiProjectType>(initialSession.projectType);
   const [mode, setMode] = useState<DedAiMode>(initialSession.mode);
+  const [policy, setPolicy] = useState<DedEstimationPolicy>(initialSession.policy ?? 'FULL_AI');
   const [fullAi, setFullAi] = useState(initialSession.fullAi ?? false);
   const [targetProjectId, setTargetProjectId] = useState<string | null>(initialSession.targetProjectId);
   const [useExisting, setUseExisting] = useState(initialSession.targetProjectId !== null);
@@ -134,6 +137,7 @@ export const DedAiInputView: React.FC<Props> = ({
       projectName: name,
       projectType,
       mode,
+      policy,
       targetProjectId: chosenProjectId,
       fullAi,
       creditEstimate: { category: complexityLabel(complexity), credits: dedTarget },
@@ -153,6 +157,31 @@ export const DedAiInputView: React.FC<Props> = ({
         <div className="dedai-step"><span className="n">2</span> {t('ai.ded.input.step_2')}</div>
         <div className="dedai-step-line" />
         <div className="dedai-step"><span className="n">3</span> {t('ai.ded.input.step_3')}</div>
+      </div>
+
+      {/* ---- Kebijakan harga: Full AI vs Database (pilihan di awal) ---- */}
+      <div className="dedai-card">
+        <h2><span className="ico"><Scale size={18} /></span> Kebijakan Harga</h2>
+        <p className="sub">Pilih dulu bagaimana harga ditentukan. Pilihan ini dikunci ke hasil estimasi dan ditegakkan di service — bukan sekadar instruksi tampilan.</p>
+        <div className="dedai-seg" style={{ marginBottom: 12 }}>
+          <button className={policy === 'FULL_AI' ? 'active' : ''} onClick={() => setPolicy('FULL_AI')}>
+            Estimasi Full AI
+          </button>
+          <button className={policy === 'DATABASE' ? 'active' : ''} onClick={() => setPolicy('DATABASE')}>
+            Estimasi Database EZRAB
+          </button>
+        </div>
+        {policy === 'FULL_AI' ? (
+          <div className="dedai-notice">
+            <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 2 }} />
+            <span><b>Estimasi awal dengan harga estimasi AI</b> saat harga terverifikasi tidak tersedia. Harga estimasi AI <b>bukan harga resmi AHSP</b> maupun penawaran pasar terverifikasi. Periksa dan validasi sebelum RAB dipakai untuk pengadaan, tender, atau kontrak.</span>
+          </div>
+        ) : (
+          <div className="dedai-notice blue">
+            <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 2 }} />
+            <span><b>Hanya harga terverifikasi / input pengguna.</b> Estimasi harga AI ditolak — item tanpa harga terverifikasi tetap <b>belum tersedia</b> dan total yang tampil bisa <b>parsial</b> sampai harga yang hilang dilengkapi. Catatan: mesin DED standar tidak mengkueri master AHSP; lengkapi harga lewat AHSP picker setelah hasil di-push ke spreadsheet.</span>
+          </div>
+        )}
       </div>
 
       {/* ---- Upload ---- */}

@@ -590,6 +590,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             <CreditPage onBack={() => setActiveMenu('dashboard')} />
           </main>
         ) : (activeMenu === 'rab-estimasi' ||
+             activeMenu === 'rab-informasi-proyek' ||
              activeMenu === 'rab-spreadsheet' ||
              activeMenu === 'rab-rekapitulasi' ||
              activeMenu === 'rab-analisa-harga' ||
@@ -601,7 +602,9 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
               key={activeMenu}
               projects={projects}
               initialTab={
-                activeMenu === 'rab-rekapitulasi'
+                activeMenu === 'rab-informasi-proyek'
+                  ? 'informasi-proyek'
+                  : activeMenu === 'rab-rekapitulasi'
                   ? 'rekapitulasi'
                   : activeMenu === 'rab-analisa-harga'
                   ? 'analisa-harga'

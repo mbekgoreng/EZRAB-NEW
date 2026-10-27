@@ -14,8 +14,12 @@ import { PAGE_TYPE_PRIORITY, formatPageRanges } from '../ded-ai-estimate/analysi
 import { buildFullAiPrompt } from './prompts';
 import { validateFullAiItem, verifySubtotal } from './validator';
 import {
-  FullAiOutput, FullAiItem, FullAiServiceOptions, FullAiSummary,
+  FullAiOutput, FullAiItem, FullAiServiceOptions, FullAiSummary, DedEstimationPolicy, FullAiPriceSource,
 } from './types';
+import {
+  matchDedItemToAhsp, resolveDedPriceWithCanonical,
+  type CanonicalDedMatch,
+} from '../ded-canonical/canonicalDedPricing';
 
 // Batas karakter dengan strategi chunking yang transparan
 const MAX_TOTAL_CHARS = 60000;  // Lebih besar dari pipeline lama (15000)
@@ -173,6 +177,8 @@ export class FullAiDedService {
 
   private async runExecute(options: FullAiServiceOptions): Promise<FullAiOutput> {
     const { mode, projectType } = options;
+    // Kebijakan harga (default FULL_AI = perilaku lama).
+    const policy: DedEstimationPolicy = options.policy ?? 'FULL_AI';
     const notify = options.onProgress || (() => {});
 
     try {
@@ -181,7 +187,7 @@ export class FullAiDedService {
       const parsed = await parseDedPdf(options.buffer, options.fileName, { withImages: false });
 
       if ('errorCode' in parsed) {
-        return this.errorOutput(mode, {
+        return this.errorOutput(mode, policy, {
           code: parsed.errorCode,
           message: parsed.message,
           retryable: parsed.retryable,
@@ -249,7 +255,7 @@ export class FullAiDedService {
       });
 
       if (!aiResult.success) {
-        return this.errorOutput(mode, {
+        return this.errorOutput(mode, policy, {
           code: aiResult.errorCode || 'AI_ERROR',
           message: aiResult.message || 'AI gagal memproses',
           retryable: true,
@@ -262,7 +268,7 @@ export class FullAiDedService {
       try {
         parsedAi = aiToolsProviderClient.extractJson(aiResult.content);
       } catch {
-        return this.errorOutput(mode, {
+        return this.errorOutput(mode, policy, {
           code: 'INVALID_JSON',
           message: 'Respons AI bukan JSON valid',
           retryable: true,
@@ -314,51 +320,68 @@ export class FullAiDedService {
         }
 
         const q = normalized.quantity || {};
-        const p = normalized.price || {};
+        // Gerbang kebijakan harga (service layer): DATABASE menolak
+        // estimasi AI (dan klaim VERIFIED tanpa ahspCode yang tak
+        // tertelusur) — harga menjadi UNRESOLVED, item tetap tampil
+        // dengan exclusionReason PRICE_UNRESOLVED di bawah.
+        const p = applyFullAiPricePolicy(policy, normalized.price || {});
+        // Resolusi kanonis (adapter ded-canonical): klaim VERIFIED tidak
+        // lagi dipercaya begitu saja. Harga kanonis dipakai bila
+        // terverifikasi (kedua mode); klaim gagal turun jadi estimasi AI
+        // (FULL_AI) / unresolved (DATABASE). Harga USER_INPUT tidak
+        // pernah ditimpa.
+        let finalPrice: {
+          unitPrice: number | null; unit: string; source: FullAiPriceSource;
+          region?: string; period?: string; ahspCode?: string; notes?: string;
+        };
+        let ahspMatch: CanonicalDedMatch | undefined;
+        if (p.source === 'USER_INPUT') {
+          finalPrice = {
+            unitPrice: typeof p.unitPrice === 'number' ? p.unitPrice : null,
+            unit: String(p.unit || q.unit || ''),
+            source: 'USER_INPUT',
+            region: p.region, period: p.period, ahspCode: p.ahspCode, notes: p.notes,
+          };
+        } else {
+          const claimedCode = typeof normalized.price?.ahspCode === 'string'
+            ? normalized.price.ahspCode
+            : undefined;
+          const match = matchDedItemToAhsp({
+            name: String(raw.name || ''),
+            unit: String(q.unit || ''),
+            specification: typeof raw.description === 'string' ? raw.description : undefined,
+            claimedAhspCode: claimedCode,
+          });
+          ahspMatch = match;
+          const decision = resolveDedPriceWithCanonical(policy, match, {
+            unitPrice: typeof p.unitPrice === 'number' ? p.unitPrice : null,
+            source: p.source || 'UNRESOLVED',
+            unit: String(p.unit || q.unit || ''),
+            notes: p.notes,
+            ahspCode: p.ahspCode,
+          });
+          finalPrice = {
+            unitPrice: decision.unitPrice,
+            unit: decision.unit || String(q.unit || ''),
+            source: decision.source,
+            region: decision.source === 'AHSP_2026' ? 'Nasional' : p.region,
+            period: decision.source === 'AHSP_2026' ? '2026' : p.period,
+            ahspCode: decision.ahspCode,
+            notes: decision.notes,
+          };
+        }
         const { subtotal, verified: subtotalComputed } = verifySubtotal(
           typeof q.value === 'number' ? q.value : null,
-          typeof p.unitPrice === 'number' ? p.unitPrice : null
+          finalPrice.unitPrice
         );
 
-        // Tentukan status dan alasan eksklusi (diagnostik spesifik)
-        let status: FullAiItem['status'] = 'READY';
-        let exclusionReason: FullAiItem['exclusionReason'] = null;
-
-        if (q.value == null) {
-          status = 'UNRESOLVED';
-          exclusionReason = 'MISSING_QUANTITY';
-        } else if (typeof q.value !== 'number' || !Number.isFinite(q.value) || q.value < 0) {
-          status = 'UNRESOLVED';
-          exclusionReason = 'INVALID_QUANTITY';
-        } else if (!q.unit) {
-          status = 'UNRESOLVED';
-          exclusionReason = 'MISSING_UNIT';
-        } else if (q.provenance === 'UNRESOLVED') {
-          status = 'UNRESOLVED';
-          exclusionReason = 'UNRESOLVED_PROVENANCE';
-        } else if (q.provenance === 'NEEDS_CONFIRMATION') {
-          status = 'NEEDS_CONFIRMATION';
-          exclusionReason = 'NEEDS_CONFIRMATION';
-        } else if (p.unitPrice == null) {
-          status = 'NEEDS_CONFIRMATION';
-          exclusionReason = 'MISSING_UNIT_PRICE';
-        } else if (typeof p.unitPrice !== 'number' || !Number.isFinite(p.unitPrice)) {
-          status = 'NEEDS_CONFIRMATION';
-          exclusionReason = 'INVALID_UNIT_PRICE';
-        } else if (p.unitPrice < 0) {
-          status = 'NEEDS_CONFIRMATION';
-          exclusionReason = 'INVALID_UNIT_PRICE';
-        } else if (p.source === 'UNRESOLVED') {
-          status = 'NEEDS_CONFIRMATION';
-          exclusionReason = 'PRICE_UNRESOLVED';
-        } else if (p.unit && q.unit) {
-          // Cek kesesuaian satuan
-          const norm = (u: string) => u.toLowerCase().replace(/[^a-z0-9]/g, '');
-          if (norm(p.unit) !== norm(q.unit)) {
-            status = 'NEEDS_CONFIRMATION';
-            exclusionReason = 'INVALID_PRICE_UNIT';
-          }
-        }
+        // Tentukan status dan alasan eksklusi (diagnostik spesifik) —
+        // satu fungsi murni agar layar hasil (konfirmasi kandidat) memakai
+        // aturan yang persis sama dengan service ini.
+        const { status, exclusionReason } = resolveFullAiItemStatus(
+          { value: q.value, unit: q.unit, provenance: q.provenance },
+          { unitPrice: finalPrice.unitPrice, unit: finalPrice.unit, source: finalPrice.source },
+        );
         // ASSUMPTION/DERIVED/EXPLICIT dengan qty+harga valid → READY (masuk total)
         // Label asumsi tetap terlihat jelas di UI — bukan status terverifikasi
 
@@ -386,13 +409,14 @@ export class FullAiDedService {
             notes: q.notes || undefined,
           },
           price: {
-            unitPrice: typeof p.unitPrice === 'number' ? p.unitPrice : null,
-            unit: String(p.unit || q.unit || ''),
-            source: p.source || 'UNRESOLVED',
-            region: p.region || undefined,
-            period: p.period || undefined,
-            ahspCode: p.ahspCode || undefined,
-            notes: p.notes || undefined,
+            unitPrice: finalPrice.unitPrice,
+            unit: finalPrice.unit,
+            source: finalPrice.source,
+            region: finalPrice.region || undefined,
+            period: finalPrice.period || undefined,
+            ahspCode: finalPrice.ahspCode || undefined,
+            notes: finalPrice.notes || undefined,
+            ahspMatch,
           },
           subtotal: includeInTotal ? subtotal : null,
           // F4 (3.7): hanya true bila subtotal item ini benar-benar terhitung
@@ -445,6 +469,7 @@ export class FullAiDedService {
       return {
         success: true,
         mode,
+        policy,
         projectInfo: {
           projectType,
           buildingFunction: parsedAi.projectInfo?.buildingFunction || undefined,
@@ -477,7 +502,7 @@ export class FullAiDedService {
         },
       };
     } catch (err: any) {
-      return this.errorOutput(mode, {
+      return this.errorOutput(mode, policy, {
         code: 'SERVICE_ERROR',
         message: err?.message || 'Terjadi kesalahan',
         retryable: true,
@@ -487,11 +512,13 @@ export class FullAiDedService {
 
   private errorOutput(
     mode: 'FAST' | 'ADVANCED',
+    policy: DedEstimationPolicy,
     error: { code: string; message: string; retryable: boolean }
   ): FullAiOutput {
     return {
       success: false,
       mode,
+      policy,
       projectInfo: {
         projectType: '',
         scopeSummary: '',
@@ -520,6 +547,86 @@ export class FullAiDedService {
       },
     };
   }
+}
+
+/**
+ * Gerbang kebijakan harga mesin Full AI (murni, service layer).
+ * - FULL_AI: harga diteruskan apa adanya (perilaku lama; validator tetap
+ *   memeriksa struktur, satuan, dan aritmetika di tempat lain).
+ * - DATABASE: sumber AI_ESTIMATE DITOLAK → unitPrice null, source
+ *   UNRESOLVED. Klaim VERIFIED_SOURCE tanpa ahspCode juga ditolak karena
+ *   tidak tertelusur ke kode AHSP. VERIFIED_SOURCE ber-ahspCode dan
+ *   USER_INPUT lolos (harga terverifikasi/pengguna, bukan estimasi AI).
+ */
+export function applyFullAiPricePolicy(
+  policy: DedEstimationPolicy | undefined,
+  price: any
+): any {
+  const effective: DedEstimationPolicy = policy ?? 'FULL_AI';
+  if (effective !== 'DATABASE' || !price || typeof price !== 'object') return price;
+  if (price.source === 'AI_ESTIMATE') {
+    return { ...price, unitPrice: null, source: 'UNRESOLVED' };
+  }
+  if (price.source === 'VERIFIED_SOURCE' && !price.ahspCode) {
+    return { ...price, unitPrice: null, source: 'UNRESOLVED' };
+  }
+  return price;
+}
+
+/**
+ * Status + alasan eksklusi satu item Full AI — FUNGSI MURNI yang dipakai
+ * service (runExecute) DAN layar hasil (konfirmasi kandidat AHSP), agar
+ * keduanya memakai aturan yang persis sama. Disalin dari rantai status
+ * inline runExecute (F4 3.7); jangan ubah satu sisi tanpa sisi lain —
+ * fungsi inilah satu-satunya sumber aturan ini.
+ */
+export function resolveFullAiItemStatus(
+  quantity: { value: unknown; unit: unknown; provenance: unknown },
+  price: { unitPrice: unknown; unit: unknown; source: unknown },
+): { status: FullAiItem['status']; exclusionReason: FullAiItem['exclusionReason'] } {
+  const qValue = quantity.value;
+  const qUnit = typeof quantity.unit === 'string' ? quantity.unit : '';
+  const qProv = quantity.provenance;
+  const pPrice = price.unitPrice;
+  const pUnit = typeof price.unit === 'string' ? price.unit : '';
+  const pSource = price.source;
+  let status: FullAiItem['status'] = 'READY';
+  let exclusionReason: FullAiItem['exclusionReason'] = null;
+  if (qValue == null) {
+    status = 'UNRESOLVED';
+    exclusionReason = 'MISSING_QUANTITY';
+  } else if (typeof qValue !== 'number' || !Number.isFinite(qValue) || qValue < 0) {
+    status = 'UNRESOLVED';
+    exclusionReason = 'INVALID_QUANTITY';
+  } else if (!qUnit) {
+    status = 'UNRESOLVED';
+    exclusionReason = 'MISSING_UNIT';
+  } else if (qProv === 'UNRESOLVED') {
+    status = 'UNRESOLVED';
+    exclusionReason = 'UNRESOLVED_PROVENANCE';
+  } else if (qProv === 'NEEDS_CONFIRMATION') {
+    status = 'NEEDS_CONFIRMATION';
+    exclusionReason = 'NEEDS_CONFIRMATION';
+  } else if (pPrice == null) {
+    status = 'NEEDS_CONFIRMATION';
+    exclusionReason = 'MISSING_UNIT_PRICE';
+  } else if (typeof pPrice !== 'number' || !Number.isFinite(pPrice)) {
+    status = 'NEEDS_CONFIRMATION';
+    exclusionReason = 'INVALID_UNIT_PRICE';
+  } else if (pPrice < 0) {
+    status = 'NEEDS_CONFIRMATION';
+    exclusionReason = 'INVALID_UNIT_PRICE';
+  } else if (pSource === 'UNRESOLVED') {
+    status = 'NEEDS_CONFIRMATION';
+    exclusionReason = 'PRICE_UNRESOLVED';
+  } else if (pUnit && qUnit) {
+    const norm = (u: string) => u.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (norm(pUnit) !== norm(qUnit)) {
+      status = 'NEEDS_CONFIRMATION';
+      exclusionReason = 'INVALID_PRICE_UNIT';
+    }
+  }
+  return { status, exclusionReason };
 }
 
 export const fullAiDedService = new FullAiDedService();

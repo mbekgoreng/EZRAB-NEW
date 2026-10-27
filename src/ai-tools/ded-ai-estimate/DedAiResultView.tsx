@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { DedAiItem, DedAiOutput } from './types';
-import { DedAiCalculator } from './calculator';
+import { DedAiCalculator, applyUnitChange } from './calculator';
+import { resolveCanonicalCode } from '../ded-canonical/canonicalDedPricing';
 import { groupByWbs, WbsGroup } from './wbsClassifier';
 import { useI18n } from '../../i18n/I18nContext';
 import './dedAi.css';
@@ -87,6 +88,7 @@ export const DedAiResultView: React.FC<Props> = ({
   const [bulkVals, setBulkVals] = useState<Record<string, string>>({});
   const [wbsExpanded, setWbsExpanded] = useState<Set<string>>(new Set());
   const [showWbs, setShowWbs] = useState(false);
+  const [confirmError, setConfirmError] = useState<Record<string, string>>({});
 
   // WBS grouping — dihitung dari items aktual, tidak mengubah data
   const wbsData = useMemo(
@@ -139,21 +141,58 @@ export const DedAiResultView: React.FC<Props> = ({
         if (it.id !== id) return it;
         const newUnits = editVals.units.trim() || it.units;
         const newName = editVals.name.trim() || it.name;
+        // Ganti satuan membatalkan harga kanonis (applyUnitChange) — harga
+        // per satuan lama tidak boleh bertahan dengan label AHSP untuk
+        // satuan baru.
+        const base = applyUnitChange(it, newUnits);
         return {
-          ...it,
+          ...base,
           name: newName,
           quantity,
           units: newUnits,
           quantityFormula: quantity != null
             ? `${t('ai.ded.result.formula_manual_a')} ${fmtQty(quantity)} ${newUnits}`
             : t('ai.ded.result.formula_cleared'),
-          provenance: [...it.provenance, 'user-edit'],
+          provenance: [...base.provenance, 'user-edit'],
         };
       });
       // Hitung ulang subtotal & stage via logika kanonis (sama seperti pipeline).
       return DedAiCalculator.finalizeItems(updated);
     });
     setEditing(null);
+  };
+
+  // Konfirmasi kandidat AHSP (review): resolusi ulang lewat jalur kode
+  // eksak adapter, lalu staging ulang via finalizeItems (aturan yang sama
+  // seperti pipeline — kuantitas tetap divalidasi, subtotal dihitung mesin).
+  // Kandidat PARTIAL / satuan tak cocok / karantina ditolak di sini.
+  const confirmAhspCandidate = (id: string, code: string) => {
+    setItems((prev) => {
+      const target = prev.find((it) => it.id === id);
+      if (!target) return prev;
+      const resolved = resolveCanonicalCode(code, target.units);
+      if (resolved.status !== 'RESOLVED' || resolved.unitPrice == null) {
+        setConfirmError((e) => ({ ...e, [id]: `Kandidat ${code} tidak bisa dipakai: ${resolved.reason}` }));
+        return prev;
+      }
+      setConfirmError((e) => {
+        const next = { ...e };
+        delete next[id];
+        return next;
+      });
+      const updated = prev.map((it) => it.id === id
+        ? {
+          ...it,
+          unitPrice: resolved.unitPrice as number,
+          priceSource: 'AHSP_2026' as const,
+          ahspCode: resolved.matchedCode,
+          ahspMatch: resolved,
+          priceAssumptionNote: `AHSP kanonis ${resolved.matchedCode} (${resolved.sourceDocument}, biaya langsung) — dikonfirmasi pengguna dari kandidat review.`,
+          provenance: [...it.provenance, `ahsp:${resolved.matchedCode}`],
+        }
+        : it);
+      return DedAiCalculator.finalizeItems(updated);
+    });
   };
 
   const commitBulkFill = () => {
@@ -254,6 +293,30 @@ export const DedAiResultView: React.FC<Props> = ({
           </div>
         </div>
       )}
+
+      {/* ---- Banner kebijakan harga (Full AI vs Database) ---- */}
+      {(() => {
+        const policy = output.policy ?? 'FULL_AI';
+        const aiCount = items.filter((it) => it.priceSource === 'AI_ESTIMATE').length;
+        const canonCount = items.filter((it) => it.priceSource === 'AHSP_2026').length;
+        const reviewCount = items.filter((it) => it.ahspMatch?.status === 'NEEDS_REVIEW').length;
+        const incompleteCount = items.filter((it) => it.ahspMatch?.status === 'INCOMPLETE_COMPONENTS').length;
+        const excluded = items.length - calculableCount;
+        const canonNote = canonCount > 0 ? ` ${canonCount} item memakai harga AHSP kanonis (SE 47/2026, biaya langsung).` : '';
+        const reviewNote = reviewCount > 0 ? ` ${reviewCount} item menunggu konfirmasi padanan AHSP.` : '';
+        const incompleteNote = incompleteCount > 0 ? ` ${incompleteCount} item AHSP-nya belum lengkap komponennya.` : '';
+        return policy === 'FULL_AI' ? (
+          <div className="dedai-notice">
+            <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 2 }} />
+            <span><b>Mode: Estimasi Full AI.</b> {aiCount} item memakai harga estimasi AI (AI_ESTIMATE) — bukan harga resmi AHSP.{canonNote}{reviewNote}{incompleteNote} Periksa dan validasi sebelum RAB dipakai untuk pengadaan, tender, atau kontrak.{excluded > 0 ? ` Total di bawah mengecualikan ${excluded} item yang belum lengkap.` : ''}</span>
+          </div>
+        ) : (
+          <div className="dedai-notice blue">
+            <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 2 }} />
+            <span><b>Mode: Estimasi Database EZRAB.</b> Estimasi harga AI ditolak di mode ini — {canonCount} item teratasi dari AHSP kanonis, {calculableCount} item terhitung, {excluded} item belum lengkap / tanpa harga.{reviewNote}{incompleteNote} Total di bawah bersifat <b>parsial</b> sampai harga yang hilang dilengkapi (mis. lewat AHSP picker setelah push ke spreadsheet).</span>
+          </div>
+        );
+      })()}
 
       {/* ---- Ringkasan: total hero + kartu hitung ---- */}
       <div className="dedai-hero-total">
@@ -559,7 +622,27 @@ export const DedAiResultView: React.FC<Props> = ({
                       <td colSpan={8}>
                         <div className="dedai-detail">
                           <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_basis')}</span><span>{it.quantityFormula || '—'}</span></div>
-                          <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_source')}</span><span><code>{it.quantitySource}</code> · <code>{it.priceSource}</code></span></div>
+                          <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_source')}</span><span><code>{it.quantitySource}</code> · <code>{it.priceSource}</code>{it.ahspCode ? <> · <code>AHSP {it.ahspCode}</code></> : null}</span></div>
+                          {it.ahspMatch && it.ahspMatch.status !== 'RESOLVED' && it.ahspMatch.status !== 'NEEDS_REVIEW' && (
+                            <div className="dl-row"><span className="dl-k">AHSP</span><span style={{ color: 'var(--ez-color-text-muted)' }}>{it.ahspMatch.reason}{it.ahspMatch.matchedCode ? ` (kode: ${it.ahspMatch.matchedCode})` : ''}</span></div>
+                          )}
+                          {it.ahspMatch && it.ahspMatch.status === 'NEEDS_REVIEW' && it.ahspMatch.candidates.length > 0 && (
+                            <div className="dl-row" style={{ alignItems: 'flex-start' }}>
+                              <span className="dl-k">Padanan AHSP</span>
+                              <span>
+                                <span style={{ display: 'block', marginBottom: 6, color: 'var(--ez-color-text-muted)' }}>{it.ahspMatch.reason}</span>
+                                {it.ahspMatch.candidates.map((c) => (
+                                  <span key={c.code} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', padding: '4px 0', borderTop: '1px solid var(--ez-color-surface-tertiary)' }}>
+                                    <span><b>{c.code}</b> — {c.name} ({c.unit})
+                                      {c.priceStatus === 'FULL' && c.canonicalPrice != null ? ` — ${fmtRp(c.canonicalPrice)}/${c.unit}` : c.priceStatus === 'PARTIAL' ? ' — komponen belum lengkap' : c.priceStatus === 'UNPRICED' ? ' — tanpa rincian komponen' : ''}
+                                      {!c.unitExact ? ' — satuan berbeda' : ''}</span>
+                                    <button className="dedai-btn ghost" style={{ padding: '2px 10px', fontSize: 11, flexShrink: 0 }} onClick={() => confirmAhspCandidate(it.id, c.code)}>Pilih</button>
+                                  </span>
+                                ))}
+                                {confirmError[it.id] && <span style={{ display: 'block', color: 'var(--ez-color-danger)', marginTop: 4 }}>{confirmError[it.id]}</span>}
+                              </span>
+                            </div>
+                          )}
                           {it.priceAssumptionNote && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_price_note')}</span><span>{it.priceAssumptionNote}</span></div>}
                           {it.sourceEvidence && <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_proof')}</span><span>{it.sourceEvidence}</span></div>}
                           <div className="dl-row"><span className="dl-k">{t('ai.ded.result.detail_pages')}</span><span>{it.sourcePages.length ? it.sourcePages.map((p) => `${t('ai.ded.result.page_abbr')}${p}${t('ai.ded.result.page_abbr_suffix')}`).join(', ') : '—'}</span></div>

@@ -5,6 +5,8 @@
  * price database / project price engine. When no price basis exists, unitPrice = null.
  */
 
+import type { DedEstimationPolicy } from './types';
+
 export function isSaneEstimate(value: number | null | undefined): value is number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return false;
   if (value <= 0) return false;
@@ -24,4 +26,30 @@ export function applyAiEstimatePrice(
     return { unitPrice: null, priceSource: 'UNRESOLVED', note: `Estimasi harga tidak wajar (${rawPrice}), ditolak` };
   }
   return { unitPrice: Math.round(rawPrice), priceSource: 'AI_ESTIMATE', note: note || 'Estimasi AI' };
+}
+
+/**
+ * Gerbang kebijakan harga DED-to-RAB (service layer, bukan instruksi UI).
+ * - FULL_AI: perilaku lama — estimasi AI diterima bila lolos isSaneEstimate,
+ *   dilabel AI_ESTIMATE; bila tidak wajar/hilang → UNRESOLVED.
+ * - DATABASE: estimasi AI DITOLAK apa pun nilainya — harga menjadi
+ *   UNRESOLVED (null). Satu-satunya harga yang bisa lolos di mode ini
+ *   adalah USER_INPUT (edit pengguna pasca analisis, di luar fungsi ini).
+ * Fungsi ini murni dan menjadi satu-satunya tempat keputusan harga AI
+ * di mesin standar (dipakai convertAiItem di service.ts).
+ */
+export function resolveDedPriceForPolicy(
+  policy: DedEstimationPolicy | undefined,
+  rawPrice: number | null | undefined,
+  note?: string
+): { unitPrice: number | null; priceSource: 'AI_ESTIMATE' | 'UNRESOLVED'; note?: string } {
+  const effective: DedEstimationPolicy = policy ?? 'FULL_AI';
+  if (effective === 'DATABASE') {
+    return {
+      unitPrice: null,
+      priceSource: 'UNRESOLVED',
+      note: 'Kebijakan Database: estimasi harga AI tidak dipakai sebagai harga',
+    };
+  }
+  return applyAiEstimatePrice(rawPrice, note);
 }

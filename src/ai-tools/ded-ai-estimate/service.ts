@@ -5,9 +5,11 @@
  *
  * HARD ISOLATION: This file must NOT import AHSP matcher / price resolver / HSD
  * database / masterRegistry / official price database / project price engine, nor
- * any ded-rab-v2/v3 module. It only uses modules inside
- * src/ai-tools/ded-ai-estimate/{parser,prompts,pricing,quantity,calculator,types}
- * plus aiToolsProviderClient/aiModelRegistry.
+ * any ded-rab-v2/v3 module — KECUALI lewat SATU jembatan terkontrol:
+ * src/ai-tools/ded-canonical/canonicalDedPricing (adapter). Adapter itulah
+ * yang mengimpor layanan kanonis; mesin ini hanya memanggil matchDedItemToAhsp
+ * & resolveDedPriceWithCanonical, dan tidak pernah menerima harga yang tidak
+ * melewati gerbang kebijakan + komposisi FULL adapter tersebut.
  */
 
 import { aiToolsProviderClient, AiToolsResult } from '../providerClient';
@@ -16,7 +18,8 @@ import { buildFastPrompt, DedFastOutput, DedFastPromptInput } from './prompts/fa
 import { buildDetailPrompt, DedDetailOutput, DedDetailPromptInput } from './prompts/detail';
 import { parseDedPdf, DedParsedDocument } from './parser';
 import { attemptQuantityFromDimensionString } from './quantity';
-import { applyAiEstimatePrice } from './pricing';
+import { resolveDedPriceForPolicy } from './pricing';
+import { matchDedItemToAhsp, resolveDedPriceWithCanonical } from '../ded-canonical/canonicalDedPricing';
 import { DedAiCalculator } from './calculator';
 import { deriveKolomVolume, deriveDindingNetto, derivePlester, DerivationTrail } from './derivation';
 import { selectPagesWithTrace, formatPageRanges } from './analysisTrace';
@@ -45,7 +48,7 @@ function isProjectTypeSupported(v: string): v is DedAiProjectType {
   return PROJECT_TYPES.includes(v);
 }
 
-function convertAiItem(idx: number, raw: any, mode: DedAiMode): DedAiItem {
+function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: import('./types').DedEstimationPolicy): DedAiItem {
   const name = String(raw.name || `Pekerjaan ${idx + 1}`);
   const units = String(raw.units || raw.unit || 'm2');
   const dims = raw.dimensions || raw.quantityFormula || '';
@@ -145,7 +148,25 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode): DedAiItem {
     quantitySource = 'UNRESOLVED';
   }
 
-  const price = applyAiEstimatePrice(raw.estimatedUnitPrice ?? raw.unitPrice, raw.unitPriceNote);
+  // Resolusi kanonis dulu (adapter ded-canonical): DATABASE kini benar-benar
+  // mencoba AHSP sebelum menyatakan harga tidak tersedia; FULL_AI memakai
+  // harga kanonis bila terverifikasi, sisanya estimasi AI + match terlampir
+  // untuk review. Gerbang kebijakan lama tetap dipakai sebagai fallback.
+  const aiPrice = resolveDedPriceForPolicy(policy, raw.estimatedUnitPrice ?? raw.unitPrice, raw.unitPriceNote);
+  const claimedCode = typeof raw.ahspCode === 'string'
+    ? raw.ahspCode
+    : (typeof raw.code === 'string' ? raw.code : undefined);
+  const ahspMatch = matchDedItemToAhsp({
+    name,
+    unit: units,
+    specification: typeof raw.specification === 'string' ? raw.specification : undefined,
+    claimedAhspCode: claimedCode,
+  });
+  const price = resolveDedPriceWithCanonical(policy ?? 'FULL_AI', ahspMatch, {
+    unitPrice: aiPrice.unitPrice,
+    source: aiPrice.priceSource,
+    notes: aiPrice.note,
+  });
 
   return {
     id: `dedai-${idx + 1}`,
@@ -175,14 +196,17 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode): DedAiItem {
     derivation,
     rawAIQuantity,
     unitPrice: price.unitPrice,
-    priceSource: price.priceSource,
-    priceAssumptionNote: price.note,
+    priceSource: price.source,
+    ahspCode: price.ahspCode,
+    ahspMatch: price.ahspMatch,
+    priceAssumptionNote: price.notes,
     subtotal: null,
     sourcePages: Array.isArray(raw.sourcePages) ? raw.sourcePages.map(Number).filter(Number.isFinite) : [],
     sourceEvidence: raw.sourceEvidence || undefined,
     provenance: [
       `quantity:${quantitySource}`,
-      `price:${price.priceSource}`,
+      `price:${price.source}`,
+      ...(price.ahspCode ? [`ahsp:${price.ahspCode}`] : []),
       quantity !== null ? `qty=${quantity}` : 'qty=null',
       price.unitPrice !== null ? `price=${price.unitPrice}` : 'price=null',
     ],
@@ -488,12 +512,14 @@ export class DedAiEstimateService {
       const prev = merged.get(key);
       if (!prev || (prev.quantity == null && typeof raw.quantity === 'number')) merged.set(key, raw);
     }
-    const items: DedAiItem[] = [...merged.values()].map((raw, idx) => convertAiItem(idx, raw, mode));
+    const policy = options.policy ?? 'FULL_AI';
+    const items: DedAiItem[] = [...merged.values()].map((raw, idx) => convertAiItem(idx, raw, mode, policy));
 
     const output = DedAiCalculator.buildOutput({
       jobId,
       projectType,
       mode,
+      policy,
       projectName: options.projectName || 'Proyek DED AI',
       fileName: options.fileName,
       pageCount: parsed.pages.length,

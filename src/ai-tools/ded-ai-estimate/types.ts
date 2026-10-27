@@ -22,6 +22,26 @@ export type DedAiProjectType =
 
 export type DedAiMode = 'FAST' | 'DETAIL';
 
+/**
+ * Kebijakan harga DED-to-RAB (owner 2026-10-27; dua mode):
+ * - 'FULL_AI': estimasi harga AI BOLEH dipakai bila harga terverifikasi
+ *   tidak tersedia (perilaku lama mesin standar — semua harga adalah
+ *   AI_ESTIMATE atau UNRESOLVED). Estimasi selalu dilabel AI_ESTIMATE,
+ *   divalidasi isSaneEstimate, dan TIDAK PERNAH menimpa data master.
+ * - 'DATABASE': estimasi harga AI DITOLAK di service layer — harga yang
+ *   tidak terverifikasi menjadi UNRESOLVED (null, bukan Rp0) dan total
+ *   menjadi parsial. Kebijakan ini ditegakkan di pricing.ts, bukan hanya
+ *   di instruksi UI/prompt. CATATAN KEJUJURAN: mesin standar tidak
+ *   mengkueri master AHSP (kontrak isolasi modul ini), sehingga di mode
+ *   DATABASE harga yang lolos hanyalah USER_INPUT (edit pengguna pasca
+ *   analisis); sisanya UNRESOLVED. Integrasi lookup AHSP kanonis adalah
+ *   tindak lanjut terpisah (butuh matcher + ambang kepercayaan + aturan
+ *   DHSP-vs-direct + quarantine) — bukan bagian dari change ini.
+ * Default: 'FULL_AI' (mempertahankan perilaku lama bila pengguna tidak
+ * memilih; mode DATABASE adalah opt-in eksplisit).
+ */
+export type DedEstimationPolicy = 'FULL_AI' | 'DATABASE';
+
 export type DedAiQuantitySource =
   | 'DED_EXPLICIT'   // Nilai dan satuan benar-benar dinyatakan di dokumen sumber dan terverifikasi
   | 'DED_GEOMETRIC'  // Dihitung dari dimensi/geometri yang ditemukan di DED
@@ -31,9 +51,11 @@ export type DedAiQuantitySource =
   | 'ASSUMPTION'     // Nilai asumsi yang perlu disetujui pengguna
   | 'UNRESOLVED';    // Nilai atau satuan belum dapat dipastikan
 
+import type { CanonicalDedMatch } from '../ded-canonical/canonicalDedPricing';
+
 export type DedAiPriceSource =
   | 'AI_ESTIMATE'  // Estimasi dari model AI — perlu verifikasi, bukan harga resmi
-  | 'AHSP_2026'    // Dari database AHSP 2026 terverifikasi (belum aktif — reserved)
+  | 'AHSP_2026'    // Harga kanonis EZRAB (SE DJBK 47/2026, biaya langsung) — AKTIF sejak adapter ded-canonical; hanya diproduksi lewat resolveDedPriceWithCanonical
   | 'USER_INPUT'   // Dimasukkan/diubah oleh pengguna
   | 'UNRESOLVED';  // Harga belum tersedia — bukan Rp0
 
@@ -72,6 +94,10 @@ export interface DedAiItem {
   rawAIQuantity?: number | null;
   unitPrice: number | null;
   priceSource: DedAiPriceSource;
+  /** Kode AHSP kanonis yang terverifikasi (hanya bila priceSource AHSP_2026). */
+  ahspCode?: string;
+  /** Hasil resolusi kanonis terakhir (status, kandidat review, alasan) — tersimpan bersama item agar review bisa dilanjutkan tanpa analisis ulang. */
+  ahspMatch?: CanonicalDedMatch;
   priceAssumptionNote?: string;
   subtotal: number | null;
   sourcePages: number[];
@@ -97,6 +123,8 @@ export interface DedAiOutput {
   jobId: string;
   projectType: DedAiProjectType;
   mode: DedAiMode;
+  /** Kebijakan harga yang dipakai estimasi ini (tersimpan bersama hasil). */
+  policy: DedEstimationPolicy;
   projectName: string;
   fileName?: string;
   pageCount: number;
@@ -225,6 +253,8 @@ export interface DedAiServiceOptions {
   mimeType?: string;
   projectType: DedAiProjectType;
   mode: DedAiMode;
+  /** Kebijakan harga (default 'FULL_AI' bila tidak diisi — perilaku lama). */
+  policy?: DedEstimationPolicy;
   projectName?: string;
   onProgress?: (event: DedAiProgressEvent) => void;
 }
