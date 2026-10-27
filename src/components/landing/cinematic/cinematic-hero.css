@@ -212,7 +212,8 @@
   opacity: 0.85;
   animation:
     ch-glow-sway 12s ease-in-out infinite alternate,
-    ch-glow-breathe 7s ease-in-out infinite;
+    ch-glow-breathe 7s ease-in-out infinite,
+    ch-glow-rgb 18s linear infinite;
 }
 
 /* Selubung pudar ke putih: dari pusat di belakang frame, warna aurora
@@ -240,6 +241,23 @@
 @keyframes ch-glow-breathe {
   0%, 100% { transform: scale(1); opacity: 0.7; }
   50%      { transform: scale(1.04); opacity: 0.95; }
+}
+
+/* RGB ganti-ganti: putar hue 0→360° supaya warna aurora bersiklus terus
+   (biru→hijau→emas→merah→kembali ke biru) tanpa mengubah bentuk, arah,
+   atau posisi cahaya. Blur harus ikut tertulis di keyframes karena
+   animasi filter menimpa filter dasar. Selubung putih ::before tidak
+   ikut berubah warna (putih tidak punya hue), jadi ujung berkas tetap
+   memudar ke putih. */
+@keyframes ch-glow-rgb {
+  from { filter: blur(8px) hue-rotate(0deg); }
+  to   { filter: blur(8px) hue-rotate(360deg); }
+}
+
+/* Varian mobile: blur lebih kecil (6px) agar tetap ringan. */
+@keyframes ch-glow-rgb-mobile {
+  from { filter: blur(6px) hue-rotate(0deg); }
+  to   { filter: blur(6px) hue-rotate(360deg); }
 }
 
 .ch-stage-frame {
@@ -1050,7 +1068,15 @@
   .ch-hero-stage { order: 2; }
   /* Cahaya tetap ada di mobile, tapi lebih kecil & redup agar tidak
      memberatkan dan tidak mengganggu keterbacaan. */
-  .ch-stage-glow { inset: -8% -4% -10% -45%; filter: blur(6px); opacity: 0.6; }
+  .ch-stage-glow {
+    inset: -8% -4% -10% -45%;
+    filter: blur(6px);
+    opacity: 0.6;
+    animation:
+      ch-glow-sway 12s ease-in-out infinite alternate,
+      ch-glow-breathe 7s ease-in-out infinite,
+      ch-glow-rgb-mobile 18s linear infinite;
+  }
   .ch-stage-frame { transform: none; animation: none; }
   .ch-stage-frame::after { display: none; }
   .ch-stage-orbit { display: none; }
