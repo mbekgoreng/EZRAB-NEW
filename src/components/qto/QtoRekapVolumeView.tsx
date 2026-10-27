@@ -3,7 +3,6 @@ import {
   Ruler,
   Plus,
   FileSpreadsheet,
-  Download,
   Filter,
   Check,
   CheckCircle2,
@@ -23,7 +22,6 @@ import {
   ZoomIn,
   ZoomOut,
   X,
-  Printer,
   FileText,
   Copy,
   FolderPlus,
@@ -93,7 +91,6 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
   const [manualModalOpen, setManualModalOpen] = useState(false);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [columnsModalOpen, setColumnsModalOpen] = useState(false);
-  const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
 
   // Manual Form State
   const [manualKode, setManualKode] = useState('');
@@ -313,42 +310,6 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
     selectedItemIds.forEach((id) => deleteQtoItem(id));
     setSelectedItemIds([]);
     showToast('Item QTO terpilih berhasil dihapus.');
-  };
-
-  // Handle Export CSV
-  const handleExportCsv = () => {
-    if (projectQtoItems.length === 0) {
-      showToast('Tidak ada data QTO untuk diekspor.', 'info');
-      return;
-    }
-    const headers = ['No', 'Kode', 'Uraian Pekerjaan', 'Parameter', 'Calculator', 'Volume', 'Satuan', 'Status', 'Calculation Run ID'];
-    const rows = projectQtoItems.map((item, idx) => {
-      const params = Object.entries(item.parameterSnapshot || {})
-        .map(([k, v]) => `${k}=${v}`)
-        .join('; ');
-      return [
-        idx + 1,
-        `"${item.kode}"`,
-        `"${item.uraian.replace(/"/g, '""')}"`,
-        `"${params}"`,
-        item.calculatorId,
-        item.quantity,
-        item.unit,
-        item.status === 'SYNCED_TO_RAB' ? 'Terhubung' : 'Terhitung',
-        item.calculationRunId || '-',
-      ];
-    });
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `EZRAB_QTO_REKAP_${currentProject?.name?.replace(/\s+/g, '_') || 'PROYEK'}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setExportDropdownOpen(false);
-    showToast('File CSV QTO Rekap berhasil didownload!');
   };
 
   // Handle Create Manual Item
@@ -573,97 +534,6 @@ export const QtoRekapVolumeView: React.FC<QtoRekapVolumeViewProps> = ({
             <Plus size={14} color="#64748B" />
             <span>Tambah Manual</span>
           </button>
-
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
-              style={{
-                height: '36px',
-                padding: '0 14px',
-                borderRadius: 'var(--ez-radius-control)',
-                background: 'var(--ez-color-surface)',
-                border: '1px solid var(--ez-color-border-line)',
-                color: 'var(--ez-color-text-body)',
-                fontSize: '12.5px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              <Download size={14} color="#64748B" />
-              <span>Export</span>
-              <ChevronDown size={13} color="#94A3B8" />
-            </button>
-
-            {exportDropdownOpen && (
-              <div
-                style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: '42px',
-                  background: 'var(--ez-color-surface)',
-                  borderRadius: '16px',
-                  border: '1px solid #EEF1F6',
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                  zIndex: 50,
-                  width: '180px',
-                  padding: '6px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '2px',
-                }}
-              >
-                <button
-                  onClick={handleExportCsv}
-                  style={{
-                    padding: '8px 12px',
-                    fontSize: '12px',
-                    color: 'var(--ez-color-text-body)',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: '6px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-tertiary)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <FileSpreadsheet size={14} color="var(--ez-hue-green-text)" />
-                  <span>Export Excel / CSV</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    window.print();
-                    setExportDropdownOpen(false);
-                  }}
-                  style={{
-                    padding: '8px 12px',
-                    fontSize: '12px',
-                    color: 'var(--ez-color-text-body)',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: '6px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--ez-color-surface-tertiary)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <Printer size={14} color="var(--ez-hue-blue-text)" />
-                  <span>Print QTO Report</span>
-                </button>
-              </div>
-            )}
-          </div>
 
           <button
             onClick={() => setColumnsModalOpen(true)}

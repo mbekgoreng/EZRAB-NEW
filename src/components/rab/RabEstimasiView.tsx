@@ -1060,6 +1060,97 @@ export const RabEstimasiView: React.FC<EstimatorSpreadsheetProps> = ({
               totalItems={totalItemsCount}
             />
 
+            {/* 3B2. TOMBOL PAJAK SPREADSHEET (owner 2026-10-27): toggle
+                PPN/PPh di sini memakai flag proyek YANG SAMA dengan
+                Pengaturan Estimasi — Rekap mengikuti flag ini, dan item
+                yang dicentang "sudah termasuk pajak" tetap tidak dihitung
+                ganda. Tarifnya sendiri diatur di Pengaturan. */}
+            {currentProject && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                  background: 'var(--ez-color-surface)',
+                  border: '1px solid var(--ez-color-border-line)',
+                  borderRadius: '12px',
+                  padding: '10px 14px',
+                }}
+              >
+                <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
+                  Pajak proyek:
+                </span>
+                {([
+                  { key: 'ppnEnabled', label: 'PPN', rate: (currentProject as any)?.ppnPercent ?? 11 },
+                  { key: 'pphEnabled', label: 'PPh', rate: (currentProject as any)?.pphPercent ?? 0 },
+                ] as const).map((t) => {
+                  const active = (currentProject as any)?.[t.key] === true;
+                  return (
+                    <button
+                      key={t.key}
+                      type="button"
+                      role="switch"
+                      aria-checked={active}
+                      onClick={() => {
+                        updateProject(currentProject.id, { [t.key]: !active } as any);
+                        /* Sama seperti simpan Pengaturan: selaraskan kartu
+                         * total proyek dengan flag pajak yang baru. */
+                        refreshProjectTotals(currentProject.id);
+                        showToast(`${t.label} ${!active ? 'diaktifkan' : 'dinonaktifkan'} — Rekap mengikuti flag ini`);
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '6px 12px',
+                        borderRadius: '999px',
+                        border: active ? '1px solid #2563EB' : '1px solid var(--ez-color-border-line)',
+                        background: active ? '#2563EB' : 'var(--ez-color-surface)',
+                        color: active ? '#FFFFFF' : 'var(--ez-color-text-body)',
+                        fontSize: '12.5px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: '28px',
+                          height: '16px',
+                          borderRadius: '999px',
+                          background: active ? 'rgba(255,255,255,0.35)' : '#CBD5E1',
+                          position: 'relative',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <span
+                          style={{
+                            position: 'absolute',
+                            top: '2px',
+                            left: active ? '14px' : '2px',
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            background: '#FFFFFF',
+                            transition: 'left 0.15s ease',
+                          }}
+                        />
+                      </span>
+                      {t.label} {t.rate}% • {active ? 'Aktif' : 'Nonaktif'}
+                    </button>
+                  );
+                })}
+                {(currentProject as any)?.pphEnabled === true && ((currentProject as any)?.pphPercent ?? 0) === 0 && (
+                  <span style={{ fontSize: '12px', color: '#B45309' }}>
+                    PPh aktif tapi tarifnya 0% — atur tarifnya di Pengaturan Estimasi.
+                  </span>
+                )}
+                <span style={{ fontSize: '12px', color: '#64748B' }}>
+                  Item yang dicentang &quot;sudah termasuk pajak&quot; tidak dihitung ganda di Rekap.
+                </span>
+              </div>
+            )}
+
             {/* 3C. ESTIMATOR SPREADSHEET GRID */}
             <EstimatorSpreadsheetTable
               groups={groupedWbsCategories}

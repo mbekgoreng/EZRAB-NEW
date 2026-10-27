@@ -201,7 +201,7 @@ const PATTERNS: Pattern[] = [
   // MEP, lanskap, demolisi, dan bangunan khusus. Tetap SETELAH pola spesifik
   // di atas dan SEBELUM pola CLARIFY umum; actionRegistry memutuskan
   // apakah draft universal bisa dibuat atau tetap ringkasan kebutuhan.
-  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(irigasi|pondasi|struktur|atap|finishing|mekanikal|elektrikal|plumbing|mep|lanskap|pagar|pembongkaran|demolisi|sekolah|rumah sakit|klinik|puskesmas|pelabuhan|dermaga|olahraga|lapangan|pertanian|beton|trotoar|kanstin|kolom|balok|sloof|genteng|keramik|plafon|sanitasi|bendung|embung)\b/ },
+  { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(irigasi|pondasi|struktur|atap|finishing|mekanikal|elektrikal|plumbing|mep|lanskap|pagar|pembongkaran|demolisi|sekolah|rumah sakit|klinik|puskesmas|pelabuhan|dermaga|olahraga|lapangan|pertanian|beton|trotoar|kanstin|kolom|balok|sloof|genteng|keramik|plafon|sanitasi|bendung|bendungan|embung)\b/ },
   { intent: 'CREATE_RAB_SUMMARY', re: /\b(buatkan|buatin|bikin|buat)\b.*\brab\b.*\b(ded|gambar kerja)\b/ },
   // "buatkan rab" tanpa objek spesifik -> tanya balik (jangan tumpahkan daftar
   // template). Pola spesifik (rumah/dll) sudah tertangkap di atas; pola umum

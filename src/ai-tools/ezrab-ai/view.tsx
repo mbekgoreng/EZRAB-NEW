@@ -365,8 +365,19 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   /* (Dihapus 2026-10-26 bersama jalur lampiran gambar: tidak ada lagi
    * object URL yang perlu dikelola — lampiran kini teks murni di state.) */
 
+  /* Auto-scroll TIDAK boleh merampas bacaan: bila pengguna sedang
+     membaca pesan lama (sudah scroll ke atas), jawaban baru / indikator
+     mengetik tidak boleh menariknya paksa ke bawah. Hanya scroll bila
+     posisi sudah dekat dasar (<160px) — kondisi normal saat mengirim. */
+  const nearBottomRef = useRef(true);
+  const onBodyScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 160;
+  };
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+    const el = scrollRef.current;
+    if (el && nearBottomRef.current) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages, busy]);
 
   /* Bersihkan sesi STT saat unmount. */
@@ -385,6 +396,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   };
 
   const newChat = () => {
+    /* Dilarang saat sibuk: permintaan yang sedang berjalan akan
+       menempelkan jawabannya ke percakapan BARU (append fungsional +
+       convId sudah berganti) sehingga jawaban muncul tanpa pertanyaan. */
+    if (busy) return;
     setHistoryOpen(false);
     setMessages([]);
     setInput('');
@@ -476,6 +491,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   };
 
   const deleteHistoryItem = (id: string) => {
+    if (busy) return;
     try {
       const wasActive = convIdRef.current === id;
       unifiedConversationStore.deleteConversation(id, storeProjectId);
@@ -959,10 +975,19 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [injectedPrompt, conversationReady, busy, input]);
 
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyMsg = (idx: number, text: string) => {
-    navigator.clipboard?.writeText(text).catch(() => {});
-    setCopiedIdx(idx);
-    setTimeout(() => setCopiedIdx(null), 1500);
+    /* Tanda centang hanya bila salin BENAR-BENAR berhasil — sebelumnya
+       centang tampil juga saat writeText gagal (izin clipboard ditolak,
+       konteks non-HTTPS), sehingga pengguna mengira sudah tersalin. */
+    const showCopied = () => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      setCopiedIdx(idx);
+      copiedTimerRef.current = setTimeout(() => setCopiedIdx(null), 1500);
+    };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(showCopied).catch(() => {});
+    }
   };
 
   /* ---------- P0 Command Center: action button handler ---------- */
@@ -1448,7 +1473,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const historyHead = (
     <div className="ezhist-head">
       <h3 className="ezhist-heading">Riwayat Percakapan</h3>
-      <button className="ezhist-newbtn" onClick={newChat}>
+      <button className="ezhist-newbtn" onClick={newChat} disabled={busy}>
         <Plus size={13} /> Percakapan Baru
       </button>
     </div>
@@ -1549,8 +1574,6 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       ref={rootRef}
       style={availH !== null ? ({ '--ezchat2-avail': `${availH}px` } as React.CSSProperties) : undefined}
     >
-      <div className="ezchat2-main">
-      {/* ===== Header ===== */}
       <div className="ezchat2-headerwrap">
       <div className="ezchat2-header">
         <div className="ezchat2-mascot">
@@ -1583,6 +1606,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           <button
             className="ezchat2-new"
             onClick={() => { setMenuOpen(false); newChat(); }}
+            disabled={busy}
             title="Percakapan baru"
           >
             <Plus size={15} /> Baru
@@ -1630,8 +1654,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       )}
       </div>{/* /.ezchat2-headerwrap */}
 
+      <div className="ezchat2-main">
+      {/* ===== Header ===== */}
+
+
       {/* ===== Body ===== */}
-      <div className="ezchat2-body" ref={scrollRef}>
+      <div className="ezchat2-body" ref={scrollRef} onScroll={onBodyScroll}>
         {messages.length === 0 ? (
           <div className="ezchat2-empty">
             {/* Maskot BESAR di tengah mode awal (owner 2026-10-24: maskot

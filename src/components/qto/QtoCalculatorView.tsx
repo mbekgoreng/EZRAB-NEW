@@ -601,9 +601,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   // Fullscreen & Lightbox States
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
-  // Magic Takeoff & Preset States
-  const [showFormulaDrawer, setShowFormulaDrawer] = useState<boolean>(false);
-
   // Reset Confirmation Modal State
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
 
@@ -1537,127 +1534,174 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         </div>
       </div>
 
-      {/* 3. DOMAIN NAVIGATION BAR (COMPACT HORIZONTAL PILLS - 10 DOMAINS + SEMUA) */}
+      {/* 3. KELOMPOK DOMAIN — strip kartu menonjol full-width di atas.
+          Satu klik memfilter daftar kalkulator persis seperti perilaku
+          activeDomain sebelumnya (hanya tampilannya yang diperbesar:
+          kartu + ikon + nama + jumlah kalkulator, status aktif jelas). */}
       <div
         style={{
+          background: 'var(--ez-color-surface)',
+          borderRadius: 'var(--ez-radius-card)',
+          border: '1px solid #EEF1F6',
+          boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
+          padding: '16px 18px',
           display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          overflowX: 'auto',
-          paddingBottom: '2px',
-          scrollbarWidth: 'none',
+          flexDirection: 'column',
+          gap: '12px',
         }}
       >
-        {/* Semua Domain Pill */}
-        <button
-          onClick={() => setActiveDomain('ALL')}
+        <div>
+          <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--ez-color-text-primary)', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            Kelompok Domain
+          </div>
+          <p style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0', lineHeight: 1.4 }}>
+            Pilih satu kelompok — daftar kalkulator di bawah akan ikut terfilter. Total {domainCounts.ALL} kalkulator.
+          </p>
+        </div>
+        <div
           style={{
-            height: '36px',
-            padding: '0 12px 0 6px',
-            borderRadius: 'var(--ez-radius-control)',
-            background: activeDomain === 'ALL' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-            border: activeDomain === 'ALL' ? '1.5px solid #2563EB' : '1px solid var(--ez-color-border-line)',
-            color: activeDomain === 'ALL' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
-            fontSize: '12px',
-            fontWeight: activeDomain === 'ALL' ? 700 : 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-            transition: 'all 0.12s ease',
-            boxShadow: activeDomain === 'ALL' ? '0 4px 12px rgba(37,99,235,0.12)' : 'none',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(158px, 1fr))',
+            gap: '10px',
           }}
         >
-          <span
+          {/* Kartu Semua Domain */}
+          <button
+            onClick={() => setActiveDomain('ALL')}
+            aria-pressed={activeDomain === 'ALL'}
             style={{
-              width: '24px',
-              height: '24px',
-              borderRadius: '8px',
-              background: activeDomain === 'ALL' ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
-              color: activeDomain === 'ALL' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
+              textAlign: 'left',
+              padding: '12px',
+              borderRadius: '12px',
+              background: activeDomain === 'ALL' ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+              border: activeDomain === 'ALL' ? '2px solid #2563EB' : '1px solid var(--ez-color-border-line)',
+              color: activeDomain === 'ALL' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              boxShadow: activeDomain === 'ALL' ? '0 6px 16px rgba(37,99,235,0.14)' : 'none',
+              transition: 'all 0.12s ease',
+              minWidth: 0,
             }}
           >
-            <LayoutGrid size={14} />
-          </span>
-          <span>Semua Domain</span>
-          <span
-            style={{
-              fontSize: '10px',
-              fontWeight: 700,
-              background: activeDomain === 'ALL' ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
-              color: activeDomain === 'ALL' ? '#ffffff' : 'var(--ez-color-text-muted)',
-              padding: '1px 5px',
-              borderRadius: 'var(--ez-radius-pill)',
-            }}
-          >
-            {domainCounts.ALL}
-          </span>
-        </button>
-
-        {/* 10 Civil Domain Pills */}
-        {CIVIL_DOMAINS.map((domain) => {
-          const isActive = activeDomain === domain.id;
-          const count = domainCounts[domain.id] || 0;
-          return (
-            <button
-              key={domain.id}
-              onClick={() => setActiveDomain(domain.id)}
-              style={{
-                height: '36px',
-                padding: '0 12px 0 6px',
-                borderRadius: 'var(--ez-radius-control)',
-                background: isActive ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                border: isActive ? '1.5px solid #2563EB' : '1px solid var(--ez-color-border-line)',
-                color: isActive ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
-                fontSize: '12px',
-                fontWeight: isActive ? 700 : 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                transition: 'all 0.12s ease',
-                boxShadow: isActive ? '0 4px 12px rgba(37,99,235,0.12)' : 'none',
-              }}
-            >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span
                 style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '8px',
-                  background: isActive ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
-                  color: isActive ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '10px',
+                  background: activeDomain === 'ALL' ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
+                  color: activeDomain === 'ALL' ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
                 }}
               >
-                <domain.icon size={14} />
+                <LayoutGrid size={16} />
               </span>
-              <span>{domain.name}</span>
-              <span
+              {activeDomain === 'ALL' ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-primary-hover)' }}>
+                  <Check size={11} /> Aktif
+                </span>
+              ) : (
+                <span
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    background: 'var(--ez-color-surface-tertiary)',
+                    color: 'var(--ez-color-text-muted)',
+                    padding: '1px 6px',
+                    borderRadius: 'var(--ez-radius-pill)',
+                  }}
+                >
+                  {domainCounts.ALL}
+                </span>
+              )}
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: 700, lineHeight: 1.3, overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+                Semua Domain
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                Seluruh kalkulator
+              </div>
+            </div>
+          </button>
+
+          {/* Kartu per domain */}
+          {CIVIL_DOMAINS.map((domain) => {
+            const isActive = activeDomain === domain.id;
+            const count = domainCounts[domain.id] || 0;
+            return (
+              <button
+                key={domain.id}
+                onClick={() => setActiveDomain(domain.id)}
+                aria-pressed={isActive}
                 style={{
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  background: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
-                  color: isActive ? '#ffffff' : 'var(--ez-color-text-muted)',
-                  padding: '1px 5px',
-                  borderRadius: 'var(--ez-radius-pill)',
+                  textAlign: 'left',
+                  padding: '12px',
+                  borderRadius: '12px',
+                  background: isActive ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
+                  border: isActive ? '2px solid #2563EB' : '1px solid var(--ez-color-border-line)',
+                  color: isActive ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-body)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  boxShadow: isActive ? '0 6px 16px rgba(37,99,235,0.14)' : 'none',
+                  transition: 'all 0.12s ease',
+                  minWidth: 0,
                 }}
               >
-                {count}
-              </span>
-            </button>
-          );
-        })}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '10px',
+                      background: isActive ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
+                      color: isActive ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <domain.icon size={16} />
+                  </span>
+                  {isActive ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '10px', fontWeight: 800, color: 'var(--ez-color-primary-hover)' }}>
+                      <Check size={11} /> Aktif
+                    </span>
+                  ) : (
+                    <span
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        background: 'var(--ez-color-surface-tertiary)',
+                        color: 'var(--ez-color-text-muted)',
+                        padding: '1px 6px',
+                        borderRadius: 'var(--ez-radius-pill)',
+                      }}
+                    >
+                      {count}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, lineHeight: 1.3, overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+                    {domain.name}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', marginTop: '2px' }}>
+                    {domain.subtitle} · {count} kalkulator
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* 4. WORKSTATION SPLIT VIEW (LEFT: CATALOG TREE, RIGHT: ACTIVE WORKBENCH) */}
@@ -2194,28 +2238,109 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             </div>
           </div>
 
-          {/* Ilustrasi Pekerjaan — gambar render-style sebagai satu-satunya
-              visual kalkulator (diagram CAD sudah diganti ilustrasi). */}
-          {activeIllustration && (
-            <figure
+          {/* Detail kalkulator terpilih: ilustrasi + formula berdampingan.
+              Desktop: ilustrasi kiri, formula kanan. Sempit: bertumpuk otomatis
+              (auto-fit minmax) tanpa media query. Formula SELALU TERLIHAT —
+              tidak lagi tersembunyi di balik drawer collapsed; isi langkahnya
+              sama persis dengan drawer lama (step, deskripsi, nilai, teks
+              formula), hanya dipindah ke sini. */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '16px',
+              alignItems: 'start',
+            }}
+          >
+            {/* Ilustrasi Pekerjaan — gambar render-style sebagai satu-satunya
+                visual kalkulator (diagram CAD sudah diganti ilustrasi). */}
+            {activeIllustration && (
+              <div
+                style={{
+                  background: 'var(--ez-color-surface)',
+                  border: '1px solid #EEF1F6',
+                  borderRadius: '20px',
+                  padding: '14px',
+                  boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
+                  minWidth: 0,
+                }}
+              >
+                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em', fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: '10px' }}>
+                  Ilustrasi Pekerjaan
+                </div>
+                <figure
+                  style={{
+                    margin: 0,
+                    border: '1px solid #EEF1F6',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    background: 'var(--ez-color-surface)',
+                  }}
+                >
+                  <img
+                    src={activeIllustration.src}
+                    alt={activeIllustration.title}
+                    title={activeIllustration.title}
+                    loading="lazy"
+                    style={{ width: '100%', height: 'auto', display: 'block' }}
+                  />
+                </figure>
+              </div>
+            )}
+
+            {/* Formula & Langkah Perhitungan — selalu terlihat */}
+            <div
               style={{
-                margin: 0,
+                background: 'var(--ez-color-surface)',
                 border: '1px solid #EEF1F6',
                 borderRadius: '20px',
-                overflow: 'hidden',
-                background: 'var(--ez-color-surface)',
+                padding: '14px',
                 boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
+                minWidth: 0,
               }}
             >
-              <img
-                src={activeIllustration.src}
-                alt={activeIllustration.title}
-                title={activeIllustration.title}
-                loading="lazy"
-                style={{ width: '100%', height: 'auto', display: 'block' }}
-              />
-            </figure>
-          )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                <Calculator size={14} color="var(--ez-hue-blue-text)" />
+                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  Formula &amp; Langkah Perhitungan
+                </span>
+              </div>
+              <p style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', margin: '0 0 10px', lineHeight: 1.4 }}>
+                Selalu terlihat — hasil audit engine untuk kalkulator terpilih.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {calculationResult.formulaSteps.length === 0 ? (
+                  <div style={{ fontSize: '12px', color: '#94A3B8', fontStyle: 'italic' }}>
+                    Belum ada langkah formula untuk kalkulator ini.
+                  </div>
+                ) : (
+                  calculationResult.formulaSteps.map((step) => (
+                    <div
+                      key={step.stepNumber}
+                      style={{
+                        background: 'var(--ez-color-surface-secondary)',
+                        borderRadius: '10px',
+                        padding: '8px 10px',
+                        border: '1px solid #EEF1F6',
+                        fontSize: '11.5px',
+                        minWidth: 0,
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontWeight: 700, color: 'var(--ez-color-text-strong)' }}>
+                        <span style={{ minWidth: 0, overflowWrap: 'break-word', wordBreak: 'break-word' }}>{step.stepNumber}. {step.description}</span>
+                        <span style={{ color: 'var(--ez-color-primary)', fontFamily: 'monospace', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                          {formatNumberId(step.calculatedValue, 2)} {step.unit}
+                        </span>
+                      </div>
+                      <div style={{ fontFamily: 'monospace', color: 'var(--ez-color-text-muted)', fontSize: '11px', marginTop: '2px', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+                        = {step.formulaText}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Two-Column Grid: Left Inputs / Right Results & Actions */}
           <div className="ezrab-volume-bottom-grid">
@@ -2252,12 +2377,12 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                       key={param.id}
                       onClick={() => setActiveParam(param.id)}
                       style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'minmax(0, 1fr) 88px 30px',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '6px 8px',
-                        borderRadius: '6px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        minWidth: 0,
+                        padding: '8px 10px',
+                        borderRadius: '8px',
                         background: isFocused ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
                         border: isInvalid
                           ? '1px solid #EF4444'
@@ -2267,32 +2392,34 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                         transition: 'all 0.1s ease',
                       }}
                     >
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span
-                            style={{
-                              fontSize: '10.5px',
-                              fontFamily: 'monospace',
-                              fontWeight: 800,
-                              background: isFocused ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
-                              color: isFocused ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
-                              padding: '1px 5px',
-                              borderRadius: '4px',
-                              flexShrink: 0,
-                            }}
-                          >
-                            {param.id}
-                          </span>
-                          <span style={{ fontSize: '12px', fontWeight: isFocused ? 700 : 600, color: isFocused ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-strong)', lineHeight: 1.35, overflowWrap: 'break-word' }}>
-                            {param.label}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px', lineHeight: 1.35, overflowWrap: 'break-word' }}>
-                          {param.description}
-                        </div>
+                      {/* Label blok penuh: selalu wrap, tidak pernah ellipsis/terpotong.
+                          Perilaku lama (grid label 1fr + input 88px + satuan 30px)
+                          memotong label panjang di panel sempit karena item flex
+                          tanpa minWidth: 0 tidak mau menyusut. */}
+                      <div style={{ minWidth: 0, display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                        <span
+                          style={{
+                            fontSize: '10.5px',
+                            fontFamily: 'monospace',
+                            fontWeight: 800,
+                            background: isFocused ? 'var(--ez-hue-blue-bg-deep)' : 'var(--ez-color-surface-tertiary)',
+                            color: isFocused ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-muted)',
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {param.id}
+                        </span>
+                        <span style={{ fontSize: '12.5px', fontWeight: isFocused ? 700 : 600, color: isFocused ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-strong)', lineHeight: 1.4, minWidth: 0, flex: 1, overflowWrap: 'break-word', wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                          {param.label}
+                        </span>
                       </div>
-
-                      <div>
+                      <div style={{ fontSize: '11px', color: '#94A3B8', lineHeight: 1.4, overflowWrap: 'break-word', wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                        {param.description}
+                      </div>
+                      {/* Input lebar penuh + satuan */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                         <input
                           type="number"
                           inputMode="decimal"
@@ -2303,13 +2430,14 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                           onChange={(e) => handleInputChange(param.id, parseFloat(e.target.value))}
                           onFocus={() => setActiveParam(param.id)}
                           style={{
-                            width: '100%',
-                            height: '32px',
+                            flex: 1,
+                            minWidth: 0,
+                            height: '36px',
                             background: isFocused ? 'var(--ez-color-surface)' : 'var(--ez-color-surface-secondary)',
                             border: '1px solid var(--ez-hue-slate-border)',
-                            borderRadius: '5px',
-                            padding: '0 8px',
-                            fontSize: '12.5px',
+                            borderRadius: '6px',
+                            padding: '0 10px',
+                            fontSize: '13px',
                             fontWeight: 700,
                             fontFamily: 'monospace, "Courier New", sans-serif',
                             textAlign: 'right',
@@ -2319,10 +2447,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                             boxShadow: isFocused ? '0 0 0 2px rgba(37,99,235,0.2)' : 'none',
                           }}
                         />
-                      </div>
-
-                      <div style={{ textAlign: 'left' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ez-color-text-muted)' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--ez-color-text-muted)', flexShrink: 0, minWidth: '28px' }}>
                           {param.unit}
                         </span>
                       </div>
@@ -2670,58 +2795,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 </button>
               </div>
 
-              {/* Collapsible Formula Steps (Audit Calculation) */}
-              <div style={{ border: '1px solid #EEF1F6', borderRadius: '20px', overflow: 'hidden' }}>
-                <button
-                  onClick={() => setShowFormulaDrawer(!showFormulaDrawer)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    background: 'var(--ez-color-surface-secondary)',
-                    border: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    fontSize: '11.5px',
-                    fontWeight: 700,
-                    color: 'var(--ez-color-text-body)',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Calculator size={13} color="var(--ez-hue-blue-text)" />
-                    <span>Langkah Formula (Audit Engine)</span>
-                  </div>
-                  {showFormulaDrawer ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                </button>
-
-                {showFormulaDrawer && (
-                  <div style={{ padding: '10px', background: 'var(--ez-color-surface)', display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #EEF1F6' }}>
-                    {calculationResult.formulaSteps.map((step) => (
-                      <div
-                        key={step.stepNumber}
-                        style={{
-                          background: 'var(--ez-color-surface-secondary)',
-                          borderRadius: '10px',
-                          padding: '6px 8px',
-                          border: '1px solid #EEF1F6',
-                          fontSize: '11px',
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: 'var(--ez-color-text-strong)' }}>
-                          <span>{step.stepNumber}. {step.description}</span>
-                          <span style={{ color: 'var(--ez-color-primary)', fontFamily: 'monospace' }}>
-                            {formatNumberId(step.calculatedValue, 2)} {step.unit}
-                          </span>
-                        </div>
-                        <div style={{ fontFamily: 'monospace', color: 'var(--ez-color-text-muted)', fontSize: '10.5px', marginTop: '2px' }}>
-                          = {step.formulaText}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </div>

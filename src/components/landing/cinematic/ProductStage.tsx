@@ -57,6 +57,8 @@ export const ProductStage: React.FC<{ flat?: boolean; onSceneChange?: (index: nu
 
   return (
     <div className="ch-stage">
+      {/* Cahaya gradasi di belakang frame: dekorasi murni, bukan bagian demo. */}
+      <div className="ch-stage-glow" aria-hidden="true" />
       <div className={`ch-stage-frame${flat ? ' ch-stage-frame--flat' : ''}`}>
         <div className="ch-stage-screen">
           {/* Crossfade: previous scene fades out beneath the incoming one. */}

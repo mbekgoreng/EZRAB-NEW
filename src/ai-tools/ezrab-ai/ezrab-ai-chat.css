@@ -22,8 +22,13 @@
 }
 
 /* ===== Header ===== */
-.ezchat2-headerwrap { position: relative; flex-shrink: 0; }
-.ezchat2-header { display: flex; align-items: center; gap: 12px; padding: 12px 10px 10px; background: var(--ez-color-surface); border-bottom: 1px solid var(--ez-color-border-soft); margin-bottom: 6px; }
+/* Header full-width (owner 2026-10-27): headerwrap TIDAK lagi di dalam
+   kolom .ezchat2-main (max-width 920px) melainkan anak langsung .ezchat2.
+   Margin negatif menetralkan padding root sehingga latar header memanjang
+   penuh kiri-kanan; padding header ditambah kompensasi yang sama agar isi
+   tetap sejajar dengan isi body. */
+.ezchat2-headerwrap { position: relative; flex-shrink: 0; margin: 0 -20px; }
+.ezchat2-header { display: flex; align-items: center; gap: 12px; padding: 12px 30px 10px; background: var(--ez-color-surface); border-bottom: 1px solid var(--ez-color-border-soft); margin-bottom: 6px; }
 .ezchat2-mascot { width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; background: radial-gradient(circle at 50% 35%, var(--ez-color-info-soft), var(--ez-color-primary-soft)); border: 1.5px solid var(--ez-color-primary-soft); overflow: hidden; }
 .ezchat2-title { min-width: 0; }
 .ezchat2-name { font-size: 17px; font-weight: 800; background: linear-gradient(135deg,var(--ez-color-primary-hover),var(--ez-color-primary) 60%,var(--ez-color-primary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
@@ -46,6 +51,7 @@
 .ezchat2 button:focus-visible, .ezchat2 select:focus-visible, .ezchat2 textarea:focus-visible { outline: 2px solid var(--ez-color-primary); outline-offset: 2px; }
 .ezchat2-new { display: flex; align-items: center; gap: 5px; border: 1.5px solid var(--ez-color-border); background: var(--ez-color-surface); border-radius: var(--ez-radius-pill); padding: 7px 14px; font-size: 12.5px; font-weight: 700; color: var(--ez-color-text-primary); cursor: pointer; font-family: inherit; transition: all .18s; }
 .ezchat2-new:hover { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); }
+.ezchat2-new:disabled, .ezhist-newbtn:disabled { opacity: .5; cursor: default; }
 .ezchat2-new.active { border-color: var(--ez-color-primary); color: var(--ez-color-primary-hover); background: var(--ez-color-primary-soft); }
 
 /* ===== Panel riwayat (dropdown header) ===== */
@@ -178,6 +184,8 @@
 
 @media (max-width: 640px) {
   .ezchat2 { padding: 0 10px; }
+  .ezchat2-headerwrap { margin: 0 -10px; }
+  .ezchat2-header { padding: 12px 20px 10px; }
   .ezchat2-col { max-width: 88%; }
   .ezchat2-bubble { font-size: 13.5px; }
   .ezchat2-greet { font-size: 19px; }
@@ -189,7 +197,7 @@
    Perkiraan lebar total pada 390px: 36 + 8 + ~105 + 8 + ~88 + 6 + ~64 + 6 + 36
    + padding ≈ 370px < 390px, jadi tidak overflow. */
 @media (max-width: 480px) {
-  .ezchat2-header { gap: 8px; padding: 10px 6px 8px; flex-wrap: nowrap; }
+  .ezchat2-header { gap: 8px; padding: 10px 16px 8px; flex-wrap: nowrap; }
   .ezchat2-mascot { width: 36px; height: 36px; }
   .ezchat2-name { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ezchat2-actions { gap: 6px; flex-wrap: nowrap; }

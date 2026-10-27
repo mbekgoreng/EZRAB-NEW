@@ -419,7 +419,11 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           paddingBottom: isNarrowMobile ? 'calc(68px + var(--ezrab-safe-bottom))' : '0px',
         }}
       >
-        {/* TOPBAR (CLEAN, MINIMAL — breadcrumb menyatu dalam satu header) */}
+        {/* TOPBAR (CLEAN, MINIMAL — breadcrumb menyatu dalam satu header).
+            Disembunyikan PENUH di mode Ezrab Chat AI (owner 2026-10-27):
+            header milik Chat AI sendiri yang memanjang penuh menggantikannya.
+            Breadcrumb ikut hilang karena ia adalah prop TopBar ini. */}
+        {activeMenu !== 'ezrab-ai' && (
         <TopBar
           breadcrumb={
             activeMenu !== 'dashboard' &&
@@ -494,6 +498,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             }
           }}
         />
+        )}
 
         {/* =========================================================================
             MAIN VIEW (PROYEK, DAFTAR PEKERJAAN, MAGIC AI, QTO, OR DASHBOARD)

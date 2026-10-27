@@ -309,9 +309,10 @@ function rabSummaryResult(raw: string, base?: RabNeeds): ActionResult {
     ok: true,
     message:
       `${summary}\n\nCatatan jujur: AI Design Studio saat ini khusus bangunan (rumah/gedung). ` +
-      `Untuk pekerjaan ${needs.kindLabel ?? 'ini'}, jalur yang tersedia adalah template RAB, estimasi dari DED, atau mulai manual — tidak saya arahkan ke wizard rumah.`,
+      `Untuk pekerjaan ${needs.kindLabel ?? 'ini'}, jalur yang tersedia adalah template RAB, Full AI, estimasi dari DED, atau mulai manual — tidak saya arahkan ke wizard rumah.`,
     actions: [
       { label: 'Pakai template', action: { kind: 'navigate', menu: 'template-rab' } },
+      { label: 'Full AI', action: { kind: 'intent', intent: 'RAB_FULL_AI', param: buildFullAiPrompt(needs) } },
       { label: 'Dari gambar DED', action: { kind: 'navigate', menu: 'ded-ai' } },
       { label: 'Mulai manual', action: { kind: 'navigate', menu: 'rab-estimasi' } },
     ],

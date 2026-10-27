@@ -13,6 +13,7 @@ export type RabKind =
   | 'jalan'
   | 'drainase'
   | 'jembatan'
+  | 'irigasi'
   | 'renovasi'
   | 'ded'
   | 'lainnya';
@@ -58,6 +59,7 @@ const KIND_PATTERNS: Array<{ kind: RabKind; label: string; re: RegExp }> = [
   { kind: 'ded', label: 'dari dokumen DED', re: /\b(ded|gambar kerja|gambar teknis|denah pdf)\b/ },
   { kind: 'drainase', label: 'drainase / saluran', re: /\b(drainase|saluran air|gorong|u-?ditch)\b/ },
   { kind: 'jembatan', label: 'jembatan', re: /\bjembatan\b/ },
+  { kind: 'irigasi', label: 'bendungan / irigasi', re: /\b(bendungan|bendung|embung|irigasi)\b/ },
   { kind: 'jalan', label: 'jalan / perkerasan', re: /\b(jalan|perkerasan|paving|rabat beton|aspal)\b/ },
   { kind: 'renovasi', label: 'renovasi', re: /\b(renovasi|rehab|perbaikan rumah|perbaikan gedung)\b/ },
   { kind: 'gedung', label: 'gedung', re: /\b(gedung|kantor|ruko|villa|gudang|sekolah|masjid|kos|kontrakan|apartemen|hotel|toko)\b/ },
@@ -159,7 +161,7 @@ export function parseFloorsMention(text: string): number | null {
 
 /** Kategori pekerjaan linear (panjang adalah kebutuhan utamanya). */
 export function isLinearKind(kind: RabKind | null): boolean {
-  return kind === 'jalan' || kind === 'drainase' || kind === 'jembatan';
+  return kind === 'jalan' || kind === 'drainase' || kind === 'jembatan' || kind === 'irigasi';
 }
 
 /**
