@@ -2098,44 +2098,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             </div>
           </div>
 
-          {/* Ilustrasi Pekerjaan — BESAR satu kolom penuh di atas formulir. */}
-            {/* Ilustrasi Pekerjaan — gambar render-style sebagai satu-satunya
-                visual kalkulator (diagram CAD sudah diganti ilustrasi). */}
-            {activeIllustration && (
-              <div
-                style={{
-                  background: 'var(--ez-color-surface)',
-                  border: '1px solid #EEF1F6',
-                  borderRadius: '20px',
-                  padding: '14px',
-                  boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
-                  minWidth: 0,
-                }}
-              >
-                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em', fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: '10px' }}>
-                  Ilustrasi Pekerjaan
-                </div>
-                <figure
-                  style={{
-                    margin: 0,
-                    border: '1px solid #EEF1F6',
-                    borderRadius: '12px',
-                    overflow: 'hidden',
-                    background: 'var(--ez-color-surface)',
-                  }}
-                >
-                  <img
-                    src={activeIllustration.src}
-                    alt={activeIllustration.title}
-                    title={activeIllustration.title}
-                    loading="eager"
-                    style={{ width: '100%', height: 'auto', display: 'block' }}
-                  />
-                </figure>
-              </div>
-            )}
-
-
           {/* Two-Column Grid: Left Inputs / Right Results & Actions */}
           <div className="ezrab-volume-bottom-grid">
             {/* COLUMN 1: FORMULIR PARAMETER GEOMETRIS */}
@@ -2592,7 +2554,44 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             </div>
           </div>
 
-          {/* Formula & Langkah Perhitungan — selalu terlihat, di bawah formulir */}
+          {/* Ilustrasi Pekerjaan — satu kolom penuh di bawah formulir. */}
+            {/* Ilustrasi Pekerjaan — gambar render-style sebagai satu-satunya
+                visual kalkulator (diagram CAD sudah diganti ilustrasi). */}
+            {activeIllustration && (
+              <div
+                style={{
+                  background: 'var(--ez-color-surface)',
+                  border: '1px solid #EEF1F6',
+                  borderRadius: '20px',
+                  padding: '14px',
+                  boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
+                  minWidth: 0,
+                }}
+              >
+                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em', fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: '10px' }}>
+                  Ilustrasi Pekerjaan
+                </div>
+                <figure
+                  style={{
+                    margin: 0,
+                    border: '1px solid #EEF1F6',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    background: 'var(--ez-color-surface)',
+                  }}
+                >
+                  <img
+                    src={activeIllustration.src}
+                    alt={activeIllustration.title}
+                    title={activeIllustration.title}
+                    loading="eager"
+                    style={{ width: '100%', height: 'auto', display: 'block' }}
+                  />
+                </figure>
+              </div>
+            )}
+
+          {/* Formula & Langkah Perhitungan — selalu terlihat, di bawah ilustrasi */}
             {/* Formula & Langkah Perhitungan — selalu terlihat */}
             <div
               style={{

@@ -174,27 +174,29 @@
   perspective: 1600px;
 }
 
-/* ---- Glow lembut lonjong ke kiri di belakang stage (dekorasi murni) -- */
-/* BUKAN bulat, BUKAN berkas tajam: satu oval lembut yang memanjang ke
-   kiri dari belakang frame (inset kiri -55%, border-radius 50% pada
-   elemen yang jauh lebih lebar daripada tinggi = lonjong, bukan bulat).
+/* ---- Glow lembut round hanya mengelilingi tablet kanan (dekorasi murni) */
+/* Satu halo lembut berbentuk oval yang HANYA mengelilingi frame tablet
+   di kanan: inset kecil dan simetris di semua sisi, jadi glow tidak
+   lagi memanjang ke kiri dan tidak pernah menyentuh kolom headline.
+   Border-radius 50% pada elemen seukuran frame (lebih lebar daripada
+   tinggi) menghasilkan oval lembut yang mengikuti bentuk tablet.
    Warna bertransisi pelan biru -> hijau forest -> hijau -> kuning ->
    kembali ke biru, tanpa hue-rotate (jadi tidak pernah jadi pink/merah).
-   Ujung glow memudar lewat mask radial + blur 48px, dan selubung putih
-   dihapus agar headline tetap terbaca. Hanya transform/opacity/
-   background-color yang dianimasikan (ramah GPU); tidak ada perubahan
-   layout. */
+   Tepi glow memudar lewat mask radial berpusat di tengah tablet +
+   blur 48px, dan selubung putih tetap dihapus agar teks terbaca.
+   Hanya transform/opacity/background-color yang dianimasikan (ramah
+   GPU); tidak ada perubahan layout. */
 
 .ch-stage-glow {
   position: absolute;
-  inset: -12% -4% -12% -55%;
+  inset: -8% -8% -10% -8%;
   z-index: 0;
   pointer-events: none;
   border-radius: 50%;
-  transform-origin: 85% 50%;
+  transform-origin: 50% 50%;
   background-color: #2563eb;
-  -webkit-mask-image: radial-gradient(ellipse at 85% 50%, #000 15%, transparent 72%);
-  mask-image: radial-gradient(ellipse at 85% 50%, #000 15%, transparent 72%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 20%, transparent 75%);
+  mask-image: radial-gradient(ellipse at 50% 50%, #000 20%, transparent 75%);
   filter: blur(48px);
   opacity: 0.6;
   animation:
@@ -1032,7 +1034,7 @@
   /* Cahaya tetap ada di mobile, tapi lebih kecil & redup agar tidak
      memberatkan dan tidak mengganggu keterbacaan. */
   .ch-stage-glow {
-    inset: -8% -4% -10% -40%;
+    inset: -6% -6% -8% -6%;
     filter: blur(36px);
     opacity: 0.5;
     animation:
