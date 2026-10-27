@@ -22,6 +22,7 @@ import {
 import { RabItem, Project, UserRole, QTOItem } from '../../types';
 import { aiApiClient, ActionProposal } from '../../services/aiApiClient';
 import { coAssistantService, CoAssistantMessage, resolveClientWizardStep } from '../../services/coAssistantService';
+import { isAbortError } from '../../ai-tools/aiResponseTiming';
 import { quickActionService } from '../../services/quickActionService';
 import { QUICK_ACTIONS_LIST, QUICK_ACTION_CONTRACTS } from '../../data/quickActionContracts';
 import { AssistantWizardRenderer } from './AssistantWizardRenderer';
@@ -480,8 +481,14 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
   };
 
   const isSendingRef = useRef(false);
+  // Controller pembatalan permintaan co-assistant (tombol berhenti /
+  // unmount): membatalkan penantian minimum di service agar hasil basi
+  // tidak pernah ditampilkan.
+  const sendAbortRef = useRef<AbortController | null>(null);
+  useEffect(() => () => { sendAbortRef.current?.abort(); }, []);
 
   const handleStopGeneration = () => {
+    sendAbortRef.current?.abort();
     stopGenerationRef.current = true;
     setIsThinking(false);
     isSendingRef.current = false;
@@ -509,6 +516,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
+    sendAbortRef.current = new AbortController();
     setIsThinking(true);
     setThinkingStep('Menganalisis dengan EZRAB Magic AI...');
 
@@ -523,6 +531,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
         activeModule,
         userRole,
         onThinking: (step) => setThinkingStep(step),
+        signal: sendAbortRef.current?.signal,
       });
 
       if (!stopGenerationRef.current) {
@@ -556,8 +565,11 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
           return [...prev, receivedMsg];
         });
       }
-    } catch {
-      if (!stopGenerationRef.current) {
+    } catch (e) {
+      // Pembatalan (tombol berhenti/unmount): diam, tanpa pesan error palsu.
+      if (isAbortError(e)) {
+        // tidak ada pesan
+      } else if (!stopGenerationRef.current) {
         const errorMsg: CoAssistantMessage = {
           id: `ai-err-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           role: 'ai',
@@ -690,6 +702,7 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
     };
 
     setMessages((prev) => [...prev, userMsg]);
+    sendAbortRef.current = new AbortController();
     setIsThinking(true);
     setThinkingStep(`Menyiapkan ${title}...`);
 
@@ -704,14 +717,18 @@ export const EzrabCoAssistantChatbox: React.FC<EzrabCoAssistantChatboxProps> = (
         activeModule,
         userRole,
         onThinking: (step) => setThinkingStep(step),
+        signal: sendAbortRef.current?.signal,
       });
 
       if (!stopGenerationRef.current) {
         const receivedMsg = result.message;
         setMessages((prev) => [...prev, receivedMsg]);
       }
-    } catch {
-      if (!stopGenerationRef.current) {
+    } catch (e) {
+      // Pembatalan (tombol berhenti/unmount): diam, tanpa pesan error palsu.
+      if (isAbortError(e)) {
+        // tidak ada pesan
+      } else if (!stopGenerationRef.current) {
         const errorMsg: CoAssistantMessage = {
           id: `ai-err-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           role: 'ai',

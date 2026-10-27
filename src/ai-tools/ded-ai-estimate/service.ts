@@ -11,6 +11,7 @@
  */
 
 import { aiToolsProviderClient, AiToolsResult } from '../providerClient';
+import { waitForMinimum, minDelayFor } from '../aiResponseTiming';
 import { buildFastPrompt, DedFastOutput, DedFastPromptInput } from './prompts/fast';
 import { buildDetailPrompt, DedDetailOutput, DedDetailPromptInput } from './prompts/detail';
 import { parseDedPdf, DedParsedDocument } from './parser';
@@ -272,8 +273,12 @@ export function decideNoItemsError(
 
 export class DedAiEstimateService {
   public async execute(options: DedAiServiceOptions): Promise<DedAiOutputEnvelope> {
+    // Gerbang timing terpusat (spesifikasi 2026-10-27): pembacaan DED =
+    // complex → minimum 3 detik sejak tombol ditekan, paralel dengan
+    // pipeline (parse + multi-pass AI), bukan sesudahnya.
+    const startedAt = Date.now();
     try {
-      return await this.run(options);
+      return await waitForMinimum(startedAt, minDelayFor('complex'), this.run(options));
     } catch (err: any) {
       return {
         success: false,

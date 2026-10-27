@@ -20,6 +20,7 @@ import { getRegionalFactor, REGIONAL_WIZARD_OPTIONS } from '../data/regionalCost
 import { unifiedConversationStore } from './ai/conversation/unifiedConversationStore';
 import { notificationBus } from '../notifications/notificationBus';
 import { aiToolsProviderClient } from '../ai-tools/providerClient';
+import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, activityForRequest } from '../ai-tools/aiResponseTiming';
 
 export interface CoAssistantMessage {
   id: string;
@@ -57,6 +58,9 @@ export interface CoAssistantContextRequest {
   userRole?: UserRole;
   conversationId?: string | null;
   onThinking?: (step: string) => void;
+  /** AbortSignal pemanggil (tombol berhenti / unmount): membatalkan
+   *  penantian minimum agar hasil basi tidak pernah ditampilkan. */
+  signal?: AbortSignal;
 }
 
 export interface CoAssistantSendResult {
@@ -189,7 +193,27 @@ class CoAssistantService {
   /**
    * Send a query to the real EZRAB AI backend with seamless fallback to construction copilot engine.
    */
+  /**
+   * Gerbang timing terpusat (spesifikasi 2026-10-27): SEMUA permintaan
+   * co-assistant — deterministik maupun server — menunggu minimum 1/2/3
+   * detik sejak dikirim, paralel dengan provider (bukan sesudahnya).
+   * Kebijakan dan teks status SAMA dengan Chat AI utama (satu modul
+   * aiResponseTiming). Status awal dikirim lewat onThinking agar ketiga
+   * call site menampilkan teks yang konsisten.
+   */
   public async sendMessage(request: CoAssistantContextRequest): Promise<CoAssistantSendResult> {
+    const trimmed = request.message.trim();
+    if (!trimmed) {
+      throw new Error('Pesan tidak boleh kosong.');
+    }
+    const activity = activityForRequest(trimmed);
+    const complexity = classifyRequest(trimmed, activity);
+    request.onThinking?.(statusTextFor(complexity, activity));
+    const startedAt = Date.now();
+    return waitForMinimum(startedAt, minDelayFor(complexity), this.runSendMessage(request), request.signal);
+  }
+
+  private async runSendMessage(request: CoAssistantContextRequest): Promise<CoAssistantSendResult> {
     const trimmedMessage = request.message.trim();
     if (!trimmedMessage) {
       throw new Error('Pesan tidak boleh kosong.');

@@ -40,6 +40,7 @@ import { extractSlashToken, filterSlashEntries, NAV_BY_ID, resolveNavCommand, ty
 import { consumePendingAiEntry, requestAiEntry, consumePendingEzrabAiEntry, peekPendingEzrabAiEntry, ezrabAiEntryRemainingMs, openEzrabAI, type EzrabAiEntryContext } from '../aiNavigation';
 import { executeIntent, continueRabNeeds, continueRabChoice, tryContinueRabSubtype, getLastRabDesignPrompt, ChatActionContext, ChatActionButton } from './actionRegistry';
 import { getLastDirectRab } from './directRab';
+import { classifyRequest, minDelayFor, statusTextFor, waitForMinimum, createRequestCoordinator, isAbortError, type AiActivity } from '../aiResponseTiming';
 import { mapDirectRabPushItems } from './directRabPush';
 import { getLastUniversalDraft, setLastUniversalDraft, looksLikeUniversalRevision, reviseUniversalDraft, buildPushPreview, formatPushPreviewMessage, buildPushPayload, dedupePushPayload, validateTransfer, draftReadiness } from './universalRab';
 import { looksLikeNeedsAnswer } from './rabNeeds';
@@ -148,6 +149,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [messages, setMessages] = useState<ChatEntry[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  // Timing terpusat (spesifikasi 2026-10-27): teks status pemrosesan
+  // mengikuti klasifikasi permintaan; timer dibersihkan saat unmount.
+  const [thinkingText, setThinkingText] = useState('EZRAB sedang berpikir…');
+  const timingCoordinatorRef = useRef(createRequestCoordinator());
+  const submitAbortRef = useRef<AbortController | null>(null);
 
   const [mode, setMode] = useState<'fast' | 'advanced'>('fast');
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
@@ -237,6 +243,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   // Segarkan daftar saat percakapan siap, saat jumlah pesan berubah, dan
   // saat store berubah (pesan masuk dari permukaan AI lain).
   useEffect(() => { refreshHistory(); }, [refreshHistory, conversationReady, messages.length]);
+  // Bersihkan timer pemrosesan AI saat view dilepas: submit yang sedang
+  // menunggu minimum tidak boleh menampilkan hasil basi setelah unmount.
+  useEffect(() => () => { submitAbortRef.current?.abort(); }, []);
   useEffect(() => {
     try {
       return unifiedConversationStore.subscribe(() => refreshHistory());
@@ -462,6 +471,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // draft yang sedang diketik pengguna.
     const echo = opts?.echo !== false;
     if ((!msg && !attached) || busy) return;
+    // Timing terpusat: minimum dihitung SEJAK kirim ditekan (bukan sejak
+    // provider selesai) — lihat aiResponseTiming.ts.
+    const timingStart = Date.now();
+    const timingRequestId = timingCoordinatorRef.current.next();
+    const submitAbort = new AbortController();
+    submitAbortRef.current = submitAbort;
     /* Full AI (klik tombol di kartu jalur): pesan ini prompt terkumpul yang
      * memang harus diproses pipeline AI — router lokal dilewati, tetapi
      * gerbang kredit & pencatatan pemakaian tetap berlaku persis seperti
@@ -520,6 +535,40 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       next = [...cleaned, entry];
     }
     setBusy(true);
+    // Klasifikasi + teks status (aktivitas RAB → complex / "menyiapkan
+    // RAB"; sisanya dari teks). Berlaku untuk SEMUA balasan chat di
+    // bawah (lokal, revisi, maupun LLM) — kecuali navigasi langsung
+    // (navHit) yang memang bukan permintaan AI dan tetap instan.
+    const timingActivity: AiActivity =
+      preRouted.intent === 'CREATE_RAB_DIRECT' ||
+      preRouted.intent === 'GENERATE_RAB_TEMPLATE' ||
+      preRouted.intent === 'RAB_FULL_AI'
+        ? 'rab'
+        : 'chat';
+    const timingComplexity = classifyRequest(msg, timingActivity);
+    const timingMinDelay = minDelayFor(timingComplexity);
+    setThinkingText(statusTextFor(timingComplexity, timingActivity));
+    // Gerbang penampil hasil: menunggu sisa minimum (paralel dengan
+    // provider, bukan sesudahnya); false = dibatalkan (unmount) atau
+    // disalip permintaan yang lebih baru → hasil TIDAK ditampilkan.
+    const gateWait = async (): Promise<boolean> => {
+      try {
+        await waitForMinimum(timingStart, timingMinDelay, Promise.resolve(), submitAbort.signal);
+      } catch (e) {
+        if (isAbortError(e)) return false;
+        throw e;
+      }
+      return timingCoordinatorRef.current.isLatest(timingRequestId);
+    };
+    // Satu-satunya jalan menampilkan balasan asisten di cabang-cabang
+    // lokal/revisi di bawah (LLM memakai gateWait langsung karena
+    // entrinya membawa field tambahan fromAi/model/creditsUsed).
+    const postAssistant = async (content: string, actions?: ChatActionButton[]): Promise<boolean> => {
+      if (!(await gateWait())) return false;
+      setMessages((prev) => [...prev, { role: 'assistant', content, ts: Date.now(), actions }]);
+      persistMessage('assistant', content);
+      return true;
+    };
     /* ---- D1: koreksi pra-pilih pada kartu pilihan RAB bertipe ----
      * Selama kartu pilihan aktif, pesan berbentuk koreksi spek (lantai/
      * dimensi/kamar/luas) digabung ke kartu dan kartu di-render ulang
@@ -531,8 +580,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         try {
           const res = continueRabChoice(msg);
           const acts = res.actions && res.actions.length > 0 ? res.actions : undefined;
-          setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: acts }]);
-          persistMessage('assistant', res.message);
+          await postAssistant(res.message, acts);
           if (!res.awaitRabChoice) setAwaitingChoice(false);
         } finally {
           setBusy(false);
@@ -567,8 +615,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         try {
           const res = continueRabNeeds(msg);
           const acts = res.actions && res.actions.length > 0 ? res.actions : undefined;
-          setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: acts }]);
-          persistMessage('assistant', res.message);
+          await postAssistant(res.message, acts);
         } finally {
           setBusy(false);
         }
@@ -602,8 +649,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
             clarifyMode: awaitingClarify,
           });
           const acts = res.actions && res.actions.length > 0 ? res.actions : undefined;
-          setMessages((prev) => [...prev, { role: 'assistant', content: res.message, ts: Date.now(), actions: acts }]);
-          persistMessage('assistant', res.message);
+          await postAssistant(res.message, acts);
           setAwaitingClarify(res.awaitClarify ?? null);
         } finally {
           setBusy(false);
@@ -660,8 +706,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
               { label: 'Buka Spreadsheet RAB', action: { kind: 'navigate', menu: 'rab-estimasi' } },
             ]
           : undefined;
-        setMessages((prev) => [...prev, { role: 'assistant', content: rev.message, ts: Date.now(), actions: acts }]);
-        persistMessage('assistant', rev.message);
+        await postAssistant(rev.message, acts);
         setBusy(false);
         return;
       }
@@ -696,34 +741,37 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         else {
           const res = executeIntent(routed.intent, routed.param, ctx);
           reply = res.message;
-          // Game Space opens as an in-chat panel — fully local, no AI call.
-          if (res.openGameSpace) setGameSpaceOpen(true);
-          // P0 Command Center: wizard & design overlays
-          if (res.openRabWizard) setRabWizardOpen(true);
-          if (res.openDesignStudio) {
-            if (res.designPrompt) setDesignPrompt(res.designPrompt);
-            setDesignStudioOpen(true);
-          }
           if (res.awaitRabNeeds) setAwaitingNeeds(true);
           if (res.awaitRabChoice) setAwaitingChoice(true);
           if (res.awaitRabSubtype) setAwaitingSubtype(true);
           if (res.awaitClarify) setAwaitingClarify(res.awaitClarify);
           // Action buttons — attached to the assistant message
           const entryActions = res.actions && res.actions.length > 0 ? res.actions : undefined;
-          setMessages((prev) => [...prev, { role: 'assistant', content: reply, ts: Date.now(), actions: entryActions }]);
-          persistMessage('assistant', reply);
+          const delivered = await postAssistant(reply, entryActions);
+          // Wizard/panel SETELAH respons terlihat (commit terpisah),
+          // bukan seketika bersamaan dengan kirim — urutan Send →
+          // Processing → AI Response → Action/Wizard. Bila pengiriman
+          // dibatalkan/disalip, wizard tidak dibuka.
+          if (delivered && (res.openGameSpace || res.openRabWizard || res.openDesignStudio)) {
+            setTimeout(() => {
+              if (res.openGameSpace) setGameSpaceOpen(true);
+              if (res.openRabWizard) setRabWizardOpen(true);
+              if (res.openDesignStudio) {
+                if (res.designPrompt) setDesignPrompt(res.designPrompt);
+                setDesignStudioOpen(true);
+              }
+            }, 0);
+          }
           return;
         }
-        setMessages((prev) => [...prev, { role: 'assistant', content: reply, ts: Date.now() }]);
-        persistMessage('assistant', reply);
+        await postAssistant(reply);
       } finally {
         setBusy(false);
       }
       return;
     }
     if (!forcedAi && routed.needsClarification && routed.clarificationPrompt) {
-      setMessages((prev) => [...prev, { role: 'assistant', content: routed.clarificationPrompt!, ts: Date.now() }]);
-      persistMessage('assistant', routed.clarificationPrompt!);
+      await postAssistant(routed.clarificationPrompt!);
       setBusy(false);
       return;
     }
@@ -733,7 +781,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     // mengirim ulang blok lampiran teks — tanpanya retry kehilangan konteks.
     lastAiPromptRef.current = content;
     try {
-      const res = await ezrabAiService.send({
+      // Provider berjalan PARALEL dengan timer minimum (dihitung sejak
+      // kirim): hasil cepat menunggu sisa minimum, hasil lambat tidak
+      // ditambah delay.
+      const res = await waitForMinimum(timingStart, timingMinDelay, ezrabAiService.send({
         // F3: the attachment block belongs ONLY to the message just sent
         // (the last entry in `next`). Older messages must keep their
         // own original content — the old map overwrote EVERY past message's
@@ -744,7 +795,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         })),
         mode,
         projectSnapshot,
-      } as any);
+      } as any), submitAbort.signal);
+      // Hasil basi (disalip permintaan baru) tidak ditampilkan dan
+      // tidak didebit — minimum sudah terpenuhi oleh waitForMinimum
+      // di atas, jadi di sini hanya cek keaslian.
+      if (!timingCoordinatorRef.current.isLatest(timingRequestId)) return;
       // --- AI Credits: catat pemakaian SIMULASI (batas atas estimasi, transparan) ---
       // FASE 1 RECOVERY (P1-2): debit HANYA bila send() sukses tegas
       // (res.success === true) — kegagalan gateway/HTTP/timeout/respons
@@ -774,6 +829,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         link: 'ezrab-ai',
       });
     } catch (err: any) {
+      // Pembatalan (unmount): diam, tanpa pesan basi. Error provider
+      // tetap menunggu sisa minimum sebelum ditampilkan — dan tidak
+      // pernah membuka wizard (cabang ini tidak punya aksi wizard).
+      if (isAbortError(err)) return;
+      if (!(await gateWait())) return;
       const errMsg = err?.message || 'Ups! Ada gangguan. Coba lagi ya 🥺';
       setMessages((prev) => [...prev, { role: 'assistant', content: errMsg, isError: true, fromAi: true, ts: Date.now() }]);
       notificationBus.publish({
@@ -1647,7 +1707,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                 <img src={MASCOT_PNG} alt="Ezrab" className="ezchat2-avatar thinking" />
                 <div className="ezchat2-bubble ai typing">
                   <span className="tdot" /><span className="tdot" /><span className="tdot" />
-                  <span className="ezchat2-thinking">Ezrab sedang berpikir…</span>
+                  <span className="ezchat2-thinking">{thinkingText}</span>
                 </div>
               </div>
             )}

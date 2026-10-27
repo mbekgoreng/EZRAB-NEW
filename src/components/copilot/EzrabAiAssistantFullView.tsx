@@ -47,6 +47,7 @@ import { quickActionService } from '../../services/quickActionService';
 import { QUICK_ACTIONS_LIST } from '../../data/quickActionContracts';
 import { aiApiClient } from '../../services/aiApiClient';
 import { coAssistantService, resolveClientWizardStep } from '../../services/coAssistantService';
+import { isAbortError } from '../../ai-tools/aiResponseTiming';
 import aiLogoAsset from '../../assets/ezrab-co-assistant-logo.jpg';
 import ezrabAvatarImg from '../../assets/ezrab_avatar.png';
 import { EZRABMascotLucu } from '../mascot/EZRABMascotLucu';
@@ -273,6 +274,11 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
   const [thinkingStep, setThinkingStep] = useState<string>('Menganalisis...');
   const [streamingContent, setStreamingContent] = useState<string>('');
   const stopGenerationRef = useRef<boolean>(false);
+  // Controller pembatalan permintaan (tombol berhenti / unmount):
+  // membatalkan penantian minimum di service agar hasil basi tidak
+  // pernah ditampilkan.
+  const sendAbortRef = useRef<AbortController | null>(null);
+  useEffect(() => () => { sendAbortRef.current?.abort(); }, []);
 
   // Toast notification for actions
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -494,6 +500,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
 
   // Stop Generation
   const handleStopGeneration = () => {
+    sendAbortRef.current?.abort();
     stopGenerationRef.current = true;
   };
 
@@ -550,6 +557,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
     // Reset composer input & attachments
     setInputText('');
     setAttachedFiles([]);
+    sendAbortRef.current = new AbortController();
     setIsGenerating(true);
     setStreamingContent('');
     setThinkingStep('Menganalisis konteks proyek...');
@@ -564,6 +572,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
         projectRabItems,
         conversationId: targetSessionId,
         onThinking: (step) => setThinkingStep(step),
+        signal: sendAbortRef.current?.signal,
       });
 
       const responseMsg = sendResult.message;
@@ -623,6 +632,10 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
         )
       );
     } catch (err) {
+      // Pembatalan (tombol berhenti/unmount): diam, tanpa pesan error palsu.
+      if (isAbortError(err)) {
+        // tidak ada pesan
+      } else {
       const errorMsg: ChatMessage = {
         id: `ai-err-${Date.now()}`,
         sender: 'assistant',
@@ -642,6 +655,7 @@ export const EzrabAiAssistantFullView: React.FC<EzrabAiAssistantFullViewProps> =
             : s
         )
       );
+      }
     } finally {
       setIsGenerating(false);
       setStreamingContent('');

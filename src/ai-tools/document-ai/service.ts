@@ -5,6 +5,7 @@
  */
 
 import { aiToolsProviderClient } from '../providerClient';
+import { waitForMinimum, minDelayFor } from '../aiResponseTiming';
 import { ENHANCE_TRANSFORM_GUIDANCE, TRANSLATE_LANGUAGE_NAMES, systemForMode } from './prompt';
 import { DokumenAiChatRequest, DokumenAiChatResponse, isTranslateLanguage } from './types';
 
@@ -14,9 +15,24 @@ const MAX_DOC_CHARS = 140_000;
 export const MAX_ENHANCE_SELECTION_CHARS = 8_000;
 
 export class DokumenAiService {
+  /**
+   * Gerbang timing terpusat (spesifikasi 2026-10-27): analisis dokumen =
+   * complex → minimum 3 detik sejak tombol ditekan, paralel dengan
+   * provider (bukan sesudahnya). Mencakup ENHANCE, TRANSLATE, dan
+   * mode chat/QA/ringkas/ekstrak lainnya.
+   */
   public async chat(request: DokumenAiChatRequest): Promise<DokumenAiChatResponse> {
-    if (request.mode === 'ENHANCE') return this.enhance(request);
-    if (request.mode === 'TRANSLATE') return this.translate(request);
+    const startedAt = Date.now();
+    const run =
+      request.mode === 'ENHANCE'
+        ? this.enhance(request)
+        : request.mode === 'TRANSLATE'
+          ? this.translate(request)
+          : this.runChat(request);
+    return waitForMinimum(startedAt, minDelayFor('complex'), run);
+  }
+
+  private async runChat(request: DokumenAiChatRequest): Promise<DokumenAiChatResponse> {
 
     const fullText = request.documentText || '';
     const truncated = fullText.length > MAX_DOC_CHARS;

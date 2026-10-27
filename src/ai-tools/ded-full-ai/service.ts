@@ -8,6 +8,7 @@
  * Alur: Upload → Parse → Prompt → AI → Validate → Verify → Output
  */
 import { aiToolsProviderClient } from '../providerClient';
+import { waitForMinimum, minDelayFor } from '../aiResponseTiming';
 import { parseDedPdf } from '../ded-ai-estimate/parser';
 import { PAGE_TYPE_PRIORITY, formatPageRanges } from '../ded-ai-estimate/analysisTrace';
 import { buildFullAiPrompt } from './prompts';
@@ -160,7 +161,17 @@ export function buildDocumentText(
 export { formatPageRanges };
 
 export class FullAiDedService {
+  /**
+   * Gerbang timing terpusat (spesifikasi 2026-10-27): pembacaan DED =
+   * complex → minimum 3 detik sejak tombol ditekan, paralel dengan
+   * pipeline (parse + AI + validasi), bukan sesudahnya.
+   */
   async execute(options: FullAiServiceOptions): Promise<FullAiOutput> {
+    const startedAt = Date.now();
+    return waitForMinimum(startedAt, minDelayFor('complex'), this.runExecute(options));
+  }
+
+  private async runExecute(options: FullAiServiceOptions): Promise<FullAiOutput> {
     const { mode, projectType } = options;
     const notify = options.onProgress || (() => {});
 
