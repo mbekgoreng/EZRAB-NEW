@@ -30,14 +30,14 @@ check('1.3 default (policy undefined) = FULL_AI, perilaku lama utuh', resolveDed
 
 console.log('\n== 2. Pemilihan mode Database (kasus 2, 5) ==');
 const dbSane = resolveDedPriceForPolicy('DATABASE', 850000, 'Estimasi AI');
-check('2.1 DATABASE menolak estimasi wajar sekalipun → UNRESOLVED null', dbSane.priceSource === 'UNRESOLVED' && dbSane.unitPrice === null);
+check('2.1 DATABASE meneruskan estimasi wajar sebagai fallback (keputusan owner 2026-10-27 malam)', dbSane.priceSource === 'AI_ESTIMATE' && dbSane.unitPrice === 850000);
 check('2.2 DATABASE + harga hilang → tetap UNRESOLVED null (bukan Rp0)', resolveDedPriceForPolicy('DATABASE', null).unitPrice === null);
 const dbFull = applyFullAiPricePolicy('DATABASE', { unitPrice: 1150000, unit: 'm3', source: 'AI_ESTIMATE' });
-check('2.3 FullAI DATABASE menolak AI_ESTIMATE → UNRESOLVED null', dbFull.unitPrice === null && dbFull.source === 'UNRESOLVED');
+check('2.3 FullAI DATABASE meneruskan AI_ESTIMATE sebagai fallback (adapter yang memutuskan)', dbFull.unitPrice === 1150000 && dbFull.source === 'AI_ESTIMATE');
 const dbVerified = applyFullAiPricePolicy('DATABASE', { unitPrice: 1150000, unit: 'm3', source: 'VERIFIED_SOURCE', ahspCode: '3.7.4' });
 check('2.4 FullAI DATABASE meloloskan VERIFIED_SOURCE ber-ahspCode', dbVerified.unitPrice === 1150000 && dbVerified.source === 'VERIFIED_SOURCE');
 const dbVerifiedNoCode = applyFullAiPricePolicy('DATABASE', { unitPrice: 1150000, unit: 'm3', source: 'VERIFIED_SOURCE' });
-check('2.5 FullAI DATABASE menolak klaim VERIFIED tanpa ahspCode', dbVerifiedNoCode.unitPrice === null && dbVerifiedNoCode.source === 'UNRESOLVED');
+check('2.5 FullAI DATABASE gerbang meneruskan klaim VERIFIED tanpa ahspCode (adapter yang menurunkannya jadi AI_ESTIMATE)', dbVerifiedNoCode.unitPrice === 1150000 && dbVerifiedNoCode.source === 'VERIFIED_SOURCE');
 const dbUser = applyFullAiPricePolicy('DATABASE', { unitPrice: 900000, unit: 'm3', source: 'USER_INPUT' });
 check('2.6 FullAI DATABASE meloloskan USER_INPUT', dbUser.unitPrice === 900000 && dbUser.source === 'USER_INPUT');
 const fullAiPass = applyFullAiPricePolicy('FULL_AI', { unitPrice: 1150000, unit: 'm3', source: 'AI_ESTIMATE' });
@@ -110,7 +110,7 @@ const raw = 750000;
 const first = resolveDedPriceForPolicy('FULL_AI', raw);
 const second = resolveDedPriceForPolicy('DATABASE', raw);
 const third = resolveDedPriceForPolicy('FULL_AI', raw);
-check('8.1 FULL_AI → DATABASE mengubah hasil (tanpa cache)', first.priceSource === 'AI_ESTIMATE' && second.priceSource === 'UNRESOLVED');
+check('8.1 FULL_AI ↔ DATABASE gerbang stateless (hasil sama; keputusan akhir di adapter)', first.priceSource === 'AI_ESTIMATE' && second.priceSource === 'AI_ESTIMATE' && second.unitPrice === 750000);
 check('8.2 DATABASE → FULL_AI kembali ke hasil awal (stateless)', third.priceSource === 'AI_ESTIMATE' && third.unitPrice === 750000);
 const gateIn = { unitPrice: 500000, unit: 'm3', source: 'AI_ESTIMATE' };
 applyFullAiPricePolicy('DATABASE', gateIn);

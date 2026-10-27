@@ -320,15 +320,16 @@ export class FullAiDedService {
         }
 
         const q = normalized.quantity || {};
-        // Gerbang kebijakan harga (service layer): DATABASE menolak
-        // estimasi AI (dan klaim VERIFIED tanpa ahspCode yang tak
-        // tertelusur) — harga menjadi UNRESOLVED, item tetap tampil
-        // dengan exclusionReason PRICE_UNRESOLVED di bawah.
+        // Gerbang kebijakan harga (service layer): harga diteruskan ke
+        // adapter — kanonis RESOLVED menang; bila tidak ada di database,
+        // estimasi AI dipakai sebagai fallback berlabel jelas (keputusan
+        // owner 2026-10-27 malam). Item tanpa harga tetap tampil dengan
+        // exclusionReason PRICE_UNRESOLVED di bawah.
         const p = applyFullAiPricePolicy(policy, normalized.price || {});
         // Resolusi kanonis (adapter ded-canonical): klaim VERIFIED tidak
         // lagi dipercaya begitu saja. Harga kanonis dipakai bila
         // terverifikasi (kedua mode); klaim gagal turun jadi estimasi AI
-        // (FULL_AI) / unresolved (DATABASE). Harga USER_INPUT tidak
+        // (kedua mode, berlabel perkiraan). Harga USER_INPUT tidak
         // pernah ditimpa.
         let finalPrice: {
           unitPrice: number | null; unit: string; source: FullAiPriceSource;
@@ -551,25 +552,26 @@ export class FullAiDedService {
 
 /**
  * Gerbang kebijakan harga mesin Full AI (murni, service layer).
+ * Keputusan owner 2026-10-27 malam (menggantikan aturan lama yang
+ * menolak estimasi di mode Database):
  * - FULL_AI: harga diteruskan apa adanya (perilaku lama; validator tetap
  *   memeriksa struktur, satuan, dan aritmetika di tempat lain).
- * - DATABASE: sumber AI_ESTIMATE DITOLAK → unitPrice null, source
- *   UNRESOLVED. Klaim VERIFIED_SOURCE tanpa ahspCode juga ditolak karena
- *   tidak tertelusur ke kode AHSP. VERIFIED_SOURCE ber-ahspCode dan
- *   USER_INPUT lolos (harga terverifikasi/pengguna, bukan estimasi AI).
+ * - DATABASE: harga diteruskan ke adapter — adapter yang memutuskan:
+ *   kanonis RESOLVED menang (AHSP_2026); bila tidak ada di database,
+ *   AI_ESTIMATE / klaim VERIFIED yang gagal dikonfirmasi turun jadi
+ *   estimasi AI berlabel jelas (perkiraan, bukan harga database).
+ *   USER_INPUT tidak pernah disentuh. Gerbang ini sengaja tidak lagi
+ *   menul-kan estimasi: menul-kan di sini membuat adapter tidak punya
+ *   fallback dan analisis Database gagal total (NO_CALCULABLE_ITEMS).
  */
 export function applyFullAiPricePolicy(
   policy: DedEstimationPolicy | undefined,
   price: any
 ): any {
-  const effective: DedEstimationPolicy = policy ?? 'FULL_AI';
-  if (effective !== 'DATABASE' || !price || typeof price !== 'object') return price;
-  if (price.source === 'AI_ESTIMATE') {
-    return { ...price, unitPrice: null, source: 'UNRESOLVED' };
-  }
-  if (price.source === 'VERIFIED_SOURCE' && !price.ahspCode) {
-    return { ...price, unitPrice: null, source: 'UNRESOLVED' };
-  }
+  // Keputusan harga kini sepenuhnya di adapter (resolveDedPriceWithCanonical);
+  // gerbang dipertahankan sebagai titik lewat agar pemanggil lama & tes
+  // tetap memiliki satu tempat kebijakan yang eksplisit.
+  void policy;
   return price;
 }
 

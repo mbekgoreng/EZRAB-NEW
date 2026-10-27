@@ -148,10 +148,11 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: import('
     quantitySource = 'UNRESOLVED';
   }
 
-  // Resolusi kanonis dulu (adapter ded-canonical): DATABASE kini benar-benar
-  // mencoba AHSP sebelum menyatakan harga tidak tersedia; FULL_AI memakai
+  // Resolusi kanonis dulu (adapter ded-canonical): DATABASE mencoba AHSP
+  // dulu; bila tidak ada di database, estimasi AI dipakai sebagai fallback
+  // berlabel jelas (keputusan owner 2026-10-27 malam). FULL_AI memakai
   // harga kanonis bila terverifikasi, sisanya estimasi AI + match terlampir
-  // untuk review. Gerbang kebijakan lama tetap dipakai sebagai fallback.
+  // untuk review.
   const aiPrice = resolveDedPriceForPolicy(policy, raw.estimatedUnitPrice ?? raw.unitPrice, raw.unitPriceNote);
   const claimedCode = typeof raw.ahspCode === 'string'
     ? raw.ahspCode

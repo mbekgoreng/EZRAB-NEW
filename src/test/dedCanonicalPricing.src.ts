@@ -63,13 +63,15 @@ check('6.4 kode tak dikenal → INVALID', unknownCode.status === 'INVALID');
 
 console.log('\n== 7-8. Kebijakan DATABASE vs FULL_AI (kasus 7, 8, 16) ==');
 const dbRefuse = resolveDedPriceWithCanonical('DATABASE', ceramic, { unitPrice: 850000, source: 'AI_ESTIMATE' });
-check('7.1 DATABASE + NEEDS_REVIEW + estimasi → UNRESOLVED null', dbRefuse.source === 'UNRESOLVED' && dbRefuse.unitPrice === null);
+check('7.1 DATABASE + NEEDS_REVIEW + estimasi wajar → AI_ESTIMATE fallback berlabel (keputusan owner 2026-10-27 malam)', dbRefuse.source === 'AI_ESTIMATE' && dbRefuse.unitPrice === 850000 && String(dbRefuse.notes || '').includes('tidak ditemukan di database'));
 check('7.2 DATABASE + RESOLVED → AHSP_2026', resolveDedPriceWithCanonical('DATABASE', plaster, { unitPrice: 999999, source: 'AI_ESTIMATE' }).source === 'AHSP_2026');
+check('7.3 DATABASE + NEEDS_REVIEW + estimasi tak wajar (50) → UNRESOLVED null', resolveDedPriceWithCanonical('DATABASE', ceramic, { unitPrice: 50, source: 'AI_ESTIMATE' }).source === 'UNRESOLVED');
+check('7.4 DATABASE + NEEDS_REVIEW + harga hilang → UNRESOLVED null (bukan Rp0)', resolveDedPriceWithCanonical('DATABASE', ceramic, { unitPrice: null, source: 'UNRESOLVED' }).source === 'UNRESOLVED');
 const fullKeep = resolveDedPriceWithCanonical('FULL_AI', ceramic, { unitPrice: 850000, source: 'AI_ESTIMATE' });
 check('8.1 FULL_AI + NEEDS_REVIEW → estimasi dipertahankan + match terlampir', fullKeep.source === 'AI_ESTIMATE' && fullKeep.unitPrice === 850000 && fullKeep.ahspMatch.status === 'NEEDS_REVIEW');
 check('8.2 FULL_AI + RESOLVED → upgrade ke kanonis', resolveDedPriceWithCanonical('FULL_AI', plaster, { unitPrice: 850000, source: 'AI_ESTIMATE' }).unitPrice === 51622);
-check('16.1 gerbang standar DATABASE tetap menolak estimasi', resolveDedPriceForPolicy('DATABASE', 850000).priceSource === 'UNRESOLVED');
-check('16.2 gerbang FullAI DATABASE tetap menolak estimasi', applyFullAiPricePolicy('DATABASE', { unitPrice: 850000, source: 'AI_ESTIMATE' }).source === 'UNRESOLVED');
+check('16.1 gerbang standar DATABASE meneruskan estimasi sebagai fallback (adapter yang memutuskan)', resolveDedPriceForPolicy('DATABASE', 850000).priceSource === 'AI_ESTIMATE');
+check('16.2 gerbang FullAI DATABASE meneruskan estimasi sebagai fallback (adapter yang memutuskan)', applyFullAiPricePolicy('DATABASE', { unitPrice: 850000, source: 'AI_ESTIMATE' }).source === 'AI_ESTIMATE');
 check('16.3 USER_INPUT tidak pernah ditimpa', resolveDedPriceWithCanonical('DATABASE', plaster, { unitPrice: 777000, source: 'USER_INPUT' }).unitPrice === 777000);
 
 console.log('\n== 9. Provenance kanonis lewat finalisasi (kasus 9) ==');
@@ -95,7 +97,7 @@ const badClaim = resolveCanonicalCode('9.9.9.9', 'm2');
 const downFull = resolveDedPriceWithCanonical('FULL_AI', badClaim, { unitPrice: 123456, source: 'VERIFIED_SOURCE', ahspCode: '9.9.9.9' });
 check('10.1 FULL_AI: klaim gagal → AI_ESTIMATE (bukan VERIFIED)', downFull.source === 'AI_ESTIMATE' && downFull.unitPrice === 123456);
 const downDb = resolveDedPriceWithCanonical('DATABASE', badClaim, { unitPrice: 123456, source: 'VERIFIED_SOURCE', ahspCode: '9.9.9.9' });
-check('10.2 DATABASE: klaim gagal → UNRESOLVED', downDb.source === 'UNRESOLVED' && downDb.unitPrice === null);
+check('10.2 DATABASE: klaim gagal → AI_ESTIMATE perkiraan (bukan VERIFIED, bukan UNRESOLVED bila wajar)', downDb.source === 'AI_ESTIMATE' && downDb.unitPrice === 123456);
 
 console.log('\n== 11. Draft lama tanpa korupsi provenance (kasus 11) ==');
 const legacy = JSON.parse(JSON.stringify({

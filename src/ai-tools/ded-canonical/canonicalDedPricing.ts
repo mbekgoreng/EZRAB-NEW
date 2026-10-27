@@ -549,13 +549,28 @@ export interface DedPriceDecision {
  * Keputusan harga setelah resolusi kanonis:
  * - Harga manual (USER_INPUT) TIDAK PERNAH ditimpa.
  * - Match RESOLVED → harga kanonis (kedua mode).
- * - Klaim VERIFIED_SOURCE yang gagal dikonfirmasi → DATABASE: UNRESOLVED;
- *   FULL_AI: turun jadi AI_ESTIMATE dengan catatan (angka model tetap angka
- *   model — tidak boleh menyandang label terverifikasi).
- * - DATABASE tanpa match → UNRESOLVED (tidak ada fallback estimasi).
+ * - Klaim VERIFIED_SOURCE yang gagal dikonfirmasi → turun jadi
+ *   AI_ESTIMATE dengan catatan (angka model tetap angka model — tidak
+ *   boleh menyandang label terverifikasi), di kedua mode.
+ * - DATABASE tanpa match → estimasi AI sebagai FALLBACK bila wajar
+ *   (berlabel AI_ESTIMATE + catatan 'tidak ditemukan di database');
+ *   bila estimasi hilang/tidak wajar → UNRESOLVED. Keputusan owner
+ *   2026-10-27 malam: mode Database tetap AI yang mengenali pekerjaan
+ *   + volume, harga diutamakan AHSP kanonis, AI mengisi perkiraan bila
+ *   item tidak ada di database — aturan lama tanpa fallback inilah yang
+ *   membuat analisis Database gagal total (NO_CALCULABLE_ITEMS) bila
+ *   tidak ada satu pun item yang cocok kanonis persis.
  * - FULL_AI tanpa match → estimasi AI dipertahankan + match terlampir
  *   untuk review.
+ *
+ * Kewajaran harga fallback (ambang sama dengan isSaneEstimate di
+ * ded-ai-estimate/pricing.ts): >0, >= Rp100, <= Rp50 M per satuan.
+ * Dipakai adapter agar estimasi fallback dari EITHER mesin tidak pernah
+ * masuk total bila nilainya tidak wajar — tanpa impor silang mesin.
  */
+function isSaneFallbackPrice(value: number | null | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 && value >= 100 && value <= 50_000_000_000;
+}
 export function resolveDedPriceWithCanonical(
   policy: 'FULL_AI' | 'DATABASE',
   match: CanonicalDedMatch,
@@ -582,12 +597,12 @@ export function resolveDedPriceWithCanonical(
     };
   }
   if (fallback.source === 'VERIFIED_SOURCE') {
-    if (policy === 'DATABASE') {
+    if (!isSaneFallbackPrice(fallback.unitPrice)) {
       return {
         unitPrice: null,
         source: 'UNRESOLVED',
         unit: fallback.unit,
-        notes: 'Klaim terverifikasi tidak terkonfirmasi database — harga dikosongkan (mode Database).',
+        notes: 'Klaim terverifikasi tidak terkonfirmasi database dan tidak ada estimasi wajar — harga dikosongkan.',
         ahspMatch: match,
       };
     }
@@ -595,11 +610,25 @@ export function resolveDedPriceWithCanonical(
       unitPrice: fallback.unitPrice,
       source: 'AI_ESTIMATE',
       unit: fallback.unit,
-      notes: `${fallback.notes ? `${fallback.notes} ` : ''}Klaim terverifikasi tidak terkonfirmasi database — diperlakukan sebagai estimasi AI.`,
+      notes: `${fallback.notes ? `${fallback.notes} ` : ''}Klaim terverifikasi tidak terkonfirmasi database — diperlakukan sebagai estimasi AI (perkiraan, bukan harga database).`,
       ahspMatch: match,
     };
   }
   if (policy === 'DATABASE') {
+    // Fallback perkiraan (keputusan owner 2026-10-27 malam): kanonis
+    // sudah gagal di atas, jadi estimasi AI yang wajar dipakai — tapi
+    // SELALU berlabel AI_ESTIMATE + catatan 'tidak ditemukan di
+    // database', tidak pernah menyamar sebagai harga AHSP. Estimasi
+    // hilang/tidak wajar tetap UNRESOLVED (bukan Rp0).
+    if (fallback.source === 'AI_ESTIMATE' && isSaneFallbackPrice(fallback.unitPrice)) {
+      return {
+        unitPrice: fallback.unitPrice,
+        source: 'AI_ESTIMATE',
+        unit: fallback.unit,
+        notes: `Estimasi AI — tidak ditemukan di database AHSP EZRAB: ${match.reason} (perkiraan, bukan harga database).`,
+        ahspMatch: match,
+      };
+    }
     return {
       unitPrice: null,
       source: 'UNRESOLVED',
