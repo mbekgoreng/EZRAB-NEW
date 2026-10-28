@@ -174,36 +174,32 @@
   perspective: 1600px;
 }
 
-/* ---- Glow lembut round hanya mengelilingi tablet kanan (dekorasi murni) */
-/* Satu halo lembut berbentuk oval yang HANYA mengelilingi frame tablet
-   di kanan: cahaya memancar keluar agak lebar (inset negatif lebih
-   besar di kiri-kanan) dengan blur 72px dan mask yang memudar lebih
-   jauh, jadi cahaya terasa lembut dan menyebar, bukan halo ketat.
-   Glow tetap tidak menyentuh kolom headline: mask memudar sampai
-   transparan sebelum tepi terjauh, dan opacity dijaga 0.6.
-   Border-radius 50% pada elemen seukuran frame (lebih lebar daripada
-   tinggi) menghasilkan oval lembut yang mengikuti bentuk tablet.
-   Warna bertransisi pelan biru -> hijau forest -> hijau -> kuning ->
-   kembali ke biru, tanpa hue-rotate (jadi tidak pernah jadi pink/merah).
-   Selubung putih tetap dihapus agar teks terbaca.
-   Hanya transform/opacity/background-color yang dianimasikan (ramah
-   GPU); tidak ada perubahan layout. */
+/* ---- Glow lembut di belakang tablet kanan (dekorasi murni) */
+/* BUKAN halo round: cahaya berupa wash warna yang lebar dan tidak
+   beraturan, persis referensi screenshot hero (2026-10-27) — hijau
+   di sisi kiri tablet, biru di sisi kanan/atas, menyebar luas ke
+   segala arah sampai menyentuh tepi kolom headline dan tepi kanan
+   hero. Bentuknya datang dari elemen yang jauh lebih lebar daripada
+   tinggi + gradient linear hijau -> biru + blur besar, TANPA
+   border-radius 50% dan TANPA mask elips ketat (dua hal yang membuat
+   revisi sebelumnya terlihat terlalu round).
+   Warna bersifat spasial (hijau kiri, biru kanan, sekaligus — bukan
+   siklus temporal), jadi tidak ada lagi fase kuning: sesuai gambar,
+   glow selalu tampak hijau-biru. Hanya napas (scale/opacity) yang
+   dianimasikan, ramah GPU; tidak ada perubahan layout. */
 
 .ch-stage-glow {
   position: absolute;
-  inset: -10% -16% -12% -16%;
+  inset: -14% -12% -20% -32%;
   z-index: 0;
   pointer-events: none;
-  border-radius: 50%;
   transform-origin: 50% 50%;
-  background-color: #2563eb;
-  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 15%, transparent 88%);
-  mask-image: radial-gradient(ellipse at 50% 50%, #000 15%, transparent 88%);
-  filter: blur(72px);
-  opacity: 0.6;
-  animation:
-    ch-glow-breathe 7s ease-in-out infinite,
-    ch-glow-color 24s ease-in-out infinite;
+  background: linear-gradient(105deg, #22c55e 0%, #166534 28%, #0ea5e9 62%, #2563eb 100%);
+  -webkit-mask-image: radial-gradient(ellipse 130% 95% at 50% 50%, #000 25%, transparent 78%);
+  mask-image: radial-gradient(ellipse 130% 95% at 50% 50%, #000 25%, transparent 78%);
+  filter: blur(64px);
+  opacity: 0.7;
+  animation: ch-glow-breathe 7s ease-in-out infinite;
 }
 
 /* Selubung putih DIHAPUS: veil putih inilah yang membuat headline
@@ -215,17 +211,8 @@
   50%      { transform: scale(1.04); opacity: 0.95; }
 }
 
-/* Transisi warna lembut (tanpa hue-rotate): background-color
-   diinterpolasi browser secara native, jadi pergeseran warna mulus
-   dan tidak pernah melewati pink/merah. Urutan: biru -> hijau forest
-   -> hijau -> kuning -> kembali ke biru, loop 24 detik. */
-@keyframes ch-glow-color {
-  0%   { background-color: #2563eb; }
-  30%  { background-color: #166534; }
-  55%  { background-color: #22c55e; }
-  80%  { background-color: #eab308; }
-  100% { background-color: #2563eb; }
-}
+/* Warna glow kini spasial (gradient hijau -> biru, sekaligus),
+   bukan siklus temporal — keyframes ch-glow-color dihapus. */
 
 .ch-stage-frame {
   background: rgba(11, 18, 32, 0.72);
@@ -1036,12 +1023,10 @@
   /* Cahaya tetap ada di mobile, tapi lebih kecil & redup agar tidak
      memberatkan dan tidak mengganggu keterbacaan. */
   .ch-stage-glow {
-    inset: -8% -12% -10% -12%;
+    inset: -10% -14% -14% -20%;
     filter: blur(54px);
-    opacity: 0.5;
-    animation:
-      ch-glow-breathe 7s ease-in-out infinite,
-      ch-glow-color 24s ease-in-out infinite;
+    opacity: 0.6;
+    animation: ch-glow-breathe 7s ease-in-out infinite;
   }
   .ch-stage-frame { transform: none; animation: none; }
   .ch-stage-frame::after { display: none; }
