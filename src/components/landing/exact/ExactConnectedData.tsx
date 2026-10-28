@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { navigateTo, paths } from '../../../routing/routes';
 import {
   ArrowRight,
@@ -22,6 +22,34 @@ interface ExactConnectedDataProps {
 }
 
 export const ExactConnectedData: React.FC<ExactConnectedDataProps> = () => {
+  const radialRef = useRef<HTMLDivElement>(null);
+  // Mobile: diagram 640px digeser horizontal di dalam wrapper selebar
+  // kartu; tengahkan posisi geser awal supaya inti EZ langsung terlihat
+  // (di desktop wrapper lebih lebar dari diagram sehingga no-op).
+  // ResizeObserver dipakai karena CSS landing dimuat lazy: efek mount
+  // bisa jalan sebelum CSS mobile diterapkan (saat itu wrapper belum
+  // bisa di-scroll), sehingga pemusatan harus diulang saat ukuran
+  // wrapper berubah.
+  useEffect(() => {
+    const el = radialRef.current;
+    if (!el) return;
+    const center = () => {
+      if (el.scrollWidth > el.clientWidth) {
+        el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+      }
+    };
+    center();
+    window.addEventListener('resize', center);
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(center);
+      ro.observe(el);
+      return () => {
+        ro.disconnect();
+        window.removeEventListener('resize', center);
+      };
+    }
+    return () => window.removeEventListener('resize', center);
+  }, []);
   return (
     <section id="data-terhubung" className="ez-connected-section">
       {/* Background blueprint subtle watermark */}
@@ -77,7 +105,7 @@ export const ExactConnectedData: React.FC<ExactConnectedDataProps> = () => {
         </div>
 
         {/* Right Column: Interactive Animated Radial Network Hub */}
-        <div className="ez-radial-stage-wrapper">
+        <div className="ez-radial-stage-wrapper" ref={radialRef}>
           <div className="ez-radial-network-box">
             {/* 1. ANIMATED SVG CONCENTRIC RINGS & RADIAL CONNECTING LINES */}
             <svg

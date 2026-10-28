@@ -268,6 +268,13 @@
     position: relative !important;
     inset: auto !important;
     width: 100%;
+    /* AKAR OVERFLOW MOBILE (terbukti ukur 2026-10-29): layer adalah grid
+       item dari .ez-stacked-stage-canvas; min-width:auto bawaan grid
+       membuat layer mengembang mengikuti min-content kartu (~862px)
+       sehingga semua kartu showcase terpotong di HP. min-width:0
+       memaksa layer mengecil ke lebar viewport. */
+    min-width: 0 !important;
+    max-width: 100% !important;
     height: auto !important;
     opacity: 1 !important;
     visibility: visible !important;
@@ -275,6 +282,23 @@
     filter: none !important;
     transform: none !important;
   }
+  .ez-stacked-card-frame {
+    min-width: 0 !important;
+  }
+  /* Diagram radial Connected Data: box 640px dipertahankan (posisi node
+     px tidak aman diskalakan), tapi di HP wrapper selebar kartu dan
+     diagram bisa digeser horizontal. Berlaku untuk SEMUA lebar HP
+     (sebelumnya hanya <=374px sehingga HP 375-767px tetap terpotong).
+     justify-content:flex-start agar seluruh diagram terjangkau geser;
+     posisi awal ditengahkan oleh efek di ExactConnectedData.tsx. */
+  .ez-radial-stage-wrapper {
+    width: 100% !important;
+    max-width: 100%;
+    overflow-x: auto !important;
+    justify-content: flex-start !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ez-radial-network-box { flex-shrink: 0; }
   .ez-stacked-card-frame {
     height: auto !important;
     min-height: 0;
