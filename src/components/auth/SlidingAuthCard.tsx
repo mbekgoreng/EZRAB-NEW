@@ -3,6 +3,11 @@
  *
  * Panel overlay gradien biru bergeser halus saat beralih mode.
  * Memakai services/supabaseClient milik branch ini (bukan AuthContext).
+ *
+ * Maskot login (foto 3D, desktop saja — panel overlay disembunyikan di
+ * mobile): menunduk + emot 🙈 saat kata sandi diisi, pindah ke tengah +
+ * jempol 👍 saat login berhasil, dengan jeda 1,4 dtk sebelum lanjut ke
+ * workspace agar animasinya sempat terlihat.
  */
 import React, { useState } from 'react';
 import { AlertCircle, CheckCircle2, Loader2, LogOut, X } from 'lucide-react';
@@ -14,6 +19,8 @@ import {
   signOutSupabase,
   signUpWithEmailPassword,
 } from '../../services/supabaseClient';
+import { useRole } from '../../auth/RoleContext';
+import { logoutSessionsOnly } from '../../auth/logoutAll';
 import './sliding-auth.css';
 
 export type SlidingAuthTab = 'masuk' | 'daftar';
@@ -57,6 +64,17 @@ export const SlidingAuthCard: React.FC<Props> = ({
   const [googleBusy, setGoogleBusy] = useState(false);
   const [checking, setChecking] = useState(true);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+  const { logoutRole } = useRole();
+  /** Animasi maskot sukses: true sejak login berhasil s.d. navigasi (1,4 dtk). */
+  const [loginSuccess, setLoginSuccess] = useState(false);
+  const successTimer = React.useRef<number | null>(null);
+
+  React.useEffect(
+    () => () => {
+      if (successTimer.current !== null) window.clearTimeout(successTimer.current);
+    },
+    [],
+  );
 
   React.useEffect(() => {
     let alive = true;
@@ -104,6 +122,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
     }
 
     setBusy(true);
+    let successShown = false;
     try {
       const r = forSignUp
         ? await signUpWithEmailPassword(email.trim(), password, name.trim())
@@ -115,10 +134,13 @@ export const SlidingAuthCard: React.FC<Props> = ({
         setNotice('Akun dibuat. Silakan masuk dengan akun Anda.');
         setIsSignUp(false);
       } else {
-        onSuccessLogin();
+        // Animasi maskot sukses dulu (1,4 dtk) baru lanjut ke workspace.
+        successShown = true;
+        setLoginSuccess(true);
+        successTimer.current = window.setTimeout(() => onSuccessLogin(), 1400);
       }
     } finally {
-      setBusy(false);
+      if (!successShown) setBusy(false);
     }
   };
 
@@ -140,11 +162,43 @@ export const SlidingAuthCard: React.FC<Props> = ({
   };
 
   const handleSignOut = async () => {
-    await signOutSupabase();
+    // R2: Keluar di kartu login = akhiri SEMUA sesi (Supabase + role
+    // demo + cookie gerbang), tanpa menghapus data workspace dan tanpa
+    // navigasi (kartu tetap tampil sebagai formulir login). Sebelum
+    // R2 hanya signOutSupabase. signOutSupabase mengembalikan {error}
+    // sehingga kegagalan tercatat jujur di result, bukan ditelan.
+    const result = await logoutSessionsOnly({
+      logoutRole,
+      hasSupabaseSession: currentUserEmail !== null,
+      signOutSupabase,
+    });
+    if (!result.allAttemptedOk) {
+      console.warn('[logout] partial failure:', result.errors);
+    }
     setCurrentUserEmail(null);
   };
 
   const spinner = <Loader2 size={15} className="animate-spin" />;
+
+  /** Maskot mengetik = salah satu kolom kata sandi terisi (dan belum sukses). */
+  const isTypingPassword = (password.length > 0 || confirmPassword.length > 0) && !loginSuccess;
+  const mascotStateClass = loginSuccess ? ' sac-mascot-success' : isTypingPassword ? ' sac-mascot-typing' : '';
+  const mascotBlock = (
+    <>
+      <div className="sac-mascot">
+        <img src="/images/mascot-login-3d.png" alt="" aria-hidden="true" />
+      </div>
+      <div className="sac-mascot-bubble sac-mascot-bubble-peek" aria-hidden="true">
+        🙈
+      </div>
+      <div className="sac-mascot-bubble sac-mascot-bubble-thumb" aria-hidden="true">
+        👍
+      </div>
+      <div className="sac-mascot-note" aria-hidden="true">
+        Berhasil! Mengalihkan ke workspace…
+      </div>
+    </>
+  );
 
   return (
     <div className="sac-page">
@@ -329,7 +383,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
             </div>
 
             {/* ---- Overlay geser ---- */}
-            <div className="sac-overlay-container" aria-hidden="true">
+            <div className={`sac-overlay-container${mascotStateClass}`} aria-hidden="true">
               <div className="sac-overlay">
                 <div className="sac-overlay-panel sac-overlay-left">
                   <div className="sac-brandmark">
@@ -340,6 +394,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
                   <button type="button" className="sac-btn sac-ghost" onClick={() => switchMode(false)} tabIndex={-1}>
                     Masuk
                   </button>
+                  {mascotBlock}
                 </div>
                 <div className="sac-overlay-panel sac-overlay-right">
                   <div className="sac-brandmark">
@@ -350,6 +405,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
                   <button type="button" className="sac-btn sac-ghost" onClick={() => switchMode(true)} tabIndex={-1}>
                     Daftar
                   </button>
+                  {mascotBlock}
                 </div>
               </div>
             </div>

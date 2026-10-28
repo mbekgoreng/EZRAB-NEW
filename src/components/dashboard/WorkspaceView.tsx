@@ -344,6 +344,23 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
   };
 
   // Handle Project Creation from Centralized Modal
+  /**
+   * R2: SATU handler keluar workspace — dipakai TopBar (onLogout) dan
+   * Pengaturan (onLogout lewat PengaturanView). Isinya sama dengan
+   * handler inline lama di TopBar: reset sesi co-assistant + tutup
+   * chatbox + kembali ke landing. Data proyek TIDAK dihapus di sini
+   * (keputusan produk yang sudah ada; penghapusan transien/sesi
+   * dilakukan logoutAll sebelum handler ini dipanggil).
+   */
+  const handleWorkspaceLogout = () => {
+    // Tanpa confirm: confirm browser auto-dismiss di pengujian membuat
+    // tombol keluar tampak mati; keluar ke landing tidak menghapus data
+    // (workspace tersimpan lokal dan bisa dibuka lagi lewat gerbang).
+    coAssistantService.resetSession();
+    setCoAssistantMode('closed');
+    if (onBackToLanding) onBackToLanding();
+  };
+
   const handleProjectCreated = (newProj: Project) => {
     setActivities((prev) => [
       { text: `Proyek baru "${newProj.name}" (${newProj.creationMethod || 'manual'}) telah dibuat`, time: 'Baru saja', type: 'create' },
@@ -490,14 +507,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
               setActiveMenu(menu);
             }
           }}
-          onLogout={() => {
-            // Tanpa confirm: confirm browser auto-dismiss di pengujian membuat
-            // tombol keluar tampak mati; keluar ke landing tidak menghapus data
-            // (workspace tersimpan lokal dan bisa dibuka lagi lewat gerbang).
-            coAssistantService.resetSession();
-            setCoAssistantMode('closed');
-            if (onBackToLanding) onBackToLanding();
-          }}
+          onLogout={handleWorkspaceLogout}
         />
         )}
 
@@ -805,6 +815,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
               initialTab={pengaturanActiveTab}
               initialScope={route.scope === 'project' ? 'PROJECT' : 'GLOBAL'}
               onNavigateTab={(tab) => setActiveMenu(tab)}
+              onLogout={handleWorkspaceLogout}
             />
           </main>
         ) : activeMenu === 'subscription' ? (

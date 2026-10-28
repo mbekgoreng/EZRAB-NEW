@@ -21,6 +21,18 @@
  * agar alur login per role bisa dicoba siapa pun. JANGAN gunakan mekanisme ini
  * untuk data produksi yang sensitif — gunakan autentikasi server (Supabase)
  * yang sudah tersedia di AuthModal untuk akun nyata.
+ * ----------------------------------------------------------------------------
+ *  BATASAN DEMO (R1, hardening 2026-10-28 — default-deny):
+ * ----------------------------------------------------------------------------
+ *  Role demo HANYA tampilan/demo. RoleId yang tersimpan di browser BUKAN
+ *  identitas terverifikasi dan BUKAN otorisasi server: siapa pun bisa
+ *  menulis nilai apa pun ke localStorage, jadi sesi role yang dipulihkan
+ *  dari penyimpanan tidak membuktikan apa pun. JANGAN PERNAH mengirim
+ *  role demo ke endpoint server sebagai bukti hak akses, dan JANGAN
+ *  PERNAH mempercayainya di sisi server. Kemampuan sensitif (manage-users,
+ *  manage-security, verify-prices) hanya aktif bila PIN dimasukkan di tab
+ *  ini (lihat SENSITIVE_CAPABILITIES + resolveCapability di bawah);
+ *  sesi yang hanya dipulihkan dari localStorage tidak mendapatkannya.
  * ============================================================================
  */
 
@@ -121,4 +133,55 @@ export function roleHasCapability(roleId: string, capability: RoleCapability): b
   const account = getRoleAccount(roleId);
   if (!account) return false;
   return account.capabilities.includes(capability);
+}
+
+/** Semua nama capability yang dikenal. Nama di luar daftar ini selalu ditolak. */
+export const ALL_CAPABILITIES: RoleCapability[] = [
+  'view-dashboard',
+  'edit-estimate',
+  'export-doc',
+  'manage-users',
+  'manage-security',
+  'verify-prices',
+  'manage-blog',
+];
+
+/**
+ * Capability sensitif (R1): tidak pernah diberikan hanya karena sebuah
+ * roleId tersimpan di browser. Sesi yang dipulihkan dari localStorage
+ * (termasuk yang dipalsukan) tidak mendapatkannya; hanya sesi yang
+ * PIN-nya dimasukkan di tab ini (pinVerifiedInTab) yang mendapatkannya,
+ * dan itu pun hanya bila role tersebut memang memilikinya.
+ * Catatan: role demo TIDAK punya jalur otorisasi server sama sekali, jadi
+ * "terverifikasi" di sini berarti PIN demo di tab ini — bukan otorisasi
+ * server. Jangan pakai daftar ini untuk mengesahkan akses server.
+ */
+export const SENSITIVE_CAPABILITIES: RoleCapability[] = [
+  'manage-users',
+  'manage-security',
+  'verify-prices',
+];
+
+/**
+ * Resolver capability murni (R1, default-deny). Dipakai RoleContext dan
+ * diuji langsung oleh suite authHardeningR1R2.
+ *
+ * Aturan, berurutan:
+ *  1. Tanpa sesi -> false (semua capability, tanpa kecuali).
+ *  2. Nama capability tak dikenal -> false.
+ *  3. Role tidak memiliki capability itu -> false.
+ *  4. Capability sensitif + PIN tidak dimasukkan di tab ini -> false.
+ *  5. Selain itu -> true.
+ */
+export function resolveCapability(
+  session: { roleId: string } | null,
+  capability: string,
+  pinVerifiedInTab: boolean,
+): boolean {
+  if (!session) return false;
+  if (!(ALL_CAPABILITIES as string[]).includes(capability)) return false;
+  const cap = capability as RoleCapability;
+  if (!roleHasCapability(session.roleId, cap)) return false;
+  if (SENSITIVE_CAPABILITIES.includes(cap) && !pinVerifiedInTab) return false;
+  return true;
 }

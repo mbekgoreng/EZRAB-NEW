@@ -210,6 +210,18 @@ export function resolveNavCommand(rawInput: string): NavResolution {
   const hasVerb = NAV_VERBS.test(text) || LEADING_KE.test(text);
   const aliasHits = findAliasMatch(text);
 
+  // Remediasi Batch 1 (2026-10-28): pertanyaan prosedural "cara mengekspor
+  // ke file" BUKAN permintaan navigasi — jangan diubah menjadi kartu
+  // "Buka …" (itulah yang terjadi pada Q18). Kembalikan 'none' agar
+  // routeIntent menjawab dengan langkah how-to deterministik. Perintah
+  // navigasi ("cara membuka …") tetap ditangani cabang HOWTO di bawah,
+  // karena ia tidak mengandung verba ekspor.
+  const EXPORT_VERBS = /\b(mengekspor|mengekspor|ekspor|export|mengunduh|unduh|download)\b/;
+  const FILE_FORMATS = /\b(excel|xlsx|pdf)\b/;
+  if (EXPORT_VERBS.test(text) && FILE_FORMATS.test(text) && !NAV_VERBS.test(text)) {
+    return { mode: 'none' };
+  }
+
   // ---- "Bagaimana cara membuka X" / "di mana menu X" → saran, bukan auto-nav.
   if (HOWTO.test(text) && aliasHits.length > 0) {
     const entry = aliasHits[0].entry;

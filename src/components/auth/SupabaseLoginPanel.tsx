@@ -6,6 +6,8 @@
 import React, { useState } from 'react';
 import { AlertCircle, ArrowLeft, Loader2, LogOut, Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
+import { useRole } from '../../auth/RoleContext';
+import { logoutSessionsOnly } from '../../auth/logoutAll';
 
 interface Props {
   onSuccess: () => void;
@@ -27,6 +29,7 @@ function GoogleIcon() {
 
 export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, initialMode = 'signin' }) => {
   const { user, loading, signIn, signUp, signInWithGoogle, signOut } = useAuth();
+  const { logoutRole } = useRole();
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -57,7 +60,26 @@ export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, 
           <button type="button" onClick={onSuccess} style={primaryBtn}>
             Lanjut ke Aplikasi
           </button>
-          <button type="button" onClick={() => void signOut()} style={ghostBtn}>
+          <button
+            type="button"
+            onClick={() => {
+              // R2: Keluar di panel login = akhiri SEMUA sesi (Supabase
+              // + role demo + cookie gerbang), tanpa menghapus data
+              // workspace dan tanpa navigasi (panel tetap tampil
+              // sebagai formulir login). Sebelum R2 hanya signOut.
+              void (async () => {
+                const result = await logoutSessionsOnly({
+                  logoutRole,
+                  hasSupabaseSession: !!user,
+                  signOutSupabase: signOut,
+                });
+                if (!result.allAttemptedOk) {
+                  console.warn('[logout] partial failure:', result.errors);
+                }
+              })();
+            }}
+            style={ghostBtn}
+          >
             <LogOut size={14} /> Keluar
           </button>
         </div>

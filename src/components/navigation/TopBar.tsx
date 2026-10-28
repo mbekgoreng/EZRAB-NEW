@@ -73,6 +73,8 @@ const MENU_SEARCH_INDEX: Array<{ id: string; label: string; keywords: string }> 
   { id: 'pengaturan', label: 'Pengaturan', keywords: 'pengaturan settings setelan' },
 ];
 import { useRole } from '../../auth/RoleContext';
+import { useAuth } from '../../auth/AuthContext';
+import { logoutAll } from '../../auth/logoutAll';
 import { useTheme, type PremiumTheme } from '../../context/ThemeContext';
 import { CreditBalance } from '../../ai-credits/components/CreditBalance';
 import { ONBOARDING_OPEN_EVENT } from '../onboarding/OnboardingTour';
@@ -110,6 +112,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 }) => {
 const { t, lang, setLang } = useI18n();
   const { activeRole, logoutRole } = useRole();
+  const { session: supabaseSession, signOut: signOutAuth } = useAuth();
   const [currentUser, setCurrentUser] = useState(() => ClientUserManagementService.getCurrentUser());
   const [helpOpen, setHelpOpen] = useState(false);
   const [shortcutOpen, setShortcutOpen] = useState(false);
@@ -1321,17 +1324,30 @@ color: 'var(--ez-hue-violet-text)', background: 'var(--ez-hue-violet-bg)',
                 <button
                   onClick={() => {
                     setProfileOpen(false);
-                    if (onLogout) {
-                      logoutRole();
-                      onLogout();
-                    } else {
-                      // Tanpa onLogout: kembali ke landing langsung (tanpa
-                      // confirm — confirm browser auto-dismiss di pengujian
-                      // membuat tombol ini tampak mati).
-                      logoutRole();
-                      navigateTo('/');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }
+                    // R2: keluar lewat alur terpusat (role + Supabase +
+                    // cookie gerbang + kunci transien). Navigasi tetap
+                    // milik pemanggil di bawah — logoutAll tidak
+                    // menavigasi sendiri. Kegagalan parsial hanya
+                    // dicatat, tidak menghentikan keluar lokal.
+                    void (async () => {
+                      const result = await logoutAll({
+                        logoutRole,
+                        hasSupabaseSession: !!supabaseSession,
+                        signOutSupabase: signOutAuth,
+                      });
+                      if (!result.allAttemptedOk) {
+                        console.warn('[logout] partial failure:', result.errors);
+                      }
+                      if (onLogout) {
+                        onLogout();
+                      } else {
+                        // Tanpa onLogout: kembali ke landing langsung (tanpa
+                        // confirm — confirm browser auto-dismiss di pengujian
+                        // membuat tombol ini tampak mati).
+                        navigateTo('/');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }
+                    })();
                   }}
                   style={{
                     width: '100%',

@@ -258,10 +258,10 @@
   .ez-stacked-ambient-glow,
   .ez-stacked-nav-pills { display: none !important; }
   .ez-stacked-stage-canvas {
-    display: grid;
+    display: grid !important;
     width: 100% !important;
     height: auto !important;
-    max-height: none;
+    max-height: none !important;
     gap: 18px;
   }
   .ez-stacked-card-layer {
@@ -391,6 +391,29 @@
   .ez-hero-actions .ez-btn-primary-pill,
   .ez-hero-actions .ez-btn-outline-pill { width: 100%; }
   .ez-minimal-footer-nav-groups { grid-template-columns: 1fr !important; }
+
+  /* From Drawings to Decisions: matikan scroll-jack sticky di mobile.
+     Section 160vh + viewport sticky terasa seperti layar putih beku, dan
+     CSS-nya hanya ada di about-page.css yang tidak dimuat rute landing. */
+  .ez-drawings-decisions-scroll-track { min-height: auto !important; }
+  .ez-drawings-decisions-viewport {
+    position: relative !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 88px 20px 64px !important;
+  }
+  .ez-statement-hero-line1,
+  .ez-statement-hero-line2 { font-size: clamp(34px, 8.5vw, 54px) !important; }
+
+  /* Diagram radial Connected Data: box 640px dipertahankan (node px tidak
+     aman diskalakan), tapi wrapper dipaksa selebar kartu + bisa digeser. */
+  .ez-radial-stage-wrapper {
+    width: 100% !important;
+    max-width: 100%;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ez-radial-network-box { flex-shrink: 0; }
 }
 
 @media (max-width: 340px) {

@@ -4,13 +4,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   Fingerprint,
-  HardHat,
   Loader2,
-  Ruler,
-  Calculator,
-  Compass,
-  Users2,
-  ShieldCheck,
 } from 'lucide-react';
 import { ROLE_ACCOUNTS, type RoleId } from '../../auth/roleAccounts';
 import { useRole } from '../../auth/RoleContext';
@@ -18,21 +12,17 @@ import { useI18n } from '../../i18n';
 import { isSupabaseAuthEnabled } from '../../lib/supabase';
 import { SupabaseLoginPanel } from './SupabaseLoginPanel';
 
-const ROLE_ICONS: Record<RoleId, React.ReactNode> = {
-  qs: <Ruler size={20} />,
-  estimator: <Calculator size={20} />,
-  kontraktor: <HardHat size={20} />,
-  konsultan: <Compass size={20} />,
-  team: <Users2 size={20} />,
+/** Gambar peran (generate AI, gaya seragam: helm putih + rompi biru). */
+const ROLE_IMAGES: Record<RoleId, string> = {
+  qs: '/images/roles/role-qs.webp',
+  estimator: '/images/roles/role-estimator.webp',
+  kontraktor: '/images/roles/role-kontraktor.webp',
+  konsultan: '/images/roles/role-konsultan.webp',
+  team: '/images/roles/role-team.webp',
 };
 
-const ROLE_COLORS: Record<RoleId, string> = {
-  qs: '#2563EB',
-  estimator: '#059669',
-  kontraktor: '#D97706',
-  konsultan: '#7C3AED',
-  team: '#0D9488',
-};
+/** Satu aksen biru login untuk semua kartu role (bahasa desain login EZRAB). */
+const ROLE_BLUE = '#2563eb';
 
 interface RoleLoginPanelProps {
   onSuccess: () => void;
@@ -103,8 +93,8 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Title */}
-      <div>
+      {/* Title — disamakan dengan desain login: terpusat, badge biru */}
+      <div style={{ textAlign: 'center' }}>
         <div
           style={{
             display: 'inline-flex',
@@ -113,18 +103,17 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
             fontSize: '10.5px',
             fontWeight: 800,
             letterSpacing: '0.06em',
-            color: '#7C3AED',
-            background: '#F5F3FF',
-            border: '1px solid #DDD6FE',
+            color: '#1e40af',
+            background: '#eff6ff',
+            border: '1px solid #bfdbfe',
             padding: '4px 10px',
             borderRadius: '999px',
             marginBottom: '10px',
           }}
         >
-          <ShieldCheck size={12} />
           {t('auth.mode_demo')}
         </div>
-        <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', margin: '0 0 6px' }}>
+        <h3 style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', margin: '0 0 6px' }}>
           {t('auth.judul_role')}
         </h3>
         <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: 1.55 }}>
@@ -163,7 +152,7 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
           {/* Role selection grid */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {ROLE_ACCOUNTS.map((role) => {
-              const color = ROLE_COLORS[role.id];
+              const color = ROLE_BLUE;
               return (
                 <button
                   key={role.id}
@@ -172,7 +161,7 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
                   style={{
                     display: 'flex', alignItems: 'center', gap: '14px', textAlign: 'left',
                     padding: '12px 14px', borderRadius: '12px',
-                    border: '1px solid #e2e8f0', background: '#ffffff', cursor: 'pointer',
+                    border: '1px solid transparent', background: '#eef2f7', cursor: 'pointer',
                     transition: 'all 0.15s',
                   }}
                   onMouseEnter={(e) => {
@@ -181,20 +170,19 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
                     e.currentTarget.style.transform = 'translateY(-1px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.borderColor = 'transparent';
                     e.currentTarget.style.boxShadow = 'none';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <div
+                  <img
+                    src={ROLE_IMAGES[role.id]}
+                    alt=""
                     style={{
-                      width: '42px', height: '42px', borderRadius: '10px', flexShrink: 0,
-                      background: `${color}14`, color, display: 'flex',
-                      alignItems: 'center', justifyContent: 'center',
+                      width: '56px', height: '56px', borderRadius: '10px', flexShrink: 0,
+                      objectFit: 'cover', objectPosition: 'top center', background: '#eef2f7',
                     }}
-                  >
-                    {ROLE_ICONS[role.id]}
-                  </div>
+                  />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{role.name}</div>
                     <div style={{ fontSize: '11.5px', fontWeight: 600, color }}>{role.title}</div>
@@ -215,24 +203,23 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
           {/* Selected role summary */}
           {(() => {
             const role = ROLE_ACCOUNTS.find((r) => r.id === selectedRole)!;
-            const color = ROLE_COLORS[role.id];
+            const color = ROLE_BLUE;
             return (
               <div
                 style={{
                   display: 'flex', alignItems: 'center', gap: '12px',
                   padding: '12px 14px', borderRadius: '12px',
-                  background: `${color}0d`, border: `1px solid ${color}33`,
+                  background: '#eff6ff', border: '1px solid #bfdbfe',
                 }}
               >
-                <div
+                <img
+                  src={ROLE_IMAGES[role.id]}
+                  alt=""
                   style={{
                     width: '40px', height: '40px', borderRadius: '10px',
-                    background: `${color}1a`, color, display: 'flex',
-                    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    objectFit: 'cover', objectPosition: 'top center', background: '#eef2f7', flexShrink: 0,
                   }}
-                >
-                  {ROLE_ICONS[role.id]}
-                </div>
+                />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{role.name}</div>
                   <div style={{ fontSize: '11.5px', color: '#64748b' }}>{role.title}</div>
@@ -269,16 +256,16 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
                   maxLength={6}
                   style={{
                     width: '100%', height: '52px', padding: '0 14px 0 44px',
-                    borderRadius: '10px', border: '1px solid #cbd5e1', background: '#ffffff',
+                    borderRadius: '10px', border: '1px solid transparent', background: '#eef2f7',
                     fontSize: '22px', fontWeight: 700, letterSpacing: '0.5em', textAlign: 'center',
                     color: '#0f172a', outline: 'none',
                   }}
                   onFocus={(e) => {
-                    e.currentTarget.style.borderColor = '#7C3AED';
-                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(124, 58, 237, 0.15)';
+                    e.currentTarget.style.borderColor = '#2563eb';
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.15)';
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.borderColor = '#cbd5e1';
+                    e.currentTarget.style.borderColor = 'transparent';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
                 />
@@ -294,7 +281,7 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
                     key={i}
                     style={{
                       width: '12px', height: '12px', borderRadius: '50%',
-                      background: i < pin.length ? '#7C3AED' : '#e2e8f0',
+                      background: i < pin.length ? '#2563eb' : '#e2e8f0',
                       transition: 'background 0.15s',
                     }}
                   />
@@ -307,12 +294,13 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
               disabled={loading || pin.length !== 6}
               style={{
                 width: '100%', height: '44px', marginTop: '4px',
-                background: loading || pin.length !== 6 ? '#c4b5fd' : '#7C3AED',
-                color: '#ffffff', border: 'none', borderRadius: '8px',
-                fontSize: '14.5px', fontWeight: 650,
+                background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 55%, #38bdf8 130%)',
+                opacity: loading || pin.length !== 6 ? 0.65 : 1,
+                color: '#ffffff', border: 'none', borderRadius: '22px',
+                fontSize: '14.5px', fontWeight: 800,
                 cursor: loading || pin.length !== 6 ? 'not-allowed' : 'pointer',
-                transition: 'background 0.2s, transform 0.15s',
-                boxShadow: '0 4px 12px rgba(124, 58, 237, 0.25)',
+                transition: 'background 0.2s, transform 0.15s, opacity 0.2s',
+                boxShadow: '0 10px 24px -10px rgba(37, 99, 235, 0.7)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
               }}
             >

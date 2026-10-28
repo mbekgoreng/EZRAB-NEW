@@ -1,6 +1,6 @@
 /**
  * /api/access/[action] — SATU Serverless Function untuk gerbang akses
- * sementara: session | verify.
+ * sementara: session | verify | logout.
  *
  * Digabung dari 2 file endpoint terpisah (api/access/session.js +
  * api/access/verify.js) agar total fungsi deployment ≤ 12 (batas plan
@@ -8,6 +8,8 @@
  * segmen [action] dari URL, jadi URL publik tidak berubah:
  * GET /api/access/session dan POST /api/access/verify tetap sama.
  * Isi kedua handler di bawah ini verbatim dari file asalnya.
+ * Aksi logout ditambahkan R2 (2026-10-28) di file yang sama supaya
+ * jumlah fungsi tetap — bukan endpoint baru.
  */
 import { applyCors, rateLimit, readJsonBody } from '../_lib/security.js';
 import {
@@ -16,6 +18,7 @@ import {
   accessCodeMatches,
   createSessionToken,
   buildSessionCookie,
+  buildClearCookie,
 } from '../_lib/accessGate.js';
 
 /**
@@ -98,7 +101,35 @@ async function verifyHandler(req, res) {
   return res.status(200).json({ success: true });
 }
 
-const ACTIONS = { session: sessionHandler, verify: verifyHandler };
+/**
+ * POST /api/access/logout — akhiri sesi gerbang akses (R2).
+ *
+ * - Menghapus cookie `ezrab_access` dengan atribut yang SAMA persis
+ *   dengan saat cookie dibuat (Path=/, HttpOnly, SameSite=Lax,
+ *   Secure-bila-HTTPS) lewat buildClearCookie — atribut yang tidak
+ *   cocok tidak akan menghapus cookie di browser.
+ * - Idempotent dan tidak butuh konfigurasi: berhasil (200) juga bila
+ *   tidak ada cookie, cookie rusak, atau env belum dikonfigurasi.
+ *   Alasannya: cookie basi harus bisa dibersihkan justru saat env
+ *   dicabut, dan tidak ada secret yang terlibat sehingga tidak ada
+ *   yang perlu di-rate-limit di sini.
+ * - Tidak membaca body, tidak mencatat cookie, tidak mengubah model
+ *   gerbang middleware (jalur /api/access/* memang dikecualikan dari
+ *   gerbang, sehingga logout selalu terjangkau).
+ */
+async function logoutHandler(req, res) {
+  if (!applyCors(req, res)) {
+    return res.status(403).json({ success: false, error: 'Origin tidak diizinkan' });
+  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
+  }
+  res.setHeader('Set-Cookie', buildClearCookie(req));
+  return res.status(200).json({ success: true });
+}
+
+const ACTIONS = { session: sessionHandler, verify: verifyHandler, logout: logoutHandler };
 
 export default async function handler(req, res) {
   const action = req.query?.action;

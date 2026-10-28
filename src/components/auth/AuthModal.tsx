@@ -81,8 +81,8 @@ const [showRole, setShowRole] = useState(false);
             maxHeight: '90vh',
             overflowY: 'auto',
             background: 'var(--ez-color-surface)',
-            borderRadius: 'var(--ez-radius-card)',
-            boxShadow: '0 24px 70px -18px rgba(15, 23, 42, 0.5)',
+            borderRadius: '18px',
+            boxShadow: '0 24px 70px -18px rgba(37, 99, 235, 0.35), 0 10px 24px rgba(15, 23, 42, 0.12)',
             padding: '28px 30px',
             position: 'relative',
           }}

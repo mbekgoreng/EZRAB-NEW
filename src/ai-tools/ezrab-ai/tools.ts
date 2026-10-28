@@ -9,6 +9,7 @@ import { aiToolsError, AIToolsStructuredError } from '../types';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
 import { ahspChatPriceSuffix } from './ahspChatPrice';
+import { searchChatAhsp, formatChatAhspResult } from './chatSearch';
 import { masterBuildingTemplateRegistry } from '../../data/buildingTemplates/masterTemplateRegistry';
 import { ProjectSnapshot, formatIDR } from './projectContext';
 
@@ -157,24 +158,13 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
   // ===== Knowledge tools: AI core knows the app's data =====
   {
     name: 'cari_ahsp',
-    description: 'Mencari AHSP 2026 resmi (kode, nama pekerjaan, satuan, harga satuan). Argumen: kata_kunci (wajib).',
+    description: 'Mencari AHSP 2026 resmi (kode, nama pekerjaan, satuan, harga satuan). Argumen: kata_kunci (wajib), satuan (opsional, mis. "m2") — bila satuan diisi, hasil dengan satuan berbeda ditandai peringatan dan tidak dianggap jawaban yang cocok. Kode AHSP eksak (mis. "3.7.4") dicari lewat lookup eksak; kode yang tidak ada dijawab TIDAK DITEMUKAN tanpa substitusi.',
     invoke: (args) => {
       const q = String(args.kata_kunci ?? args.query ?? '').trim();
       if (!q) return 'ERROR: kata_kunci wajib diisi.';
+      const satuan = String(args.satuan ?? '').trim() || undefined;
       try {
-        const hits = officialAhspRepository.searchOfficialAhsp(q, { limit: 8 });
-        if (hits.length === 0) return `Tidak ditemukan AHSP untuk "${q}".`;
-        return hits.map((h, i) => {
-          const it: any = h.item;
-          const title = it.title ?? it.name ?? '-';
-          // Provenance diteruskan apa adanya dari record kanonis (dokumen
-          // sumber + status verifikasi item) — tidak dinaikkan/diturunkan.
-          const prov: string[] = [];
-          if (it.sourceDocument) prov.push(`Sumber: ${it.sourceDocument}`);
-          if (it.status) prov.push(`Status verifikasi: ${it.status}`);
-          const head = `${i + 1}. [${it.code ?? '-'}] ${title} — ${it.unit ?? ''}${ahspChatPriceSuffix(it)}`;
-          return prov.length ? `${head}\n   ${prov.join(' · ')}` : head;
-        }).join('\n');
+        return formatChatAhspResult(searchChatAhsp(q, satuan ? { unit: satuan } : undefined));
       } catch (e: any) {
         return 'ERROR: gagal mencari AHSP: ' + (e?.message ?? e);
       }

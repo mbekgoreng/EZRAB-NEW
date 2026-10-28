@@ -65,6 +65,9 @@ import { UserRole, Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
 import { useI18n, LANG_OPTIONS, type Lang } from '../../i18n';
 import { useRole } from '../../auth/RoleContext';
+import { useAuth } from '../../auth/AuthContext';
+import { logoutAll } from '../../auth/logoutAll';
+import { navigateTo } from '../../routing/routes';
 import { ONBOARDING_OPEN_EVENT } from '../onboarding/OnboardingTour';
 import { TutorialCenter } from '../onboarding/tutorials/TutorialCenter';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -134,6 +137,8 @@ interface UnifiedSettingsViewProps {
   initialTab?: SettingsTabId | string;
   initialScope?: 'GLOBAL' | 'PROJECT';
   onNavigateTab?: (tab: string) => void;
+  /** Keluar workspace (dari WorkspaceView: reset co-assistant + landing). */
+  onLogout?: () => void;
 }
 
 interface SearchableSettingItem {
@@ -149,10 +154,12 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   initialTab = 'profile',
   initialScope,
   onNavigateTab,
+  onLogout,
 }) => {
   const { currentProject, projects, setCurrentProjectId, updateProject, refreshProjectTotals } = useProject();
   const { t, lang, setLang } = useI18n();
   const { activeRole, logoutRole, hasCapability } = useRole();
+  const { session: supabaseSession, signOut: signOutAuth } = useAuth();
 
   // Scope: 'GLOBAL' (Account & Workspace) vs 'PROJECT' (Project Configuration)
   const [scope, setScope] = useState<'GLOBAL' | 'PROJECT'>(() => {
@@ -1150,7 +1157,28 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                     </div>
                     <button
                       type="button"
-                      onClick={logoutRole}
+                      onClick={() => {
+                        // R2: keluar lewat alur terpusat yang sama dengan
+                        // TopBar (role + Supabase + cookie gerbang +
+                        // kunci transien), lalu keluar workspace.
+                        // Sebelum R2 tombol ini hanya logoutRole.
+                        void (async () => {
+                          const result = await logoutAll({
+                            logoutRole,
+                            hasSupabaseSession: !!supabaseSession,
+                            signOutSupabase: signOutAuth,
+                          });
+                          if (!result.allAttemptedOk) {
+                            console.warn('[logout] partial failure:', result.errors);
+                          }
+                          if (onLogout) {
+                            onLogout();
+                          } else {
+                            navigateTo('/');
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }
+                        })();
+                      }}
                       style={{
                         display: 'flex', alignItems: 'center', gap: '6px',
                         height: '34px', padding: '0 14px', borderRadius: '10px',

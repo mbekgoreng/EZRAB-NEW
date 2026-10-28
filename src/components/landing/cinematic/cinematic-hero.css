@@ -199,7 +199,7 @@
 
 .ch-stage-glow-white {
   position: absolute;
-  inset: -32%;
+  inset: -58%;
   z-index: 0;
   pointer-events: none;
   background: radial-gradient(ellipse closest-side at 50% 50%, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.14) 55%, transparent 80%);
@@ -209,14 +209,16 @@
 
 .ch-stage-glow {
   position: absolute;
-  inset: -22%;
+  inset: -48%;
   z-index: 0;
   pointer-events: none;
   transform-origin: 50% 50%;
-  /* Cahaya DIPUSATKAN di tengah tablet: inset simetris di semua sisi
-     (sebelumnya menjulur jauh ke kiri), jadi halo mengelilingi tablet
-     merata. Spektrum warna tetap hijau kiri -> biru kanan; yang
-     berubah hanya posisi kotaknya — kini terpusat, bukan condong kiri. */
+  /* Cahaya LEBAR + TERPUSAT (disetujui user 2026-10-28 malam, dari
+     pratinjau headless): inset simetris -48% supaya halo meluber jauh
+     mengelilingi tablet seperti contoh screenshot — versi rapat
+     (-22%) DITOLAK user karena cahaya harus keluar banyak. Spektrum
+     warna tetap hijau kiri -> biru kanan; posisi tetap terpusat,
+     bukan condong kiri. */
      hijau konstruksi -> teal -> cyan blueprint -> biru EZRAB ->
      emas hangat lampu proyek di ujung kanan. Hijau diletakkan di
      26% (bukan 0%) supaya tetap terbaca — ujung gradient selalu

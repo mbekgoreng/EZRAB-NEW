@@ -5,12 +5,15 @@ interface PengaturanViewProps {
   initialTab?: 'perusahaan' | 'estimasi' | 'ai' | 'keamanan' | SettingsTabId | string;
   initialScope?: 'GLOBAL' | 'PROJECT';
   onNavigateTab?: (tab: string) => void;
+  /** Diteruskan ke UnifiedSettingsView (tombol Keluar). */
+  onLogout?: () => void;
 }
 
 export const PengaturanView: React.FC<PengaturanViewProps> = ({
   initialTab = 'profile',
   initialScope,
   onNavigateTab,
+  onLogout,
 }) => {
   return (
     <div
@@ -35,6 +38,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
         initialTab={initialTab}
         initialScope={initialScope}
         onNavigateTab={onNavigateTab}
+        onLogout={onLogout}
       />
     </div>
   );

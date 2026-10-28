@@ -28,6 +28,7 @@ import { resolveQtoSyncPrice, resolveQtoSyncCode } from '../lib/qtoSyncPricing';
 import { checkAhspIdentitySafety } from '../data/priceDatabase2026/ahspDisplayPolicy';
 import { resolvePriceStatus } from '../engine/pricing/priceStatus';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
+import { clearLogoutInProgress, isLogoutInProgress } from '../auth/sessionBoundary';
 import { projectPriceEngine } from '../engine/pricing/projectPriceEngine';
 import {
   resolveInitialProjects,
@@ -659,10 +660,26 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
   }, []);
 
+  // R2: sesi workspace baru dimulai saat provider ini mount — penanda
+  // logout dari sesi sebelumnya dibersihkan, supaya flush unmount sesi
+  // baru ini kembali normal. Tanpa ini, flush sesi baru pun akan
+  // dilewati (kehilangan penyimpanan saat tab ditutup).
+  useEffect(() => {
+    clearLogoutInProgress();
+  }, []);
+
   // Debounced Sync to LocalStorage (hardened)
   // Extracted so unmount can flush pending writes instead of dropping them.
   const flushToStorageRef = useRef<() => void>(() => {});
   const flushToStorage = useCallback(() => {
+    // R2: saat logout sedang berlangsung, JANGAN menulis kembali state
+    // dari memori ke localStorage. Flush unmount inilah yang akan
+    // menghidupkan kembali kunci transien yang baru dibersihkan
+    // logoutAll (penunjuk proyek aktif) — dan menulis state sesi lama
+    // di atas penyimpanan yang sudah dibersihkan. Badan data proyek
+    // tetap utuh di storage (tidak dihapus logout), jadi melewati
+    // flush ini tidak menghilangkan data apa pun.
+    if (isLogoutInProgress()) return;
     const failures: string[] = [];
     const saveOne = (key: string, data: unknown) => {
       const result: SaveResult = saveVersioned(key, data);

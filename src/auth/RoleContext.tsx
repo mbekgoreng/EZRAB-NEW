@@ -8,11 +8,12 @@ import React, {
 } from 'react';
 import {
   getRoleAccount,
-  roleHasCapability,
+  resolveCapability,
   verifyRolePin,
   type RoleAccount,
   type RoleCapability,
 } from './roleAccounts';
+import { clearLogoutInProgress } from './sessionBoundary';
 
 /** Kunci penyimpanan sesi role aktif di localStorage. */
 export const ROLE_STORAGE_KEY = 'ezrab_role_v1';
@@ -37,13 +38,24 @@ export interface RoleContextValue {
   /** Keluar dari mode role (menghapus sesi). */
   logoutRole: () => void;
   /**
-   * Cek kemampuan role aktif. Jika tidak ada sesi role, dianggap tidak
-   * dibatasi (perilaku existing untuk pengguna non-role tetap sama).
+   * Cek kemampuan role aktif (R1, default-deny).
+   * - Tanpa sesi -> false untuk semua capability.
+   * - Nama capability tak dikenal -> false.
+   * - Capability sensitif (manage-users, manage-security, verify-prices)
+   *   hanya true bila PIN dimasukkan di tab ini; sesi yang dipulihkan
+   *   dari localStorage (termasuk yang dipalsukan) tidak mendapatkannya.
    */
   hasCapability: (capability: RoleCapability) => boolean;
 }
 
-const readStoredSession = (): RoleSession | null => {
+/**
+ * Membaca sesi role tersimpan. Diekspor untuk pengujian.
+ * PERHATIAN: fungsi ini hanya memvalidasi BENTUK (roleId string yang
+ * dikenal). Ia TIDAK membuktikan keaslian — nilai localStorage bisa
+ * ditulis siapa pun. Keaslian untuk capability sensitif ditegakkan
+ * terpisah lewat pinVerifiedInTab di provider (lihat resolveCapability).
+ */
+export const readStoredSession = (): RoleSession | null => {
   try {
     const raw = localStorage.getItem(ROLE_STORAGE_KEY);
     if (!raw) return null;
@@ -67,13 +79,23 @@ const defaultRoleValue: RoleContextValue = {
   logoutRole: () => {
     /* tanpa provider: no-op */
   },
-  hasCapability: () => true,
+  // Tanpa provider: default-deny (R1). Sebelumnya true — celah yang sama
+  // dengan perilaku tanpa-sesi di provider.
+  hasCapability: () => false,
 };
 
 const RoleContext = createContext<RoleContextValue | undefined>(undefined);
 
 export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<RoleSession | null>(() => readStoredSession());
+  /**
+   * R1: true hanya bila PIN dimasukkan lewat loginWithPin di tab ini.
+   * Sengaja TIDAK dipersist ke localStorage — nilai yang dipersist bisa
+   * dipalsukan, jadi nilai ini harus lahir dari aksi login di tab ini
+   * dan mati saat logout. Sesi yang dipulihkan dari penyimpanan
+   * (reload tab / nilai palsu) selalu mulai dengan false.
+   */
+  const [pinVerifiedInTab, setPinVerifiedInTab] = useState(false);
 
   const activeRole: RoleAccount | null = useMemo(
     () => (session ? getRoleAccount(session.roleId) ?? null : null),
@@ -103,19 +125,22 @@ export const RoleProvider: React.FC<{ children: React.ReactNode }> = ({ children
       title: account.title,
       loginAt: new Date().toISOString(),
     });
+    // Sesi baru dimulai di tab ini: PIN terverifikasi, dan penanda
+    // logout (bila ada dari sesi sebelumnya) dibersihkan.
+    setPinVerifiedInTab(true);
+    clearLogoutInProgress();
     return { ok: true as const };
   }, []);
 
   const logoutRole = useCallback(() => {
     setSession(null);
+    setPinVerifiedInTab(false);
   }, []);
 
   const hasCapability = useCallback(
-    (capability: RoleCapability): boolean => {
-      if (!session) return true; // tanpa sesi role: tidak ada pembatasan baru
-      return roleHasCapability(session.roleId, capability);
-    },
-    [session]
+    (capability: RoleCapability): boolean =>
+      resolveCapability(session, capability, pinVerifiedInTab),
+    [session, pinVerifiedInTab]
   );
 
   const value = useMemo<RoleContextValue>(

@@ -19,7 +19,12 @@ import {
 import { RabTemplateService } from '../../services/rabTemplateService';
 import { listUnifiedTemplates } from '../../services/rabTemplateCatalogAdapter';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
-import { ahspChatPriceSuffix } from './ahspChatPrice';
+import { searchChatAhsp, formatChatAhspResult } from './chatSearch';
+import {
+  EXPLAIN_AHSP_VS_ESTIMATE_TEXT,
+  METHODOLOGY_MISSING_AHSP_TEXT,
+  HOWTO_EXCEL_EXPORT_TEXT,
+} from './chatExplanations';
 import { clarifyTopicCard, clarifyPickResult } from './clarifyTopics';
 import { evaluateCalculation } from './calcIntent';
 import { buildDirectRab, displayTemplateBasisName, findDirectTemplate, formatDirectRabMessage, matchDirectRegion } from './directRab';
@@ -545,11 +550,11 @@ export function continueRabChoice(text: string): ActionResult {
 /* adanya, harga tak tersedia TIDAK PERNAH ditulis Rp0.               */
 /* ------------------------------------------------------------------ */
 
-/** Query mode 'ahsp': cari di katalog AHSP 2026 resmi (maks 6). */
+/** Query mode 'ahsp': cari di katalog AHSP 2026 resmi (maks 8, via engine chat). */
 function clarifyAhspQueryResult(query: string): ActionResult {
-  let hits: ReturnType<typeof officialAhspRepository.searchOfficialAhsp>;
+  let result: ReturnType<typeof searchChatAhsp>;
   try {
-    hits = officialAhspRepository.searchOfficialAhsp(query, { limit: 6 });
+    result = searchChatAhsp(query);
   } catch {
     return {
       ok: false,
@@ -559,32 +564,18 @@ function clarifyAhspQueryResult(query: string): ActionResult {
       ],
     };
   }
-  if (hits.length === 0) {
+  if (result.outcome === 'NOT_FOUND') {
     return {
       ok: true,
-      message:
-        `Tidak ditemukan AHSP untuk "${query}" di katalog AHSP 2026 resmi.\n\n` +
-        'Tips kata kunci: coba kata yang lebih umum — nama pekerjaannya saja (mis. "beton", ' +
-        '"pasangan bata", "galian tanah") atau potongan kode analisanya (mis. "A.4.1"). ' +
-        'Ketik kata kunci barunya langsung di sini.',
+      message: formatChatAhspResult(result),
       awaitClarify: 'ahsp',
     };
   }
-  // Format per baris PERSIS pola tool cari_ahsp (tools.ts): [kode] judul
-  // — satuan — harga; provenans (dokumen sumber + status verifikasi)
-  // diteruskan apa adanya dari record kanonis.
-  const lines = hits.map((h, i) => {
-    const it: any = h.item;
-    const title = it.title ?? it.name ?? '-';
-    const prov: string[] = [];
-    if (it.sourceDocument) prov.push(`Sumber: ${it.sourceDocument}`);
-    if (it.status) prov.push(`Status verifikasi: ${it.status}`);
-    const head = `${i + 1}. [${it.code ?? '-'}] ${title} — ${it.unit ?? ''}${ahspChatPriceSuffix(it)}`;
-    return prov.length ? `${head}\n   ${prov.join(' · ')}` : head;
-  });
+  // Format per baris mengikuti pola tool cari_ahsp (tools.ts) yang baru:
+  // [kode] judul — satuan — harga + provenance koefisien/HSD terpisah.
   return {
     ok: true,
-    message: `Hasil pencarian AHSP 2026 untuk "${query}":\n\n${lines.join('\n')}`,
+    message: `Hasil pencarian AHSP 2026 untuk "${query}":\n\n${formatChatAhspResult(result)}`,
     actions: [
       { label: 'Buka katalog AHSP 2026', action: { kind: 'navigate', menu: 'ahsp-2026' } },
       { label: 'Cari lagi', action: { kind: 'intent', intent: 'CLARIFY_PICK', param: 'ahsp:search' } },
@@ -1189,6 +1180,27 @@ export function executeIntent(
       if (!tool) return { ok: false, message: 'Pencarian AHSP tidak tersedia saat ini.' };
       const result = tool.invoke({ kata_kunci: param });
       return { ok: !result.startsWith('ERROR'), message: result };
+    }
+
+    // Remediasi Batch 1 (2026-10-28): jawaban deterministik untuk pertanyaan
+    // konseptual / metodologi / how-to — tidak lewat pencarian item.
+    case 'EXPLAIN_AHSP_VS_ESTIMATE': {
+      return { ok: true, message: EXPLAIN_AHSP_VS_ESTIMATE_TEXT };
+    }
+
+    case 'METHODOLOGY_MISSING_AHSP': {
+      return { ok: true, message: METHODOLOGY_MISSING_AHSP_TEXT };
+    }
+
+    case 'HOWTO_EXCEL_EXPORT': {
+      return {
+        ok: true,
+        message: HOWTO_EXCEL_EXPORT_TEXT,
+        // Kartu navigasi hanya PELENGKAP langkah — bukan pengganti instruksi.
+        actions: [
+          { label: 'Buka Laporan', action: { kind: 'nav-entry', entryId: 'laporan' } },
+        ],
+      };
     }
 
     case 'QUERY_MOST_EXPENSIVE_ITEMS':

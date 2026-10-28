@@ -45,6 +45,10 @@ export type ChatIntent =
   | 'CLARIFY_PICK'
   | 'CLARIFY_QUERY'
   | 'SEARCH_AHSP'
+  | 'EXPLAIN_AHSP_VS_ESTIMATE'
+  | 'METHODOLOGY_MISSING_AHSP'
+  | 'HOWTO_EXCEL_EXPORT'
+  | 'CONCEPTUAL_AHSP'
   | 'QUERY_PROJECT_TOTAL'
   | 'QUERY_PROJECT_LIST'
   | 'QUERY_MOST_EXPENSIVE_ITEMS'
@@ -92,6 +96,8 @@ interface Pattern {
   re: RegExp;
   /** extract param via capture group 1 */
   paramGroup?: boolean;
+  /** false = intent flows to AI instead of local execution (default true) */
+  localOnly?: boolean;
 }
 
 const PATTERNS: Pattern[] = [
@@ -211,6 +217,26 @@ const PATTERNS: Pattern[] = [
   { intent: 'OPEN_SPREADSHEET', re: /\b(buka|bukain|tampilkan|tampilin)\b.*\bspreadsheet\b/ },
   { intent: 'OPEN_DASHBOARD', re: /\b(buka|kembali|ke)\b.*\bdashboard\b/ },
 
+  // Remediasi Batch 1 (2026-10-28): pertanyaan konseptual / metodologi /
+  // how-to HARUS sebelum pola SEARCH_AHSP yang rakus — kata "ahsp" di
+  // dalamnya bukan perintah pencarian item. Urutan di dalam kelompok ini:
+  // how-to spesifik dulu, lalu penjelasan spesifik, lalu metodologi, lalu
+  // konseptual umum (yang mengalir ke AI sebagai prosa model, tanpa
+  // pencarian item lokal).
+  { intent: 'HOWTO_EXCEL_EXPORT', re: /\bcara\b.*\b(mengekspor|mengekspor|ekspor|export|mengunduh|unduh|download)\b.*\b(excel|xlsx)\b/ },
+  { intent: 'HOWTO_EXCEL_EXPORT', re: /\b(bagaimana|gimana)\b.*\b(ekspor|export|unduh|download)\b.*\b(excel|xlsx)\b/ },
+  { intent: 'EXPLAIN_AHSP_VS_ESTIMATE', re: /\bbeda.*\bahsp\b.*\bestimasi\b/ },
+  { intent: 'EXPLAIN_AHSP_VS_ESTIMATE', re: /\bestimasi\b.*\bbeda.*\bahsp\b/ },
+  { intent: 'METHODOLOGY_MISSING_AHSP', re: /\b(kalau|jika|apabila)\b.*\b(tidak ada|tidak tersedia|tidak ditemukan|kosong)\b.*\bahsp\b/ },
+  { intent: 'METHODOLOGY_MISSING_AHSP', re: /\bahsp\b.*\b(tidak ada|tidak tersedia|tidak ditemukan)\b.*\b(bagaimana|gimana|terus|kemudian|apa yang)\b/ },
+  { intent: 'METHODOLOGY_MISSING_AHSP', re: /\b(tidak ada|tidak tersedia|tidak ditemukan)\b.*\bahsp\b.*\b(bagaimana|gimana)\b/ },
+  // Konseptual AHSP umum -> jalur AI (prosa model, tanpa pencarian item).
+  // Bentuk telanjang ("apa itu ahsp 2026") sudah ditangani detectClarifyTopic
+  // sebelum pola; pola ini menangkap redaksi berkalimat yang lolos dari sana.
+  { intent: 'CONCEPTUAL_AHSP', re: /\b(apa itu|jelaskan|terangkan|mengapa|kenapa)\b.*\bahsp\b/, localOnly: false },
+  { intent: 'CONCEPTUAL_AHSP', re: /\bapa\b.*\bbeda\b.*\bahsp\b/, localOnly: false },
+  { intent: 'CONCEPTUAL_AHSP', re: /\bahsp\b.*\b(artinya|maksudnya|definisi|pengertian)\b/, localOnly: false },
+
   // AHSP search without keyword → clarification (never silently Rp0)
   { intent: 'SEARCH_AHSP', re: /^(cari|carikan|search)\s+(ahsp|harga satuan)\s*$/ },
 
@@ -306,7 +332,7 @@ export function routeIntent(rawInput: string): IntentResult {
           localOnly: true,
         };
       }
-      return { intent: p.intent, confidence: 0.85, needsClarification: false, param, localOnly: true };
+      return { intent: p.intent, confidence: 0.85, needsClarification: false, param, localOnly: p.localOnly ?? true };
     }
   }
 
