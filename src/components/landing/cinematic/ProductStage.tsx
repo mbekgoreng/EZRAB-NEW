@@ -57,7 +57,9 @@ export const ProductStage: React.FC<{ flat?: boolean; onSceneChange?: (index: nu
 
   return (
     <div className="ch-stage">
-      {/* Cahaya gradasi di belakang frame: dekorasi murni, bukan bagian demo. */}
+      {/* Cahaya gradasi di belakang frame: dekorasi murni, bukan bagian demo.
+          Dua lapis: aura putih pudar paling luar + wash warna di tengah. */}
+      <div className="ch-stage-glow-white" aria-hidden="true" />
       <div className="ch-stage-glow" aria-hidden="true" />
       <div className={`ch-stage-frame${flat ? ' ch-stage-frame--flat' : ''}`}>
         <div className="ch-stage-screen">

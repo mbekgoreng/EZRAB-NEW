@@ -175,18 +175,30 @@
 }
 
 /* ---- Glow lembut di belakang tablet kanan (dekorasi murni) */
-/* BUKAN halo round: cahaya berupa wash warna yang lebar dan tidak
-   beraturan, persis referensi screenshot hero (2026-10-27) — hijau
-   di sisi kiri tablet, biru di sisi kanan/atas, menyebar luas ke
-   segala arah sampai menyentuh tepi kolom headline dan tepi kanan
-   hero. Bentuknya datang dari elemen yang jauh lebih lebar daripada
-   tinggi + gradient linear hijau -> biru + blur besar, TANPA
-   border-radius 50% dan TANPA mask elips ketat (dua hal yang membuat
-   revisi sebelumnya terlihat terlalu round).
-   Warna bersifat spasial (hijau kiri, biru kanan, sekaligus — bukan
-   siklus temporal), jadi tidak ada lagi fase kuning: sesuai gambar,
-   glow selalu tampak hijau-biru. Hanya napas (scale/opacity) yang
-   dianimasikan, ramah GPU; tidak ada perubahan layout. */
+/* DUA LAPIS, dan ini penting — penyebab kotak pada revisi sebelumnya:
+   mask radial dengan radius LEBIH BESAR dari elemen (ellipse 130%
+   95%) membuat zona transparan mask jatuh DI LUAR elemen, sehingga
+   tepi elemen tetap ~75% opak dan tampil sebagai garis kotak tajam
+   (terbukti lewat reproduksi headless). Perbaikannya: radius mask
+   harus muat di dalam elemen — pakai closest-side, jadi mask selalu
+   memudar sampai transparan SEBELUM tepi elemen.
+   Lapis 1 (.ch-stage-glow-white): aura putih pudar PALING LUAR —
+   kotaknya lebih besar dari wash warna, gradient radialnya sendiri
+   berakhir transparan (tanpa mask), jadi tidak mungkin kotak.
+   Lapis 2 (.ch-stage-glow): wash warna hijau kiri -> biru kanan
+   persis referensi, dengan mask closest-side + blur besar.
+   Hanya napas (scale/opacity) yang dianimasikan, ramah GPU;
+   tidak ada perubahan layout. */
+
+.ch-stage-glow-white {
+  position: absolute;
+  inset: -30% -25% -35% -45%;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse closest-side at 50% 50%, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.14) 55%, transparent 80%);
+  filter: blur(44px);
+  opacity: 0.9;
+}
 
 .ch-stage-glow {
   position: absolute;
@@ -195,10 +207,10 @@
   pointer-events: none;
   transform-origin: 50% 50%;
   background: linear-gradient(105deg, #22c55e 0%, #166534 28%, #0ea5e9 62%, #2563eb 100%);
-  -webkit-mask-image: radial-gradient(ellipse 130% 95% at 50% 50%, #000 25%, transparent 78%);
-  mask-image: radial-gradient(ellipse 130% 95% at 50% 50%, #000 25%, transparent 78%);
-  filter: blur(64px);
-  opacity: 0.7;
+  -webkit-mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 5%, transparent 88%);
+  mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 5%, transparent 88%);
+  filter: blur(56px);
+  opacity: 0.85;
   animation: ch-glow-breathe 7s ease-in-out infinite;
 }
 
@@ -1022,6 +1034,11 @@
   .ch-hero-stage { order: 2; }
   /* Cahaya tetap ada di mobile, tapi lebih kecil & redup agar tidak
      memberatkan dan tidak mengganggu keterbacaan. */
+  .ch-stage-glow-white {
+    inset: -20% -18% -24% -28%;
+    filter: blur(36px);
+    opacity: 0.7;
+  }
   .ch-stage-glow {
     inset: -10% -14% -14% -20%;
     filter: blur(54px);
