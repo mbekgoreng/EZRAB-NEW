@@ -3316,7 +3316,7 @@ body,
 .ez-vol-scene {
   position: relative;
   width: 100%;
-  height: 440px;
+  height: 420px;
   border-radius: 18px;
   overflow: hidden;
   background: #0f172a;
@@ -4138,14 +4138,19 @@ body,
 
 /* Floating Total RAB Card */
 .ez-sheet-total-badge {
-  position: absolute;
-  top: -22px;
-  right: 24px;
+  /* In-flow (bukan absolute melayang) supaya tidak pernah menumpuk
+     header tabel: kartu total duduk rapi di bawah topbar, rata kanan.
+     Pola ini sama dengan override mobile yang sudah ada. */
+  position: relative;
+  top: 0;
+  right: 0;
+  margin: 12px 24px 0 auto;
+  width: fit-content;
   background: #ffffff;
   border-radius: 16px;
   padding: 14px 20px;
   border: 1.5px solid var(--ez-color-border-line);
-  box-shadow: 
+  box-shadow:
     0 16px 36px -10px rgba(15, 23, 42, 0.14),
     0 0 20px rgba(37, 99, 235, 0.08);
   z-index: 20;
@@ -4792,14 +4797,15 @@ body,
 .ez-cad-tag {
   position: absolute;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 700;
-  color: rgba(56, 189, 248, 0.6);
+  color: #e0f2fe;
   letter-spacing: 0.5px;
-  padding: 2px 6px;
-  background: rgba(15, 23, 42, 0.5);
+  padding: 3px 7px;
+  background: rgba(2, 6, 23, 0.78);
   border-radius: 4px;
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  text-shadow: 0 1px 2px rgba(2, 6, 23, 0.6);
 }
 
 .ez-cad-tag.tag-structure { top: 12%; left: 32%; }

@@ -176,28 +176,30 @@
 
 /* ---- Glow lembut round hanya mengelilingi tablet kanan (dekorasi murni) */
 /* Satu halo lembut berbentuk oval yang HANYA mengelilingi frame tablet
-   di kanan: inset kecil dan simetris di semua sisi, jadi glow tidak
-   lagi memanjang ke kiri dan tidak pernah menyentuh kolom headline.
+   di kanan: cahaya memancar keluar agak lebar (inset negatif lebih
+   besar di kiri-kanan) dengan blur 72px dan mask yang memudar lebih
+   jauh, jadi cahaya terasa lembut dan menyebar, bukan halo ketat.
+   Glow tetap tidak menyentuh kolom headline: mask memudar sampai
+   transparan sebelum tepi terjauh, dan opacity dijaga 0.6.
    Border-radius 50% pada elemen seukuran frame (lebih lebar daripada
    tinggi) menghasilkan oval lembut yang mengikuti bentuk tablet.
    Warna bertransisi pelan biru -> hijau forest -> hijau -> kuning ->
    kembali ke biru, tanpa hue-rotate (jadi tidak pernah jadi pink/merah).
-   Tepi glow memudar lewat mask radial berpusat di tengah tablet +
-   blur 48px, dan selubung putih tetap dihapus agar teks terbaca.
+   Selubung putih tetap dihapus agar teks terbaca.
    Hanya transform/opacity/background-color yang dianimasikan (ramah
    GPU); tidak ada perubahan layout. */
 
 .ch-stage-glow {
   position: absolute;
-  inset: -8% -8% -10% -8%;
+  inset: -10% -16% -12% -16%;
   z-index: 0;
   pointer-events: none;
   border-radius: 50%;
   transform-origin: 50% 50%;
   background-color: #2563eb;
-  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 20%, transparent 75%);
-  mask-image: radial-gradient(ellipse at 50% 50%, #000 20%, transparent 75%);
-  filter: blur(48px);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 15%, transparent 88%);
+  mask-image: radial-gradient(ellipse at 50% 50%, #000 15%, transparent 88%);
+  filter: blur(72px);
   opacity: 0.6;
   animation:
     ch-glow-breathe 7s ease-in-out infinite,
@@ -1034,8 +1036,8 @@
   /* Cahaya tetap ada di mobile, tapi lebih kecil & redup agar tidak
      memberatkan dan tidak mengganggu keterbacaan. */
   .ch-stage-glow {
-    inset: -6% -6% -8% -6%;
-    filter: blur(36px);
+    inset: -8% -12% -10% -12%;
+    filter: blur(54px);
     opacity: 0.5;
     animation:
       ch-glow-breathe 7s ease-in-out infinite,
