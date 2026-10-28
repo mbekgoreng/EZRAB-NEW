@@ -192,7 +192,7 @@
 
 .ch-stage-glow-white {
   position: absolute;
-  inset: -30% -25% -35% -45%;
+  inset: -35% -32% -42% -58%;
   z-index: 0;
   pointer-events: none;
   background: radial-gradient(ellipse closest-side at 50% 50%, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.14) 55%, transparent 80%);
@@ -202,15 +202,21 @@
 
 .ch-stage-glow {
   position: absolute;
-  inset: -14% -12% -20% -32%;
+  inset: -18% -22% -24% -48%;
   z-index: 0;
   pointer-events: none;
   transform-origin: 50% 50%;
-  background: linear-gradient(105deg, #22c55e 0%, #166534 28%, #0ea5e9 62%, #2563eb 100%);
+  /* Spektrum konsep landing (tetap tanpa pink/merah, tanpa efek RGB):
+     hijau konstruksi -> teal -> cyan blueprint -> biru EZRAB ->
+     emas hangat lampu proyek di ujung kanan. Hijau diletakkan di
+     26% (bukan 0%) supaya tetap terbaca — ujung gradient selalu
+     pudar oleh mask. Mask closest-side menjaga ujung terjauh tetap
+     pudar, jadi headline tetap terbaca. */
+  background: linear-gradient(105deg, #166534 0%, #22c55e 26%, #14b8a6 44%, #38bdf8 60%, #2563eb 74%, #f59e0b 88%, #fbbf24 100%);
   -webkit-mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 5%, transparent 88%);
   mask-image: radial-gradient(ellipse closest-side at 50% 50%, #000 5%, transparent 88%);
-  filter: blur(56px);
-  opacity: 0.85;
+  filter: blur(60px);
+  opacity: 0.9;
   animation: ch-glow-breathe 7s ease-in-out infinite;
 }
 
@@ -1035,12 +1041,12 @@
   /* Cahaya tetap ada di mobile, tapi lebih kecil & redup agar tidak
      memberatkan dan tidak mengganggu keterbacaan. */
   .ch-stage-glow-white {
-    inset: -20% -18% -24% -28%;
+    inset: -24% -22% -28% -34%;
     filter: blur(36px);
     opacity: 0.7;
   }
   .ch-stage-glow {
-    inset: -10% -14% -14% -20%;
+    inset: -12% -18% -16% -28%;
     filter: blur(54px);
     opacity: 0.6;
     animation: ch-glow-breathe 7s ease-in-out infinite;
