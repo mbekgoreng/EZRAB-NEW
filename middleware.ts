@@ -16,27 +16,19 @@
  *   check), /access itself (the gate page; no redirect loop), and all
  *   paths outside the matcher (landing, blog, static assets).
  *
- * Blog root rewrite (NOT a gate change): host blog.ezrab.site + path '/'
- * is rewritten to the prerendered blog index (/blog/index.html) with the
- * URL kept at '/'. This must live here, not in vercel.json, because Vercel
- * serves an existing file (dist/index.html, the landing page) before
- * applying rewrites, so a vercel.json root rewrite can never win for '/'.
- * Only that one host + path is rewritten; every other host/path falls
- * through to the unchanged gate logic below, and /blog/index.html is
- * already public blog content (same file served for article slugs).
- * Mechanism: an 'x-middleware-rewrite' response header, so Vercel itself
- * serves the static file — NOT a fetch() of the file through the edge.
- * The fetch approach (commit 47239b4) was replaced because in production
- * it returned HTTP 200 with an empty/hanging body for the blog root
- * (observed 2026-10-28), while the rewrite header lets Vercel serve the
- * file directly.
+ * Blog root is NOT handled here anymore: host blog.ezrab.site + path '/'
+ * is redirected to '/blog/' by an ordinary redirect in vercel.json
+ * (redirects run before filesystem serving, unlike rewrites, so the
+ * landing dist/index.html cannot win for '/'). Earlier middleware
+ * approaches for the blog root — fetch (47239b4, empty/hanging body in
+ * production) and x-middleware-rewrite (cdeed46, never promoted) — are
+ * removed; the middleware now only does the access gate below.
  *
  * This is a temporary barrier, NOT user authentication.
  */
 
 export const config = {
   matcher: [
-    '/',
     '/app',
     '/app/:path*',
     '/access',
@@ -106,20 +98,8 @@ export default async function middleware(request: Request): Promise<Response | u
   const url = new URL(request.url);
   const path = url.pathname;
 
-  // Blog root rewrite: runs BEFORE Vercel filesystem serving, so it can
-  // win for '/' where a vercel.json rewrite cannot (dist/index.html
-  // exists). Only blog.ezrab.site + '/' — anything else falls through.
-  // Via 'x-middleware-rewrite': Vercel serves /blog/index.html itself
-  // (the prerendered file built by build:full), instead of the edge
-  // proxying the file body through fetch() — the fetch approach returned
-  // an empty/hanging body in production. No fetch is made here, so there
-  // is no fetch failure to fall back from.
-  if (url.hostname === 'blog.ezrab.site' && path === '/') {
-    return new Response(null, {
-      status: 200,
-      headers: { 'x-middleware-rewrite': new URL('/blog/index.html', url).toString() },
-    });
-  }
+  // No blog-root handling here: vercel.json redirects blog.ezrab.site '/'
+  // to '/blog/' before this middleware would ever matter for root.
 
   // The gate's own endpoints must NEVER be gated — defense in depth on top
   // of the matcher (which already excludes them). If this exemption were

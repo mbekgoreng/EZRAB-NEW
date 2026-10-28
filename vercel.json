@@ -4,6 +4,19 @@
   "framework": "vite",
   "installCommand": "npm install",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "destination": "/blog/",
+      "has": [
+        {
+          "type": "host",
+          "value": "blog.ezrab.site"
+        }
+      ],
+      "permanent": false,
+      "source": "/"
+    }
+  ],
   "rewrites": [
     {
       "destination": "/blog/robots.txt",
@@ -28,16 +41,6 @@
     {
       "destination": "/blog/sitemap.xml",
       "source": "/sitemap.xml"
-    },
-    {
-      "destination": "/blog/index.html",
-      "has": [
-        {
-          "type": "host",
-          "value": "blog.ezrab.site"
-        }
-      ],
-      "source": "/"
     },
     {
       "destination": "/blog/$1",
