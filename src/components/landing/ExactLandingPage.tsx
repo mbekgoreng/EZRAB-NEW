@@ -42,7 +42,7 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
   }, []);
 
   return (
-    <div className="ez-landing-page" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#071426' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#ffffff' }}>
       {/* 1. Fixed Dark Navbar */}
       <ExactNavbar
         onOpenAuth={onOpenAuth}
