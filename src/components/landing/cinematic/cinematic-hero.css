@@ -82,6 +82,13 @@
 }
 
 /* ---- Copy ------------------------------------------------------------ */
+/* Tulisan hero HARUS di depan semua cahaya: copy diberi position +
+   z-index 2, sementara glow di dalam stage punya z-index 0. Stage
+   sendiri sengaja TIDAK diberi z-index (tetap auto) supaya badge
+   orbit (z-index 3) tetap di atas tulisan, dan urutan akhirnya:
+   glow (0) < frame tablet (1) < tulisan (2) < badge orbit (3). */
+.ch-hero-copy { position: relative; z-index: 2; }
+
 .ch-eyebrow {
   display: flex;
   align-items: center;
@@ -192,7 +199,7 @@
 
 .ch-stage-glow-white {
   position: absolute;
-  inset: -35% -32% -42% -58%;
+  inset: -32%;
   z-index: 0;
   pointer-events: none;
   background: radial-gradient(ellipse closest-side at 50% 50%, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.14) 55%, transparent 80%);
@@ -202,11 +209,14 @@
 
 .ch-stage-glow {
   position: absolute;
-  inset: -18% -22% -24% -48%;
+  inset: -22%;
   z-index: 0;
   pointer-events: none;
   transform-origin: 50% 50%;
-  /* Spektrum konsep landing (tetap tanpa pink/merah, tanpa efek RGB):
+  /* Cahaya DIPUSATKAN di tengah tablet: inset simetris di semua sisi
+     (sebelumnya menjulur jauh ke kiri), jadi halo mengelilingi tablet
+     merata. Spektrum warna tetap hijau kiri -> biru kanan; yang
+     berubah hanya posisi kotaknya — kini terpusat, bukan condong kiri. */
      hijau konstruksi -> teal -> cyan blueprint -> biru EZRAB ->
      emas hangat lampu proyek di ujung kanan. Hijau diletakkan di
      26% (bukan 0%) supaya tetap terbaca — ujung gradient selalu
@@ -1041,12 +1051,12 @@
   /* Cahaya tetap ada di mobile, tapi lebih kecil & redup agar tidak
      memberatkan dan tidak mengganggu keterbacaan. */
   .ch-stage-glow-white {
-    inset: -24% -22% -28% -34%;
+    inset: -26%;
     filter: blur(36px);
     opacity: 0.7;
   }
   .ch-stage-glow {
-    inset: -12% -18% -16% -28%;
+    inset: -16%;
     filter: blur(54px);
     opacity: 0.6;
     animation: ch-glow-breathe 7s ease-in-out infinite;
