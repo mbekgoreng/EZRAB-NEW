@@ -44,6 +44,8 @@ import {
 import { Project } from '../../types';
 import { RabTemplate, TemplateCategory, DetailLevel, TemplateMappingReadiness } from '../../types/rabTemplate';
 import { RabTemplateService } from '../../services/rabTemplateService';
+import { useProject } from '../../context/ProjectContext';
+import { useToast } from '../onboarding/Toast';
 import { CustomTemplateBuilderModal } from './CustomTemplateBuilderModal';
 import { ApplyTemplateModal } from './ApplyTemplateModal';
 import { TemplatePreviewDrawer } from './TemplatePreviewDrawer';
@@ -111,6 +113,10 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
   onCreateProjectWithTemplate,
   onApplyTemplate
 }) => {
+  // P1: dedupe request + result read for template apply, and the app-level
+  // toast that survives the menu switch to the spreadsheet.
+  const { requestTemplateApplyDedupe, getLastTemplateApplyResult } = useProject();
+  const { showToast } = useToast();
   // Navigation & Filter States
   const [selectedCategory, setSelectedCategory] = useState<TemplateCategory | 'ALL'>('ALL');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>('ALL');
@@ -370,6 +376,12 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
   ) => {
     recordTemplateUsage(tpl.id);
     if (onApplyTemplate) {
+      // P1: request exact-duplicate dedupe for THIS apply only, then read
+      // the synchronous result and report it. The toast survives the menu
+      // switch because ToastProvider sits above the workspace views. When
+      // no result (or a stale sequence) comes back, stay silent rather
+      // than report numbers we cannot vouch for.
+      const dedupeSeq = requestTemplateApplyDedupe();
       onApplyTemplate(
         tpl,
         params,
@@ -378,6 +390,22 @@ export const TemplateRabCatalogView: React.FC<TemplateRabCatalogViewProps> = ({
         detailLevel || globalDetailLevel,
         selectedOptionalItemIds
       );
+      const result = getLastTemplateApplyResult();
+      if (result && result.seq === dedupeSeq) {
+        if (result.inserted > 0 && result.skipped === 0) {
+          showToast(`Template diterapkan: ${result.inserted} item ditambahkan.`, 'success');
+        } else if (result.inserted > 0) {
+          showToast(
+            `Template diterapkan: ${result.inserted} item ditambahkan, ${result.skipped} duplikat dilewati.`,
+            'info'
+          );
+        } else if (result.skipped > 0) {
+          showToast(
+            `Template sudah ada di RAB: ${result.skipped} item duplikat dilewati, tidak ada item baru.`,
+            'info'
+          );
+        }
+      }
     } else if (targetProjectId && onSelectTemplate) {
       onSelectTemplate(tpl);
     } else if (onCreateProjectWithTemplate) {

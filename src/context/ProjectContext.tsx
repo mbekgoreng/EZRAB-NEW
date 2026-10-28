@@ -26,6 +26,7 @@ import { SafeDecimalEngine } from '../engine/safeDecimalEngine';
 import { createRabItemRecord } from '../engine/rab/rabItemFactory';
 import { resolveQtoSyncPrice, resolveQtoSyncCode } from '../lib/qtoSyncPricing';
 import { checkAhspIdentitySafety } from '../data/priceDatabase2026/ahspDisplayPolicy';
+import { normalizeName, normalizeUnit } from '../data/priceDatabase2026/normalize';
 import { resolvePriceStatus } from '../engine/pricing/priceStatus';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
 import { clearLogoutInProgress, isLogoutInProgress } from '../auth/sessionBoundary';
@@ -58,6 +59,83 @@ export interface SourceTraceLineage {
     schedule: boolean;
     laporan: boolean;
   };
+}
+
+// ============================================================================
+// P1 — Safe template-apply deduplication (exact duplicates only).
+//
+// The duplicate key is the normalized triple: code-part + name + unit.
+// - code-part: ahspCode when present, else code; trimmed + lowercased.
+// - name: normalizeName (lowercase, diacritics stripped, punctuation and
+//   whitespace collapsed) — same helper the price pipeline already uses.
+// - unit: normalizeUnit (spelling canonicalization ONLY, e.g. m² -> m2,
+//   "Meter Persegi" -> m2). No conversion: different canonical units never
+//   match, and no unit is ever silently converted.
+// A code alone is NEVER enough: all three parts must be present and equal.
+// A row lacking any part has no key and is always inserted (conservative:
+// never discard a row on a partial match). No price, provenance, mapping
+// status, or volume field is read or changed by this logic.
+// ============================================================================
+
+export interface TemplateApplyDedupeResult {
+  /** Sequence number of the dedupe request this result answers. */
+  seq: number;
+  /** Proposed rows actually inserted. */
+  inserted: number;
+  /** Proposed rows skipped as exact duplicates. */
+  skipped: number;
+  /** Descriptions of skipped rows, for the result message. */
+  skippedDescriptions: string[];
+}
+
+export interface DedupeKeyInput {
+  ahspCode?: string;
+  code?: string;
+  description?: string;
+  unit?: string;
+}
+
+/**
+ * Build the exact-duplicate key for one RAB row, or null when the row lacks
+ * sufficient identity to match safely.
+ */
+export function buildExactDuplicateKey(item: DedupeKeyInput): string | null {
+  const codePart = (item.ahspCode?.trim() || item.code?.trim() || '').toLowerCase();
+  const namePart = normalizeName(item.description || '');
+  const unitPart = normalizeUnit(item.unit || '');
+  if (!codePart || !namePart || !unitPart) return null;
+  return `${codePart}|||${namePart}|||${unitPart}`;
+}
+
+/**
+ * Partition proposed rows into inserted vs skipped-exact-duplicates.
+ * `existing` must already be scoped to the target project (the caller
+ * filters by projectId). A proposed row is skipped only when its full
+ * triple key matches an existing row OR an earlier proposed row in the
+ * same batch. Rows without a key are always inserted. No field is mutated:
+ * both lists carry the original record objects.
+ */
+export function partitionExactDuplicates<T extends DedupeKeyInput>(
+  existing: readonly T[],
+  proposed: readonly T[],
+): { inserted: T[]; skipped: T[] } {
+  const seen = new Set<string>();
+  for (const row of existing) {
+    const key = buildExactDuplicateKey(row);
+    if (key) seen.add(key);
+  }
+  const inserted: T[] = [];
+  const skipped: T[] = [];
+  for (const row of proposed) {
+    const key = buildExactDuplicateKey(row);
+    if (key && seen.has(key)) {
+      skipped.push(row);
+    } else {
+      inserted.push(row);
+      if (key) seen.add(key);
+    }
+  }
+  return { inserted, skipped };
 }
 
 interface ProjectContextType {
@@ -161,6 +239,21 @@ interface ProjectContextType {
     items: Array<Partial<RabItem> & { description: string; volume: number; unit: string }>,
     targetProjectId?: string
   ) => RabItem[];
+  /**
+   * P1: one-shot opt-in for template-apply deduplication. The catalog view
+   * calls this immediately before invoking the apply callback; the NEXT
+   * bulkAddRabItems call then dedupes exact duplicates and records the
+   * result for getLastTemplateApplyResult. Returns a sequence number so
+   * the caller can verify the result it reads answers THIS request.
+   * Callers that never request are completely unaffected.
+   */
+  requestTemplateApplyDedupe: () => number;
+  /**
+   * P1: result of the most recent deduped bulk add, or null when no
+   * deduped add has run yet. Read it only after checking its seq matches
+   * the sequence returned by requestTemplateApplyDedupe.
+   */
+  getLastTemplateApplyResult: () => TemplateApplyDedupeResult | null;
   updateRabItemFull: (rabItemId: string, updates: Partial<RabItem>) => void;
   deleteRabItem: (rabItemId: string) => void;
   bulkDeleteRabItems: (rabItemIds: string[]) => void;
@@ -1531,11 +1624,35 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     [currentProjectId, recalculateProjectSummary]
   );
 
+  // P1 — one-shot template-apply dedupe state. Refs (not state) so the
+  // request -> apply -> result-read sequence stays synchronous within one
+  // event tick: the catalog view requests, the apply callback inserts, and
+  // the view reads the result before the menu switch unmounts it.
+  const templateApplyDedupePendingRef = useRef(false);
+  const templateApplyDedupeSeqRef = useRef(0);
+  const lastTemplateApplyResultRef = useRef<TemplateApplyDedupeResult | null>(null);
+
+  const requestTemplateApplyDedupe = useCallback((): number => {
+    templateApplyDedupePendingRef.current = true;
+    templateApplyDedupeSeqRef.current += 1;
+    return templateApplyDedupeSeqRef.current;
+  }, []);
+
+  const getLastTemplateApplyResult = useCallback((): TemplateApplyDedupeResult | null => {
+    return lastTemplateApplyResultRef.current;
+  }, []);
+
   const bulkAddRabItems = useCallback(
     (
       items: Array<Partial<RabItem> & { description: string; volume: number; unit: string }>,
       targetProjectId?: string
     ): RabItem[] => {
+      // P1: consume the one-shot request FIRST, so a requested-but-never-
+      // applied flag can never leak into an unrelated later insertion
+      // (e.g. when bulkAdd throws below on a missing project id).
+      const dedupeSeq = templateApplyDedupeSeqRef.current;
+      const dedupeRequested = templateApplyDedupePendingRef.current;
+      templateApplyDedupePendingRef.current = false;
       const pid = targetProjectId || currentProjectId;
       if (!pid) throw new Error('Tidak ada proyek aktif untuk menambahkan item RAB.');
 
@@ -1548,15 +1665,33 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         })
       );
 
+      // P1: when (and only when) the template-apply path requested it,
+      // drop exact duplicates against the TARGET project only. Existing
+      // rows are never deleted or overwritten; skipped rows are counted
+      // for the result message. All other callers keep the old behavior
+      // byte-for-byte (insertedItems === newItems).
+      let insertedItems = newItems;
+      if (dedupeRequested) {
+        const existingForProject = allRabItems.filter((it) => it.projectId === pid);
+        const { inserted, skipped } = partitionExactDuplicates(existingForProject, newItems);
+        insertedItems = inserted;
+        lastTemplateApplyResultRef.current = {
+          seq: dedupeSeq,
+          inserted: inserted.length,
+          skipped: skipped.length,
+          skippedDescriptions: skipped.map((it) => it.description),
+        };
+      }
+
       setAllRabItems((prev) => {
-        const next = [...prev, ...newItems];
+        const next = [...prev, ...insertedItems];
         recalculateProjectSummary(pid, next);
         return next;
       });
 
-      return newItems;
+      return insertedItems;
     },
-    [currentProjectId, recalculateProjectSummary]
+    [currentProjectId, recalculateProjectSummary, allRabItems]
   );
 
   const updateRabItemFull = useCallback(
@@ -2518,6 +2653,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       updateRabItemUnitPrice,
       createRabItemDirect,
       bulkAddRabItems,
+      requestTemplateApplyDedupe,
+      getLastTemplateApplyResult,
       updateRabItemFull,
       deleteRabItem,
       bulkDeleteRabItems,
@@ -2585,6 +2722,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       updateRabItemUnitPrice,
       createRabItemDirect,
       bulkAddRabItems,
+      requestTemplateApplyDedupe,
+      getLastTemplateApplyResult,
       updateRabItemFull,
       deleteRabItem,
       bulkDeleteRabItems,
