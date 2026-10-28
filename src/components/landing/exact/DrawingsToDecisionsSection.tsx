@@ -128,7 +128,7 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
       style={{
         position: 'relative',
         minHeight: prefersReduced ? 'auto' : '160vh',
-        background: '#f8fafc',
+        background: '#071426',
       }}
     >
       {/* Sticky Cinematic Viewport */}
@@ -146,8 +146,8 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
           alignItems: 'center',
           justifyContent: 'center',
           overflow: 'hidden',
-          background: 'radial-gradient(ellipse at 50% 45%, #ffffff 0%, #f8fafc 65%, #f1f5f9 100%)',
-          color: '#0f172a',
+          background: 'radial-gradient(ellipse at 50% 45%, #0d1e40 0%, #071426 65%, #04091a 100%)',
+          color: '#f8fafc',
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -172,10 +172,10 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
               position: 'absolute',
               inset: 0,
               backgroundImage: `
-                linear-gradient(to right, rgba(37, 99, 235, 0.05) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(37, 99, 235, 0.05) 1px, transparent 1px),
-                linear-gradient(to right, rgba(37, 99, 235, 0.12) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(37, 99, 235, 0.12) 1px, transparent 1px)
+                linear-gradient(to right, rgba(56, 189, 248, 0.10) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(56, 189, 248, 0.10) 1px, transparent 1px),
+                linear-gradient(to right, rgba(56, 189, 248, 0.22) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(56, 189, 248, 0.22) 1px, transparent 1px)
               `,
               backgroundSize: '24px 24px, 24px 24px, 120px 120px, 120px 120px',
               opacity: 0.65,
@@ -189,26 +189,26 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
             preserveAspectRatio="none"
           >
             {/* Top Left Precision Origin Marker */}
-            <path d="M 48,36 L 48,60 M 36,48 L 60,48" stroke="rgba(37, 99, 235, 0.35)" strokeWidth="1" />
-            <text x="68" y="52" fill="rgba(37, 99, 235, 0.45)" fontSize="10" fontFamily="monospace" letterSpacing="0.1em">
+            <path d="M 48,36 L 48,60 M 36,48 L 60,48" stroke="rgba(56, 189, 248, 0.40)" strokeWidth="1" />
+            <text x="68" y="52" fill="rgba(56, 189, 248, 0.55)" fontSize="10" fontFamily="monospace" letterSpacing="0.1em">
               ORIGIN [0, 0] • SCALE 1:100
             </text>
 
             {/* Top Right Project Coordinate Marker */}
-            <path d="M 1392,36 L 1392,60 M 1380,48 L 1404,48" stroke="rgba(37, 99, 235, 0.35)" strokeWidth="1" />
-            <text x="1270" y="52" fill="rgba(37, 99, 235, 0.45)" fontSize="10" fontFamily="monospace" letterSpacing="0.1em">
+            <path d="M 1392,36 L 1392,60 M 1380,48 L 1404,48" stroke="rgba(56, 189, 248, 0.40)" strokeWidth="1" />
+            <text x="1270" y="52" fill="rgba(56, 189, 248, 0.55)" fontSize="10" fontFamily="monospace" letterSpacing="0.1em">
               BIM REVISION 2026.04
             </text>
 
             {/* Bottom Left Elevation Marker */}
-            <path d="M 48,852 L 48,876 M 36,864 L 60,864" stroke="rgba(37, 99, 235, 0.35)" strokeWidth="1" />
-            <text x="68" y="868" fill="rgba(37, 99, 235, 0.45)" fontSize="10" fontFamily="monospace" letterSpacing="0.1em">
+            <path d="M 48,852 L 48,876 M 36,864 L 60,864" stroke="rgba(56, 189, 248, 0.40)" strokeWidth="1" />
+            <text x="68" y="868" fill="rgba(56, 189, 248, 0.55)" fontSize="10" fontFamily="monospace" letterSpacing="0.1em">
               DATUM LEVEL: +0.000 FFL
             </text>
 
             {/* Bottom Right System Metric */}
-            <path d="M 1392,852 L 1392,876 M 1380,864 L 1404,864" stroke="rgba(37, 99, 235, 0.35)" strokeWidth="1" />
-            <text x="1260" y="868" fill="rgba(37, 99, 235, 0.45)" fontSize="10" fontFamily="monospace" letterSpacing="0.1em">
+            <path d="M 1392,852 L 1392,876 M 1380,864 L 1404,864" stroke="rgba(56, 189, 248, 0.40)" strokeWidth="1" />
+            <text x="1260" y="868" fill="rgba(56, 189, 248, 0.55)" fontSize="10" fontFamily="monospace" letterSpacing="0.1em">
               DECISION ACCURACY 99.8%
             </text>
           </svg>
@@ -285,7 +285,7 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
                   M 460,645 L 810,465
                   M 530,680 L 880,500
                 "
-                stroke="rgba(37, 99, 235, 0.18)"
+                stroke="rgba(56, 189, 248, 0.25)"
                 strokeWidth="0.75"
                 strokeDasharray="4 4"
               />
@@ -337,9 +337,9 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
               />
 
               {/* Grid Axis Labels */}
-              <text x="235" y="545" fill="rgba(37, 99, 235, 0.5)" fontSize="9" fontFamily="monospace">GRID A</text>
-              <text x="600" y="735" fill="rgba(37, 99, 235, 0.5)" fontSize="9" fontFamily="monospace" textAnchor="middle">GRID B</text>
-              <text x="960" y="545" fill="rgba(37, 99, 235, 0.5)" fontSize="9" fontFamily="monospace">GRID C</text>
+              <text x="235" y="545" fill="rgba(56, 189, 248, 0.55)" fontSize="9" fontFamily="monospace">GRID A</text>
+              <text x="600" y="735" fill="rgba(56, 189, 248, 0.55)" fontSize="9" fontFamily="monospace" textAnchor="middle">GRID B</text>
+              <text x="960" y="545" fill="rgba(56, 189, 248, 0.55)" fontSize="9" fontFamily="monospace">GRID C</text>
             </motion.g>
 
             {/* ---------------------------------------------------------------
@@ -354,7 +354,7 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
                   M 770,560 L 810,580 L 790,590 L 750,570 Z
                   M 580,450 L 620,470 L 600,480 L 560,460 Z
                 "
-                stroke="#2563EB"
+                stroke="#3B82F6"
                 strokeWidth="1.2"
                 strokeOpacity="0.4"
                 fill="rgba(37, 99, 235, 0.03)"
@@ -386,7 +386,7 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
                   M 600,660 L 600,668
                   M 850,530 L 850,538
                 "
-                stroke="#1E40AF"
+                stroke="#2563EB"
                 strokeWidth="1.4"
                 strokeOpacity="0.6"
                 fill="rgba(37, 99, 235, 0.04)"
@@ -467,7 +467,7 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
               <g transform="translate(230, 580)">
                 <rect x="0" y="0" width="130" height="26" rx="6" fill="#FFFFFF" stroke="#38BDF8" strokeWidth="1" filter="url(#ezGlowFilter)" />
                 <circle cx="14" cy="13" r="3.5" fill="#00A8FF" />
-                <text x="26" y="17" fill="#0F172A" fontSize="10" fontWeight="700" fontFamily="monospace">
+                <text x="26" y="17" fill="#F8FAFC" fontSize="10" fontWeight="700" fontFamily="monospace">
                   QTO: 142.5 m³
                 </text>
               </g>
@@ -476,7 +476,7 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
               <g transform="translate(850, 580)">
                 <rect x="0" y="0" width="145" height="26" rx="6" fill="#FFFFFF" stroke="#0066FF" strokeWidth="1" filter="url(#ezGlowFilter)" />
                 <circle cx="14" cy="13" r="3.5" fill="#2563EB" />
-                <text x="26" y="17" fill="#0F172A" fontSize="10" fontWeight="700" fontFamily="monospace">
+                <text x="26" y="17" fill="#F8FAFC" fontSize="10" fontWeight="700" fontFamily="monospace">
                   AHSP: 2026-B.11
                 </text>
               </g>
@@ -547,23 +547,23 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
               alignItems: 'center',
               gap: '8px',
               padding: '7px 18px',
-              background: 'rgba(255, 255, 255, 0.85)',
+              background: 'rgba(7, 20, 38, 0.72)',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
-              border: '1px solid rgba(37, 99, 235, 0.18)',
+              border: '1px solid rgba(56, 189, 248, 0.25)',
               borderRadius: '999px',
-              boxShadow: '0 4px 20px rgba(37, 99, 235, 0.08)',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35)',
               marginBottom: '28px',
             }}
           >
-            <Sparkles size={13} color="#0066FF" />
+            <Sparkles size={13} color="#38BDF8" />
             <span
               style={{
                 fontSize: '11.5px',
                 fontWeight: 750,
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: '#1E3A8A',
+                color: '#7dd3fc',
                 fontFamily: 'monospace',
               }}
             >
@@ -571,7 +571,7 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
             </span>
           </motion.div>
 
-          {/* LINE 1: FROM DRAWINGS (Deep Architectural Navy) */}
+          {/* LINE 1: FROM DRAWINGS (putih di atas navy gelap) */}
           <motion.div
             className="ez-statement-hero-line1"
             style={{
@@ -579,7 +579,7 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
               fontSize: 'clamp(46px, 8.8vw, 132px)',
               fontWeight: 900,
               lineHeight: 0.96,
-              color: '#0B1B33',
+              color: '#FFFFFF',
               letterSpacing: line1Tracking,
               y: line1Y,
               opacity: line1Opacity,
@@ -625,14 +625,14 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
               fontSize: 'clamp(12px, 1.4vw, 15px)',
               fontWeight: 750,
               letterSpacing: brandSpacing,
-              color: '#64748B',
+              color: '#94A3B8',
               textTransform: 'uppercase',
               opacity: brandOpacity,
             }}
           >
-            <span style={{ width: '28px', height: '1.5px', background: 'rgba(37, 99, 235, 0.4)' }} />
+            <span style={{ width: '28px', height: '1.5px', background: 'rgba(56, 189, 248, 0.5)' }} />
             <span>EZRAB WORKSPACE</span>
-            <span style={{ width: '28px', height: '1.5px', background: 'rgba(37, 99, 235, 0.4)' }} />
+            <span style={{ width: '28px', height: '1.5px', background: 'rgba(56, 189, 248, 0.5)' }} />
           </motion.div>
 
           {/* Subtle Live Pipeline Flow Indicators */}
@@ -661,17 +661,17 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
                     alignItems: 'center',
                     gap: '7px',
                     padding: '6px 14px',
-                    background: 'rgba(255, 255, 255, 0.75)',
-                    border: '1px solid rgba(226, 232, 240, 0.9)',
+                    background: 'rgba(7, 20, 38, 0.72)',
+                    border: '1px solid rgba(148, 163, 184, 0.25)',
                     borderRadius: '8px',
                     fontSize: '11px',
                     fontWeight: 650,
-                    color: '#334155',
+                    color: '#e2e8f0',
                     fontFamily: 'monospace',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.03)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
                   }}
                 >
-                  <step.icon size={12} color="#0066FF" />
+                  <step.icon size={12} color="#38BDF8" />
                   <span>{step.label}</span>
                 </div>
                 {idx < arr.length - 1 && (
