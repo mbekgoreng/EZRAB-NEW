@@ -16,11 +16,21 @@
  *   check), /access itself (the gate page; no redirect loop), and all
  *   paths outside the matcher (landing, blog, static assets).
  *
+ * Blog root rewrite (NOT a gate change): host blog.ezrab.site + path '/'
+ * is served the prerendered blog index (/blog/index.html) with the URL
+ * kept at '/'. This must live here, not in vercel.json, because Vercel
+ * serves an existing file (dist/index.html, the landing page) before
+ * applying rewrites, so a vercel.json root rewrite can never win for '/'.
+ * Only that one host + path is rewritten; every other host/path falls
+ * through to the unchanged gate logic below, and /blog/index.html is
+ * already public blog content (same file served for article slugs).
+ *
  * This is a temporary barrier, NOT user authentication.
  */
 
 export const config = {
   matcher: [
+    '/',
     '/app',
     '/app/:path*',
     '/access',
@@ -89,6 +99,19 @@ function readCookie(request: Request, name: string): string | undefined {
 export default async function middleware(request: Request): Promise<Response | undefined> {
   const url = new URL(request.url);
   const path = url.pathname;
+
+  // Blog root rewrite: runs BEFORE Vercel filesystem serving, so it can
+  // win for '/' where a vercel.json rewrite cannot (dist/index.html
+  // exists). Only blog.ezrab.site + '/' — anything else falls through.
+  if (url.hostname === 'blog.ezrab.site' && path === '/') {
+    try {
+      const blogIndex = await fetch(new URL('/blog/index.html', url));
+      if (blogIndex.ok) return blogIndex;
+    } catch {
+      // Fall through to the normal response (landing page) below.
+    }
+    return undefined;
+  }
 
   // The gate's own endpoints must NEVER be gated — defense in depth on top
   // of the matcher (which already excludes them). If this exemption were
