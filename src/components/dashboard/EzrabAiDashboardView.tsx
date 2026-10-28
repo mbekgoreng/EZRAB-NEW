@@ -17,6 +17,7 @@ import {
 import { Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
 import { useI18n } from '../../i18n';
+import { useCurrency } from '../../context/CurrencyContext';
 import { countUnpricedRabItems, unpricedInsightText } from '../../lib/dashboardInsight';
 import { EZRABMascotLucu } from '../mascot/EZRABMascotLucu';
 
@@ -110,6 +111,7 @@ export const EzrabAiDashboardView: React.FC<EzrabAiDashboardViewProps> = ({
   };
 
   const { currentProject, setCurrentProjectId, allRabItems } = useProject();
+  const { displayCurrency, formatDisplay } = useCurrency();
 const { t, lang } = useI18n();
 
   // F1a: "EZRAB Insight" dihitung dari data nyata (item RAB lintas proyek
@@ -701,7 +703,7 @@ className="ezdb-split"
                         {proj.location || 'Indonesia'}
                       </td>
                       <td style={{ padding: '14px 12px', color: 'var(--ez-color-text-primary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                        {projectRabValue(proj) ? formatRpFull(projectRabValue(proj) as number) : '-'}
+                        {projectRabValue(proj) ? (displayCurrency === 'IDR' ? formatRpFull(projectRabValue(proj) as number) : formatDisplay(projectRabValue(proj) as number)) : '-'}
                       </td>
                       <td style={{ padding: '14px 12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '110px' }}>

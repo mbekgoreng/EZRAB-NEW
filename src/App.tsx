@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { ProjectProvider } from './context/ProjectContext';
 import { ExactLandingPage } from './components/landing/ExactLandingPage';
 import { AboutPage } from './components/about/AboutPage';
@@ -131,6 +131,11 @@ const AuthFailsafeBanner: React.FC = () => {
   );
 };
 
+// Blog host lazy: markdown blog tidak ikut bundle awal aplikasi utama.
+const BlogHostPage = lazy(() =>
+  import('./blog/BlogHostPage').then((m) => ({ default: m.BlogHostPage })),
+);
+
 export const App: React.FC = () => {
   const location = useBrowserLocation();
   const workspaceRoute = parseWorkspaceRoute(location.pathname, location.search);
@@ -154,6 +159,9 @@ export const App: React.FC = () => {
   const isPrivacy = location.pathname === '/privacy';
   const isTerms = location.pathname === '/terms';
   const isHomePath = location.pathname === '/' || location.pathname === '';
+  // Host blog: fallback SPA bila rewrite statis /blog/* tidak tersaji.
+  const isBlogHost =
+    typeof window !== 'undefined' && window.location.hostname === 'blog.ezrab.site';
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authInitialTab, setAuthInitialTab] = useState<'masuk' | 'daftar'>('daftar');
@@ -172,7 +180,8 @@ export const App: React.FC = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (isWorkspace) document.title = workspaceRoute.status === 'not-found' ? 'Halaman Tidak Ditemukan — EZRAB' : `${routeLabel(workspaceRoute)} — EZRAB`;
+    if (isBlogHost) document.title = 'Blog EZRAB';
+    else if (isWorkspace) document.title = workspaceRoute.status === 'not-found' ? 'Halaman Tidak Ditemukan — EZRAB' : `${routeLabel(workspaceRoute)} — EZRAB`;
     else if (isAccess) document.title = 'Akses Dashboard — EZRAB';
     else if (invitationToken) document.title = 'Terima Undangan — EZRAB';
     else if (isAbout) document.title = 'Tentang EZRAB';
@@ -265,7 +274,21 @@ export const App: React.FC = () => {
 
   let content: React.ReactNode = null;
 
-  if (invitationToken) {
+  if (isBlogHost && !isWorkspace && !isAccess) {
+    // Subdomain blog: indeks/artikel dari data markdown yang sama — bukan
+    // landing (audit A-1). Path /app/* tetap ke workspace normal.
+    content = (
+      <Suspense
+        fallback={
+          <div style={{ padding: '48px', fontFamily: 'system-ui' }}>
+            Memuat Blog EZRAB…
+          </div>
+        }
+      >
+        <BlogHostPage pathname={location.pathname} />
+      </Suspense>
+    );
+  } else if (invitationToken) {
     // Penerimaan undangan bersifat publik (di luar shell workspace dan di
     // luar PasscodeGate) — keamanan ditegakkan server-side oleh endpoint
     // /api/invitations/* (validasi token + redeem atomik ber-JWT).

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { navigateTo, paths } from '../../../routing/routes';
 import {
   ArrowRight,
   CheckCircle2,
@@ -31,7 +32,7 @@ const ACTIVITIES: ActivityItem[] = [
   { id: 'act-3', title: 'AHSP terhubung', time: '8m lalu', category: 'Database' }
 ];
 
-export const ExactProjectManagement: React.FC<ExactProjectManagementProps> = ({ onOpenWorkspace }) => {
+export const ExactProjectManagement: React.FC<ExactProjectManagementProps> = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const isVisibleRef = useRef<boolean>(true);
 
@@ -191,7 +192,7 @@ export const ExactProjectManagement: React.FC<ExactProjectManagementProps> = ({ 
 
           <div className="ez-pm-cta-group">
             <button
-              onClick={onOpenWorkspace}
+              onClick={() => navigateTo(paths.projects())}
               className="ez-btn-primary-pill ez-pm-cta-btn"
               aria-label="Lihat Fitur Project"
             >

@@ -491,11 +491,12 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             }
           }}
           onLogout={() => {
-            if (window.confirm(t('nav.konfirmasi_keluar'))) {
-              coAssistantService.resetSession();
-              setCoAssistantMode('closed');
-              if (onBackToLanding) onBackToLanding();
-            }
+            // Tanpa confirm: confirm browser auto-dismiss di pengujian membuat
+            // tombol keluar tampak mati; keluar ke landing tidak menghapus data
+            // (workspace tersimpan lokal dan bisa dibuka lagi lewat gerbang).
+            coAssistantService.resetSession();
+            setCoAssistantMode('closed');
+            if (onBackToLanding) onBackToLanding();
           }}
         />
         )}
@@ -625,7 +626,18 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           </main>
         ) : (activeMenu === 'ahsp-2026' || activeMenu === 'ahsp' || activeMenu === 'analisa-ahsp') ? (
           <main style={{ padding: '20px 24px', background: 'var(--ez-color-background)', minHeight: 'calc(100vh - 64px)' }}>
-            <Suspense fallback={null}>
+            <Suspense
+              fallback={
+                <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '15px', fontWeight: 700, marginBottom: '8px' }}>
+                    Memuat katalog AHSP 2026…
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'var(--ez-color-text-muted)' }}>
+                    Data kanonis ±19 MB sedang dimuat. Mohon tunggu sebentar.
+                  </div>
+                </div>
+              }
+            >
             <AhspExplorerViewLazy
               routeParams={route.ahsp}
               onAddAhspToRab={(ahsp, volume) => {

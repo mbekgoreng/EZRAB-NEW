@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { navigateTo, paths } from '../../../routing/routes';
 import {
   ArrowRight,
   FileSpreadsheet,
@@ -285,7 +286,7 @@ export const ExactRabWorkspace: React.FC<ExactRabWorkspaceProps> = ({ onOpenWork
 
           <div className="ez-rab-cta-group">
             <button
-              onClick={onOpenWorkspace}
+              onClick={() => navigateTo(paths.estimate())}
               className="ez-btn-primary-pill ez-rab-cta-btn"
               aria-label="Lihat Demo RAB"
             >

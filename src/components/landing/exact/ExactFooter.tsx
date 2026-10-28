@@ -71,10 +71,10 @@ export const ExactFooter: React.FC<ExactFooterProps> = () => {
               <ul className="ez-minimal-footer-links">
                 <li>
                   <a
-                    href="/"
+                    href="/about"
                     onClick={(e) => {
                       e.preventDefault();
-                      navigateTo(paths.home());
+                      navigateTo(paths.about());
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                   >

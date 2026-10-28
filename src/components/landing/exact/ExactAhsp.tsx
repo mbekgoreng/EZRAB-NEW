@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { navigateTo, paths } from '../../../routing/routes';
 import {
   ArrowRight,
   Database,
@@ -20,7 +21,7 @@ interface ExactAhspProps {
 
 type AhspPhase = 'idle' | 'scan' | 'detect' | 'activate' | 'flow' | 'detail' | 'settled';
 
-export const ExactAhsp: React.FC<ExactAhspProps> = ({ onOpenWorkspace }) => {
+export const ExactAhsp: React.FC<ExactAhspProps> = () => {
   const [phase, setPhase] = useState<AhspPhase>('scan');
   const [scanY, setScanY] = useState<number>(100);
   const [materialCount, setMaterialCount] = useState<number>(0);
@@ -183,7 +184,7 @@ export const ExactAhsp: React.FC<ExactAhspProps> = ({ onOpenWorkspace }) => {
 
           <div className="ez-ahsp-cta-group">
             <button
-              onClick={onOpenWorkspace}
+              onClick={() => navigateTo(paths.ahsp())}
               className="ez-btn-primary-pill ez-ahsp-cta-btn"
               aria-label="Lihat AHSP"
             >

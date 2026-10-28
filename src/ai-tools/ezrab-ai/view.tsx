@@ -22,7 +22,7 @@ import React, { useRef, useState, useEffect, useLayoutEffect, useCallback, Suspe
 import {
   Send, Sparkles, Loader2, RotateCcw,
   Copy, Check, Mic, Paperclip, X, Plus, FileText,
-  History, Trash2, MoreVertical,
+  History, Trash2, MoreVertical, Gamepad2,
 } from 'lucide-react';
 import { ezrabAiService } from './service';
 import {
@@ -1634,6 +1634,12 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                   onClick={() => reloadChat()}
                 >
                   <RotateCcw size={14} /> Muat Ulang
+                </button>
+                <button
+                  role="menuitem"
+                  onClick={() => { setMenuOpen(false); setGameSpaceOpen(true); }}
+                >
+                  <Gamepad2 size={14} /> Game Space
                 </button>
               </div>
             )}

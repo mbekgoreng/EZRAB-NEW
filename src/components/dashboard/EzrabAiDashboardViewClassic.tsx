@@ -16,6 +16,7 @@ import {
 import { Project } from '../../types';
 import { useProject } from '../../context/ProjectContext';
 import { useI18n } from '../../i18n';
+import { useCurrency } from '../../context/CurrencyContext';
 import { countUnpricedRabItems, unpricedInsightText } from '../../lib/dashboardInsight';
 import { EZRABMascotLucu } from '../mascot/EZRABMascotLucu';
 
@@ -71,6 +72,7 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
   };
 
   const { currentProject, setCurrentProjectId, allRabItems } = useProject();
+  const { displayCurrency, formatDisplay } = useCurrency();
   const { t, lang } = useI18n();
 
   // F1a: Insight dari hitungan nyata; proyek terkini urut updatedAt dengan
@@ -977,7 +979,9 @@ export const EzrabAiDashboardViewClassic: React.FC<EzrabAiDashboardViewClassicPr
                       {/* Nilai RAB */}
                       <td style={{ padding: '14px 12px', color: 'var(--ez-color-text-primary)', fontWeight: 550, whiteSpace: 'nowrap' }}>
                         {projectRabValue(proj)
-                          ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(projectRabValue(proj) as number)
+                          ? (displayCurrency === 'IDR'
+                            ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(projectRabValue(proj) as number)
+                            : formatDisplay(projectRabValue(proj) as number))
                           : '-'}
                       </td>
 

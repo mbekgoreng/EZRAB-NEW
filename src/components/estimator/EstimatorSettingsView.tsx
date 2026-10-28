@@ -41,7 +41,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
     (currentProject as any)?.pphPercent ?? 0
   );
   const [selectedRegion, setSelectedRegion] = useState<string>(
-    (currentProject as any)?.region || "JAWA_TIMUR"
+    (currentProject as any)?.region || ""
   );
   const [isSaved, setIsSaved] = useState(false);
 
@@ -285,6 +285,7 @@ export const EstimatorSettingsView: React.FC<EstimatorSettingsViewProps> = ({
               outline: "none",
             }}
           >
+            <option value="">Pilih wilayah…</option>
             <option value="JAWA_TIMUR">Jawa Timur (Surabaya, Malang, Sidoarjo)</option>
             <option value="DKI_JAKARTA">DKI Jakarta & Bodetabek</option>
             <option value="JAWA_BARAT">Jawa Barat (Bandung, Cirebon, dll)</option>

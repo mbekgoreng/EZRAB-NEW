@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { navigateTo, paths } from '../../../routing/routes';
 import {
   ArrowRight,
   FileText,
@@ -37,7 +38,7 @@ const S_POINTS: SPoint[] = [
   { week: 'M4', percent: 68, x: 370, y: 26, label: 'Minggu 4: 68%' }
 ];
 
-export const ExactReportsExport: React.FC<ExactReportsExportProps> = ({ onOpenWorkspace }) => {
+export const ExactReportsExport: React.FC<ExactReportsExportProps> = () => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const isVisibleRef = useRef<boolean>(true);
 
@@ -174,6 +175,12 @@ export const ExactReportsExport: React.FC<ExactReportsExportProps> = ({ onOpenWo
       setExportBtnState('ready');
     }, 5700));
 
+    // 8.7s: kembali ke idle agar tombol bisa diklik (sebelumnya terkunci di
+    // 'ready' selamanya sehingga klik berikutnya ditolak handler — audit B-5).
+    timeouts.push(setTimeout(() => {
+      setExportBtnState('idle');
+    }, 8700));
+
     // 6.2s: Settle into calm idle state
     timeouts.push(setTimeout(() => {
       setIsSettled(true);
@@ -187,7 +194,10 @@ export const ExactReportsExport: React.FC<ExactReportsExportProps> = ({ onOpenWo
 
   // Manual trigger for 1-Click Export test - generates real PDF download
   const handleExportClick = async () => {
-    if (exportBtnState !== 'idle') return;
+    // Tombol ini sempat tampak mati: timeline animasi mengunci state ke 'ready'
+    // dan handler menolak klik apa pun selain 'idle'. Klik kini selalu menjalankan
+    // export (kecuali saat sedang generating).
+    if (exportBtnState === 'generating') return;
     setExportBtnState('generating');
 
     try {
@@ -378,7 +388,7 @@ export const ExactReportsExport: React.FC<ExactReportsExportProps> = ({ onOpenWo
 
           <div className="ez-reports-cta-group">
             <button
-              onClick={onOpenWorkspace}
+              onClick={() => navigateTo(paths.reports())}
               className="ez-btn-primary-pill ez-reports-cta-btn"
               aria-label="Lihat Semua Laporan"
             >

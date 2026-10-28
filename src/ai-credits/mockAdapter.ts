@@ -6,6 +6,11 @@
  * - Menyediakan saldo & riwayat SIMULASI untuk demonstrasi interaksi UI.
  * - State hidup di memori modul ini selama sesi browser; BUKAN sumber
  *   kebenaran produksi. Jangan pakai untuk penagihan nyata.
+ * - Sejak perbaikan audit 2026-10-28, state simulasi juga dipersist ke
+ *   localStorage (kunci di bawah) agar saldo tidak me-reset ke 10.000 setiap
+ *   reload halaman penuh — sebelumnya saldo hanya hidup di memori modul
+ *   sehingga pulang-pergi ke beranda (navigasi langsung) mengembalikannya ke
+ *   default. Persistensi ini HANYA untuk demo; tetap bukan penagihan nyata.
  * - Setiap entri riwayat diberi status 'simulated' dan label "Simulasi".
  * - Pada Fase 2, ganti modul ini dengan adapter yang memanggil endpoint
  *   backend sungguhan (lihat daftar endpoint di docs fase 2).
@@ -38,6 +43,39 @@ const state: MockState = {
   ledger: [],
   seq: 0,
 };
+
+// --- persistensi simulasi (localStorage; aman bila tak tersedia, mis. Node) ---
+const STORAGE_KEY = 'ezrab-credit-sim-v1';
+
+function saveState(): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Abaikan: simulasi tetap jalan di memori.
+  }
+}
+
+function loadState(): void {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as Partial<MockState>;
+    if (parsed.plan === 'free' || parsed.plan === 'starter' || parsed.plan === 'pro') {
+      state.plan = parsed.plan;
+    }
+    if (Number.isFinite(parsed.subscription)) state.subscription = parsed.subscription as number;
+    if (Number.isFinite(parsed.topup)) state.topup = parsed.topup as number;
+    if (Number.isFinite(parsed.bonus)) state.bonus = parsed.bonus as number;
+    if (Array.isArray(parsed.ledger)) state.ledger = parsed.ledger as LedgerEntry[];
+    if (Number.isFinite(parsed.seq)) state.seq = parsed.seq as number;
+  } catch {
+    // Data tersimpan rusak: pakai default.
+  }
+}
+
+loadState();
 
 function nextId(prefix: string): string {
   state.seq += 1;
@@ -143,6 +181,7 @@ export function mockReset(): void {
 type Listener = () => void;
 const listeners = new Set<Listener>();
 function notify(): void {
+  saveState();
   listeners.forEach((l) => l());
 }
 export function subscribeMock(listener: Listener): () => void {

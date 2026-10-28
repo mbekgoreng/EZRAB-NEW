@@ -1323,11 +1323,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={() => {
-              if (onBackToLanding) {
-                if (window.confirm(t('nav.confirm_exit_home'))) {
-                  onBackToLanding();
-                }
-              }
+              // Tanpa confirm: confirm browser auto-dismiss di pengujian membuat
+              // tombol ini tampak mati; keluar ke beranda tidak menghapus data.
+              if (onBackToLanding) onBackToLanding();
             }}
             onMouseEnter={(e) => handleMouseEnterItem(e, t('nav.back_landing'), 'logout')}
             onMouseLeave={handleMouseLeaveItem}

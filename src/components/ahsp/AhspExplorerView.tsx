@@ -30,6 +30,7 @@ import {
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { NationalAHSPItem, AHSPDomain } from '../../data/nationalCostDatabase/types';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
+import { useCurrency } from '../../context/CurrencyContext';
 import { useProject } from '../../context/ProjectContext';
 import { saveProjectAhspFromCatalog } from '../../project-data/ahspBridge';
 import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
@@ -112,6 +113,12 @@ const DOMAIN_COLOR_MAP: Record<string, { bg: string; text: string; border: strin
 
 export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams, onAddAhspToRab }) => {
   const { currentProject, projectRabItems, createRabItemDirect } = useProject();
+  const { displayCurrency, formatDisplay } = useCurrency();
+  // Harga tampil mengikuti mata uang TopBar (audit C-1); IDR persis seperti
+  // dulu, mata uang asing memakai konversi tampilan (fallback jujur ke IDR
+  // bila kurs tak usable — lihat CurrencyContext).
+  const fmt = (v: number | null | undefined) =>
+    displayCurrency === 'IDR' ? formatCurrencyIDR(v) : formatDisplay(v);
 
   // Filters State (F-05: nilai awal dari parameter URL bila ada).
   const [selectedDomain, setSelectedDomain] = useState<AHSPDomain | 'ALL'>(() =>
@@ -1380,9 +1387,9 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                       color: 'var(--ez-color-text-muted)',
                     }}
                   >
-                    <span>Tenaga Kerja: <strong style={{ color: laborTotal > 0 ? 'var(--ez-color-text)' : '#94A3B8' }}>{laborTotal > 0 ? formatCurrencyIDR(laborTotal) : (composition.labor.components.length > 0 ? '—' : '0')}</strong></span>
-                    <span>Material: <strong style={{ color: materialTotal > 0 ? 'var(--ez-color-text)' : '#94A3B8' }}>{materialTotal > 0 ? formatCurrencyIDR(materialTotal) : (composition.material.components.length > 0 ? '—' : '0')}</strong></span>
-                    <span>Peralatan: <strong style={{ color: equipTotal > 0 ? 'var(--ez-color-text)' : '#94A3B8' }}>{equipTotal > 0 ? formatCurrencyIDR(equipTotal) : (composition.equipment.components.length > 0 ? '—' : '0')}</strong></span>
+                    <span>Tenaga Kerja: <strong style={{ color: laborTotal > 0 ? 'var(--ez-color-text)' : '#94A3B8' }}>{laborTotal > 0 ? fmt(laborTotal) : (composition.labor.components.length > 0 ? '—' : '0')}</strong></span>
+                    <span>Material: <strong style={{ color: materialTotal > 0 ? 'var(--ez-color-text)' : '#94A3B8' }}>{materialTotal > 0 ? fmt(materialTotal) : (composition.material.components.length > 0 ? '—' : '0')}</strong></span>
+                    <span>Peralatan: <strong style={{ color: equipTotal > 0 ? 'var(--ez-color-text)' : '#94A3B8' }}>{equipTotal > 0 ? fmt(equipTotal) : (composition.equipment.components.length > 0 ? '—' : '0')}</strong></span>
                   </div>
                 </div>
 
@@ -1401,7 +1408,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                     <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>Harga Satuan (HSP):</span>
                     {hspPrice !== null && hspPrice > 0 ? (
                       <div style={{ fontSize: '17px', fontWeight: 800, color: pricingStatus === 'FULL' ? 'var(--ez-hue-green-text)' : 'var(--ez-hue-amber-text-deep)' }}>
-                        {formatCurrencyIDR(hspPrice)}{pricingStatus === 'PARTIAL' ? '*' : ''} <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>/ {item.unit}</span>
+                        {fmt(hspPrice)}{pricingStatus === 'PARTIAL' ? '*' : ''} <span style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', fontWeight: 600 }}>/ {item.unit}</span>
                       </div>
                     ) : (
                       <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ez-color-text-muted)', fontStyle: 'italic' }}>
@@ -1766,7 +1773,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                     </td>
                     <td style={{ padding: '10px', textAlign: 'right', color: 'var(--ez-color-text-primary)', fontSize: '13.5px', fontWeight: 800 }}>
                       {selectedAhspAugmented && selectedAhspAugmented.unitPrice !== null && selectedAhspAugmented.unitPrice > 0
-                        ? formatCurrencyIDR(selectedAhspAugmented.unitPrice)
+                        ? fmt(selectedAhspAugmented.unitPrice)
                         : '—'}
                     </td>
                   </tr>
@@ -1794,7 +1801,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                         const dPrice = getAhspDirectPrice(comp);
                         const isFull = comp?.pricingStatus === 'FULL' || selectedAhsp?.domain === 'SMKK';
                         return isFull && dPrice !== null && dPrice > 0
-                          ? formatCurrencyIDR(dPrice)
+                          ? fmt(dPrice)
                           : 'Harga belum tersedia';
                       })()}
                     </td>
@@ -1806,7 +1813,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                         Daftar Harga Satuan Pekerjaan Resmi (DHSP):
                       </td>
                       <td style={{ padding: '10px', textAlign: 'right', color: 'var(--ez-hue-green-text)', fontSize: '15px', fontWeight: 900 }}>
-                        {formatCurrencyIDR(selectedAhspAugmented.officialDhspPrice)}
+                        {fmt(selectedAhspAugmented.officialDhspPrice)}
                       </td>
                     </tr>
                   ) : null}
@@ -2023,7 +2030,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                   <>
                     <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--ez-hue-green-text-bright)', marginTop: '6px' }}>
                       {gate.ok && rabD !== null && rabD > 0
-                        ? `${formatCurrencyIDR(rabD)} / ${addToRabModalItem.unit}`
+                        ? `${fmt(rabD)} / ${addToRabModalItem.unit}`
                         : 'Harga belum tersedia'}
                     </div>
                     {!gate.ok ? (
@@ -2079,7 +2086,7 @@ export const AhspExplorerView: React.FC<AhspExplorerViewProps> = ({ routeParams,
                   const comp = addToRabAugmented;
                   const rabD = getAhspDirectPrice(comp);
                   return canFinalizeAhsp(comp).ok && rabD !== null && rabD > 0
-                    ? formatCurrencyIDR(rabD * (inputVolume || 0))
+                    ? fmt(rabD * (inputVolume || 0))
                     : '—';
                 })()}
               </span>

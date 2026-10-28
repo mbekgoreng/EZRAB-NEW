@@ -112,6 +112,7 @@ const { t, lang, setLang } = useI18n();
   const { activeRole, logoutRole } = useRole();
   const [currentUser, setCurrentUser] = useState(() => ClientUserManagementService.getCurrentUser());
   const [helpOpen, setHelpOpen] = useState(false);
+  const [shortcutOpen, setShortcutOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
@@ -860,7 +861,7 @@ onFocus={(e) => {
                     { label: 'Panduan Penggunaan EZRAB', icon: BookOpen, action: () => { setHelpOpen(false); window.dispatchEvent(new CustomEvent(ONBOARDING_OPEN_EVENT)); } },
                     // FAQ → bagian FAQ nyata di halaman publik /fitur.
                     { label: 'Pusat Bantuan & FAQ', icon: LifeBuoy, action: () => { setHelpOpen(false); navigateTo('/fitur'); window.setTimeout(() => { document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' }); }, 250); } },
-                    { label: 'Shortcut Keyboard (⌘ K)', icon: Keyboard, action: () => { setHelpOpen(false); alert(`${t('nav.shortcut_title')}:\n- ⌘ K / Ctrl+K: ${t('nav.shortcut_search')}\n- Esc: ${t('nav.shortcut_close')}\n- Shift+A: ${t('nav.shortcut_magic_ai')}`); } },
+                    { label: 'Shortcut Keyboard (⌘ K)', icon: Keyboard, action: () => { setHelpOpen(false); setShortcutOpen(true); } },
                     // Item dukungan teknis DIHAPUS (F6): tidak ada kanal
                     // support nyata di konfigurasi — item itu hanya melempar
                     // ke tab pengaturan yang sama dan menyesatkan.
@@ -1323,9 +1324,13 @@ color: 'var(--ez-hue-violet-text)', background: 'var(--ez-hue-violet-bg)',
                     if (onLogout) {
                       logoutRole();
                       onLogout();
-                    } else if (window.confirm(t('nav.konfirmasi_keluar'))) {
+                    } else {
+                      // Tanpa onLogout: kembali ke landing langsung (tanpa
+                      // confirm — confirm browser auto-dismiss di pengujian
+                      // membuat tombol ini tampak mati).
                       logoutRole();
-                      onNavigate('landing');
+                      navigateTo('/');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                   }}
                   style={{
@@ -1375,6 +1380,79 @@ color: 'var(--ez-hue-violet-text)', background: 'var(--ez-hue-violet-bg)',
           }}
         >
           {breadcrumb}
+        </div>
+      )}
+      {shortcutOpen && (
+        <div
+          role="dialog"
+          aria-label={t('nav.shortcut_title')}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1200,
+          }}
+          onClick={() => setShortcutOpen(false)}
+        >
+          <div
+            style={{
+              background: 'var(--ez-color-surface)',
+              border: '1px solid var(--ez-color-surface-tertiary)',
+              borderRadius: '14px',
+              boxShadow: '0 24px 60px rgba(15, 23, 42, 0.25)',
+              padding: '20px 22px',
+              width: 'min(420px, calc(100vw - 32px))',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: '15px', fontWeight: 700, marginBottom: '12px' }}>
+              {t('nav.shortcut_title')}
+            </div>
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13.5px' }}>
+              <li>⌘ K / Ctrl+K — {t('nav.shortcut_search')}</li>
+              <li>Esc — {t('nav.shortcut_close')}</li>
+              <li>Shift+A — {t('nav.shortcut_magic_ai')}</li>
+            </ul>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '16px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setShortcutOpen(false);
+                  searchInputRef.current?.focus();
+                }}
+                style={{
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '8px 14px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  background: 'var(--ez-color-primary)',
+                  color: '#ffffff',
+                }}
+              >
+                {t('nav.shortcut_search')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShortcutOpen(false)}
+                style={{
+                  border: '1px solid var(--ez-color-surface-tertiary)',
+                  borderRadius: '8px',
+                  padding: '8px 14px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  background: 'transparent',
+                }}
+              >
+                {t('common.tutup')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </header>

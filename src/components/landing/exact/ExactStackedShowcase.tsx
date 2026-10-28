@@ -79,6 +79,13 @@ function computeCardStyle(index: number, v: number): CardStyle {
 
   const isActive = d < 0.25;
 
+  // Kartu terdepan bisa diklik selama masih jadi kartu depan (d < 1), bukan
+  // hanya saat sudah berhenti penuh (d < 0.25): sebelumnya tombol kartu yang
+  // sedang transisi terlihat tapi tidak bisa diklik (audit B-4 — kartu yang
+  // sudah lewat selalu pointerEvents 'none', jadi tetap hanya satu kartu yang
+  // bisa diklik dalam satu waktu).
+  const isClickable = d < 1;
+
   return {
     transform: `translate3d(0, ${translateY}px, 0) scale(${scale})`,
     opacity,
@@ -88,7 +95,7 @@ function computeCardStyle(index: number, v: number): CardStyle {
       ? '0 32px 85px -15px rgba(15, 23, 42, 0.18), 0 0 0 1.5px rgba(37, 99, 235, 0.16)'
       : '0 20px 45px -15px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(226, 232, 240, 0.7)',
     borderColor: isActive ? 'rgba(37, 99, 235, 0.25)' : 'rgba(226, 232, 240, 0.7)',
-    pointerEvents: isActive ? 'auto' : 'none',
+    pointerEvents: isClickable ? 'auto' : 'none',
     visibility: 'visible',
   };
 }

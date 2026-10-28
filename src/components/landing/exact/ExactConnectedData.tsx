@@ -1,4 +1,5 @@
 import React from 'react';
+import { navigateTo, paths } from '../../../routing/routes';
 import {
   ArrowRight,
   Zap,
@@ -20,7 +21,7 @@ interface ExactConnectedDataProps {
   onOpenWorkspace?: () => void;
 }
 
-export const ExactConnectedData: React.FC<ExactConnectedDataProps> = ({ onOpenWorkspace }) => {
+export const ExactConnectedData: React.FC<ExactConnectedDataProps> = () => {
   return (
     <section id="data-terhubung" className="ez-connected-section">
       {/* Background blueprint subtle watermark */}
@@ -45,7 +46,14 @@ export const ExactConnectedData: React.FC<ExactConnectedDataProps> = ({ onOpenWo
           </p>
 
           <div className="ez-connected-cta-wrap">
-            <button onClick={onOpenWorkspace} className="ez-btn-primary-pill ez-connected-btn">
+            <button
+              onClick={() => {
+                // "Alur Lengkap" = pipeline alur kerja di landing (seksi #fitur),
+                // bukan dashboard generik.
+                document.getElementById('fitur')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="ez-btn-primary-pill ez-connected-btn"
+            >
               <span>Lihat Alur Lengkap</span>
               <ArrowRight size={17} />
             </button>

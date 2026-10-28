@@ -56,6 +56,7 @@ import { INDONESIA_38_PROVINCES } from '../../domain/material/nationalRegionData
 import { BRAND_CATALOG } from '../../domain/material/brandDatabase';
 import { MASTER_PRICE_ITEMS } from '../../data/indonesianPrices';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
+import { useCurrency } from '../../context/CurrencyContext';
 import { useProject } from '../../context/ProjectContext';
 
 // Dedicated Sub-components & Helpers
@@ -110,6 +111,10 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
   onNavigateToTab,
 }) => {
   const { currentProject } = useProject();
+  const { displayCurrency, formatDisplay } = useCurrency();
+  // Harga tampil mengikuti mata uang TopBar (audit C-1); IDR persis seperti dulu.
+  const fmt = (v: number | null | undefined) =>
+    displayCurrency === 'IDR' ? formatCurrencyIDR(v) : formatDisplay(v);
   const matDb = useMemo(() => MaterialDatabaseService.getInstance(), []);
   const laborDb = useMemo(() => LaborDatabaseService.getInstance(), []);
   const equipDb = useMemo(() => EquipmentDatabaseService.getInstance(), []);
@@ -2075,8 +2080,8 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                           <td style={{ padding: `${padY} 10px`, whiteSpace: 'nowrap' }}>
                             <div style={{ fontWeight: 900, color: isOverridden ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text)', fontFamily: 'monospace', fontSize: '12px' }}>
                               {isOverridden && activeOverride
-                                ? formatCurrencyIDR(activeOverride.price)
-                                : (basePrice > 0 ? formatCurrencyIDR(basePrice) : 'Belum tersedia')}
+                                ? fmt(activeOverride.price)
+                                : (basePrice > 0 ? fmt(basePrice) : 'Belum tersedia')}
                             </div>
                             {isOverridden ? (
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
@@ -2084,7 +2089,7 @@ export const MaterialDatabaseView: React.FC<MaterialDatabaseViewProps> = ({
                                   OVERRIDE PROYEK
                                 </span>
                                 <span style={{ fontSize: '9.5px', color: 'var(--ez-color-text-faint)', textDecoration: 'line-through' }}>
-                                  {basePrice > 0 ? formatCurrencyIDR(basePrice) : 'Belum tersedia'}
+                                  {basePrice > 0 ? fmt(basePrice) : 'Belum tersedia'}
                                 </span>
                               </div>
                             ) : primaryPriceRec?.verificationStatus === 'VERIFIED' ? (
