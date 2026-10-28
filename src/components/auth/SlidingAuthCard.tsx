@@ -24,6 +24,8 @@ interface Props {
   onClose: () => void;
   /** Tampilkan panel peran demo (PIN) sebagai ganti. */
   onShowRoleLogin: () => void;
+  /** True bila backend login belum aktif: tampilkan banner demo-only. */
+  demoOnly?: boolean;
 }
 
 function GoogleIcon() {
@@ -42,6 +44,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
   onSuccessLogin,
   onClose,
   onShowRoleLogin,
+  demoOnly = false,
 }) => {
   const [isSignUp, setIsSignUp] = useState(initialTab === 'daftar');
   const [name, setName] = useState('');
@@ -148,6 +151,48 @@ export const SlidingAuthCard: React.FC<Props> = ({
       <button type="button" className="sac-close" onClick={onClose} aria-label="Tutup">
         <X size={20} />
       </button>
+
+      {demoOnly && (
+        <div
+          role="note"
+          style={{
+            position: 'absolute',
+            top: 16,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 5,
+            width: 'min(560px, calc(100% - 32px))',
+            textAlign: 'center',
+            fontSize: '13px',
+            lineHeight: 1.55,
+            color: '#1e40af',
+            background: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            borderRadius: '10px',
+            padding: '10px 12px',
+          }}
+        >
+          Login email belum diaktifkan — backend dalam redesign. Untuk
+          sekarang, masuk lewat{' '}
+          <button
+            type="button"
+            onClick={onShowRoleLogin}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              color: '#1d4ed8',
+              fontWeight: 700,
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              fontSize: '13px',
+            }}
+          >
+            peran demo
+          </button>
+          .
+        </div>
+      )}
 
       <div className="sac-mobile-brand">
         <img src="/images/ez-emblem.png" alt="EZRAB" />

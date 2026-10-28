@@ -87,3 +87,37 @@ export function resolveAuthMode(
 export function isOpenAccessMode(mode: AuthMode): boolean {
   return mode === 'open' || mode === 'failsafe-demo';
 }
+
+/* ------------------------------------------------------------------ */
+/* Login UI frontend-only (tanpa backend) — user 2026-10-28            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Keputusan tampilnya modal login.
+ *
+ * - 'real-login' → modal penuh (Supabase). Tidak peduli flag UI.
+ * - 'open' + loginUiEnabled → modal DEMO-ONLY: kartu email tampil, tapi
+ *   submit email/Google gagal jujur (Supabase belum terkonfigurasi —
+ *   lihat SlidingAuthCard), dan jalur masuk yang jalan adalah peran demo
+ *   lokal (RoleLoginPanel + forceDemoRoles). Owner tidak pernah terkunci.
+ * - 'failsafe-demo' → modal TIDAK tampil walau flag menyala: jalur
+ *   fail-safe harus tetap tanpa friksi (langsung workspace + banner).
+ * - 'open' tanpa flag → perilaku lama (langsung workspace).
+ *
+ * AUTH_ENABLED sendiri TIDAK diubah oleh keputusan ini: backend login
+ * tetap nonaktif sampai user mendesain ulang backend.
+ */
+export interface LoginUiDecision {
+  showModal: boolean;
+  demoOnly: boolean;
+}
+
+export function resolveLoginUi(
+  mode: AuthMode,
+  loginUiEnabled: boolean,
+): LoginUiDecision {
+  if (mode === 'real-login') return { showModal: true, demoOnly: false };
+  if (loginUiEnabled && mode === 'open')
+    return { showModal: true, demoOnly: true };
+  return { showModal: false, demoOnly: false };
+}

@@ -36,10 +36,11 @@ export function deriveAiStatus(input: AiStatusInput): AiStatus {
     return { label: 'AI tidak terjangkau — periksa koneksi internet', tone: 'error' };
   }
   if (input.lastOutcome === 'auth-error') {
-    // F3: no sign-in screen exists in this build (AUTH_ENABLED=false) —
-    // never instruct the user to "log in again". Name the real cause:
-    // the gateway refused access; the actionable check is the app
-    // access code (kode akses), plus retrying.
+    // F3: layar masuk di build ini bersifat frontend-only (AUTH_ENABLED=
+    // false; login email backend belum dibangun) — jangan pernah menyuruh
+    // user "login lagi". Sebut penyebab sebenarnya: gateway menolak akses;
+    // pemeriksaan yang bisa dilakukan adalah kode akses aplikasi, plus
+    // percobaan ulang.
     return { label: 'Akses AI ditolak server — periksa kode akses aplikasi', tone: 'error' };
   }
   if (input.lastOutcome === 'demo-restricted') {

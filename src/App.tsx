@@ -23,7 +23,7 @@ import { FeatureTutorialPlayer } from './components/onboarding/tutorials/Feature
 import { WelcomeSlotGuard } from './components/onboarding/tutorials/WelcomeSlotGuard';
 import { isAppPath, navigateTo, parseWorkspaceRoute, paths, routeForMenu, routeLabel } from './routing/routes';
 import { useBrowserLocation } from './routing/useBrowserLocation';
-import { resolveAuthMode, type AuthMode } from './auth/authMode';
+import { resolveAuthMode, resolveLoginUi, type AuthMode } from './auth/authMode';
 import { PasscodeGate } from './auth/PasscodeGate';
 
 // Login dinonaktifkan sementara (perintah user 2026-10-12): seluruh pintu
@@ -37,6 +37,18 @@ import { PasscodeGate } from './auth/PasscodeGate';
 // Lihat src/auth/authMode.ts untuk matriks resolusinya.
 const AUTH_ENABLED = false;
 
+// Login UI frontend-only (perintah user 2026-10-28): tombol "Masuk" /
+// "Coba Gratis" menampilkan AuthModal walau AUTH_ENABLED=false. Backend
+// login TIDAK ikut aktif — user akan mendesain ulang backend nanti.
+// Di mode ini modal berjalan DEMO-ONLY: form email tampil, tapi submit
+// email/Google gagal jujur karena Supabase belum terkonfigurasi (lihat
+// SlidingAuthCard), dan jalur masuk yang jalan adalah peran demo lokal
+// (RoleLoginPanel + forceDemoRoles). Owner tidak pernah terkunci:
+// masuk demo → workspace seperti akses terbuka hari ini.
+// Membalik flag ini ke false mengembalikan perilaku lama (CTA langsung
+// ke workspace, modal tidak pernah tampil).
+const LOGIN_UI_ENABLED = true;
+
 /**
  * Mode auth efektif hasil resolusi flag + env. Dihitung sekali di module
  * scope karena import.meta.env di-inline saat build (vite).
@@ -46,6 +58,9 @@ const AUTH_ENABLED = false;
  *                     terbuka + banner. Owner tidak pernah terkunci.
  */
 const AUTH_MODE: AuthMode = resolveAuthMode(AUTH_ENABLED);
+
+/** Keputusan tampilnya modal login (lihat src/auth/authMode.ts). */
+const LOGIN_UI = resolveLoginUi(AUTH_MODE, LOGIN_UI_ENABLED);
 
 if (typeof console !== 'undefined' && AUTH_MODE === 'failsafe-demo') {
   console.warn(
@@ -247,14 +262,15 @@ export const App: React.FC = () => {
   };
 
   const handleOpenAuth = (tab: 'masuk' | 'daftar' = 'masuk') => {
-    // Fail-safe: mode selain 'real-login' (yaitu 'open' maupun 'failsafe-demo')
-    // selalu memberi akses terbuka — tidak pernah mengunci owner.
-    if (AUTH_MODE !== 'real-login') {
-      handleSetWorkspace(true);
+    // Modal tampil di 'real-login' (penuh) dan di 'open' + LOGIN_UI_ENABLED
+    // (demo-only). Mode lain (termasuk 'failsafe-demo') selalu memberi
+    // akses terbuka — tidak pernah mengunci owner.
+    if (LOGIN_UI.showModal) {
+      setAuthInitialTab(tab);
+      setAuthModalOpen(true);
       return;
     }
-    setAuthInitialTab(tab);
-    setAuthModalOpen(true);
+    handleSetWorkspace(true);
   };
 
   const handleReturnToLanding = () => {
@@ -399,11 +415,13 @@ export const App: React.FC = () => {
           }}
         />
 
-        {/* Modals — AuthModal hanya aktif di mode 'real-login' (fail-safe). */}
-        {AUTH_MODE === 'real-login' && (
+        {/* Modals — AuthModal tampil di 'real-login' (penuh) dan di 'open' +
+            LOGIN_UI_ENABLED (demo-only). Di luar itu tidak di-render. */}
+        {LOGIN_UI.showModal && (
           <AuthModal
             isOpen={authModalOpen}
             initialTab={authInitialTab}
+            demoOnly={LOGIN_UI.demoOnly}
             onClose={() => setAuthModalOpen(false)}
             onSuccessLogin={() => {
               setAuthModalOpen(false);
