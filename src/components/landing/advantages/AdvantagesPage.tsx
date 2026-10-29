@@ -17,6 +17,8 @@ import {
 
 interface AdvantagesPageProps {
   onBackToLanding: () => void;
+  /** AUTH-03: pintu auth yang sama seperti landing (route /masuk & /daftar). */
+  onOpenAuth?: (tab: 'masuk' | 'daftar') => void;
   onOpenWorkspace: () => void;
   onOpenFeatures: () => void;
 }
@@ -54,6 +56,7 @@ const Section: React.FC<{
  */
 export const AdvantagesPage: React.FC<AdvantagesPageProps> = ({
   onBackToLanding,
+  onOpenAuth,
   onOpenWorkspace,
   onOpenFeatures,
 }) => {
@@ -95,7 +98,7 @@ export const AdvantagesPage: React.FC<AdvantagesPageProps> = ({
     <div className="adv-page">
       {/* Nav — sama seperti landing page */}
       <ExactNavbar
-        onOpenAuth={() => onOpenWorkspace()}
+        onOpenAuth={(tab) => (onOpenAuth ? onOpenAuth(tab) : onOpenWorkspace())}
         onBackToLanding={onBackToLanding}
         onOpenAdvantages={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       />

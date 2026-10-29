@@ -64,9 +64,9 @@ export const CinematicHero: React.FC<CinematicHeroProps> = ({ onStartFree, onOpe
           bersama <span className="ch-headline-accent">EZRAB.</span>
         </h1>
         <p className="ch-subheadline">
-          EZRAB membaca DED Anda, menghitung volume (QTO), menerapkan AHSP
-          2026, dan merakit RAB siap tender — dalam hitungan menit, tanpa
-          drama revisi berulang.
+          EZRAB membantu membaca DED Anda, menghitung volume (QTO),
+          menerapkan AHSP 2026, dan menyusun draf RAB yang siap Anda periksa
+          dan sempurnakan — tanpa drama revisi berulang.
         </p>
         <div className="ch-cta-row">
           <button type="button" className="ch-cta-primary" onClick={onStartFree}>

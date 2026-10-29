@@ -18,11 +18,12 @@
  *                   → akses tetap terbuka seperti 'open' + banner peringatan.
  *                     Owner tidak pernah terkunci; aplikasi tidak crash.
  *
- * Validasi Supabase di sini SENGAJA lebih ketat daripada
- * `isSupabaseAuthEnabled()` di lib/supabase.ts (yang hanya mengecek
- * keberadaan env): URL harus https:// dan key harus cukup panjang agar
- * konfigurasi setengah jadi tidak memicu 'real-login' dengan form login
- * yang pasti gagal.
+ * Validasi Supabase di sini adalah satu-satunya definisi "terkonfigurasi"
+ * (AUTH-08, audit 2026-10-29): `isSupabaseAuthEnabled()` di lib/supabase.ts
+ * dan `isSupabaseConfigured()` di services/supabaseClient.ts sama-sama
+ * mendelegasikan ke fungsi ini. URL harus https:// dan key harus cukup
+ * panjang agar konfigurasi setengah jadi tidak memicu 'real-login' dengan
+ * form login yang pasti gagal.
  *
  * Aturan user yang dijaga modul ini:
  * - backend authoritative untuk auth; localStorage bukan identitas

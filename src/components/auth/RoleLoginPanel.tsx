@@ -9,7 +9,7 @@ import {
 import { ROLE_ACCOUNTS, type RoleId } from '../../auth/roleAccounts';
 import { useRole } from '../../auth/RoleContext';
 import { useI18n } from '../../i18n';
-import { isSupabaseAuthEnabled } from '../../lib/supabase';
+import { isSupabaseReadyForAuth } from '../../auth/authMode';
 import { SupabaseLoginPanel } from './SupabaseLoginPanel';
 
 /** Gambar peran (generate AI, gaya seragam: helm putih + rompi biru). */
@@ -34,14 +34,9 @@ interface RoleLoginPanelProps {
 }
 
 export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBackToLogin, initialMode = 'signin', forceDemoRoles = false }) => {
-  // Phase 3: when real Supabase Auth is configured, demo PINs are REPLACED
-  // by verified login — never shown side by side. Without Supabase config,
-  // the legacy demo flow stays so the owner is never locked out.
-  // forceDemoRoles bypasses this for the dedicated /masuk/role route.
-  if (isSupabaseAuthEnabled() && !forceDemoRoles) {
-    return <SupabaseLoginPanel onSuccess={onSuccess} onBackToLogin={onBackToLogin} initialMode={initialMode} />;
-  }
-
+  // Semua hooks dipanggil TANPA syarat di awal (AUTH-07, audit 2026-10-29:
+  // sebelumnya return dini mendahului hooks — pelanggaran rules-of-hooks
+  // yang hanya stabil karena cek konfigurasi adalah konstanta build-time).
   const { t } = useI18n();
   const { loginWithPin } = useRole();
   const [selectedRole, setSelectedRole] = useState<RoleId | null>(null);
@@ -50,6 +45,16 @@ export const RoleLoginPanel: React.FC<RoleLoginPanelProps> = ({ onSuccess, onBac
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const pinInputRef = useRef<HTMLInputElement>(null);
+
+  // Phase 3: when real Supabase Auth is configured, demo PINs are REPLACED
+  // by verified login — never shown side by side. Without Supabase config,
+  // the legacy demo flow stays so the owner is never locked out.
+  // forceDemoRoles bypasses this for the dedicated /masuk/role route.
+  // AUTH-08: memakai cek ketat tunggal dari authMode (bukan lagi cek
+  // keberadaan env saja) agar keadaan auth tidak tercampur dalam satu layar.
+  if (isSupabaseReadyForAuth() && !forceDemoRoles) {
+    return <SupabaseLoginPanel onSuccess={onSuccess} onBackToLogin={onBackToLogin} initialMode={initialMode} />;
+  }
 
   const handleSelectRole = (roleId: RoleId) => {
     setSelectedRole(roleId);

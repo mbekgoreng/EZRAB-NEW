@@ -209,7 +209,7 @@ export const DrawingsToDecisionsSection: React.FC<DrawingsToDecisionsSectionProp
             {/* Bottom Right System Metric */}
             <path d="M 1392,852 L 1392,876 M 1380,864 L 1404,864" stroke="rgba(37, 99, 235, 0.35)" strokeWidth="1" />
             <text x="1260" y="868" fill="rgba(37, 99, 235, 0.45)" fontSize="10" fontFamily="monospace" letterSpacing="0.1em">
-              DECISION ACCURACY 99.8%
+              PIPELINE: DRAWING → DECISION
             </text>
           </svg>
         </div>

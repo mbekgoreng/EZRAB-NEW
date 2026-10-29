@@ -185,7 +185,10 @@ export const ExactNavbar: React.FC<ExactNavbarProps> = ({
         <a href="/keunggulan" onClick={goPage('/keunggulan')}><span>04</span> Keunggulan</a>
         <a href="/#harga" onClick={goLandingSection('harga')}><span>05</span> Harga</a>
         <button type="button" onClick={() => { setMobileMenuOpen(false); onOpenAuth('masuk'); }}>
-          Masuk ke Workspace <ArrowRight size={16} />
+          Masuk <ArrowRight size={16} />
+        </button>
+        <button type="button" onClick={() => { setMobileMenuOpen(false); onOpenAuth('daftar'); }}>
+          Coba Gratis <ArrowRight size={16} />
         </button>
       </nav>
     </header>

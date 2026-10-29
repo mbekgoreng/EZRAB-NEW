@@ -87,6 +87,11 @@
   transform: scale(1.05);
 }
 
+.sac-close:focus-visible {
+  outline: 2px solid #1d76e2;
+  outline-offset: 2px;
+}
+
 .sac-role-link {
   margin-top: 14px;
   background: none;
@@ -154,6 +159,16 @@
   background: #eff6ff;
   color: #1d4ed8;
   border: 1px solid #bfdbfe;
+}
+
+/* AUTH-09: pesan error per-field di bawah input yang bermasalah */
+.sac2-field-error {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: #be123c;
+  text-align: left;
 }
 
 /* ---------------- Panel status sesi (memeriksa / sudah masuk) ---------------- */
@@ -330,7 +345,7 @@
 .sac2-card .input-line::after { content: ''; position: absolute; left: 0; bottom: -1.5px; width: 100%; height: 2px; background: #1d76e2; transform: scaleX(0); transform-origin: left center; transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
 .sac2-card .input-line:focus-within::after { transform: scaleX(1); }
 .sac2-card .text-input { width: 100%; padding: 8px 0; font-size: 13.5px; color: #0f172a; background: transparent; border: none; outline: none; font-family: inherit; }
-.sac2-card .text-input::placeholder { color: #94a3b8; }
+.sac2-card .text-input::placeholder { color: #64748b; }
 .sac2-card .eye-btn { background: transparent; border: none; padding: 6px; color: #94a3b8; cursor: pointer; border-radius: 999px; display: flex; align-items: center; justify-content: center; transition: color 0.15s ease, background-color 0.15s ease; }
 .sac2-card .eye-btn:hover { color: #1d76e2; background-color: #f1f5f9; }
 .sac2-card .meta-row { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; margin-bottom: 22px; font-size: 11.5px; }
@@ -345,7 +360,7 @@
 .sac2-card .primary-btn:active { transform: scale(0.99); }
 .sac2-card .or-divider { position: relative; display: flex; align-items: center; justify-content: center; margin: 15px 0; }
 .sac2-card .or-line { position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid #e2e8f0; width: 100%; }
-.sac2-card .or-text { position: relative; z-index: 1; background: #ffffff; padding: 0 12px; font-size: 11px; color: #94a3b8; }
+.sac2-card .or-text { position: relative; z-index: 1; background: #ffffff; padding: 0 12px; font-size: 11px; color: #64748b; }
 .sac2-card .google-btn { width: 100%; padding: 11.5px 16px; border-radius: 999px; background: #f1f5f9; color: #0f172a; font-weight: 600; font-size: 13px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 9px; transition: background 0.15s ease; font-family: inherit; }
 .sac2-card .google-btn:hover { background: #e2e8f0; }
 .sac2-card .signup-footer { text-align: center; font-size: 11.5px; color: #64748b; margin: 22px 0 0 0; }
@@ -367,13 +382,10 @@
 .sac2-card.shake { animation: cardShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
 @media (prefers-reduced-motion: reduce) {
   .sac2-card .mate, .sac2-card .mate-face, .sac2-card .mate-visor, .sac2-card .mate-helmet, .sac2-card .expr-layer, .sac2-card .blink-target { transition: none !important; animation: none !important; }
+  .sac2-card.shake { animation: none !important; }
 }
-.sac2-card <style>
-    
-    .strokeless-svg .outlined { stroke: #0b2246 !important; }
-<style>
-    
-    .sac2-card[data-mood="idle"] .mate-face { transition: transform 0.22s cubic-bezier(.22,1,.36,1), opacity 0.24s ease; }
+.sac2-card .strokeless-svg .outlined { stroke: #0b2246 !important; }
+.sac2-card[data-mood="idle"] .mate-face { transition: transform 0.22s cubic-bezier(.22,1,.36,1), opacity 0.24s ease; }
 .sac2-card[data-mood="idle"] .mate-visor { transition: transform 0.22s cubic-bezier(.22,1,.36,1); }
 .sac2-card[data-mood="idle"] .mate-helmet { transition: transform 0.22s cubic-bezier(.22,1,.36,1); }
 .sac2-card.is-logging-in .mate { animation: matePopFromBelow .95s cubic-bezier(.34,1.56,.64,1) both; }
@@ -391,8 +403,5 @@
 @media (prefers-reduced-motion: reduce) {
   .sac2-card .mate--ezrab .hero-eye-track { transform: none; transition: none; }
 }
-.sac2-card .mate--ezrab { --hx: 0; --hy: 0; transform: none !important; }
-.sac2-card .mate--ezrab .mate-face { transform: none !important; }
-.sac2-card.is-logging-in .mate--ezrab { animation: none !important; }
-.sac2-card .mate--ezrab.mate-bounce { animation: none !important; }
+.sac2-card .mate--ezrab { --hx: 0; --hy: 0; }
 .sac2-card .mate--ezrab.is-blinking .ezrab-idle, .sac2-card .mate--ezrab.is-blinking .ezrab-nosy { opacity: 0; }

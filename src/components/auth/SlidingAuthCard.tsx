@@ -6,8 +6,14 @@
  * - Mood karakter idle/nosy/shy/exposed mengikuti fokus form: email =
  *   nosy (kepo), kata sandi = shy (menutup mata), kata sandi terlihat =
  *   exposed. Kursor menggerakkan wajah/helm karakter (--mx/--my) dan
- *   khusus mata maskot utama lewat tracker tersendiri (--hx/--hy);
- *   badan maskot utama terkunci diam (stationary lock di CSS).
+ *   khusus mata maskot utama lewat tracker tersendiri (--hx/--hy).
+ *   Maskot utama bergerak seperti karakter lain (miring/sway, pop,
+ *   bounce klik) — kunci diam lama dicabut atas keputusan user
+ *   2026-10-29; batch audit landing+auth 2026-10-29 juga menambahkan:
+ *   pesan demo-only yang eksplisit (AUTH-02), sinkronisasi mode↔URL
+ *   (AUTH-06), validasi per-field + pesan error aman (AUTH-09), pesan
+ *   daftar sadar konfirmasi email (AUTH-10), scene dimuat lazy
+ *   (PERF-01), dan tracker kursor menghormati reduced-motion (A11Y-01).
  * - Klik tombol submit memicu animasi pop karakter dari bawah; error
  *   validasi menggoyang kartu.
  *
@@ -33,8 +39,14 @@ import {
 } from '../../services/supabaseClient';
 import { useRole } from '../../auth/RoleContext';
 import { logoutSessionsOnly } from '../../auth/logoutAll';
-import { LoginMatesScene } from './LoginMatesScene';
 import './sliding-auth.css';
+
+// PERF-01 (audit 2026-10-29): scene maskot adalah SVG inline ~386 KB —
+// dimuat lazy agar tidak membebani bundle utama halaman landing; kartu
+// login hanya tampil di route/modal auth, jadi chunk-nya terpisah.
+const LoginMatesScene = React.lazy(() =>
+  import('./LoginMatesScene').then((m) => ({ default: m.LoginMatesScene })),
+);
 
 export type SlidingAuthTab = 'masuk' | 'daftar';
 type Mood = 'idle' | 'nosy' | 'shy' | 'exposed';
@@ -46,9 +58,14 @@ interface Props {
   onClose: () => void;
   /** Tampilkan panel peran demo (PIN) sebagai ganti. */
   onShowRoleLogin: () => void;
+  /** AUTH-06: dipanggil saat pengguna menukar mode Masuk/Daftar. Di
+      varian 'page' pemilik route menavigasikan URL (/masuk ↔ /daftar)
+      agar URL, judul, dan mode form tidak pernah berbeda. */
+  onModeChange?: (tab: SlidingAuthTab) => void;
   /** True bila backend login belum aktif: tampilkan banner demo-only. */
   demoOnly?: boolean;
-  /** 'overlay' (bawaan — dipakai AuthModal sebagai lapisan fixed) atau
+  /** 'overlay' (bawaan — lapisan fixed; tak ada pemanggil aktif sejak
+      AuthModal dipensiunkan) atau
       'page' (halaman route /masuk & /daftar — .sac-page mengalir sebagai
       dokumen dan banner demo-only tampil in-flow di atas kartu). */
   variant?: 'overlay' | 'page';
@@ -67,20 +84,55 @@ function GoogleIcon() {
 
 const clampUnit = (v: number) => Math.max(-1, Math.min(1, v));
 
+/**
+ * AUTH-09 (audit 2026-10-29): pesan error provider TIDAK ditampilkan
+ * mentah ke pengguna — petakan ke pesan aman berbahasa Indonesia
+ * (selaras friendlyAuthError di AuthContext).
+ */
+function friendlyAuthError(message: string): string {
+  const m = (message || '').toLowerCase();
+  if (m.includes('invalid login credentials')) return 'Email atau kata sandi salah.';
+  if (m.includes('email not confirmed')) return 'Email belum dikonfirmasi. Cek kotak masuk Anda.';
+  if (m.includes('user already registered') || m.includes('already exists'))
+    return 'Email sudah terdaftar. Silakan masuk.';
+  if (m.includes('provider is not enabled') || m.includes('unsupported provider'))
+    return 'Login Google belum diaktifkan. Hubungi admin.';
+  if (m.includes('failed to fetch') || m.includes('network'))
+    return 'Koneksi bermasalah. Periksa jaringan Anda, lalu coba lagi.';
+  if (m.includes('password')) return 'Kata sandi tidak memenuhi syarat (min. 6 karakter).';
+  return 'Gagal autentikasi. Coba lagi.';
+}
+
+const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+interface FieldErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+  confirm?: string;
+}
+
 export const SlidingAuthCard: React.FC<Props> = ({
   initialTab = 'masuk',
   onSuccessLogin,
   onClose,
   onShowRoleLogin,
+  onModeChange,
   demoOnly = false,
   variant = 'overlay',
 }) => {
   const [isSignUp, setIsSignUp] = useState(initialTab === 'daftar');
+  // AUTH-06: mode mengikuti route — saat URL berpindah /masuk ↔ /daftar
+  // (termasuk tombol kembali browser), form menyesuaikan, bukan sebaliknya.
+  React.useEffect(() => {
+    setIsSignUp(initialTab === 'daftar');
+  }, [initialTab]);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
@@ -148,6 +200,9 @@ export const SlidingAuthCard: React.FC<Props> = ({
   React.useEffect(() => {
     const card = cardRef.current;
     if (!card) return;
+    // A11Y-01: pengguna reduced-motion tidak dilacak kursornya sama
+    // sekali (sama seperti tracker mata maskot utama di bawah).
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let curX = 0;
     let curY = 0;
     let raf = 0;
@@ -300,13 +355,20 @@ export const SlidingAuthCard: React.FC<Props> = ({
   const switchMode = (toSignUp: boolean) => {
     setIsSignUp(toSignUp);
     setError(null);
+    setFieldErrors({});
     setNotice(null);
     setFocusField(null);
+    // AUTH-06: di halaman route, pertukaran mode menavigasikan URL agar
+    // /masuk dan /daftar selalu cocok dengan mode form + judul halaman.
+    if (variant === 'page' && onModeChange) {
+      onModeChange(toSignUp ? 'daftar' : 'masuk');
+    }
   };
 
   const submit = async (e: React.FormEvent, forSignUp: boolean) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
     setNotice(null);
     // Pop karakter dari bawah setiap klik submit (sesuai desain).
     triggerPop();
@@ -316,20 +378,30 @@ export const SlidingAuthCard: React.FC<Props> = ({
       triggerShake();
     };
 
+    // AUTH-02: selama demo-only formulir email nonaktif — jangan pernah
+    // mengirim kredensial ke provider yang tidak terkonfigurasi.
+    if (demoOnly) {
+      failValidation('Login email belum diaktifkan. Gunakan peran demo untuk masuk.');
+      return;
+    }
     if (!isSupabaseConfigured()) {
       failValidation('Layanan autentikasi Supabase belum terhubung atau konfigurasi belum lengkap.');
       return;
     }
-    if (forSignUp && !name.trim()) {
-      failValidation('Isi nama Anda.');
-      return;
-    }
-    if (!email.trim() || password.length < 6) {
-      failValidation('Isi email valid dan kata sandi min. 6 karakter.');
-      return;
-    }
-    if (forSignUp && password !== confirmPassword) {
-      failValidation('Konfirmasi kata sandi tidak sama.');
+
+    // AUTH-09: validasi per-field — setiap field menyebut masalahnya
+    // sendiri (bukan satu pesan gabungan), dan error hilang saat diketik.
+    const nextErrors: FieldErrors = {};
+    if (forSignUp && !name.trim()) nextErrors.name = 'Isi nama Anda.';
+    if (!email.trim()) nextErrors.email = 'Isi email Anda.';
+    else if (!EMAIL_FORMAT.test(email.trim())) nextErrors.email = 'Format email tidak valid.';
+    if (!password) nextErrors.password = 'Isi kata sandi Anda.';
+    else if (password.length < 6) nextErrors.password = 'Kata sandi minimal 6 karakter.';
+    if (forSignUp && password && password !== confirmPassword)
+      nextErrors.confirm = 'Konfirmasi kata sandi tidak sama.';
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      triggerShake();
       return;
     }
 
@@ -340,11 +412,22 @@ export const SlidingAuthCard: React.FC<Props> = ({
         ? await signUpWithEmailPassword(email.trim(), password, name.trim())
         : await signInWithEmailPassword(email.trim(), password);
       if (r.error) {
-        setError(r.error.message || 'Gagal. Coba lagi.');
+        setError(friendlyAuthError(r.error.message));
       } else if (forSignUp) {
-        // Konfirmasi email mungkin aktif — arahkan ke form masuk.
-        setNotice('Akun dibuat. Silakan masuk dengan akun Anda.');
-        setIsSignUp(false);
+        if (r.session) {
+          // AUTH-10: konfirmasi email NONAKTIF — sesi langsung terbentuk,
+          // pengguna benar-benar sudah masuk; perlakukan seperti login.
+          successShown = true;
+          successTimer.current = window.setTimeout(() => onSuccessLogin(), 1400);
+        } else {
+          // AUTH-10: konfirmasi email AKTIF — akun menunggu verifikasi;
+          // jangan menyuruh pengguna langsung masuk sebelum konfirmasi.
+          setNotice(
+            'Akun dibuat. Periksa email Anda dan selesaikan konfirmasi, lalu masuk dengan akun Anda.',
+          );
+          setIsSignUp(false);
+          if (variant === 'page' && onModeChange) onModeChange('masuk');
+        }
       } else {
         // Animasi pop login dulu (1,4 dtk) baru lanjut ke workspace.
         successShown = true;
@@ -362,10 +445,14 @@ export const SlidingAuthCard: React.FC<Props> = ({
       setError('Layanan autentikasi Supabase belum terhubung atau konfigurasi belum lengkap.');
       return;
     }
+    if (demoOnly) {
+      setError('Login email belum diaktifkan. Gunakan peran demo untuk masuk.');
+      return;
+    }
     setGoogleBusy(true);
     try {
       const { error: gErr } = await signInWithGoogleOAuth();
-      if (gErr) setError(gErr.message || 'Gagal membuka login Google.');
+      if (gErr) setError(friendlyAuthError(gErr.message));
       // Jika ok, browser redirect ke Google — tidak ada lanjutan di sini.
     } finally {
       setGoogleBusy(false);
@@ -474,7 +561,9 @@ export const SlidingAuthCard: React.FC<Props> = ({
 
         {/* ---- Panel panggung maskot ---- */}
         <div className="stage-panel" aria-hidden="true">
-          <LoginMatesScene />
+          <React.Suspense fallback={null}>
+            <LoginMatesScene />
+          </React.Suspense>
         </div>
 
         {/* ---- Panel form ---- */}
@@ -507,13 +596,23 @@ export const SlidingAuthCard: React.FC<Props> = ({
               <div className="sac2-form-head">
                 <h2 className="sac2-form-title">{isSignUp ? 'Buat Akun EZRAB' : 'Masuk ke EZRAB'}</h2>
                 <p className="sac2-form-subtitle">
-                  {isSignUp
-                    ? 'Daftar gratis dan susun RAB pertama Anda dalam hitungan menit'
-                    : 'Masuk untuk melanjutkan proyek, QTO, dan RAB Anda'}
+                  {demoOnly
+                    ? isSignUp
+                      ? 'Pendaftaran email belum dibuka — EZRAB masih tahap pengujian. Coba lewat peran demo.'
+                      : 'Login email belum diaktifkan — masuk lewat peran demo untuk mencoba EZRAB.'
+                    : isSignUp
+                      ? 'Daftar gratis dan susun RAB pertama Anda dalam hitungan menit'
+                      : 'Masuk untuk melanjutkan proyek, QTO, dan RAB Anda'}
                 </p>
               </div>
 
               <form onSubmit={(e) => void submit(e, isSignUp)}>
+                {demoOnly && (
+                  <div className="sac2-banner sac2-banner-ok" role="note">
+                    Formulir email nonaktif selama tahap pengujian — gunakan
+                    tombol peran demo di bawah kartu untuk masuk.
+                  </div>
+                )}
                 {isSignUp && (
                   <div className="field-group">
                     <label className="field-label" htmlFor="sac2-name">Nama lengkap</label>
@@ -523,12 +622,26 @@ export const SlidingAuthCard: React.FC<Props> = ({
                         type="text"
                         className="text-input"
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        disabled={demoOnly}
+                        required
+                        aria-invalid={fieldErrors.name ? true : undefined}
+                        aria-describedby={fieldErrors.name ? 'sac2-name-error' : undefined}
+                        onChange={(e) => {
+                          setName(e.target.value);
+                          if (error) setError(null);
+                          if (fieldErrors.name)
+                            setFieldErrors((prev) => ({ ...prev, name: undefined }));
+                        }}
                         placeholder="Nama lengkap Anda"
                         autoComplete="name"
                         {...fieldFocus(null)}
                       />
                     </div>
+                    {fieldErrors.name && (
+                      <p className="sac2-field-error" id="sac2-name-error" role="alert">
+                        {fieldErrors.name}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -540,8 +653,15 @@ export const SlidingAuthCard: React.FC<Props> = ({
                       type="email"
                       className="text-input"
                       value={email}
+                      disabled={demoOnly}
+                      required
+                      aria-invalid={fieldErrors.email ? true : undefined}
+                      aria-describedby={fieldErrors.email ? 'sac2-email-error' : undefined}
                       onChange={(e) => {
                         setEmail(e.target.value);
+                        if (error) setError(null);
+                        if (fieldErrors.email)
+                          setFieldErrors((prev) => ({ ...prev, email: undefined }));
                         // Karakter menoleh mengikuti progres ketikan email (desain).
                         const progress = Math.min(1, e.target.value.length / 24);
                         trackTarget.current = { x: 0.35 + progress * 0.65, y: -0.35 };
@@ -551,6 +671,11 @@ export const SlidingAuthCard: React.FC<Props> = ({
                       {...fieldFocus('email')}
                     />
                   </div>
+                  {fieldErrors.email && (
+                    <p className="sac2-field-error" id="sac2-email-error" role="alert">
+                      {fieldErrors.email}
+                    </p>
+                  )}
                 </div>
 
                 <div className="field-group">
@@ -561,7 +686,16 @@ export const SlidingAuthCard: React.FC<Props> = ({
                       type={showPassword ? 'text' : 'password'}
                       className="text-input"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={demoOnly}
+                      required
+                      aria-invalid={fieldErrors.password ? true : undefined}
+                      aria-describedby={fieldErrors.password ? 'sac2-password-error' : undefined}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (error) setError(null);
+                        if (fieldErrors.password)
+                          setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                      }}
                       placeholder={isSignUp ? 'Min. 6 karakter' : '••••••••'}
                       autoComplete={isSignUp ? 'new-password' : 'current-password'}
                       {...fieldFocus('password')}
@@ -573,11 +707,17 @@ export const SlidingAuthCard: React.FC<Props> = ({
                       onMouseEnter={() => setPeekToggle(true)}
                       onMouseLeave={() => setPeekToggle(false)}
                       aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+                      aria-pressed={showPassword}
                       title="Tampilkan / sembunyikan kata sandi"
                     >
                       {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                     </button>
                   </div>
+                  {fieldErrors.password && (
+                    <p className="sac2-field-error" id="sac2-password-error" role="alert">
+                      {fieldErrors.password}
+                    </p>
+                  )}
                 </div>
 
                 {isSignUp && (
@@ -589,12 +729,26 @@ export const SlidingAuthCard: React.FC<Props> = ({
                         type={showPassword ? 'text' : 'password'}
                         className="text-input"
                         value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        disabled={demoOnly}
+                        required
+                        aria-invalid={fieldErrors.confirm ? true : undefined}
+                        aria-describedby={fieldErrors.confirm ? 'sac2-confirm-error' : undefined}
+                        onChange={(e) => {
+                          setConfirmPassword(e.target.value);
+                          if (error) setError(null);
+                          if (fieldErrors.confirm)
+                            setFieldErrors((prev) => ({ ...prev, confirm: undefined }));
+                        }}
                         placeholder="••••••••"
                         autoComplete="new-password"
                         {...fieldFocus('password')}
                       />
                     </div>
+                    {fieldErrors.confirm && (
+                      <p className="sac2-field-error" id="sac2-confirm-error" role="alert">
+                        {fieldErrors.confirm}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -609,7 +763,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
                   </div>
                 )}
 
-                <button type="submit" className="primary-btn" disabled={busy || googleBusy}>
+                <button type="submit" className="primary-btn" disabled={demoOnly || busy || googleBusy}>
                   {busy ? spinner : null} {isSignUp ? 'Daftar' : 'Masuk'}
                 </button>
 
@@ -622,7 +776,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
                   type="button"
                   className="google-btn"
                   onClick={() => void googleLogin()}
-                  disabled={googleBusy || busy}
+                  disabled={demoOnly || googleBusy || busy}
                 >
                   {googleBusy ? <Loader2 size={15} className="animate-spin" /> : <GoogleIcon />}
                   <span>{isSignUp ? 'Daftar dengan Google' : 'Masuk dengan Google'}</span>

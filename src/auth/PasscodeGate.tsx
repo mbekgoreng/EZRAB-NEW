@@ -162,7 +162,7 @@ export const PasscodeGate: React.FC<{
             ? configNote
             : busy
               ? 'Memeriksa sesi akses Anda…'
-              : 'Masukkan kode akses 4 digit untuk membuka workspace EZRAB.'}
+              : 'Masukkan kode akses untuk membuka workspace EZRAB.'}
         </p>
 
         {phase !== 'unconfigured' && (
@@ -186,7 +186,6 @@ export const PasscodeGate: React.FC<{
               type="password"
               inputMode="numeric"
               autoComplete="off"
-              autoFocus
               maxLength={16}
               disabled={formDisabled}
               value={code}

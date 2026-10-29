@@ -73,7 +73,7 @@ const PLANS: PlanConfig[] = [
     annualNum: 50999,
     periodLabelMonthly: '/bulan',
     periodLabelAnnual: '/bulan',
-    annualBilledText: 'Dibayar Rp 611.988/tahun',
+    annualBilledText: 'Setara Rp 611.988 per tahun',
     originalPrice: 'Rp 125.000',
     discountBadge: 'HEMAT 52%',
     features: [
@@ -84,7 +84,7 @@ const PLANS: PlanConfig[] = [
       { text: 'DED → RAB AI (kuota harian)' },
       { text: 'Database harga material' }
     ],
-    ctaText: 'Pilih Starter',
+    ctaText: 'Coba Starter',
     styleVariant: 'starter',
     icon: <Layers size={20} />
   },
@@ -99,7 +99,7 @@ const PLANS: PlanConfig[] = [
     annualNum: 67999,
     periodLabelMonthly: '/bulan',
     periodLabelAnnual: '/bulan',
-    annualBilledText: 'Dibayar Rp 815.988/tahun',
+    annualBilledText: 'Setara Rp 815.988 per tahun',
     originalPrice: 'Rp 180.000',
     discountBadge: 'HEMAT 56%',
     features: [
@@ -111,7 +111,7 @@ const PLANS: PlanConfig[] = [
       { text: '3 tema premium' },
       { text: 'Priority support' }
     ],
-    ctaText: 'Pilih Pro',
+    ctaText: 'Coba Pro',
     styleVariant: 'pro',
     icon: <Crown size={20} />
   }
@@ -192,6 +192,12 @@ export const ExactPricing: React.FC<ExactPricingProps> = ({ onSelectPlan }) => {
 
           <p className="ez-pricing-subheading">
             Mulai gratis, lalu tingkatkan saat kebutuhan proyek Anda berkembang.
+          </p>
+
+          <p className="ez-pricing-stage-note" role="note">
+            EZRAB saat ini dalam tahap pengujian — paket berbayar belum dapat
+            dibeli. Harga di bawah adalah rencana paket saat rilis; tombol paket
+            mengarahkan ke pendaftaran untuk mencoba versi demo.
           </p>
 
           {/* Premium Segmented Billing Toggle */}

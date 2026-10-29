@@ -16,6 +16,7 @@
  */
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { navigateTo } from '../../routing/routes';
 import { RoleLoginPanel } from './RoleLoginPanel';
 import { SlidingAuthCard } from './SlidingAuthCard';
 
@@ -110,6 +111,11 @@ export const AuthRoutePage: React.FC<AuthRoutePageProps> = ({
       onSuccessLogin={onSuccessLogin}
       onClose={onBackToLanding}
       onShowRoleLogin={() => setShowRole(true)}
+      onModeChange={(tab) => {
+        // AUTH-06: tukar mode = tukar route; query (mis. ?returnTo= untuk
+        // AUTH-05) ikut dipertahankan agar tujuan pengguna tidak hilang.
+        navigateTo(`${tab === 'daftar' ? '/daftar' : '/masuk'}${window.location.search}`);
+      }}
       demoOnly={demoOnly}
     />
   );

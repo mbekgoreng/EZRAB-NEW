@@ -4,7 +4,6 @@ import { ExactLandingPage } from './components/landing/ExactLandingPage';
 import { AboutPage } from './components/about/AboutPage';
 import { FeaturesPage } from './components/landing/features/FeaturesPage';
 import { AdvantagesPage } from './components/landing/advantages/AdvantagesPage';
-import { AuthModal } from './components/auth/AuthModal';
 import { AuthRoutePage } from './components/auth/AuthRoutePage';
 import { AcceptInvitationPage } from './components/auth/AcceptInvitationPage';
 import { WorkspaceView } from './components/dashboard/WorkspaceView';
@@ -22,7 +21,7 @@ import { ToastProvider } from './components/onboarding/Toast';
 import { OnboardingOrchestrator, openDashboardTour } from './components/onboarding/OnboardingOrchestrator';
 import { FeatureTutorialPlayer } from './components/onboarding/tutorials/FeatureTutorialPlayer';
 import { WelcomeSlotGuard } from './components/onboarding/tutorials/WelcomeSlotGuard';
-import { isAppPath, navigateTo, parseWorkspaceRoute, paths, routeForMenu, routeLabel } from './routing/routes';
+import { isAppPath, isSafeInternalReturnTo, navigateTo, parseWorkspaceRoute, paths, routeForMenu, routeLabel } from './routing/routes';
 import { useBrowserLocation } from './routing/useBrowserLocation';
 import { resolveAuthMode, resolveLoginUi, type AuthMode } from './auth/authMode';
 import { PasscodeGate } from './auth/PasscodeGate';
@@ -39,7 +38,7 @@ import { PasscodeGate } from './auth/PasscodeGate';
 const AUTH_ENABLED = false;
 
 // Login UI frontend-only (perintah user 2026-10-28): tombol "Masuk" /
-// "Coba Gratis" menampilkan AuthModal walau AUTH_ENABLED=false. Backend
+// "Coba Gratis" membuka halaman login /masuk & /daftar walau AUTH_ENABLED=false. Backend
 // login TIDAK ikut aktif — user akan mendesain ulang backend nanti.
 // Di mode ini modal berjalan DEMO-ONLY: form email tampil, tapi submit
 // email/Google gagal jujur karena Supabase belum terkonfigurasi (lihat
@@ -54,7 +53,7 @@ const LOGIN_UI_ENABLED = true;
  * Mode auth efektif hasil resolusi flag + env. Dihitung sekali di module
  * scope karena import.meta.env di-inline saat build (vite).
  * - 'open'          : AUTH_ENABLED=false → perilaku hari ini (akses terbuka).
- * - 'real-login'    : AUTH_ENABLED=true + Supabase valid → AuthModal aktif.
+ * - 'real-login'    : AUTH_ENABLED=true + Supabase valid → login wajib aktif.
  * - 'failsafe-demo' : AUTH_ENABLED=true tapi Supabase belum valid → akses
  *                     terbuka + banner. Owner tidak pernah terkunci.
  */
@@ -185,8 +184,6 @@ export const App: React.FC = () => {
   const isBlogHost =
     typeof window !== 'undefined' && window.location.hostname === 'blog.ezrab.site';
 
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authInitialTab, setAuthInitialTab] = useState<'masuk' | 'daftar'>('daftar');
   const [demoModalOpen, setDemoModalOpen] = useState(false);
 
   // Boot screen dihapus (permintaan user): aplikasi langsung tampil.
@@ -212,7 +209,7 @@ export const App: React.FC = () => {
     else if (isPrivacy) document.title = 'Kebijakan Privasi — EZRAB';
     else if (isTerms) document.title = 'Ketentuan Layanan — EZRAB';
     else if (isAuthRoute) document.title = authNoticeTab === 'daftar' ? 'Daftar — EZRAB' : 'Masuk — EZRAB';
-    else if (isAuthNotice) document.title = authNoticeTab === 'daftar' ? 'Daftar belum dibuka — EZRAB' : 'Masuk belum dibuka — EZRAB';
+    else if (isAuthNotice) document.title = authNoticeTab === 'daftar' ? 'Daftar — EZRAB' : 'Masuk — EZRAB';
     else if (!isHomePath) document.title = 'Halaman Tidak Ditemukan — EZRAB';
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
   }, [isAbout, isFeatures, isAdvantages, isWorkspace, workspaceRoute, isPrivacy, isTerms, isAuthRoute, isAuthNotice, authNoticeTab, isHomePath]);
@@ -284,7 +281,6 @@ export const App: React.FC = () => {
 
   const handleReturnToLanding = () => {
     navigateTo(paths.home());
-    setAuthModalOpen(false);
     setDemoModalOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -343,7 +339,7 @@ export const App: React.FC = () => {
     content = (
       <AboutPage
         onBackToLanding={handleReturnToLanding}
-        onOpenWorkspace={() => handleSetWorkspace(true)}
+        onOpenWorkspace={() => handleOpenAuth('daftar')}
         onOpenFeatures={handleOpenFeatures}
       />
     );
@@ -351,7 +347,8 @@ export const App: React.FC = () => {
     content = (
       <FeaturesPage
         onBackToLanding={handleReturnToLanding}
-        onOpenWorkspace={() => handleSetWorkspace(true)}
+        onOpenAuth={handleOpenAuth}
+        onOpenWorkspace={() => handleOpenAuth('daftar')}
         onOpenPricing={handleOpenPricing}
         onOpenAdvantages={() => {
           navigateTo('/keunggulan');
@@ -363,7 +360,8 @@ export const App: React.FC = () => {
     content = (
       <AdvantagesPage
         onBackToLanding={handleReturnToLanding}
-        onOpenWorkspace={() => handleSetWorkspace(true)}
+        onOpenAuth={handleOpenAuth}
+        onOpenWorkspace={() => handleOpenAuth('daftar')}
         onOpenFeatures={handleOpenFeaturesPage}
       />
     );
@@ -391,7 +389,17 @@ export const App: React.FC = () => {
       <AuthRoutePage
         initialTab={authNoticeTab}
         demoOnly={LOGIN_UI.demoOnly}
-        onSuccessLogin={() => handleSetWorkspace(true)}
+        onSuccessLogin={() => {
+          // AUTH-05: tujuan asal (?returnTo=) dipertahankan lewat login —
+          // hanya path internal /app yang lolos validasi; selain itu
+          // perilaku lama (dashboard) berlaku.
+          const returnTo = new URLSearchParams(location.search).get('returnTo');
+          if (returnTo && isSafeInternalReturnTo(returnTo) && isAppPath(returnTo)) {
+            navigateTo(returnTo);
+          } else {
+            handleSetWorkspace(true);
+          }
+        }}
         onBackToLanding={handleReturnToLanding}
       />
     );
@@ -438,23 +446,9 @@ export const App: React.FC = () => {
           }}
         />
 
-        {/* Modals — CTA Masuk/Coba Gratis sekarang menavigasi ke route
-            /masuk & /daftar (AuthRoutePage), jadi AuthModal tidak lagi
-            dibuka dari landing; mount ini dipertahankan apa adanya untuk
-            alur lain yang mungkin masih memakainya. */}
-        {LOGIN_UI.showModal && (
-          <AuthModal
-            isOpen={authModalOpen}
-            initialTab={authInitialTab}
-            demoOnly={LOGIN_UI.demoOnly}
-            onClose={() => setAuthModalOpen(false)}
-            onSuccessLogin={() => {
-              setAuthModalOpen(false);
-              handleSetWorkspace(true);
-            }}
-          />
-        )}
-
+        {/* AuthModal lama sudah dipensiunkan (AUTH-07, audit 2026-10-29):
+            tidak ada pemanggil yang pernah membukanya sejak CTA pindah ke
+            route /masuk & /daftar (AuthRoutePage). */}
         <DemoModal
           isOpen={demoModalOpen}
           onClose={() => setDemoModalOpen(false)}

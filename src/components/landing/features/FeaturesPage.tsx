@@ -21,6 +21,8 @@ import {
 
 interface FeaturesPageProps {
   onBackToLanding: () => void;
+  /** AUTH-03: pintu auth yang sama seperti landing (route /masuk & /daftar). */
+  onOpenAuth?: (tab: 'masuk' | 'daftar') => void;
   onOpenWorkspace: () => void;
   onOpenPricing: () => void;
   onOpenAdvantages: () => void;
@@ -61,6 +63,7 @@ const EcosystemFlow = lazy(() =>
  */
 export const FeaturesPage: React.FC<FeaturesPageProps> = ({
   onBackToLanding,
+  onOpenAuth,
   onOpenWorkspace,
   onOpenPricing,
   onOpenAdvantages,
@@ -91,7 +94,7 @@ export const FeaturesPage: React.FC<FeaturesPageProps> = ({
     <div className="fp-page">
       {/* Nav — sama seperti landing page */}
       <ExactNavbar
-        onOpenAuth={() => onOpenWorkspace()}
+        onOpenAuth={(tab) => (onOpenAuth ? onOpenAuth(tab) : onOpenWorkspace())}
         onBackToLanding={onBackToLanding}
         onOpenAdvantages={onOpenAdvantages}
       />

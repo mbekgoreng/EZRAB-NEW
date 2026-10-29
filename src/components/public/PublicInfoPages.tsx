@@ -176,15 +176,18 @@ interface AuthNoticePageProps extends InfoPageProps {
 }
 
 export const AuthNoticePage: React.FC<AuthNoticePageProps> = ({ tab, ...props }) => (
-  <PageShell icon={<LogIn size={20} />} title={tab === 'daftar' ? 'Daftar belum dibuka' : 'Masuk belum dibuka'} {...props}>
+  <PageShell icon={<LogIn size={20} />} title={tab === 'daftar' ? 'Daftar di EZRAB' : 'Masuk ke EZRAB'} {...props}>
     <p style={{ margin: 0 }}>
-      {tab === 'daftar' ? 'Pendaftaran akun' : 'Halaman masuk'} <strong>belum dibuka</strong>. Saat ini
-      EZRAB dapat langsung digunakan tanpa akun — seluruh fitur terbuka dari tombol di bawah, dan
-      data Anda tersimpan lokal di perangkat ini.
+      Halaman {tab === 'daftar' ? 'pendaftaran' : 'masuk'} EZRAB tersedia di{' '}
+      <strong>/masuk</strong>. Saat ini EZRAB masih dalam tahap pengujian:{' '}
+      {tab === 'daftar' ? 'pendaftaran akun email' : 'login email'} belum dibuka, dan cara masuk
+      yang tersedia adalah <strong>peran demo</strong> di halaman login tersebut. Tanpa akun pun
+      seluruh fitur dapat dibuka dari tombol di bawah, dan data Anda tersimpan lokal di perangkat
+      ini.
     </p>
     <p style={{ margin: 0 }}>
       Akses ke area aplikasi sementara dilindungi kode akses. Bila login resmi diaktifkan nanti,
-      halaman ini akan digantikan formulir {tab === 'daftar' ? 'pendaftaran' : 'masuk'} yang sebenarnya.
+      formulir {tab === 'daftar' ? 'pendaftaran' : 'masuk'} email akan tersedia di halaman login.
     </p>
   </PageShell>
 );

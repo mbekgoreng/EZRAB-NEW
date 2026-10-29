@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient, User, Session } from '@supabase/supabase-js';
+import { isSupabaseReadyForAuth } from '../auth/authMode';
 
 // Safe environment retrieval without exposing secrets
 const supabaseUrl: string =
@@ -12,12 +13,10 @@ const supabasePublishableKey: string =
 let clientInstance: SupabaseClient | null = null;
 
 export function isSupabaseConfigured(): boolean {
-  return Boolean(
-    supabaseUrl &&
-    supabaseUrl.startsWith('https://') &&
-    supabasePublishableKey &&
-    supabasePublishableKey.length > 20
-  );
+  // AUTH-08 (audit 2026-10-29): satu sumber kebenaran untuk "apakah
+  // Supabase terkonfigurasi" — cek ketat yang sama seperti authMode
+  // (URL https:// + key cukup panjang), dipakai semua modul.
+  return isSupabaseReadyForAuth();
 }
 
 export function getSupabaseClient(): SupabaseClient | null {

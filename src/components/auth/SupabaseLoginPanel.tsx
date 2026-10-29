@@ -4,7 +4,7 @@
  * Rendered INSTEAD of the demo-PIN panel when Supabase is configured.
  */
 import React, { useState } from 'react';
-import { AlertCircle, ArrowLeft, Loader2, LogOut, Mail, Lock, User } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, LogOut, Mail, Lock, User } from 'lucide-react';
 import { useAuth } from '../../auth/AuthContext';
 import { useRole } from '../../auth/RoleContext';
 import { logoutSessionsOnly } from '../../auth/logoutAll';
@@ -35,6 +35,7 @@ export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
 
@@ -89,25 +90,41 @@ export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, 
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // AUTH-09: validasi menyebut field-nya sendiri (bukan pesan gabungan).
     if (mode === 'signup' && !name.trim()) {
       setError('Isi nama Anda.');
       return;
     }
-    if (!email.trim() || password.length < 6) {
-      setError('Isi email valid dan kata sandi min. 6 karakter.');
+    if (!email.trim()) {
+      setError('Isi email Anda.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError('Format email tidak valid.');
+      return;
+    }
+    if (!password) {
+      setError('Isi kata sandi Anda.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Kata sandi minimal 6 karakter.');
       return;
     }
     setBusy(true);
     setError(null);
+    setNotice(null);
     const r = mode === 'signin' ? await signIn(email, password) : await signUp(email, password, name);
     setBusy(false);
     if (r.ok) {
       if (mode === 'signup') {
-        // Jika konfirmasi email aktif, pengguna harus verifikasi dulu.
-        // Jika nonaktif, sesi langsung terbentuk dan panel otomatis
-        // menampilkan status login lewat `user`.
+        // AUTH-10: pesan sadar konfirmasi email. Jika konfirmasi aktif,
+        // pengguna harus verifikasi dulu; jika nonaktif, sesi langsung
+        // terbentuk dan panel otomatis menampilkan status login lewat
+        // `user`. Kedua keadaan disebut apa adanya.
         setMode('signin');
         setError(null);
+        setNotice('Akun dibuat. Jika Anda menerima email konfirmasi, selesaikan konfirmasi dulu, lalu masuk.');
       } else {
         onSuccess();
       }
@@ -156,7 +173,7 @@ export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, 
           <label style={field}>
             <span style={labelRow}><User size={14} /> Nama</span>
             <input
-              type="text" value={name} onChange={(e) => setName(e.target.value)}
+              type="text" value={name} onChange={(e) => { setName(e.target.value); if (error) setError(null); }}
               placeholder="Nama lengkap" style={input} autoComplete="name"
             />
           </label>
@@ -164,20 +181,25 @@ export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, 
         <label style={field}>
           <span style={labelRow}><Mail size={14} /> Email</span>
           <input
-            type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+            type="email" value={email} onChange={(e) => { setEmail(e.target.value); if (error) setError(null); }}
             placeholder="nama@perusahaan.id" style={input} autoComplete="email"
           />
         </label>
         <label style={field}>
           <span style={labelRow}><Lock size={14} /> Kata sandi</span>
           <input
-            type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+            type="password" value={password} onChange={(e) => { setPassword(e.target.value); if (error) setError(null); }}
             placeholder="••••••••" style={input} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
           />
         </label>
         {error && (
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: '#DC2626', fontSize: 12.5 }}>
             <AlertCircle size={14} /> {error}
+          </div>
+        )}
+        {notice && (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: '#166534', fontSize: 12.5 }}>
+            <CheckCircle2 size={14} /> {notice}
           </div>
         )}
         <button type="submit" disabled={busy || googleBusy} style={primaryBtn}>
@@ -190,7 +212,7 @@ export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, 
         </button>
         <button
           type="button"
-          onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null); }}
+          onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null); setNotice(null); }}
           style={linkBtn}
         >
           {mode === 'signin' ? 'Belum punya akun? Daftar' : 'Sudah punya akun? Masuk'}

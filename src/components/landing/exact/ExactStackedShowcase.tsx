@@ -295,6 +295,28 @@ export const ExactStackedShowcase: React.FC<ExactStackedShowcaseProps> = ({ onOp
     >
       {/* 100vh Sticky Stage */}
       <div className="ez-stacked-sticky-viewport">
+        {/* Semua kartu showcase adalah ilustrasi antarmuka dengan data contoh */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '14px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 30,
+            fontSize: '11px',
+            fontWeight: 600,
+            letterSpacing: '0.04em',
+            color: '#64748b',
+            background: 'rgba(255, 255, 255, 0.82)',
+            border: '1px solid rgba(226, 232, 240, 0.9)',
+            borderRadius: '999px',
+            padding: '4px 12px',
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+          }}
+        >
+          Ilustrasi antarmuka — data pada tampilan ini adalah contoh
+        </div>
         {/* Subtle Architectural Ambient Background Layers */}
         <div className="ez-stacked-bg-grid" />
         <div className="ez-stacked-ambient-glow" />

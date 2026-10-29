@@ -9150,6 +9150,22 @@ body,
   }
 }
 
+/* Catatan tahap pengujian di bawah subjudul harga (LAND-01) */
+.ez-pricing-stage-note {
+  max-width: 640px;
+  margin: 14px auto 0;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: #1e40af;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 10px 14px;
+  text-align: center;
+}
+
 /* Trust Elements below cards */
 .ez-pricing-trust-strip {
   text-align: center;
