@@ -10,7 +10,7 @@
  *               -> Atmo ag/gemini-3.8-flash-high -> Atmo cx/gpt-6-luna -> ZyRouter
  *  - fast     : Crown MiniMax M2.7 -> Crown DeepSeek V4 Flash -> Gemini native
  *               -> River vision (DeepSeek V4.1)
- *               -> Atmo atmo/deepseek-v4.1-flash -> Atmo ali/deepseek-v4.1-flash
+ *               -> Atmo atmo/deepseek-v4.1-flash -> Atmo ali/qwen3.8-flash
  *  - vision   : TIDAK BERUBAH (Crown tidak support image_url):
  *               Gemini native -> River vision -> Atmo ag/gemini-3.8-flash-high
  *               -> ZyRouter
@@ -160,7 +160,7 @@ setAll('fail');
     'gemini:gemini-3.5-flash-lite',
     'river-vision:deepseek-ai/DeepSeek-V4.1-Flash',
     'atmorouter:atmo/deepseek-v4.1-flash',
-    'atmorouter:ali/deepseek-v4.1-flash',
+    'atmorouter:ali/qwen3.8-flash',
   ]));
 }
 

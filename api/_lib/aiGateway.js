@@ -63,11 +63,12 @@ const GEMINI_OAI_MODEL = 'gemini-3.8-flash';
 const RIVER_TEXT_MODEL = 'nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-NVFP4';
 const RIVER_VISION_MODEL = 'deepseek-ai/DeepSeek-V4.1-Flash';
 // Model AtmoRouter untuk rantai 'fast' (user 2026-10-21): atmo/deepseek-
-// v4.1-flash, fallback ali/deepseek-v4.1-flash (provider/key sama). Rantai
+// v4.1-flash, fallback ali/qwen3.8-flash (provider/key sama; user 2026-10-26:
+// termurah katalog Atmo). Rantai
 // 'chat' kini memakai model advanced AtmoRouter di bawah (urutan owner
 // terbaru — lihat executeAI).
 const ATMO_CHAT_MODEL = 'atmo/deepseek-v4.1-flash';
-const ATMO_CHAT_FALLBACK_MODEL = 'ali/deepseek-v4.1-flash';
+const ATMO_CHAT_FALLBACK_MODEL = 'ali/qwen3.8-flash';
 // Advanced via AtmoRouter (user 2026-10-21): ag/gemini-3.8-flash-high,
 // fallback cx/gpt-6-luna (provider/key sama).
 const ATMO_ADVANCED_MODEL = 'ag/gemini-3.8-flash-high';
@@ -441,7 +442,7 @@ export async function executeAI(o, onAttempt) {
   } else {
     // Fast (urutan user 2026-10-25): Crown MiniMax M2.7 -> Crown
     // DeepSeek V4 Flash -> Gemini native -> River DeepSeek V4.1 -> AtmoRouter
-    // atmo/deepseek-v4.1-flash -> ali/deepseek-v4.1-flash.
+    // atmo/deepseek-v4.1-flash -> ali/qwen3.8-flash.
     attempts.push(...crownTextAttempts);
     gk.forEach((k) => attempts.push(geminiCall(k, FAST_MODEL)));
     rk.forEach((k) => attempts.push(riverVisionCall(k)));
