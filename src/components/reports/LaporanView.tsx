@@ -49,6 +49,7 @@ import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { exportProjectToExcel } from '../../export/excelExportEngine';
 import { exportProjectToPDF } from '../../export/pdfExporter';
 import { brandingClient } from '../../services/brandingClient';
+import { ExportProjectPackageModal } from '../export/ExportProjectPackageModal';
 import { checkKurvaSRequirements } from '../../engine/kurvaSEngine';
 import { computeLaporanSummary, resolveItemAmount } from '../../lib/laporanSummary';
 import { buildLaporanKurvaS } from '../../lib/kurvaSHonesty';
@@ -115,6 +116,9 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
     totalRab: 0,
     createdAt: '2026-09-06',
   };
+
+  // Proyek nyata untuk modal ekspor paket (null bila belum ada proyek).
+  const exportProject: Project | null = currentProject || contextProjects[0] || null;
 
   const initialRabItems = projectRabItems;
 
@@ -535,6 +539,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
   };
 
   const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExportPackageModalOpen, setIsExportPackageModalOpen] = useState(false);
 
   const handleExportPdf = async () => {
     if (isExportingPdf) return;
@@ -826,6 +831,31 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
         {/* Right: Export PDF & Export Excel Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={() => setIsExportPackageModalOpen(true)}
+            disabled={!hasRealProject}
+            title={hasRealProject ? 'Buka menu ekspor paket lengkap (preset + pilihan lembar kerja)' : 'Pilih proyek terlebih dahulu'}
+            style={{
+              height: '38px',
+              padding: '0 16px',
+              borderRadius: '10px',
+              background: hasRealProject ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-tertiary)',
+              border: '1px solid transparent',
+              color: hasRealProject ? '#FFFFFF' : 'var(--ez-color-text-faint)',
+              fontSize: '12.5px',
+              fontWeight: 700,
+              cursor: hasRealProject ? 'pointer' : 'not-allowed',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Package size={14} />
+            <span>Ekspor Paket Lengkap</span>
+          </button>
+
           <button
             onClick={handleExportPdf}
             disabled={isExportingPdf}
@@ -2887,6 +2917,20 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Menu ekspor paket lengkap — modal yang sama dengan yang dibuka dari
+          toolbar RAB (preset resmi + pilihan 15 lembar, Excel/PDF/both). */}
+      {exportProject && (
+        <ExportProjectPackageModal
+          isOpen={isExportPackageModalOpen}
+          onClose={() => setIsExportPackageModalOpen(false)}
+          currentProject={{
+            ...exportProject,
+            rabItems: projectRabItems,
+            items: projectRabItems,
+          } as any}
+        />
       )}
 
     </div>
