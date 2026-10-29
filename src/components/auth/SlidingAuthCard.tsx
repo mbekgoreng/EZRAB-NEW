@@ -48,6 +48,10 @@ interface Props {
   onShowRoleLogin: () => void;
   /** True bila backend login belum aktif: tampilkan banner demo-only. */
   demoOnly?: boolean;
+  /** 'overlay' (bawaan — dipakai AuthModal sebagai lapisan fixed) atau
+      'page' (halaman route /masuk & /daftar — .sac-page mengalir sebagai
+      dokumen dan banner demo-only tampil in-flow di atas kartu). */
+  variant?: 'overlay' | 'page';
 }
 
 function GoogleIcon() {
@@ -69,6 +73,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
   onClose,
   onShowRoleLogin,
   demoOnly = false,
+  variant = 'overlay',
 }) => {
   const [isSignUp, setIsSignUp] = useState(initialTab === 'daftar');
   const [name, setName] = useState('');
@@ -394,30 +399,44 @@ export const SlidingAuthCard: React.FC<Props> = ({
   });
 
   return (
-    <div className="sac-page">
-      <button type="button" className="sac-close" onClick={onClose} aria-label="Tutup">
-        <X size={20} />
-      </button>
-
+    <div className={variant === 'page' ? 'sac-page sac-page--route' : 'sac-page'}>
       {demoOnly && (
         <div
           role="note"
-          style={{
-            position: 'absolute',
-            top: 16,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 5,
-            width: 'min(560px, calc(100% - 32px))',
-            textAlign: 'center',
-            fontSize: '13px',
-            lineHeight: 1.55,
-            color: '#1e40af',
-            background: '#eff6ff',
-            border: '1px solid #bfdbfe',
-            borderRadius: '10px',
-            padding: '10px 12px',
-          }}
+          style={
+            variant === 'page'
+              ? {
+                  // Halaman route: banner mengalir sebagai blok biasa di
+                  // atas kartu — tidak menimpa apa pun.
+                  flexShrink: 0,
+                  width: 'min(560px, 100%)',
+                  margin: '0 0 14px',
+                  textAlign: 'center',
+                  fontSize: '13px',
+                  lineHeight: 1.55,
+                  color: '#1e40af',
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '10px',
+                  padding: '10px 12px',
+                }
+              : {
+                  position: 'absolute',
+                  top: 16,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  zIndex: 5,
+                  width: 'min(560px, calc(100% - 32px))',
+                  textAlign: 'center',
+                  fontSize: '13px',
+                  lineHeight: 1.55,
+                  color: '#1e40af',
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '10px',
+                  padding: '10px 12px',
+                }
+          }
         >
           Login email belum diaktifkan — backend dalam redesign. Untuk
           sekarang, masuk lewat{' '}
@@ -447,6 +466,12 @@ export const SlidingAuthCard: React.FC<Props> = ({
         data-mood={mood}
         data-peek={peekToggle ? 'true' : 'false'}
       >
+        {/* Tombol tutup menempel di pojok kartu (bukan melayang di pojok
+            viewport) — di halaman route ini jalan kembali ke beranda. */}
+        <button type="button" className="sac-close" onClick={onClose} aria-label="Tutup">
+          <X size={20} />
+        </button>
+
         {/* ---- Panel panggung maskot ---- */}
         <div className="stage-panel" aria-hidden="true">
           <LoginMatesScene />

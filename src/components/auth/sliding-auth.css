@@ -27,6 +27,19 @@
   overflow-y: auto;
 }
 
+/* Varian halaman route (/masuk & /daftar): dokumen sungguhan, bukan
+   overlay fixed — halaman tumbuh mengikuti isi dan di-scroll alami,
+   jadi kartu setinggi apa pun tetap terjangkau penuh (mengatasi kartu
+   daftar yang terpotong di dalam modal). */
+.sac-page--route {
+  position: relative;
+  inset: auto;
+  z-index: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: visible;
+}
+
 /* Grid blueprint samar + glow di backdrop (dari desain pratinjau) */
 .sac-page::before {
   content: '';
@@ -53,8 +66,8 @@
 
 .sac-close {
   position: absolute;
-  top: 22px;
-  right: 26px;
+  top: 14px;
+  right: 14px;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -231,7 +244,7 @@
 @media (max-width: 760px) {
   .sac2-card .stage-panel { min-height: 290px; }
 }
-.sac2-card .huddle-svg { width: 100%; height: 100%; display: block; }
+.sac2-card .huddle-svg { position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; display: block; }
 .sac2-card .strokeless-svg * { stroke: none !important; }
 .sac2-card .form-panel { background: #ffffff; padding: 44px 46px; display: flex; flex-direction: column; justify-content: center; color: #0f172a; position: relative; }
 @media (max-width: 760px) {

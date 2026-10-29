@@ -5,6 +5,7 @@ import { AboutPage } from './components/about/AboutPage';
 import { FeaturesPage } from './components/landing/features/FeaturesPage';
 import { AdvantagesPage } from './components/landing/advantages/AdvantagesPage';
 import { AuthModal } from './components/auth/AuthModal';
+import { AuthRoutePage } from './components/auth/AuthRoutePage';
 import { AcceptInvitationPage } from './components/auth/AcceptInvitationPage';
 import { WorkspaceView } from './components/dashboard/WorkspaceView';
 import { DemoModal } from './components/common/DemoModal';
@@ -171,6 +172,12 @@ export const App: React.FC = () => {
     location.pathname === '/daftar' ||
     location.pathname.startsWith('/masuk/');
   const authNoticeTab: 'masuk' | 'daftar' = location.pathname === '/daftar' ? 'daftar' : 'masuk';
+  // Route login sungguhan: /masuk & /daftar merender halaman login animasi
+  // (AuthRoutePage) selama UI login aktif. Bila UI login mati
+  // (LOGIN_UI.showModal=false, mis. mode 'failsafe-demo'), kedua route
+  // jatuh ke AuthNoticePage seperti sebelumnya — owner tidak terkunci.
+  const isAuthRoute =
+    (location.pathname === '/masuk' || location.pathname === '/daftar') && LOGIN_UI.showModal;
   const isPrivacy = location.pathname === '/privacy';
   const isTerms = location.pathname === '/terms';
   const isHomePath = location.pathname === '/' || location.pathname === '';
@@ -204,10 +211,11 @@ export const App: React.FC = () => {
     else if (isAdvantages) document.title = 'Keunggulan EZRAB — Mengapa Memilih EZRAB';
     else if (isPrivacy) document.title = 'Kebijakan Privasi — EZRAB';
     else if (isTerms) document.title = 'Ketentuan Layanan — EZRAB';
+    else if (isAuthRoute) document.title = authNoticeTab === 'daftar' ? 'Daftar — EZRAB' : 'Masuk — EZRAB';
     else if (isAuthNotice) document.title = authNoticeTab === 'daftar' ? 'Daftar belum dibuka — EZRAB' : 'Masuk belum dibuka — EZRAB';
     else if (!isHomePath) document.title = 'Halaman Tidak Ditemukan — EZRAB';
     else document.title = 'EZRAB — RAB & Estimasi Konstruksi';
-  }, [isAbout, isFeatures, isAdvantages, isWorkspace, workspaceRoute, isPrivacy, isTerms, isAuthNotice, authNoticeTab, isHomePath]);
+  }, [isAbout, isFeatures, isAdvantages, isWorkspace, workspaceRoute, isPrivacy, isTerms, isAuthRoute, isAuthNotice, authNoticeTab, isHomePath]);
 
   useEffect(() => {
     migrateLegacyOnboardingFlag(); // idempoten: pengguna lama tidak ditanya ulang
@@ -262,12 +270,13 @@ export const App: React.FC = () => {
   };
 
   const handleOpenAuth = (tab: 'masuk' | 'daftar' = 'masuk') => {
-    // Modal tampil di 'real-login' (penuh) dan di 'open' + LOGIN_UI_ENABLED
-    // (demo-only). Mode lain (termasuk 'failsafe-demo') selalu memberi
-    // akses terbuka — tidak pernah mengunci owner.
+    // Pintu masuk login sekarang berupa route sendiri (/masuk & /daftar)
+    // selama UI login aktif — mode 'real-login' (penuh) dan 'open' +
+    // LOGIN_UI_ENABLED (demo-only). Mode lain (termasuk 'failsafe-demo')
+    // selalu memberi akses terbuka — tidak pernah mengunci owner.
     if (LOGIN_UI.showModal) {
-      setAuthInitialTab(tab);
-      setAuthModalOpen(true);
+      navigateTo(tab === 'daftar' ? '/daftar' : '/masuk');
+      window.scrollTo({ top: 0 });
       return;
     }
     handleSetWorkspace(true);
@@ -372,10 +381,24 @@ export const App: React.FC = () => {
         onOpenWorkspace={() => handleSetWorkspace(true)}
       />
     );
+  } else if (isAuthRoute) {
+    // /masuk & /daftar: halaman login animasi di route sendiri — kartu
+    // yang sama seperti modal, tetapi halaman dokumen: bisa di-scroll
+    // alami, banner demo-only mengalir di atas kartu, dan tombol kembali
+    // menempel di kartu. Login/peran-demo berhasil → masuk aplikasi,
+    // persis perilaku modal sebelumnya.
+    content = (
+      <AuthRoutePage
+        initialTab={authNoticeTab}
+        demoOnly={LOGIN_UI.demoOnly}
+        onSuccessLogin={() => handleSetWorkspace(true)}
+        onBackToLanding={handleReturnToLanding}
+      />
+    );
   } else if (isAuthNotice) {
-    // /masuk & /daftar: login dinonaktifkan (AUTH_ENABLED=false), jadi tampilkan
-    // pemberitahuan jujur + jalan masuk aplikasi — bukan landing diam-diam.
-    // Bila AUTH_MODE menjadi 'real-login', gerbang ini harus diganti AuthPage.
+    // Sisa jalur pemberitahuan: sub-path /masuk/* dan /masuk & /daftar
+    // saat UI login tidak aktif (LOGIN_UI.showModal=false) — tampilkan
+    // pemberitahuan jujur + jalan masuk aplikasi, bukan landing diam-diam.
     content = (
       <AuthNoticePage
         tab={authNoticeTab}
@@ -415,8 +438,10 @@ export const App: React.FC = () => {
           }}
         />
 
-        {/* Modals — AuthModal tampil di 'real-login' (penuh) dan di 'open' +
-            LOGIN_UI_ENABLED (demo-only). Di luar itu tidak di-render. */}
+        {/* Modals — CTA Masuk/Coba Gratis sekarang menavigasi ke route
+            /masuk & /daftar (AuthRoutePage), jadi AuthModal tidak lagi
+            dibuka dari landing; mount ini dipertahankan apa adanya untuk
+            alur lain yang mungkin masih memakainya. */}
         {LOGIN_UI.showModal && (
           <AuthModal
             isOpen={authModalOpen}
