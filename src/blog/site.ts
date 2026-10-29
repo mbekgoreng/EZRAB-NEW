@@ -10,16 +10,14 @@
  *
  * Env (tanpa trailing slash):
  *   VITE_BLOG_URL      — override domain blog (Vercel env / process.env)
- *   VITE_CANONICAL_URL — override domain utama
- * TODO(user): (1) pastikan DNS `blog` → CNAME cname.vercel-dns.com di panel
- * domain ezrab.site; (2) daftarkan domain blog.ezrab.site di proyek Vercel;
- * (3) tetapkan domain utama final di VITE_CANONICAL_URL sebelum go-live.
+ *   VITE_CANONICAL_URL — override domain utama (bila di-set di Vercel,
+ *     nilainya mengalahkan fallback di bawah ini)
  */
 export const SITE_NAME = 'EZRAB Blog';
 export const SITE_TAGLINE = 'Pengetahuan RAB, AHSP & estimasi konstruksi';
 
-/** Domain utama aplikasi — fallback placeholder, JANGAN jadikan final tanpa keputusan user. */
-export const DEFAULT_CANONICAL_BASE = 'https://www.ezrab.id';
+/** Domain utama aplikasi — keputusan user 2026-10-29: ezrab.site, bukan ezrab.id. */
+export const DEFAULT_CANONICAL_BASE = 'https://ezrab.site';
 
 /** Subdomain publik blog — keputusan user 2026-10-17 ("misal blog.ezrab.site"). */
 export const DEFAULT_BLOG_BASE = 'https://blog.ezrab.site';

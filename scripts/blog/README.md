@@ -39,7 +39,7 @@ navbar/footer landing menautkan blog via URL absolut subdomain
 - **Env `VITE_BLOG_URL`**: override domain blog bila berbeda dari
   `https://blog.ezrab.site` (fallback saat ini — dari keputusan user).
 - **Env `VITE_CANONICAL_URL`**: domain kanonis final APLIKASI UTAMA
-  (fallback: `https://www.ezrab.id` — PLACEHOLDER, butuh keputusan user).
+  (fallback: `https://ezrab.site` — keputusan user 2026-10-29, bukan ezrab.id).
   Dipakai untuk link CTA/aplikasi dari halaman blog.
 
 Catatan: selama DNS belum aktif, `/blog/*` di domain utama tetap dapat dibuka

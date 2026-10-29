@@ -16,19 +16,24 @@
  *   check), /access itself (the gate page; no redirect loop), and all
  *   paths outside the matcher (landing, blog, static assets).
  *
- * Blog root is NOT handled here anymore: host blog.ezrab.site + path '/'
- * is redirected to '/blog/' by an ordinary redirect in vercel.json
- * (redirects run before filesystem serving, unlike rewrites, so the
- * landing dist/index.html cannot win for '/'). Earlier middleware
- * approaches for the blog root — fetch (47239b4, empty/hanging body in
- * production) and x-middleware-rewrite (cdeed46, never promoted) — are
- * removed; the middleware now only does the access gate below.
+ * Blog root (beranda blog, keputusan user 2026-10-29: URL tetap '/',
+ * BUKAN '/blog/'): host blog.ezrab.site + path '/' di-rewrite ke
+ * prerendered blog index (/blog/index.html) lewat header
+ * 'x-middleware-rewrite', supaya Vercel sendiri melayani file statisnya.
+ * Ini menggantikan redirect vercel.json ke '/blog/' (b41eafe) atas
+ * permintaan user. Catatan jujur: mekanisme ini belum pernah dites di
+ * production (cdeed46 tidak jadi dipromosikan); bila di production
+ * ternyata juga tidak jalan, jalur berikutnya yang pasti adalah proyek
+ * Vercel terpisah khusus blog. Fetch lewat edge (47239b4) sudah terbukti
+ * gagal di production (body kosong/gantung) dan tidak dipakai lagi.
+ * Selain host + path itu, middleware ini hanya melakukan gate di bawah.
  *
  * This is a temporary barrier, NOT user authentication.
  */
 
 export const config = {
   matcher: [
+    '/',
     '/app',
     '/app/:path*',
     '/access',
@@ -98,8 +103,15 @@ export default async function middleware(request: Request): Promise<Response | u
   const url = new URL(request.url);
   const path = url.pathname;
 
-  // No blog-root handling here: vercel.json redirects blog.ezrab.site '/'
-  // to '/blog/' before this middleware would ever matter for root.
+  // Blog root (beranda): hanya blog.ezrab.site + '/' — URL tetap '/',
+  // Vercel melayani /blog/index.html lewat header rewrite di bawah.
+  // Jalur lain jatuh ke logika gate seperti biasa.
+  if (url.hostname === 'blog.ezrab.site' && path === '/') {
+    return new Response(null, {
+      status: 200,
+      headers: { 'x-middleware-rewrite': new URL('/blog/index.html', url).toString() },
+    });
+  }
 
   // The gate's own endpoints must NEVER be gated — defense in depth on top
   // of the matcher (which already excludes them). If this exemption were

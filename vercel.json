@@ -4,19 +4,6 @@
   "framework": "vite",
   "installCommand": "npm install",
   "outputDirectory": "dist",
-  "redirects": [
-    {
-      "destination": "/blog/",
-      "has": [
-        {
-          "type": "host",
-          "value": "blog.ezrab.site"
-        }
-      ],
-      "permanent": false,
-      "source": "/"
-    }
-  ],
   "rewrites": [
     {
       "destination": "/blog/robots.txt",
