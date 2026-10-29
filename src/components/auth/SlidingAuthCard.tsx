@@ -1,16 +1,28 @@
 /**
- * SlidingAuthCard — Masuk/Daftar EZRAB gaya "double slider" (sesuai video referensi).
+ * SlidingAuthCard — Masuk/Daftar EZRAB dengan kartu dua panel: panel
+ * panggung maskot animasi (LoginMatesScene) + panel form.
  *
- * Panel overlay gradien biru bergeser halus saat beralih mode.
- * Memakai services/supabaseClient milik branch ini (bukan AuthContext).
+ * Port desain login animasi final yang disetujui user (2026-10-29):
+ * - Mood karakter idle/nosy/shy/exposed mengikuti fokus form: email =
+ *   nosy (kepo), kata sandi = shy (menutup mata), kata sandi terlihat =
+ *   exposed. Kursor menggerakkan wajah/helm karakter (--mx/--my) dan
+ *   khusus mata maskot utama lewat tracker tersendiri (--hx/--hy);
+ *   badan maskot utama terkunci diam (stationary lock di CSS).
+ * - Klik tombol submit memicu animasi pop karakter dari bawah; error
+ *   validasi menggoyang kartu.
  *
- * Maskot login (foto 3D, desktop saja — panel overlay disembunyikan di
- * mobile): menunduk + emot 🙈 saat kata sandi diisi, pindah ke tengah +
- * jempol 👍 saat login berhasil, dengan jeda 1,4 dtk sebelum lanjut ke
- * workspace agar animasinya sempat terlihat.
+ * Perilaku app TIDAK berubah: props sama, submit/validasi/Google/demo
+ * sama, dan login berhasil tetap menunggu 1,4 dtk sebelum
+ * onSuccessLogin agar animasinya sempat terlihat. Memakai
+ * services/supabaseClient milik branch ini (bukan AuthContext).
+ *
+ * Deviasi sadar dari desain pratinjau: baris "ingat saya / lupa kata
+ * sandi" tidak di-port (belum ada perilaku app di baliknya — desain
+ * pratinjau memalsukan tautan reset terkirim), dan judul memakai teks
+ * app berbahasa Indonesia yang sudah ada.
  */
 import React, { useState } from 'react';
-import { AlertCircle, CheckCircle2, Loader2, LogOut, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Eye, EyeOff, Loader2, LogOut, X } from 'lucide-react';
 import {
   getCurrentSupabaseUser,
   isSupabaseConfigured,
@@ -21,9 +33,12 @@ import {
 } from '../../services/supabaseClient';
 import { useRole } from '../../auth/RoleContext';
 import { logoutSessionsOnly } from '../../auth/logoutAll';
+import { LoginMatesScene } from './LoginMatesScene';
 import './sliding-auth.css';
 
 export type SlidingAuthTab = 'masuk' | 'daftar';
+type Mood = 'idle' | 'nosy' | 'shy' | 'exposed';
+type FocusField = 'email' | 'password' | null;
 
 interface Props {
   initialTab?: SlidingAuthTab;
@@ -46,6 +61,8 @@ function GoogleIcon() {
   );
 }
 
+const clampUnit = (v: number) => Math.max(-1, Math.min(1, v));
+
 export const SlidingAuthCard: React.FC<Props> = ({
   initialTab = 'masuk',
   onSuccessLogin,
@@ -65,13 +82,40 @@ export const SlidingAuthCard: React.FC<Props> = ({
   const [checking, setChecking] = useState(true);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const { logoutRole } = useRole();
-  /** Animasi maskot sukses: true sejak login berhasil s.d. navigasi (1,4 dtk). */
-  const [loginSuccess, setLoginSuccess] = useState(false);
   const successTimer = React.useRef<number | null>(null);
+
+  /* ---- State mesin mood desain ---- */
+  const [focusField, setFocusField] = useState<FocusField>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [peekToggle, setPeekToggle] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
+  const [shaking, setShaking] = useState(false);
+  const cardRef = React.useRef<HTMLDivElement | null>(null);
+  const popTimer = React.useRef<number | null>(null);
+  const shakeTimer = React.useRef<number | null>(null);
+  /** Target tracking kursor global (--mx/--my), ditulis mousemove + input email. */
+  const trackTarget = React.useRef({ x: 0, y: 0 });
+  const focusRef = React.useRef<FocusField>(null);
+
+  const mood: Mood =
+    showPassword && password.length > 0
+      ? 'exposed'
+      : focusField === 'password'
+        ? 'shy'
+        : focusField === 'email'
+          ? 'nosy'
+          : 'idle';
+  const moodRef = React.useRef<Mood>(mood);
+  React.useEffect(() => {
+    moodRef.current = mood;
+    focusRef.current = focusField;
+  });
 
   React.useEffect(
     () => () => {
       if (successTimer.current !== null) window.clearTimeout(successTimer.current);
+      if (popTimer.current !== null) window.clearTimeout(popTimer.current);
+      if (shakeTimer.current !== null) window.clearTimeout(shakeTimer.current);
     },
     [],
   );
@@ -93,31 +137,194 @@ export const SlidingAuthCard: React.FC<Props> = ({
     };
   }, []);
 
+  /* ---- Tracking kursor global: wajah/helm karakter mengikuti kursor
+         (lerp rAF 0.35 seperti desain; saat email fokus, mousemove diabaikan
+         dan target diatur progres ketikan email). ---- */
+  React.useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+    let curX = 0;
+    let curY = 0;
+    let raf = 0;
+    const loop = () => {
+      curX += (trackTarget.current.x - curX) * 0.35;
+      curY += (trackTarget.current.y - curY) * 0.35;
+      card.style.setProperty('--mx', curX.toFixed(3));
+      card.style.setProperty('--my', curY.toFixed(3));
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    const onMove = (e: MouseEvent) => {
+      if (focusRef.current === 'email') return;
+      const rect = card.getBoundingClientRect();
+      const centerX = rect.left + rect.width * 0.26;
+      const centerY = rect.top + rect.height * 0.68;
+      trackTarget.current = {
+        x: clampUnit((e.clientX - centerX) / 210),
+        y: clampUnit((e.clientY - centerY) / 210),
+      };
+    };
+    window.addEventListener('mousemove', onMove);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('mousemove', onMove);
+    };
+  }, []);
+
+  /* ---- Eye tracking maskot utama: hanya mata yang bergerak (interval
+         lerp konvergen menulis --hx/--hy pada elemen hero); pointer keluar
+         kartu/jendela -> kembali netral; nonaktif bila reduced-motion. ---- */
+  React.useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+    const hero = card.querySelector('.mate--ezrab') as HTMLElement | null;
+    if (!hero) return;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let tx = 0;
+    let ty = 0;
+    let cx = 0;
+    let cy = 0;
+    let timerId: number | null = null;
+    const loop = () => {
+      cx += (tx - cx) * 0.16;
+      cy += (ty - cy) * 0.16;
+      if (Math.abs(tx - cx) < 0.002) cx = tx;
+      if (Math.abs(ty - cy) < 0.002) cy = ty;
+      hero.style.setProperty('--hx', cx.toFixed(3));
+      hero.style.setProperty('--hy', cy.toFixed(3));
+      if (cx === tx && cy === ty && timerId !== null) {
+        window.clearInterval(timerId);
+        timerId = null;
+      }
+    };
+    const kick = () => {
+      if (timerId === null) {
+        loop();
+        timerId = window.setInterval(loop, 16);
+      }
+    };
+    const onMove = (e: PointerEvent | MouseEvent) => {
+      if (reduceMotion.matches) return;
+      const r = hero.getBoundingClientRect();
+      if (!r.width) return;
+      const hx = r.left + r.width / 2;
+      const hy = r.top + r.height / 2;
+      tx = clampUnit((e.clientX - hx) / 260);
+      ty = clampUnit((e.clientY - hy) / 260);
+      kick();
+    };
+    const onLeave = () => {
+      tx = 0;
+      ty = 0;
+      kick();
+    };
+    window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('mousemove', onMove, { passive: true });
+    card.addEventListener('pointerleave', onLeave);
+    card.addEventListener('mouseleave', onLeave);
+    document.addEventListener('mouseleave', onLeave);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('mousemove', onMove);
+      card.removeEventListener('pointerleave', onLeave);
+      card.removeEventListener('mouseleave', onLeave);
+      document.removeEventListener('mouseleave', onLeave);
+      if (timerId !== null) window.clearInterval(timerId);
+    };
+  }, []);
+
+  /* ---- Kedip berkala + reaksi klik karakter (blink + bounce) ---- */
+  React.useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+    const mates = Array.from(card.querySelectorAll('.mate'));
+    let cancelled = false;
+    const timers: number[] = [];
+    const later = (fn: () => void, ms: number) => {
+      timers.push(window.setTimeout(fn, ms));
+    };
+    const scheduleBlink = () => {
+      later(() => {
+        if (cancelled) return;
+        const m = moodRef.current;
+        if (m === 'idle' || m === 'nosy') {
+          mates.forEach((mate, idx) => {
+            if (Math.random() > 0.25 || idx === 3) {
+              later(() => {
+                mate.classList.add('is-blinking');
+                later(() => mate.classList.remove('is-blinking'), 140);
+              }, idx * 55);
+            }
+          });
+        }
+        scheduleBlink();
+      }, 2200 + Math.random() * 2600);
+    };
+    scheduleBlink();
+    const clickHandlers: Array<{ el: Element; fn: () => void }> = [];
+    mates.forEach((mate) => {
+      const fn = () => {
+        mate.classList.add('is-blinking');
+        mate.classList.remove('mate-bounce');
+        void mate.getBoundingClientRect();
+        mate.classList.add('mate-bounce');
+        later(() => mate.classList.remove('is-blinking'), 180);
+      };
+      mate.addEventListener('click', fn);
+      clickHandlers.push({ el: mate, fn });
+    });
+    return () => {
+      cancelled = true;
+      timers.forEach((id) => window.clearTimeout(id));
+      clickHandlers.forEach(({ el, fn }) => el.removeEventListener('click', fn));
+    };
+  }, []);
+
+  const triggerPop = () => {
+    setLoggingIn(true);
+    if (popTimer.current !== null) window.clearTimeout(popTimer.current);
+    popTimer.current = window.setTimeout(() => setLoggingIn(false), 1250);
+  };
+
+  const triggerShake = () => {
+    setShaking(true);
+    if (shakeTimer.current !== null) window.clearTimeout(shakeTimer.current);
+    shakeTimer.current = window.setTimeout(() => setShaking(false), 500);
+  };
+
   const switchMode = (toSignUp: boolean) => {
     setIsSignUp(toSignUp);
     setError(null);
     setNotice(null);
+    setFocusField(null);
   };
 
   const submit = async (e: React.FormEvent, forSignUp: boolean) => {
     e.preventDefault();
     setError(null);
     setNotice(null);
+    // Pop karakter dari bawah setiap klik submit (sesuai desain).
+    triggerPop();
+
+    const failValidation = (msg: string) => {
+      setError(msg);
+      triggerShake();
+    };
 
     if (!isSupabaseConfigured()) {
-      setError('Layanan autentikasi Supabase belum terhubung atau konfigurasi belum lengkap.');
+      failValidation('Layanan autentikasi Supabase belum terhubung atau konfigurasi belum lengkap.');
       return;
     }
     if (forSignUp && !name.trim()) {
-      setError('Isi nama Anda.');
+      failValidation('Isi nama Anda.');
       return;
     }
     if (!email.trim() || password.length < 6) {
-      setError('Isi email valid dan kata sandi min. 6 karakter.');
+      failValidation('Isi email valid dan kata sandi min. 6 karakter.');
       return;
     }
     if (forSignUp && password !== confirmPassword) {
-      setError('Konfirmasi kata sandi tidak sama.');
+      failValidation('Konfirmasi kata sandi tidak sama.');
       return;
     }
 
@@ -134,9 +341,8 @@ export const SlidingAuthCard: React.FC<Props> = ({
         setNotice('Akun dibuat. Silakan masuk dengan akun Anda.');
         setIsSignUp(false);
       } else {
-        // Animasi maskot sukses dulu (1,4 dtk) baru lanjut ke workspace.
+        // Animasi pop login dulu (1,4 dtk) baru lanjut ke workspace.
         successShown = true;
-        setLoginSuccess(true);
         successTimer.current = window.setTimeout(() => onSuccessLogin(), 1400);
       }
     } finally {
@@ -180,25 +386,12 @@ export const SlidingAuthCard: React.FC<Props> = ({
 
   const spinner = <Loader2 size={15} className="animate-spin" />;
 
-  /** Maskot mengetik = salah satu kolom kata sandi terisi (dan belum sukses). */
-  const isTypingPassword = (password.length > 0 || confirmPassword.length > 0) && !loginSuccess;
-  const mascotStateClass = loginSuccess ? ' sac-mascot-success' : isTypingPassword ? ' sac-mascot-typing' : '';
-  const mascotBlock = (
-    <>
-      <div className="sac-mascot">
-        <img src="/images/mascot-login-3d.png" alt="" aria-hidden="true" />
-      </div>
-      <div className="sac-mascot-bubble sac-mascot-bubble-peek" aria-hidden="true">
-        🙈
-      </div>
-      <div className="sac-mascot-bubble sac-mascot-bubble-thumb" aria-hidden="true">
-        👍
-      </div>
-      <div className="sac-mascot-note" aria-hidden="true">
-        Berhasil! Mengalihkan ke workspace…
-      </div>
-    </>
-  );
+  const fieldFocus = (field: FocusField) => ({
+    onFocus: () => setFocusField(field),
+    onBlur: () => {
+      if (focusRef.current === field) setFocusField(null);
+    },
+  });
 
   return (
     <div className="sac-page">
@@ -248,188 +441,184 @@ export const SlidingAuthCard: React.FC<Props> = ({
         </div>
       )}
 
-      <div className="sac-mobile-brand">
-        <img src="/images/ez-emblem.png" alt="EZRAB" />
-        <div className="sac-mobile-brand-text">
-          <strong>EZRAB</strong>
-          <span>Platform RAB &amp; Estimasi Konstruksi AI</span>
+      <div
+        ref={cardRef}
+        className={`sac2-card${loggingIn ? ' is-logging-in' : ''}${shaking ? ' shake' : ''}`}
+        data-mood={mood}
+        data-peek={peekToggle ? 'true' : 'false'}
+      >
+        {/* ---- Panel panggung maskot ---- */}
+        <div className="stage-panel" aria-hidden="true">
+          <LoginMatesScene />
         </div>
-      </div>
 
-      <div className={`sac-container${isSignUp ? ' sac-right-active' : ''}`}>
-        {checking ? (
-          <div className="sac-loggedin">
-            <Loader2 size={22} className="animate-spin" style={{ color: 'var(--ez-color-primary)' }} />
-            <p>Memeriksa sesi…</p>
-          </div>
-        ) : currentUserEmail ? (
-          <div className="sac-loggedin">
-            <h2>Sudah masuk</h2>
-            <p>
-              Masuk sebagai <strong>{currentUserEmail}</strong>
-            </p>
-            <div className="sac-loggedin-row">
-              <button type="button" className="sac-btn" onClick={onSuccessLogin}>
-                Lanjut ke Aplikasi
-              </button>
-              <button type="button" className="sac-btn-secondary" onClick={() => void handleSignOut()}>
-                <LogOut size={14} /> Keluar
-              </button>
+        {/* ---- Panel form ---- */}
+        <div className="form-panel">
+          {checking ? (
+            <div className="sac2-state">
+              <Loader2 size={22} className="animate-spin" style={{ color: 'var(--ez-color-primary)' }} />
+              <p>Memeriksa sesi…</p>
             </div>
-          </div>
-        ) : (
-          <>
-            {/* ---- Form DAFTAR ---- */}
-            <div className="sac-form-container sac-sign-up-container">
-              <form onSubmit={(e) => void submit(e, true)}>
-                <h1>Buat Akun EZRAB</h1>
-                <div className="sac-social">
-                  <button
-                    type="button"
-                    className="sac-social-btn"
-                    onClick={() => void googleLogin()}
-                    disabled={googleBusy || busy}
-                    title="Lanjutkan dengan Google"
-                    aria-label="Lanjutkan dengan Google"
-                  >
-                    {googleBusy ? <Loader2 size={18} className="animate-spin" /> : <GoogleIcon />}
-                  </button>
-                </div>
-                <span className="sac-hint">atau gunakan email untuk pendaftaran</span>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Nama lengkap"
-                  autoComplete="name"
-                />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email"
-                  autoComplete="email"
-                />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Kata sandi (min. 6 karakter)"
-                  autoComplete="new-password"
-                />
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Konfirmasi kata sandi"
-                  autoComplete="new-password"
-                />
-                {error && (
-                  <div className="sac-error">
-                    <AlertCircle size={14} /> {error}
+          ) : currentUserEmail ? (
+            <div className="sac2-state">
+              <h2>Sudah masuk</h2>
+              <p>
+                Masuk sebagai <strong>{currentUserEmail}</strong>
+              </p>
+              <div className="sac2-state-row">
+                <button type="button" className="primary-btn sac2-btn-auto" onClick={onSuccessLogin}>
+                  Lanjut ke Aplikasi
+                </button>
+                <button type="button" className="sac2-btn-secondary" onClick={() => void handleSignOut()}>
+                  <LogOut size={14} /> Keluar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="sac2-logo-wrap">
+                <img src="/images/ez-logo-glossy.png" alt="EZRAB" style={{ width: 60, height: 60, display: 'block' }} />
+              </div>
+              <div className="sac2-form-head">
+                <h2 className="sac2-form-title">{isSignUp ? 'Buat Akun EZRAB' : 'Masuk ke EZRAB'}</h2>
+                <p className="sac2-form-subtitle">
+                  {isSignUp
+                    ? 'Daftar gratis dan susun RAB pertama Anda dalam hitungan menit'
+                    : 'Masuk untuk melanjutkan proyek, QTO, dan RAB Anda'}
+                </p>
+              </div>
+
+              <form onSubmit={(e) => void submit(e, isSignUp)}>
+                {isSignUp && (
+                  <div className="field-group">
+                    <label className="field-label" htmlFor="sac2-name">Nama lengkap</label>
+                    <div className="input-line">
+                      <input
+                        id="sac2-name"
+                        type="text"
+                        className="text-input"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Nama lengkap Anda"
+                        autoComplete="name"
+                        {...fieldFocus(null)}
+                      />
+                    </div>
                   </div>
                 )}
-                <button type="submit" className="sac-btn" disabled={busy || googleBusy}>
-                  {busy && isSignUp ? spinner : null} Daftar
-                </button>
-              </form>
-            </div>
 
-            {/* ---- Form MASUK ---- */}
-            <div className="sac-form-container sac-sign-in-container">
-              <form onSubmit={(e) => void submit(e, false)}>
-                <h1>Masuk ke EZRAB</h1>
-                <div className="sac-social">
-                  <button
-                    type="button"
-                    className="sac-social-btn"
-                    onClick={() => void googleLogin()}
-                    disabled={googleBusy || busy}
-                    title="Lanjutkan dengan Google"
-                    aria-label="Lanjutkan dengan Google"
-                  >
-                    {googleBusy ? <Loader2 size={18} className="animate-spin" /> : <GoogleIcon />}
-                  </button>
+                <div className="field-group">
+                  <label className="field-label" htmlFor="sac2-email">Email</label>
+                  <div className="input-line">
+                    <input
+                      id="sac2-email"
+                      type="email"
+                      className="text-input"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        // Karakter menoleh mengikuti progres ketikan email (desain).
+                        const progress = Math.min(1, e.target.value.length / 24);
+                        trackTarget.current = { x: 0.35 + progress * 0.65, y: -0.35 };
+                      }}
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      {...fieldFocus('email')}
+                    />
+                  </div>
                 </div>
-                <span className="sac-hint">atau gunakan akun Anda</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email"
-                  autoComplete="email"
-                />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Kata sandi"
-                  autoComplete="current-password"
-                />
+
+                <div className="field-group">
+                  <label className="field-label" htmlFor="sac2-password">Kata sandi</label>
+                  <div className="input-line">
+                    <input
+                      id="sac2-password"
+                      type={showPassword ? 'text' : 'password'}
+                      className="text-input"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={isSignUp ? 'Min. 6 karakter' : '••••••••'}
+                      autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                      {...fieldFocus('password')}
+                    />
+                    <button
+                      type="button"
+                      className={`eye-btn${showPassword ? ' is-on' : ''}`}
+                      onClick={() => setShowPassword((v) => !v)}
+                      onMouseEnter={() => setPeekToggle(true)}
+                      onMouseLeave={() => setPeekToggle(false)}
+                      aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+                      title="Tampilkan / sembunyikan kata sandi"
+                    >
+                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  </div>
+                </div>
+
+                {isSignUp && (
+                  <div className="field-group">
+                    <label className="field-label" htmlFor="sac2-confirm">Konfirmasi kata sandi</label>
+                    <div className="input-line">
+                      <input
+                        id="sac2-confirm"
+                        type={showPassword ? 'text' : 'password'}
+                        className="text-input"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        autoComplete="new-password"
+                        {...fieldFocus('password')}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {error && (
-                  <div className="sac-error">
+                  <div className="sac2-banner sac2-banner-error">
                     <AlertCircle size={14} /> {error}
                   </div>
                 )}
                 {notice && (
-                  <div className="sac-success">
+                  <div className="sac2-banner sac2-banner-ok">
                     <CheckCircle2 size={14} /> {notice}
                   </div>
                 )}
-                <button type="submit" className="sac-btn" disabled={busy || googleBusy}>
-                  {busy && !isSignUp ? spinner : null} Masuk
+
+                <button type="submit" className="primary-btn" disabled={busy || googleBusy}>
+                  {busy ? spinner : null} {isSignUp ? 'Daftar' : 'Masuk'}
+                </button>
+
+                <div className="or-divider">
+                  <div className="or-line" />
+                  <span className="or-text">atau</span>
+                </div>
+
+                <button
+                  type="button"
+                  className="google-btn"
+                  onClick={() => void googleLogin()}
+                  disabled={googleBusy || busy}
+                >
+                  {googleBusy ? <Loader2 size={15} className="animate-spin" /> : <GoogleIcon />}
+                  <span>{isSignUp ? 'Daftar dengan Google' : 'Masuk dengan Google'}</span>
                 </button>
               </form>
-            </div>
 
-            {/* ---- Overlay geser ---- */}
-            <div className={`sac-overlay-container${mascotStateClass}`} aria-hidden="true">
-              <div className="sac-overlay">
-                <div className="sac-overlay-panel sac-overlay-left">
-                  <div className="sac-brandmark">
-                    <img src="/images/ez-emblem.png" alt="EZRAB" />
-                  </div>
-                  <h1>Selamat Datang Kembali!</h1>
-                  <p>Masuk untuk melanjutkan proyek, QTO, dan RAB Anda</p>
-                  <button type="button" className="sac-btn sac-ghost" onClick={() => switchMode(false)} tabIndex={-1}>
-                    Masuk
-                  </button>
-                  {mascotBlock}
-                </div>
-                <div className="sac-overlay-panel sac-overlay-right">
-                  <div className="sac-brandmark">
-                    <img src="/images/ez-emblem.png" alt="EZRAB" />
-                  </div>
-                  <h1>Halo, Estimator!</h1>
-                  <p>Daftar gratis dan susun RAB pertama Anda dalam hitungan menit</p>
-                  <button type="button" className="sac-btn sac-ghost" onClick={() => switchMode(true)} tabIndex={-1}>
-                    Daftar
-                  </button>
-                  {mascotBlock}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+              <p className="signup-footer">
+                <span>{isSignUp ? 'Sudah punya akun?' : 'Belum punya akun?'}</span>
+                <button type="button" className="signup-link" onClick={() => switchMode(!isSignUp)}>
+                  {isSignUp ? 'Masuk' : 'Daftar gratis'}
+                </button>
+              </p>
+            </>
+          )}
+        </div>
       </div>
 
       {!checking && !currentUserEmail && (
-        <>
-          <p className="sac-mobile-toggle">
-            {isSignUp ? (
-              <>
-                Sudah punya akun? <button type="button" onClick={() => switchMode(false)}>Masuk</button>
-              </>
-            ) : (
-              <>
-                Belum punya akun? <button type="button" onClick={() => switchMode(true)}>Daftar gratis</button>
-              </>
-            )}
-          </p>
-          <button type="button" className="sac-role-link" onClick={onShowRoleLogin}>
-            Coba masuk sebagai peran demo
-          </button>
-        </>
+        <button type="button" className="sac-role-link" onClick={onShowRoleLogin}>
+          Coba masuk sebagai peran demo
+        </button>
       )}
     </div>
   );
