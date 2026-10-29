@@ -591,7 +591,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
           ) : (
             <>
               <div className="sac2-logo-wrap">
-                <img src="/images/ez-logo-glossy.png" alt="EZRAB" style={{ width: 60, height: 60, display: 'block' }} />
+                <img src="/images/ez-logo-glossy.png" alt="EZRAB" style={{ width: 46, height: 46, display: 'block' }} />
               </div>
               <div className="sac2-form-head">
                 <h2 className="sac2-form-title">{isSignUp ? 'Buat Akun EZRAB' : 'Masuk ke EZRAB'}</h2>
