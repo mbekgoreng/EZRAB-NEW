@@ -8,8 +8,13 @@
 /** Jenis saldo kredit. */
 export type CreditKind = 'subscription' | 'topup' | 'bonus';
 
-/** Paket langganan yang memberi jatah kredit per periode. */
-export type CreditPlan = 'starter' | 'pro' | 'free';
+/**
+ * Paket langganan pada SIMULASI kredit. ID kanonis paket hidup di
+ * src/billing/plans.ts (PlanId) — 'pro' di sini adalah nama warisan
+ * simulasi untuk paket kanonis 'professional'; pemetaan resminya ada di
+ * CREDIT_PLAN_TO_PLAN_ID (src/ai-credits/config.ts).
+ */
+export type CreditPlan = 'starter' | 'pro' | 'business' | 'free';
 
 /** Saldo kredit agregat (kontrak backend). */
 export interface CreditBalance {

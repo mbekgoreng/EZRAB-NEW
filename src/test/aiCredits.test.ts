@@ -22,9 +22,14 @@ import {
 import { formatCredits, formatCreditsShort, formatRupiah, formatEstimateRange } from '../ai-credits/format';
 
 describe('ai-credits config', () => {
-  it('1. paket Starter 10.000 dan Pro 20.000', () => {
-    expect(PLAN_CREDITS.starter).toBe(10_000);
-    expect(PLAN_CREDITS.pro).toBe(20_000);
+  // Nilai jatah mengikuti definisi paket KANONIS (src/billing/plans.ts,
+  // owner-approved 2026-10-30): Starter 5.000, Professional 10.000,
+  // Business 30.000 per periode. Menggantikan angka lama 10.000/20.000
+  // yang menyimpang dari tabel paket resmi.
+  it('1. paket Starter 5.000, Pro (Professional) 10.000, Business 30.000', () => {
+    expect(PLAN_CREDITS.starter).toBe(5_000);
+    expect(PLAN_CREDITS.pro).toBe(10_000);
+    expect(PLAN_CREDITS.business).toBe(30_000);
   });
 
   it('2. top-up Rp5.000 → 3.000 + 600 bonus = 3.600', () => {
@@ -76,19 +81,19 @@ describe('ai-credits config', () => {
 });
 
 describe('ai-credits mockAdapter (SIMULASI)', () => {
-  it('8. saldo awal = paket starter 10.000', () => {
+  it('8. saldo awal = paket starter 5.000', () => {
     mockReset();
     const b = mockGetBalance();
-    expect(b.total).toBe(10_000);
+    expect(b.total).toBe(5_000);
     expect(b.plan).toBe('starter');
-    expect(b.subscription).toBe(10_000);
+    expect(b.subscription).toBe(5_000);
   });
 
   it('9. consume mengurangi saldo dan mencatat ledger simulasi', () => {
     mockReset();
     const ok = mockConsume('chat-ai', 20, 'test chat', { model: 'FAST' });
     expect(ok).toBe(true);
-    expect(mockGetBalance().total).toBe(9_980);
+    expect(mockGetBalance().total).toBe(4_980);
     const ledger = mockGetLedger();
     expect(ledger.length).toBe(1);
     expect(ledger[0].credits).toBe(-20);
@@ -99,7 +104,7 @@ describe('ai-credits mockAdapter (SIMULASI)', () => {
     mockReset();
     const ok = mockConsume('ded-ai', 99_999, 'test');
     expect(ok).toBe(false);
-    expect(mockGetBalance().total).toBe(10_000);
+    expect(mockGetBalance().total).toBe(5_000);
     expect(mockGetLedger().length).toBe(0);
   });
 
@@ -111,7 +116,7 @@ describe('ai-credits mockAdapter (SIMULASI)', () => {
     const b = mockGetBalance();
     expect(b.topup).toBe(3_000);
     expect(b.bonus).toBe(600);
-    expect(b.total).toBe(13_600);
+    expect(b.total).toBe(8_600);
   });
 
   it('12. urutan pakai: bonus → topup → langganan', () => {
@@ -121,14 +126,17 @@ describe('ai-credits mockAdapter (SIMULASI)', () => {
     const b = mockGetBalance();
     expect(b.bonus).toBe(0); // 600 habis dulu
     expect(b.topup).toBe(2_600); // sisa 400 dari topup
-    expect(b.subscription).toBe(10_000); // belum tersentuh
+    expect(b.subscription).toBe(5_000); // belum tersentuh
   });
 
   it('13. ganti paket mengubah jatah langganan', () => {
     mockReset();
     mockSetPlan('pro');
     expect(mockGetBalance().plan).toBe('pro');
-    expect(mockGetBalance().subscription).toBe(20_000);
+    expect(mockGetBalance().subscription).toBe(10_000);
+    mockSetPlan('business');
+    expect(mockGetBalance().plan).toBe('business');
+    expect(mockGetBalance().subscription).toBe(30_000);
     mockSetPlan('free');
     expect(mockGetBalance().subscription).toBe(0);
   });

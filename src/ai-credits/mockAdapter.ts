@@ -62,7 +62,7 @@ function loadState(): void {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     const parsed = JSON.parse(raw) as Partial<MockState>;
-    if (parsed.plan === 'free' || parsed.plan === 'starter' || parsed.plan === 'pro') {
+    if (parsed.plan === 'free' || parsed.plan === 'starter' || parsed.plan === 'pro' || parsed.plan === 'business') {
       state.plan = parsed.plan;
     }
     if (Number.isFinite(parsed.subscription)) state.subscription = parsed.subscription as number;
@@ -146,6 +146,7 @@ export function mockSetPlan(plan: CreditPlan): void {
   state.plan = plan;
   if (plan === 'starter') state.subscription = PLAN_CREDITS.starter;
   else if (plan === 'pro') state.subscription = PLAN_CREDITS.pro;
+  else if (plan === 'business') state.subscription = PLAN_CREDITS.business;
   else state.subscription = 0;
   notify();
 }

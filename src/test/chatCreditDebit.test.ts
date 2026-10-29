@@ -32,12 +32,14 @@ import {
   debitChatCreditOnSuccess,
   shouldDebitChatCredit,
 } from '../ai-tools/ezrab-ai/chatCreditDebit';
-import { tariffFor } from '../ai-credits/config';
+import { PLAN_CREDITS, tariffFor } from '../ai-credits/config';
 import { mockConsume, mockGetBalance, mockGetLedger, mockReset } from '../ai-credits/mockAdapter';
 
 const FAST_MAX = tariffFor('chat-ai/fast').max; // 20
 const ADV_MAX = tariffFor('chat-ai/advanced').max; // 50
-const START = 10_000; // PLAN_CREDITS.starter, dipulihkan mockReset()
+// Jatah awal Starter dari definisi paket kanonis (src/billing/plans.ts via
+// PLAN_CREDITS): 5.000 sejak Fase 1 entitlement (sebelumnya hardcoded 10.000).
+const START = PLAN_CREDITS.starter; // dipulihkan mockReset()
 
 /**
  * Tiruan persis langkah debit di view.tsx (jalur online): gerbang menerima
@@ -114,7 +116,7 @@ describe('Fase 1 — kegagalan TIDAK mengubah saldo (kontrak service success:fal
     });
   }
 
-  it('reproduksi angka audit live: 2x gagal Cepat + 1x gagal Mendalam → saldo tetap 10.000 (dulu: 9.910)', () => {
+  it('reproduksi pola audit live: 2x gagal Cepat + 1x gagal Mendalam → saldo tetap utuh di jatah awal', () => {
     viewDebitStep({ success: false, reply: 'AI Online sementara tidak dapat diakses.' }, 'fast');
     viewDebitStep({ success: false, reply: 'AI Online sementara tidak dapat diakses.' }, 'fast');
     viewDebitStep({ success: false, reply: 'AI Online sementara tidak dapat diakses.' }, 'advanced');

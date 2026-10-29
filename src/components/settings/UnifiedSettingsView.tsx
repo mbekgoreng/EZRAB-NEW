@@ -70,6 +70,7 @@ import { logoutAll } from '../../auth/logoutAll';
 import { navigateTo } from '../../routing/routes';
 import { ONBOARDING_OPEN_EVENT } from '../onboarding/OnboardingTour';
 import { TutorialCenter } from '../onboarding/tutorials/TutorialCenter';
+import { SuggestionComplaintBox } from './SuggestionComplaintBox';
 import { useCurrency } from '../../context/CurrencyContext';
 import {
   CURRENCY_DEFINITIONS,
@@ -89,6 +90,9 @@ import { settingsAuditService, SettingsAuditEntry, SettingsCategory, SettingsSco
 import { computeProjectInfoTotal } from '../../services/projectInfoTotal';
 import { BrowserNotifyControl } from '../../notifications/BrowserNotifyControl';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
+import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
+import { CREDIT_PLAN_TO_PLAN_ID } from '../../ai-credits/config';
+import { getPlanDefinition } from '../../billing/plans';
 
 export type SettingsTabId =
   // Level 1: Account
@@ -160,6 +164,23 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
   const { t, lang, setLang } = useI18n();
   const { activeRole, logoutRole, hasCapability } = useRole();
   const { session: supabaseSession, signOut: signOutAuth } = useAuth();
+  // Tab Paket & Billing menampilkan keadaan SIMULASI kredit saat ini apa
+  // adanya (billing nyata belum aktif — tidak ada langganan berbayar yang
+  // terverifikasi). Nama/batas/jatah paket dibaca dari definisi kanonis
+  // src/billing/plans.ts, bukan teks hardcoded.
+  const { balance: creditBalance } = useCreditSimulation();
+  const simulatedPlanDef = getPlanDefinition(CREDIT_PLAN_TO_PLAN_ID[creditBalance.plan]);
+  const simulatedPlanFacts = [
+    simulatedPlanDef.monthlyPriceIdr === 0
+      ? 'Rp0 (gratis)'
+      : `${formatCurrencyIDR(simulatedPlanDef.monthlyPriceIdr)}/bulan`,
+    simulatedPlanDef.projectLimit === null
+      ? 'Proyek tanpa batas'
+      : `Maks. ${simulatedPlanDef.projectLimit} proyek`,
+    simulatedPlanDef.credits.kind === 'initial'
+      ? `${simulatedPlanDef.credits.credits.toLocaleString('id-ID')} kredit AI awal (sekali)`
+      : `${simulatedPlanDef.credits.credits.toLocaleString('id-ID')} kredit AI per periode`,
+  ].join(' • ');
 
   // Scope: 'GLOBAL' (Account & Workspace) vs 'PROJECT' (Project Configuration)
   const [scope, setScope] = useState<'GLOBAL' | 'PROJECT'>(() => {
@@ -492,7 +513,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
     { id: 'company', scope: 'GLOBAL', categoryLabel: 'Workspace', title: 'Profil Perusahaan', description: 'Nama kantor, NPWP, alamat dan kontak', keywords: ['perusahaan', 'kantor', 'npwp', 'alamat', 'telepon', 'pt', 'cv'] },
     { id: 'users', scope: 'GLOBAL', categoryLabel: 'Workspace', title: 'Tim & Anggota', description: 'Kelola anggota tim dan undang estimator baru', keywords: ['pengguna', 'tim', 'anggota', 'users', 'undang', 'role'] },
     { id: 'roles', scope: 'GLOBAL', categoryLabel: 'Workspace', title: 'Role & Hak Akses', description: 'Matriks izin akses Super Admin, Estimator, Direksi', keywords: ['role', 'hak akses', 'izin', 'permission', 'direksi', 'client', 'editor'] },
-    { id: 'subscription', scope: 'GLOBAL', categoryLabel: 'Workspace', title: 'Paket & Billing', description: 'Langganan Professional Estimator dan kuota', keywords: ['paket', 'billing', 'langganan', 'proyek', 'pembayaran', 'invoice'] },
+    { id: 'subscription', scope: 'GLOBAL', categoryLabel: 'Workspace', title: 'Paket & Billing', description: 'Paket saat ini, kuota kredit AI, dan status langganan (simulasi)', keywords: ['paket', 'billing', 'langganan', 'proyek', 'pembayaran', 'invoice'] },
     { id: 'master-data', scope: 'GLOBAL', categoryLabel: 'Master Data', title: 'Master Harga & AHSP', description: 'Database acuan harga 38 provinsi dan PUPR 2026', keywords: ['master', 'harga', 'ahsp', 'pupr', 'material', 'upah', 'alat'] },
     { id: 'estimator', scope: 'GLOBAL', categoryLabel: 'Estimator', title: 'Pengaturan RAB & Pajak', description: 'Persentase overhead acuan, PPN 11%, pembulatan', keywords: ['pajak', 'ppn', 'overhead', 'profit', 'margin', 'pembulatan', 'rab', 'estimator'] },
     { id: 'ded-volume', scope: 'GLOBAL', categoryLabel: 'DED & Volume', title: 'Presisi & Waste Factor', description: 'Presisi desimal volume dan susut material', keywords: ['ded', 'volume', 'presisi', 'desimal', 'waste', 'susut', 'satuan'] },
@@ -1793,7 +1814,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   Paket Langganan & Billing Workspace
                 </h3>
                 <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-muted)', margin: 0 }}>
-                  Informasi lisensi aktif, kuota penyimpanan, dan kuota proyek.
+                  Informasi paket saat ini, kuota penyimpanan, dan kuota proyek.
                 </p>
               </div>
 
@@ -1801,17 +1822,20 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--ez-color-primary-hover)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Paket Aktif Saat Ini
+                      Paket Saat Ini (Simulasi)
                     </span>
                     <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--ez-color-text-primary)', margin: '4px 0 0' }}>
-                      Professional Estimator & Enterprise
+                      {simulatedPlanDef.displayName}
                     </h2>
                     <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-body)', margin: '4px 0 0' }}>
-                      Masa aktif sampai 31 Desember 2026 • Unlimited Proyek & Export PDF/Excel
+                      {simulatedPlanFacts}
+                    </p>
+                    <p style={{ fontSize: '12.5px', color: 'var(--ez-color-text-body)', margin: '4px 0 0' }}>
+                      Saldo kredit AI saat ini: {creditBalance.total.toLocaleString('id-ID')} kredit (simulasi). Billing belum aktif — belum ada langganan berbayar yang terverifikasi; paket di atas adalah paket pada simulasi kredit frontend EZRAB.
                     </p>
                   </div>
-                  <div style={{ padding: '8px 16px', background: 'var(--ez-color-primary)', color: '#FFFFFF', borderRadius: '10px', fontSize: '12.5px', fontWeight: 700 }}>
-                    Status: Aktif Terverifikasi
+                  <div style={{ padding: '8px 16px', background: 'var(--ez-color-surface-tertiary)', color: 'var(--ez-color-text-body)', border: '1px solid var(--ez-color-border-strong)', borderRadius: '10px', fontSize: '12.5px', fontWeight: 700 }}>
+                    Mode Simulasi — Bukan Langganan Aktif
                   </div>
                 </div>
               </div>
@@ -2384,6 +2408,8 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
                   </div>
                 ))}
               </div>
+
+              <SuggestionComplaintBox />
 
               <TutorialCenter />
             </div>

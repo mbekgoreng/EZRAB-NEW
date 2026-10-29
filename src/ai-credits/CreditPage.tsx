@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, RotateCcw, Activity, Wallet, Repeat, PiggyBank, Gift } from 'lucide-react';
 import './ai-credits.css';
 import { useCreditSimulation } from './useCreditSimulation';
-import { CREDIT_CONFIG_NOTE, FEATURE_LABELS, PLAN_CREDITS, TOPUP_OFFER } from './config';
+import { CREDIT_CONFIG_NOTE, FEATURE_LABELS, FREE_INITIAL_CREDITS, PLAN_CREDITS, TOPUP_OFFER } from './config';
 import { formatCredits, formatRupiah } from './format';
 import type { CreditPlan } from './types';
 import { CreditTopUpModal } from './components/CreditTopUpModal';
@@ -114,7 +114,7 @@ export const CreditPage: React.FC<Props> = ({ onBack }) => {
   const { balance, ledger, topUp, setPlan, reset } = useCreditSimulation();
   const [topUpOpen, setTopUpOpen] = useState(false);
 
-  const planLabel = balance.plan === 'free' ? 'Gratis' : balance.plan === 'starter' ? 'Starter' : 'Pro';
+  const planLabel = balance.plan === 'free' ? 'Gratis' : balance.plan === 'starter' ? 'Starter' : balance.plan === 'business' ? 'Business' : 'Pro';
 
   return (
     <div className="aic aic-page">
@@ -178,20 +178,20 @@ export const CreditPage: React.FC<Props> = ({ onBack }) => {
           <span className="aic-chip">{planLabel}</span>
           <span style={{ fontSize: 13, color: 'var(--ez-color-text-faint)' }}>
             {balance.plan === 'free'
-              ? 'Paket gratis — tanpa jatah kredit langganan.'
-              : `${formatCredits(PLAN_CREDITS[balance.plan as 'starter' | 'pro'])} per periode.`}
+              ? `Paket gratis — ${formatCredits(FREE_INITIAL_CREDITS)} awal (sekali), tanpa jatah kredit periodik.`
+              : `${formatCredits(PLAN_CREDITS[balance.plan as 'starter' | 'pro' | 'business'])} per periode.`}
           </span>
         </div>
         <div className="aic-plan-row" style={{ marginTop: 12 }}>
           <span style={{ fontSize: 12.5, color: 'var(--ez-color-text-faint)' }}>Simulasi ganti paket:</span>
-          {(['free', 'starter', 'pro'] as CreditPlan[]).map((p) => (
+          {(['free', 'starter', 'pro', 'business'] as CreditPlan[]).map((p) => (
             <button
               key={p}
               type="button"
               className={`aic-plan-btn${balance.plan === p ? ' active' : ''}`}
               onClick={() => setPlan(p)}
             >
-              {p === 'free' ? 'Gratis' : p === 'starter' ? 'Starter' : 'Pro'}
+              {p === 'free' ? 'Gratis' : p === 'starter' ? 'Starter' : p === 'business' ? 'Business' : 'Pro'}
             </button>
           ))}
           <button

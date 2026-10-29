@@ -13,6 +13,12 @@ import {
   Clock
 } from 'lucide-react';
 
+import {
+  PLAN_IDS,
+  getPlanDefinition,
+  type PlanId,
+} from '../../../billing/plans';
+
 interface ExactPricingProps {
   onSelectPlan?: (plan: string) => void;
 }
@@ -39,83 +45,133 @@ interface PlanConfig {
   features: PlanFeature[];
   ctaText: string;
   isPopular?: boolean;
-  styleVariant: 'free' | 'starter' | 'pro';
+  styleVariant: 'free' | 'starter' | 'pro' | 'business';
   icon: React.ReactNode;
 }
 
-const PLANS: PlanConfig[] = [
-  {
-    id: 'free',
-    name: 'Free',
-    monthlyPrice: 'Rp 0',
-    annualPrice: 'Rp 0',
-    monthlyNum: 0,
-    annualNum: 0,
-    periodLabelMonthly: 'selamanya',
-    periodLabelAnnual: 'selamanya',
+// ---------------------------------------------------------------------------
+// Harga, batas proyek, dan jatah kredit TIDAK lagi hardcoded di sini —
+// semuanya diturunkan dari definisi paket kanonis (src/billing/plans.ts,
+// tabel owner-approved). Blok ini hanya memuat PRESENTASI (ikon, badge,
+// harga coret promo, daftar fitur turunan matriks entitlement §C).
+// Diskon tahunan 15% (chip toggle) diterapkan sebagai rumus dari harga
+// bulanan kanonis — bukan angka terpisah yang bisa menyimpang.
+// ---------------------------------------------------------------------------
+
+const formatRp = (n: number): string => `Rp ${n.toLocaleString('id-ID')}`;
+
+interface PlanPresentation {
+  badge?: string;
+  isPopular?: boolean;
+  originalPrice?: string;
+  originalPriceNum?: number;
+  /** Fitur setelah baris batas proyek & jatah kredit (keduanya otomatis). */
+  features: string[];
+  ctaText: string;
+  styleVariant: PlanConfig['styleVariant'];
+  icon: React.ReactNode;
+}
+
+const PLAN_PRESENTATION: Record<PlanId, PlanPresentation> = {
+  free: {
     features: [
-      { text: '1 Proyek' },
-      { text: 'Kalkulator QTO dasar' },
-      { text: 'Database AHSP 2026 (lihat)' },
-      { text: 'Export PDF' },
-      { text: 'Tutorial & panduan' }
+      'Kalkulator QTO dasar',
+      'Database AHSP 2026 — Cipta Karya (lihat)',
+      'Export PDF & Excel (terbatas)',
+      'Tutorial & panduan',
     ],
     ctaText: 'Mulai Gratis',
     styleVariant: 'free',
-    icon: <Zap size={20} />
+    icon: <Zap size={20} />,
   },
-  {
-    id: 'starter',
-    name: 'Starter',
-    monthlyPrice: 'Rp 59.999',
-    annualPrice: 'Rp 50.999',
-    monthlyNum: 59999,
-    annualNum: 50999,
-    periodLabelMonthly: '/bulan',
-    periodLabelAnnual: '/bulan',
-    annualBilledText: 'Setara Rp 611.988 per tahun',
+  starter: {
     originalPrice: 'Rp 125.000',
-    discountBadge: 'HEMAT 52%',
+    originalPriceNum: 125_000,
     features: [
-      { text: '10 Proyek' },
-      { text: 'Semua kalkulator QTO' },
-      { text: 'RAB & BOQ lengkap' },
-      { text: 'Export Excel & PDF' },
-      { text: 'DED → RAB AI (kuota harian)' },
-      { text: 'Database harga material' }
+      'Kalkulator standar SNI terverifikasi',
+      'RAB & BOQ lengkap',
+      'Export Excel & PDF',
+      'DED → RAB AI',
+      'Template Rumah Tinggal, Gedung & Kesehatan',
+      'Database harga material',
     ],
     ctaText: 'Coba Starter',
     styleVariant: 'starter',
-    icon: <Layers size={20} />
+    icon: <Layers size={20} />,
   },
-  {
-    id: 'pro',
-    name: 'Pro',
+  professional: {
     badge: 'PALING POPULER',
     isPopular: true,
-    monthlyPrice: 'Rp 79.999',
-    annualPrice: 'Rp 67.999',
-    monthlyNum: 79999,
-    annualNum: 67999,
-    periodLabelMonthly: '/bulan',
-    periodLabelAnnual: '/bulan',
-    annualBilledText: 'Setara Rp 815.988 per tahun',
     originalPrice: 'Rp 180.000',
-    discountBadge: 'HEMAT 56%',
+    originalPriceNum: 180_000,
     features: [
-      { text: '20 Proyek' },
-      { text: 'Semua fitur Starter' },
-      { text: 'Kuota AI prioritas' },
-      { text: 'Kurva S & laporan advanced' },
-      { text: 'Kolaborasi tim' },
-      { text: '3 tema premium' },
-      { text: 'Priority support' }
+      'Semua fitur Starter',
+      'Semua kalkulator & domain AHSP',
+      'AI Documents',
+      'Semua template dokumen proyek & jadwal',
+      'Kurva S & laporan lengkap',
+      'Kolaborasi tim',
+      '3 tema premium',
     ],
     ctaText: 'Coba Pro',
     styleVariant: 'pro',
-    icon: <Crown size={20} />
-  }
-];
+    icon: <Crown size={20} />,
+  },
+  business: {
+    features: [
+      'Semua fitur Professional',
+      'Semua template dokumen (termasuk BAST)',
+      'Finance & laporan penuh',
+      'Kolaborasi tim penuh',
+    ],
+    ctaText: 'Coba Business',
+    styleVariant: 'business',
+    icon: <Building2 size={20} />,
+  },
+};
+
+function toPlanConfig(id: PlanId): PlanConfig {
+  const def = getPlanDefinition(id);
+  const p = PLAN_PRESENTATION[id];
+  const monthlyNum = def.monthlyPriceIdr;
+  const annualNum = Math.round(monthlyNum * 0.85);
+  const projectFeature =
+    def.projectLimit === null ? 'Proyek tanpa batas' : `${def.projectLimit} Proyek`;
+  const creditFeature =
+    def.credits.kind === 'initial'
+      ? `${def.credits.credits.toLocaleString('id-ID')} kredit AI awal`
+      : `${def.credits.credits.toLocaleString('id-ID')} kredit AI per periode`;
+  const discountBadge =
+    p.originalPriceNum && monthlyNum > 0
+      ? `HEMAT ${Math.round((1 - monthlyNum / p.originalPriceNum) * 100)}%`
+      : undefined;
+  return {
+    id: def.id,
+    name: def.displayName,
+    badge: p.badge,
+    isPopular: p.isPopular,
+    monthlyPrice: formatRp(monthlyNum),
+    annualPrice: formatRp(annualNum),
+    monthlyNum,
+    annualNum,
+    periodLabelMonthly: monthlyNum === 0 ? 'selamanya' : '/bulan',
+    periodLabelAnnual: monthlyNum === 0 ? 'selamanya' : '/bulan',
+    annualBilledText:
+      monthlyNum === 0 ? undefined : `Setara ${formatRp(annualNum * 12)} per tahun`,
+    originalPrice: p.originalPrice,
+    discountBadge,
+    features: [
+      { text: projectFeature },
+      { text: creditFeature },
+      ...p.features.map((text) => ({ text })),
+    ],
+    ctaText: p.ctaText,
+    styleVariant: p.styleVariant,
+    icon: p.icon,
+  };
+}
+
+const PLANS: PlanConfig[] = PLAN_IDS.map(toPlanConfig);
 
 export const ExactPricing: React.FC<ExactPricingProps> = ({ onSelectPlan }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
@@ -231,7 +287,7 @@ export const ExactPricing: React.FC<ExactPricingProps> = ({ onSelectPlan }) => {
           </div>
         </div>
 
-        {/* 3 Pricing Cards Grid (Free, Starter, Pro) */}
+        {/* 4 Pricing Cards Grid (Free, Starter, Professional, Business) */}
         <div className="ez-pricing-cards-grid">
           {PLANS.map((plan, idx) => {
             const isAnnual = billingCycle === 'annual';

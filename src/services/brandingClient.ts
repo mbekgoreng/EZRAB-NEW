@@ -190,6 +190,12 @@ export class BrandingClient {
     // company ("PT EZRAB KONSTRUKSI DIGITAL", fake NPWP/phone/director),
     // which flowed straight into PDF/Excel exports as if it were the user's
     // real company. Empty = UI shows "Belum diisi" + warning banner.
+    //
+    // FAIL-CLOSED entitlement (Audit Billing Master P0-3, Fase 1 entitlement):
+    // when the backend is unreachable and no saved branding exists, the
+    // fallback must NOT grant paid-plan rights. Default to free-equivalent:
+    // plan 'free', watermark required, custom logo locked — until the server
+    // says otherwise. Identity fields above stay empty per the P0-B fix.
     return {
       workspaceId,
       companyName: '',
@@ -200,9 +206,9 @@ export class BrandingClient {
       taxNumber: '',
       directorName: '',
       leadEstimatorName: '',
-      subscriptionPlan: 'pro',
-      isWatermarkRequired: false,
-      canUploadLogo: true,
+      subscriptionPlan: 'free',
+      isWatermarkRequired: true,
+      canUploadLogo: false,
       updatedAt: new Date().toISOString(),
     };
   }

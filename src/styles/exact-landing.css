@@ -8570,10 +8570,10 @@ body,
   }
 }
 
-/* 3-Card Pricing Grid (Free, Starter, Pro) — centered */
+/* 4-Card Pricing Grid (Free, Starter, Professional, Business) — centered */
 .ez-pricing-cards-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 340px));
+  grid-template-columns: repeat(4, minmax(0, 340px));
   gap: 22px;
   align-items: stretch;
   justify-content: center;
@@ -8718,6 +8718,12 @@ body,
   background: #2563eb;
   color: #ffffff;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.ez-price-card.business .ez-plan-icon-wrap {
+  background: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
 }
 
 .ez-price-plan-name {
@@ -8954,6 +8960,20 @@ body,
   border-color: #1d4ed8;
   transform: translateY(-2px);
   box-shadow: 0 12px 26px -4px rgba(37, 99, 235, 0.5);
+}
+
+.ez-pricing-cta-btn.business {
+  background: #0f172a;
+  color: #ffffff;
+  border: 1.5px solid #0f172a;
+  box-shadow: 0 8px 20px -4px rgba(15, 23, 42, 0.4);
+}
+
+.ez-pricing-cta-btn.business:hover {
+  background: #1e293b;
+  border-color: #1e293b;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px -4px rgba(15, 23, 42, 0.5);
 }
 
 
