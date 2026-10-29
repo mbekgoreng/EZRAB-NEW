@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import { getBlogBaseUrl } from '../../../blog/site';
 import { navigateTo } from '../../../routing/routes';
+import '../../../styles/exact-landing-nav-mobile.css';
 
 interface ExactNavbarProps {
   onOpenAuth: (tab: 'masuk' | 'daftar') => void;

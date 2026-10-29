@@ -13,7 +13,6 @@ import {
   TrendingUp,
   FileCheck2,
   FileCode2,
-  RefreshCw,
   Building2,
 } from 'lucide-react';
 
@@ -23,32 +22,41 @@ interface ExactConnectedDataProps {
 
 export const ExactConnectedData: React.FC<ExactConnectedDataProps> = () => {
   const radialRef = useRef<HTMLDivElement>(null);
-  // Mobile: diagram 640px digeser horizontal di dalam wrapper selebar
-  // kartu; tengahkan posisi geser awal supaya inti EZ langsung terlihat
-  // (di desktop wrapper lebih lebar dari diagram sehingga no-op).
-  // ResizeObserver dipakai karena CSS landing dimuat lazy: efek mount
-  // bisa jalan sebelum CSS mobile diterapkan (saat itu wrapper belum
-  // bisa di-scroll), sehingga pemusatan harus diulang saat ukuran
-  // wrapper berubah.
+  const boxRef = useRef<HTMLDivElement>(null);
+  // Diagram radial berukuran tetap 640x560 (posisi node dalam px), jadi
+  // diskalakan mengikuti lebar kolom: scale = min(1, lebar wrapper / 640)
+  // dan tinggi wrapper disetel 560*scale supaya diagram selalu tampil
+  // utuh di semua lebar layar, tanpa scroll horizontal.
+  // ResizeObserver dipakai karena CSS landing dimuat lazy: ukuran wrapper
+  // bisa berubah setelah mount (saat CSS diterapkan), sehingga pengukuran
+  // harus diulang setiap ukuran wrapper berubah.
   useEffect(() => {
     const el = radialRef.current;
-    if (!el) return;
-    const center = () => {
-      if (el.scrollWidth > el.clientWidth) {
-        el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
-      }
+    const box = boxRef.current;
+    if (!el || !box) return;
+    const measure = () => {
+      const scale = Math.min(1, el.clientWidth / 640);
+      const h = Math.round(560 * scale);
+      box.style.transformOrigin = 'center center';
+      box.style.transform = `scale(${scale})`;
+      el.style.height = `${h}px`;
+      // min-height 580px di CSS hanya fallback sebelum pengukuran pertama;
+      // setelah diskalakan, min-height tidak boleh menahan tinggi wrapper.
+      // Pada scale 1 min-height CSS dibiarkan berlaku (tampilan sama
+      // seperti sebelumnya).
+      el.style.minHeight = scale < 1 ? `${h}px` : '';
     };
-    center();
-    window.addEventListener('resize', center);
+    measure();
+    window.addEventListener('resize', measure);
     if (typeof ResizeObserver !== 'undefined') {
-      const ro = new ResizeObserver(center);
+      const ro = new ResizeObserver(measure);
       ro.observe(el);
       return () => {
         ro.disconnect();
-        window.removeEventListener('resize', center);
+        window.removeEventListener('resize', measure);
       };
     }
-    return () => window.removeEventListener('resize', center);
+    return () => window.removeEventListener('resize', measure);
   }, []);
   return (
     <section id="data-terhubung" className="ez-connected-section">
@@ -106,7 +114,7 @@ export const ExactConnectedData: React.FC<ExactConnectedDataProps> = () => {
 
         {/* Right Column: Interactive Animated Radial Network Hub */}
         <div className="ez-radial-stage-wrapper" ref={radialRef}>
-          <div className="ez-radial-network-box">
+          <div className="ez-radial-network-box" ref={boxRef}>
             {/* 1. ANIMATED SVG CONCENTRIC RINGS & RADIAL CONNECTING LINES */}
             <svg
               className="ez-radial-svg-layer"
@@ -291,42 +299,6 @@ export const ExactConnectedData: React.FC<ExactConnectedDataProps> = () => {
             </div>
           </div>
 
-          {/* 4. FLOATING PERSPECTIVE WIDGETS MATCHING UPLOADED REFERENCE */}
-
-          {/* Top Right Floating Card: 3D Building Wireframe & Auto-Revision Tag */}
-          <div className="ez-floating-preview-card top-right-card">
-            <div className="ez-preview-tag-row">
-              <span className="ez-revision-chip">
-                <RefreshCw size={12} className="ez-spin-slow text-blue-600" />
-                <span>Revisi otomatis di semua modul</span>
-              </span>
-            </div>
-            <div className="ez-building-render-box">
-              {/* Isometric 3D Building Structure Graphic */}
-              <div className="ez-isometric-building-wireframe">
-                <div className="ez-iso-cube top" />
-                <div className="ez-iso-cube middle" />
-                <div className="ez-iso-cube bottom" />
-                <div className="ez-iso-scaffold-lines" />
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Right Floating Card: Progres Proyek Live Chart */}
-          <div className="ez-floating-preview-card bottom-right-card">
-            <div className="ez-chart-card-header">
-              <span className="ez-chart-title">Progres Proyek</span>
-              <span className="ez-chart-trend-badge">↗</span>
-            </div>
-            <div className="ez-chart-bars-wrap">
-              <div className="ez-chart-bar" style={{ height: '35%' }} />
-              <div className="ez-chart-bar" style={{ height: '52%' }} />
-              <div className="ez-chart-bar" style={{ height: '44%' }} />
-              <div className="ez-chart-bar" style={{ height: '68%' }} />
-              <div className="ez-chart-bar" style={{ height: '82%' }} />
-              <div className="ez-chart-bar" style={{ height: '96%' }} />
-            </div>
-          </div>
         </div>
       </div>
     </section>

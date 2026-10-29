@@ -1,0 +1,147 @@
+/* EZRAB Mobile Navbar: floating navy bar + menu panel for touch screens.
+   Diimpor oleh ExactNavbar.tsx supaya semua halaman yang memakai navbar
+   (Beranda, Kenali EZRAB, Keunggulan) mendapat gaya nav mobile yang sama.
+   Warna bar disamakan persis dengan navy panel menu: rgba(3, 9, 24, .98). */
+.ez-flagship-menu-trigger,
+.ez-flagship-mobile-menu { display: none; }
+
+@media (max-width: 767px) {
+  /* Floating glass navigation */
+  .ez-nav-dark {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    height: 58px;
+    border: 1px solid rgba(148, 163, 184, .16);
+    border-radius: 17px;
+    background: rgba(3, 9, 24, .98);
+    box-shadow: 0 14px 38px rgba(0, 0, 0, .26);
+    backdrop-filter: blur(22px) saturate(1.25);
+    -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  }
+
+  .ez-nav-dark.is-scrolled {
+    background: rgba(3, 9, 24, .98);
+    border-color: rgba(96, 165, 250, .22);
+  }
+
+  .ez-nav-inner { padding: 0 9px 0 14px !important; }
+  .ez-nav-brand-logo { height: 30px; width: auto; }
+  .ez-nav-links,
+  .ez-nav-actions .ez-btn-ghost-dark { display: none !important; }
+  .ez-nav-actions { gap: 7px; }
+
+  .ez-nav-actions .ez-btn-primary-pill {
+    min-height: 40px;
+    padding: 0 13px !important;
+    font-size: 11.5px !important;
+    box-shadow: 0 8px 22px rgba(37, 99, 235, .34);
+  }
+
+  .ez-nav-actions .ez-btn-primary-pill svg { display: none; }
+
+  .ez-flagship-menu-trigger {
+    display: grid;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    padding: 0;
+    color: #fff;
+    background: rgba(255, 255, 255, .07);
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 12px;
+    cursor: pointer;
+  }
+
+  .ez-flagship-mobile-menu {
+    position: absolute;
+    top: 66px;
+    left: 0;
+    right: 0;
+    display: grid;
+    gap: 2px;
+    padding: 16px;
+    background: radial-gradient(circle at 90% 0%, rgba(37, 99, 235, .22), transparent 40%), rgba(3, 9, 24, .98);
+    border: 1px solid rgba(96, 165, 250, .22);
+    border-radius: 20px;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, .52);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-12px) scale(.98);
+    transform-origin: top;
+    transition: opacity 220ms ease, transform 220ms cubic-bezier(.2,.8,.2,1), visibility 220ms;
+  }
+
+  .ez-flagship-mobile-menu.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+
+  .ez-flagship-menu-kicker {
+    padding: 2px 12px 10px;
+    color: #60a5fa;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .16em;
+  }
+
+  .ez-flagship-mobile-menu a {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    min-height: 48px;
+    padding: 0 12px;
+    color: #E2E8F0;
+    font-size: 15px;
+    font-weight: 650;
+    text-decoration: none;
+    border-radius: 12px;
+  }
+
+  .ez-flagship-mobile-menu a span {
+    color: #3b82f6;
+    font: 700 10px/1 'JetBrains Mono', monospace;
+  }
+
+  .ez-flagship-mobile-menu button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 50px;
+    margin-top: 8px;
+    padding: 0 15px;
+    color: #fff;
+    font: 700 14px/1 'Plus Jakarta Sans', sans-serif;
+    background: linear-gradient(135deg, #2563eb, #0ea5e9);
+    border: 0;
+    border-radius: 13px;
+  }
+}
+
+@media (max-width: 374px) {
+  /* Primary CTA stays visible on small phones — compact instead of hidden.
+     Brand lockup and nav padding shrink slightly to make room for it. */
+  .ez-nav-inner { padding: 0 8px 0 10px !important; }
+  .ez-nav-brand-logo { height: 27px; width: auto; }
+  .ez-nav-logo-text { margin-left: 7px !important; font-size: 15.5px; }
+  .ez-nav-actions .ez-btn-primary-pill {
+    display: inline-flex;
+    min-height: 38px;
+    padding: 7px 12px !important;
+    font-size: 12.5px !important;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 340px) {
+  /* Very small phones: drop the brand wordmark text so logo image, CTA
+     and hamburger still fit on one row without overflow. */
+  .ez-nav-logo-text { display: none; }
+  .ez-nav-brand-logo { height: 30px; width: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ez-flagship-mobile-menu { transition: none !important; }
+}
