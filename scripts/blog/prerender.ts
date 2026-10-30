@@ -30,7 +30,19 @@ import { BlogArticlePage } from '../../src/blog/pages/BlogArticlePage';
 import type { BlogArticle } from '../../src/blog/types';
 import { loadAllArticles } from './loader';
 
-function shell(head: string, bodyHtml: string, css: string, langTitle: string): string {
+function shell(
+  head: string,
+  bodyHtml: string,
+  css: string,
+  langTitle: string,
+  scriptSrc?: string
+): string {
+  // scriptSrc: hanya halaman indeks yang memuat kontrol statis
+  // (blog-controls.js → dist/blog/blog.js). Path relatif terhadap halaman:
+  // indeks di / maupun /blog/ sama-sama mencapai /blog/blog.js lewat
+  // './blog.js' (di subdomain, rewrite host memetakan /blog.js →
+  // /blog/blog.js). Halaman artikel tidak memuat script ini.
+  const scriptTag = scriptSrc ? `<script defer src="${scriptSrc}"></script>\n` : '';
   return `<!doctype html>
 <html lang="id">
 <head>
@@ -49,7 +61,7 @@ ${head}
 <body>
 <div id="blog-root">${bodyHtml}</div>
 <noscript><p style="font-family:system-ui;padding:24px">Aktifkan JavaScript untuk pengalaman interaktif penuh (${langTitle}).</p></noscript>
-</body>
+${scriptTag}</body>
 </html>
 `;
 }
@@ -76,13 +88,29 @@ function main(): void {
   const css = readFileSync(join(process.cwd(), 'src', 'blog', 'blog.css'), 'utf8');
   const outDir = join(process.cwd(), 'dist', 'blog');
 
-  // 1) Indeks
-  const indexHtml = renderToString(React.createElement(BlogIndexPage, { repo }));
+  // 1) Indeks — renderAllItems agar semua kartu ada di DOM statis;
+  //    kontrol statis (blog.js) yang menyaring/mem-paginasi di klien.
+  const indexHtml = renderToString(
+    React.createElement(BlogIndexPage, { repo, renderAllItems: true })
+  );
   mkdirSync(outDir, { recursive: true });
   writeFileSync(
     join(outDir, 'index.html'),
-    shell(blogIndexHeadHtml(base), indexHtml, css, SITE_NAME)
+    shell(blogIndexHeadHtml(base), indexHtml, css, SITE_NAME, './blog.js')
   );
+
+  // 1b) Kontrol statis indeks → dist/blog/blog.js (vanilla JS, tanpa
+  //     bundel aplikasi; sumber: scripts/blog/client/blog-controls.js).
+  const controlsSrc = join(
+    process.cwd(),
+    'scripts',
+    'blog',
+    'client',
+    'blog-controls.js'
+  );
+  if (existsSync(controlsSrc)) {
+    cpSync(controlsSrc, join(outDir, 'blog.js'));
+  }
 
   // 2) Tiap artikel publik
   let count = 0;

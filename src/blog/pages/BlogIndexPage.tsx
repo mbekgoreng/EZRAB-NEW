@@ -17,6 +17,13 @@ interface Props {
   repo: BlogRepository;
   initialCategory?: string;
   initialQuery?: string;
+  /**
+   * Khusus prerender statis: render SEMUA kartu hasil filter (tanpa slice
+   * halaman) agar kontrol statis (blog-controls.js) bisa menyaring &
+   * mem-paginasi dari DOM. Tanpa JS, semua kartu tetap terlihat — halaman
+   * statis tidak kehilangan konten. SPA tidak memakai prop ini.
+   */
+  renderAllItems?: boolean;
 }
 
 const Newsletter: React.FC = () => {
@@ -63,7 +70,7 @@ const Newsletter: React.FC = () => {
   );
 };
 
-export const BlogIndexPage: React.FC<Props> = ({ repo, initialCategory, initialQuery }) => {
+export const BlogIndexPage: React.FC<Props> = ({ repo, initialCategory, initialQuery, renderAllItems }) => {
   const [category, setCategory] = useState<string>(initialCategory || 'Semua');
   const [query, setQuery] = useState<string>(initialQuery || '');
   const [page, setPage] = useState<number>(1);
@@ -88,7 +95,9 @@ export const BlogIndexPage: React.FC<Props> = ({ repo, initialCategory, initialQ
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
-  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const pageItems = renderAllItems
+    ? filtered
+    : filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const selectCategory = (c: string) => {
     // Klik kategori aktif sekali lagi = reset ke Semua.
@@ -146,7 +155,7 @@ export const BlogIndexPage: React.FC<Props> = ({ repo, initialCategory, initialQ
             <div className="ezb-section-head">
               <h2>Artikel Terbaru</h2>
               <a className="ezb-link-more" href="#artikel-terbaru">
-                Lihat Semua <ArrowRight size={15} aria-hidden="true" />
+                Ke artikel terbaru <ArrowRight size={15} aria-hidden="true" />
               </a>
             </div>
 

@@ -10,6 +10,20 @@ export const ExactFooter: React.FC<ExactFooterProps> = () => {
   const [lineDrawn, setLineDrawn] = useState(false);
   const footerRef = useRef<HTMLElement>(null);
 
+  /** Ke section landing (#fitur/#harga) — pola yang sama dengan handler FAQ
+   *  di footer ini: pindah ke beranda dulu, lalu scroll ke section.
+   *  Href relatif '#fitur' polos mati dari halaman selain beranda karena
+   *  section targetnya tidak ada di sana (audit F3). */
+  const goHomeSection =
+    (sectionId: string) =>
+    (e: React.MouseEvent): void => {
+      e.preventDefault();
+      navigateTo('/');
+      window.setTimeout(() => {
+        document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+      }, 250);
+    };
+
   useEffect(() => {
     const el = footerRef.current;
     if (!el) return;
@@ -55,13 +69,14 @@ export const ExactFooter: React.FC<ExactFooterProps> = () => {
 
           {/* Navigation Links Columns */}
           <div className="ez-minimal-footer-nav-groups">
-            {/* Product — hanya tautan bertarget nyata (jangkar #fitur & #harga
-                ada di landing; tautan mati #integrasi dihapus — F6) */}
+            {/* Product — hanya tautan bertarget nyata (section #fitur &
+                #harga ada di landing; tautan mati #integrasi dihapus — F6).
+                Dari halaman lain, handler menavigasi ke beranda dulu (F3). */}
             <div className="ez-minimal-footer-col">
               <h4 className="ez-minimal-footer-col-title">Product</h4>
               <ul className="ez-minimal-footer-links">
-                <li><a href="#fitur">Fitur</a></li>
-                <li><a href="#harga">Harga</a></li>
+                <li><a href="/#fitur" onClick={goHomeSection('fitur')}>Fitur</a></li>
+                <li><a href="/#harga" onClick={goHomeSection('harga')}>Harga</a></li>
               </ul>
             </div>
 

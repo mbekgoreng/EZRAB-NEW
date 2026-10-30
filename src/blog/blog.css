@@ -1181,3 +1181,12 @@
     padding: 26px 22px;
   }
 }
+
+/* Kontrol statis (blog-controls.js): atribut hidden harus menang atas
+   display bawaan .ezb-card/.ezb-grid/.ezb-pagination. */
+.ezb-card[hidden],
+.ezb-grid[hidden],
+.ezb-pagination[hidden],
+.ezb-state[hidden] {
+  display: none;
+}

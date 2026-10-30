@@ -32,7 +32,10 @@ export const BlogNav: React.FC = () => {
           </a>
         </nav>
         <div className="ezb-nav-actions">
-          <a className="ezb-nav-search" href="#cari" aria-label="Cari artikel">
+          {/* Ke kolom cari di indeks blog: './#cari' bekerja dari indeks
+              (halaman yang sama) maupun dari artikel (menuju indeks#cari);
+              '#cari' polos mati di artikel karena targetnya tak ada di sana. */}
+          <a className="ezb-nav-search" href="./#cari" aria-label="Cari artikel">
             <Search size={18} />
           </a>
           <a className="ezb-btn-outline" href={`${main}/masuk`}>

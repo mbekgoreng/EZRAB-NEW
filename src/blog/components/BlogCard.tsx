@@ -16,9 +16,19 @@ export const formatBlogDate = (iso?: string): string => {
 
 export const BlogCard: React.FC<{ article: BlogArticle }> = ({ article }) => {
   const style = categoryStyle(article.category);
+  // data-category & data-search: dipakai kontrol statis blog
+  // (scripts/blog/client/blog-controls.js) untuk menyaring kartu di DOM
+  // hasil prerender — haystack sama dengan filter React di BlogIndexPage.
+  const searchHaystack =
+    `${article.title} ${article.excerpt} ${article.category} ${article.tags.join(' ')}`.toLowerCase();
   // Link relatif (./slug): benar di subdomain (/) maupun path /blog/ (preview/domain utama).
   return (
-    <a className="ezb-card" href={`./${article.slug}`}>
+    <a
+      className="ezb-card"
+      href={`./${article.slug}`}
+      data-category={article.category}
+      data-search={searchHaystack}
+    >
       <div className="ezb-card-cover" role="img" aria-label={`Ilustrasi: ${article.category}`}>
         {article.cover ? (
           <img src={article.cover} alt="" loading="lazy" />
