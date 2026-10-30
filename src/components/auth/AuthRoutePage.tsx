@@ -30,17 +30,6 @@ interface AuthRoutePageProps {
   onBackToLanding: () => void;
 }
 
-const DEMO_ONLY_BANNER: React.CSSProperties = {
-  fontSize: '13px',
-  lineHeight: 1.55,
-  color: '#1e40af',
-  background: '#eff6ff',
-  border: '1px solid #bfdbfe',
-  borderRadius: '10px',
-  padding: '10px 12px',
-  margin: '0 0 14px',
-};
-
 const ROLE_CARD: React.CSSProperties = {
   width: 'min(460px, 100%)',
   background: 'var(--ez-color-surface)',
@@ -78,7 +67,7 @@ export const AuthRoutePage: React.FC<AuthRoutePageProps> = ({
     // di backdrop .sac-page varian route; X menempel di kartu dan
     // kembali ke beranda; panel sendiri punya jalan kembali ke form.
     return (
-      <div className="sac-page sac-page--route">
+      <div className="sac-page">
         <div style={ROLE_CARD}>
           <button
             type="button"
@@ -88,12 +77,6 @@ export const AuthRoutePage: React.FC<AuthRoutePageProps> = ({
           >
             <X size={18} />
           </button>
-          {demoOnly && (
-            <div style={DEMO_ONLY_BANNER}>
-              Login email belum diaktifkan — backend dalam redesign. Untuk
-              sekarang, masuk lewat peran demo di bawah.
-            </div>
-          )}
           <RoleLoginPanel
             forceDemoRoles={demoOnly}
             onSuccess={onSuccessLogin}
@@ -106,7 +89,6 @@ export const AuthRoutePage: React.FC<AuthRoutePageProps> = ({
 
   return (
     <SlidingAuthCard
-      variant="page"
       initialTab={initialTab}
       onSuccessLogin={onSuccessLogin}
       onClose={onBackToLanding}

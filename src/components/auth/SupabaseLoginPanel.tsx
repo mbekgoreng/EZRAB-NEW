@@ -8,6 +8,7 @@ import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, LogOut, Mail, Lock, User
 import { useAuth } from '../../auth/AuthContext';
 import { useRole } from '../../auth/RoleContext';
 import { logoutSessionsOnly } from '../../auth/logoutAll';
+import { EMAIL_FORMAT } from './authFormShared';
 
 interface Props {
   onSuccess: () => void;
@@ -34,6 +35,7 @@ export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -99,7 +101,7 @@ export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, 
       setError('Isi email Anda.');
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    if (!EMAIL_FORMAT.test(email.trim())) {
       setError('Format email tidak valid.');
       return;
     }
@@ -109,6 +111,10 @@ export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, 
     }
     if (password.length < 6) {
       setError('Kata sandi minimal 6 karakter.');
+      return;
+    }
+    if (mode === 'signup' && password !== confirmPassword) {
+      setError('Konfirmasi kata sandi tidak sama.');
       return;
     }
     setBusy(true);
@@ -168,7 +174,7 @@ export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, 
         <span style={dividerLine} />
       </div>
 
-      <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <form noValidate onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {mode === 'signup' && (
           <label style={field}>
             <span style={labelRow}><User size={14} /> Nama</span>
@@ -193,14 +199,23 @@ export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, 
           />
         </label>
         {error && (
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: '#DC2626', fontSize: 12.5 }}>
+          <div role="alert" style={{ display: 'flex', gap: 8, alignItems: 'center', color: '#DC2626', fontSize: 12.5 }}>
             <AlertCircle size={14} /> {error}
           </div>
         )}
         {notice && (
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', color: '#166534', fontSize: 12.5 }}>
+          <div role="status" style={{ display: 'flex', gap: 8, alignItems: 'center', color: '#166534', fontSize: 12.5 }}>
             <CheckCircle2 size={14} /> {notice}
           </div>
+        )}
+        {mode === 'signup' && (
+          <label style={field}>
+            <span style={labelRow}><Lock size={14} /> Konfirmasi kata sandi</span>
+            <input
+              type="password" value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); if (error) setError(null); }}
+              placeholder="••••••••" style={input} autoComplete="new-password"
+            />
+          </label>
         )}
         <button type="submit" disabled={busy || googleBusy} style={primaryBtn}>
           {busy ? <Loader2 size={16} className="animate-spin" /> : mode === 'signin' ? 'Masuk' : 'Daftar'}
@@ -212,7 +227,7 @@ export const SupabaseLoginPanel: React.FC<Props> = ({ onSuccess, onBackToLogin, 
         </button>
         <button
           type="button"
-          onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null); setNotice(null); }}
+          onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null); setNotice(null); setPassword(''); setConfirmPassword(''); }}
           style={linkBtn}
         >
           {mode === 'signin' ? 'Belum punya akun? Daftar' : 'Sudah punya akun? Masuk'}

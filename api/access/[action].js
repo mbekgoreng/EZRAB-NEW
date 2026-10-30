@@ -1,6 +1,6 @@
 /**
  * /api/access/[action] — SATU Serverless Function untuk gerbang akses
- * sementara: session | verify | logout.
+ * sementara: session | verify | logout | owner-login.
  *
  * Digabung dari 2 file endpoint terpisah (api/access/session.js +
  * api/access/verify.js) agar total fungsi deployment ≤ 12 (batas plan
@@ -41,6 +41,9 @@ async function sessionHandler(req, res) {
     success: true,
     configured,
     active: session.active,
+    // Login pemilik via form Masuk memakai kode akses yang sama; klien
+    // hanya perlu tahu TERSEDIA/TIDAK — nilai kode tidak pernah keluar.
+    ownerLogin: configured,
   });
 }
 
@@ -129,7 +132,67 @@ async function logoutHandler(req, res) {
   return res.status(200).json({ success: true });
 }
 
-const ACTIONS = { session: sessionHandler, verify: verifyHandler, logout: logoutHandler };
+
+/**
+ * POST /api/access/owner-login — login pemilik lewat form Masuk.
+ *
+ * Keputusan owner 2026-10-30: form login diaktifkan memakai KODE AKSES
+ * Preview yang sudah ada (EZRAB_ACCESS_CODE) sebagai kata sandi pemilik.
+ * - Verifikasi persis seperti verify: env server saja, hash + constant-time
+ *   via accessCodeMatches, fail closed 503 bila belum terkonfigurasi.
+ * - Bucket rate-limit terpisah dari gerbang (rl-owner-login) supaya
+ *   percobaan login tidak menghabiskan jatah gerbang, dan sebaliknya.
+ * - Sukses mencetak cookie sesi gerbang yang sama (token stateless tanpa
+ *   identitas); klien lalu masuk workspace lewat jalur sukses yang sama
+ *   seperti peran demo. Ini BUKAN autentikasi pengguna sungguhan dan
+ *   tidak memberi otorisasi per-pengguna.
+ */
+async function ownerLoginHandler(req, res) {
+  if (!applyCors(req, res)) {
+    return res.status(403).json({ success: false, error: 'Origin tidak diizinkan' });
+  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
+  }
+
+  const config = getAccessConfig();
+  if (!config.configured) {
+    return res.status(503).json({
+      success: false,
+      error: 'ACCESS_NOT_CONFIGURED',
+      message: 'Login pemilik belum dikonfigurasi di server.',
+    });
+  }
+
+  const rl = rateLimit(req, { limit: 10, windowMs: 10 * 60 * 1000, keyPrefix: 'rl-owner-login' });
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', String(Math.ceil(rl.resetMs / 1000)));
+    return res.status(429).json({
+      success: false,
+      error: 'TOO_MANY_ATTEMPTS',
+      message: 'Terlalu banyak percobaan. Coba lagi beberapa menit lagi.',
+    });
+  }
+
+  let body;
+  try {
+    body = typeof req.body === 'object' && req.body !== null ? req.body : await readJsonBody(req);
+  } catch {
+    return res.status(400).json({ success: false, error: 'Body tidak valid.' });
+  }
+
+  const candidate = typeof body?.password === 'string' ? body.password : '';
+  if (!accessCodeMatches(config.code, candidate)) {
+    return res.status(401).json({ success: false, error: 'INVALID_PASSWORD', message: 'Kata sandi salah.' });
+  }
+
+  const token = createSessionToken(config.secret);
+  res.setHeader('Set-Cookie', buildSessionCookie(token, req));
+  return res.status(200).json({ success: true });
+}
+
+const ACTIONS = { session: sessionHandler, verify: verifyHandler, logout: logoutHandler, 'owner-login': ownerLoginHandler };
 
 export default async function handler(req, res) {
   const action = req.query?.action;

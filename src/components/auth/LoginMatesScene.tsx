@@ -225,8 +225,10 @@ export const LoginMatesScene: React.FC = () => (
         </g>
       </g>
 
-      {/* 4. MAIN EZRAB MASCOT (user vector) — Pivot (122, 480) */}
-      <g transform="translate(122, 480)">
+      {/* 4. MAIN EZRAB MASCOT (user vector) — Pivot (122, 510): diturunkan
+          30 unit atas permintaan user (2026-10-30) agar badan biru bagian
+          bawah tertutup tepi bawah panel, mendekati batas putih/biru. */}
+      <g transform="translate(122, 510)">
         <g className="mate mate--ezrab" data-mate="ezrab">
           <g className="mate-face">
             <g transform="translate(0, 14)">
