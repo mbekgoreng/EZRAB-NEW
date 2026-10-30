@@ -6,12 +6,13 @@
  * - Mood karakter idle/nosy/shy/exposed mengikuti fokus form: email =
  *   nosy (kepo), kata sandi = shy (menutup mata), kata sandi terlihat =
  *   exposed. Kursor menggerakkan wajah/helm karakter LAIN (--mx/--my).
- *   MASKOT UTAMA (hero): badan, kepala, helm, dan logonya DIAM TOTAL
- *   (spec FINAL owner 2026-10-29 malam — keputusan siang "samakan gerak
- *   dengan mate lain" DIBATALKAN malam yang sama). Satu-satunya gerak
- *   hero: mata replika lewat tracker --hx/--hy, kedip, dan pergantian
- *   lapisan ekspresi. Jangan beri hero transform/animasi mood/pop/bounce
- *   di sliding-auth.css. Batch audit landing+auth 2026-10-29 menambahkan:
+ *   MASKOT UTAMA (hero): ikut bergerak seperti mate lain di tingkat
+ *   AKAR .mate (keputusan owner 2026-10-30 — menggeser spec diam total
+ *   malam sebelumnya): miring per mood, memantul saat diklik, pop saat
+ *   submit. Lapisan .mate-face hero TIDAK diberi transform — ia memuat
+ *   seluruh karya vektor menyatu; mata replika tetap melacak kursor
+ *   lewat tracker --hx/--hy, plus kedip dan pergantian lapisan ekspresi.
+ *   Batch audit landing+auth 2026-10-29 menambahkan:
  *   pesan demo-only yang eksplisit (AUTH-02), sinkronisasi mode↔URL
  *   (AUTH-06), validasi per-field + pesan error aman (AUTH-09), pesan
  *   daftar sadar konfirmasi email (AUTH-10), scene dimuat lazy
@@ -41,6 +42,7 @@ import {
 } from '../../services/supabaseClient';
 import { useRole } from '../../auth/RoleContext';
 import { EMAIL_FORMAT, friendlyAuthError } from './authFormShared';
+import { ROLE_ACCOUNTS } from '../../auth/roleAccounts';
 import { logoutSessionsOnly } from '../../auth/logoutAll';
 import './sliding-auth.css';
 
@@ -151,7 +153,7 @@ export const SlidingAuthCard: React.FC<Props> = ({
   const ownerSignIn = demoOnly && ownerLogin && !isSignUp;
   const fieldsLocked = demoOnly && !ownerSignIn;
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
-  const { logoutRole } = useRole();
+  const { logoutRole, loginWithPin } = useRole();
   const successTimer = React.useRef<number | null>(null);
   const emailRef = React.useRef<HTMLInputElement | null>(null);
   const nameRef = React.useRef<HTMLInputElement | null>(null);
@@ -633,7 +635,9 @@ export const SlidingAuthCard: React.FC<Props> = ({
               </div>
 
               <form noValidate onSubmit={(e) => void submit(e, isSignUp)}>
-                {demoOnly && !ownerSignIn && (
+                {/* Banner nonaktif hanya di tab Masuk — di tab Daftar
+                    disembunyikan atas permintaan owner (2026-10-30). */}
+                {demoOnly && !ownerSignIn && !isSignUp && (
                   <div className="sac2-banner sac2-banner-ok" role="note">
                     Formulir email nonaktif selama tahap pengujian — gunakan
                     tombol peran demo di bawah kartu untuk masuk.
@@ -831,7 +835,29 @@ export const SlidingAuthCard: React.FC<Props> = ({
       </div>
 
       {!checking && !currentUserEmail && (
-        <button type="button" className="sac-role-link" onClick={onShowRoleLogin}>
+        <button
+          type="button"
+          className="sac-role-link"
+          onClick={() => {
+            // Permintaan owner (2026-10-30): tautan demo langsung masuk
+            // ke dashboard — lewati panel pilih peran + PIN. Entri cepat
+            // memakai akun demo pertama pada konfigurasi peran; PIN tetap
+            // bersumber dari roleAccounts (satu-satunya sumber), dan sesi
+            // tetap terverifikasi-di-tab lewat loginWithPin. Bila entri
+            // cepat gagal, jatuh ke panel peran seperti sebelumnya.
+            if (demoOnly) {
+              const demo = ROLE_ACCOUNTS[0];
+              if (demo && loginWithPin(demo.id, demo.pin).ok) {
+                // Pola sukses yang sama seperti jalur login lain: animasi
+                // pop karakter 1,4 dtk dulu, baru masuk workspace.
+                setLoggingIn(true);
+                successTimer.current = window.setTimeout(() => onSuccessLogin(), 1400);
+                return;
+              }
+            }
+            onShowRoleLogin?.();
+          }}
+        >
           Coba masuk sebagai peran demo
         </button>
       )}
