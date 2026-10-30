@@ -11,7 +11,18 @@ import { priceResolver2026 } from '../../data/priceDatabase2026/resolver';
 import { ahspChatPriceSuffix } from './ahspChatPrice';
 import { searchChatAhsp, formatChatAhspResult } from './chatSearch';
 import { masterBuildingTemplateRegistry } from '../../data/buildingTemplates/masterTemplateRegistry';
-import { ProjectSnapshot, formatIDR } from './projectContext';
+import { ProjectSnapshot, formatIDR, snapshotAllItems } from './projectContext';
+import {
+  getAssistantOperationContext,
+  buildUpdateQuantityPlan,
+  buildUpdateUnitPricePlan,
+  buildDeletePlan,
+  buildAddPlan,
+  buildUndoPlan,
+  getLastUndoableRecord,
+  listOperationRecords,
+  writesDatasetGuard,
+} from './operations';
 
 /**
  * Active-project snapshot for read-only project tools.
@@ -331,13 +342,14 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
   },
   {
     name: 'get_project_items',
-    description: 'Mencari item RAB di proyek aktif. Argumen: kata_kunci (opsional — kosongkan untuk semua, maks 25), hanya_belum_berharga (opsional boolean).',
+    description: 'Mencari item RAB di proyek aktif. Argumen: kata_kunci (opsional — kosongkan untuk semua, maks 25), hanya_belum_berharga (opsional boolean). Tool ini TIDAK memuat rincian upah tenaga kerja — untuk pertanyaan upah/gaji (mandor, tukang, pekerja) gunakan get_project_labor.',
     invoke: (args) => {
       const snap = requireSnapshot();
       if (typeof snap === 'string') return snap;
       const q = String(args.kata_kunci ?? args.query ?? '').trim().toLowerCase();
       const onlyUnresolved = args.hanya_belum_berharga === true || args.onlyUnresolved === true;
-      let pool = onlyUnresolved ? snap.unresolvedItems : snap.items;
+      const allItems = snapshotAllItems(snap);
+      let pool = onlyUnresolved ? allItems.filter((i) => i.priceStatus === 'PRICE_UNRESOLVED') : allItems;
       if (q) {
         const words = q.split(/\s+/).filter((w) => w.length > 1);
         pool = pool.filter((it) => {
@@ -345,10 +357,13 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
           return words.every((w) => hay.includes(w));
         });
       }
+      const truncNote = snap.allTruncated
+        ? '\nCatatan: proyek melebihi batas 1.000 item alat — pencarian/daftar hanya mencakup 1.000 item pertama.'
+        : '';
       if (pool.length === 0) {
-        return q
+        return (q
           ? `Tidak ditemukan item RAB yang cocok dengan "${q}" di proyek "${snap.projectName}".`
-          : `Proyek "${snap.projectName}" belum memiliki item RAB.`;
+          : `Proyek "${snap.projectName}" belum memiliki item RAB.`) + truncNote;
       }
       return pool.slice(0, 25).map((it, i) => {
         const price =
@@ -356,24 +371,25 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
             ? 'harga belum tersedia'
             : `${formatIDR(it.unitPrice ?? 0)}/${it.unit}`;
         return `${i + 1}. ${it.description} — ${it.volume} ${it.unit} × ${price} = ${formatIDR(it.totalPrice)}`;
-      }).join('\n');
+      }).join('\n') + truncNote;
     },
   },
   {
     name: 'get_item_detail',
-    description: 'Detail satu item RAB di proyek aktif. Argumen: nama (wajib — nama atau kode item). Jika ambigu, kembalikan kandidat.',
+    description: 'Detail satu item RAB di proyek aktif (volume, harga satuan pekerjaan, subtotal). Argumen: nama (wajib — nama atau kode item). Jika ambigu, kembalikan kandidat. Harga satuan di sini adalah harga SATUAN PEKERJAAN, bukan upah tenaga kerja — untuk rincian upah gunakan get_project_labor.',
     invoke: (args) => {
       const snap = requireSnapshot();
       if (typeof snap === 'string') return snap;
       const q = String(args.nama ?? args.name ?? args.kode ?? '').trim().toLowerCase();
       if (!q) return 'ERROR: argumen "nama" wajib diisi.';
       const words = q.split(/\s+/).filter((w) => w.length > 1);
-      const matches = snap.items.filter((it) => {
+      const matches = snapshotAllItems(snap).filter((it) => {
         const hay = `${it.description} ${it.code}`.toLowerCase();
         return words.every((w) => hay.includes(w));
       });
       if (matches.length === 0) {
-        return `Item "${q}" tidak ditemukan di proyek "${snap.projectName}". Jangan mengarang data item ini.`;
+        return `Item "${q}" tidak ditemukan di proyek "${snap.projectName}". Jangan mengarang data item ini.` +
+          (snap.allTruncated ? ' Catatan: proyek melebihi batas 1.000 item alat — pencarian hanya mencakup 1.000 item pertama, jadi item ini mungkin berada di luar jangkauan.' : '');
       }
       if (matches.length > 1) {
         return (
@@ -391,7 +407,435 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
         // Item unresolved tidak boleh tercetak "Subtotal: Rp0" — snapshot
         // menyimpan totalPrice 0 untuk item belum berharga (observasi C2).
         `Subtotal: ${it.priceStatus === 'PRICE_UNRESOLVED' ? 'belum tersedia' : formatIDR(it.totalPrice)}`,
+        ...(it.ahspCode ? [`Kode AHSP tertaut: ${it.ahspCode}`] : []),
+        ...(it.ahspMappingStatus ? [`Status pemetaan AHSP: ${it.ahspMappingStatus}`] : []),
+        ...(it.priceSourceKind ? [`Jenis sumber harga: ${{ OFFICIAL_AHSP: 'AHSP resmi', MARKET_REFERENCE: 'Referensi pasar', EZRAB_ASSUMPTION: 'Asumsi EZRAB', UNRESOLVED: 'Belum teratasi' }[it.priceSourceKind] ?? it.priceSourceKind}`] : []),
       ].join('\n');
+    },
+  },
+  {
+    name: 'get_project_labor',
+    description: 'Rincian UPAH tenaga kerja dari analisa AHSP item-item proyek aktif: per kategori (Pekerja, Tukang, Kepala Tukang, Mandor, dll.) tampilkan koefisien, satuan, tarif upah, dan sumbernya. WAJIB dipakai untuk pertanyaan upah/gaji tenaga kerja dalam konteks proyek ini — JANGAN menjawab pertanyaan upah dengan get_project_items/get_item_detail (itu harga satuan pekerjaan, bukan upah). Argumen: nama (opsional — batasi ke satu item), kategori (opsional — mis. "mandor"). Koefisien dan tarif berasal dari komposisi AHSP katalog untuk kode item proyek apa adanya; item yang kodenya tidak ada di katalog atau analisanya tidak memuat upah dinyatakan tidak tersedia secara eksplisit — tidak pernah diganti item/kode lain.',
+    invoke: (args) => {
+      const snap = requireSnapshot();
+      if (typeof snap === 'string') return snap;
+      const nameQ = String(args.nama ?? args.name ?? args.kode ?? '').trim().toLowerCase();
+      const catQ = String(args.kategori ?? args.category ?? '').trim().toLowerCase();
+
+      let targets = snapshotAllItems(snap);
+      if (nameQ) {
+        const words = nameQ.split(/\s+/).filter((w) => w.length > 1);
+        const matches = snapshotAllItems(snap).filter((it) => {
+          const hay = `${it.description} ${it.code}`.toLowerCase();
+          return words.every((w) => hay.includes(w));
+        });
+        if (matches.length === 0) {
+          return `Item "${nameQ}" tidak ditemukan di proyek "${snap.projectName}". Jangan mengarang data item ini.`;
+        }
+        if (matches.length > 1) {
+          return (
+            `Ditemukan ${matches.length} kandidat untuk "${nameQ}" — minta klarifikasi:` +
+            matches.slice(0, 5).map((it, i) => `\n${i + 1}. ${it.description} (${it.volume} ${it.unit})`).join('')
+          );
+        }
+        targets = matches;
+      }
+
+      const fmtCoef = (n: number) => n.toLocaleString('id-ID', { maximumFractionDigits: 6 });
+      type LaborRow = {
+        category: string;
+        coefficient: number;
+        unit: string;
+        price: number | null;
+        subtotal: number | null;
+        source: string;
+        verification: string;
+        resolved: boolean;
+      };
+      const perItem: Array<{ desc: string; code: string; unit: string; rows: LaborRow[]; partialNote: string | null }> = [];
+      const unavailable: Array<{ desc: string; reason: string }> = [];
+      const categoriesSeen = new Set<string>();
+
+      for (const it of targets) {
+        // Tautan katalog: ahspCode eksplisit didahulukan, lalu code item.
+        // Keduanya dicocokkan PERSIS ke katalog — tanpa pemetaan fuzzy.
+        const code = String(it.ahspCode ?? '').trim() || String(it.code ?? '').trim();
+        if (!code) {
+          unavailable.push({ desc: it.description, reason: 'item tidak memiliki kode AHSP, sehingga analisanya tidak dapat ditelusuri' });
+          continue;
+        }
+        let catalogItem: any = null;
+        try {
+          catalogItem = officialAhspRepository.getOfficialAhsp(code);
+        } catch {
+          catalogItem = null;
+        }
+        if (!catalogItem) {
+          // Kode proyek apa adanya — TIDAK dipetakan diam-diam ke kode lain.
+          unavailable.push({
+            desc: it.description,
+            reason: `kode ${code} tidak ada di katalog AHSP 2026 resmi, sehingga rincian upahnya tidak tersedia (kode tidak diganti dengan kode lain)`,
+          });
+          continue;
+        }
+        let comp: any = null;
+        try {
+          comp = priceResolver2026.resolveAhspUnitPrice(catalogItem);
+        } catch {
+          comp = null;
+        }
+        const laborComps: any[] = comp?.labor?.components ?? [];
+        if (!comp || laborComps.length === 0) {
+          unavailable.push({
+            desc: it.description,
+            reason: 'analisa AHSP item ini tidak memuat komponen upah yang dapat ditampilkan',
+          });
+          continue;
+        }
+        let rows: LaborRow[] = laborComps.map((c: any) => ({
+          category: String(c.itemName ?? '-'),
+          coefficient: Number(c.coefficient ?? 0),
+          unit: String(c.unit ?? ''),
+          price: c.resolved && typeof c.unitPrice === 'number' ? c.unitPrice : null,
+          subtotal: c.resolved && typeof c.subtotalPerUnit === 'number' ? c.subtotalPerUnit : null,
+          source: String(c.sourceName ?? ''),
+          verification: String(c.verificationStatus ?? ''),
+          resolved: Boolean(c.resolved),
+        }));
+        for (const r of rows) categoriesSeen.add(r.category);
+        if (catQ) rows = rows.filter((r) => r.category.toLowerCase().includes(catQ));
+        if (rows.length === 0) continue;
+        const partialNote =
+          comp.pricingStatus && comp.pricingStatus !== 'FULL'
+            ? `komposisi item ini berstatus ${comp.pricingStatus} (${comp.resolvedComponents}/${comp.totalComponents} komponen terisi) — angka di bawah hanya dari komponen yang ter-resolve`
+            : null;
+        perItem.push({ desc: it.description, code, unit: it.unit, rows, partialNote });
+      }
+
+      const lines: string[] = [];
+      const totalRows = perItem.reduce((n, g) => n + g.rows.length, 0);
+
+      if (catQ && totalRows === 0 && perItem.length === 0 && unavailable.length < targets.length) {
+        lines.push(
+          `Kategori upah "${catQ}" tidak ditemukan dalam analisa item proyek "${snap.projectName}".` +
+            (categoriesSeen.size ? ` Kategori yang tersedia: ${[...categoriesSeen].join(', ')}.` : ''),
+        );
+        return lines.join('\n');
+      }
+
+      if (totalRows === 0) {
+        lines.push(`Rincian upah tenaga kerja untuk proyek "${snap.projectName}" TIDAK TERSEDIA.`);
+        if (unavailable.length > 0) {
+          lines.push('Penyebab per item:');
+          for (const u of unavailable) lines.push(`- ${u.desc}: ${u.reason}.`);
+        }
+        // Referensi umum ditawarkan TERPISAH dan berlabel tegas — bukan data proyek.
+        lines.push('');
+        lines.push('Sebagai pembanding, berikut REFERENSI UPAH UMUM dari database harga (BUKAN data proyek ini, dan bukan rincian analisa item proyek):');
+        for (const q of ['Pekerja', 'Tukang', 'Kepala Tukang', 'Mandor']) {
+          try {
+            const res: any = priceResolver2026.resolveResourcePrice({ resourceName: q, resourceType: 'labor' } as any);
+            const r: any = res?.record ?? res;
+            if (r && r.price != null) {
+              const tier: string | undefined = r.source?.tier ?? r.sourceTier;
+              lines.push(
+                `- ${r.resourceName ?? r.name ?? q}: ${fmtIDR(Math.round(Number(r.price)))}/${r.unit ?? ''} — status sumber: ${tier ? (PRICE_TIER_LABELS[tier] ?? tier) : '-'}${r.verificationStatus ? `, verifikasi: ${r.verificationStatus}` : ''}`,
+              );
+            } else {
+              lines.push(`- ${q}: harga referensi belum tersedia di database (bukan Rp0).`);
+            }
+          } catch {
+            lines.push(`- ${q}: harga referensi belum tersedia di database (bukan Rp0).`);
+          }
+        }
+        return lines.join('\n');
+      }
+
+      lines.push(`Rincian upah tenaga kerja — proyek "${snap.projectName}"`);
+      lines.push(
+        'Koefisien dan tarif berikut berasal dari ANALISA AHSP katalog untuk kode item proyek ini ' +
+          '(referensi analisa resmi, diteruskan apa adanya) — bukan penetapan upah khusus proyek, dan berbeda dari ' +
+          'harga satuan pekerjaan pada item RAB. Koefisien tidak dijumlahkan lintas item/satuan.',
+      );
+
+      // Tabel tarif ringkas (hanya bila pertanyaan umum, tanpa nama item):
+      // tarif distinct per kategori+satuan+harga dari komponen ter-resolve.
+      if (!nameQ) {
+        const rateMap = new Map<string, { category: string; unit: string; price: number; source: string; items: string[] }>();
+        for (const g of perItem) {
+          for (const r of g.rows) {
+            if (!r.resolved || r.price === null) continue;
+            if (catQ && !r.category.toLowerCase().includes(catQ)) continue;
+            const key = `${r.category}|${r.unit}|${r.price}`;
+            const cur = rateMap.get(key) ?? { category: r.category, unit: r.unit, price: r.price, source: r.source, items: [] };
+            if (!cur.items.includes(g.desc)) cur.items.push(g.desc);
+            rateMap.set(key, cur);
+          }
+        }
+        if (rateMap.size > 0) {
+          lines.push('');
+          lines.push('Tarif upah yang dipakai dalam analisa item-item proyek ini:');
+          for (const v of rateMap.values()) {
+            const used = v.items.slice(0, 3).join('; ') + (v.items.length > 3 ? `; dan ${v.items.length - 3} item lain` : '');
+            lines.push(`- ${v.category}: ${fmtIDR(v.price)}/${v.unit} — sumber: ${v.source || '-'} — dipakai pada: ${used}`);
+          }
+        }
+      }
+
+      for (const g of perItem) {
+        lines.push('');
+        lines.push(`Item: ${g.desc} [${g.code}] — satuan pekerjaan ${g.unit}`);
+        for (const r of g.rows) {
+          const tarif = r.resolved && r.price !== null ? `${fmtIDR(r.price)}/${r.unit}` : 'belum tersedia (komponen belum ter-resolve — bukan Rp0)';
+          const sub = r.resolved && r.subtotal !== null ? ` — subtotal ${fmtIDR(r.subtotal)} per ${g.unit}` : '';
+          const src = r.source ? ` — sumber: ${r.source}${r.verification ? ` (${r.verification})` : ''}` : '';
+          lines.push(`- ${r.category}: koefisien ${fmtCoef(r.coefficient)} ${r.unit} per ${g.unit}; tarif ${tarif}${sub}${src}`);
+        }
+        if (g.partialNote) lines.push(`  Catatan: ${g.partialNote}.`);
+      }
+
+      if (unavailable.length > 0) {
+        lines.push('');
+        lines.push('Item proyek tanpa rincian upah yang dapat ditampilkan:');
+        for (const u of unavailable) lines.push(`- ${u.desc}: ${u.reason}.`);
+      }
+      if (snap.allTruncated) {
+        lines.push('');
+        lines.push('Catatan: daftar item alat mencapai batas 1.000 item; item selebihnya tidak tercakup dalam jawaban ini.');
+      }
+      return lines.join('\n');
+    },
+  },
+  {
+    name: 'get_project_sections',
+    description: 'Ringkasan per seksi/kelompok pekerjaan proyek aktif: jumlah item, subtotal ter-resolve, dan jumlah item belum berharga per seksi. Tanpa argumen. Pakai untuk pertanyaan total per seksi/bagian pekerjaan.',
+    invoke: () => {
+      const snap = requireSnapshot();
+      if (typeof snap === 'string') return snap;
+      const groups = new Map<string, { count: number; subtotal: number; unresolved: number }>();
+      for (const it of snapshotAllItems(snap)) {
+        const key = it.sectionName || 'Tanpa Seksi';
+        const g = groups.get(key) ?? { count: 0, subtotal: 0, unresolved: 0 };
+        g.count += 1;
+        if (it.priceStatus === 'PRICE_UNRESOLVED') g.unresolved += 1;
+        else g.subtotal += it.totalPrice;
+        groups.set(key, g);
+      }
+      const lines = [`Ringkasan per seksi — proyek "${snap.projectName}" (${snap.itemCount} item):`];
+      for (const [name, g] of groups) {
+        lines.push(`- ${name}: ${g.count} item — subtotal ${formatIDR(g.subtotal)}${g.unresolved ? ` — ${g.unresolved} item belum berharga (tidak dihitung Rp0)` : ''}`);
+      }
+      lines.push(`Total langsung (item ter-resolve): ${formatIDR(snap.totalDirect)}`);
+      if (snap.unresolvedCount) lines.push(`Catatan: ${snap.unresolvedCount} item belum memiliki harga, sehingga total di atas bersifat parsial.`);
+      if (snap.allTruncated) lines.push('Catatan: daftar item alat mencapai batas 1.000 item; item selebihnya tidak tercakup.');
+      return lines.join('\n');
+    },
+  },
+  {
+    name: 'get_project_costliest',
+    description: 'Item-item dengan biaya terbesar di proyek aktif (berdasarkan subtotal ter-resolve). Argumen: jumlah (opsional, default 5, maks 10). Pakai untuk pertanyaan item termahal/terbesar biayanya.',
+    invoke: (args) => {
+      const snap = requireSnapshot();
+      if (typeof snap === 'string') return snap;
+      const n = Math.min(10, Math.max(1, Number(args.jumlah ?? 5) || 5));
+      const resolved = snapshotAllItems(snap).filter((i) => i.priceStatus !== 'PRICE_UNRESOLVED').sort((a, b) => b.totalPrice - a.totalPrice);
+      if (resolved.length === 0) return `Belum ada item berharga ter-resolve di proyek "${snap.projectName}" — peringkat biaya tidak dapat dibuat (harga yang hilang tidak dianggap Rp0).`;
+      const lines = [`${Math.min(n, resolved.length)} item berbiaya terbesar — proyek "${snap.projectName}":`];
+      resolved.slice(0, n).forEach((it, i) => {
+        lines.push(`${i + 1}. ${it.description} (${it.code || 'tanpa kode'}) — ${it.volume} ${it.unit} × ${formatIDR(it.unitPrice ?? 0)} = ${formatIDR(it.totalPrice)} — Seksi: ${it.sectionName || '-'}`);
+      });
+      if (snap.unresolvedCount) lines.push(`Catatan: ${snap.unresolvedCount} item belum berharga dan tidak ikut peringkat.`);
+      if (snap.allTruncated) lines.push('Catatan: proyek melebihi batas 1.000 item alat — peringkat dihitung dari 1.000 item pertama.');
+      return lines.join('\n');
+    },
+  },
+  {
+    name: 'get_project_materials',
+    description: 'Kebutuhan MATERIAL proyek aktif dari analisa AHSP: koefisien material per item dikalikan volume proyek (deterministik), diagregasi hanya untuk material+satuan yang sama, lengkap dengan tarif, sumber, dan status. WAJIB dipakai untuk pertanyaan kebutuhan material — JANGAN mengarang kebutuhan material. Argumen: nama (opsional — batasi ke satu item). Komponen yang belum ter-resolve dinyatakan eksplisit; item tanpa analisa valid didaftar dengan penyebabnya.',
+    invoke: (args) => {
+      const snap = requireSnapshot();
+      if (typeof snap === 'string') return snap;
+      const nameQ = String(args.nama ?? args.name ?? args.kode ?? '').trim().toLowerCase();
+      let targets = snapshotAllItems(snap);
+      if (nameQ) {
+        const words = nameQ.split(/\s+/).filter((w) => w.length > 1);
+        const matches = snapshotAllItems(snap).filter((it) => {
+          const hay = `${it.description} ${it.code}`.toLowerCase();
+          return words.every((w) => hay.includes(w));
+        });
+        if (matches.length === 0) return `Item "${nameQ}" tidak ditemukan di proyek "${snap.projectName}". Jangan mengarang data item ini.`;
+        if (matches.length > 1) {
+          return `Ditemukan ${matches.length} kandidat untuk "${nameQ}" — minta klarifikasi:` +
+            matches.slice(0, 5).map((it, i) => `\n${i + 1}. ${it.description} (${it.volume} ${it.unit})`).join('');
+        }
+        targets = matches;
+      }
+      const fmtQty = (n: number) => n.toLocaleString('id-ID', { maximumFractionDigits: 4 });
+      type MatRow = { name: string; coefficient: number; unit: string; need: number; price: number | null; source: string; verification: string; resolved: boolean };
+      const perItem: Array<{ desc: string; code: string; volume: number; unit: string; rows: MatRow[]; partial: boolean }> = [];
+      const unavailable: Array<{ desc: string; reason: string }> = [];
+      for (const it of targets) {
+        const code = String(it.ahspCode ?? '').trim() || String(it.code ?? '').trim();
+        if (!code) { unavailable.push({ desc: it.description, reason: 'item tidak memiliki kode AHSP' }); continue; }
+        let catalogItem: any = null;
+        try { catalogItem = officialAhspRepository.getOfficialAhsp(code); } catch { catalogItem = null; }
+        if (!catalogItem) { unavailable.push({ desc: it.description, reason: `kode ${code} tidak ada di katalog AHSP 2026 resmi (tidak dipetakan diam-diam ke kode lain)` }); continue; }
+        let comp: any = null;
+        try { comp = priceResolver2026.resolveAhspUnitPrice(catalogItem); } catch { comp = null; }
+        const matComps: any[] = comp?.material?.components ?? [];
+        if (!comp || matComps.length === 0) { unavailable.push({ desc: it.description, reason: 'analisa AHSP item ini tidak memuat komponen material' }); continue; }
+        const rows: MatRow[] = matComps.map((c: any) => ({
+          name: String(c.itemName ?? '-'),
+          coefficient: Number(c.coefficient ?? 0),
+          unit: String(c.unit ?? ''),
+          need: Number(c.coefficient ?? 0) * it.volume,
+          price: c.resolved && typeof c.unitPrice === 'number' ? c.unitPrice : null,
+          source: String(c.sourceName ?? ''),
+          verification: String(c.verificationStatus ?? ''),
+          resolved: Boolean(c.resolved),
+        }));
+        perItem.push({ desc: it.description, code, volume: it.volume, unit: it.unit, rows, partial: Boolean(comp.pricingStatus && comp.pricingStatus !== 'FULL') });
+      }
+      const lines: string[] = [];
+      const totalRows = perItem.reduce((n, g) => n + g.rows.length, 0);
+      if (totalRows === 0) {
+        lines.push(`Kebutuhan material proyek "${snap.projectName}" TIDAK TERSEDIA dari analisa AHSP.`);
+        for (const u of unavailable) lines.push(`- ${u.desc}: ${u.reason}.`);
+        return lines.join('\n');
+      }
+      lines.push(`Kebutuhan material — proyek "${snap.projectName}"`);
+      lines.push('Dihitung deterministik dari koefisien analisa AHSP katalog × volume item proyek. Agregasi hanya menggabungkan material dengan satuan yang sama; satuan tidak pernah dikonversi diam-diam.');
+      if (!nameQ) {
+        const agg = new Map<string, { name: string; unit: string; need: number; price: number | null; priceVaries: boolean; unresolved: number; source: string }>();
+        for (const g of perItem) {
+          for (const r of g.rows) {
+            const key = `${r.name.toLowerCase()}|${r.unit}`;
+            const cur = agg.get(key) ?? { name: r.name, unit: r.unit, need: 0, price: r.price, priceVaries: false, unresolved: 0, source: r.source };
+            cur.need += r.need;
+            if (!r.resolved) cur.unresolved += 1;
+            else if (cur.price !== null && r.price !== null && cur.price !== r.price) cur.priceVaries = true;
+            else if (cur.price === null) cur.price = r.price;
+            agg.set(key, cur);
+          }
+        }
+        lines.push('');
+        lines.push('Total kebutuhan per material:');
+        for (const v of [...agg.values()].sort((a, b) => b.need - a.need)) {
+          const priceTxt = v.unresolved > 0 ? 'sebagian harga belum tersedia' : v.priceVaries ? 'tarif bervariasi antar analisa' : v.price !== null ? `${formatIDR(v.price)}/${v.unit}` : 'harga belum tersedia';
+          lines.push(`- ${v.name}: ${fmtQty(v.need)} ${v.unit} — tarif: ${priceTxt}${v.source ? ` — sumber koefisien/harga: ${v.source}` : ''}`);
+        }
+      }
+      for (const g of perItem) {
+        lines.push('');
+        lines.push(`Item: ${g.desc} [${g.code}] — volume proyek ${g.volume} ${g.unit}`);
+        for (const r of g.rows) {
+          lines.push(`- ${r.name}: koefisien ${r.coefficient} ${r.unit} per ${g.unit} → kebutuhan ${fmtQty(r.need)} ${r.unit}; tarif ${r.resolved && r.price !== null ? `${formatIDR(r.price)}/${r.unit}` : 'belum tersedia (bukan Rp0)'}${r.source ? ` — sumber: ${r.source}${r.verification ? ` (${r.verification})` : ''}` : ''}`);
+        }
+        if (g.partial) lines.push('  Catatan: komposisi item ini berstatus parsial — sebagian komponen belum ter-resolve.');
+      }
+      if (unavailable.length > 0) {
+        lines.push('');
+        lines.push('Item tanpa analisa material yang dapat ditampilkan:');
+        for (const u of unavailable) lines.push(`- ${u.desc}: ${u.reason}.`);
+      }
+      if (snap.allTruncated) lines.push('\nCatatan: daftar item alat mencapai batas 1.000 item; item selebihnya tidak tercakup.');
+      return lines.join('\n');
+    },
+  },
+  {
+    name: 'propose_update_quantity',
+    description: 'Mengusulkan perubahan VOLUME/KUANTITAS satu item RAB proyek aktif. Tool ini hanya membuat PRATINJAU — perubahan TIDAK dieksekusi oleh tool ini; eksekusi hanya terjadi bila pengguna menekan tombol Konfirmasi pada kartu pratinjau. Argumen: nama (nama/kode item), volume (angka baru). Setelah memanggil tool ini, sampaikan pratinjaunya apa adanya dan katakan perubahan menunggu konfirmasi pengguna — JANGAN menyatakan perubahan sudah terjadi.',
+    invoke: (args) => {
+      const snap = requireSnapshot();
+      if (typeof snap === 'string') return snap;
+      const ctx = getAssistantOperationContext();
+      if (!ctx?.writesEnabled) return 'Operasi tulis Asisten AI tidak aktif untuk sesi ini: peran aktif tidak memiliki capability edit-estimate (atau belum masuk dengan peran demo). Perubahan RAB hanya dapat diusulkan oleh peran yang berhak mengedit estimasi. Tidak ada perubahan yang dibuat.';
+      const datasetGuard = writesDatasetGuard(snap);
+      if (datasetGuard) return datasetGuard;
+      const vol = typeof args.volume === 'number' ? args.volume : Number(args.volume);
+      const res = buildUpdateQuantityPlan(snap, { id: String(args.id ?? '') || undefined, nama: String(args.nama ?? args.name ?? '') || undefined }, vol, ctx.actor);
+      return res.ok ? res.plan.previewText : res.message;
+    },
+  },
+  {
+    name: 'propose_update_unit_price',
+    description: 'Mengusulkan perubahan HARGA SATUAN satu item RAB proyek aktif menjadi harga MANUAL. Hanya membuat PRATINJAU (eksekusi lewat tombol Konfirmasi pengguna). Harga manual tidak mewarisi label sumber resmi. Argumen: nama, harga (angka rupiah baru). JANGAN menyatakan perubahan sudah terjadi.',
+    invoke: (args) => {
+      const snap = requireSnapshot();
+      if (typeof snap === 'string') return snap;
+      const ctx = getAssistantOperationContext();
+      if (!ctx?.writesEnabled) return 'Operasi tulis Asisten AI tidak aktif untuk sesi ini: peran aktif tidak memiliki capability edit-estimate (atau belum masuk dengan peran demo). Tidak ada perubahan yang dibuat.';
+      const datasetGuard = writesDatasetGuard(snap);
+      if (datasetGuard) return datasetGuard;
+      const price = typeof args.harga === 'number' ? args.harga : Number(args.harga ?? args.price);
+      const res = buildUpdateUnitPricePlan(snap, { id: String(args.id ?? '') || undefined, nama: String(args.nama ?? args.name ?? '') || undefined }, price, ctx.actor);
+      return res.ok ? res.plan.previewText : res.message;
+    },
+  },
+  {
+    name: 'propose_delete_items',
+    description: 'Mengusulkan PENGHAPUSAN satu atau beberapa item RAB proyek aktif. Hanya membuat PRATINJAU — penghapusan TIDAK terjadi tanpa tombol Konfirmasi pengguna. Argumen: nama (satu item) atau daftar_nama (array nama item). JANGAN menyatakan item sudah terhapus.',
+    invoke: (args) => {
+      const snap = requireSnapshot();
+      if (typeof snap === 'string') return snap;
+      const ctx = getAssistantOperationContext();
+      if (!ctx?.writesEnabled) return 'Operasi tulis Asisten AI tidak aktif untuk sesi ini: peran aktif tidak memiliki capability edit-estimate (atau belum masuk dengan peran demo). Tidak ada perubahan yang dibuat.';
+      const datasetGuard = writesDatasetGuard(snap);
+      if (datasetGuard) return datasetGuard;
+      const list: Array<{ nama?: string; id?: string }> = [];
+      if (Array.isArray(args.daftar_nama)) for (const n of args.daftar_nama) list.push({ nama: String(n) });
+      if (Array.isArray(args.daftar_id)) for (const n of args.daftar_id) list.push({ id: String(n) });
+      if (args.nama || args.name) list.push({ nama: String(args.nama ?? args.name) });
+      if (args.id) list.push({ id: String(args.id) });
+      const res = buildDeletePlan(snap, list, ctx.actor);
+      return res.ok ? res.plan.previewText : res.message;
+    },
+  },
+  {
+    name: 'propose_add_item',
+    description: 'Mengusulkan PENAMBAHAN item RAB baru dari katalog AHSP resmi ke proyek aktif. Hanya kode katalog yang valid persis yang diterima — kode tidak ditebak/dipetakan. Hanya membuat PRATINJAU (eksekusi lewat tombol Konfirmasi). Argumen: kode_ahsp (wajib), volume (opsional).',
+    invoke: (args) => {
+      const snap = requireSnapshot();
+      if (typeof snap === 'string') return snap;
+      const ctx = getAssistantOperationContext();
+      if (!ctx?.writesEnabled) return 'Operasi tulis Asisten AI tidak aktif untuk sesi ini: peran aktif tidak memiliki capability edit-estimate (atau belum masuk dengan peran demo). Tidak ada perubahan yang dibuat.';
+      const datasetGuard = writesDatasetGuard(snap);
+      if (datasetGuard) return datasetGuard;
+      const vol = args.volume != null ? Number(args.volume) : undefined;
+      const res = buildAddPlan(snap, String(args.kode_ahsp ?? args.kode ?? ''), vol, ctx.actor);
+      return res.ok ? res.plan.previewText : res.message;
+    },
+  },
+  {
+    name: 'propose_undo_last',
+    description: 'Mengusulkan UNDO operasi Asisten AI terakhir pada proyek aktif. Hanya membuat PRATINJAU undo (eksekusi lewat tombol Konfirmasi). Undo ditolak otomatis bila data sudah berubah sesudah operasi itu. Tanpa argumen.',
+    invoke: () => {
+      const snap = requireSnapshot();
+      if (typeof snap === 'string') return snap;
+      const ctx = getAssistantOperationContext();
+      if (!ctx?.writesEnabled) return 'Operasi tulis Asisten AI tidak aktif untuk sesi ini: peran aktif tidak memiliki capability edit-estimate (atau belum masuk dengan peran demo). Tidak ada perubahan yang dibuat.';
+      const datasetGuard = writesDatasetGuard(snap);
+      if (datasetGuard) return datasetGuard;
+      const last = getLastUndoableRecord(snap.projectId);
+      if (!last) return `Belum ada operasi Asisten AI yang tercatat untuk proyek "${snap.projectName}" — tidak ada yang bisa di-undo.`;
+      const res = buildUndoPlan(snap, last, ctx.actor);
+      return res.ok ? res.plan.previewText : res.message;
+    },
+  },
+  {
+    name: 'get_operation_history',
+    description: 'Riwayat operasi tulis Asisten AI pada proyek aktif (dari log operasi aplikasi): waktu, jenis, ringkasan, status, dan status penyimpanan. Argumen: jumlah (opsional, default 10). Pakai untuk pertanyaan riwayat perubahan oleh asisten.',
+    invoke: (args) => {
+      const snap = requireSnapshot();
+      if (typeof snap === 'string') return snap;
+      const n = Math.min(25, Math.max(1, Number(args.jumlah ?? 10) || 10));
+      const rows = listOperationRecords(snap.projectId).slice(0, n);
+      if (rows.length === 0) return `Belum ada operasi Asisten AI yang tercatat untuk proyek "${snap.projectName}".`;
+      const lines = [`Riwayat operasi Asisten AI — proyek "${snap.projectName}" (${rows.length} terakhir):`];
+      for (const r of rows) {
+        lines.push(`- ${new Date(r.ts).toLocaleString('id-ID')} — ${r.summary} — status: ${r.status} — penyimpanan: ${r.persistence} — oleh: ${r.actor}`);
+      }
+      return lines.join('\n');
     },
   },
   {
@@ -400,12 +844,22 @@ export const EZRAB_AI_TOOLS: EzrabAiToolDef[] = [
     invoke: () => {
       const snap = requireSnapshot();
       if (typeof snap === 'string') return snap;
-      if (snap.unresolvedItems.length === 0) {
+      const unresolvedAll = snapshotAllItems(snap).filter((i) => i.priceStatus === 'PRICE_UNRESOLVED');
+      if (snap.unresolvedCount === 0) {
         return `Semua ${snap.itemCount} item di proyek "${snap.projectName}" sudah memiliki harga.`;
       }
+      if (unresolvedAll.length === 0) {
+        // Semua item belum berharga berada di luar batas daftar alat.
+        return `${snap.unresolvedCount} item belum memiliki harga (tidak termasuk dalam total RAB). Catatan: proyek melebihi batas 1.000 item alat — item-item tersebut berada di luar jangkauan daftar ini.`;
+      }
+      const shown = unresolvedAll.slice(0, 25);
       return (
         `${snap.unresolvedCount} item belum memiliki harga (tidak termasuk dalam total RAB):\n` +
-        snap.unresolvedItems.map((it, i) => `${i + 1}. ${it.description} — ${it.volume} ${it.unit}`).join('\n')
+        shown.map((it, i) => `${i + 1}. ${it.description} — ${it.volume} ${it.unit}`).join('\n') +
+        (unresolvedAll.length > shown.length ? `\n…dan ${unresolvedAll.length - shown.length} item lainnya.` : '') +
+        (snap.allTruncated && snap.unresolvedCount > unresolvedAll.length
+          ? `\nCatatan: proyek melebihi batas 1.000 item alat — ${snap.unresolvedCount - unresolvedAll.length} item belum berharga lainnya berada di luar jangkauan daftar ini.`
+          : '')
       );
     },
   },

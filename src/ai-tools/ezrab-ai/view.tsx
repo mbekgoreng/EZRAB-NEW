@@ -48,7 +48,16 @@ import { notificationBus } from '../../notifications/notificationBus';
 import { navigateTo, paths, routeForMenu } from '../../routing/routes';
 import { EZRABMascotLucu } from '../../components/mascot/EZRABMascotLucu';
 import { useProject } from '../../context/ProjectContext';
-import { buildProjectSnapshot, ProjectSnapshot } from './projectContext';
+import { useRole } from '../../auth/RoleContext';
+import {
+  setAssistantOperationContext,
+  listPendingPlans,
+  getPlan,
+  setPlanStatus,
+  executePlan,
+  type OperationHost,
+} from './operations';
+import { buildProjectSnapshot, ProjectSnapshot, snapshotAllItems } from './projectContext';
 import { unifiedConversationStore } from '../../services/ai/conversation/unifiedConversationStore';
 import './ezrab-ai-chat.css';
 import '../../ai-credits/ai-credits.css';
@@ -80,6 +89,54 @@ interface ChatEntry {
   creditsUsed?: number;
   /** Tombol aksi interaktif (Command Center P0) */
   actions?: ChatActionButton[];
+  /** Plan operasi Asisten AI yang menunggu/sudah dikonfirmasi pada pesan ini. */
+  planId?: string;
+}
+
+/** Kontrol konfirmasi plan operasi Asisten AI (pratinjau → konfirmasi manusia). */
+function PlanControls(props: {
+  planId: string;
+  busy: boolean;
+  onConfirm: (planId: string) => void;
+  onCancel: (planId: string) => void;
+}): React.ReactNode {
+  const plan = getPlan(props.planId);
+  if (!plan) return null;
+  if (plan.status === 'pending') {
+    return (
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10, alignItems: 'center' }}>
+        <button
+          onClick={() => props.onConfirm(props.planId)}
+          disabled={props.busy}
+          style={{
+            padding: '8px 14px', borderRadius: 8, border: '1px solid #047857',
+            background: '#059669', color: '#FFFFFF', fontWeight: 700,
+            fontSize: 13, cursor: props.busy ? 'default' : 'pointer', opacity: props.busy ? 0.6 : 1,
+          }}
+        >
+          {props.busy ? 'Mengeksekusi…' : 'Konfirmasi Eksekusi'}
+        </button>
+        <button
+          onClick={() => props.onCancel(props.planId)}
+          disabled={props.busy}
+          style={{
+            padding: '8px 14px', borderRadius: 8, border: '1px solid #CBD5E1',
+            background: '#F8FAFC', color: '#334155', fontWeight: 600,
+            fontSize: 13, cursor: props.busy ? 'default' : 'pointer', opacity: props.busy ? 0.6 : 1,
+          }}
+        >
+          Batalkan
+        </button>
+        <span style={{ fontSize: 12, color: '#64748B' }}>Perubahan belum berjalan sampai Anda mengonfirmasi.</span>
+      </div>
+    );
+  }
+  const note =
+    plan.status === 'executed' ? 'Sudah dieksekusi — hasil terverifikasi ada pada pesan berikutnya.'
+    : plan.status === 'cancelled' ? 'Pratinjau dibatalkan — tidak ada perubahan yang dibuat.'
+    : plan.status === 'expired' ? 'Pratinjau kedaluwarsa — buat permintaan baru.'
+    : 'Eksekusi gagal — lihat pesan hasil.';
+  return <div style={{ marginTop: 8, fontSize: 12, color: '#64748B' }}>{note}</div>;
 }
 
 /* ---- Tipe minimal Web Speech API (Chrome: webkitSpeechRecognition) ---- */
@@ -195,7 +252,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const [designPrompt, setDesignPrompt] = useState<string | undefined>(undefined);
 
   /* ---- FASE 5A: project grounding + conversation persistence ---- */
-  const { currentProject, projectRabItems, bulkAddRabItems } = useProject();
+  const {
+    currentProject, projectRabItems, bulkAddRabItems,
+    updateRabItemFull, updateRabItemUnitPrice, deleteRabItem, bulkDeleteRabItems,
+    createVersionSnapshot, saveStatus,
+  } = useProject();
   // Prefer live context; fall back to props (keeps standalone usage working).
   const effProject = currentProject ?? activeProject;
   const projectSnapshot: ProjectSnapshot | null = buildProjectSnapshot(
@@ -287,6 +348,84 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       /* honest degradation: in-memory only */
     }
   };
+
+  /* ---- Asisten AI: operasi spreadsheet (pratinjau → konfirmasi → eksekusi) ----
+   * Tool propose_* hanya membuat plan dari snapshot; eksekusi berjalan di
+   * sini, lewat mutator kanonis ProjectContext yang sama dengan spreadsheet,
+   * setelah pengguna menekan tombol Konfirmasi pada kartu pratinjau. */
+  const { activeRole, hasCapability } = useRole();
+  const [, setPlanTick] = useState(0);
+  const [busyPlanId, setBusyPlanId] = useState<string | null>(null);
+  const projectRef = useRef<typeof effProject>(null);
+  projectRef.current = effProject;
+  const rawItemsRef = useRef(projectRabItems);
+  rawItemsRef.current = projectRabItems;
+  const saveStatusRef = useRef(saveStatus);
+  saveStatusRef.current = saveStatus;
+
+  useEffect(() => {
+    setAssistantOperationContext({
+      actor: activeRole?.name ?? 'Peran demo',
+      writesEnabled: hasCapability('edit-estimate'),
+    });
+    return () => setAssistantOperationContext(null);
+  }, [activeRole, hasCapability]);
+
+  const buildOperationHost = useCallback((): OperationHost => ({
+    projectId: projectRef.current?.id ?? '',
+    readItems: () => {
+      const p = projectRef.current;
+      const snapNow = buildProjectSnapshot(
+        p ? { id: p.id, name: p.name, costSummary: (p as unknown as { costSummary?: Record<string, unknown> }).costSummary } : null,
+        (rawItemsRef.current ?? []) as unknown as Array<Record<string, unknown>>,
+      );
+      return snapNow ? snapshotAllItems(snapNow) : [];
+    },
+    applyUpdateQuantity: (itemId, volume) => updateRabItemFull(itemId, { volume }),
+    applyManualUnitPrice: (itemId, price) => updateRabItemUnitPrice(itemId, price),
+    applyDelete: (itemIds) => {
+      if (itemIds.length === 1) deleteRabItem(itemIds[0]);
+      else bulkDeleteRabItems(itemIds);
+    },
+    applyAdd: (itemData) => {
+      const created = bulkAddRabItems([itemData as never]);
+      return created?.[0]?.id ?? null;
+    },
+    createSafetySnapshot: (description) => {
+      try {
+        return createVersionSnapshot(description)?.id ?? null;
+      } catch {
+        return null;
+      }
+    },
+    readRawItem: (itemId) => {
+      const raw = (rawItemsRef.current ?? []).find((r) => (r as { id?: string }).id === itemId);
+      return raw ? ({ ...(raw as unknown as Record<string, unknown>) }) : null;
+    },
+    persistenceStatus: () => saveStatusRef.current,
+  }), [updateRabItemFull, updateRabItemUnitPrice, deleteRabItem, bulkDeleteRabItems, bulkAddRabItems, createVersionSnapshot]);
+
+  const handleConfirmPlan = useCallback(async (planId: string) => {
+    const plan = getPlan(planId);
+    if (!plan || plan.status !== 'pending') return;
+    setBusyPlanId(planId);
+    try {
+      const res = await executePlan(plan, buildOperationHost());
+      const entry: ChatEntry = { role: 'assistant', content: res.message, ts: Date.now() };
+      setMessages((prev) => [...prev, entry]);
+      persistMessage('assistant', res.message);
+    } finally {
+      setBusyPlanId(null);
+      setPlanTick((t) => t + 1);
+    }
+    // persistMessage/setMessages stabil per render; deps sengaja minimal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buildOperationHost]);
+
+  const handleCancelPlan = useCallback((planId: string) => {
+    setPlanStatus(planId, 'cancelled');
+    setPlanTick((t) => t + 1);
+  }, []);
   /* ---- Tinggi root terukur (fix crop atas, 2026-10-24) ----
    * Root .ezchat2 harus mengisi PERSIS sisa ruang vertikal di dalam
    * kontainer scroll shell (.pf-main di WorkspaceView): TopBar sticky
@@ -828,6 +967,7 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
       // kirim): hasil cepat menunggu sisa minimum, hasil lambat tidak
       // ditambah delay. RAB: minimum 5–10 detik dari besarnya hasil
       // (waitForRabMinimum), bukan 3 detik complex.
+      const planIdsBeforeSend = new Set(listPendingPlans().map((p) => p.id));
       const sendPromise = ezrabAiService.send({
         // F3: the attachment block belongs ONLY to the message just sent
         // (the last entry in `next`). Older messages must keep their
@@ -858,6 +998,10 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           model: mode === 'fast' ? 'FAST' : 'ADVANCED',
         }),
       );
+      // Plan operasi yang dibuat tool propose_* selama pengiriman ini:
+      // lampirkan kartu konfirmasinya ke balon jawaban (plan pertama) dan
+      // sebagai entry tersendiri untuk plan tambahan apa pun.
+      const newPlans = listPendingPlans().filter((p) => !planIdsBeforeSend.has(p.id));
       const assistantEntry: ChatEntry = {
         role: 'assistant',
         content: res.reply,
@@ -866,9 +1010,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         model: (res as any).model,
         ts: Date.now(),
         creditsUsed: res.success ? simUsed : undefined,
+        planId: newPlans[0]?.id,
       };
       setMessages((prev) => [...prev, assistantEntry]);
       persistMessage('assistant', res.reply);
+      for (const extra of newPlans.slice(1)) {
+        setMessages((prev) => [...prev, { role: 'assistant', content: extra.previewText, ts: Date.now(), planId: extra.id }]);
+        persistMessage('assistant', extra.previewText);
+      }
       notificationBus.publish({
         type: res.success ? 'success' : 'error',
         title: res.success ? 'Ezrab AI selesai menjawab' : 'Ezrab AI gagal menjawab',
@@ -1724,6 +1873,15 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
                           </button>
                         ))}
                       </div>
+                    )}
+                    {/* Asisten AI: kartu konfirmasi operasi spreadsheet */}
+                    {m.planId && (
+                      <PlanControls
+                        planId={m.planId}
+                        busy={busyPlanId === m.planId}
+                        onConfirm={handleConfirmPlan}
+                        onCancel={handleCancelPlan}
+                      />
                     )}
                     <div className="ezchat2-meta">
                       {m.model && <span className="ezchat2-model"><Sparkles size={11} /> {m.model}</span>}

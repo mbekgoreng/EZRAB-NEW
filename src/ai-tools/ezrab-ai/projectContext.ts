@@ -19,6 +19,12 @@ export interface ProjectItemSnapshot {
   totalPrice: number;
   priceStatus: 'PRICE_RESOLVED' | 'PRICE_UNRESOLVED';
   sectionName: string;
+  /** Tautan katalog eksplisit pada item (RabItem.ahspCode) — kosong bila tidak ada. */
+  ahspCode?: string;
+  /** Status pemetaan ke katalog kanonis 2026 (RabItem.ahspMappingStatus) — kosong bila tidak ada. */
+  ahspMappingStatus?: string;
+  /** Jenis sumber harga (RabItem.priceSourceKind) — kosong bila tidak tercatat. */
+  priceSourceKind?: string;
 }
 
 export interface ProjectSnapshot {
@@ -29,8 +35,14 @@ export interface ProjectSnapshot {
   totalDirect: number;
   unresolvedCount: number;
   unresolvedItems: ProjectItemSnapshot[];
+  /** Daftar TERBATAS (25) untuk teks ringkasan prompt — JANGAN dipakai tool. */
   items: ProjectItemSnapshot[];
   truncated: boolean;
+  /** Daftar LENGKAP untuk tool & operasi (batas keras MAX_TOOL_ITEMS).
+   * Opsional demi kompatibilitas fixture/konstruktor lama — akses selalu
+   * lewat snapshotAllItems(). */
+  allItems?: ProjectItemSnapshot[];
+  allTruncated?: boolean;
   /** Canonical cost breakdown from UnifiedProjectEngine.recalculateCostSummary. */
   costBreakdown: {
     directCost: number;
@@ -46,6 +58,9 @@ export interface ProjectSnapshot {
 }
 
 const MAX_ITEMS = 25;
+/** Batas keras daftar item untuk TOOL (bukan prompt): jauh di atas kebutuhan
+ * proyek nyata, mencegah pertumbuhan tak terbatas pada data rusak/impor raksasa. */
+const MAX_TOOL_ITEMS = 1000;
 
 function toNumber(v: unknown): number {
   const n = Number(v);
@@ -85,6 +100,9 @@ export function buildProjectSnapshot(
       totalPrice,
       priceStatus: status,
       sectionName: String(it.sectionName ?? it.category ?? ''),
+      ahspCode: String(it.ahspCode ?? ''),
+      ahspMappingStatus: String(it.ahspMappingStatus ?? ''),
+      priceSourceKind: String(it.priceSourceKind ?? ''),
     };
   });
 
@@ -141,8 +159,15 @@ export function buildProjectSnapshot(
     unresolvedItems: unresolvedItems.slice(0, MAX_ITEMS),
     items: snapshots.slice(0, MAX_ITEMS),
     truncated,
+    allItems: snapshots.slice(0, MAX_TOOL_ITEMS),
+    allTruncated: snapshots.length > MAX_TOOL_ITEMS,
     costBreakdown,
   };
+}
+
+/** Daftar item yang harus dipakai tool & operasi: lengkap bila tersedia. */
+export function snapshotAllItems(snap: ProjectSnapshot): ProjectItemSnapshot[] {
+  return snap.allItems ?? snap.items;
 }
 
 export function formatIDR(n: number): string {
