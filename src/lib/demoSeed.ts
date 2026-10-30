@@ -129,3 +129,24 @@ export function markSeedProject(p: Project): Project {
     totalRab: p.totalRab ? costSummary.grandTotal : p.totalRab,
   };
 }
+
+/**
+ * Injeksi satu kali berdasarkan id (untuk dataset demo tambahan seperti
+ * Premium Demo). Aturan sama dengan P0-B: hanya berjalan bila flag injeksi
+ * belum pernah terpasang; setelah itu isi penyimpanan dihormati apa adanya —
+ * termasuk bila pengguna menghapus datasetnya (tidak respawn). Entri yang
+ * id-nya sudah ada tidak pernah diduplikasi.
+ */
+export function injectOnceById<T extends { id: string }>(
+  existing: T[],
+  additions: T[],
+  alreadyInjected: boolean
+): { items: T[]; shouldMarkInjected: boolean } {
+  if (alreadyInjected) return { items: existing, shouldMarkInjected: false };
+  const seen = new Set(existing.map((x) => x.id));
+  const fresh = additions.filter((a) => !seen.has(a.id));
+  return {
+    items: fresh.length ? [...existing, ...fresh] : existing,
+    shouldMarkInjected: true,
+  };
+}

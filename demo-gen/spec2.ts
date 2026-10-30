@@ -1,0 +1,93 @@
+import type { DemoSpecItem } from './spec';
+
+export const SPEC2: DemoSpecItem[] = [
+  // ---------- 08. Waterproofing ----------
+  { s: 8, name: 'Waterproofing membran bakar — balkon dan dak kecil', unit: 'm2', qty: 8, basis: 'Balkon lantai 2 seluas 8 m² (jalur mundur pelat lantai 2: 8 × 1 m).', code: '3.4.1' },
+  { s: 8, name: 'Waterproofing kristalin — lantai kamar mandi/WC', unit: 'm2', qty: 10, basis: '3 KM/WC: 3,0 + 3,6 + 3,0 = 9,6 ≈ 10 m².', code: '3.4.2' },
+  { s: 8, name: 'Waterproofing kristalin — dinding kamar mandi tinggi 1,8 m', unit: 'm2', qty: 34, basis: 'Dinding basah (7 + 6 + 6 m keliling efektif) × 1,8 m = 34,2 ≈ 34 m², di balik keramik dinding.', code: '3.4.2' },
+  { s: 8, name: 'Sealant sambungan kusen dan sanitair', unit: 'ls', qty: 1, basis: '1 paket sambungan kusen luar dan peralatan sanitair.' },
+
+  // ---------- 09. Finishing Lantai ----------
+  { s: 9, name: 'Lantai homogenous tile polish 60 × 60 cm — ruang utama lantai 1', unit: 'm2', qty: 40, basis: 'Ruang tamu + keluarga + makan lantai 1 = 40 m² (jadwal ruang contoh).', code: '3.9.4.3' },
+  { s: 9, name: 'Lantai homogenous tile polish 60 × 60 cm — lantai 2', unit: 'm2', qty: 46, basis: 'Ruang keluarga + 3 kamar tidur lantai 2 = 46 m².', code: '3.9.4.3' },
+  { s: 9, name: 'Lantai ubin warna 30 × 30 cm — dapur', unit: 'm2', qty: 10, basis: 'Dapur ±3 × 3,3 m = 10 m².', code: '3.9.2.2' },
+  { s: 9, name: 'Lantai ubin warna 30 × 30 cm — kamar mandi/WC', unit: 'm2', qty: 10, basis: '3 KM/WC = 9,6 ≈ 10 m². Spesifikasi contoh: permukaan anti-slip — item katalog generik, konfirmasi saat pengadaan.', code: '3.9.2.2' },
+  { s: 9, name: 'Lantai ubin warna 40 × 40 cm — teras depan', unit: 'm2', qty: 8, basis: 'Teras 2 × 4 m = 8 m².', code: '3.9.2.3' },
+  { s: 9, name: 'Lantai ubin warna 30 × 30 cm — balkon', unit: 'm2', qty: 8, basis: 'Balkon lantai 2 = 8 m².', code: '3.9.2.2' },
+  { s: 9, name: "Plint homogenous tile polish 10 × 60 cm", unit: "m'", qty: 80, basis: 'Keliling ruang utama lantai 1 dan 2 (di luar KM/dapur) ≈ 80 m.', code: '3.9.4.6' },
+  { s: 9, name: "Plint ubin warna 10 × 30 cm — dapur dan KM", unit: "m'", qty: 26, basis: 'Keliling dapur + 3 KM ≈ 26 m.', code: '3.9.2.5' },
+  { s: 9, name: 'Finishing anak tangga keramik termasuk nosing', unit: "m'", qty: 18, basis: 'Total nosing anak tangga dua jalur ±18 m.' },
+  { s: 9, name: 'Lantai plester semen — gudang bawah tangga', unit: 'm2', qty: 8, basis: 'Ruang bawah tangga dan gudang ±8 m².' },
+
+  // ---------- 10. Finishing Dinding ----------
+  { s: 10, name: 'Plesteran 1SP : 4PP tebal 15 mm — dinding luar', unit: 'm2', qty: 202, basis: 'Sisi luar dinding eksterior: 107 (Lt1) + 95 (Lt2) = 202 m².', code: '3.7.4', spec: 'plesteran 1SP : 4PP tebal 15 mm' },
+  { s: 10, name: 'Plesteran 1SP : 4PP tebal 15 mm — dinding dalam bata merah', unit: 'm2', qty: 263, basis: 'Sisi dalam dinding eksterior 202 m² + dinding KM bata merah 61 m² = 263 m².', code: '3.7.4', spec: 'plesteran 1SP : 4PP tebal 15 mm' },
+  { s: 10, name: 'Plesteran 1SP : 4PP tebal 15 mm — partisi bata ringan dua sisi', unit: 'm2', qty: 182, basis: 'Partisi bata ringan (60 + 31) m² × 2 sisi = 182 m².', code: '3.7.4', spec: 'plesteran 1SP : 4PP tebal 15 mm' },
+  { s: 10, name: 'Acian — dinding interior', unit: 'm2', qty: 445, basis: 'Plesteran interior 263 + 182 = 445 m².', code: '3.7.8' },
+  { s: 10, name: 'Acian — dinding eksterior', unit: 'm2', qty: 202, basis: 'Mengikuti plesteran dinding luar 202 m².', code: '3.7.8' },
+  { s: 10, name: 'Pengecatan tembok baru interior (1 lapis cat dasar, 2 lapis cat penutup)', unit: 'm2', qty: 396, basis: 'Acian interior 445 − keramik dinding KM 34 − backsplash dapur 5 = 396 m² (dibulatkan).', code: '3.8.10.1' },
+  { s: 10, name: 'Pengecatan tembok baru eksterior (1 lapis cat dasar, 2 lapis cat penutup)', unit: 'm2', qty: 202, basis: 'Mengikuti acian eksterior 202 m².', code: '3.8.10.2' },
+  { s: 10, name: 'Dinding keramik artistik 10 × 20 cm — kamar mandi/WC', unit: 'm2', qty: 34, basis: 'Bidang sama dengan waterproofing dinding KM: ±34 m² setinggi 1,8 m.', code: '3.10.1.1' },
+  { s: 10, name: 'Dinding keramik artistik 10 × 20 cm — backsplash dapur', unit: 'm2', qty: 5, basis: 'Pita backsplash 8 m × 0,6 m = 4,8 ≈ 5 m².', code: '3.10.1.1' },
+  { s: 10, name: 'Dinding dekoratif panel kayu — dinding aksen ruang tamu', unit: 'm2', qty: 10, basis: 'Satu bidang aksen 3,3 × 3 m = 10 m² (spesifikasi contoh).' },
+
+  // ---------- 11. Pekerjaan Plafon ----------
+  { s: 11, name: 'Rangka plafon besi hollow 40.40 modul 60 × 60 cm — lantai 1', unit: 'm2', qty: 61, basis: 'Plafon lantai 1: tapak 72 − KM 3 − teras 8 = 61 m².', code: '3.5.3.1' },
+  { s: 11, name: 'Rangka plafon besi hollow 40.40 modul 60 × 60 cm — lantai 2', unit: 'm2', qty: 57, basis: 'Plafon lantai 2: pelat 64 − KM 6,6 = 57,4 ≈ 57 m².', code: '3.5.3.1' },
+  { s: 11, name: 'Plafon papan gypsum tebal 9 mm — lantai 1', unit: 'm2', qty: 61, basis: 'Mengikuti rangka plafon lantai 1: 61 m².', code: '3.5.2.1' },
+  { s: 11, name: 'Plafon papan gypsum tebal 9 mm — lantai 2', unit: 'm2', qty: 57, basis: 'Mengikuti rangka plafon lantai 2: 57 m².', code: '3.5.2.1' },
+  { s: 11, name: 'Plafon papan gypsum tebal 9 mm — kamar mandi/WC', unit: 'm2', qty: 10, basis: '3 KM = 9,6 ≈ 10 m². Spesifikasi contoh: papan tahan lembap — item katalog generik, konfirmasi saat pengadaan.', code: '3.5.2.1' },
+  { s: 11, name: 'Plafon serat semen/GRC — teras', unit: 'm2', qty: 8, basis: 'Plafon teras depan 8 m².', code: '3.5.2.2.1' },
+  { s: 11, name: "List plafon gypsum", unit: "m'", qty: 100, basis: 'Keliling pertemuan plafon–dinding ruang utama dua lantai ≈ 100 m.', code: '3.5.2.6' },
+  { s: 11, name: 'Pengecatan plafon (1 lapis cat dasar, 2 lapis cat penutup)', unit: 'm2', qty: 128, basis: 'Plafon gypsum 61 + 57 + 10 = 128 m².' },
+  { s: 11, name: 'Panel akses plafon 60 × 60 cm', unit: 'buah', qty: 2, basis: '2 titik akses (jalur pipa KM lantai 2 dan panel listrik).' },
+
+  // ---------- 12. Pintu, Jendela & Kusen ----------
+  { s: 12, name: "Kusen pintu kayu kelas II", unit: "m'", qty: 40, basis: '8 daun pintu: total panjang kusen (2 × 2,1 + lebar) rata-rata ≈ 40 m.', code: '3.11.3.2' },
+  { s: 12, name: "Kusen aluminium jendela", unit: "m'", qty: 54, basis: 'Keliling 11 bukaan jendela/boven ≈ 54 m.', code: '3.11.3.1' },
+  { s: 12, name: 'Daun pintu panel kayu kelas I atau II — pintu utama', unit: 'm2', qty: 2.4, basis: 'Pintu utama 1,0 × 2,4 m = 2,4 m².', code: '3.11.1.11' },
+  { s: 12, name: 'Daun pintu plywood rangkap rangka kayu kelas II — pintu kamar', unit: 'm2', qty: 7.56, basis: '4 daun (3 kamar tidur + 1 belakang) × 0,9 × 2,1 m = 7,56 m².', code: '3.11.1.12' },
+  { s: 12, name: 'Daun pintu aluminium strip lebar 8 cm — pintu KM/WC', unit: 'm2', qty: 4.41, basis: '3 daun × 0,7 × 2,1 m = 4,41 m².', code: '3.11.1.4' },
+  { s: 12, name: 'Jendela kaca tebal 5 mm nako aluminium', unit: 'm2', qty: 14.9, basis: 'J1: 5 × 1,5 × 1,5 m (11,25) + J2: 4 × 0,6 × 1,5 m (3,6) = 14,85 ≈ 14,9 m².', code: '3.11.2.1' },
+  { s: 12, name: 'Kaca polos tebal 5 mm — boven dan panel tetap', unit: 'm2', qty: 2.5, basis: 'Bovenlicht 3 titik ≈ 2,5 m².', code: '3.12.3' },
+  { s: 12, name: 'Engsel pintu', unit: 'buah', qty: 24, basis: '8 daun pintu × 3 engsel = 24 buah.', code: '3.11.4.5' },
+  { s: 12, name: 'Engsel jendela kupu-kupu', unit: 'buah', qty: 16, basis: '8 daun jendela buka × 2 engsel = 16 buah.', code: '3.11.4.15' },
+  { s: 12, name: 'Kunci tanam biasa — pintu kamar dan utama', unit: 'buah', qty: 4, basis: '4 daun pintu (utama + 3 kamar tidur).', code: '3.11.4.2' },
+  { s: 12, name: 'Grendel — pintu KM/WC', unit: 'buah', qty: 3, basis: '3 daun pintu KM.', code: '3.11.4.20' },
+  { s: 12, name: 'Handle pintu lever — pintu kamar dan utama', unit: 'set', qty: 4, basis: '4 set mengikuti daun berkunci.' },
+  { s: 12, name: 'Door stopper lantai', unit: 'buah', qty: 8, basis: '1 per daun pintu = 8 buah.' },
+
+  // ---------- 13. Instalasi Listrik ----------
+  { s: 13, name: 'Main Distribution Panel (MDP) wall mounted', unit: 'unit', qty: 1, basis: '1 panel utama di lantai 1 dekat meter PLN.', code: '5.1.2.4' },
+  { s: 13, name: 'Sub Distribution Panel (SDP) wall mounted', unit: 'unit', qty: 2, basis: '1 panel per lantai = 2 unit.', code: '5.1.2.6' },
+  { s: 13, name: 'MCB box', unit: 'unit', qty: 2, basis: 'Mengikuti jumlah SDP: 2 unit.', code: '5.1.2.24' },
+  { s: 13, name: 'MCB dan RCCB/ELCB pengaman grup sirkuit', unit: 'buah', qty: 18, basis: '16 MCB grup + 2 RCCB (jadwal sirkuit contoh).' },
+  { s: 13, name: 'Instalasi titik lampu', unit: 'titik', qty: 19, basis: 'Jadwal ruang: lantai 1 = 10 titik, lantai 2 = 9 titik (termasuk balkon dan teras).', code: '5.3.1.1' },
+  { s: 13, name: 'Downlight LED 5 inch 14,5 watt', unit: 'unit', qty: 12, basis: 'Ruang utama dua lantai: 12 titik downlight.', code: '5.3.1.3' },
+  { s: 13, name: 'Fitting E27 + lampu LED 10 watt', unit: 'unit', qty: 7, basis: 'KM, teras, gudang, balkon: 7 titik.', code: '5.3.1.4' },
+  { s: 13, name: 'Saklar tunggal', unit: 'unit', qty: 7, basis: 'Jadwal titik saklar contoh: 7 unit.', code: '5.1.5.1' },
+  { s: 13, name: 'Saklar ganda', unit: 'unit', qty: 3, basis: 'Jadwal titik saklar contoh: 3 unit.', code: '5.1.5.2' },
+  { s: 13, name: 'Saklar triple', unit: 'unit', qty: 1, basis: 'Ruang keluarga lantai 1: 1 unit.', code: '5.1.5.3' },
+  { s: 13, name: 'Stop kontak 1 phase 10 A', unit: 'unit', qty: 15, basis: 'Lantai 1: 8 titik, lantai 2: 7 titik (jadwal ruang).', code: '5.1.5.9' },
+  { s: 13, name: 'Stop kontak 1 phase 10 A dengan cover (area basah)', unit: 'unit', qty: 3, basis: 'Dapur dan KM: 3 titik tahan cipratan.', code: '5.1.5.10' },
+  { s: 13, name: "Kabel NYY 1 × 10 mm² — feeder MDP", unit: "m'", qty: 20, basis: 'Jalur meter PLN ke MDP ±20 m (asumsi rute contoh).', code: '5.1.1.1.3' },
+  { s: 13, name: 'Kabel instalasi NYM 3 × 2,5 mm² sirkuit stop kontak', unit: "m'", qty: 170, basis: 'Estimasi rute sirkuit stop kontak dua lantai ±170 m (asumsi routing contoh).', code: '5.1.1.3.7' },
+  { s: 13, name: 'Pipa conduit PVC 20 mm instalasi dalam dinding/plafon', unit: "m'", qty: 280, basis: 'Estimasi rute conduit titik lampu dan stop kontak ±280 m.' },
+  { s: 13, name: 'Air terminal penangkal petir', unit: 'unit', qty: 1, basis: '1 terminal di bubungan tertinggi.', code: '5.2.1' },
+  { s: 13, name: 'Grounding test box sistem pembumian', unit: 'unit', qty: 1, basis: '1 titik uji pembumian di halaman.', code: '5.2.6' },
+  { s: 13, name: 'Batang arde (ground rod) dan kabel BC pembumian', unit: 'set', qty: 1, basis: '1 set rod + kabel BC ke MDP (asumsi contoh).' },
+  { s: 13, name: 'Lampu darurat (emergency) tangga dan koridor', unit: 'unit', qty: 2, basis: '2 titik: tangga dan koridor lantai 2.' },
+
+  // ---------- 14. Plambing — Air Bersih ----------
+  { s: 14, name: "Pipa PPR PN 10 diameter 3/4 inci — distribusi utama", unit: "m'", qty: 38, basis: 'Rute contoh: tandon → shaft → KM/dapur dua lantai ±38 m.', code: '6.4.3.2' },
+  { s: 14, name: "Pipa PPR PN 10 diameter 1/2 inci — cabang titik air", unit: "m'", qty: 50, basis: 'Cabang ke 11 titik air ±50 m (asumsi rute contoh).', code: '6.4.3.1' },
+  { s: 14, name: "Pipa PVC AW diameter 1 inci — jalur pompa ke tandon", unit: "m'", qty: 15, basis: 'Dari pompa/sumur ke roof tank ±15 m.', code: '6.4.1.3' },
+  { s: 14, name: 'Ball valve diameter 1/2 inci', unit: 'unit', qty: 6, basis: 'Katup isolasi per KM (3), dapur (1), tandon (1), taman (1) = 6 buah.', code: '6.5.2.1' },
+  { s: 14, name: 'Check valve jalur pompa', unit: 'buah', qty: 1, basis: '1 buah di discharge pompa.', code: '6.5.3.1' },
+  { s: 14, name: 'Roof tank fiberglass kapasitas 2 m3', unit: 'unit', qty: 1, basis: '1 tandon atap (kapasitas contoh 2.000 liter, di atas plat dak).', code: '6.1.1.1' },
+  { s: 14, name: 'Pompa air rumah tangga (jet pump) termasuk panel kecil', unit: 'unit', qty: 1, basis: '1 unit pompa transfer ke roof tank.' },
+  { s: 14, name: 'Sambungan PDAM dan meteran air', unit: 'ls', qty: 1, basis: '1 paket sambungan baru contoh.' },
+  { s: 14, name: 'Pelampung otomatis (float valve) roof tank', unit: 'buah', qty: 1, basis: '1 buah di roof tank.' },
+  { s: 14, name: 'Kran diameter 1/2 inci — titik air KM, dapur, taman', unit: 'buah', qty: 8, basis: 'KM 3 + dapur 2 + wastafel luar 1 + taman 2 = 8 buah.', code: '3.18.6.2.1' },
+  { s: 14, name: "Pipa air panas PPR PN 20 — KM lantai 2 dan dapur", unit: "m'", qty: 20, basis: 'Rute contoh dari water heater: ±20 m. Memerlukan kelas pipa PN 20.' },
+];

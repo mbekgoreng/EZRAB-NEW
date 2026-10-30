@@ -36,7 +36,12 @@ import {
   resolveInitialRabItems,
   computeSeedCostSummary,
   markSeedProject,
+  injectOnceById,
 } from '../lib/demoSeed';
+import {
+  PREMIUM_DEMO_PROJECT,
+  PREMIUM_DEMO_RAB_ITEMS,
+} from '../data/premiumDemoData';
 import { cloneProjectItems } from '../lib/projectClone';
 import {
   saveVersioned,
@@ -619,7 +624,20 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
           /* abaikan */
         }
       }
-      return resolved.projects;
+      // Premium Demo: injeksi satu kali (flag sendiri) — proyek demo lengkap
+      // ditambahkan ke instalasi lama maupun baru, tanpa respawn setelah
+      // pengguna menghapusnya (aturan P0-B yang sama).
+      const PREMIUM_FLAG = 'ezrab_premium_demo_v1';
+      const alreadyInjected = localStorage.getItem(PREMIUM_FLAG) === '1';
+      const injected = injectOnceById(resolved.projects, [PREMIUM_DEMO_PROJECT], alreadyInjected);
+      if (injected.shouldMarkInjected) {
+        try {
+          localStorage.setItem(PREMIUM_FLAG, '1');
+        } catch {
+          /* abaikan */
+        }
+      }
+      return injected.items;
     } catch {
       return DEFAULT_PORTFOLIO_PROJECTS;
     }
@@ -666,7 +684,24 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!result.ok && (result.error === 'CORRUPT' || result.error === 'MIGRATION_FAILED')) {
       console.warn(`[EZRAB] Storage ${result.error} for key ezrab_prod_rab_items; using fallback.`);
     }
-    return resolveInitialRabItems(result, DEFAULT_FLAGSHIP_RAB_ITEMS);
+    const baseItems = resolveInitialRabItems(result, DEFAULT_FLAGSHIP_RAB_ITEMS);
+    // Premium Demo: item-itemnya diinjeksikan satu kali dengan flag sendiri
+    // (terpisah dari flag proyek agar urutan inisialisasi tidak saling kunci).
+    try {
+      const ITEMS_FLAG = 'ezrab_premium_demo_items_v1';
+      const alreadyInjected = localStorage.getItem(ITEMS_FLAG) === '1';
+      const injected = injectOnceById(baseItems, PREMIUM_DEMO_RAB_ITEMS, alreadyInjected);
+      if (injected.shouldMarkInjected) {
+        try {
+          localStorage.setItem(ITEMS_FLAG, '1');
+        } catch {
+          /* abaikan */
+        }
+      }
+      return injected.items;
+    } catch {
+      return baseItems;
+    }
   });
 
   // 7. Schedule Tasks Store
