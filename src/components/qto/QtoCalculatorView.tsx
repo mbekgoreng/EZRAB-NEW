@@ -516,6 +516,10 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   const [filterUnit, setFilterUnit] = useState<string>('ALL');
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const [collapsedDomains, setCollapsedDomains] = useState<Record<string, boolean>>({});
+  // Layout konsep final (acc owner 2026-10-30): langkah formula
+  // tersembunyi di balik tombol "?" pada header workbench.
+  const [showFormulaSteps, setShowFormulaSteps] = useState(false);
+  const [activeDomainChip, setActiveDomainChip] = useState<string | null>(null);
 
   const recordRecent = (id: string) => {
     setRecentIds((prev) => {
@@ -556,6 +560,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   const handleSelectCalculator = (id: string) => {
     setSelectedCalcId(id);
     setEditingQtoId(null);
+    setShowFormulaSteps(false);
     recordRecent(id);
 
     const cat = CALCULATOR_CATEGORIES.find((c) => c.items.some((it) => it.id === id));
@@ -1516,14 +1521,56 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
         </div>
       </div>
 
-      {/* 3. WORKSTATION SPLIT VIEW (LEFT: SATU DAFTAR DOMAIN -> KATEGORI -> ITEM, RIGHT: ACTIVE WORKBENCH) */}
+      {/* 3. ALUR VERTIKAL (konsep final acc owner 2026-10-30): DAFTAR KALKULATOR
+          (panel atas) -> ILUSTRASI LEBAR PENUH -> WORKBENCH KALKULATOR AKTIF */}
       <div className="ezrab-workstation-split">
         {/* =========================================================================
-            LEFT COLUMN: CALCULATOR CATALOG & REALTIME FILTER PANE
+            PANEL ATAS: DAFTAR KALKULATOR (CHIP DOMAIN + CARI + LIST)
            ========================================================================= */}
         <div className="ezrab-workstation-sidebar">
           {/* Top Controls: Search + Unit Filter + Status & Expand/Collapse */}
           <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* Chip Domain — pintasan membuka satu kelompok domain pada
+                daftar di bawahnya (murni navigasi expand/collapse). */}
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {domainGroups.map((domain) => {
+                const isActive = activeDomainChip === domain.id;
+                return (
+                  <button
+                    key={domain.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveDomainChip(domain.id);
+                      setCollapsedDomains(() => {
+                        const next: Record<string, boolean> = {};
+                        domainGroups.forEach((d) => { next[d.id] = d.id !== domain.id; });
+                        return next;
+                      });
+                    }}
+                    style={{
+                      height: '28px',
+                      padding: '0 10px',
+                      borderRadius: 'var(--ez-radius-pill)',
+                      background: isActive ? 'var(--ez-color-primary)' : 'var(--ez-color-surface-secondary)',
+                      border: isActive ? '1px solid var(--ez-color-primary)' : '1px solid var(--ez-color-border-line)',
+                      color: isActive ? '#FFFFFF' : 'var(--ez-color-text-body)',
+                      fontSize: '11.5px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      transition: 'all 0.12s ease',
+                    }}
+                    title={`Buka kelompok ${domain.name}`}
+                  >
+                    <domain.icon size={13} />
+                    <span>{domain.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+
             {/* Search Bar */}
             <div style={{ position: 'relative', width: '100%' }}>
               <Search
@@ -2002,8 +2049,46 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
           </div>
         </div>
 
+          {/* Ilustrasi Pekerjaan — lebar penuh: di bawah daftar kalkulator,
+              di atas workbench (konsep final acc owner 2026-10-30). */}
+            {/* Ilustrasi Pekerjaan — gambar render-style sebagai satu-satunya
+                visual kalkulator (diagram CAD sudah diganti ilustrasi). */}
+            {activeIllustration && (
+              <div
+                style={{
+                  background: 'var(--ez-color-surface)',
+                  border: '1px solid #EEF1F6',
+                  borderRadius: '20px',
+                  padding: '14px',
+                  boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
+                  minWidth: 0,
+                }}
+              >
+                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em', fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: '10px' }}>
+                  Ilustrasi Pekerjaan
+                </div>
+                <figure
+                  style={{
+                    margin: 0,
+                    border: '1px solid #EEF1F6',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    background: 'var(--ez-color-surface)',
+                  }}
+                >
+                  <img
+                    src={activeIllustration.src}
+                    alt={activeIllustration.title}
+                    title={activeIllustration.title}
+                    loading="eager"
+                    style={{ width: '100%', height: 'auto', display: 'block' }}
+                  />
+                </figure>
+              </div>
+            )}
+
         {/* =========================================================================
-            RIGHT COLUMN: ACTIVE CALCULATOR WORKBENCH (FULL WORKING ENGINE)
+            WORKBENCH KALKULATOR AKTIF (MESIN HITUNG PENUH)
            ========================================================================= */}
         <div
           id="active-calculator-workbench"
@@ -2095,6 +2180,96 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 <RefreshCw size={12} />
                 <span>Reset</span>
               </button>
+
+              {/* Tombol "?" — formula & langkah perhitungan tersembunyi
+                  di balik tombol ini (konsep final acc owner 2026-10-30). */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowFormulaSteps((prev) => !prev)}
+                  aria-expanded={showFormulaSteps}
+                  aria-label="Lihat formula dan langkah perhitungan"
+                  title="Formula & Langkah Perhitungan"
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: showFormulaSteps ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-primary)',
+                    border: 'none',
+                    color: '#FFFFFF',
+                    fontSize: '16px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 8px rgba(37, 99, 235, 0.35)',
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  }}
+                >
+                  ?
+                </button>
+                {showFormulaSteps && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 10px)',
+                      right: 0,
+                      width: 'min(580px, 92vw)',
+                      maxHeight: '62vh',
+                      overflowY: 'auto',
+                      background: 'var(--ez-color-surface)',
+                      border: '1px solid #EEF1F6',
+                      borderRadius: '16px',
+                      padding: '14px',
+                      boxShadow: '0 16px 44px rgba(15, 23, 42, 0.20)',
+                      zIndex: 70,
+                      textAlign: 'left',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                      <Calculator size={14} color="var(--ez-hue-blue-text)" />
+                      <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                        Formula &amp; Langkah Perhitungan
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', margin: '0 0 10px', lineHeight: 1.4 }}>
+                      Hasil audit engine untuk kalkulator terpilih.
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {calculationResult.formulaSteps.length === 0 ? (
+                        <div style={{ fontSize: '12px', color: '#94A3B8', fontStyle: 'italic' }}>
+                          Belum ada langkah formula untuk kalkulator ini.
+                        </div>
+                      ) : (
+                        calculationResult.formulaSteps.map((step) => (
+                          <div
+                            key={step.stepNumber}
+                            style={{
+                              background: 'var(--ez-color-surface-secondary)',
+                              borderRadius: '10px',
+                              padding: '8px 10px',
+                              border: '1px solid #EEF1F6',
+                              fontSize: '11.5px',
+                              minWidth: 0,
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontWeight: 700, color: 'var(--ez-color-text-strong)' }}>
+                              <span style={{ minWidth: 0, overflowWrap: 'break-word', wordBreak: 'break-word' }}>{step.stepNumber}. {step.description}</span>
+                              <span style={{ color: 'var(--ez-color-primary)', fontFamily: 'monospace', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                                {formatNumberId(step.calculatedValue, 2)} {step.unit}
+                              </span>
+                            </div>
+                            <div style={{ fontFamily: 'monospace', color: 'var(--ez-color-text-muted)', fontSize: '11px', marginTop: '2px', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+                              = {step.formulaText}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -2554,96 +2729,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             </div>
           </div>
 
-          {/* Ilustrasi Pekerjaan — satu kolom penuh di bawah formulir. */}
-            {/* Ilustrasi Pekerjaan — gambar render-style sebagai satu-satunya
-                visual kalkulator (diagram CAD sudah diganti ilustrasi). */}
-            {activeIllustration && (
-              <div
-                style={{
-                  background: 'var(--ez-color-surface)',
-                  border: '1px solid #EEF1F6',
-                  borderRadius: '20px',
-                  padding: '14px',
-                  boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
-                  minWidth: 0,
-                }}
-              >
-                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em', fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: '10px' }}>
-                  Ilustrasi Pekerjaan
-                </div>
-                <figure
-                  style={{
-                    margin: 0,
-                    border: '1px solid #EEF1F6',
-                    borderRadius: '12px',
-                    overflow: 'hidden',
-                    background: 'var(--ez-color-surface)',
-                  }}
-                >
-                  <img
-                    src={activeIllustration.src}
-                    alt={activeIllustration.title}
-                    title={activeIllustration.title}
-                    loading="eager"
-                    style={{ width: '100%', height: 'auto', display: 'block' }}
-                  />
-                </figure>
-              </div>
-            )}
-
-          {/* Formula & Langkah Perhitungan — selalu terlihat, di bawah ilustrasi */}
-            {/* Formula & Langkah Perhitungan — selalu terlihat */}
-            <div
-              style={{
-                background: 'var(--ez-color-surface)',
-                border: '1px solid #EEF1F6',
-                borderRadius: '20px',
-                padding: '14px',
-                boxShadow: '0 4px 20px rgba(38, 54, 75, 0.045)',
-                minWidth: 0,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                <Calculator size={14} color="var(--ez-hue-blue-text)" />
-                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-primary)', textTransform: 'uppercase', letterSpacing: '0.03em', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                  Formula &amp; Langkah Perhitungan
-                </span>
-              </div>
-              <p style={{ fontSize: '11px', color: 'var(--ez-color-text-muted)', margin: '0 0 10px', lineHeight: 1.4 }}>
-                Selalu terlihat — hasil audit engine untuk kalkulator terpilih.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {calculationResult.formulaSteps.length === 0 ? (
-                  <div style={{ fontSize: '12px', color: '#94A3B8', fontStyle: 'italic' }}>
-                    Belum ada langkah formula untuk kalkulator ini.
-                  </div>
-                ) : (
-                  calculationResult.formulaSteps.map((step) => (
-                    <div
-                      key={step.stepNumber}
-                      style={{
-                        background: 'var(--ez-color-surface-secondary)',
-                        borderRadius: '10px',
-                        padding: '8px 10px',
-                        border: '1px solid #EEF1F6',
-                        fontSize: '11.5px',
-                        minWidth: 0,
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', fontWeight: 700, color: 'var(--ez-color-text-strong)' }}>
-                        <span style={{ minWidth: 0, overflowWrap: 'break-word', wordBreak: 'break-word' }}>{step.stepNumber}. {step.description}</span>
-                        <span style={{ color: 'var(--ez-color-primary)', fontFamily: 'monospace', flexShrink: 0, whiteSpace: 'nowrap' }}>
-                          {formatNumberId(step.calculatedValue, 2)} {step.unit}
-                        </span>
-                      </div>
-                      <div style={{ fontFamily: 'monospace', color: 'var(--ez-color-text-muted)', fontSize: '11px', marginTop: '2px', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
-                        = {step.formulaText}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
         </div>
       </div>
 
