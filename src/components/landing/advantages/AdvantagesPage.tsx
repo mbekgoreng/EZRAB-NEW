@@ -43,9 +43,7 @@ const Section: React.FC<{
         {title}
       </h2>
       {sub && <p className="adv-sub adv-reveal">{sub}</p>}
-      <div className="adv-reveal" style={{ ['--adv-d' as any]: '0.08s' }}>
-        {children}
-      </div>
+      <div>{children}</div>
     </div>
   </section>
 );

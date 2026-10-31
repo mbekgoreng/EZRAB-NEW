@@ -12,12 +12,12 @@ import {
 /* ------------------------------------------------------------------ S02 */
 export const ProblemSection: React.FC = () => (
   <div className="adv-problem-grid">
-    <div className="adv-problem-narrative adv-reveal">
-      <p className="adv-body">
+    <div className="adv-problem-narrative">
+      <p className="adv-body adv-reveal">
         Estimasi konstruksi jarang gagal karena salah hitung. Ia gagal karena <strong>hubungannya putus</strong>:
         antara gambar dan volume, antara volume dan harga, antara harga dan sumbernya.
       </p>
-      <p className="adv-body adv-muted">
+      <p className="adv-body adv-muted adv-reveal" style={{ ['--adv-d' as any]: '0.08s' }}>
         Lima pola ini berulang di hampir setiap proyek. EZRAB dirancang untuk menjaga agar kelimanya tetap
         terhubung — bukan dengan janji otomatisasi penuh, melainkan dengan alur yang tercatat.
       </p>
@@ -39,16 +39,22 @@ export const ProblemSection: React.FC = () => (
 /* ------------------------------------------------------------------ S03 */
 export const WorkflowSection: React.FC<{ onOpenWorkspace: () => void }> = ({ onOpenWorkspace }) => (
   <div>
-    <div className="adv-flow adv-reveal">
+    <div className="adv-flow">
       {WORKFLOW_STEPS.map((s, i) => (
         <React.Fragment key={s.no}>
-          <div className="adv-flow-step">
+          <div className="adv-flow-step adv-reveal" style={{ ['--adv-d' as any]: `${i * 0.07}s` }}>
             <span className="adv-flow-no">{s.no}</span>
             <span className="adv-flow-tag">{s.tag}</span>
             <h3 className="adv-h3">{s.title}</h3>
             <p className="adv-body-sm adv-muted">{s.desc}</p>
           </div>
-          {i < WORKFLOW_STEPS.length - 1 && <span className="adv-flow-arrow" aria-hidden="true" />}
+          {i < WORKFLOW_STEPS.length - 1 && (
+            <span
+              className="adv-flow-arrow adv-reveal"
+              style={{ ['--adv-d' as any]: `${i * 0.07 + 0.05}s` }}
+              aria-hidden="true"
+            />
+          )}
         </React.Fragment>
       ))}
     </div>
@@ -68,9 +74,9 @@ export const WorkflowSection: React.FC<{ onOpenWorkspace: () => void }> = ({ onO
 /* ------------------------------------------------------------------ S04 */
 export const PriceIntegritySection: React.FC = () => (
   <div>
-    <div className="adv-price-table adv-reveal" role="table" aria-label="Kategori sumber harga">
-      {PRICE_CATEGORIES.map((c) => (
-        <div key={c.name} className="adv-price-row" role="row">
+    <div className="adv-price-table" role="table" aria-label="Kategori sumber harga">
+      {PRICE_CATEGORIES.map((c, i) => (
+        <div key={c.name} className="adv-price-row adv-reveal" style={{ ['--adv-d' as any]: `${i * 0.06}s` }} role="row">
           <span className="adv-price-chip" style={{ color: c.color, background: c.bg, borderColor: c.border }}>
             {c.name}
           </span>
@@ -79,15 +85,15 @@ export const PriceIntegritySection: React.FC = () => (
         </div>
       ))}
     </div>
-    <div className="adv-rules adv-reveal">
-      <div className="adv-rule">
+    <div className="adv-rules">
+      <div className="adv-rule adv-reveal">
         <ShieldAlert size={18} />
         <p className="adv-body-sm">
           <strong>Harga yang belum tersedia tidak diperlakukan sebagai nol.</strong> Ia tampil sebagai
           &ldquo;belum diisi&rdquo; dan wajib dilengkapi — total tidak pernah diam-diam mengecil.
         </p>
       </div>
-      <div className="adv-rule">
+      <div className="adv-rule adv-reveal" style={{ ['--adv-d' as any]: '0.08s' }}>
         <ShieldAlert size={18} />
         <p className="adv-body-sm">
           <strong>Satuan yang tidak kompatibel tidak dikalikan diam-diam.</strong> Sistem menandainya untuk
@@ -121,9 +127,9 @@ const AI_LANES = [
 ];
 
 export const AiOversightSection: React.FC = () => (
-  <div className="adv-lanes adv-reveal">
-    {AI_LANES.map((lane) => (
-      <div key={lane.title} className={`adv-lane adv-lane-${lane.tone}`}>
+  <div className="adv-lanes">
+    {AI_LANES.map((lane, i) => (
+      <div key={lane.title} className={`adv-lane adv-lane-${lane.tone} adv-reveal`} style={{ ['--adv-d' as any]: `${i * 0.09}s` }}>
         <h3 className="adv-h3">{lane.title}</h3>
         <p className="adv-body-sm adv-muted">{lane.desc}</p>
         <ul className="adv-check-list">
@@ -182,7 +188,7 @@ export const RolesSection: React.FC = () => {
           </button>
         ))}
       </div>
-      <div className="adv-role-panel" role="tabpanel">
+      <div key={role.id} className="adv-role-panel adv-role-panel-anim" role="tabpanel">
         <p className="adv-body adv-role-scenario">{role.scenario}</p>
         <ul className="adv-check-list adv-role-points">
           {role.points.map((pt) => (
@@ -222,13 +228,13 @@ export const FinalCtaSection: React.FC<{
   onOpenFeatures: () => void;
   onOpenWorkspace: () => void;
 }> = ({ onOpenFeatures, onOpenWorkspace }) => (
-  <div className="adv-final adv-reveal">
-    <p className="adv-eyebrow adv-eyebrow-center">Mulai dengan benar</p>
-    <h2 className="adv-h2 adv-h2-center">Mulai dari Data yang Jelas. Bangun Estimasi dengan Lebih Terstruktur.</h2>
-    <p className="adv-lead adv-lead-center">
+  <div className="adv-final">
+    <p className="adv-eyebrow adv-eyebrow-center adv-reveal">Mulai dengan benar</p>
+    <h2 className="adv-h2 adv-h2-center adv-reveal" style={{ ['--adv-d' as any]: '0.06s' }}>Mulai dari Data yang Jelas. Bangun Estimasi dengan Lebih Terstruktur.</h2>
+    <p className="adv-lead adv-lead-center adv-reveal" style={{ ['--adv-d' as any]: '0.12s' }}>
       Kenali cara kerja EZRAB dan temukan alat yang sesuai dengan kebutuhan proyek Anda.
     </p>
-    <div className="adv-hero-ctas adv-ctas-center">
+    <div className="adv-hero-ctas adv-ctas-center adv-reveal" style={{ ['--adv-d' as any]: '0.18s' }}>
       <button type="button" className="adv-btn-primary" onClick={onOpenFeatures}>
         Jelajahi Fitur <ArrowRight size={15} />
       </button>
