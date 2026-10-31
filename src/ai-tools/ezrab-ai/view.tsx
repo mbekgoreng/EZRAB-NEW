@@ -64,6 +64,7 @@ import '../../ai-credits/ai-credits.css';
 import { useCreditSimulation } from '../../ai-credits/useCreditSimulation';
 import { tariffFor } from '../../ai-credits/config';
 import { CreditEstimateBadge } from '../../ai-credits/components/CreditEstimateBadge';
+import { CreditBalance } from '../../ai-credits/components/CreditBalance';
 import { CreditTopUpModal } from '../../ai-credits/components/CreditTopUpModal';
 
 // Game Space is lazy-loaded: three.js + game code split into their own chunk,
@@ -500,6 +501,16 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   const recognitionRef = useRef<EzrabSpeechRecognition | null>(null);
   const sttBaseRef = useRef('');
   const sttFinalRef = useRef('');
+  /* Penanda auto-kirim STT: diisi true HANYA oleh stopListening (tekanan
+   * tombol mic/selesai oleh pengguna sendiri). Recognition yang berakhir
+   * alami (jeda bicara — continuous=false), karena error, atau unmount
+   * TIDAK pernah memasang penanda ini → tidak ada kirim otomatis. */
+  const sttAutoSendRef = useRef(false);
+  /* Nomor sesi dikte — dinaikkan setiap toggleMic memulai sesi baru.
+   * onend dari sesi lama yang tiba SETELAH sesi baru dimulai (klik
+   * start/stop cepat) harus diabaikan total: ref teks & penanda kini
+   * milik sesi baru, dan end basi tidak boleh mengirim apa pun. */
+  const sttSessionRef = useRef(0);
 
   /* (Dihapus 2026-10-26 bersama jalur lampiran gambar: tidak ada lagi
    * object URL yang perlu dikelola — lampiran kini teks murni di state.) */
@@ -1043,6 +1054,14 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     }
   };
 
+  /* Cermin submit() versi render terbaru untuk callback yang dibuat
+   * sekali dan hidup lebih lama dari render-nya — khususnya
+   * recognition.onend (dibuat saat mic dinyalakan; closure submit versi
+   * render itu bisa basi: busy/messages sudah berubah). Mengikuti pola
+   * projectRef/saveStatusRef di file ini. */
+  const submitRef = useRef(submit);
+  submitRef.current = submit;
+
   /* ---- Kontrak navigasi AI terpusat (Tahap B: prefill default).
    * Entry point dari menu lain mendaftarkan initialPrompt lewat requestAiEntry().
    * - sendMode 'prefill' (default): prompt dimasukkan ke kotak input agar
@@ -1516,12 +1535,23 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
   };
 
   /* ---------- Voice input (Web Speech API) ---------- */
+  /* Selesai dikte atas inisiatif pengguna — satu-satunya pemanggil fungsi
+   * ini adalah toggleMic saat sedang mendengarkan (tombol mic = tombol
+   * "selesai"). Pasang penanda auto-kirim, lalu stop() — BUKAN abort():
+   * stop() membiarkan engine menyelesaikan & mengirim hasil final
+   * terakhir sebelum onend, sedangkan abort() membuangnya (kata terakhir
+   * pengguna hilang dari teks yang terkirim). sttFinalRef SENGAJA tidak
+   * dikosongkan di sini: onend yang mengonsumsinya untuk menyusun teks
+   * kirim, lalu membersihkannya. */
   const stopListening = () => {
     const rec = recognitionRef.current;
     recognitionRef.current = null;
-    sttFinalRef.current = '';
     setListening(false);
-    if (rec) { try { rec.abort(); } catch { /* abaikan */ } }
+    if (rec) {
+      sttAutoSendRef.current = true;
+      try { rec.stop(); }
+      catch { try { rec.abort(); } catch { /* abaikan */ } }
+    }
   };
 
   const toggleMic = () => {
@@ -1539,6 +1569,11 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
     rec.continuous = false;
     rec.interimResults = true;
     rec.maxAlternatives = 1;
+    sttSessionRef.current += 1;
+    const mySession = sttSessionRef.current;
+    /* Sesi baru tidak mewarisi niat kirim sesi sebelumnya — penanda
+     * hanya boleh lahir dari stopListening pada sesi ini sendiri. */
+    sttAutoSendRef.current = false;
     sttBaseRef.current = input;
     sttFinalRef.current = '';
     recognitionRef.current = rec;
@@ -1567,7 +1602,28 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
         }]);
       }
     };
-    rec.onend = () => { recognitionRef.current = null; sttFinalRef.current = ''; setListening(false); };
+    rec.onend = () => {
+      /* End basi dari sesi sebelumnya (pengguna sudah memulai dikte
+       * baru): abaikan sepenuhnya — jangan sentuh state, ref teks,
+       * maupun penanda milik sesi yang sedang berjalan. */
+      if (mySession !== sttSessionRef.current) return;
+      recognitionRef.current = null;
+      setListening(false);
+      /* Konsumsi penanda SEKALI PAKAI apa pun hasilnya, supaya akhir
+       * sesi berikutnya (alami / error) tidak mewarisi niat kirim ini. */
+      const autoSend = sttAutoSendRef.current;
+      sttAutoSendRef.current = false;
+      const finalText = sttFinalRef.current;
+      sttFinalRef.current = '';
+      if (!autoSend) return;
+      const composed = [sttBaseRef.current, finalText].filter((p) => p.trim()).join(' ').trim();
+      if (!composed) return;
+      /* Jalur yang sama persis dengan Enter / tombol Kirim, lewat cermin
+       * submit terbaru: guard kosong & sibuk milik submit berlaku apa
+       * adanya — bila AI sedang menjawab, submit menolak sendiri dan
+       * teks tetap di kotak input (tidak dipaksa, tidak hilang). */
+      void submitRef.current(composed);
+    };
     try { rec.start(); setListening(true); }
     catch { recognitionRef.current = null; setListening(false); }
   };
@@ -1738,6 +1794,9 @@ export const EzrabAiView: React.FC<EzrabAiViewProps> = ({
           <div className="ezchat2-name">Ezrab Chat AI</div>
         </div>
         <div className="ezchat2-actions">
+          {/* Saldo kredit AI (simulasi) — selalu terlihat di header chat;
+              tombol + membuka modal top-up simulasi. */}
+          <CreditBalance compact />
           {/* Satu-satunya kontrol mode: dropdown header (mode nyata:
               Cepat/fast dan Mendalam/advanced). Bukan daftar model
               provider — tidak ada nama model yang dikarang di sini. */}
