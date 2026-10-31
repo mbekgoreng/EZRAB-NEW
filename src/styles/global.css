@@ -741,6 +741,58 @@ img, svg {
   background: var(--ez-hue-blue-bg-deep);
 }
 
+/* Daftar kalkulator sebagai KOTAK (owner 2026-10-30): grid kartu di dalam
+   panel yang dapat di-scroll; kartu terpilih mengikuti fokus keyboard
+   (tekan Tab berpindah kartu = berpindah kalkulator, diatur onFocus di TSX). */
+.ezrab-calc-card-grid {
+  padding: 6px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 6px;
+}
+
+.ezrab-calc-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 88px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--ez-color-border-line);
+  background: var(--ez-color-surface);
+  cursor: pointer;
+  user-select: none;
+  box-sizing: border-box;
+  transition: all 0.12s ease;
+}
+
+.ezrab-calc-card:hover {
+  background: var(--ez-hue-slate-bg);
+  border-color: #CBD5E1;
+}
+
+.ezrab-calc-card.active {
+  background: var(--ez-hue-blue-bg);
+  border-color: #2563EB;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.12);
+}
+
+.ezrab-calc-card.active:hover {
+  background: var(--ez-hue-blue-bg-deep);
+}
+
+.ezrab-calc-card:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: 1px;
+}
+
+@media (max-width: 640px) {
+  .ezrab-calc-card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
+
 /* ------------------------------------------------------------------
  * Dark-mode-safe helpers — pengganti bg-white / text-slate-* hardcoded
  * yang bocor di dark mode. Spesifisitas [data-theme]+class (0,2,0)

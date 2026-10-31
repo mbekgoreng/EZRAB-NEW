@@ -520,6 +520,9 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   // tersembunyi di balik tombol "?" pada header workbench.
   const [showFormulaSteps, setShowFormulaSteps] = useState(false);
   const [activeDomainChip, setActiveDomainChip] = useState<string | null>(null);
+  // Panel daftar kalkulator bisa diminimize (owner 2026-10-30): menyisakan
+  // bar header ramping berisi nama kalkulator aktif.
+  const [listMinimized, setListMinimized] = useState(false);
 
   const recordRecent = (id: string) => {
     setRecentIds((prev) => {
@@ -1165,6 +1168,10 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
   // Ilustrasi statis pekerjaan terpilih (bila ada di peta ilustrasi final).
   const activeIllustration = getCalculatorIllustration(selectedCalcId);
 
+  // Nama kalkulator aktif — ditampilkan pada bar panel saat diminimize.
+  const selectedCalcName =
+    groupedCalculators.flatMap((g) => g.items).find((i) => i.id === selectedCalcId)?.name ?? '';
+
   return (
     <div
       onPaste={handlePasteExcelData}
@@ -1528,6 +1535,41 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             PANEL ATAS: DAFTAR KALKULATOR (CHIP DOMAIN + CARI + LIST)
            ========================================================================= */}
         <div className="ezrab-workstation-sidebar">
+          {/* Bar header panel + minimize (owner 2026-10-30): panel daftar
+              dapat diminimize menyisakan bar ini saja. */}
+          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--ez-color-text-strong)', fontFamily: "'Plus Jakarta Sans', sans-serif", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
+              Daftar Kalkulator
+              {listMinimized && selectedCalcName && (
+                <span style={{ fontWeight: 600, color: 'var(--ez-color-text-muted)' }}>{` — ${selectedCalcName}`}</span>
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={() => setListMinimized((v) => !v)}
+              style={{
+                flexShrink: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                height: '24px',
+                padding: '0 8px',
+                borderRadius: 'var(--ez-radius-pill)',
+                background: 'var(--ez-color-surface-secondary)',
+                border: '1px solid var(--ez-color-border-line)',
+                color: 'var(--ez-color-text-slate)',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+              title={listMinimized ? 'Buka daftar kalkulator' : 'Minimize daftar kalkulator'}
+            >
+              {listMinimized ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
+              <span>{listMinimized ? 'Buka' : 'Minimize'}</span>
+            </button>
+          </div>
+          {!listMinimized && (
+          <>
           {/* Top Controls: Search + Unit Filter + Status & Expand/Collapse */}
           <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {/* Chip Domain — pintasan membuka satu kelompok domain pada
@@ -1930,7 +1972,7 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
 
                     {/* Category Items List */}
                     {!isCollapsed && (
-                      <div style={{ padding: '6px', display: 'flex', flexDirection: 'column', gap: '5px', flexShrink: 0 }}>
+                      <div className="ezrab-calc-card-grid">
                         {group.items.map((item) => {
                           const isSelected = selectedCalcId === item.id;
                           return (
@@ -1939,21 +1981,18 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                               role="button"
                               tabIndex={0}
                               onClick={() => handleSelectCalculator(item.id)}
+                              onFocus={() => { if (!isSelected) handleSelectCalculator(item.id); }}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') handleSelectCalculator(item.id);
                               }}
-                              className={`ezrab-calc-compact-row ${isSelected ? 'active' : ''}`}
-                              style={{
-                                flexShrink: 0,
-                                background: isSelected ? 'var(--ez-hue-blue-bg)' : 'var(--ez-color-surface)',
-                                border: isSelected ? '1.5px solid #2563EB' : '1px solid var(--ez-color-border-line)',
-                                borderLeft: isSelected ? '3.5px solid #2563EB' : '1px solid var(--ez-color-border-line)',
-                              }}
+                              className={`ezrab-calc-card ${isSelected ? 'active' : ''}`}
+                              title={item.name}
                             >
-                              {/* Left Info: Star + Name + Description */}
-                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', minWidth: 0, flex: 1, paddingRight: '8px' }}>
+                              {/* Bar atas kartu: bintang favorit (kiri) */}
+                              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
                                 <button
                                   type="button"
+                                  tabIndex={-1}
                                   onClick={(e) => toggleFavorite(item.id, e)}
                                   style={{
                                     background: 'transparent',
@@ -1970,31 +2009,6 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                                 >
                                   <Star size={13} fill={item.isFavorite ? '#F59E0B' : 'none'} />
                                 </button>
-
-                                <div style={{ minWidth: 0, flex: 1 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                    <span style={{ fontSize: '12px', fontWeight: isSelected ? 800 : 700, color: isSelected ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                      {item.name}
-                                    </span>
-                                  </div>
-                                  <p
-                                    style={{
-                                      fontSize: '10.5px',
-                                      color: 'var(--ez-color-text-muted)',
-                                      margin: '1px 0 0',
-                                      lineHeight: 1.3,
-                                      whiteSpace: 'nowrap',
-                                      overflow: 'hidden',
-                                      textOverflow: 'ellipsis',
-                                    }}
-                                  >
-                                    {item.shortDesc}
-                                  </p>
-                                </div>
-                              </div>
-
-                              {/* Right Badges: Unit + Action */}
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                                 <span
                                   style={{
                                     fontSize: '10.5px',
@@ -2008,10 +2022,30 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                                 >
                                   {item.primaryUnit}
                                 </span>
-                                <span style={{ color: isSelected ? 'var(--ez-color-primary)' : 'var(--ez-hue-slate-border)', display: 'flex', alignItems: 'center' }}>
-                                  <ChevronRight size={14} />
-                                </span>
+
                               </div>
+
+                              {/* Nama + deskripsi kartu (maks 2 baris) */}
+                              <div style={{ minWidth: 0, width: '100%' }}>
+                                <span style={{ fontSize: '12px', fontWeight: isSelected ? 800 : 700, color: isSelected ? 'var(--ez-color-primary-hover)' : 'var(--ez-color-text-primary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.3 }}>
+                                  {item.name}
+                                </span>
+                                <p
+                                  style={{
+                                    fontSize: '10.5px',
+                                    color: 'var(--ez-color-text-muted)',
+                                    margin: '2px 0 0',
+                                    lineHeight: 1.3,
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                  }}
+                                >
+                                  {item.shortDesc}
+                                </p>
+                              </div>
+
                             </div>
                           );
                         })}
@@ -2047,6 +2081,8 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
             </span>
             <span>Deterministic QTO</span>
           </div>
+          </>
+          )}
         </div>
 
           {/* Ilustrasi Pekerjaan — lebar penuh: di bawah daftar kalkulator,
