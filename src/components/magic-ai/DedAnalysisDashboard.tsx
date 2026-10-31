@@ -34,7 +34,8 @@ import {
 import { DocumentViewer } from './DocumentViewer';
 import { useProject } from '../../context/ProjectContext';
 import { useCurrency } from '../../context/CurrencyContext';
-import { honestVolume } from '../../engine/honestVolume';
+import { mapMagicAiItemToRabInput } from '../../ai-tools/ded-ai-estimate/finalizeMapping';
+import { csvRow } from '../../lib/csv';
 
 export interface DedAnalysisDashboardProps {
   currentProject?: Project | null;
@@ -103,6 +104,11 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
   const [editPrice, setEditPrice] = useState<string>('');
   const [isCommitting, setIsCommitting] = useState<boolean>(false);
   const [committedSuccess, setCommittedSuccess] = useState<boolean>(false);
+  /* P0-A: laporan commit jujur — berapa item masuk vs ditahan karena
+   * harga belum tersedia (ditahan = tidak dimasukkan sebagai Rp0). */
+  const [commitReport, setCommitReport] = useState<{ added: number; held: number } | null>(null);
+  /* Audit 2026-10-31 (F-4.1): pesan penolakan unggahan (ukuran/tipe). */
+  const [fileError, setFileError] = useState<string | null>(null);
 
   // Timer for elapsed seconds
   useEffect(() => {
@@ -122,20 +128,46 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
     }
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setIsSampleLoaded(false);
-      setOutputResult(null);
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (reader.result instanceof ArrayBuffer) {
-          setFileBuffer(reader.result);
-        }
-      };
-      reader.readAsArrayBuffer(file);
+    e.target.value = '';
+    if (!file) return;
+    /* Audit 2026-10-31 (F-4.1): jalur unggah ini sebelumnya tanpa pagar —
+     * berkas berapa pun ukurannya langsung dibaca ke memori (tab bisa
+     * kehabisan memori; PDF raksasa menjadi bom parser). Samakan dengan
+     * pagar jalur DED lain: maks 25 MB + magic bytes %PDF- (atribut
+     * accept saja mudah dilewati dan tidak membuktikan isi berkas). */
+    const MAX_PDF_MB = 25;
+    if (file.size === 0) {
+      setFileError('Berkas kosong — pilih PDF gambar kerja yang valid.');
+      return;
     }
+    if (file.size > MAX_PDF_MB * 1024 * 1024) {
+      setFileError(`Ukuran berkas ${(file.size / (1024 * 1024)).toFixed(1)} MB melebihi batas ${MAX_PDF_MB} MB.`);
+      return;
+    }
+    try {
+      const head = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+      const magic = String.fromCharCode(...head);
+      if (magic !== '%PDF-') {
+        setFileError('Berkas bukan PDF yang valid (tanda tangan %PDF- tidak ditemukan).');
+        return;
+      }
+    } catch {
+      setFileError('Berkas tidak dapat dibaca — coba pilih ulang.');
+      return;
+    }
+    setFileError(null);
+    setSelectedFile(file);
+    setIsSampleLoaded(false);
+    setOutputResult(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (reader.result instanceof ArrayBuffer) {
+        setFileBuffer(reader.result);
+      }
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   const handleLoadSampleDED = async (startAuto = false) => {
@@ -342,19 +374,23 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
       'Confidence',
       'Status',
     ];
-    const rows = outputResult.workItems.map((item, idx) => [
-      idx + 1,
-      `"${item.item || item.workName}"`,
-      `"${item.category}"`,
-      `"${item.specification || ''}"`,
-      item.quantity !== null ? item.quantity : '',
-      item.unit,
-      item.unitPrice || item.estimatedUnitPrice || '',
-      item.subtotal || item.estimatedSubtotal || '',
-      item.confidence,
-      item.status,
-    ]);
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    // Sel lewat helper CSV bersama (audit F-5.2): nama/spesifikasi berasal
+    // dari ekstraksi AI atas PDF unggahan — wajib lolos netralisasi formula.
+    const rows = outputResult.workItems.map((item, idx) =>
+      csvRow([
+        idx + 1,
+        item.item || item.workName,
+        item.category,
+        item.specification || '',
+        item.quantity !== null ? item.quantity : '',
+        item.unit,
+        item.unitPrice ?? item.estimatedUnitPrice ?? '',
+        item.subtotal ?? item.estimatedSubtotal ?? '',
+        item.confidence,
+        item.status || '',
+      ])
+    );
+    const csvContent = [csvRow(headers), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -370,27 +406,29 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
     setIsCommitting(true);
 
     try {
-      const itemsToAdd = outputResult.workItems.map((it) => ({
-        description: it.item || it.workName,
-        category: it.category,
-        // Fase 4A: quantity kosong/tidak valid -> 0, jangan fabrikasi 1.
-        volume: honestVolume(it.quantity),
-        unit: it.unit || 'ls',
-        unitPrice: it.unitPrice || it.estimatedUnitPrice || 0,
-        amount: honestVolume(it.quantity) * (it.unitPrice || it.estimatedUnitPrice || 0),
-        ahspCode: (it as any).ahspCode || '',
-        notes: it.specification || '',
-      }));
+      /* P0-A (D-02): pemetaan lewat mapper finalisasi kanonis
+       * (finalizeMapping). Item tanpa harga yang sah DITAHAN — tidak
+       * pernah lagi menjadi baris Rp0 berstatus resolved/VERIFIED —
+       * dan item berharga masuk berlabel Estimasi AI. Jumlah tertahan
+       * dilaporkan apa adanya lewat commitReport. */
+      const mapped = outputResult.workItems.map((it) => mapMagicAiItemToRabInput(it));
+      const itemsToAdd = mapped.filter((m): m is NonNullable<typeof m> => m !== null);
+      const heldCount = mapped.length - itemsToAdd.length;
 
-      if (bulkAddRabItems) {
-        bulkAddRabItems(itemsToAdd as any);
-      } else if (createRabItemDirect) {
-        itemsToAdd.forEach((item) => createRabItemDirect(item as any));
+      if (itemsToAdd.length > 0) {
+        if (bulkAddRabItems) {
+          bulkAddRabItems(itemsToAdd as any);
+        } else if (createRabItemDirect) {
+          itemsToAdd.forEach((item) => createRabItemDirect(item as any));
+        }
       }
 
-      setCommittedSuccess(true);
-      if (onCommitSuccess) {
-        onCommitSuccess([], outputResult.summary?.estimatedTotal ?? 0, currentProject?.id);
+      setCommitReport({ added: itemsToAdd.length, held: heldCount });
+      if (itemsToAdd.length > 0) {
+        setCommittedSuccess(true);
+        if (onCommitSuccess) {
+          onCommitSuccess([], outputResult.summary?.estimatedTotal ?? 0, currentProject?.id);
+        }
       }
     } catch (e) {
       console.error('Failed to commit items:', e);
@@ -606,6 +644,11 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
             className="hidden"
             onChange={handleFileChange}
           />
+          {fileError && (
+            <div className="w-full px-3 py-2 rounded-[8px] bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] text-[12px] font-semibold">
+              {fileError}
+            </div>
+          )}
 
           <div className="flex items-center min-w-0 deddash-x7">
             <div className="w-10 h-10 rounded-[10px] bg-[var(--ez-hue-red-bg)] text-[var(--ez-hue-rose-text)] flex items-center justify-center shrink-0 border border-[var(--ez-hue-rose-border)]">
@@ -870,6 +913,25 @@ export const DedAnalysisDashboard: React.FC<DedAnalysisDashboardProps> = ({
                   </button>
                 </div>
               </div>
+
+              {/* P0-A: laporan commit jujur — item tertahan tidak disembunyikan */}
+              {commitReport && (
+                <div
+                  className={`px-4 py-2.5 rounded-[8px] border text-[12px] font-semibold ${
+                    commitReport.added === 0
+                      ? 'bg-[#FEF2F2] border-[#FECACA] text-[#B91C1C]'
+                      : commitReport.held > 0
+                        ? 'bg-[#FFFBEB] border-[#FDE68A] text-[#92400E]'
+                        : 'bg-[#F0FDF4] border-[#BBF7D0] text-[#166534]'
+                  }`}
+                >
+                  {commitReport.added > 0
+                    ? `${commitReport.added} item masuk ke spreadsheet sebagai Estimasi AI (perlu verifikasi, bukan harga resmi AHSP).`
+                    : 'Tidak ada item yang dimasukkan ke spreadsheet.'}
+                  {commitReport.held > 0 &&
+                    ` ${commitReport.held} item ditahan karena harga belum tersedia — tidak dimasukkan sebagai Rp0. Tambahkan manual di spreadsheet setelah harganya diketahui.`}
+                </div>
+              )}
 
               {/* 2. Four Key Metric Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 deddash-x28">

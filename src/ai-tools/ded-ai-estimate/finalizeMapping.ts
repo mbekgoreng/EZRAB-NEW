@@ -34,6 +34,8 @@
 
 import type { DedAiItem, DedEstimationPolicy } from './types';
 import type { FullAiItem } from '../ded-full-ai/types';
+import type { AiEstimateWorkItem } from '../../ai-estimate/types';
+import { honestVolume } from '../../engine/honestVolume';
 import type { VerificationStatus } from '../../types';
 
 export interface DedFinalizeRabInput {
@@ -106,6 +108,51 @@ export function mapDedAiItemToRabInput(
   // (Cabang ini tidak terjangkau dari handler yang sudah menyaring
   // unitPrice null, tapi dipertahankan sebagai pertahanan eksplisit.)
   return null;
+}
+
+/**
+ * P0-A (D-02, persetujuan owner 2026-10-31) — mapper finalisasi untuk
+ * jalur Magic AI (`DedAnalysisDashboard.handleCommitToProject`).
+ *
+ * Jalur ini dulu memetakan harga dengan `unitPrice || estimatedUnitPrice
+ * || 0`, sehingga item yang harganya TIDAK TERSEDIA masuk RAB sebagai
+ * baris Rp0 berstatus resolved/VERIFIED. Mapper ini menutup jalur itu
+ * dengan kosakata yang sama seperti dua mapper di atas:
+ *
+ * - Pipeline Magic TIDAK PERNAH menghasilkan harga kanonis — sumber
+ *   harganya hanya 'AI_ESTIMATE' | 'UNRESOLVED'
+ *   (src/ai-estimate/types.ts). Karena itu item yang lolos selalu
+ *   'EZRAB_ASSUMPTION' + label 'Estimasi AI' + NEEDS_VERIFICATION, dan
+ *   `ahspCode` TIDAK PERNAH diteruskan dari jalur ini (meneruskannya
+ *   akan mengesankan kaitan resmi yang tidak pernah tervalidasi).
+ * - Item ditahan (null) bila: status BLOCKED (total pipeline sendiri
+ *   mengecualikannya), priceSource 'UNRESOLVED', priceStatus
+ *   'PRICE_UNRESOLVED', atau harga efektif tidak ada/tidak valid.
+ *   Harga efektif dibaca nullish (`??`), bukan truthiness.
+ * - Harga <= 0 ditahan mengikuti aturan domain pipeline sendiri
+ *   (aiEstimateCalculator: harga <= 0 tidak pernah masuk total) — di
+ *   jalur AI ini nol bukan harga sah; aturan factory "nol eksplisit =
+ *   resolved" berlaku untuk entri manual spreadsheet, bukan jalur ini.
+ */
+export function mapMagicAiItemToRabInput(
+  item: AiEstimateWorkItem
+): DedFinalizeRabInput | null {
+  if (item.status === 'BLOCKED') return null;
+  if (item.priceSource === 'UNRESOLVED' || item.priceStatus === 'PRICE_UNRESOLVED') return null;
+  const effectivePrice = item.unitPrice ?? item.estimatedUnitPrice ?? null;
+  if (effectivePrice === null || !Number.isFinite(effectivePrice) || effectivePrice <= 0) return null;
+  return {
+    description: item.item || item.workName,
+    volume: honestVolume(item.quantity),
+    unit: item.unit || 'ls',
+    unitPrice: effectivePrice,
+    category: item.category,
+    priceSourceKind: 'EZRAB_ASSUMPTION',
+    priceSourceLabel: 'Estimasi AI',
+    priceSourceExplanation:
+      'Estimasi AI (Magic AI) — perkiraan, bukan harga database AHSP EZRAB.',
+    verificationStatus: 'NEEDS_VERIFICATION',
+  };
 }
 
 export function mapFullAiItemToRabInput(
