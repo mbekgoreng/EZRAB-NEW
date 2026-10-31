@@ -1,7 +1,10 @@
 /**
  * GET /api/ai/engine-status — health check.
  * Phase 2 hardening: CORS allowlist (was `*`), rate limiting.
- * Returns key COUNTS only — never key values.
+ * Returns key AVAILABILITY booleans only — never key values, and (audit
+ * 2026-10-31, F6) no longer exact key COUNTS: counts told an anonymous
+ * caller exactly how much provider quota sits behind each provider.
+ * The only consumer (UnifiedSettingsView) reads `status`, not counts.
  */
 import { applyCors, rateLimit } from '../_lib/security.js';
 
@@ -33,7 +36,7 @@ export default async function handler(req, res) {
   return res.status(200).json({
     success: true,
     status: anyKeys ? 'ready' : 'no_keys',
-    providers: { gemini_keys: gemini, zyrouter, atria_keys: atria, dahl_keys: dahl, gemini_oai_keys: geminiOai, river_keys: river },
+    providers: { gemini: gemini > 0, zyrouter, atria: atria > 0, dahl: dahl > 0, gemini_oai: geminiOai > 0, river: river > 0 },
     modes: { chat: 'gemini-3.5-flash-lite (Gemini)', fast: 'gemini-3.5-flash-lite (Gemini)', advanced: 'gemini-3.5-flash-lite (Gemini)' },
     time: new Date().toISOString(),
   });

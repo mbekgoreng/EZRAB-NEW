@@ -109,7 +109,12 @@ const PATTERNS: Pattern[] = [
   { intent: 'GREETING', re: /^(selamat\s+(pagi|siang|sore|malam)|halo+|hai+|hello+|hi+|hei+|pagi|sore|malam|assalamualaikum)([\s!.,]+(kak|bang|gan|bro|sis|ezrab|semua))?[\s!.,]*$/ },
   // "tolong" tidak memicu HELP bila diikuti objek kerja (rab/proyek/ahsp) —
   // "tolong buatkan rab" adalah perintah kerja, bukan minta bantuan.
-  { intent: 'HELP', re: /\b(bantuan|help|panduan|cara pakai|perintah)\b|\btolong\b(?!.*\b(rab|proyek|ahsp)\b)/ },
+  // Audit 2026-10-31 (uji dinamis E0): penjaga diperluas — "tolong" yang
+  // diikuti kata tanya/kata kerja penjelasan (jelaskan/hitung/apa/
+  // bagaimana/berapa/...) adalah PERTANYAAN untuk AI, bukan minta daftar
+  // perintah; sebelumnya semua pesan berawalan "Tolong…" yang sopan
+  // tertelan HELP dan tak pernah sampai ke gateway.
+  { intent: 'HELP', re: /\b(bantuan|help|panduan|cara pakai|perintah)\b|\btolong\b(?!.*\b(rab|proyek|ahsp)\b)(?!.*\b(jelaskan|hitung|apa|mengapa|kenapa|bagaimana|berapa|kapan|siapa|dimana|di mana))/ },
 
   // "kamu bisa apa?" -> jawaban produk deterministik (keunggulan EZRAB),
   // bukan jawaban umum model AI. Pola mensyaratkan konteks kamu/ezrab agar

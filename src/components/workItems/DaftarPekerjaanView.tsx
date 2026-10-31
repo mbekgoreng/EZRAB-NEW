@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { csvCell } from '../../lib/csv';
 import {
   ListPlus,
   Plus,
@@ -746,7 +747,7 @@ export const DaftarPekerjaanView: React.FC<DaftarPekerjaanViewProps> = ({
                 showToast('Tidak ada pekerjaan untuk diekspor.', 'warning');
                 return;
               }
-              const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+              const esc = (v: any) => csvCell(v);
               const headers = ['Kode', 'Kategori', 'Uraian Pekerjaan', 'Volume', 'Satuan', 'Harga Satuan', 'Jumlah Harga', 'Status', 'Kode AHSP', 'Sumber'];
               const lines = projectWorkItems.map((it) =>
                 [it.code, it.category, it.name, it.volume, it.unit, it.unitPrice, it.totalAmount, it.status, it.ahspCode || '', it.source].map(esc).join(',')

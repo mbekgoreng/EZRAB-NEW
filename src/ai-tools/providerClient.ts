@@ -82,6 +82,26 @@ export function mapGatewayHttpError(
       retryable: false,
     };
   }
+  // Audit 2026-10-31 (uji dinamis E6): kode dari perbaikan gateway F1 harus
+  // sampai ke pengguna sebagai sebab yang sebenarnya — sebelumnya tertelan
+  // pesan generik "gagal memproses" sehingga penolakan kebijakan konten
+  // terlihat seperti gangguan layanan.
+  if (serverErrorCode === 'CONTENT_REJECTED') {
+    return {
+      code: 'CONTENT_REJECTED',
+      message:
+        'Permintaan ditolak oleh kebijakan konten provider AI. Ubah rumusan permintaan Anda, lalu coba lagi.',
+      retryable: false,
+    };
+  }
+  if (serverErrorCode === 'AI_BAD_REQUEST') {
+    return {
+      code: 'AI_BAD_REQUEST',
+      message:
+        'Permintaan tidak valid untuk provider AI. Persingkat atau sederhanakan permintaan Anda.',
+      retryable: false,
+    };
+  }
   const message =
     status === 403
       ? 'AI Online sementara tidak dapat diakses. Silakan coba lagi nanti.'
@@ -318,6 +338,10 @@ export class AiToolsProviderClient {
     if (/401|403|auth|api key/i.test(msg)) return 'MODEL_ERROR';
     if (/429|rate/i.test(msg)) return 'MODEL_ERROR';
     if (/empty/i.test(msg)) return 'EMPTY_RESPONSE';
+    // Audit 2026-10-31 (uji dinamis E7): putus jaringan (fetch TypeError /
+    // connection reset) sebelumnya jatuh ke MODEL_ERROR dan diberi label
+    // "penyedia menolak / kesalahan otentikasi" — label yang keliru.
+    if (err instanceof TypeError || /failed to fetch|network|connection|econnrefused|econnreset|load failed/i.test(msg)) return 'NETWORK_ERROR';
     return 'MODEL_ERROR';
   }
 
@@ -333,6 +357,8 @@ export class AiToolsProviderClient {
         return 'Model yang diminta tidak ditemukan pada penyedia layanan (404). Periksa konfigurasi model.';
       case 'MALFORMED_JSON':
         return err?.message || 'Respons model dalam format yang tidak valid.';
+      case 'NETWORK_ERROR':
+        return 'Tidak dapat terhubung ke layanan AI. Periksa koneksi internet Anda, lalu coba lagi.';
       case 'MODEL_ERROR':
         return 'Penyedia layanan AI menolak permintaan atau terjadi kesalahan otentikasi.';
       default:

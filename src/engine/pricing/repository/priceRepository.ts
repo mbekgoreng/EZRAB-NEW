@@ -4,6 +4,7 @@
  */
 
 import { PriceDefinition } from '../contracts/types';
+import { csvRow } from '../../../lib/csv';
 import { PriceNormalizationEngine } from '../normalization/priceNormalization';
 import { projectPriceEngine, ProjectPriceEngine } from '../projectPriceEngine';
 import { OFFICIAL_HSD_2026_ITEMS } from '../../../data/nationalCostDatabase/officialHSD2026';
@@ -733,20 +734,12 @@ export class PriceRepository {
   public exportToCsv(items?: PriceDefinition[]): string {
     const target = items || this.masterPriceList;
     const header = ['Kode', 'Nama Material', 'Kategori', 'Subkategori', 'Spesifikasi', 'Brand', 'Unit', 'Harga', 'Wilayah', 'Sumber', 'Tanggal'];
-    const rows = target.map((p) => [
-      `"${p.code}"`,
-      `"${(p.name || '').replace(/"/g, '""')}"`,
-      `"${p.category || ''}"`,
-      `"${(p.subcategory || '').replace(/"/g, '""')}"`,
-      `"${(p.specification || '').replace(/"/g, '""')}"`,
-      `"${(p.brand || '').replace(/"/g, '""')}"`,
-      `"${p.unit || ''}"`,
-      p.price ?? "",
-      `"${(p.location || '').replace(/"/g, '""')}"`,
-      `"${(p.priceSource || '').replace(/"/g, '""')}"`,
-      `"${p.effectiveDate || ''}"`,
-    ]);
-    return [header.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    // Sel dibangun lewat helper CSV bersama (audit F-5.2): kutip standar +
+    // netralisasi injeksi formula untuk sel teks.
+    const rows = target.map((p) =>
+      csvRow([p.code, p.name || '', p.category || '', p.subcategory || '', p.specification || '', p.brand || '', p.unit || '', p.price ?? '', p.location || '', p.priceSource || '', p.effectiveDate || ''])
+    );
+    return [csvRow(header), ...rows].join('\n');
   }
 
   public count(): number {

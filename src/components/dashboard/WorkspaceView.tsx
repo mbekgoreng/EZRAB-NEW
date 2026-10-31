@@ -37,6 +37,7 @@ import {
   Menu,
 } from 'lucide-react';
 import { Project, RabItem } from '../../types';
+import { useRole } from '../../auth/RoleContext';
 import { EzrabAiView } from '../../ai-tools/ezrab-ai/view';
 // Chat-to-RAB Workspace (Fase 3): lazy agar three.js/studio tidak memuat awal.
 const ChatToRabWorkspaceLazy = lazy(() =>
@@ -184,6 +185,14 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
     createRabItemDirect,
     bulkAddRabItems,
   } = useProject();
+
+  /* Audit 2026-10-31 (F-2.2): CoAssistant floating sebelumnya menerima
+   * userRole="SUPER_ADMIN" hard-coded untuk SEMUA pengunjung. Kini peran
+   * diturunkan dari sesi role nyata: sesi aktif berkemampuan edit-estimate
+   * -> ESTIMATOR (dapat menerapkan proposal, sama seperti alur demo yang
+   * sah); tanpa sesi/kemampuan -> CLIENT (privilese terendah). */
+  const { activeRole, hasCapability } = useRole();
+  const coAssistantUserRole = activeRole && hasCapability('edit-estimate') ? 'ESTIMATOR' : 'CLIENT';
 
   // Mobile Navigation & Viewport State
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -981,7 +990,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
             projects={projects}
             currentProjectId={currentProjectId}
             activeModule={activeMenu}
-            userRole="SUPER_ADMIN"
+            userRole={coAssistantUserRole}
             onSelectProject={(pId) => {
               setCurrentProjectId(pId);
               setActiveMenu(activeMenu, pId);

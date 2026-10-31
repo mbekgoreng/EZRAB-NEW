@@ -28,6 +28,9 @@ export type AIToolsErrorCode =
   | 'MODEL_MISMATCH'
   | 'AUTH_REQUIRED'
   | 'DEMO_RESTRICTED'
+  | 'CONTENT_REJECTED'
+  | 'AI_BAD_REQUEST'
+  | 'NETWORK_ERROR'
   | 'INTERNAL';
 
 export interface AIToolsStructuredError {

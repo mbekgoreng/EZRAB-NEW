@@ -223,6 +223,38 @@ function stripThinkBlocks(content) {
   return out.trim();
 }
 
+// ---------------------------------------------------------------------------
+// Klasifikasi kegagalan attempt (audit keamanan 2026-10-31, temuan F1).
+// Kegagalan provider BUKAN satu bit:
+// - 'policy' (400 bernada kebijakan konten/keamanan): prompt yang sama
+//   TIDAK BOLEH dicoba ulang ke provider lain — failover di sini berarti
+//   filter-shopping (filter paling ketat tidak pernah menang). Rantai
+//   berhenti dan klien menerima kode CONTENT_REJECTED yang bisa dibedakan
+//   dari gangguan layanan.
+// - 'client_error' (400 lain): permintaan yang sama akan gagal identik di
+//   semua provider — rantai berhenti (kode AI_BAD_REQUEST).
+// - 'auth' (401/403): kredensial mati — dicatat untuk observabilitas;
+//   pembatasan percobaan per provider yang sudah ada (maks 2 try sesudah
+//   gagal) menahan pemborosan, TANPA memblokir rotasi key lain milik
+//   provider yang sama (key bernomor vs polos adalah key berbeda).
+// - 'rate' (429), 'server' (5xx), 'network', 'empty', 'bad_response':
+//   failover seperti sebelumnya.
+// ---------------------------------------------------------------------------
+const POLICY_MARKERS = /safety|content[_ -]?policy|polic|prohibit|harmful|blocked|moderation|inappropriate|disallowed/i;
+function classifyHttpFailure(status, bodyText) {
+  if (status === 401 || status === 403) return 'auth';
+  if (status === 429) return 'rate';
+  if (status === 400) return POLICY_MARKERS.test(bodyText || '') ? 'policy' : 'client_error';
+  if (status >= 500) return 'server';
+  return 'http';
+}
+async function readFailureBody(r) {
+  try {
+    if (typeof r.text === 'function') return (await r.text()).slice(0, 2000);
+  } catch { /* body tak terbaca — klasifikasi dari status saja */ }
+  return '';
+}
+
 async function callGemini(key, model, message, systemPrompt, temperature, maxTokens, jsonMode, media) {
   const contents = [];
   if (systemPrompt) {
@@ -255,10 +287,17 @@ async function callGemini(key, model, message, systemPrompt, temperature, maxTok
       signal: ctl.signal,
     });
     clearTimeout(t);
-    if (!r.ok) return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: 'Gemini ' + r.status };
+    if (!r.ok) return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: 'Gemini ' + r.status, errorClass: classifyHttpFailure(r.status, await readFailureBody(r)) };
     const d = await r.json();
     const text = (((d.candidates || [])[0] || {}).content?.parts || []).map((p) => p.text || '').join('') || '';
-    if (!text) return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: 'Empty' };
+    // Blokir keamanan Gemini bisa tiba sebagai HTTP 200 tanpa kandidat
+    // (promptFeedback.blockReason / finishReason SAFETY) — itu penolakan
+    // kebijakan, BUKAN respons kosong; jangan difailover (F1).
+    const geminiBlock =
+      (d.promptFeedback && d.promptFeedback.blockReason) ||
+      (((d.candidates || [])[0] || {}).finishReason === 'SAFETY' ? 'SAFETY' : null);
+    if (!text && geminiBlock) return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: 'Gemini content blocked: ' + geminiBlock, errorClass: 'policy' };
+    if (!text) return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: 'Empty', errorClass: 'empty' };
     // Usage meter (Phase 3): tangkap usageMetadata resmi Gemini.
     const um = d.usageMetadata || {};
     const usage = {
@@ -271,7 +310,7 @@ async function callGemini(key, model, message, systemPrompt, temperature, maxTok
     return { ok: true, content: text, model, provider: 'gemini', ms: Date.now() - started, usage };
   } catch (e) {
     clearTimeout(t);
-    return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: String((e && e.message) || e) };
+    return { ok: false, provider: 'gemini', model, ms: Date.now() - started, error: String((e && e.message) || e), errorClass: 'network' };
   }
 }
 
@@ -308,7 +347,7 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
       signal: ctl.signal,
     });
     clearTimeout(t);
-    if (!r.ok) return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' ' + r.status };
+    if (!r.ok) return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' ' + r.status, errorClass: classifyHttpFailure(r.status, await readFailureBody(r)) };
     // Baca body sebagai TEKS terlebih dahulu. r.json() langsung meledak pada
     // respons SSE ("Unexpected token 'd', "data: {..." is not valid JSON") —
     // akar kegagalan mode chat yang terlihat di log produksi 2026-10-23.
@@ -322,7 +361,7 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
     if (/text\/event-stream/i.test(contentType) || /^\s*data:/.test(raw)) {
       const parsedSse = parseSseStreamContent(raw);
       if (!parsedSse) {
-        return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' invalid stream response' };
+        return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' invalid stream response', errorClass: 'bad_response' };
       }
       d = { choices: [{ message: { content: parsedSse.content } }] };
       sseUsage = parsedSse.usage;
@@ -330,7 +369,7 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
       try {
         d = JSON.parse(raw);
       } catch {
-        return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' invalid response' };
+        return { ok: false, provider, model, ms: Date.now() - started, error: provider + ' invalid response', errorClass: 'bad_response' };
       }
     }
     let text = (((d.choices || [])[0] || {}).message || {}).content || '';
@@ -338,7 +377,7 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
     if (provider === 'atmorouter') text = stripAtmoPromoFooter(text);
     // Blok reasoning MiniMax (Crown) tidak boleh sampai ke pengguna.
     if (provider === 'crown') text = stripThinkBlocks(text);
-    if (!text) return { ok: false, provider, model, ms: Date.now() - started, error: 'Empty' };
+    if (!text) return { ok: false, provider, model, ms: Date.now() - started, error: 'Empty', errorClass: 'empty' };
     // Usage meter (Phase 3): tangkap usage resmi OpenAI-compatible.
     // Hindari double-counting: cached/reasoning sudah termasuk dalam total provider.
     const u = sseUsage || d.usage || {};
@@ -355,7 +394,7 @@ async function callOAI(base, key, model, provider, message, systemPrompt, temper
     return { ok: true, content: text, model, provider, ms: Date.now() - started, usage };
   } catch (e) {
     clearTimeout(t);
-    return { ok: false, provider, model, ms: Date.now() - started, error: String((e && e.message) || e) };
+    return { ok: false, provider, model, ms: Date.now() - started, error: String((e && e.message) || e), errorClass: 'network' };
   }
 }
 
@@ -505,7 +544,21 @@ export async function executeAI(o, onAttempt) {
     providerAttempts.set(a.provider, tries + 1);
     const r = await a.run();
     if (!r.ok) providerFailures.set(a.provider, fails + 1);
-    outcomes.push({ provider: r.provider, model: r.model, ok: r.ok, ms: r.ms, error: r.ok ? undefined : r.error, usage: r.ok ? r.usage || null : null });
+    outcomes.push({ provider: r.provider, model: r.model, ok: r.ok, ms: r.ms, error: r.ok ? undefined : r.error, errorClass: r.ok ? undefined : r.errorClass, usage: r.ok ? r.usage || null : null });
+    if (!r.ok && (r.errorClass === 'policy' || r.errorClass === 'client_error')) {
+      // Penolakan kebijakan / permintaan tak valid: JANGAN failover dengan
+      // prompt yang sama (F1). Berhenti sekarang dengan kode yang jelas.
+      return {
+        ok: false,
+        errorCode: r.errorClass === 'policy' ? 'CONTENT_REJECTED' : 'AI_BAD_REQUEST',
+        error:
+          r.errorClass === 'policy'
+            ? 'Permintaan ditolak oleh kebijakan konten provider AI.'
+            : 'Permintaan tidak valid untuk provider AI.',
+        requestId,
+        attempts: outcomes,
+      };
+    }
     if (typeof onAttempt === 'function') {
       try { onAttempt(outcomes[outcomes.length - 1]); } catch { /* never break on logging */ }
     }
@@ -760,6 +813,12 @@ export async function handleAiRequest(req, res, opts = {}) {
     };
     if (idemScope) idempotencyStore(idemScope, responseBody);
     return res.status(200).json(responseBody);
+  }
+  // F1: penolakan kebijakan/permintaan tak valid BUKAN gangguan layanan —
+  // jangan runtuhkan ke 502 generik; kembalikan kode yang bisa dibedakan
+  // klien (rantai sudah berhenti di executeAI, tanpa failover).
+  if (r.errorCode === 'CONTENT_REJECTED' || r.errorCode === 'AI_BAD_REQUEST') {
+    return res.status(400).json({ success: false, errorCode: r.errorCode, error: r.error, message: r.error, requestId, durationMs });
   }
   return res.status(502).json({ success: false, error: 'AI sedang tidak tersedia.', requestId, durationMs });
 }
