@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useMemo } from 'react';
+import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Pause, Play } from 'lucide-react';
 import './cinematic-hero.css';
 import { useSceneMachine, type SceneDef } from './sceneMachine';
@@ -55,8 +55,44 @@ export const ProductStage: React.FC<{ flat?: boolean; onSceneChange?: (index: nu
     onSceneChange?.(sceneIndex);
   }, [sceneIndex, onSceneChange]);
 
+  /* Pan vertikal khusus HP (<=639px, breakpoint yang sama dengan CSS
+     mobile hero): layar demo hanya menampilkan ~121px isi, sementara isi
+     scene setinggi 254–843px, jadi tanpa ini 52–86% isi tiap scene
+     terpotong permanen. Konten digeser mengikuti progres scene — bagian
+     yang di-reveal oleh animasi fade scene memang berurutan atas ke
+     bawah, jadi geseran ini sejalan dengan urutan tampilnya. Desktop
+     dan reduced-motion tidak disentuh. */
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [panVersion, setPanVersion] = useState(0);
+  useEffect(() => {
+    const onResize = () => setPanVersion((v) => v + 1);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  useEffect(() => {
+    const root = stageRef.current;
+    if (!root) return;
+    const layers = root.querySelectorAll('.ch-scene-layer');
+    const layer = layers[layers.length - 1];
+    const box = layer?.querySelector('.ch-dash-content');
+    const inner = layer?.querySelector<HTMLElement>('.ch-dash-scroll');
+    if (!box || !inner) return;
+    const mobile = window.matchMedia('(max-width: 639px)').matches;
+    if (!mobile || reducedMotion) {
+      inner.style.transform = '';
+      return;
+    }
+    const cs = window.getComputedStyle(box);
+    const padV = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+    const overflow = Math.max(0, inner.scrollHeight - (box.clientHeight - padV));
+    // Beri jeda di awal (atas terbaca dulu) dan pastikan dasar tercapai
+    // sedikit sebelum scene berganti.
+    const t = Math.min(1, Math.max(0, (sceneProgress - 0.04) / 0.92));
+    inner.style.transform = overflow > 0 ? `translateY(${(-overflow * t).toFixed(1)}px)` : '';
+  }, [sceneIndex, sceneProgress, reducedMotion, panVersion]);
+
   return (
-    <div className="ch-stage">
+    <div className="ch-stage" ref={stageRef}>
       {/* Cahaya gradasi di belakang frame: dekorasi murni, bukan bagian demo.
           Dua lapis: aura putih pudar paling luar + wash warna di tengah. */}
       <div className="ch-stage-glow-white" aria-hidden="true" />

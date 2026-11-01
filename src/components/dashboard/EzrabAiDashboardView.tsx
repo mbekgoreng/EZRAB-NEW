@@ -747,8 +747,9 @@ className="ezdb-split"
         <div
           className="ezdb-anim ez-mini"
           style={{
-            background: 'var(--ez-pastel-cream)',
+            background: 'var(--ez-color-surface)',
             borderRadius: '22px',
+            border: '1px solid var(--ez-color-border-soft)',
             boxShadow: CARD_SHADOW,
             padding: '24px',
             display: 'flex',
@@ -767,8 +768,8 @@ className="ezdb-split"
                   width: '32px',
                   height: '32px',
                   borderRadius: '12px',
-                  background: 'var(--ez-color-surface)',
-                  color: 'var(--ez-color-warning)',
+                  background: 'var(--ez-color-primary-soft)',
+                  color: 'var(--ez-color-primary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -776,7 +777,7 @@ className="ezdb-split"
               >
                 <TrendingUp size={16} />
               </div>
-              <span style={{ fontSize: '14px', fontWeight: 750, color: 'var(--ez-color-text-primary)' }}>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--ez-color-text-primary)' }}>
                 EZRAB Insight
               </span>
             </div>
@@ -793,24 +794,25 @@ className="ezdb-split"
                 padding: '0 16px',
                 borderRadius: '12px',
                 background: 'var(--ez-color-surface)',
-                color: 'var(--ez-color-warning)',
-                border: 'none',
+                color: 'var(--ez-color-primary)',
+                border: '1px solid var(--ez-hue-blue-border)',
                 fontSize: '12.5px',
                 fontWeight: 700,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
-                boxShadow: CARD_SHADOW,
                 transition: 'all 0.15s ease',
                 position: 'relative',
                 zIndex: 2,
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.background = 'var(--ez-color-primary-soft)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.background = 'var(--ez-color-surface)';
               }}
             >
               <Sparkles size={14} />

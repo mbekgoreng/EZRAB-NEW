@@ -107,7 +107,12 @@ export const DashboardMock: React.FC<DashboardMockProps> = memo(({ activeMenuId,
           D
         </span>
       </header>
-      <div className="ch-dash-content">{children}</div>
+      <div className="ch-dash-content">
+        {/* Pembungkus geser: di HP konten scene digeser vertikal mengikuti
+            progres scene (lihat ProductStage) karena isi scene jauh lebih
+            tinggi dari layar demo; di desktop pembungkus ini diam. */}
+        <div className="ch-dash-scroll">{children}</div>
+      </div>
     </div>
   </div>
 ));

@@ -1076,6 +1076,9 @@
   .ch-dash-topbar-title { display: inline; }
   .ch-dash-logo-mark--sm { display: inline-flex; }
   .ch-dash-content { padding: 10px; }
+  /* Konten scene digeser (transform) oleh ProductStage mengikuti progres
+     scene — tanpa ini 52-86% isi tiap scene terpotong permanen di HP. */
+  .ch-dash-scroll { will-change: transform; }
   .ch-project-cards { grid-template-columns: 1fr; }
   .ch-doc-layout { grid-template-columns: 1fr; }
   .ch-kpi-row { grid-template-columns: 1fr 1fr; }
