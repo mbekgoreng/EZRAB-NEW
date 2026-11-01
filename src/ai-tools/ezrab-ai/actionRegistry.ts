@@ -27,6 +27,7 @@ import {
 } from './chatExplanations';
 import { clarifyTopicCard, clarifyPickResult } from './clarifyTopics';
 import { evaluateCalculation } from './calcIntent';
+import { findGamesMentioned, buildGameInfoAnswer } from '../../game-space/catalog';
 import { buildDirectRab, displayTemplateBasisName, findDirectTemplate, formatDirectRabMessage, matchDirectRegion } from './directRab';
 import { buildSpecRab } from './specRab';
 import { buildUniversalDraft, formatUniversalDraftMessage } from './universalRab';
@@ -671,6 +672,22 @@ export function executeIntent(
         message: 'Membuka EZRAB Game Space 🎮 — pilih game dan langsung main, tanpa memakai AI credits.',
         openGameSpace: true,
       };
+
+    case 'GAME_INFO': {
+      // Pertanyaan tentang game dijawab dari katalog NYATA
+      // (game-space/catalog.ts) — judul yang disebut user dijawab
+      // spesifik, selain itu daftar lengkap semua game + isinya.
+      // Tombol "Buka Game Space": handler tombol view mengirim label
+      // sebagai pesan → isGameCommand("buka game space") membuka panel.
+      const mentioned = findGamesMentioned(ctx.rawText ?? param ?? '');
+      return {
+        ok: true,
+        message: buildGameInfoAnswer(mentioned),
+        actions: [
+          { label: 'Buka Game Space', action: { kind: 'intent', intent: 'OPEN_GAME_SPACE' } },
+        ],
+      };
+    }
 
     case 'OPEN_PROJECT_CREATE':
       ctx.navigate('proyek');

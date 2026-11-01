@@ -2,7 +2,12 @@
  * ARCADE 50 — manifest kartu game arcade versi ENHANCED, reskin total tema konstruksi.
  * Dipakai parent (GameSpaceOverlay) untuk membangun menu/kartu; parent mengintegrasikan
  * komponen gamenya sendiri. JANGAN commit/push dari sini.
+ *
+ * Teks katalog (id/judul/deskripsi) berasal dari SUMBER TUNGGAL
+ * src/game-space/catalog.ts (ARCADE_GAME_META) — file ini hanya memasangkan
+ * art per id. Chat AI membaca katalog yang sama dari catalog.ts.
  */
+import { ARCADE_GAME_META } from '../../catalog';
 import artCandyCrush from './candy-crush/art.jpg';
 import artPacMan from './pac-man/art.jpg';
 import artChess from './chess/art.jpg';
@@ -61,60 +66,60 @@ export interface ArcadeGameMeta {
   art: string;
 }
 
-export const ARCADE_GAMES: ArcadeGameMeta[] = [
-  // ---- W1 ----
-  { id: 'candy-crush', title: 'Material Match', desc: 'Cocokkan 3+ material bangunan (bata, semen, besi, kayu, kaca) beruntun.', art: artCandyCrush },
-  { id: 'pac-man', title: 'Pak Mandor', desc: 'Jadi kepala mandor: makan helm di labirin sambil kabur dari Klien Revisi.', art: artPacMan },
-  { id: 'chess', title: 'Catur Proyek', desc: 'Catur klasik — buah jadi peran proyek: mandor, arsitek, tower crane. AI level sedang.', art: artChess },
-  { id: 'doodle-jump', title: 'Lompat Scaffolding', desc: 'Lompat setinggi mungkin di perancah, awas papan rapuh.', art: artDoodleJump },
-  { id: 'solitaire', title: 'Solitaire Proyek', desc: 'Solitaire klasik dengan kartu bermotif proyek konstruksi.', art: artSolitaire },
-  { id: 'sudoku', title: 'Sudoku Material', desc: 'Sudoku 9×9 dengan ikon material, bukan angka.', art: artSudoku },
-  { id: 'crossy-road', title: 'Nyebrang Proyek', desc: 'Tuntun tukang menyeberang jalan proyek, hindari truk molen.', art: artCrossyRoad },
-  { id: 'rock-paper-scissors', title: 'Suit Kontraktor', desc: 'Suit Bata vs Gergaji vs Gambar Kerja melawan AI.', art: artRockPaperScissors },
-  { id: 'flappy-bird', title: 'Mandor Terbang', desc: 'Terbangkan mandor melewati celah crane raksasa.', art: artFlappyBird },
-  { id: '2048', title: 'Cor 2048', desc: 'Gabung material: BATA → BATAKO → … sampai 2048.', art: art2048 },
-  // ---- W2 ----
-  { id: 'wordle', title: 'Kata Proyek', desc: 'Tebak kata konstruksi 5 huruf dalam 6 percobaan.', art: artWordle },
-  { id: 'hangman', title: 'Selamatkan Tukang', desc: 'Tebak kata proyek — salah tebak, perancah roboh bertahap!', art: artHangman },
-  { id: 'tower-blocks', title: 'Menara Lantai', desc: 'Susun lantai gedung 3D setinggi mungkin, jangan sampai ambruk.', art: artTowerBlocks },
-  { id: 'archery', title: 'Tembak Paku', desc: 'Tembak nail gun ke papan triplek — perhitungkan tiupan angin.', art: artArchery },
-  { id: 'tic-tac-toe', title: 'Bata vs Semen', desc: 'Tic-tac-toe bata melawan semen. AI sedang atau 2 pemain lokal.', art: artTicTacToe },
-  { id: 'minesweeper', title: 'Cari Pipa Bocor', desc: 'Minesweeper: temukan pipa bocor tanpa meledakkannya.', art: artMinesweeper },
-  { id: 'speed-typing', title: 'Ketik Cepat Estimator', desc: 'Ketik istilah proyek secepat mungkin sebelum waktu habis.', art: artSpeedTyping },
-  { id: 'breakout', title: 'Bobok Tembok', desc: 'Pantul bola, bobok dinding bata lapis demi lapis.', art: artBreakout },
-  { id: 'ping-pong', title: 'Tenis Sendok Semen', desc: 'Ping-pong pakai bet sendok semen melawan AI.', art: artPingPong },
-  { id: 'tetris', title: 'Susun Bata', desc: 'Tetris ber-texture bata/besi/kayu — baris penuh jadi dinding kokoh.', art: artTetris },
-  // ---- W3 ----
-  { id: 'maze-drag', title: 'Labirin Gudang', desc: 'Seret helm melewati labirin gudang material sampai ke pintu keluar.', art: artMazeDrag },
-  { id: 'memory-card', title: 'Pasangan Material', desc: 'Kartu memori: temukan pasangan material bangunan.', art: artMemoryCard },
-  { id: 'number-guessing', title: 'Tebak Volume', desc: 'Tebak volume cor (m³) yang disembunyikan molen.', art: artNumberGuessing },
-  { id: 'snake', title: 'Ular Kabel', desc: 'Ular kabel makan konektor — jangan sampai korslet.', art: artSnake },
-  { id: 'connect-four', title: 'Sambung Pipa', desc: 'Connect four: sambung 4 pipa sejalur melawan AI.', art: artConnectFour },
-  { id: 'insect-catch', title: 'Tangkap Perkakas', desc: 'Tangkap perkakas yang jatuh dari rak gudang sebelum menyentuh lantai.', art: artInsectCatch },
-  { id: 'typing-game', title: 'Ketik Proyek', desc: 'Ketik kata proyek yang berjatuhan sebelum deadline jebol.', art: artTypingGame },
-  { id: 'dice-roll', title: 'Dadu Proyek', desc: 'Lempar dadu proyek, adu hoki melawan AI.', art: artDiceRoll },
-  { id: 'shape-clicker', title: 'Ketok Paku', desc: 'Klik paku yang nongol secepat mungkin — uji refleks tukang.', art: artShapeClicker },
-  { id: 'fruit-slicer', title: 'Tebas Bambu', desc: 'Swipe untuk menebas bambu & material yang beterbangan.', art: artFruitSlicer },
-  // ---- W4 ----
-  { id: 'quiz', title: 'Kuis Tukang', desc: 'Kuis pengetahuan umum & dunia proyek ala tukang.', art: artQuiz },
-  { id: 'emoji-catcher', title: 'Tangkap Helm', desc: 'Tangkap helm yang jatuh, hindari bata melayang.', art: artEmojiCatcher },
-  { id: 'whack-a-mole', title: 'Pukul Paku', desc: 'Pukul paku yang nongol dari triplek secepatnya.', art: artWhackAMole },
-  { id: 'simon-says', title: 'Ikuti Mandor', desc: 'Ikuti urutan aba-aba mandor yang makin panjang.', art: artSimonSays },
-  { id: 'sliding-puzzle', title: 'Geser Keramik', desc: 'Geser keramik untuk menyusun gambar blueprint.', art: artSlidingPuzzle },
-  { id: 'mastermind', title: 'Tebak Campuran', desc: 'Tebak komposisi campuran cor yang tepat.', art: artMastermind },
-  { id: 'blackjack', title: 'Blackjack Meja Proyek', desc: 'Blackjack 21 di meja proyek — kalahkan bandar.', art: artBlackjack },
-  { id: 'bubble-shooter', title: 'Tembak Semen', desc: 'Tembak gelembung semen, cocokkan 3 warna sejenis.', art: artBubbleShooter },
-  { id: 'checkers', title: 'Dam Bata', desc: 'Dam/checkers berbidak bata melawan AI level sedang.', art: artCheckers },
-  { id: 'space-invaders', title: 'Tembak Deadline', desc: 'Tembak deadline yang berjatuhan dari langit sebelum mendarat.', art: artSpaceInvaders },
-  // ---- W5 ----
-  { id: 'asteroids', title: 'Hujan Bata', desc: 'Hindari dan hancurkan hujan bata di area proyek.', art: artAsteroids },
-  { id: 'reversi', title: 'Balik Triplek', desc: 'Reversi 8×8 berbidak keping triplek melawan AI level sedang.', art: artReversi },
-  { id: 'mahjong-match', title: 'Ubin Material', desc: 'Mahjong: pasangkan ubin material yang sama.', art: artMahjongMatch },
-  { id: 'frogger', title: 'Tukang Nyebrang', desc: 'Tuntun tukang menyeberangi sungai & jalan proyek yang ramai.', art: artFrogger },
-  { id: 'video-poker', title: 'Video Poker Proyek', desc: 'Video poker draw 5 kartu bertema proyek.', art: artVideoPoker },
-  { id: 'battleship', title: 'Perang Crane', desc: 'Tempatkan alat berat di lahan, bombardir markas lawan.', art: artBattleship },
-  { id: 'nonogram', title: 'Bongkar Gambar', desc: 'Nonogram: ungkap pixel-art alat proyek.', art: artNonogram },
-  { id: 'lights-out', title: 'Matikan Lampu Proyek', desc: 'Padamkan semua lampu proyek dengan logika toggle.', art: artLightsOut },
-  { id: 'capit-crane', title: 'Capit Material', desc: 'Mesin capit: ambil material dari boks sebanyak mungkin.', art: artCapitCrane },
-  { id: 'sortir-material', title: 'Sortir Material', desc: 'Sortir material ke wadah yang benar secepat mungkin.', art: artSortirMaterial },
-];
+const ART_BY_ID: Record<string, string> = {
+  'candy-crush': artCandyCrush,
+  'pac-man': artPacMan,
+  'chess': artChess,
+  'doodle-jump': artDoodleJump,
+  'solitaire': artSolitaire,
+  'sudoku': artSudoku,
+  'crossy-road': artCrossyRoad,
+  'rock-paper-scissors': artRockPaperScissors,
+  'flappy-bird': artFlappyBird,
+  '2048': art2048,
+  'wordle': artWordle,
+  'hangman': artHangman,
+  'tower-blocks': artTowerBlocks,
+  'archery': artArchery,
+  'tic-tac-toe': artTicTacToe,
+  'minesweeper': artMinesweeper,
+  'speed-typing': artSpeedTyping,
+  'breakout': artBreakout,
+  'ping-pong': artPingPong,
+  'tetris': artTetris,
+  'maze-drag': artMazeDrag,
+  'memory-card': artMemoryCard,
+  'number-guessing': artNumberGuessing,
+  'snake': artSnake,
+  'connect-four': artConnectFour,
+  'insect-catch': artInsectCatch,
+  'typing-game': artTypingGame,
+  'dice-roll': artDiceRoll,
+  'shape-clicker': artShapeClicker,
+  'fruit-slicer': artFruitSlicer,
+  'quiz': artQuiz,
+  'emoji-catcher': artEmojiCatcher,
+  'whack-a-mole': artWhackAMole,
+  'simon-says': artSimonSays,
+  'sliding-puzzle': artSlidingPuzzle,
+  'mastermind': artMastermind,
+  'blackjack': artBlackjack,
+  'bubble-shooter': artBubbleShooter,
+  'checkers': artCheckers,
+  'space-invaders': artSpaceInvaders,
+  'asteroids': artAsteroids,
+  'reversi': artReversi,
+  'mahjong-match': artMahjongMatch,
+  'frogger': artFrogger,
+  'video-poker': artVideoPoker,
+  'battleship': artBattleship,
+  'nonogram': artNonogram,
+  'lights-out': artLightsOut,
+  'capit-crane': artCapitCrane,
+  'sortir-material': artSortirMaterial,
+};
+
+export const ARCADE_GAMES: ArcadeGameMeta[] = ARCADE_GAME_META.map((g) => ({
+  ...g,
+  art: ART_BY_ID[g.id],
+}));

@@ -12,6 +12,7 @@
 
 import { strict as assert } from 'node:assert';
 import { isGameCommand } from '../game-space/command';
+import { ALL_GAMES } from '../game-space/catalog';
 import { routeIntent } from '../ai-tools/ezrab-ai/intentRouter';
 import { executeIntent } from '../ai-tools/ezrab-ai/actionRegistry';
 import {
@@ -86,6 +87,54 @@ test('executeIntent returns openGameSpace flag + no navigation', () => {
   assert.equal(res.openGameSpace, true);
   assert.equal(res.navigated, undefined);
   assert.ok(res.message.length > 0);
+});
+
+/* ================= 2b. Game questions → GAME_INFO ================= */
+console.log('\n[2b] routeIntent → GAME_INFO (pertanyaan tentang game)');
+['game apa saja?', 'ada game apa saja di ezrab?', 'game apa aja?', 'apa itu game?',
+ 'game bongkar rumah tentang apa?', 'jelaskan game yang ada di ezrab'].forEach((s) =>
+  test(`route "${s}"`, () => {
+    const r = routeIntent(s);
+    assert.equal(r.intent, 'GAME_INFO');
+    assert.equal(r.localOnly, true, 'jawaban katalog tidak boleh memanggil AI');
+  }),
+);
+test('pernyataan tentang game (bukan pertanyaan) tetap ke AI', () => {
+  // Tanpa verba perintah ("main game" = perintah panel, perilaku lama)
+  // dan tanpa bingkai tanya → bukan GAME_INFO, mengalir ke AI.
+  const r = routeIntent('saya suka game strategi');
+  assert.equal(r.intent, 'UNKNOWN');
+  assert.equal(r.localOnly, false);
+});
+test('katalog: 61 game (11 konstruksi + 50 arcade)', () => {
+  assert.equal(ALL_GAMES.length, 61);
+  assert.equal(ALL_GAMES.filter((g) => g.cat === 'construction').length, 11);
+  assert.equal(ALL_GAMES.filter((g) => g.cat === 'arcade').length, 50);
+});
+const gameInfoCtx = (rawText: string) => ({
+  navigate: () => { throw new Error('must not navigate'); },
+  currentMenu: 'ezrab-ai',
+  activeProject: null,
+  projects: [],
+  projectTotal: null,
+  rawText,
+});
+test('jawaban "game apa saja?" memuat semua game + tombol buka', () => {
+  const res = executeIntent('GAME_INFO', 'game apa saja?', gameInfoCtx('game apa saja?'));
+  assert.equal(res.ok, true);
+  assert.ok(res.message.includes('Ada!'), 'wajib menjawab ADA');
+  assert.ok(res.message.includes('61 mini-game'));
+  for (const title of ['Bongkar Rumah', 'Build Challenge', 'Pak Mandor', 'Catur Proyek', 'Sortir Material']) {
+    assert.ok(res.message.includes(title), `jawaban harus memuat ${title}`);
+  }
+  assert.ok(res.actions?.some((a) => a.label === 'Buka Game Space'));
+});
+test('pertanyaan game spesifik menjawab game itu saja', () => {
+  const res = executeIntent('GAME_INFO', 'game bongkar rumah tentang apa?',
+    gameInfoCtx('game bongkar rumah tentang apa?'));
+  assert.ok(res.message.includes('Bongkar Rumah'));
+  assert.ok(res.message.includes('rata dengan tanah'), 'isi/deskripsi game ikut dijawab');
+  assert.ok(!res.message.includes('Pak Mandor'), 'game lain tidak ikut ditumpahkan');
 });
 
 /* ================= 3. Placement rules ================= */

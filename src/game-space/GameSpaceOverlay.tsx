@@ -11,6 +11,7 @@ import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { X, Gamepad2, ChevronRight, ArrowLeft, Loader2 } from 'lucide-react';
 import './game-space.css';
 import { ARCADE_GAMES } from './games/arcade/manifest';
+import { CONSTRUCTION_GAMES } from './catalog';
 
 /**
  * Ukuran desain acuan semua game (px). Stage mengecil/membesar agar game
@@ -101,118 +102,27 @@ interface GameDef {
   component: React.LazyExoticComponent<React.FC<{ onExit: () => void }>>;
 }
 
+const CONSTRUCTION_COMPONENTS: Record<string, GameDef['component']> = {
+  'bongkar-rumah': BongkarRumah,
+  'flappy-mandor': FlappyMandor,
+  'ketapel-konstruksi': KetapelKonstruksi,
+  'lari-proyek': LariProyek,
+  'sudoku-tukang': SudokuTukang,
+  'selamatkan-mandor': SelamatkanMandor,
+  'tebas-material': TebasMaterial,
+  'sambung-kata': SambungKata,
+  'gabung-blok': GabungBlok,
+  'head-soccer-mandor': HeadSoccerMandor,
+  'build-challenge': BuildChallenge,
+};
+
 const GAMES: GameDef[] = [
-  {
-    id: 'bongkar-rumah',
-    title: 'Bongkar Rumah',
-    tagline: 'Ketuk rumahnya sampai rata dengan tanah. 4 level: rumah, ruko, apartemen, tower.',
-    emoji: '💥',
-    meta: '4 level · kombo runtuh · pelepas stres',
-    theme: 'gs-card-bongkar',
-    badge: 'PELEPAS STRES',
-    cat: 'construction',
-    component: BongkarRumah,
-  },
-  {
-    id: 'flappy-mandor',
-    title: 'Flappy Mandor',
-    tagline: 'Terbangkan mandor berhelm lewati crane & balok. Jangan sampai jatuh!',
-    emoji: '🪖',
-    meta: 'Medali tiap 10 gate · best score',
-    theme: 'gs-card-flappy',
-    cat: 'construction',
-    component: FlappyMandor,
-  },
-  {
-    id: 'ketapel-konstruksi',
-    title: 'Ketapel Konstruksi',
-    tagline: 'Luncurkan wrecking ball, robohkan struktur & berkas revisi. 10 level.',
-    emoji: '🎯',
-    meta: '10 level · bintang 1–3',
-    theme: 'gs-card-ketapel',
-    cat: 'construction',
-    component: KetapelKonstruksi,
-  },
-  {
-    id: 'lari-proyek',
-    title: 'Lari Proyek',
-    tagline: 'Endless runner: lompat & nunduk hindari barier, lubang & bata jatuh.',
-    emoji: '🏃',
-    meta: 'Endless · kumpulkan helm',
-    theme: 'gs-card-lari',
-    cat: 'construction',
-    component: LariProyek,
-  },
-  {
-    id: 'sudoku-tukang',
-    title: 'Sudoku Tukang',
-    tagline: 'Sudoku 9×9 klasik. 4 tingkat kesulitan, mode catatan, timer.',
-    emoji: '🧩',
-    meta: '4 difficulty · best time',
-    theme: 'gs-card-sudoku',
-    cat: 'construction',
-    component: SudokuTukang,
-  },
-  {
-    id: 'selamatkan-mandor',
-    title: 'Selamatkan Mandor',
-    tagline: 'Gambar garis pelindung, selamatkan mandor dari hujan bata. 15 level.',
-    emoji: '✏️',
-    meta: '15 level · fisika garis',
-    theme: 'gs-card-selamat',
-    cat: 'construction',
-    component: SelamatkanMandor,
-  },
-  {
-    id: 'tebas-material',
-    title: 'Tebas Material',
-    tagline: 'Swipe tebas material beterbangan. Kombo swipe, awas dinamit!',
-    emoji: '🍉',
-    meta: 'Kombo · 3 nyawa',
-    theme: 'gs-card-tebas',
-    cat: 'construction',
-    component: TebasMaterial,
-  },
-  {
-    id: 'sambung-kata',
-    title: 'Sambung Kata',
-    tagline: 'Susun istilah konstruksi dari roda huruf. 3 pack × 20 level.',
-    emoji: '🔤',
-    meta: '60 level · kosakata proyek',
-    theme: 'gs-card-kata',
-    cat: 'construction',
-    component: SambungKata,
-  },
-  {
-    id: 'gabung-blok',
-    title: 'Gabung Blok',
-    tagline: '2048 ala kontraktor: BATA → BATAKO → … → MENARA.',
-    emoji: '🧱',
-    meta: '8 tier · best score',
-    theme: 'gs-card-gabung',
-    cat: 'construction',
-    component: GabungBlok,
-  },
-  {
-    id: 'head-soccer-mandor',
-    title: 'Head Soccer Mandor',
-    tagline: 'Sundul & tendang bola, kalahkan 5 level AI dalam turnamen.',
-    emoji: '⚽',
-    meta: 'Turnamen 5 level',
-    theme: 'gs-card-soccer',
-    cat: 'construction',
-    component: HeadSoccerMandor,
-  },
-  {
-    id: 'build-challenge',
-    title: 'Build Challenge',
-    tagline: 'Susun pondasi, kolom, balok & atap jadi bangunan 3D.',
-    emoji: '🏗️',
-    meta: '3 level • ±5 menit • mouse & sentuh',
-    theme: 'gs-card-build',
-    cat: 'construction',
-    component: BuildChallenge,
-  },
+  // ---- Konstruksi: teks katalog dari sumber tunggal game-space/catalog.ts ----
+  ...CONSTRUCTION_GAMES.map((g) => ({
+    ...g,
+    cat: 'construction' as const,
+    component: CONSTRUCTION_COMPONENTS[g.id],
+  })),
   // ---- Arcade 50 (reskin total tema konstruksi, dari manifest) ----
   ...ARCADE_GAMES.map((g) => ({
     id: `arcade-${g.id}`,

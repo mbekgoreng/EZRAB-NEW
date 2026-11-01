@@ -8,6 +8,7 @@
  * by the registry, not by string templating.
  */
 import { isGameCommand } from '../../game-space/command';
+import { isGameQuestion } from '../../game-space/catalog';
 import { evaluateCalculation } from './calcIntent';
 import { detectClarifyTopic } from './clarifyTopics';
 
@@ -26,6 +27,7 @@ export type ChatIntent =
   | 'OPEN_SETTINGS'
   | 'OPEN_DASHBOARD'
   | 'OPEN_GAME_SPACE'
+  | 'GAME_INFO'
   | 'OPEN_SPREADSHEET'
   | 'START_RAB_WIZARD'
   | 'START_HOUSE_DESIGN'
@@ -295,6 +297,16 @@ export function routeIntent(rawInput: string): IntentResult {
   // 2. Game Space command — deterministic, runs fully local (no AI call, no credits)
   if (isGameCommand(rawInput)) {
     return { intent: 'OPEN_GAME_SPACE', confidence: 0.95, needsClarification: false, localOnly: true };
+  }
+
+  // 2a. Pertanyaan TENTANG game ("game apa saja?", "ada game apa?",
+  // "game bongkar rumah tentang apa?") — BUKAN perintah membuka panel.
+  // Dijawab deterministik dari katalog nyata (game-space/catalog.ts):
+  // perintah owner 2026-11-01 — chat wajib menjawab ADA + menjelaskan
+  // semua game dan isinya, bukan "tidak tahu" dari model yang memang
+  // tidak punya data game. Lokal penuh, tanpa kredit.
+  if (isGameQuestion(input)) {
+    return { intent: 'GAME_INFO', confidence: 0.9, needsClarification: false, param: rawInput, localOnly: true };
   }
 
   // 2b. Klarifikasi topik telanjang (peraturan owner 2026-10-23): pesan
