@@ -49,6 +49,8 @@ export interface DocRecord {
   /** Teks terekstrak dari dokumen. */
   text: string;
   pages?: number;
+  /** Total halaman berkas sumber (PDF) bila melebihi halaman terparse. */
+  sourcePages?: number;
   charCount: number;
   status: DocStatus;
   error?: string;

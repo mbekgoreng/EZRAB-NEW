@@ -9,6 +9,12 @@ export interface ParsedDocument {
   kind: 'pdf' | 'docx' | 'xlsx' | 'text' | 'unknown';
   text: string;
   pages?: number;
+  /** Total halaman pada berkas sumber (PDF), sebelum batas parse diterapkan. */
+  sourcePageCount?: number;
+  /** Halaman yang benar-benar diparse dan tersedia di `text`. */
+  parsedPageCount?: number;
+  /** true bila berkas sumber punya lebih banyak halaman daripada yang diparse. */
+  pagesTruncated?: boolean;
   tables?: Array<Array<Array<string>>>;
 }
 
@@ -57,7 +63,19 @@ export async function parseDocument(
         // Marker halaman untuk traceability jawaban AI ke sumber.
         pages.push(`[Halaman ${p}]\n${t}`);
       }
-      return { fileName, kind: 'pdf', text: pages.join('\n\n'), pages: max };
+      // Sprint 1 (Workstream D): batas 150 halaman TIDAK lagi diam-diam —
+      // jumlah halaman sumber vs terparse diekspos agar UI wajib jujur
+      // ("dibaca N dari M halaman") dan tidak menyajikan dokumen terpotong
+      // sebagai dokumen utuh.
+      return {
+        fileName,
+        kind: 'pdf',
+        text: pages.join('\n\n'),
+        pages: max,
+        sourcePageCount: doc.numPages,
+        parsedPageCount: max,
+        pagesTruncated: doc.numPages > max,
+      };
     }
 
     if (isDocx) {

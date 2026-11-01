@@ -89,6 +89,7 @@ export const DocLibrary: React.FC<{
         const updated: DocRecord = {
           ...rec,
           kind: parsed.kind, text: parsed.text, pages: parsed.pages,
+          sourcePages: parsed.pagesTruncated ? parsed.sourcePageCount : undefined,
           charCount: parsed.text.length,
           status: parsed.text.trim() ? 'ready' : 'needs_review',
           error: parsed.text.trim() ? undefined : t('ai.doc.lib.err_no_text'),

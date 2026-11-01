@@ -28,12 +28,37 @@ export type DokumenAiChatRequest = {
   targetLanguage?: string;
 };
 
+/**
+ * Cakupan pemrosesan dokumen bertahap (Sprint 1, Workstream B) — selalu
+ * diisi jalur SUMMARY berpotongan agar UI bisa menampilkan halaman yang
+ * benar-benar diproses dan menandai hasil SEBAGIAN secara eksplisit.
+ */
+export interface DocCoverageInfo {
+  /** Halaman pada teks terekstrak yang tersedia untuk dianalisis. */
+  totalPages: number;
+  /** Halaman yang tercakup potongan yang dicoba diproses. */
+  processedPages: number;
+  totalChunks: number;
+  processedChunks: number;
+  okChunks: number;
+  failedChunks: number;
+  failedPageRanges: Array<{ start: number; end: number }>;
+  /** true bila tidak seluruh dokumen berhasil diproses. */
+  partial: boolean;
+}
+
 export type DokumenAiChatResponse = {
   success: boolean;
   mode: DocAiMode;
   reply?: string;
   /** true jika teks dokumen dipotong karena batas. */
   truncated?: boolean;
+  /** Cakupan pemrosesan (jalur SUMMARY berpotongan). */
+  coverage?: DocCoverageInfo;
+  /** true bila hasil hanya mencakup sebagian dokumen. */
+  partial?: boolean;
+  /** QA: tidak ditemukan potongan relevan — jawaban batas jujur tanpa panggilan AI. */
+  contextInsufficient?: boolean;
   /** Identitas provider/model AKTUAL dari respons providerClient (F4) — null/tidak ada bila tidak disediakan. */
   provider?: string | null;
   model?: string | null;

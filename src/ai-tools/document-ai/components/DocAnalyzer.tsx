@@ -98,6 +98,9 @@ export const DocAnalyzer: React.FC<{
   const [result, setResult] = useState('');
   /** Catatan pemotongan yang tampil ke pengguna (umum dari service, atau spesifik per dokumen untuk COMPARE). */
   const [truncNote, setTruncNote] = useState<string | null>(null);
+  /** Cakupan pemrosesan berpotongan dari service (Sprint 1): halaman & potongan yang benar-benar diproses. */
+  const [coverageNote, setCoverageNote] = useState<string | null>(null);
+  const [coveragePartial, setCoveragePartial] = useState(false);
   const [copied, setCopied] = useState(false);
   // QA chat
   const [chat, setChat] = useState<ChatMessage[]>([]);
@@ -139,6 +142,7 @@ export const DocAnalyzer: React.FC<{
     const mode = MODE_OF[anaTab];
     const docText = docTextOverride ?? doc.text;
     setBusy(true); setError(null); setResult(''); setTruncNote(truncNoteOverride ?? null);
+    setCoverageNote(null); setCoveragePartial(false);
     try {
       const res = await dokumenAiService.chat({
         documentText: docText,
@@ -148,6 +152,15 @@ export const DocAnalyzer: React.FC<{
       });
       if (res.success) {
         setResult(res.reply || '');
+        // Cakupan berpotongan (SUMMARY): tampilkan halaman/potongan yang
+        // benar-benar diproses; hasil SEBAGIAN tidak pernah tampil utuh.
+        if (res.coverage) {
+          const c = res.coverage;
+          setCoveragePartial(c.partial);
+          setCoverageNote(
+            `Cakupan: ${c.processedPages} dari ${c.totalPages} halaman diproses · ${c.processedChunks} potongan (${c.okChunks} berhasil${c.failedChunks ? `, ${c.failedChunks} gagal` : ''})${c.partial ? ' — hasil SEBAGIAN, tidak mencakup seluruh dokumen.' : '.'}`,
+          );
+        }
         // Flag truncated dari service adalah sumber kebenaran pemotongan
         // (kecuali pemanggil — COMPARE — sudah memberi catatan spesifik).
         if (res.truncated && !truncNoteOverride) setTruncNote(t('ai.doc.ana.warn_truncated'));
@@ -233,7 +246,7 @@ export const DocAnalyzer: React.FC<{
         <button className="docai-btn-ghost" onClick={onBack}><ArrowLeft size={16} /> {t('ai.doc.ana.back')}</button>
         <div className="docai-anatitle">
           <strong>{doc.fileName}</strong>
-          <span>{doc.kind.toUpperCase()} · {doc.pages ? `${doc.pages} ${t('ai.doc.ana.pages_abbr')}` : ''} · {doc.text.length.toLocaleString('id-ID')} {t('ai.doc.ana.chars')}</span>
+          <span>{doc.kind.toUpperCase()} · {doc.pages ? `${doc.pages} ${t('ai.doc.ana.pages_abbr')}` : ''} · {doc.text.length.toLocaleString('id-ID')} {t('ai.doc.ana.chars')}{doc.sourcePages && doc.pages && doc.sourcePages > doc.pages ? ` · dibaca ${doc.pages} dari ${doc.sourcePages} halaman (sisanya belum terbaca)` : ''}</span>
         </div>
         <CreditBalance compact showTopUp={false} />
       </div>
@@ -242,7 +255,7 @@ export const DocAnalyzer: React.FC<{
         {TABS.map((tb) => {
           const Icon = tb.icon;
           return (
-            <button key={tb.id} className={tab === tb.id ? 'active' : ''} onClick={() => { setTab(tb.id); setResult(''); setError(null); setTruncNote(null); }}>
+            <button key={tb.id} className={tab === tb.id ? 'active' : ''} onClick={() => { setTab(tb.id); setResult(''); setError(null); setTruncNote(null); setCoverageNote(null); setCoveragePartial(false); }}>
               <Icon size={15} /> {tb.label}
             </button>
           );
@@ -293,6 +306,10 @@ export const DocAnalyzer: React.FC<{
                 {busy && <div className="docai-msg ai"><div className="docai-msg-b"><Loader2 size={14} className="spin" /> {t('ai.doc.ana.busy_reading')}</div></div>}
                 <div ref={chatEndRef} />
               </div>
+              {/* Sprint 1: error QA WAJIB dirender di tab ini sendiri —
+                  sebelumnya situs render error hanya ada di cabang non-QA
+                  sehingga pertanyaan gagal menggantung tanpa pesan. */}
+              {error && <div className="docai-error"><AlertTriangle size={14} /> {error}</div>}
               <div className="docai-qarow">
                 <input
                   value={question} onChange={(e) => setQuestion(e.target.value)}
@@ -321,6 +338,7 @@ export const DocAnalyzer: React.FC<{
                 {busy ? <><Loader2 size={15} className="spin" /> {t('ai.doc.ana.run_busy')}</> : `${t('ai.doc.ana.run_a')} ${TABS.find((tb) => tb.id === tab)?.label}`}
               </button>
               {error && <div className="docai-error"><AlertTriangle size={14} /> {error}</div>}
+              {coverageNote && <div className={coveragePartial ? 'docai-warn' : 'docai-hint'}>{coverageNote}</div>}
               {truncNote && <div className="docai-warn">{truncNote}</div>}
               {result && (
                 <div className="docai-result">
