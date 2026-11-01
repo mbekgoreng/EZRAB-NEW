@@ -397,7 +397,16 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
         color: 'var(--ez-color-text-primary)',
       }}
     >
-      {/* Mobile Drawer Backdrop Overlay */}
+      {/* PREMIUM FRAME — Layer 2 (outer dark frame) + Layer 3 (app panel) */}
+      <div className="pf-frame">
+        <div className="pf-panel">
+      {/* Mobile Drawer Backdrop Overlay — WAJIB di dalam .pf-panel, konteks
+          stacking yang sama dengan sidebar: .pf-frame membentuk stacking
+          context sendiri (z-index 1), jadi backdrop di luar frame selalu
+          melukis DI ATAS seluruh frame dan backdrop-filter-nya ikut
+          mem-blur drawer (z-index 9999 sidebar hanya berlaku lokal di
+          dalam frame). Di sini backdrop (z 9990) berada di bawah aside
+          (z 9999): konten utama tetap ter-blur/gelap, drawer tetap tajam. */}
       {isMobile && mobileDrawerOpen && (
         <div
           className="ezrab-drawer-backdrop"
@@ -405,10 +414,6 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({ onBackToLanding, r
           aria-hidden="true"
         />
       )}
-
-      {/* PREMIUM FRAME — Layer 2 (outer dark frame) + Layer 3 (app panel) */}
-      <div className="pf-frame">
-        <div className="pf-panel">
       {/* =========================================================================
           LEFT SIDEBAR (DESKTOP) / SLIDE-OVER OFF-CANVAS DRAWER (MOBILE)
          ========================================================================= */}
