@@ -272,7 +272,12 @@ export const EzrabCoAssistantLauncher: React.FC<EzrabCoAssistantLauncherProps> =
     );
   }
 
-  const mascotPixelSize = isMobile ? 80 : 92;
+  // Ukuran maskot launcher DESKTOP: diperkecil 92 -> 64 atas permintaan
+  // owner (2026-11-01, "ai assistant di tampilan web lebih diperkecil").
+  // Semua turunan (tombol +10, glow x1.35, offset label) mengikuti
+  // konstanta ini. Di HP maskot tidak dirender sama sekali (pill teks),
+  // jadi nilai mobile di bawah tidak lagi dipakai untuk tampilan.
+  const mascotPixelSize = isMobile ? 80 : 64;
 
   return (
     <div
@@ -284,7 +289,9 @@ export const EzrabCoAssistantLauncher: React.FC<EzrabCoAssistantLauncherProps> =
         zIndex: 9990,
       }}
     >
-      {/* "EZRAB AI ASSISTANT" Text Badge on Cursor Approach with Auto-Hide */}
+      {/* "EZRAB AI ASSISTANT" Text Badge on Cursor Approach with Auto-Hide —
+          desktop saja; di HP launcher berbentuk pill teks (lihat bawah). */}
+      {!isMobile && (
       <div
         className="ezrab-assistant-tooltip"
         style={{
@@ -355,6 +362,7 @@ export const EzrabCoAssistantLauncher: React.FC<EzrabCoAssistantLauncherProps> =
           </span>
         </div>
       </div>
+      )}
 
       {/* Spring Tether Wrapper */}
       <div
@@ -406,7 +414,50 @@ export const EzrabCoAssistantLauncher: React.FC<EzrabCoAssistantLauncherProps> =
           <X size={12} strokeWidth={2.5} />
         </button>
 
-        {/* Mascot Interactive Button */}
+        {/* Mascot Interactive Button — di HP diganti pill TEKS tanpa
+            maskot (perintah owner 2026-11-01: "buat tulisan aja jangan
+            maskot di mode mobile"); desktop tetap maskot 64px. */}
+        {isMobile ? (
+          <button
+            type="button"
+            onClick={handleClick}
+            aria-label="Buka EZRAB AI Assistant"
+            className="ezrab-touch-target"
+            style={{
+              height: '42px',
+              padding: '0 16px',
+              borderRadius: '9999px',
+              background: 'var(--ez-color-primary)',
+              border: 'none',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '7px',
+              fontSize: '13.5px',
+              fontWeight: 700,
+              fontFamily: "'Plus Jakarta Sans', 'Inter', system-ui, sans-serif",
+              cursor: 'pointer',
+              boxShadow: '0 8px 20px rgba(37, 99, 235, 0.38)',
+              position: 'relative',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Sparkles size={15} />
+            <span>Ezrab AI</span>
+            {hasActiveContext && (
+              <span
+                style={{
+                  width: '9px',
+                  height: '9px',
+                  borderRadius: '50%',
+                  backgroundColor: '#10B981',
+                  border: '2px solid #FFFFFF',
+                  flexShrink: 0,
+                }}
+              />
+            )}
+          </button>
+        ) : (
         <button
           type="button"
           onClick={handleClick}
@@ -508,6 +559,7 @@ export const EzrabCoAssistantLauncher: React.FC<EzrabCoAssistantLauncherProps> =
             </span>
           )}
         </button>
+        )}
       </div>
 
       <style>{`
