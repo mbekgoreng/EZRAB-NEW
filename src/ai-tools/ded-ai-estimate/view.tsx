@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { dedAiEstimateService, DedAiOutputEnvelope } from './service';
 import { DedAiCalculator } from './calculator';
 import { mapDedAiItemToRabInput, mapFullAiItemToRabInput } from './finalizeMapping';
+import { buildFinalizationKey, countAssumptionItems, resolveAssumptionCount } from './finalizationKey';
 import { mergeAnalysisTraces, FileTraceInput } from './analysisTrace';
 import { buildDivisionCoverage } from './divisions';
 import { groupByWbs } from './wbsClassifier';
@@ -53,7 +54,7 @@ const initialStages = (t: (key: string) => string): DedAiStage[] =>
 
 export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
   const { t } = useI18n();
-  const { projects, createProject, bulkAddRabItems, setCurrentProjectId } = useProject();
+  const { projects, createProject, bulkAddRabItems, getLastBulkAddOutcome, setCurrentProjectId } = useProject();
   const [screen, setScreen] = useState<Screen>('input');
   const [session, setSession] = useState<DedAiSession>({
     files: [], description: '', projectName: '',
@@ -485,22 +486,36 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       // `notes` — factory tidak menyimpan `notes`, dan tanpa pemetaan ini
       // baris fallback "Estimasi AI" kehilangan labelnya di spreadsheet.
       // Item yang helpernya mengembalikan null (tanpa harga) tidak jadi baris.
-      const added = bulkAddRabItems(
-        savable.flatMap((it) => {
-          const mapped = mapDedAiItemToRabInput(it, result?.policy ?? 'FULL_AI');
-          return mapped ? [mapped] : [];
-        }),
-        projectId
-      );
+      const mappedInputs = savable.flatMap((it) => {
+        const mapped = mapDedAiItemToRabInput(it, result?.policy ?? 'FULL_AI');
+        return mapped ? [mapped] : [];
+      });
+      // G4: kunci finalisasi deterministik (proyek + set item terkanonisasi).
+      // Finalisasi logis yang sama — klik ganda, retry sesudah state UI
+      // ter-reset, analisis yang sama dibuka lagi — dikenali store sebagai
+      // duplikat dan TIDAK menulis baris baru. Flag `finalized` di view ini
+      // sekarang hanya kenyamanan UI, bukan batas integritas.
+      const finalizationKey = buildFinalizationKey(projectId, mappedInputs);
+      const added = bulkAddRabItems(mappedInputs, projectId, { finalizationKey });
+      const outcome = typeof getLastBulkAddOutcome === 'function' ? getLastBulkAddOutcome() : null;
       setCurrentProjectId(projectId);
       setFinalized(true);
+      if (outcome?.duplicate) {
+        return {
+          ok: true,
+          message: `Finalisasi ini sudah pernah disimpan ke proyek "${projectName}" — tidak ada duplikasi.`,
+        };
+      }
       notificationBus.publish({
         type: 'success',
         title: t('ai.ded.notif_saved_title'),
         message: `${added.length} ${t('ai.ded.notif_saved_a')} "${projectName}".`,
         link: 'rab-estimasi',
       });
-      return { ok: true, message: `${added.length} ${t('ai.ded.finalize_ok_a')} "${projectName}".${blocked > 0 ? ` ${blocked} ${t('ai.ded.finalize_blocked_a')}` : ''}${needsReview > 0 ? ` ${needsReview} ${t('ai.ded.finalize_review_a')} "${t('ai.ded.result.badge_review')}" ${t('ai.ded.finalize_review_b')}` : ''} ${t('ai.ded.finalize_open')}` };
+      // G2 (Opsi A): total tunggal tetap memuat kuantitas ASSUMPTION —
+      // keberadaan & jumlahnya WAJIB diungkap di ringkasan finalisasi.
+      const assumptionSaved = countAssumptionItems(savable);
+      return { ok: true, message: `${added.length} ${t('ai.ded.finalize_ok_a')} "${projectName}".${blocked > 0 ? ` ${blocked} ${t('ai.ded.finalize_blocked_a')}` : ''}${needsReview > 0 ? ` ${needsReview} ${t('ai.ded.finalize_review_a')} "${t('ai.ded.result.badge_review')}" ${t('ai.ded.finalize_review_b')}` : ''}${assumptionSaved > 0 ? ` Total estimasi mencakup ${assumptionSaved} item dengan kuantitas asumsi (ASSUMPTION) — periksa badge "Perlu Ditinjau".` : ''} ${t('ai.ded.finalize_open')}` };
     } catch (e: any) {
       return { ok: false, message: e?.message || t('ai.ded.err_save') };
     }
@@ -540,15 +555,22 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
       }
       // Provenance lewat helper pemetaan (finalizeMapping) — alasan sama
       // seperti jalur standar di atas: `notes` tidak disimpan factory.
-      const added = bulkAddRabItems(
-        savable.flatMap((it) => {
-          const mapped = mapFullAiItemToRabInput(it, fullAiOutput?.policy ?? 'FULL_AI');
-          return mapped ? [mapped] : [];
-        }),
-        projectId
-      );
+      const mappedInputs = savable.flatMap((it) => {
+        const mapped = mapFullAiItemToRabInput(it, fullAiOutput?.policy ?? 'FULL_AI');
+        return mapped ? [mapped] : [];
+      });
+      // G4: kunci finalisasi deterministik — sama seperti jalur standar.
+      const finalizationKey = buildFinalizationKey(projectId, mappedInputs);
+      const added = bulkAddRabItems(mappedInputs, projectId, { finalizationKey });
+      const outcome = typeof getLastBulkAddOutcome === 'function' ? getLastBulkAddOutcome() : null;
       setCurrentProjectId(projectId);
       setFinalized(true);
+      if (outcome?.duplicate) {
+        return {
+          ok: true,
+          message: `Finalisasi ini sudah pernah disimpan ke proyek "${projectName}" — tidak ada duplikasi.`,
+        };
+      }
       notificationBus.publish({
         type: 'success',
         title: 'Full AI tersimpan ke proyek',
@@ -592,17 +614,42 @@ export const DedAiEstimateView: React.FC<Props> = ({ onNavigateToTab }) => {
     );
   }
   if (screen === 'result' && result) {
+    // G2 (Opsi A): bila ada kuantitas ASSUMPTION yang masuk total, nyatakan
+    // secara terlihat di layar hasil — total tunggal adalah ESTIMASI dan
+    // tidak boleh terbaca sebagai total tervalidasi sumber. Tanpa asumsi,
+    // tidak ada strip tambahan.
+    const assumptionCount = resolveAssumptionCount(result.coverage, result.items);
     return (
-      <DedAiResultView
-        output={result}
-        onBackToInput={() => setScreen('input')}
-        onSaveDraft={handleSaveDraft}
-        onFinalize={handleFinalize}
-        onOpenSpreadsheet={handleOpenSpreadsheet}
-        draftSaved={draftSaved}
-        finalized={finalized}
-        creditEstimate={session.creditEstimate}
-      />
+      <>
+        {assumptionCount > 0 && (
+          <div
+            role="note"
+            style={{
+              margin: '12px 16px 0',
+              padding: '10px 14px',
+              borderRadius: '12px',
+              border: '1px solid var(--ez-hue-amber-border, #F59E0B)',
+              background: 'var(--ez-hue-amber-bg, #FFFBEB)',
+              fontSize: '12.5px',
+              lineHeight: 1.5,
+            }}
+          >
+            <strong>Total estimasi mencakup {assumptionCount} item dengan kuantitas asumsi (ASSUMPTION)</strong>
+            {' '}— periksa badge "Perlu Ditinjau" pada item terkait. Kuantitas asumsi tetap
+            terhitung dalam total estimasi, tetapi bukan kuantitas terverifikasi dari dokumen.
+          </div>
+        )}
+        <DedAiResultView
+          output={result}
+          onBackToInput={() => setScreen('input')}
+          onSaveDraft={handleSaveDraft}
+          onFinalize={handleFinalize}
+          onOpenSpreadsheet={handleOpenSpreadsheet}
+          draftSaved={draftSaved}
+          finalized={finalized}
+          creditEstimate={session.creditEstimate}
+        />
+      </>
     );
   }
 

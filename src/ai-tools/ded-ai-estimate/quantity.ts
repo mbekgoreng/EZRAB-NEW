@@ -142,6 +142,57 @@ export interface DimensionParseResult {
   ambiguousUnit: boolean;
   /** dimensi mentah sebagai evidence untuk audit */
   rawDimensions: string;
+  /**
+   * Sprint 3 (B2): true bila satu-satunya dimensi yang terparse adalah
+   * diameter (ø/D) — diameter BUKAN panjang elemen; kuantitas linear tidak
+   * boleh diturunkan darinya (kasus Sprint 2: "ø800 mm" terbaca 0,8 m').
+   */
+  diameterOnly?: boolean;
+}
+
+/**
+ * Sprint 3 (B2): deteksi string dimensi yang HANYA memuat satu diameter.
+ * Sempit dengan sengaja: tepat satu angka terparse DAN ada penanda
+ * diameter eksplisit (simbol ø/Ø, kata "diameter", atau awalan "D<angka>"
+ * seperti "D16"). "800 mm" polos (bisa panjang sah) tidak dicocokkan.
+ */
+export function isDiameterOnlyDimension(dimensionString: string, parsedCount: number): boolean {
+  if (parsedCount !== 1) return false;
+  const s = dimensionString;
+  if (/[øØ]/.test(s)) return true;
+  if (/diameter/i.test(s)) return true;
+  if (/^\s*[dD]\s*\d/.test(s)) return true;
+  return false;
+}
+
+/**
+ * Sprint 3 (B2): format tampilan kuantitas yang TIDAK PERNAH membulatkan
+ * nilai tak-nol menjadi "0". Nilai internal tidak diubah — ini murni
+ * lapisan tampilan. Nilai kecil dirender dengan presisi yang cukup
+ * (hingga 6 desimal; di bawah itu notasi eksponensial ringkas).
+ * null/tidak valid → '—' (bukan 0).
+ */
+export function formatQuantityDisplay(quantity: number | null | undefined): string {
+  if (quantity === null || quantity === undefined || !Number.isFinite(quantity)) return '—';
+  if (quantity === 0) return '0';
+  const sign = quantity < 0 ? '-' : '';
+  const abs = Math.abs(quantity);
+  if (abs < 1e-6) {
+    // Terlalu kecil untuk 6 desimal — notasi eksponensial ringkas,
+    // koma desimal ala id-ID: 2.5e-7 → "2,5e-7".
+    return sign + quantity.toExponential(2).replace('.', ',');
+  }
+  let text: string;
+  if (abs < 1) {
+    // Presisi penuh hingga 6 desimal, nol ekor dibuang: 2e-6 → "0.000002".
+    text = abs.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+  } else {
+    // Hingga 4 desimal untuk nilai >= 1, nol ekor dibuang.
+    text = abs.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+  }
+  const [intPart, fracPart] = text.split('.');
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return sign + grouped + (fracPart ? `,${fracPart}` : '');
 }
 
 export function attemptQuantityFromDimensionString(
@@ -154,6 +205,19 @@ export function attemptQuantityFromDimensionString(
   if (nums.length === 0) return { quantity: null, formula: dimensionString, ambiguousUnit: false, rawDimensions: raw };
 
   const { factor, unit: dimUnit } = detectLengthUnitFactor(dimensionString);
+
+  // Sprint 3 (B2): satu-satunya dimensi adalah diameter dan satuan item
+  // linear (m/m') — diameter bukan panjang; jangan turunkan kuantitas.
+  // Pemeriksaan sebelum konversi satuan agar "ø800 mm" tidak menjadi 0,8.
+  if (shapeForUnit(unit) === 'LENGTH' && isDiameterOnlyDimension(dimensionString, nums.length)) {
+    return {
+      quantity: null,
+      formula: `${dimensionString} [hanya diameter; panjang elemen tidak tercantum — kuantitas tidak dapat diturunkan dari diameter]`,
+      ambiguousUnit: false,
+      rawDimensions: raw,
+      diameterOnly: true,
+    };
+  }
 
   // FASE DED-FIX TASK 1: tanpa penanda satuan eksplisit -> unresolved, bukan meter.
   if (dimUnit === null) {

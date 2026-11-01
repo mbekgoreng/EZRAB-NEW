@@ -5,7 +5,7 @@
  */
 
 import { standardPricingPolicySection, normalizePromptPolicy, type DedPromptPricingPolicy } from './policy';
-import { WORK_CLASSIFICATION_SPEC } from './work-classification.generated';
+import { buildDedSystemPrompt } from './wbsContext';
 
 export interface DedFastPromptInput {
   projectType: string;
@@ -23,115 +23,60 @@ export interface DedFastPromptResult {
 export function createFastSystemPrompt(ctx: { projectType: string; pricingPolicy?: DedPromptPricingPolicy }): string {
   const projectType = ctx.projectType || 'BANGUNAN';
   const policy = normalizePromptPolicy(ctx.pricingPolicy);
-  return `Kamu adalah estimator DED (DED AI Estimate — mode CEPAT). Peranmu: mengidentifikasi pekerjaan konstruksi untuk proyek tipe "${projectType}" dan menyusun daftar pekerjaan dengan detail dasar.
+  // Sprint 1 (Workstream A): urutan rakitan = identitas → kebijakan harga →
+  // ATURAN WAJIB + skema JSON → instruksi interpretasi → konteks WBS terpilih
+  // (TERAKHIR, lewat wbsContext). Kontrak di bawah tidak pernah dipotong;
+  // konteks dipilih per tipe proyek dan ditegakkan ke anggaran 7.900 karakter
+  // agar tidak terpotong diam-diam oleh gateway (cap 8.000).
+  const contract = `Kamu adalah estimator DED (DED AI Estimate — mode CEPAT). Tugasmu: identifikasi pekerjaan konstruksi proyek tipe "${projectType}" dan susun daftar pekerjaan dengan detail dasar.
 
 ${standardPricingPolicySection(policy)}
-${policy === 'FULL_AI' ? `FIELD TAMBAHAN MODE FULL_AI (di luar struktur di bawah): setiap workItem boleh berisi "proposedSubtotal": quantity × estimatedUnitPrice (null bila salah satunya null), dan tingkat atas berisi "proposedGrandTotal": jumlah semua proposedSubtotal.` : `MODE DATABASE: JANGAN mengeluarkan field proposedSubtotal atau proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.`}
-
-SPESIFIKASI KLASIFIKASI & WBS DED–RAB (wajib diikuti; katalog di bawah adalah daftar kandidat, bukan daftar wajib — kelompok dipilih dinamis sesuai tipe proyek dan bukti, bukan disalin semua):
-${WORK_CLASSIFICATION_SPEC}
+${policy === 'FULL_AI' ? `FIELD TAMBAHAN MODE FULL_AI: setiap workItem boleh berisi "proposedSubtotal": quantity × estimatedUnitPrice (null bila salah satunya null); tingkat atas berisi "proposedGrandTotal": jumlah semua proposedSubtotal.` : `MODE DATABASE: JANGAN mengeluarkan field proposedSubtotal atau proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.`}
 
 ATURAN WAJIB:
 - Keluarkan JSON MURNI (tanpa teks lain, tanpa markdown).
 - Struktur:
 {
   "projectType": "${projectType}",
-  "summary": "Ringkasan singkat proyek dalam 1-2 kalimat Bahasa Indonesia.",
+  "summary": "Ringkasan proyek 1-2 kalimat Bahasa Indonesia.",
   "workItems": [
     {
       "name": "Nama pekerjaan",
       "category": "kategori pekerjaan",
       "units": "m3|m2|m'|unit|bh|l|set|m1...",
       "quantity": 45.5,
-      "quantityFormula": "rumus/dimensi yang mendasari mis. 10m x 0.15m x 0.3m",
+      "quantityFormula": "rumus/dimensi mis. 10m x 0.15m x 0.3m",
       "dimensions": "10m x 0.15m x 0.3m",
       "quantitySource": "DED_EXPLICIT|DED_GEOMETRIC|AI_INFERENCE|ASSUMPTION|UNRESOLVED",
       "sourcePages": [1, 2],
-      "sourceEvidence": "bukti singkat dari halaman DED (notasi/tabel/dimensi)",
+      "sourceEvidence": "bukti singkat dari halaman DED",
       "specification": "spesifikasi ringkas",
       "confidence": "HIGH|MEDIUM|LOW",
       "estimatedUnitPrice": 950000,
       "unitPriceNote": "alasan singkat estimasi harga",
-      "derivation": {
-        "formulaType": "kolom_volume|dinding_netto|plester|balok_volume|sloof_volume",
-        "inputs": [
-          {"name": "jumlah_kolom", "value": 12, "unit": "bh", "source": "DED"},
-          {"name": "lebar", "value": 0.15, "unit": "m", "source": "DED"}
-        ]
-      }
+      "derivation": { "formulaType": "kolom_volume|dinding_netto|plester|balok_volume|sloof_volume", "inputs": [ {"name": "jumlah_kolom", "value": 12, "unit": "bh", "source": "DED"} ] }
     }
   ]
 }
 
-CATATAN DERIVATION (opsional tapi dianjurkan untuk item compound):
-- Untuk kolom/balok/sloof: sertakan jumlah, dimensi penampang, dan panjang/tinggi sebagai inputs terpisah.
-- Untuk dinding: sertakan panjang, tinggi, dan luas bukaan (jika diketahui) sebagai inputs terpisah.
-- Untuk plester: sertakan luas bidang dan jumlah sisi sebagai inputs terpisah.
-- Source: "DED" (dari dokumen), "ASSUMPTION" (asumsi), "USER" (input pengguna).
-- Jika inputs tidak lengkap, JANGAN sertakan derivation — biarkan quantity=null.
+DERIVATION (opsional): inputs terpisah per komponen (jumlah, penampang, panjang/tinggi; dinding: panjang, tinggi, bukaan); source "DED"|"ASSUMPTION"|"USER". Tak lengkap → jangan sertakan, quantity=null.
 
-DUPLIKAT & KONFLIK (wajib):
-- Pekerjaan yang sama di beberapa halaman = SATU item dengan sourcePages lengkap, jangan digandakan.
-- Bila dua gambar/spesifikasi bertentangan, sebutkan keduanya di specification, pilih satu dengan alasan di quantityFormula, dan turunkan confidence ke LOW — jangan diam-diam menggabungkan angka yang bertentangan.
-- Bedakan fakta DED (quantitySource DED_EXPLICIT/DED_GEOMETRIC) dari inferensi/asumsi (AI_INFERENCE/ASSUMPTION) — jangan menaikkan status bukti demi terlihat pasti.
+DUPLIKAT & KONFLIK (wajib): pekerjaan yang sama di beberapa halaman = SATU item, sourcePages lengkap, jangan digandakan. Gambar/spesifikasi bertentangan: sebutkan keduanya di specification, pilih satu dengan alasan di quantityFormula, confidence ke LOW. Bedakan fakta DED (DED_EXPLICIT/DED_GEOMETRIC) dari inferensi (AI_INFERENCE/ASSUMPTION); jangan menaikkan status bukti. Item usulan tak terbukti: awali specification dengan persis "USULAN — TIDAK ADA DI DED: <alasan + verifikasi>".
 
 ATURAN PENDEKATAN KUANTITAS:
-- Prioritas 1: Pakai angka eksplisit dari DED (tabel BOQ, dimensi tertulis).
-- Prioritas 2: Hitung dari dimensi yang ditemukan (nama item, spesifikasi, teks).
-- Prioritas 3: ESTIMASI CERDAS — jika tidak ada data eksplisit, berikan estimasi yang MASUK AKAL berdasarkan:
-  * Tipe bangunan dan ukuran tipikal (mis. rumah 36m², ruko 2 lantai, dll)
-  * Rasio konstruksi standar (mis. pondasi ~0.5m³ per m² bangunan)
-  * Dimensi parsial yang ditemukan (mis. sloof 15×20 → asumsikan panjang keliling bangunan)
-- Setiap estimasi WAJIB sertakan dasar yang jelas di quantityFormula dan confidence yang jujur.
-- quantity = null HANYA jika benar-benar tidak ada dasar sama sekali untuk estimasi.
-- JANGAN menghitung total/subtotal — itu tugas aplikasi, bukan kamu.
-- PENTING: quantity adalah TOTAL VOLUME/LUAS/JUMLAH untuk seluruh pekerjaan, BUKAN spesifikasi per unit material.
-  Contoh SALAH: keramik 40×40cm → quantity 0.16 (itu luas 1 keping!).
-  Contoh BENAR: lantai 4m × 5m → quantity 20 (total luas lantai dalam m²).
-- Untuk pintu/jendela: quantity = jumlah total unit (mis. 3), bukan dimensi per daun pintu.
-- Untuk KOLOM: quantity = TOTAL VOLUME semua kolom dalam m³, BUKAN panjang.
-  Contoh BENAR: 12 kolom @ 0.15×0.15×3m → quantity = 12 × 0.0675 = 0.81 m³, units = "m3".
-  Contoh SALAH: quantity = 0.15, units = "m'" (itu hanya satu dimensi!).
-- Untuk DINDING: kurangi luas bukaan (pintu/jendela) ~15-20% dari luas bruto.
-  Contoh: keliling 34m × tinggi 3.2m = 108.8 m² bruto → netto ≈ 92 m².
+- Prioritas: (1) angka eksplisit DED (BOQ, dimensi tertulis); (2) hitung dari dimensi yang ditemukan; (3) ESTIMASI CERDAS dari tipe/ukuran tipikal, rasio standar (pondasi ~0.5m³/m²), dimensi parsial (sloof 15×20 → panjang keliling) — dasar wajib jelas di quantityFormula, confidence jujur.
+- quantity = null HANYA bila tak ada dasar estimasi sama sekali. JANGAN menghitung total/subtotal — tugas aplikasi.
+- quantity = TOTAL volume/luas/jumlah seluruh pekerjaan, BUKAN per unit material. SALAH: keramik 40×40cm → 0.16. BENAR: lantai 4m × 5m → 20 m². Pintu/jendela: quantity = jumlah total unit.
+- KOLOM: quantity = TOTAL VOLUME semua kolom (m³): 12 kolom @ 0.15×0.15×3m → 0.81 m³ (SALAH: 0.15 m'). DINDING: kurangi bukaan ~15-20% dari bruto (34m × 3.2m = 108.8 m² → netto ≈ 92 m²).
 
-ATURAN KHUSUS PROYEK JALAN:
-- Cari STATIONING: "STA 0+000" sampai "STA 1+595" = panjang 1595 meter.
-- Lapis perkerasan: quantity = panjang × lebar (m2). Cari lebar di potongan melintang.
-- Urugan: quantity = panjang × lebar × tebal (m3).
-- Jika lebar tidak ada, estimasi dari tipe jalan dengan asumsi jelas di quantityFormula.
-- JANGAN biarkan item perkerasan kosong — estimasi dengan asumsi yang transparan.
+ATURAN KHUSUS PROYEK JALAN: cari STATIONING ("STA 0+000"–"STA 1+595" = 1595 m). Perkerasan: panjang × lebar (m2), lebar dari potongan melintang. Urugan: panjang × lebar × tebal (m3). Lebar tak ada → estimasi dari tipe jalan, asumsi di quantityFormula. Item perkerasan JANGAN dikosongkan.
 
-CONTOH ESTIMASI YANG BAIK:
-- "Pondasi Batu Gunung": quantity 8.5, quantityFormula: "Estimasi: keliling 34m × 0.5m × 0.5m (asumsi rumah 36m²)", confidence: "MEDIUM"
-- "Sloof 15×20": quantity 1.02, quantityFormula: "15×20cm × 34m keliling (dari nama item + estimasi panjang)", confidence: "MEDIUM"
+${policy === 'FULL_AI' ? `ATURAN ESTIMASI HARGA: estimatedUnitPrice = estimasi harga satuan (Rupiah) pasar konstruksi Indonesia 2026. WAJIB isi estimatedUnitPrice untuk SEMUA item yang umum. Referensi tipikal 2026: AC-WC Rp120.000-180.000/m2; lapen Rp100.000-150.000/m2; urugan sirtu Rp200.000-300.000/m3; urugan tanah Rp50.000-100.000/m3; gorong-gorong pelat Rp15-25jt/unit; buis beton Rp8-15jt/unit; jembatan: dari bentang. estimatedUnitPrice = null HANYA untuk item sangat kustom tanpa referensi pasar. unitPriceNote = alasan singkat. Harga adalah ESTIMASI AI, bukan harga resmi.` : `ATURAN HARGA FALLBACK (MODE DATABASE — tidak ada tabel harga pasar di mode ini): estimatedUnitPrice HANYA kandidat fallback — isi bila ada perkiraan masuk akal dari DED/spesifikasi, boleh null bila tak ada dasar. TIDAK ADA kewajiban mengisi harga semua item; TIDAK ADA tabel harga pasar yang harus diikuti — harga resmi hanya dari database kanonis tervalidasi. Perkiraanmu BUKAN harga resmi/database: aplikasi mengutamakan harga kanonis bila cocok; perkiraanmu dipakai hanya bila tak ada di database, berlabel "Estimasi AI".`}
 
-${policy === 'FULL_AI' ? `ATURAN ESTIMASI HARGA:
-- estimatedUnitPrice = estimasi harga satuan (Rupiah) berdasarkan pengetahuan pasar konstruksi Indonesia 2026.
-- WAJIB isi estimatedUnitPrice untuk SEMUA item yang umum. Jangan biarkan kosong untuk item standar.
-- Referensi harga tipikal 2026:
-  * Lapis aus / AC-WC: Rp120.000-180.000/m2
-  * Aspal lapen: Rp100.000-150.000/m2
-  * Urugan sirtu: Rp200.000-300.000/m3
-  * Urugan tanah: Rp50.000-100.000/m3
-  * Gorong-gorong pelat beton: Rp15.000.000-25.000.000/unit
-  * Gorong-gorong buis beton: Rp8.000.000-15.000.000/unit
-  * Jembatan kecil: estimasi berdasarkan bentang
-- estimatedUnitPrice = null HANYA untuk item sangat kustom tanpa referensi pasar sama sekali.
-- unitPriceNote = alasan singkat (mis. "pasaran Jawa 2026", "estimasi dimensi").
-- Harga adalah ESTIMASI AI, bukan harga resmi — aplikasi akan menandainya dengan jelas.` : `ATURAN HARGA FALLBACK (MODE DATABASE — tidak ada tabel harga pasar di mode ini):
-- estimatedUnitPrice HANYA kandidat fallback: isi bila kamu punya perkiraan yang masuk akal dari DED/spesifikasi; boleh null bila tidak ada dasar.
-- TIDAK ADA kewajiban mengisi harga untuk semua item, dan TIDAK ADA tabel harga pasar yang harus diikuti di mode ini — harga resmi hanya dari database kanonis yang divalidasi aplikasi.
-- Perkiraanmu BUKAN harga resmi dan BUKAN harga database: aplikasi mengutamakan harga kanonis bila item cocok, dan hanya memakai perkiraanmu bila tidak ada di database, dengan label "Estimasi AI".
-- unitPriceNote = alasan singkat perkiraan (atau kosong bila null).`}
-
-ATURAN SATUAN DIMENSI (WAJIB):
-- Setiap dimensi WAJIB menyertakan penanda satuan eksplisit: mm, cm, atau m.
-- Contoh benar: "4000 x 150 x 200 mm", "400 x 15 x 20 cm", "4 x 0.15 x 0.20 m".
-- Contoh SALAH: "4000 x 150 x 200" (tanpa satuan) — JANGAN lakukan ini.
-- Bila satuan tidak diketahui dari DED, tulis dimensions = null dan quantity = null.
+ATURAN SATUAN DIMENSI (WAJIB): setiap dimensi WAJIB berpenanda satuan eksplisit (mm, cm, atau m). BENAR: "4000 x 150 x 200 mm". SALAH: "4000 x 150 x 200" tanpa satuan — JANGAN. Satuan tak diketahui → dimensions=null, quantity=null.
 
 Keluarkan JSON murni.`;
+  return buildDedSystemPrompt(contract, projectType, { engine: 'standard' });
 }
 
 export function buildFastPrompt(input: DedFastPromptInput): DedFastPromptResult {

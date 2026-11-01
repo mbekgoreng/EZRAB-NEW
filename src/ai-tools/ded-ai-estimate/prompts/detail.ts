@@ -6,7 +6,7 @@
  */
 
 import { standardPricingPolicySection, normalizePromptPolicy, type DedPromptPricingPolicy } from './policy';
-import { WORK_CLASSIFICATION_SPEC } from './work-classification.generated';
+import { buildDedSystemPrompt } from './wbsContext';
 
 export interface DedDetailPromptInput {
   projectType: string;
@@ -24,20 +24,21 @@ export interface DedDetailPromptResult {
 export function createDetailSystemPrompt(ctx: { projectType: string; pricingPolicy?: DedPromptPricingPolicy }): string {
   const projectType = ctx.projectType || 'BANGUNAN';
   const policy = normalizePromptPolicy(ctx.pricingPolicy);
-  return `Kamu adalah estimator DED (DED AI Estimate — mode DETAIL). Peranmu: menganalisis secara mendalam gambar kerja DED proyek tipe "${projectType}" dan menyusun daftar pekerjaan dengan kuantitas + estimasi harga satuan yang dapat dipertanggungjawabkan.
+  // Sprint 1 (Workstream A): urutan & anggaran sama dengan mode CEPAT —
+  // kontrak (identitas → kebijakan → aturan wajib + skema → interpretasi)
+  // tidak pernah dipotong; konteks WBS terpilih per tipe proyek dirakit
+  // terakhir oleh wbsContext dalam anggaran 7.900 karakter.
+  const contract = `Kamu adalah estimator DED (DED AI Estimate — mode DETAIL). Tugasmu: analisis mendalam gambar kerja DED proyek tipe "${projectType}" dan susun daftar pekerjaan dengan kuantitas + estimasi harga satuan yang dapat dipertanggungjawabkan.
 
 ${standardPricingPolicySection(policy)}
-${policy === 'FULL_AI' ? `FIELD TAMBAHAN MODE FULL_AI (di luar struktur di bawah): setiap workItem boleh berisi "proposedSubtotal": quantity × estimatedUnitPrice (null bila salah satunya null), dan tingkat atas berisi "proposedGrandTotal": jumlah semua proposedSubtotal.` : `MODE DATABASE: JANGAN mengeluarkan field proposedSubtotal atau proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.`}
-
-SPESIFIKASI KLASIFIKASI & WBS DED–RAB (wajib diikuti; katalog di bawah adalah daftar kandidat, bukan daftar wajib — kelompok dipilih dinamis sesuai tipe proyek dan bukti, bukan disalin semua):
-${WORK_CLASSIFICATION_SPEC}
+${policy === 'FULL_AI' ? `FIELD TAMBAHAN MODE FULL_AI: setiap workItem boleh berisi "proposedSubtotal": quantity × estimatedUnitPrice (null bila salah satunya null); tingkat atas berisi "proposedGrandTotal": jumlah semua proposedSubtotal.` : `MODE DATABASE: JANGAN mengeluarkan field proposedSubtotal atau proposedGrandTotal — total resmi dihitung aplikasi dari data tervalidasi.`}
 
 ATURAN WAJIB:
 - Keluarkan JSON MURNI (tanpa teks lain, tanpa markdown).
 - Struktur:
 {
   "projectType": "${projectType}",
-  "summary": "Ringkasan proyek dalam 2-3 kalimat Bahasa Indonesia.",
+  "summary": "Ringkasan proyek 2-3 kalimat Bahasa Indonesia.",
   "workItems": [
     {
       "id": "bebas",
@@ -46,7 +47,7 @@ ATURAN WAJIB:
       "units": "m3|m2|m'|unit|bh|l|set|m1...",
       "quantity": 45.5,
       "quantitySource": "DED_EXPLICIT|DED_GEOMETRIC|AI_INFERENCE|ASSUMPTION|UNRESOLVED",
-      "quantityFormula": "rumus / dimensi mis. 10m x 0.15m x 0.3m",
+      "quantityFormula": "rumus/dimensi mis. 10m x 0.15m x 0.3m",
       "dimensions": "10m x 0.15m x 0.3m",
       "specification": "spesifikasi teknis",
       "sourcePages": [2, 4],
@@ -59,41 +60,27 @@ ATURAN WAJIB:
 }
 
 PENALARAN DIMENSI, AMBIGUITAS & DUPLIKAT (wajib, mode DETAIL):
-- Tulis dasar hitung tiap kuantitas di quantityFormula dengan dimensi + satuan yang bisa diperiksa ulang (bukan hanya angka jadi). Bila satu dimensi hilang, nyatakan apa yang hilang dan asumsi penggantinya — jangan memakai angka yang terlihat presisi dari data yang tidak ada.
-- Gambar ambigu / dimensi tidak terbaca / spesifikasi tidak konsisten: sebutkan kedua versi di specification, pilih satu dengan alasan di quantityFormula, turunkan confidence ke LOW, dan tandai quantitySource sebagai ASSUMPTION atau UNRESOLVED bila tidak ada dasar yang bisa dipertahankan.
-- Pekerjaan yang sama di beberapa halaman = SATU item dengan sourcePages lengkap, jangan digandakan. Pekerjaan yang tumpang tindih ruang lingkupnya (mis. plester sudah termasuk acian) harus dipisahkan atau dijelaskan agar kuantitas tidak dihitung dua kali.
-- Bedakan secara eksplisit fakta DED (DED_EXPLICIT/DED_GEOMETRIC, lengkap dengan sourceEvidence) dari inferensi/asumsi (AI_INFERENCE/ASSUMPTION). Kuantitas atau harga tanpa dasar tidak boleh disajikan sebagai fakta pasti — beri confidence LOW dan catatan di quantityFormula/unitPriceNote.
+- Tulis dasar hitung tiap kuantitas di quantityFormula dengan dimensi + satuan yang bisa diperiksa ulang (bukan angka jadi). Dimensi hilang → nyatakan yang hilang + asumsi penggantinya; jangan memakai angka terlihat presisi dari data yang tidak ada.
+- Gambar ambigu/dimensi tak terbaca/spesifikasi tak konsisten: sebutkan kedua versi di specification, pilih satu dengan alasan di quantityFormula, confidence ke LOW, quantitySource ASSUMPTION/UNRESOLVED bila tak ada dasar yang bisa dipertahankan.
+- Pekerjaan yang sama di beberapa halaman = SATU item, sourcePages lengkap, jangan digandakan. Lingkup tumpang tindih (mis. plester termasuk acian) dipisahkan/dijelaskan agar tak dihitung dua kali.
+- Bedakan fakta DED (DED_EXPLICIT/DED_GEOMETRIC + sourceEvidence) dari inferensi (AI_INFERENCE/ASSUMPTION). Kuantitas/harga tanpa dasar tidak disajikan sebagai fakta pasti — confidence LOW + catatan di quantityFormula/unitPriceNote.
 
 ATURAN KUANTITAS & HARGA:
 - quantity = null SAAT TIDAK ADA dasar yang dapat kamu yakini. BUKAN 0.
-${policy === 'FULL_AI' ? `- estimatedUnitPrice: WAJIB diisi untuk semua item umum. Jangan biarkan kosong untuk item standar.
-  Referensi 2026: lapis aus Rp120-180rb/m2, aspal lapen Rp100-150rb/m2, sirtu Rp200-300rb/m3,
-  urugan tanah Rp50-100rb/m3, gorong-gorong pelat Rp15-25jt/unit, buis beton Rp8-15jt/unit.
-- estimatedUnitPrice = null HANYA untuk item sangat kustom tanpa referensi pasar.
-- Harga SEMUANYA adalah AI_ESTIMATE (bukan harga resmi AHSP / database).
-- Subtotal/total resmi tetap dihitung aplikasi secara deterministik; yang kamu hitung hanya proposedSubtotal/proposedGrandTotal sebagai usulan.` : `- estimatedUnitPrice HANYA kandidat fallback (mode DATABASE — tidak ada tabel harga pasar di mode ini): isi bila ada perkiraan masuk akal dari DED/spesifikasi, boleh null bila tidak ada dasar. TIDAK ADA kewajiban mengisi harga untuk semua item.
-- Harga final ditentukan aplikasi: kanonis bila item cocok dengan database, estimasi AI berlabel bila tidak ada di database. Perkiraanmu BUKAN harga resmi dan BUKAN harga database.
-- JANGAN menghitung subtotal/total resmi — aplikasi yang menghitungnya dari data tervalidasi.`}
-- Untuk KOLOM: quantity = TOTAL VOLUME semua kolom dalam m³, BUKAN panjang.
-  Contoh BENAR: 12 kolom @ 0.15×0.15×3m → quantity = 0.81, units = "m3".
-  Contoh SALAH: quantity = 0.15, units = "m'".
-- Untuk DINDING: kurangi luas bukaan (pintu/jendela) ~15-20% dari luas bruto.
-- Untuk pintu/jendela: quantity = jumlah total unit, bukan dimensi per daun.
+${policy === 'FULL_AI' ? `- estimatedUnitPrice: WAJIB diisi untuk semua item umum — jangan biarkan kosong untuk item standar. Referensi 2026: lapis aus Rp120-180rb/m2, aspal lapen Rp100-150rb/m2, sirtu Rp200-300rb/m3, urugan tanah Rp50-100rb/m3, gorong-gorong pelat Rp15-25jt/unit, buis beton Rp8-15jt/unit.
+- estimatedUnitPrice = null HANYA untuk item sangat kustom tanpa referensi pasar. Harga SEMUANYA adalah AI_ESTIMATE (bukan harga resmi AHSP/database).
+- Subtotal/total resmi dihitung aplikasi secara deterministik; yang kamu hitung hanya proposedSubtotal/proposedGrandTotal sebagai usulan.` : `- estimatedUnitPrice HANYA kandidat fallback (mode DATABASE — tidak ada tabel harga pasar di mode ini): isi bila ada perkiraan masuk akal dari DED/spesifikasi, boleh null bila tak ada dasar. TIDAK ADA kewajiban mengisi harga untuk semua item.
+- Harga final ditentukan aplikasi: kanonis bila item cocok database, estimasi AI berlabel bila tidak. Perkiraanmu BUKAN harga resmi dan BUKAN harga database. JANGAN menghitung subtotal/total resmi — aplikasi yang menghitung dari data tervalidasi.`}
+- KOLOM: quantity = TOTAL VOLUME semua kolom (m³), BUKAN panjang. BENAR: 12 kolom @ 0.15×0.15×3m → 0.81, units "m3". SALAH: 0.15, units "m'".
+- DINDING: kurangi bukaan (pintu/jendela) ~15-20% dari luas bruto. Pintu/jendela: quantity = jumlah total unit, bukan dimensi per daun.
 
 ATURAN KHUSUS PROYEK JALAN:
-- Cari STATIONING: format "STA 0+000" sampai "STA 1+595" berarti panjang 1595 meter.
-  Contoh: STA P. 0+004 ke STA P. 1+595 → panjang ≈ 1591 m.
-- Cari LEBAR JALAN di potongan melintang (tipikal 4-7 m untuk jalan kabupaten).
-- Lapis perkerasan (Lapis Aus, Aspal, Levelling): quantity = panjang × lebar, units = "m2".
-  Contoh: 1591 m × 5 m = 7955 m².
-- Urugan/timbunan: quantity = panjang × lebar × tebal, units = "m3".
-  Cari tebal urugan di potongan melintang (tipikal 0.1-0.3 m).
-- Jika lebar tidak ditemukan, ESTIMASI dari tipe jalan dan nyatakan asumsi di quantityFormula.
-  Contoh: "1591 × 5 (asumsi lebar jalan kabupaten)" dengan confidence LOW.
-- Gorong-gorong/jembatan: quantity = jumlah unit, units = "unit".
-- JANGAN biarkan item perkerasan kosong hanya karena lebar tidak eksplisit — estimasi dengan asumsi yang jelas.
+- STATIONING: "STA 0+000"–"STA 1+595" = panjang 1595 m (mis. STA P. 0+004 ke STA P. 1+595 → ≈1591 m). LEBAR jalan dicari di potongan melintang (tipikal 4-7 m jalan kabupaten).
+- Lapis perkerasan (lapis aus, aspal, levelling): quantity = panjang × lebar, units "m2" (mis. 1591 m × 5 m = 7955 m²). Urugan/timbunan: panjang × lebar × tebal, units "m3"; tebal dari potongan melintang (tipikal 0.1-0.3 m).
+- Lebar tak ditemukan → ESTIMASI dari tipe jalan, asumsi di quantityFormula (mis. "1591 × 5 (asumsi lebar jalan kabupaten)", confidence LOW). Gorong-gorong/jembatan: quantity = jumlah unit, units "unit". Item perkerasan JANGAN dikosongkan hanya karena lebar tak eksplisit.
 
 Keluarkan JSON murni.`;
+  return buildDedSystemPrompt(contract, projectType, { engine: 'standard' });
 }
 
 export function buildDetailPrompt(input: DedDetailPromptInput): DedDetailPromptResult {

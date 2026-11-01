@@ -12,17 +12,18 @@
  * melewati gerbang kebijakan + komposisi FULL adapter tersebut.
  */
 
-import { aiToolsProviderClient, AiToolsResult } from '../providerClient';
+import { aiToolsProviderClient, AiToolsResult, balancedJsonEnd } from '../providerClient';
 import { waitForMinimum, minDelayFor } from '../aiResponseTiming';
 import { buildFastPrompt, DedFastOutput, DedFastPromptInput } from './prompts/fast';
 import { buildDetailPrompt, DedDetailOutput, DedDetailPromptInput } from './prompts/detail';
 import { parseDedPdf, DedParsedDocument } from './parser';
-import { attemptQuantityFromDimensionString } from './quantity';
+import { attemptQuantityFromDimensionString, parseDimensionsString } from './quantity';
+import { applyQuantityReasonablenessReview } from './reasonableness';
 import { resolveDedPriceForPolicy } from './pricing';
 import { matchDedItemToAhsp, resolveDedPriceWithCanonical } from '../ded-canonical/canonicalDedPricing';
 import { DedAiCalculator } from './calculator';
 import { deriveKolomVolume, deriveDindingNetto, derivePlester, DerivationTrail } from './derivation';
-import { selectPagesWithTrace, formatPageRanges } from './analysisTrace';
+import { selectPagesWithTrace, formatPageRanges, SelectedPage } from './analysisTrace';
 import { buildDivisionCoverage } from './divisions';
 import { groupByWbs } from './wbsClassifier';
 import {
@@ -34,6 +35,7 @@ import {
   DedAiQuantitySource,
   DedAiProgressEvent,
   DedPassTraceEntry,
+  DedPassSummary,
 } from './types';
 
 const PROJECT_TYPES: ReadonlyArray<string> = [
@@ -47,6 +49,12 @@ const PROJECT_TYPES: ReadonlyArray<string> = [
   // meski katalog & prompt sudah mendukungnya.
   'BENDUNGAN',
   'IRIGASI',
+  // Sprint 3 (B1): JEMBATAN diselaraskan ke spec — katalog WBS §6 dan
+  // ketiga pembangun prompt Sprint 1 sudah menangani token ini (probe
+  // gateway menghasilkan 12 item jembatan yang sah); gerbang service
+  // adalah satu-satunya titik yang tidak konsisten. Chip UI adalah
+  // cakupan workstream lain — di sini hanya gerbang service.
+  'JEMBATAN',
 ];
 
 // Diekspor agar gate validasi ini dapat diuji langsung (tanpa model live).
@@ -58,6 +66,9 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: import('
   const name = String(raw.name || `Pekerjaan ${idx + 1}`);
   const units = String(raw.units || raw.unit || 'm2');
   const dims = raw.dimensions || raw.quantityFormula || '';
+  // Sprint 3 (G3): ditandai mergeRawItemsAcrossPasses bila item se-nama
+  // se-satuan dengan dimensi berbeda dipertahankan dari pass lain.
+  const dedupDimensionConflict = raw?.__dedupDimensionConflict === true;
 
   const fromDim = attemptQuantityFromDimensionString(units, dims || undefined);
   const rawAIQuantity = typeof raw.quantity === 'number' && Number.isFinite(raw.quantity) ? raw.quantity : null;
@@ -128,6 +139,11 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: import('
 
   if (derivation && quantity !== null) {
     // Derivasi berhasil — quantitySource sudah DERIVED, skip fallback.
+  } else if (fromDim.diameterOnly) {
+    // Sprint 3 (B2): hanya diameter yang tercantum — diameter bukan
+    // panjang elemen. Kuantitas UNRESOLVED apa pun klaim modelnya.
+    quantity = null;
+    quantitySource = 'UNRESOLVED';
   } else if (fromDim.ambiguousUnit) {
     quantity = null;
     quantitySource = 'UNRESOLVED';
@@ -175,6 +191,30 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: import('
     notes: aiPrice.note,
   });
 
+  // FASE DED-FIX: alasan unresolved spesifik untuk ditampilkan ke pengguna.
+  // Bedakan "tidak tercantum di DED" vs "gagal membaca".
+  const baseQuantityNote =
+    quantitySource === 'UNRESOLVED'
+      ? fromDim.diameterOnly
+        ? 'Hanya diameter yang tercantum di DED; panjang elemen tidak diketahui — kuantitas perlu input manual.'
+        : fromDim.ambiguousUnit
+          ? 'Satuan dimensi tidak jelas; perlu verifikasi manual.'
+          : dims && dims.trim()
+            ? 'Dimensi ditemukan tetapi gagal diparse; periksa manual.'
+            : 'Kuantitas tidak tercantum di DED; perlu input manual atau asumsi terdokumentasi.'
+      : quantitySource === 'AI_INFERENCE'
+        ? 'Kuantitas dari inferensi AI; perlu ditinjau sebelum finalisasi.'
+        : quantitySource === 'ASSUMPTION'
+          ? 'Kuantitas dari asumsi; perlu ditinjau sebelum finalisasi.'
+          : undefined;
+  // Sprint 3 (G3): konflik dimensi antar-pass selalu terlihat sebagai
+  // catatan review, apa pun catatan dasarnya.
+  const quantityNote = dedupDimensionConflict
+    ? [baseQuantityNote, 'Item se-nama dan se-satuan dengan dimensi berbeda ditemukan antar-pass — keduanya dipertahankan; perlu review.']
+        .filter(Boolean)
+        .join(' ')
+    : baseQuantityNote;
+
   return {
     id: `dedai-${idx + 1}`,
     name,
@@ -185,20 +225,7 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: import('
     quantity,
     quantitySource,
     quantityFormula: fromDim.formula || raw.quantityFormula || undefined,
-    // FASE DED-FIX: alasan unresolved spesifik untuk ditampilkan ke pengguna.
-    // Bedakan "tidak tercantum di DED" vs "gagal membaca".
-    quantityNote:
-      quantitySource === 'UNRESOLVED'
-        ? fromDim.ambiguousUnit
-          ? 'Satuan dimensi tidak jelas; perlu verifikasi manual.'
-          : dims && dims.trim()
-            ? 'Dimensi ditemukan tetapi gagal diparse; periksa manual.'
-            : 'Kuantitas tidak tercantum di DED; perlu input manual atau asumsi terdokumentasi.'
-        : quantitySource === 'AI_INFERENCE'
-          ? 'Kuantitas dari inferensi AI; perlu ditinjau sebelum finalisasi.'
-          : quantitySource === 'ASSUMPTION'
-            ? 'Kuantitas dari asumsi; perlu ditinjau sebelum finalisasi.'
-            : undefined,
+    quantityNote,
     rawDimensions: fromDim.rawDimensions || undefined,
     derivation,
     rawAIQuantity,
@@ -222,6 +249,7 @@ function convertAiItem(idx: number, raw: any, mode: DedAiMode, policy?: import('
       ...(price.ahspCode ? [`ahsp:${price.ahspCode}`] : []),
       quantity !== null ? `qty=${quantity}` : 'qty=null',
       price.unitPrice !== null ? `price=${price.unitPrice}` : 'price=null',
+      ...(dedupDimensionConflict ? ['dedup-conflict: dimensi berbeda antar-pass untuk nama+satuan yang sama'] : []),
     ],
     stage: 'PARSE',
   };
@@ -269,6 +297,110 @@ export function classifyPassOutcome(parsedAi: unknown, parseFailed: boolean): De
   return { status: 'OK', items: workItems };
 }
 
+export type DedPassExecution =
+  | { kind: 'PROVIDER_ERROR'; aiError: Extract<AiToolsResult, { success: false }>; retries: number }
+  | { kind: 'OUTCOME'; outcome: DedPassOutcome; retries: number };
+
+/** Sprint 3.1: batas percobaan ulang per pass untuk outcome MALFORMED. */
+export const DED_PASS_MAX_MALFORMED_RETRIES = 1;
+
+/**
+ * Sprint 3.1 — Eksekusi satu pass dengan retry TERBATAS untuk keluaran
+ * MALFORMED (investigasi landscape Sprint 3: satu run gugur
+ * MALFORMED_RESPONSE padahal pass yang sama bisa sah pada percobaan
+ * berikutnya karena keluaran model tidak deterministik).
+ *
+ * Aturan main (disengaja sempit):
+ * - Hanya outcome MALFORMED_RESPONSE yang dicoba ulang, MAKSIMUM
+ *   DED_PASS_MAX_MALFORMED_RETRIES (1) kali, dengan prompt yang sama.
+ * - Kegagalan provider/gateway TIDAK dicoba ulang di sini: bisa berupa
+ *   auth/kuota/batas biaya, dan semantik lastAiError harus utuh.
+ * - Item hanya diambil dari outcome FINAL — percobaan sebelumnya tidak
+ *   menyumbang item, jadi retry tidak dapat menggandakan item (dan
+ *   finalisasi sendiri dilindungi kunci idempotensi G4).
+ * - `retries` dikembalikan agar loop mencatatnya di jejak pass
+ *   (passTrace.retryCount) — retry selalu terobservasi, tidak senyap.
+ * - Bila percobaan ulang tetap MALFORMED, outcome MALFORMED itulah
+ *   hasilnya: tidak pernah diubah menjadi sukses/EMPTY palsu.
+ */
+export async function executeDedPassAttempt(
+  callAi: () => Promise<AiToolsResult>
+): Promise<DedPassExecution> {
+  let retries = 0;
+  for (;;) {
+    const aiResult = await callAi();
+    if (!aiResult.success) {
+      return { kind: 'PROVIDER_ERROR', aiError: aiResult, retries };
+    }
+    let parsedAi: DedFastOutput | DedDetailOutput | null = null;
+    let parseFailed = false;
+    if (aiResult.structured != null) {
+      parsedAi = aiResult.structured as DedFastOutput | DedDetailOutput;
+    } else {
+      const recovered = parseDedAiModelResponse(aiResult.content);
+      parsedAi = recovered.parsed as DedFastOutput | DedDetailOutput | null;
+      parseFailed = recovered.parseFailed;
+    }
+    const outcome = classifyPassOutcome(parsedAi, parseFailed);
+    if (outcome.status === 'MALFORMED_RESPONSE' && retries < DED_PASS_MAX_MALFORMED_RETRIES) {
+      retries++;
+      continue;
+    }
+    return { kind: 'OUTCOME', outcome, retries };
+  }
+}
+
+/**
+ * Sprint 1 (Workstream A): pemulihan respons model untuk pass DED.
+ *
+ * Urutan pemulihan (deterministik):
+ * 1. Pindai objek `{...}` seimbang PERTAMA yang — setelah JSON.parse bersih
+ *    (dengan pembersihan koma-ekor yang sama seperti providerClient) —
+ *    adalah objek dengan `workItems` berupa array. Ini mencakup JSON murni
+ *    dan JSON di dalam pagar markdown (pagar hanyalah prosa di sekeliling
+ *    objek), serta JSON yang terbungkus prosa penjelasan: objek payload
+ *    didahulukan daripada rentang JSON lain yang mungkin lebih panjang
+ *    tetapi bukan payload (heuristik "terpanjang" extractJson bisa memilih
+ *    objek contoh dari prosa).
+ * 2. Bila tidak ada objek workItems yang sah, jatuh ke extractJson milik
+ *    providerClient persis seperti sebelumnya (paritas perilaku lama,
+ *    termasuk objek tanpa workItems → MALFORMED_RESPONSE di
+ *    classifyPassOutcome).
+ * 3. Bila keduanya gagal: parseFailed = true → MALFORMED_JSON. Prosa
+ *    markdown murni tanpa objek yang sah TIDAK PERNAH menjadi sukses palsu.
+ *
+ * Fungsi ini tidak mengubah semantik classifyPassOutcome, kalkulator,
+ * harga, atau provenance — ia hanya menentukan objek mana yang dinilai.
+ */
+export function parseDedAiModelResponse(content: unknown): { parsed: unknown; parseFailed: boolean } {
+  if (typeof content !== 'string' || content.trim() === '') {
+    return { parsed: null, parseFailed: true };
+  }
+  const text = content;
+  let candidates = 0;
+  for (let i = 0; i < text.length && candidates < 200; i++) {
+    if (text[i] !== '{') continue;
+    candidates++;
+    const end = balancedJsonEnd(text, i);
+    if (end === -1) continue;
+    const slice = text.slice(i, end);
+    if (!slice.includes('"workItems"')) continue;
+    try {
+      const value: unknown = JSON.parse(slice.replace(/,\s*([}\]])/g, '$1'));
+      if (value != null && typeof value === 'object' && Array.isArray((value as { workItems?: unknown }).workItems)) {
+        return { parsed: value, parseFailed: false };
+      }
+    } catch {
+      /* bukan JSON bersih — lanjutkan pemindaian */
+    }
+  }
+  try {
+    return { parsed: aiToolsProviderClient.extractJson<unknown>(text), parseFailed: false };
+  } catch {
+    return { parsed: null, parseFailed: true };
+  }
+}
+
 /**
  * F4 (3.5): keputusan error akhir bila tidak ada satu pun item terkumpul.
  * Kegagalan gateway (lastAiError) diteruskan apa adanya. Bila ada pass
@@ -306,6 +438,283 @@ export function decideNoItemsError(
     message: 'Model tidak menemukan pekerjaan apa pun di DED.',
     retryable: true,
   };
+}
+
+/**
+ * Sprint 3 (B1) — Anggaran request per pass. Gateway menolak prompt di
+ * atas 20.000 karakter (api/_lib/security.js); Sprint 1 menetapkan
+ * disiplin ukuran request gabungan (system + prompt) ≤ 19.500 untuk
+ * Dokumen AI. Sprint 2 membuktikan pass DED menembus batas itu (klaster
+ * 20–40 halaman) sehingga pass gugur PAYLOAD_TOO_LARGE di balik
+ * success:true. Anggaran ini ditegakkan SEBELUM pengiriman, dengan
+ * mengukur prompt yang benar-benar akan dikirim.
+ */
+export const DED_PASS_REQUEST_BUDGET_CHARS = 19500;
+
+export interface DedPassPlanGroup {
+  label: string;
+  pages: SelectedPage[];
+}
+
+export type DedPassPlanEntry =
+  | { kind: 'SEND'; label: string; pages: SelectedPage[]; requestChars: number }
+  | { kind: 'SKIPPED_BUDGET'; label: string; pages: SelectedPage[]; requestChars: number; reason: string };
+
+/**
+ * Sprint 3 (B1) — Perencana pass sadar-anggaran (fungsi murni, dapat
+ * diuji). Untuk setiap kelompok, halaman diakumulasi serakah: sebuah
+ * halaman ditambahkan hanya bila request terukur (system + prompt,
+ * lewat `measure` yang memakai pembangun prompt asli) tetap ≤ budget.
+ * Kelompok yang melebihi anggaran DIPECAH menjadi beberapa pass SEND —
+ * tidak ada halaman yang dibuang. Satu-satunya pengecualian: satu
+ * halaman yang SENDIRIAN sudah melebihi anggaran menjadi entri
+ * SKIPPED_BUDGET dengan alasan eksplisit (tidak dikirim untuk gagal).
+ */
+export function planDedPasses(
+  groups: ReadonlyArray<DedPassPlanGroup>,
+  measure: (pages: SelectedPage[]) => number,
+  budget: number = DED_PASS_REQUEST_BUDGET_CHARS
+): DedPassPlanEntry[] {
+  const plan: DedPassPlanEntry[] = [];
+  for (const group of groups) {
+    let current: SelectedPage[] = [];
+    let currentChars = 0;
+    const flush = () => {
+      if (current.length > 0) {
+        plan.push({ kind: 'SEND', label: group.label, pages: current, requestChars: currentChars });
+        current = [];
+        currentChars = 0;
+      }
+    };
+    for (const page of group.pages) {
+      const trial = [...current, page];
+      const trialChars = measure(trial);
+      if (trialChars <= budget) {
+        current = trial;
+        currentChars = trialChars;
+        continue;
+      }
+      if (current.length > 0) {
+        flush();
+        const singleChars = measure([page]);
+        if (singleChars <= budget) {
+          current = [page];
+          currentChars = singleChars;
+        } else {
+          plan.push({
+            kind: 'SKIPPED_BUDGET',
+            label: group.label,
+            pages: [page],
+            requestChars: singleChars,
+            reason:
+              `Halaman ${page.page} sendirian membutuhkan ${singleChars} karakter request ` +
+              `(anggaran ${budget}) — tidak dikirim agar tidak gagal PAYLOAD_TOO_LARGE.`,
+          });
+        }
+      } else {
+        plan.push({
+          kind: 'SKIPPED_BUDGET',
+          label: group.label,
+          pages: [page],
+          requestChars: trialChars,
+          reason:
+            `Halaman ${page.page} sendirian membutuhkan ${trialChars} karakter request ` +
+            `(anggaran ${budget}) — tidak dikirim agar tidak gagal PAYLOAD_TOO_LARGE.`,
+        });
+      }
+    }
+    flush();
+  }
+  return plan;
+}
+
+/**
+ * Sprint 3 (B1) — Ringkasan status pass untuk envelope. Hasil bersifat
+ * parsial bila ada pass yang gagal (FAILED/PARTIAL) atau dilewati
+ * (SKIPPED_*) — parsial tidak pernah dilaporkan sebagai sukses penuh.
+ */
+export function summarizePassOutcomes(
+  passTraces: ReadonlyArray<DedPassTraceEntry>
+): DedPassSummary {
+  let succeeded = 0;
+  let failed = 0;
+  let skipped = 0;
+  for (const t of passTraces) {
+    const s = t.passStatus ?? (
+      t.status === 'OK' || t.status === 'EMPTY_RESPONSE'
+        ? 'SUCCESS'
+        : t.status === 'MALFORMED_RESPONSE'
+          ? 'PARTIAL'
+          : t.status === 'FAILED'
+            ? 'FAILED'
+            : t.status
+    );
+    if (s === 'SUCCESS') succeeded++;
+    else if (s === 'SKIPPED_BUDGET' || s === 'SKIPPED_UNSUPPORTED') skipped++;
+    else failed++;
+  }
+  return {
+    totalPasses: passTraces.length,
+    succeededPasses: succeeded,
+    failedPasses: failed,
+    skippedPasses: skipped,
+    partial: failed > 0 || skipped > 0,
+  };
+}
+
+/**
+ * Sprint 3 (G3) — Sidik dimensi deterministik untuk identitas dedup:
+ * nilai numerik terparse dari string dimensi item mentah, terurut.
+ * String kosong / tanpa angka → '' (identitas tanpa dimensi).
+ */
+const numericKey = (n: number): string => String(Math.round(n * 1e6) / 1e6);
+
+export function dimensionSignatureOf(raw: any): string {
+  const dims = String(raw?.dimensions || raw?.quantityFormula || '');
+  if (!dims.trim()) return '';
+  return parseDimensionsString(dims)
+    .slice()
+    .sort((a, b) => a - b)
+    .map(numericKey)
+    .join('x');
+}
+
+/**
+ * Sprint 3 (G3) — Gabung + dedup antar-pass yang sadar dimensi.
+ * Kunci identitas = nama ternormalisasi + satuan + sidik dimensi.
+ * - Nama+satuan+dimensi sama → digabung seperti perilaku lama (utamakan
+ *   item yang kuantitasnya terisi).
+ * - Nama+satuan sama tetapi dimensi BERBEDA → kedua item DIPERTAHANKAN;
+ *   item sesudah yang pertama ditandai `__dedupDimensionConflict` agar
+ *   convertAiItem menempelkan catatan review (dulu salah satunya
+ *   tertelan diam-diam: 0,12 m³ vs 0,36 m³ menjadi satu item).
+ * - Tanpa dimensi di kedua sisi → tanda tangan '' sama → digabung
+ *   seperti perilaku lama.
+ */
+export function mergeRawItemsAcrossPasses(rawItems: any[]): any[] {
+  const keyOf = (raw: any) =>
+    `${String(raw.name || '').toLowerCase().replace(/\s+/g, ' ').trim()}|` +
+    `${String(raw.units || raw.unit || '').toLowerCase()}|` +
+    dimensionSignatureOf(raw);
+  const merged = new Map<string, any>();
+  const order: any[] = [];
+  for (const raw of rawItems) {
+    const key = keyOf(raw);
+    const prev = merged.get(key);
+    if (!prev) {
+      merged.set(key, raw);
+      order.push(raw);
+      continue;
+    }
+    if (prev.quantity == null && typeof raw.quantity === 'number') {
+      merged.set(key, raw);
+      order[order.indexOf(prev)] = raw;
+    }
+  }
+  const byNameUnit = new Map<string, any[]>();
+  for (const item of order) {
+    const k = keyOf(item).split('|').slice(0, 2).join('|');
+    const arr = byNameUnit.get(k) || [];
+    arr.push(item);
+    byNameUnit.set(k, arr);
+  }
+  for (const group of byNameUnit.values()) {
+    if (group.length < 2) continue;
+    const sigs = new Set(group.map((it) => dimensionSignatureOf(it)));
+    if (sigs.size > 1) {
+      for (const item of group.slice(1)) item.__dedupDimensionConflict = true;
+    }
+  }
+  return order;
+}
+
+/** Halaman sumber minimal untuk verifikasi evidensial kuantitas. */
+export interface DedEvidencePage {
+  page: number;
+  text: string;
+}
+
+function sourceNumberSet(pages: ReadonlyArray<DedEvidencePage>): Set<string> {
+  const set = new Set<string>();
+  for (const p of pages) {
+    for (const n of parseDimensionsString(p.text || '')) set.add(numericKey(n));
+  }
+  return set;
+}
+
+/** Varian skala satuan yang wajar untuk satu angka masukan (mm↔cm↔m). */
+function numberVariants(n: number): string[] {
+  return [n, n * 1000, n / 1000, n * 100, n / 100].map(numericKey);
+}
+
+function quantityInputNumbers(item: DedAiItem): number[] {
+  const fromDims = item.rawDimensions ? parseDimensionsString(item.rawDimensions) : [];
+  if (fromDims.length > 0) return [...new Set(fromDims.filter((n) => n > 0))];
+  if (item.quantityFormula) {
+    // Hanya kepala formula (string dimensi model) — bagian "(= …)" dan
+    // "[konversi …]" adalah hasil hitung aplikasi, bukan masukan.
+    const head = item.quantityFormula.split('(')[0].split('[')[0];
+    const nums = parseDimensionsString(head).filter((n) => n > 0);
+    if (nums.length > 0) return [...new Set(nums)];
+  }
+  return item.quantity !== null && item.quantity > 0 ? [item.quantity] : [];
+}
+
+/**
+ * Sprint 3 (B2) — Verifikasi evidensial label kuantitas. Label
+ * DED_EXPLICIT / DED_GEOMETRIC adalah klaim bahwa angka-angkanya berasal
+ * dari dokumen sumber; klaim model saja TIDAK cukup. Setiap angka
+ * masukan dimensi item harus ditemukan di teks sumber (halaman yang
+ * disitir item bila ada, dengan fallback seluruh dokumen; varian skala
+ * mm↔cm↔m diterima). Bila ada angka yang tidak ditemukan di mana pun:
+ * label DITURUNKAN ke AI_INFERENCE — nilai kuantitasnya dipertahankan
+ * sebagai estimasi model — dan penurunan dicatat di quantityNote +
+ * provenance. Item DERIVED tidak disentuh (input terstrukturnya punya
+ * penanda sumber sendiri di derivation.ts).
+ */
+export function verifyItemQuantityEvidence(item: DedAiItem, pages: ReadonlyArray<DedEvidencePage>): DedAiItem {
+  if (item.quantity === null) return item;
+  if (item.quantitySource !== 'DED_EXPLICIT' && item.quantitySource !== 'DED_GEOMETRIC') return item;
+  const inputs = quantityInputNumbers(item);
+  if (inputs.length === 0) return item;
+  const cited = item.sourcePages.length > 0
+    ? pages.filter((p) => item.sourcePages.includes(p.page))
+    : [];
+  const missingIn = (set: Set<string>) =>
+    inputs.filter((n) => !numberVariants(n).some((v) => set.has(v)));
+  let missing: number[];
+  if (cited.length > 0) {
+    missing = missingIn(sourceNumberSet(cited));
+    if (missing.length === 0) return item;
+    // Sitiran halaman bisa saja tidak tepat; label hanya gugur bila
+    // angkanya tidak ada di SELURUH dokumen.
+    const docMissing = missingIn(sourceNumberSet(pages));
+    if (docMissing.length === 0) {
+      item.provenance = [...item.provenance, 'quantity-evidence: ditemukan di dokumen di luar halaman sitiran'];
+      return item;
+    }
+    missing = docMissing;
+  } else {
+    missing = missingIn(sourceNumberSet(pages));
+    if (missing.length === 0) return item;
+  }
+  const previous = item.quantitySource;
+  item.quantitySource = 'AI_INFERENCE';
+  const reason =
+    `Kuantitas diturunkan dari ${previous} ke inferensi AI: angka dimensi ` +
+    `(${missing.join(', ')}) tidak ditemukan di teks sumber DED — label sumber tidak terverifikasi.`;
+  item.quantityNote = [item.quantityNote, reason].filter(Boolean).join(' ');
+  item.provenance = [...item.provenance, `quantity:${previous}->AI_INFERENCE(evidence-unverified)`];
+  return item;
+}
+
+/** Sprint 3 (B2): terapkan verifikasi evidensial ke seluruh item hasil. */
+export function applyQuantityEvidenceVerification(
+  items: DedAiItem[],
+  pages: ReadonlyArray<DedEvidencePage>
+): DedAiItem[] {
+  for (const item of items) verifyItemQuantityEvidence(item, pages);
+  return items;
 }
 
 export class DedAiEstimateService {
@@ -411,36 +820,44 @@ export class DedAiEstimateService {
     if (pageSummaries.length <= 10 || groups.length <= 1) {
       groups = [{ label: 'Semua Halaman', pages: pageSummaries }];
     }
-    // Pecah kelompok besar menjadi pass-pass berurutan — INI BUKAN batas
-    // buang: semua halaman tetap diproses, hanya dibagi panggilannya agar
-    // satu panggilan model tidak timeout dan tidak terpotong token.
-    // Ambang 60.000 karakter per pass (~15 ribu token teks) jauh di bawah
-    // konteks model, jadi pemecahan ini murni pengaman latensi.
-    const PASS_TEXT_CHUNK = 60000;
-    const chunkedGroups: typeof groups = [];
-    for (const g of groups) {
-      let chunk: typeof g.pages = [];
-      let chars = 0;
-      for (const pg of g.pages) {
-        if (chunk.length > 0 && chars + pg.text.length > PASS_TEXT_CHUNK) {
-          chunkedGroups.push({ label: g.label, pages: chunk });
-          chunk = [];
-          chars = 0;
-        }
-        chunk.push(pg);
-        chars += pg.text.length;
-      }
-      if (chunk.length > 0) chunkedGroups.push({ label: g.label, pages: chunk });
-    }
-    groups = chunkedGroups;
-    // Tautkan halaman terpilih ke pass-nya di jejak.
+    // === Sprint 3 (B1): pecah kelompok menjadi pass SADAR-ANGGARAN ===
+    // Ambang lama 60.000 karakter teks per pass mengabaikan plafon
+    // gateway (prompt > 20.000 ditolak): klaster 20–40 halaman gugur
+    // PAYLOAD_TOO_LARGE di balik success:true (Sprint 2: gedung
+    // kehilangan 8/11 pass; irigasi gugur total). Sekarang ukuran
+    // request yang SEBENARNYA (system + prompt dari pembangun prompt
+    // asli) diukur sebelum pengiriman dan setiap pass dijamin
+    // ≤ DED_PASS_REQUEST_BUDGET_CHARS. Ini tetap BUKAN batas buang:
+    // kelompok dipecah menjadi lebih banyak pass; satu-satunya halaman
+    // yang tidak dikirim adalah halaman yang sendirian sudah melebihi
+    // anggaran — dan itu tercatat SKIPPED_BUDGET dengan alasan, bukan
+    // hilang diam-diam.
+    const pricingPolicy = options.policy ?? 'FULL_AI';
+    const buildForPages = (pages: typeof pageSummaries) => mode === 'FAST'
+      ? buildFastPrompt({ projectType, buildingType, pageSummaries: pages, pricingPolicy })
+      : buildDetailPrompt({ projectType, buildingType, pageSummaries: pages, pricingPolicy });
+    const measureRequest = (pages: typeof pageSummaries) => {
+      const b = buildForPages(pages);
+      return b.system.length + b.prompt.length;
+    };
+    const passPlan = planDedPasses(groups, measureRequest);
+    // Tautkan halaman terpilih ke pass-nya di jejak; halaman pada pass
+    // SKIPPED_BUDGET dibalik status jejaknya (UI sudah menampilkannya).
     const traceByPage = new Map(pageTrace.map(t => [t.page, t]));
-    groups.forEach((g, gi) => {
-      for (const s of g.pages) {
-        const entry = traceByPage.get(s.page);
-        if (entry) { entry.passIndex = gi; entry.clusterLabel = g.label; }
+    passPlan.forEach((entry, gi) => {
+      for (const s of entry.pages) {
+        const t = traceByPage.get(s.page);
+        if (!t) continue;
+        t.passIndex = gi;
+        t.clusterLabel = entry.label;
+        if (entry.kind === 'SKIPPED_BUDGET') {
+          t.status = 'SKIPPED_BUDGET';
+          t.sentChars = 0;
+          t.reason = entry.reason;
+        }
       }
     });
+    const budgetSkippedCount = pageTrace.filter((t) => t.status === 'SKIPPED_BUDGET').length;
 
     const maxTokens = mode === 'FAST' ? 16000 : 24000;
     const productId = mode === 'FAST' ? 'DED_AI_FAST' : 'DED_AI_DETAIL';
@@ -448,87 +865,124 @@ export class DedAiEstimateService {
     const passTraces: DedPassTraceEntry[] = [];
     let lastAiError: any = null;
 
-    for (let gi = 0; gi < groups.length; gi++) {
-      // Kebijakan harga DIPAKAIKAN ke prompt (sebelumnya prompt tidak
-      // menerima policy sehingga selalu meminta harga AI apa pun modenya).
-      const built = mode === 'FAST'
-        ? buildFastPrompt({ projectType, buildingType, pageSummaries: groups[gi].pages, pricingPolicy: options.policy ?? 'FULL_AI' })
-        : buildDetailPrompt({ projectType, buildingType, pageSummaries: groups[gi].pages, pricingPolicy: options.policy ?? 'FULL_AI' });
-
-      notify('ANALYZE', mode === 'FAST' ? 'Menganalisis DED' : 'Analisis mendalam',
-        50 + Math.round((gi / groups.length) * 25),
-        groups.length > 1
-          ? `Mengirim kelompok halaman ${gi + 1}/${groups.length} ke model AI…`
-          : 'Mengirim prompt ke model AI untuk analisis…',
-        { pagesRead: parsed.pages.length, totalPages: parsed.pages.length });
-
-      const aiResult: AiToolsResult = await aiToolsProviderClient.execute({
-        productId,
-        prompt: built.prompt,
-        systemPrompt: built.system,
-        jsonMode: true,
-        maxTokens,
-        timeoutMs: mode === 'FAST' ? 120000 : 180000,
-      });
-
+    for (let gi = 0; gi < passPlan.length; gi++) {
+      const planEntry = passPlan[gi];
       const passTrace: DedPassTraceEntry = {
         passIndex: gi,
-        clusterLabel: groups[gi].label,
-        pageTypes: [...new Set(groups[gi].pages.map(s => s.pageType))],
-        pages: groups[gi].pages.map(s => s.page),
+        clusterLabel: planEntry.label,
+        pageTypes: [...new Set(planEntry.pages.map(s => s.pageType))],
+        pages: planEntry.pages.map(s => s.page),
         productId,
         mode,
         maxTokens,
         status: 'OK',
         itemCount: 0,
+        // Sprint 3 (B1): ukuran request terukur dicatat sebagai bukti
+        // anggaran ditegakkan sebelum pengiriman.
+        requestChars: planEntry.requestChars,
       };
 
-      if (!aiResult.success) {
-        lastAiError = aiResult;
-        passTrace.status = 'FAILED';
-        passTrace.errorCode = aiResult.errorCode;
+      if (planEntry.kind === 'SKIPPED_BUDGET') {
+        // Tidak dikirim — mengirimnya pasti gagal PAYLOAD_TOO_LARGE.
+        // Tercatat eksplisit; hasil akhir menjadi parsial, bukan sukses.
+        passTrace.status = 'SKIPPED_BUDGET';
+        passTrace.passStatus = 'SKIPPED_BUDGET';
+        passTrace.reason = planEntry.reason;
         passTraces.push(passTrace);
         continue;
       }
 
-      let parsedAi: DedFastOutput | DedDetailOutput | null = null;
-      let parseFailed = false;
-      try {
-        parsedAi =
-          (aiResult.structured as any) ??
-          (mode === 'FAST'
-            ? aiToolsProviderClient.extractJson<DedFastOutput>(aiResult.content)
-            : aiToolsProviderClient.extractJson<DedDetailOutput>(aiResult.content));
-      } catch { parsedAi = null; parseFailed = true; }
+      // Kebijakan harga DIPAKAIKAN ke prompt (sebelumnya prompt tidak
+      // menerima policy sehingga selalu meminta harga AI apa pun modenya).
+      const built = buildForPages(planEntry.pages);
+
+      notify('ANALYZE', mode === 'FAST' ? 'Menganalisis DED' : 'Analisis mendalam',
+        50 + Math.round((gi / passPlan.length) * 25),
+        passPlan.length > 1
+          ? `Mengirim kelompok halaman ${gi + 1}/${passPlan.length} ke model AI…`
+          : 'Mengirim prompt ke model AI untuk analisis…',
+        { pagesRead: parsed.pages.length, totalPages: parsed.pages.length });
+
+      // Sprint 3.1: eksekusi + interpretasi + retry MALFORMED terbatas
+      // dirangkum executeDedPassAttempt (item hanya dari outcome final).
+      const execution = await executeDedPassAttempt(() =>
+        aiToolsProviderClient.execute({
+          productId,
+          prompt: built.prompt,
+          systemPrompt: built.system,
+          jsonMode: true,
+          maxTokens,
+          timeoutMs: mode === 'FAST' ? 120000 : 180000,
+        })
+      );
+      passTrace.retryCount = execution.retries;
+
+      if (execution.kind === 'PROVIDER_ERROR') {
+        lastAiError = execution.aiError;
+        passTrace.status = 'FAILED';
+        passTrace.passStatus = 'FAILED';
+        passTrace.errorCode = execution.aiError.errorCode;
+        passTraces.push(passTrace);
+        continue;
+      }
+
       // F4 (3.5): bedakan format keluaran rusak (MALFORMED) dari dokumen
       // yang memang tidak menghasilkan item (EMPTY) — lihat classifyPassOutcome.
-      const outcome = classifyPassOutcome(parsedAi, parseFailed);
+      const outcome = execution.outcome;
       if (outcome.status === 'OK') {
         rawItems.push(...outcome.items);
       }
       passTrace.itemCount = outcome.items.length;
       passTrace.status = outcome.status;
+      // Sprint 3 (B1): status semantik — MALFORMED berarti pass terkirim
+      // tetapi cakupannya hilang (PARTIAL), bukan sukses.
+      passTrace.passStatus = outcome.status === 'MALFORMED_RESPONSE' ? 'PARTIAL' : 'SUCCESS';
       if (outcome.errorCode) passTrace.errorCode = outcome.errorCode;
       passTraces.push(passTrace);
     }
 
     if (rawItems.length === 0) {
+      // Sprint 3 (B1): bila tidak ada item KARENA halaman dilewati
+      // anggaran (dan tidak ada kegagalan lain), errornya harus menyebut
+      // penyebab sebenarnya — bukan NO_DATA yang menyalahkan dokumen.
+      const onlyBudgetSkips =
+        !lastAiError &&
+        !passTraces.some((t) => t.status === 'MALFORMED_RESPONSE') &&
+        passTraces.some((t) => t.status === 'SKIPPED_BUDGET');
+      if (onlyBudgetSkips) {
+        return {
+          success: false,
+          errorCode: 'PAYLOAD_TOO_LARGE',
+          stage: 'analyze',
+          message:
+            'Satu atau lebih halaman terlalu besar untuk dikirim ke model dalam anggaran request ' +
+            'yang aman (lihat analysisTrace: pass SKIPPED_BUDGET). Tidak ada item yang dihasilkan dari halaman tersebut.',
+          retryable: false,
+        };
+      }
       return {
         success: false,
         ...decideNoItemsError(passTraces.map((t) => t.status), lastAiError),
       };
     }
 
-    // Gabung + dedup antar-pass: kunci nama ternormalisasi + satuan;
-    // bila duplikat, utamakan item yang kuantitasnya terisi.
-    const merged = new Map<string, any>();
-    for (const raw of rawItems) {
-      const key = `${String(raw.name || '').toLowerCase().replace(/\s+/g, ' ').trim()}|${String(raw.units || raw.unit || '').toLowerCase()}`;
-      const prev = merged.get(key);
-      if (!prev || (prev.quantity == null && typeof raw.quantity === 'number')) merged.set(key, raw);
-    }
+    // Sprint 3 (G3): gabung + dedup antar-pass yang sadar dimensi —
+    // nama+satuan sama tetapi dimensi berbeda TIDAK lagi tertelan.
+    const mergedRaws = mergeRawItemsAcrossPasses(rawItems);
     const policy = options.policy ?? 'FULL_AI';
-    const items: DedAiItem[] = [...merged.values()].map((raw, idx) => convertAiItem(idx, raw, mode, policy));
+    const items: DedAiItem[] = mergedRaws.map((raw, idx) => convertAiItem(idx, raw, mode, policy));
+    // Sprint 3 (B2): label DED_EXPLICIT/DED_GEOMETRIC diverifikasi ke
+    // teks sumber SEBELUM kalkulator menghitung — klaim model saja
+    // tidak cukup untuk label sumber-terverifikasi.
+    applyQuantityEvidenceVerification(items, parsed.pages);
+    // Sprint 3.1: evaluator kewajaran kuantitas — anotasi deterministik
+    // (quantityReview + penanda quantityNote) atas SETIAP item
+    // berkuantitas. Bukti sumber yang sah tidak menjamin skala hasil
+    // derivasi masuk akal; evaluator menilai sumbu itu TANPA mengubah
+    // nilai/status/provenance apa pun.
+    // Sprint 3.2: tipe proyek diteruskan sebagai konteks yang DICATAT
+    // evaluator (bukan bukti independen bagi sumbu skala total-item).
+    applyQuantityReasonablenessReview(items, { projectType });
 
     const output = DedAiCalculator.buildOutput({
       jobId,
@@ -555,9 +1009,9 @@ export class DedAiEstimateService {
       projectType,
     });
     const traceWarnings: string[] = [];
-    if (selection.skippedCount > 0) {
+    if (budgetSkippedCount > 0) {
       traceWarnings.push(
-        `${selection.skippedCount} halaman tidak dikirim ke model — lihat analysisTrace.pages berstatus SKIPPED_BUDGET.`
+        `${budgetSkippedCount} halaman tidak dikirim ke model karena melebihi anggaran request per pass — lihat analysisTrace.pages berstatus SKIPPED_BUDGET.`
       );
     }
     // F4 (3.6): halaman tanpa lapisan teks diperingatkan eksplisit dengan
@@ -578,21 +1032,38 @@ export class DedAiEstimateService {
         );
       } else if (pt.status === 'MALFORMED_RESPONSE') {
         traceWarnings.push(
-          `Pass "${pt.clusterLabel}" (hal. ${pt.pages.join(', ')}) mengembalikan format keluaran yang tidak sesuai${pt.errorCode ? ` (${pt.errorCode})` : ''} — item dari kelompok ini mungkin tidak lengkap.`
+          `Pass "${pt.clusterLabel}" (hal. ${pt.pages.join(', ')}) mengembalikan format keluaran yang tidak sesuai${pt.errorCode ? ` (${pt.errorCode})` : ''}${pt.retryCount ? ` — sudah dicoba ulang ${pt.retryCount}× dan tetap tidak sesuai` : ''} — item dari kelompok ini mungkin tidak lengkap.`
         );
       } else if (pt.status === 'EMPTY_RESPONSE') {
         traceWarnings.push(
           `Pass "${pt.clusterLabel}" (hal. ${pt.pages.join(', ')}) tidak menghasilkan item.`
         );
+      } else if (pt.status === 'SKIPPED_BUDGET') {
+        traceWarnings.push(
+          `Pass "${pt.clusterLabel}" (hal. ${pt.pages.join(', ')}) dilewati anggaran request — halaman ini TIDAK dianalisis${pt.reason ? `: ${pt.reason}` : ''}`
+        );
       }
+    }
+    // Sprint 3 (B1): status kelengkapan eksplisit pada envelope — hasil
+    // parsial tidak pernah dibaca sebagai sukses penuh.
+    const passSummary = summarizePassOutcomes(passTraces);
+    output.partial = passSummary.partial;
+    output.passSummary = passSummary;
+    if (passSummary.partial) {
+      traceWarnings.unshift(
+        `Analisis PARSIAL: ${passSummary.succeededPasses} dari ${passSummary.totalPasses} pass berhasil` +
+        `${passSummary.failedPasses > 0 ? `, ${passSummary.failedPasses} gagal` : ''}` +
+        `${passSummary.skippedPasses > 0 ? `, ${passSummary.skippedPasses} dilewati` : ''} — hasil tidak lengkap.`
+      );
     }
     output.analysisTrace = {
       totalPages: parsed.pages.length,
       selectedPageCount: pageSummaries.length,
-      skippedPageCount: selection.skippedCount,
-      // Tanpa budget terpisah lagi: yang tercatat adalah yang terkirim.
-      totalCharsBudget: selection.totalCharsSent,
-      totalCharsSent: selection.totalCharsSent,
+      skippedPageCount: budgetSkippedCount,
+      // Anggaran per pass (Sprint 3 B1); total terkirim dihitung dari
+      // jejak halaman aktual (halaman SKIPPED_BUDGET sentChars = 0).
+      totalCharsBudget: DED_PASS_REQUEST_BUDGET_CHARS,
+      totalCharsSent: pageTrace.reduce((acc, t) => acc + t.sentChars, 0),
       pages: pageTrace,
       passes: passTraces,
       warnings: traceWarnings,

@@ -25,6 +25,10 @@
  *
  * Default bila policy tidak diisi: 'FULL_AI' (perilaku lama konsumen
  * yang belum mengirim policy — service selalu mengirim policy eksplisit).
+ *
+ * Sprint 1 (Workstream A): teks dirapatkan (aturan & frasa kunci tidak
+ * berubah) agar prompt sistem rakitan muat dalam anggaran gateway; lihat
+ * wbsContext.ts.
  */
 
 export type DedPromptPricingPolicy = 'FULL_AI' | 'DATABASE';
@@ -46,16 +50,15 @@ export function standardPricingPolicySection(
   policy: DedPromptPricingPolicy | undefined
 ): string {
   if (normalizePromptPolicy(policy) === 'DATABASE') {
-    return `KEBIJAKAN HARGA — DATABASE EZRAB (wajib dipatuhi; bagian harga di bawah dibangun kondisional untuk mode ini, sehingga tidak ada instruksi harga umum yang bertentangan):
-- Harga resmi HANYA berasal dari database AHSP kanonis EZRAB yang divalidasi aplikasi. Kamu DILARANG menulis kode AHSP, koefisien resmi, harga material resmi, harga upah resmi, harga alat resmi, atau harga satuan resmi — jangan mengarang, jangan menebak, jangan menyajikannya sebagai harga database.
-- Tugasmu adalah memberi aplikasi bahan pencocokan selengkap mungkin: deskripsi teknis detail (material, mutu, campuran, ukuran, metode), dimensi lengkap dengan satuan, spesifikasi, satuan yang konsisten dengan pekerjaannya, dasar hitung kuantitas (quantityFormula), asumsi, dan informasi yang hilang (tulis di specification diawali "DATA HILANG: ...").
-- Field estimatedUnitPrice yang kamu isi BUKAN harga database: itu hanya perkiraan fallback berlabel "Estimasi AI", yang dipakai aplikasi HANYA bila item ini tidak ditemukan di database AHSP. Bila item cocok dengan database, harga kanonis selalu menang dan perkiraanmu diabaikan. Jangan pernah menyebut perkiraanmu sebagai harga AHSP/resmi.
-- JANGAN menghitung subtotal atau total resmi — aplikasi menghitungnya dari data tervalidasi. Item tanpa harga kanonis yang valid tetap berstatus belum ada harga (null), tidak pernah Rp0.`;
+    return `KEBIJAKAN HARGA — DATABASE EZRAB (wajib dipatuhi):
+- Harga resmi HANYA dari database AHSP kanonis EZRAB tervalidasi aplikasi. DILARANG menulis kode AHSP, koefisien resmi, harga material resmi, harga upah resmi, harga alat resmi, atau harga satuan resmi — jangan mengarang/menebak/menyajikannya sebagai harga database.
+- Beri aplikasi bahan pencocokan selengkap mungkin: deskripsi teknis (material, mutu, campuran, ukuran), dimensi bersatuan, spesifikasi, satuan konsisten, dasar hitung (quantityFormula), asumsi, info hilang (di specification, awali "DATA HILANG: ...").
+- estimatedUnitPrice BUKAN harga database — hanya fallback berlabel "Estimasi AI", dipakai HANYA bila item tak ditemukan di database; bila cocok, harga kanonis selalu menang. Jangan menyebutnya harga AHSP/resmi. Subtotal/total resmi dihitung aplikasi; item tanpa harga kanonis valid tetap null, tidak pernah Rp0.`;
   }
   return `KEBIJAKAN HARGA — FULL AI (estimasi murni AI, wajib dipatuhi):
-- Semua harga yang kamu tulis adalah ESTIMASI AI, bukan data resmi AHSP EZRAB. Jangan pernah mengklaim harga, koefisien, atau analisismu sebagai data resmi AHSP, dan jangan menulis kode AHSP kecuali kode itu tertulis eksplisit di DED (bila ragu, kosongkan).
-- Untuk setiap item, hitung juga proposedSubtotal = quantity × estimatedUnitPrice bila keduanya ada (bila salah satunya null, proposedSubtotal = null). Di akhir keluaran, tulis proposedGrandTotal = jumlah semua proposedSubtotal.
-- Total usulanmu DISIMPAN terpisah untuk perbandingan: aplikasi menghitung ulang total secara deterministik dari kuantitas × harga yang lolos validasi, dan menandai selisih bila berbeda. Total aplikasi yang dipakai sebagai hasil, bukan totalmu — tapi usulanmu tidak dibuang diam-diam.`;
+- Semua harga yang kamu tulis adalah ESTIMASI AI, bukan data resmi AHSP EZRAB. Jangan mengklaimnya sebagai data resmi AHSP; jangan menulis kode AHSP kecuali tertulis eksplisit di DED (ragu → kosongkan).
+- Hitung proposedSubtotal = quantity × estimatedUnitPrice per item (null bila salah satu null) dan proposedGrandTotal = jumlah semua proposedSubtotal.
+- Total usulanmu DISIMPAN terpisah untuk perbandingan: aplikasi menghitung ulang total secara deterministik dan menandai selisihnya; total aplikasi yang dipakai, bukan totalmu.`;
 }
 
 /**
@@ -67,14 +70,14 @@ export function fullAiPricingPolicySection(
   policy: DedPromptPricingPolicy | undefined
 ): string {
   if (normalizePromptPolicy(policy) === 'DATABASE') {
-    return `KEBIJAKAN HARGA — DATABASE EZRAB (wajib dipatuhi; bagian harga di bawah dibangun kondisional untuk mode ini, sehingga tidak ada instruksi harga umum yang bertentangan):
-- Harga resmi HANYA berasal dari database AHSP kanonis EZRAB yang divalidasi aplikasi. Kamu DILARANG menulis kode AHSP, koefisien resmi, harga material resmi, harga upah resmi, harga alat resmi, atau harga satuan resmi — jangan mengarang, jangan menebak, jangan menyajikannya sebagai harga database.
-- Tugasmu adalah memberi aplikasi bahan pencocokan selengkap mungkin: deskripsi teknis detail, dimensi, spesifikasi (mutu, campuran, ukuran, material), satuan yang konsisten, dasar hitung kuantitas (formula), asumsi, dan informasi yang hilang (tulis di assumptions).
-- Field price yang kamu isi BUKAN harga database: itu hanya perkiraan fallback berlabel "Estimasi AI", yang dipakai aplikasi HANYA bila item ini tidak ditemukan di database AHSP. Bila item cocok dengan database, harga kanonis selalu menang. Jangan pernah menyebut perkiraanmu sebagai harga AHSP/resmi, dan jangan menghitung subtotal/total resmi — aplikasi menghitungnya dari data tervalidasi. Item tanpa harga kanonis yang valid tetap berstatus belum ada harga (null), tidak pernah Rp0.`;
+    return `KEBIJAKAN HARGA — DATABASE EZRAB (wajib dipatuhi):
+- Harga resmi HANYA dari database AHSP kanonis EZRAB tervalidasi aplikasi. DILARANG menulis kode AHSP, koefisien resmi, harga material resmi, harga upah/alat/satuan resmi — jangan mengarang/menebak/menyajikannya sebagai harga database.
+- Beri aplikasi bahan pencocokan selengkap mungkin: deskripsi teknis detail, dimensi, spesifikasi (mutu, campuran, ukuran, material), satuan konsisten, dasar hitung kuantitas (formula), asumsi, info hilang (tulis di assumptions).
+- Field price BUKAN harga database — hanya fallback berlabel "Estimasi AI", dipakai HANYA bila item tak ditemukan di database; bila cocok, harga kanonis selalu menang. Jangan menyebutnya harga AHSP/resmi. Subtotal/total resmi dihitung aplikasi; item tanpa harga kanonis valid tetap null, tidak pernah Rp0.`;
   }
   return `KEBIJAKAN HARGA — FULL AI (estimasi murni AI, wajib dipatuhi):
-- Semua harga yang kamu tulis adalah ESTIMASI AI, bukan data resmi AHSP EZRAB. Jangan pernah mengklaim harga, koefisien, atau analisismu sebagai data resmi AHSP, dan jangan menulis kode AHSP kecuali kode itu tertulis eksplisit di DED (bila ragu, kosongkan).
-- Bila relevan, uraikan singkat kebutuhan material, tenaga kerja, dan peralatan per item (tetap sebagai estimasi AI, bukan komposisi AHSP resmi).
-- Untuk setiap item, hitung juga proposedSubtotal = qty × price bila keduanya ada (bila salah satunya null, proposedSubtotal = null). Di akhir keluaran, tulis proposedGrandTotal = jumlah semua proposedSubtotal.
-- Total usulanmu DISIMPAN terpisah untuk perbandingan: aplikasi menghitung ulang subtotal dan total secara deterministik dari kuantitas × harga yang lolos validasi, dan menandai selisih bila berbeda. Total aplikasi yang dipakai sebagai hasil, bukan totalmu — tapi usulanmu tidak dibuang diam-diam.`;
+- Semua harga yang kamu tulis adalah ESTIMASI AI, bukan data resmi AHSP EZRAB — jangan mengklaimnya sebagai data resmi; jangan menulis kode AHSP kecuali tertulis eksplisit di DED (ragu → kosongkan).
+- Bila relevan, uraikan singkat kebutuhan material, tenaga kerja, dan peralatan per item (estimasi AI, bukan komposisi AHSP resmi).
+- Hitung proposedSubtotal = qty × price per item (null bila salah satu null) dan proposedGrandTotal = jumlah semua proposedSubtotal.
+- Total usulanmu DISIMPAN terpisah: aplikasi menghitung ulang subtotal/total secara deterministik dan menandai selisihnya; total aplikasi yang dipakai.`;
 }

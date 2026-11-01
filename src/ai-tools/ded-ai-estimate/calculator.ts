@@ -234,6 +234,12 @@ export class DedAiCalculator {
     const itemsWithQuantity = finalized.filter((i) => i.quantity !== null && i.quantity > 0).length;
     const itemsWithPrice = finalized.filter((i) => i.unitPrice !== null && i.unitPrice! > 0).length;
     const fully = finalized.filter((i) => i.subtotal !== null && i.subtotal > 0).length;
+    // Sprint 3 (G2 Opsi A): asumsi tetap masuk Total Estimasi tunggal,
+    // tetapi jumlahnya WAJIB terungkap lewat penghitung ini — asumsi
+    // tidak boleh menyamar menjadi kuantitas terverifikasi.
+    const itemsWithAssumption = finalized.filter(
+      (i) => i.quantitySource === 'ASSUMPTION' && i.quantity !== null
+    ).length;
     return {
       success: true,
       jobId: base.jobId,
@@ -254,6 +260,7 @@ export class DedAiCalculator {
         itemsWithPrice,
         itemsFullyResolved: fully,
         itemsUnresolved: finalized.length - fully,
+        itemsWithAssumption,
       },
     };
   }

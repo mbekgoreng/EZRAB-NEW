@@ -95,6 +95,13 @@ export interface DedAiItem {
     notes?: string;
   };
   rawAIQuantity?: number | null;
+  /**
+   * Sprint 3.1: hasil evaluator kewajaran kuantitas deterministik
+   * (reasonableness.ts). ANOTASI MURNI — tidak pernah mengubah quantity,
+   * subtotal, harga, status, atau provenance. Diisi service untuk item
+   * berkuantitas; undefined bila kuantitas null (tidak ada yang dinilai).
+   */
+  quantityReview?: DedQuantityReview;
   unitPrice: number | null;
   priceSource: DedAiPriceSource;
   /** Kode AHSP kanonis yang terverifikasi (hanya bila priceSource AHSP_2026). */
@@ -118,6 +125,69 @@ export interface DedAiItem {
   wbsCode?: string;
   wbsName?: string;
   wbsStatus?: 'IDENTIFIED' | 'DERIVED' | 'NEEDS_CONFIRM' | 'OPTIONAL';
+}
+
+/**
+ * Sprint 3.1 — Hasil evaluator kewajaran kuantitas (reasonableness.ts).
+ * Tiga sumbu yang SENGAJA dipisah (jangan dilebur):
+ * - validitas bukti sumber (Sprint 3 B2, verifyItemQuantityEvidence),
+ * - validitas derivasi matematis (quantity.ts / derivation.ts),
+ * - kewajaran fisik/teknik (evaluator ini).
+ * Outcome evaluator tidak pernah menimpa ketiga sumbu lain, harga, atau
+ * identitas AHSP.
+ */
+export type DedQuantityReviewOutcome =
+  | 'REASONABLE'          // skala & konteks konsisten; tidak ada pemicu review
+  | 'NEEDS_REVIEW'        // ada ketidakkonsistenan skala yang harus dilihat manusia
+  | 'INSUFFICIENT_CONTEXT'; // konteks tidak cukup untuk menilai — BUKAN "wajar"
+
+export interface DedQuantityReview {
+  outcome: DedQuantityReviewOutcome;
+  /** Kode alasan deterministik (lihat reasonableness.ts untuk tabelnya). */
+  reasonCode: string;
+  /** Penjelasan bahasa Indonesia yang dapat dibaca estimator. */
+  explanation: string;
+  severity: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH';
+  /** Kuantitas item apa adanya (tidak pernah diubah evaluator). */
+  originalQuantity: number;
+  /**
+   * Kuantitas hasil hitung-ulang deterministik dari dimensi item, bila
+   * dapat dihitung (basis perbandingan mismatch/mikro/skala). null bila
+   * dimensi tidak cukup / tidak terparse.
+   */
+  derivedQuantity?: number | null;
+  /**
+   * Sprint 3.2 — label kategori pekerjaan dari profil skala yang cocok
+   * dengan item (mis. "Elemen beton struktural"), null bila tidak ada
+   * profil skala yang berlaku untuk kategori/satuan item.
+   */
+  category?: string | null;
+  /**
+   * Sprint 3.2 — id profil skala total-item yang diterapkan (mis.
+   * 'STRUCTURAL_CONCRETE_M3'), null bila kategori tidak terprofil.
+   */
+  scaleProfile?: string | null;
+  /**
+   * Sprint 3.2 — basis skala tekstual: amplop profil + posisi total
+   * item terhadap amplop itu. Hanya ada bila profil diterapkan.
+   */
+  scaleBasis?: string;
+  /**
+   * Sprint 3.2 — konteks yang benar-benar dipakai evaluator (tipe
+   * proyek bila diberikan pemanggil; ketiadaannya dicatat apa adanya
+   * sebagai PROJECT_CONTEXT_MISSING, tidak pernah dikarang).
+   */
+  contextUsed?: string;
+  /**
+   * Sprint 3.2 — kode alasan sumbu DERIVASI, dicatat bila alasan utama
+   * hasil berasal dari sumbu skala (kedua sumbu tidak saling menimpa).
+   */
+  derivationReasonCode?: string | null;
+  /**
+   * Sprint 3.2 — kode alasan sumbu SKALA, dicatat bila alasan utama
+   * hasil berasal dari sumbu derivasi tetapi sumbu skala juga terpicu.
+   */
+  scaleReasonCode?: string | null;
 }
 
 export interface DedAiCategorySummary {
@@ -157,7 +227,23 @@ export interface DedAiOutput {
     itemsWithPrice: number;
     itemsFullyResolved: number;
     itemsUnresolved: number;
+    /**
+     * Sprint 3 (G2 Opsi A): jumlah item yang kuantitasnya berasal dari
+     * ASSUMPTION dan terisi — asumsi tetap masuk Total Estimasi tunggal,
+     * tetapi WAJIB teridentifikasi lewat penghitung ini. Opsional agar
+     * konstruktor lama tidak berubah; buildOutput selalu mengisinya.
+     */
+    itemsWithAssumption?: number;
   };
+  /**
+   * Sprint 3 (B1): true bila satu atau lebih pass gagal/dilewati sehingga
+   * hasil TIDAK lengkap — hasil parsial tidak boleh dibaca sebagai sukses
+   * penuh. Opsional agar konstruktor lama tidak berubah; service selalu
+   * mengisinya pada envelope hasil analisis.
+   */
+  partial?: boolean;
+  /** Sprint 3 (B1): ringkasan status pass yang membentuk `partial`. */
+  passSummary?: DedPassSummary;
   /**
    * FASE P0: cakupan 12 divisi rumah (diisi service untuk proyek
    * BANGUNAN/GEDUNG; opsional agar konsumen lama tidak berubah).
@@ -230,6 +316,33 @@ export interface DedPageTraceEntry {
   sourceFile?: string;
 }
 
+/**
+ * Sprint 3 (B1) — status pass semantik di samping `status` teknis lama:
+ * - SUCCESS: pass terkirim dan responsnya dapat dipakai (termasuk kosong).
+ * - PARTIAL: pass terkirim tetapi responsnya tidak dapat dipakai
+ *   (MALFORMED) — cakupan kelompok ini hilang sebagian.
+ * - FAILED: panggilan provider/gateway gagal.
+ * - SKIPPED_BUDGET: tidak dikirim karena anggaran request (halaman tunggal
+ *   terlalu besar) — selalu dengan alasan eksplisit.
+ * - SKIPPED_UNSUPPORTED: kelompok tidak didukung (dicadangkan; gerbang
+ *   tipe proyek menolak lebih awal sehingga status ini jarang terpakai).
+ */
+export type DedPassStatus =
+  | 'SUCCESS'
+  | 'PARTIAL'
+  | 'FAILED'
+  | 'SKIPPED_BUDGET'
+  | 'SKIPPED_UNSUPPORTED';
+
+/** Sprint 3 (B1) — ringkasan pass pada envelope hasil. */
+export interface DedPassSummary {
+  totalPasses: number;
+  succeededPasses: number;
+  failedPasses: number;
+  skippedPasses: number;
+  partial: boolean;
+}
+
 /** FASE P0 — Jejak per pass analisis (kelompok halaman → satu panggilan model). */
 export interface DedPassTraceEntry {
   passIndex: number;
@@ -240,7 +353,19 @@ export interface DedPassTraceEntry {
   productId: string;
   mode: DedAiMode;
   maxTokens: number;
-  status: 'OK' | 'FAILED' | 'EMPTY_RESPONSE' | 'MALFORMED_RESPONSE';
+  status: 'OK' | 'FAILED' | 'EMPTY_RESPONSE' | 'MALFORMED_RESPONSE' | 'SKIPPED_BUDGET' | 'SKIPPED_UNSUPPORTED';
+  /** Sprint 3 (B1): status semantik (lihat DedPassStatus). */
+  passStatus?: DedPassStatus;
+  /** Sprint 3 (B1): ukuran request terukur (system + prompt, karakter). */
+  requestChars?: number;
+  /** Sprint 3 (B1): alasan eksplisit bila pass dilewati (SKIPPED_*). */
+  reason?: string;
+  /**
+   * Sprint 3.1: jumlah percobaan ulang yang dilakukan untuk pass ini
+   * (maksimum 1, hanya untuk outcome MALFORMED — lihat
+   * executeDedPassAttempt di service.ts). 0/undefined = tanpa retry.
+   */
+  retryCount?: number;
   errorCode?: string;
   itemCount: number;
   /** FINAL REVIEW (Tugas A) — nama file sumber pada hasil gabungan multi-file. */
