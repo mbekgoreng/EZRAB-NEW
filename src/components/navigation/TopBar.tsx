@@ -395,6 +395,7 @@ const handleNotificationItemClick = (item: NotificationItem) => {
       {/* =======================================================================
           CENTER: GLOBAL SEARCH (CLEAN & SUBTLE)
          ======================================================================= */}
+      {!isNarrowMobile && (
       <div
         className="ezrab-topbar-center"
         style={{
@@ -558,13 +559,16 @@ onFocus={(e) => {
         )}
         </div>
       </div>
+      )}
 
       {/* =======================================================================
           RIGHT: NOTIFICATION + HELP + PROFILE MENU
          ======================================================================= */}
       <div className="ezrab-topbar-right" style={{ display: 'flex', alignItems: 'center', gap: isNarrowMobile ? '6px' : '10px', flexShrink: 0 }}>
         
-{/* 0. THEME TOGGLE (terang/gelap) */}
+{/* 0. THEME TOGGLE (terang/gelap) — di HP ringkas: tema tetap bisa
+            diganti dari Pengaturan > Preferensi, TopBar HP fokus ke kredit. */}
+        {!isNarrowMobile && (
         <button
           type="button"
           onClick={() => setTheme(isDark ? 'light' : 'dark')}
@@ -586,6 +590,7 @@ onFocus={(e) => {
         >
           {isDark ? <Sun size={17} /> : <Moon size={17} />}
         </button>
+        )}
 
         {/* 0a. CURRENCY SELECTOR — ganti kurs tampil dari Top Bar (owner 2026-10-27).
             Animasi loading: Loader2 berputar selama refreshRates berjalan. */}
@@ -605,7 +610,7 @@ onFocus={(e) => {
             disabled={currencyLoading}
             style={{
               height: '32px',
-              minWidth: '64px',
+              minWidth: isNarrowMobile ? '50px' : '64px',
               padding: '0 8px',
               borderRadius: '8px',
               border: '1px solid var(--ez-color-border-line)',
@@ -686,7 +691,9 @@ onFocus={(e) => {
           )}
         </div>
 
-        {/* 0b. LANGUAGE SELECTOR (compact dropdown, wired to I18nContext) */}
+        {/* 0b. LANGUAGE SELECTOR (compact dropdown, wired to I18nContext) —
+            di HP ringkas: bahasa tetap bisa diganti dari Pengaturan. */}
+        {!isNarrowMobile && (
         <div style={{ position: 'relative' }} ref={langRef}>
           <button
             type="button"
@@ -780,6 +787,7 @@ onFocus={(e) => {
             </div>
           )}
         </div>
+        )}
 
         {/* 1. NOTIFICATION BELL & POPOVER (real notification center) */}
         <NotificationBell

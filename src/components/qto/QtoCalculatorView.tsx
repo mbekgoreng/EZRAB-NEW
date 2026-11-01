@@ -1358,11 +1358,11 @@ export const QtoCalculatorView: React.FC<QtoCalculatorViewProps> = ({
                 QTO WORKSTATION
               </span>
               <span style={{ fontSize: '11px', color: '#94A3B8' }}>•</span>
-              <span style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>
+              <span className="ez-qto-header-counts" style={{ fontSize: '11.5px', color: 'var(--ez-color-text-muted)', fontWeight: 500 }}>
                 {domainCounts.ALL} Kalkulator / 10 Domain
               </span>
             </div>
-            <p style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0', lineHeight: 1.3 }}>
+            <p className="ez-qto-header-desc" style={{ fontSize: '12px', color: 'var(--ez-color-text-muted)', margin: '2px 0 0', lineHeight: 1.3 }}>
               QTO • Hitung volume pekerjaan konstruksi dengan cepat, presisi dan terstandarisasi SNI.
             </p>
           </div>

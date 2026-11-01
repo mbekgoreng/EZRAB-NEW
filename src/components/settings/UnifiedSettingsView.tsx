@@ -968,7 +968,7 @@ export const UnifiedSettingsView: React.FC<UnifiedSettingsViewProps> = ({
       {/* ------------------------------------------------------------- */}
       {/* 2. MAIN SETTINGS WORKSPACE (SIDEBAR + CONTENT PANEL)           */}
       {/* ------------------------------------------------------------- */}
-      <div style={{ display: 'grid', gridTemplateColumns: '270px 1fr', gap: '20px', alignItems: 'flex-start' }}>
+      <div className="ez-settings-layout" style={{ display: 'grid', gridTemplateColumns: '270px 1fr', gap: '20px', alignItems: 'flex-start' }}>
         
         {/* Left Sidebar Navigation */}
         <div

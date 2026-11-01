@@ -215,3 +215,61 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+/* =========================================================================
+   MODE PONSEL RINGKAS (ACC owner 2026-11-01 dari mockup 31 layar)
+   -------------------------------------------------------------------------
+   Prinsip owner: mode ponsel BERBEDA dari web — lebih ringkas, minim
+   tulisan; fungsi & data sama, yang berubah hanya presentasi. Semua aturan
+   di blok ini <=767px; desktop tidak berubah. Pasangan JSX-nya: TopBar
+   menyembunyikan pencarian/tema/bahasa di isNarrowMobile (kredit + IDR +
+   notifikasi + profil tetap, tidak lagi terpotong).
+   ========================================================================= */
+@media (max-width: 767px) {
+  /* --- R1. Pengaturan: SATU kolom ----------------------------------------
+     Layout desktop grid 270px + 1fr membuat panel kanan terpotong keluar
+     layar di HP (temuan audit P1). Di HP: navigasi pengaturan menumpuk di
+     atas konten dengan tinggi terbatas + scroll sendiri, konten penuh di
+     bawahnya. */
+  .ez-settings-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .ez-settings-layout > :first-child {
+    max-height: 42vh;
+    overflow-y: auto;
+  }
+
+  /* --- R2. Header Kalkulator Volume: minim tulisan ------------------------
+     Baris "194 Kalkulator / 10 Domain" + paragraf deskripsi disembunyikan
+     di HP (judul + badge tetap); daftar kalkulator adalah konten utamanya. */
+  .ez-qto-header-counts,
+  .ez-qto-header-desc {
+    display: none !important;
+  }
+
+  /* --- R3. Pill checklist onboarding: tidak melayang di HP ----------------
+     Pill "Progres Kamu" menutupi konten di SEMUA view HP (temuan audit
+     P2) dan tidak ada di mockup ringkas yang di-ACC. Progres onboarding
+     tetap terlihat di desktop; di HP pill disembunyikan. */
+  .ez-checklist-fab {
+    display: none !important;
+  }
+
+  /* --- R4. Hero dashboard: paragraf dipangkas 2 baris ---------------------
+     "Minim tulisan": sapaan + CTA yang utama; deskripsi panjang dipotong
+     rapi 2 baris dengan clamp (teks lengkap tetap ada di desktop). */
+  .ezrab-dashboard-hero-text p,
+  .ezdb-hero-text p {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* --- R5. Baris menu drawer: target sentuh >= 44px -----------------------
+     Temuan audit P3: baris menu 36px & tombol tutup 32px di bawah panduan
+     44px. Di HP baris menu di dalam <nav> sidebar dibuat min 44px. */
+  .ezrab-workspace-sidebar nav button {
+    min-height: 44px;
+  }
+}
