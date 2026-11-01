@@ -30,6 +30,8 @@ export type AIToolsErrorCode =
   | 'DEMO_RESTRICTED'
   | 'CONTENT_REJECTED'
   | 'AI_BAD_REQUEST'
+  | 'PAYLOAD_TOO_LARGE'
+  | 'INVALID_REQUEST'
   | 'NETWORK_ERROR'
   | 'INTERNAL';
 

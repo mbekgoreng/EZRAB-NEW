@@ -69,6 +69,8 @@ export type RouterGatewayErrorCode =
   | 'NETWORK_ERROR'
   | 'TIMEOUT'
   | 'EMPTY_RESPONSE'
+  | 'PAYLOAD_TOO_LARGE'
+  | 'INVALID_REQUEST'
   | 'MODEL_ERROR';
 
 export interface RouterGatewayError {
@@ -112,6 +114,24 @@ export function mapRouterGatewayError(input: {
       code: 'DEMO_RESTRICTED',
       message:
         'Mode Demo tidak mengizinkan permintaan ini. Coba permintaan yang lebih sederhana, atau coba lagi nanti.',
+      retryable: false,
+    };
+  }
+  // Sprint 1 (Workstream C): selaras dengan providerClient — kegagalan
+  // validasi ukuran/invalid dari gateway tidak melebur ke MODEL_ERROR.
+  if (status === 400 && serverCode === 'PAYLOAD_TOO_LARGE') {
+    return {
+      code: 'PAYLOAD_TOO_LARGE',
+      message:
+        'Dokumen/permintaan terlalu besar untuk diproses dalam satu permintaan. Persingkat isi yang dikirim, lalu coba lagi.',
+      retryable: false,
+    };
+  }
+  if (status === 400 && serverCode === 'INVALID_REQUEST') {
+    return {
+      code: 'INVALID_REQUEST',
+      message:
+        'Permintaan tidak valid dan ditolak oleh gerbang server sebelum mencapai AI. Periksa isi permintaan Anda, lalu coba lagi.',
       retryable: false,
     };
   }

@@ -679,15 +679,24 @@ export async function handleAiRequest(req, res, opts = {}) {
   try {
     body = await readJsonBody(req);
   } catch (e) {
-    return res
-      .status(e.status || 400)
-      .json({ success: false, error: 'Body tidak valid: ' + String(e.message || e), requestId });
+    return res.status(e.status || 400).json({
+      success: false,
+      error: 'Body tidak valid: ' + String(e.message || e),
+      // Sprint 1 (Workstream C): body di atas batas baca = kegagalan ukuran.
+      ...(e.status === 413 ? { errorCode: 'PAYLOAD_TOO_LARGE' } : {}),
+      requestId,
+    });
   }
 
   // 5. Strict input validation
-  const { errors, input } = validateAiInput(body);
+  const { errors, input, errorCode: validationErrorCode } = validateAiInput(body);
   if (errors.length > 0) {
-    return res.status(400).json({ success: false, error: errors.join('; '), requestId });
+    return res.status(400).json({
+      success: false,
+      error: errors.join('; '),
+      errorCode: validationErrorCode || 'INVALID_REQUEST',
+      requestId,
+    });
   }
   const mode =
     opts.productIdToMode && input.productId ? opts.productIdToMode(input.productId, input.mode) : input.mode;

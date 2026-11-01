@@ -102,6 +102,26 @@ export function mapGatewayHttpError(
       retryable: false,
     };
   }
+  // Sprint 1 (Workstream C): kegagalan ukuran dari validasi gateway harus
+  // sampai sebagai sebab sebenarnya — bukan MODEL_ERROR generik. Pesan
+  // jujur: muatan terlalu besar untuk satu permintaan; fitur yang mendukung
+  // pemrosesan bertahap (mis. Analisis Dokumen) membaginya otomatis.
+  if (status === 400 && serverErrorCode === 'PAYLOAD_TOO_LARGE') {
+    return {
+      code: 'PAYLOAD_TOO_LARGE',
+      message:
+        'Dokumen/permintaan terlalu besar untuk diproses dalam satu permintaan. Pada fitur yang mendukung, dokumen diproses dalam beberapa bagian; bila Anda melihat pesan ini, persingkat isi yang dikirim lalu coba lagi.',
+      retryable: false,
+    };
+  }
+  if (status === 400 && serverErrorCode === 'INVALID_REQUEST') {
+    return {
+      code: 'INVALID_REQUEST',
+      message:
+        'Permintaan tidak valid dan ditolak oleh gerbang server sebelum mencapai AI. Periksa isi permintaan Anda, lalu coba lagi.',
+      retryable: false,
+    };
+  }
   const message =
     status === 403
       ? 'AI Online sementara tidak dapat diakses. Silakan coba lagi nanti.'

@@ -187,9 +187,19 @@ function clampNum(v, min, max, dflt) {
 
 export function validateAiInput(body) {
   const errors = [];
+  // Sprint 1 (Workstream C): klasifikasi kegagalan validasi agar respons 400
+  // membawa errorCode terstruktur — PAYLOAD_TOO_LARGE untuk kegagalan batas
+  // ukuran (prompt/media/body), INVALID_REQUEST untuk kegagalan lain.
+  // Pesan human-readable dan semua batas TIDAK berubah.
+  let errorCode = null;
+  const fail = (msg, kind) => {
+    errors.push(msg);
+    if (kind === 'size') errorCode = 'PAYLOAD_TOO_LARGE';
+    else if (!errorCode) errorCode = 'INVALID_REQUEST';
+  };
   const message = String(body.message ?? body.prompt ?? body.input ?? '');
-  if (!message.trim()) errors.push('message/prompt wajib diisi');
-  if (message.length > 20000) errors.push('message/prompt maksimal 20000 karakter');
+  if (!message.trim()) fail('message/prompt wajib diisi', 'invalid');
+  if (message.length > 20000) fail('message/prompt maksimal 20000 karakter', 'size');
   const rawMode = String(body.mode || body.capabilityMode || 'fast').toLowerCase();
   // 'vision' = multimodal (gambar/PDF ikut dikirim ke provider). Nilai lain
   // yang tak dikenal tetap di-clamp ke 'fast' agar tak jadi mode liar.
@@ -200,24 +210,25 @@ export function validateAiInput(body) {
   const jsonMode = Boolean(body.jsonMode);
   // Media (vision): base64 murni atau data URL. Batas 3,5 juta karakter
   // (~2,6 MB biner) agar tetap di bawah limit body Vercel.
-  const { data: imageDataBase64, mime: imageMimeType, error: imageError } = sanitizeMedia(
+  const { data: imageDataBase64, mime: imageMimeType, error: imageError, errorKind: imageErrorKind } = sanitizeMedia(
     body.imageDataBase64,
     body.imageMimeType,
     ['image/png', 'image/jpeg', 'image/webp'],
     'image/png',
     'imageDataBase64'
   );
-  if (imageError) errors.push(imageError);
-  const { data: pdfDataBase64, error: pdfError } = sanitizeMedia(
+  if (imageError) fail(imageError, imageErrorKind);
+  const { data: pdfDataBase64, error: pdfError, errorKind: pdfErrorKind } = sanitizeMedia(
     body.pdfDataBase64,
     'application/pdf',
     ['application/pdf'],
     'application/pdf',
     'pdfDataBase64'
   );
-  if (pdfError) errors.push(pdfError);
+  if (pdfError) fail(pdfError, pdfErrorKind);
   return {
     errors,
+    errorCode,
     input: {
       message,
       mode,
@@ -253,13 +264,14 @@ function sanitizeMedia(raw, mimeType, allowlist, defaultMime, fieldName) {
   }
   if (!allowlist.includes(mime)) mime = defaultMime;
   if (!/^[A-Za-z0-9+/=]+$/.test(data)) {
-    return { data: undefined, mime: undefined, error: `${fieldName}: bukan base64 valid` };
+    return { data: undefined, mime: undefined, error: `${fieldName}: bukan base64 valid`, errorKind: 'invalid' };
   }
   if (data.length > MAX_MEDIA_B64_CHARS) {
     return {
       data: undefined,
       mime: undefined,
       error: `${fieldName}: ukuran melebihi batas (${Math.round(data.length / 1e6)} jt karakter, maks 3,5 jt)`,
+      errorKind: 'size',
     };
   }
   return { data, mime, error: undefined };
