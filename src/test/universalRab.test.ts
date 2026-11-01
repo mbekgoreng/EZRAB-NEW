@@ -390,7 +390,10 @@ test('factory: provenance diteruskan ke record; PRICE_UNRESOLVED tetap menolkan 
     priceSourceKind: 'OFFICIAL_AHSP', priceSourceLabel: 'RESMI AHSP',
     priceSourceName: 'AHSP 2026', ahspMappingStatus: 'VERIFIED',
   } as never);
-  assert.equal((rec as { priceSourceKind?: string }).priceSourceKind, 'OFFICIAL_AHSP');
+  // Keputusan B (Sprint 3.1): record ini TANPA ahspCode — klaim OFFICIAL_AHSP
+  // tanpa kode kanonis terverifikasi BUKAN provenance resmi yang sah, maka
+  // factory menurunkannya ke UNRESOLVED (dulu tes ini mengharapkan pass-through).
+  assert.equal((rec as { priceSourceKind?: string }).priceSourceKind, 'UNRESOLVED');
   assert.equal((rec as { priceSourceName?: string | null }).priceSourceName, 'AHSP 2026');
   assert.equal((rec as { ahspMappingStatus?: string }).ahspMappingStatus, 'VERIFIED');
   const unpriced = createRabItemRecord({

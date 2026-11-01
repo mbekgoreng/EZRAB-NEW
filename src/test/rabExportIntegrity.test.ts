@@ -10,6 +10,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createRabItemRecord } from '../engine/rab/rabItemFactory';
+import { canonicalAhspCodeExists } from '../data/priceDatabase2026/ahspDisplayPolicy';
 
 // Fixture: 6 skenario sesuai prompt
 const fixtureItems = [
@@ -73,8 +74,34 @@ describe('factory: AHSP identity safety di engine boundary', () => {
   const base = { description: 'Pekerjaan galian tanah', volume: 10, unit: 'm3', unitPrice: 50000 };
 
   it('5. item AHSP valid → SAFE', () => {
-    const item = createRabItemRecord({ ...base, ahspCode: 'A.1.1' }, 'proj-1');
+    // Keputusan owner (Sprint 3.2): contoh kode valid memakai kode
+    // kanonis 2026 yang benar-benar ada di katalog ('3.7.4'). Kode
+    // warisan 'A.1.1' BUKAN kode kanonis — lihat tes 10.
+    const item = createRabItemRecord({ ...base, ahspCode: '3.7.4' }, 'proj-1');
     expect(item.ahspIdentityStatus).toBe('SAFE');
+  });
+
+  it('10. kode warisan A.1.1 → TIDAK menerima identitas kanonis SAFE/VERIFIED', () => {
+    // Keputusan owner (Sprint 3.2): 'A.1.1' adalah kode warisan 2022 —
+    // tidak ada di katalog AHSP kanonis 2026 dan TIDAK boleh
+    // di-whitelist. Itemnya sendiri tetap sah sebagai item tak
+    // terverifikasi/non-AHSP; yang ditolak hanya klaim identitas
+    // resminya.
+    expect(canonicalAhspCodeExists('A.1.1')).toBe(false);
+    expect(canonicalAhspCodeExists('3.7.4')).toBe(true);
+    const item = createRabItemRecord({ ...base, ahspCode: 'A.1.1' }, 'proj-1');
+    expect(item).toBeTruthy(); // item tetap dapat dibuat
+    expect(item.ahspCode).toBe('A.1.1'); // klaim dipertahankan sebagai klaim tak terverifikasi
+    expect(item.ahspIdentityStatus).toBe('UNSAFE');
+    expect(item.ahspIdentityStatus).not.toBe('SAFE');
+    // Klaim VERIFIED eksplisit atas kode warisan pun diturunkan —
+    // identitas resmi tidak dapat diperoleh dari kode non-kanonis.
+    const claimed = createRabItemRecord(
+      { ...base, ahspCode: 'A.1.1', verificationStatus: 'VERIFIED' } as never,
+      'proj-1'
+    );
+    expect(claimed.ahspIdentityStatus).toBe('UNSAFE');
+    expect((claimed as { verificationStatus?: string }).verificationStatus).toBe('NEEDS_VERIFICATION');
   });
 
   it('6. item fragmen (nama kosong) → UNSAFE', () => {
