@@ -13,7 +13,10 @@ import type { RabItem, VolumeSourceType } from '../../types';
 import { SafeDecimalEngine } from '../safeDecimalEngine';
 import { resolvePriceStatus } from '../pricing/priceStatus';
 import type { PriceStatus } from '../../types';
-import { checkAhspIdentitySafety } from '../../data/priceDatabase2026/ahspDisplayPolicy';
+import {
+  checkAhspIdentitySafety,
+  canonicalAhspCodeExists,
+} from '../../data/priceDatabase2026/ahspDisplayPolicy';
 
 export interface RabItemInput extends Partial<RabItem> {
   description: string;
@@ -49,6 +52,14 @@ export function createRabItemRecord(
   // (ahspCode terisi) diperiksa identitasnya di boundary engine, sehingga
   // semua jalur masuk RAB (UI, QTO, AI, template, impor) tidak bisa melewati.
   // UNSAFE = tidak boleh diperlakukan sebagai AHSP valid; data tidak diubah.
+  //
+  // G1 (Sprint 3, menutup temuan Sprint 2): aman-parsing saja TIDAK cukup.
+  // Kode juga WAJIB ada di katalog AHSP kanonis 2026 (canonicalAhspCodeExists
+  // -> officialAhspRepository, sumber yang sama dengan gerbang harga kanonis
+  // DED). Kode yang tidak ada di katalog -> UNSAFE, dan (di bawah) status
+  // VERIFIED diturunkan serta provenance OFFICIAL_AHSP dicabut. Kode asli
+  // tetap dipertahankan sebagai klaim yang belum terverifikasi — data
+  // pemanggil tidak dihapus.
   let ahspIdentityStatus: 'SAFE' | 'UNSAFE' | undefined;
   let ahspIdentityReason: string | undefined;
   const claimedAhspCode = itemData.ahspCode || '';
@@ -57,8 +68,17 @@ export function createRabItemRecord(
       code: claimedAhspCode,
       name: itemData.description || '',
     });
-    ahspIdentityStatus = idCheck.safe ? 'SAFE' : 'UNSAFE';
-    if (!idCheck.safe) ahspIdentityReason = idCheck.reason;
+    if (!idCheck.safe) {
+      ahspIdentityStatus = 'UNSAFE';
+      ahspIdentityReason = idCheck.reason;
+    } else if (!canonicalAhspCodeExists(claimedAhspCode)) {
+      ahspIdentityStatus = 'UNSAFE';
+      ahspIdentityReason =
+        `Kode AHSP "${claimedAhspCode}" tidak ditemukan di katalog AHSP kanonis 2026 — ` +
+        'identitas belum terverifikasi.';
+    } else {
+      ahspIdentityStatus = 'SAFE';
+    }
   }
   // Fase 4A: caller yang mengetahui kebenaran (mis. duplikat dari item yang
   // memang belum ada harganya, atau baris kosong baru) boleh meneruskan
@@ -71,6 +91,46 @@ export function createRabItemRecord(
   const rawPrice = Number(itemData.unitPrice);
   const up = priceStatus === 'PRICE_UNRESOLVED' ? 0 : (Number.isFinite(rawPrice) ? rawPrice : 0);
   const amt = SafeDecimalEngine.safeMultiply(vol, up, 0);
+
+  // G1: provenance harga resmi tidak boleh menempel pada identitas AHSP yang
+  // terbukti tidak sah. Bila pemanggil MENGKLAIM kode AHSP dan identitas itu
+  // UNSAFE (artefak parsing atau kode tidak ada di katalog), klaim
+  // OFFICIAL_AHSP diturunkan ke UNRESOLVED (klaim sumber tidak terbukti).
+  // Nilai harga & priceStatus TIDAK diubah — sumbu harga tetap independen.
+  //
+  // Sprint 3.1 (Keputusan B owner): provenance OFFICIAL_AHSP kini mensyaratkan
+  // identitas SAFE (kode kanonis terverifikasi) — BUKAN sekadar "tidak
+  // UNSAFE". Record TANPA kode sama sekali yang mengklaim OFFICIAL_AHSP juga
+  // diturunkan ke UNRESOLVED: klaim resmi tanpa kode bukan bukti resmi yang
+  // genuine. Ini TIDAK menghukum ketiadaan kode itu sendiri — item tanpa
+  // kode tetap sah penuh (identitasnya tetap tak berflag, kind non-resmi
+  // seperti MARKET_REFERENCE/EZRAB_ASSUMPTION dan label manual tidak
+  // disentuh); yang dicabut hanya klaim RESMI yang tak berdasar. Alasan
+  // penurunan jalur tanpa-kode dicatat di ahspIdentityReason (tanpa
+  // menetapkan status UNSAFE — ketiadaan kode bukan ketidakamanan).
+  const officialClaimRejected =
+    itemData.priceSourceKind === 'OFFICIAL_AHSP' && ahspIdentityStatus !== 'SAFE';
+  const effectivePriceSourceKind = officialClaimRejected
+    ? 'UNRESOLVED'
+    : itemData.priceSourceKind;
+  const codelessOfficialReason =
+    officialClaimRejected && !claimedAhspCode
+      ? 'Klaim harga OFFICIAL_AHSP tanpa kode AHSP — provenance resmi ' +
+        'mensyaratkan kode kanonis terverifikasi; diturunkan ke UNRESOLVED.'
+      : undefined;
+
+  // G1: status VERIFIED tidak boleh melebihi bukti identitas. Bila identitas
+  // AHSP UNSAFE (artefak parsing ATAU kode tak dikenal), klaim VERIFIED —
+  // eksplisit dari pemanggil maupun default harga-resolved — diturunkan ke
+  // NEEDS_VERIFICATION. Status lain (AI_GENERATED, ESTIMATED, dst.) tidak
+  // disentuh.
+  const claimedVerificationStatus =
+    itemData.verificationStatus ||
+    (priceStatus === 'PRICE_UNRESOLVED' ? 'NEEDS_VERIFICATION' : 'VERIFIED');
+  const effectiveVerificationStatus =
+    claimedVerificationStatus === 'VERIFIED' && ahspIdentityStatus === 'UNSAFE'
+      ? 'NEEDS_VERIFICATION'
+      : claimedVerificationStatus;
 
   return {
     id: newItemId,
@@ -97,7 +157,7 @@ export function createRabItemRecord(
     // yang di-push dari chat/katalog kehilangan status sumbernya di
     // Spreadsheet. Diteruskan apa adanya bila pemanggil mengisinya; bila
     // tidak diisi, field tetap tidak ada (tidak ada default karangan).
-    ...(itemData.priceSourceKind ? { priceSourceKind: itemData.priceSourceKind } : {}),
+    ...(effectivePriceSourceKind ? { priceSourceKind: effectivePriceSourceKind } : {}),
     ...(itemData.priceSourceLabel ? { priceSourceLabel: itemData.priceSourceLabel } : {}),
     ...(itemData.priceSourceExplanation ? { priceSourceExplanation: itemData.priceSourceExplanation } : {}),
     ...(itemData.priceSourceName !== undefined ? { priceSourceName: itemData.priceSourceName } : {}),
@@ -105,9 +165,10 @@ export function createRabItemRecord(
     ...(itemData.priceSourceDate !== undefined ? { priceSourceDate: itemData.priceSourceDate } : {}),
     ...(itemData.priceSourceRegion !== undefined ? { priceSourceRegion: itemData.priceSourceRegion } : {}),
     ...(itemData.ahspMappingStatus ? { ahspMappingStatus: itemData.ahspMappingStatus } : {}),
-    verificationStatus:
-      itemData.verificationStatus ||
-      (priceStatus === 'PRICE_UNRESOLVED' ? 'NEEDS_VERIFICATION' : 'VERIFIED'),
+    verificationStatus: effectiveVerificationStatus,
     ...(ahspIdentityStatus ? { ahspIdentityStatus, ahspIdentityReason } : {}),
+    ...(!ahspIdentityStatus && codelessOfficialReason
+      ? { ahspIdentityReason: codelessOfficialReason }
+      : {}),
   };
 }

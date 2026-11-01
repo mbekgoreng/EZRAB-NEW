@@ -13,6 +13,26 @@
  */
 /** Kebijakan tampilan/finalisasi AHSP — lihat komentar modul. */
 
+import { officialAhspRepository } from '../nationalCostDatabase/officialAhspRepository';
+
+/**
+ * Apakah kode AHSP benar-benar ADA di katalog AHSP kanonis 2026?
+ *
+ * Sumber kebenaran TUNGGAL: `officialAhspRepository.hasOfficialAhsp` — gerbang
+ * §14 yang sama dengan yang dipakai gerbang harga kanonis DED
+ * (canonicalDedPricing). Alias kode diselesaikan dan item karantina
+ * dikecualikan di dalam repository; fungsi ini tidak menduplikasi katalog.
+ *
+ * `checkAhspIdentitySafety` di bawah SENGAJA tidak diubah: ia hanya menilai
+ * keamanan parsing (artefak/fragmen). Keberadaan kanonis adalah sumbu
+ * terpisah dan ditegakkan di boundary tulis (rabItemFactory) lewat fungsi ini.
+ */
+export function canonicalAhspCodeExists(code: string | null | undefined): boolean {
+  const c = String(code || '').trim();
+  if (!c) return false;
+  return officialAhspRepository.hasOfficialAhsp(c);
+}
+
 /**
  * Bentuk minimal yang dibutuhkan kebijakan. Disengaja minimal agar komposisi
  * augmented (overlay pasar) maupun komposisi resmi sama-sama diterima.

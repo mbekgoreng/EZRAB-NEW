@@ -33,6 +33,7 @@ import {
   RabMutationDiff,
 } from '../../domain/ded/dedPipelineTypes';
 import { DedToRabPipelineService } from '../../services/dedToRabPipelineService';
+import { canonicalAhspCodeExists } from '../../data/priceDatabase2026/ahspDisplayPolicy';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { RabItem, RABSection } from '../../types';
 
@@ -120,9 +121,31 @@ export const DedRabPipelineReviewView: React.FC<DedRabPipelineReviewViewProps> =
         ahspCode: editValues.ahspCode,
         description: editValues.description,
       });
+      // G1 (Sprint 3) — override ini menulis kode AHSP ketikan user ke draf
+      // TANPA melewati factory RAB. Bila kode non-kosong TIDAK ada di
+      // katalog AHSP kanonis 2026, baris tidak boleh mempertahankan
+      // presentasi tervalidasi: status diturunkan ke NEEDS_REVIEW dan
+      // confidence ke LOW pada objek draf yang dikembalikan service
+      // (objek yang sama yang dipegang state view ini — service tidak
+      // menyediakan API koreksi status), dan user diperingatkan lewat
+      // toast. Saat commit, factory tetap menjadi gerbang terakhir:
+      // klaim VERIFIED atas kode ini akan diturunkan di sana juga.
+      const savedCode = (editValues.ahspCode || '').trim();
+      const codeUnknown = savedCode !== '' && !canonicalAhspCodeExists(savedCode);
+      if (codeUnknown) {
+        const row = updatedDraft.rows.find((r) => r.workItemId === editingRow.workItemId);
+        if (row) {
+          row.status = 'NEEDS_REVIEW';
+          row.confidence = 'LOW';
+        }
+      }
       setDraft({ ...updatedDraft });
       setEditingRow(null);
-      showToast(`Item "${editValues.description}" berhasil diperbarui (USER_OVERRIDDEN). Nilai asli AI tetap tersimpan.`);
+      showToast(
+        codeUnknown
+          ? `Item "${editValues.description}" diperbarui, TETAPI kode AHSP "${savedCode}" tidak ditemukan di katalog AHSP kanonis 2026 — identitas belum terverifikasi; item diturunkan ke NEEDS_REVIEW.`
+          : `Item "${editValues.description}" berhasil diperbarui (USER_OVERRIDDEN). Nilai asli AI tetap tersimpan.`
+      );
     } catch (err: any) {
       showToast(err.message || 'Gagal menyimpan perubahan.');
     }

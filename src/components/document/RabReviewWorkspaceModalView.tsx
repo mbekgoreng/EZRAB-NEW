@@ -40,6 +40,7 @@ import {
   AuditLogEntry
 } from '../../domain/document/reviewApprovalTypes';
 import { SpreadsheetApprovalEngine } from '../../../server/services/spreadsheetApprovalEngine';
+import { canonicalAhspCodeExists } from '../../data/priceDatabase2026/ahspDisplayPolicy';
 import { formatCurrencyIDR } from '../../calculations/decimalEngine';
 import { officialAhspRepository } from '../../data/nationalCostDatabase/officialAhspRepository';
 import { ALL_OFFICIAL_AHSP_ITEMS } from '../../data/nationalCostDatabase/masterRegistry';
@@ -219,7 +220,34 @@ export const RabReviewWorkspaceModalView: React.FC<RabReviewWorkspaceModalViewPr
       userName,
       editReason || 'Penyesuaian estimasi estimator'
     );
-    setItems(updated);
+    // G1 (Sprint 3) — jalur edit ini menulis kode AHSP ketikan user ke baris
+    // review TANPA melewati factory RAB, jadi aturan keberadaan kanonis
+    // ditegakkan di titik simpan ini, dalam kosakata model baris review:
+    // kode non-kosong yang TIDAK ada di katalog AHSP kanonis 2026 tidak
+    // boleh mempertahankan kesan identitas resmi — baris diturunkan ke
+    // NEEDS_REVIEW dan diberi catatan yang tampil di panel temuan.
+    // (Padanan factory: ahspIdentityStatus UNSAFE + VERIFIED diturunkan;
+    // di spreadsheet, engine impor memetakan status != APPROVED menjadi
+    // NEEDS_VERIFICATION, jadi penurunan ini menutup jalur persetujuan
+    // ulang tanpa tinjauan.) Kode diketik tetap tersimpan sebagai klaim
+    // yang belum terverifikasi; membersihkan kode (null) tidak memicu ini.
+    const savedCode = (editAhspCode || '').trim();
+    const guarded =
+      savedCode && !canonicalAhspCodeExists(savedCode)
+        ? updated.map((row) =>
+            row.rabDraftItemId === editingItem.rabDraftItemId
+              ? {
+                  ...row,
+                  status: 'NEEDS_REVIEW' as const,
+                  notes: [
+                    ...(row.notes || []),
+                    `Kode AHSP "${savedCode}" tidak ditemukan di katalog AHSP kanonis 2026 — identitas belum terverifikasi; item diturunkan ke Perlu Tinjau.`,
+                  ],
+                }
+              : row
+          )
+        : updated;
+    setItems(guarded);
     setEditingItem(null);
   };
 

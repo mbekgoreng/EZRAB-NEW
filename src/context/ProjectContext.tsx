@@ -25,7 +25,7 @@ import { CONSTRUCTION_CALCULATORS, getCalculatorById } from '../engine/construct
 import { SafeDecimalEngine } from '../engine/safeDecimalEngine';
 import { createRabItemRecord } from '../engine/rab/rabItemFactory';
 import { resolveQtoSyncPrice, resolveQtoSyncCode } from '../lib/qtoSyncPricing';
-import { checkAhspIdentitySafety } from '../data/priceDatabase2026/ahspDisplayPolicy';
+import { checkAhspIdentitySafety, canonicalAhspCodeExists } from '../data/priceDatabase2026/ahspDisplayPolicy';
 import { normalizeName, normalizeUnit } from '../data/priceDatabase2026/normalize';
 import { resolvePriceStatus } from '../engine/pricing/priceStatus';
 import { UnifiedProjectEngine } from '../engine/unifiedProjectEngine';
@@ -91,6 +91,71 @@ export interface TemplateApplyDedupeResult {
   skipped: number;
   /** Descriptions of skipped rows, for the result message. */
   skippedDescriptions: string[];
+}
+
+// ============================================================================
+// G4 (Sprint 3) — Finalization idempotency at the store boundary.
+//
+// A caller finalizing an analysis (e.g. DED-AI) may pass a deterministic
+// `finalizationKey` (built from target project + canonicalized item set).
+// The provider records applied keys per project in a persisted registry
+// ('ezrab_prod_finalization_keys'). Re-submitting the same key for the same
+// project is a NO-OP duplicate: zero records are added and the outcome is
+// reported via getLastBulkAddOutcome. The same key under a DIFFERENT project
+// is a different finalization and is allowed. Keys are recorded only after a
+// successful insert, so a failed attempt stays retryable. The registry
+// helpers below are pure and exported for unit tests, following the same
+// pattern as buildExactDuplicateKey/partitionExactDuplicates above.
+// ============================================================================
+
+export interface BulkAddRabItemsOptions {
+  /** Deterministic finalization identity (see G4 note above). */
+  finalizationKey?: string;
+}
+
+export interface BulkAddOutcome {
+  /** True when the call was a no-op because the key was already applied. */
+  duplicate: boolean;
+  /** True when the call was rejected because the target project is unknown. */
+  projectMissing?: boolean;
+  /** Records actually inserted by the call (0 for duplicates). */
+  insertedCount: number;
+  /** Echo of the finalizationKey the call carried, if any. */
+  finalizationKey?: string;
+}
+
+export type FinalizationKeyRegistry = Record<string, string[]>;
+
+export function isFinalizationKeyApplied(
+  registry: FinalizationKeyRegistry,
+  projectId: string,
+  finalizationKey: string
+): boolean {
+  return (registry[projectId] || []).includes(finalizationKey);
+}
+
+/** Immutable append: returns a NEW registry with the key recorded. */
+export function applyFinalizationKey(
+  registry: FinalizationKeyRegistry,
+  projectId: string,
+  finalizationKey: string
+): FinalizationKeyRegistry {
+  if (isFinalizationKeyApplied(registry, projectId, finalizationKey)) return registry;
+  return {
+    ...registry,
+    [projectId]: [...(registry[projectId] || []), finalizationKey],
+  };
+}
+
+/** Immutable removal of a project's registry entry (project deletion). */
+export function removeFinalizationKeysForProject(
+  registry: FinalizationKeyRegistry,
+  projectId: string
+): FinalizationKeyRegistry {
+  if (!(projectId in registry)) return registry;
+  const next = { ...registry };
+  delete next[projectId];
+  return next;
 }
 
 export interface DedupeKeyInput {
@@ -242,8 +307,15 @@ interface ProjectContextType {
   createRabItemDirect: (item: Partial<RabItem> & { description: string; volume: number; unit: string }) => RabItem;
   bulkAddRabItems: (
     items: Array<Partial<RabItem> & { description: string; volume: number; unit: string }>,
-    targetProjectId?: string
+    targetProjectId?: string,
+    options?: BulkAddRabItemsOptions
   ) => RabItem[];
+  /**
+   * G4: outcome of the most recent bulkAddRabItems call (duplicate /
+   * project-missing / inserted count), or null before the first call.
+   * Read it immediately after invoking bulkAddRabItems in the same tick.
+   */
+  getLastBulkAddOutcome: () => BulkAddOutcome | null;
   /**
    * P1: one-shot opt-in for template-apply deduplication. The catalog view
    * calls this immediately before invoking the apply callback; the NEXT
@@ -724,6 +796,12 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     loadDataset<EstimateVersion[]>('ezrab_prod_estimate_versions', [])
   );
 
+  // 10.5 G4 — Finalization idempotency registry Store (per-project applied
+  // finalization keys; persisted with the other datasets, see flushToStorage).
+  const [finalizationKeys, setFinalizationKeys] = useState<FinalizationKeyRegistry>(() =>
+    loadDataset<FinalizationKeyRegistry>('ezrab_prod_finalization_keys', {})
+  );
+
   // 11. Autosave Status
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'dirty' | 'error'>('saved');
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -746,6 +824,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       'ezrab_prod_price_overrides',
       'ezrab_prod_version_snapshots',
       'ezrab_prod_estimate_versions',
+      'ezrab_prod_finalization_keys',
     ]);
     const unsubscribe = onExternalStorageChange((ev) => {
       if (datasetKeys.has(ev.key)) {
@@ -767,6 +846,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const priceOverridesRef = useRef(priceOverrides);
   const versionSnapshotsRef = useRef(versionSnapshots);
   const estimateVersionsRef = useRef(estimateVersions);
+  const finalizationKeysRef = useRef(finalizationKeys);
   useEffect(() => {
     projectsRef.current = projects;
     currentProjectIdRef.current = currentProjectId;
@@ -779,6 +859,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     priceOverridesRef.current = priceOverrides;
     versionSnapshotsRef.current = versionSnapshots;
     estimateVersionsRef.current = estimateVersions;
+    finalizationKeysRef.current = finalizationKeys;
   });
 
   // Flush pending writes on unmount (e.g. project switch / tab close via React tree).
@@ -837,6 +918,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     saveOne('ezrab_prod_price_overrides', priceOverridesRef.current);
     saveOne('ezrab_prod_version_snapshots', versionSnapshotsRef.current);
     saveOne('ezrab_prod_estimate_versions', estimateVersionsRef.current);
+    saveOne('ezrab_prod_finalization_keys', finalizationKeysRef.current);
 
     if (failures.length > 0) {
       console.error('Failed to sync EZRAB state to localStorage:', failures);
@@ -870,6 +952,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     priceOverrides,
     versionSnapshots,
     estimateVersions,
+    finalizationKeys,
   ]);
 
   // Keep active project valid
@@ -1078,6 +1161,13 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ...projectData,
     };
 
+    // G4: mirror the creation into projectsRef SYNCHRONOUSLY. Callers that
+    // create a project and immediately add RAB items in the same tick
+    // (finalize flows) must pass bulkAddRabItems' existence check, which
+    // reads the ref — React state has not settled yet at that point. The
+    // every-render ref sync later overwrites the ref with the settled
+    // state (which contains this project), so the mirror cannot diverge.
+    projectsRef.current = [newProj, ...projectsRef.current];
     setProjects((prev) => [newProj, ...prev]);
     setCurrentProjectIdState(newId);
     return newProj;
@@ -1120,6 +1210,13 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const deleteProject = useCallback(
     (id: string) => {
       backupProjectData(id);
+      // G4: mirror the deletion into projectsRef synchronously (same-tick
+      // adds targeting this id must fail the existence check immediately),
+      // and drop the project's finalization-key registry entry with the
+      // rest of the cascade.
+      projectsRef.current = projectsRef.current.filter((p) => p.id !== id);
+      finalizationKeysRef.current = removeFinalizationKeysForProject(finalizationKeysRef.current, id);
+      setFinalizationKeys(finalizationKeysRef.current);
       setProjects((prev) => prev.filter((p) => p.id !== id));
       setWorkItems((prev) => prev.filter((w) => w.projectId !== id));
       setCalculationRuns((prev) => prev.filter((r) => r.projectId !== id));
@@ -1677,10 +1774,19 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return lastTemplateApplyResultRef.current;
   }, []);
 
+  // G4 — outcome of the most recent bulkAddRabItems call (same ref pattern
+  // as the template-apply result above: synchronous within one event tick).
+  const lastBulkAddOutcomeRef = useRef<BulkAddOutcome | null>(null);
+
+  const getLastBulkAddOutcome = useCallback((): BulkAddOutcome | null => {
+    return lastBulkAddOutcomeRef.current;
+  }, []);
+
   const bulkAddRabItems = useCallback(
     (
       items: Array<Partial<RabItem> & { description: string; volume: number; unit: string }>,
-      targetProjectId?: string
+      targetProjectId?: string,
+      options?: BulkAddRabItemsOptions
     ): RabItem[] => {
       // P1: consume the one-shot request FIRST, so a requested-but-never-
       // applied flag can never leak into an unrelated later insertion
@@ -1690,6 +1796,38 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       templateApplyDedupePendingRef.current = false;
       const pid = targetProjectId || currentProjectId;
       if (!pid) throw new Error('Tidak ada proyek aktif untuk menambahkan item RAB.');
+
+      // G4 — project-existence gate at the store boundary (ALL bulk-add
+      // paths, not only finalization): an unknown/deleted target is
+      // rejected BEFORE any record is built, so zero orphan rows can be
+      // created. The check reads projectsRef — the store's live mirror —
+      // which already contains projects created in this same tick
+      // (createProject prepends synchronously), so create-then-add flows
+      // (template apply, DED finalize) keep working unchanged.
+      if (!projectsRef.current.some((p) => p.id === pid)) {
+        lastBulkAddOutcomeRef.current = {
+          duplicate: false,
+          projectMissing: true,
+          insertedCount: 0,
+          finalizationKey: options?.finalizationKey,
+        };
+        const err = new Error(
+          `Proyek tujuan tidak ditemukan (ID: ${pid}). Item RAB tidak disimpan — proyek mungkin sudah dihapus.`
+        ) as Error & { code?: string };
+        err.code = 'PROJECT_NOT_FOUND';
+        throw err;
+      }
+
+      // G4 — finalization idempotency: the same key already applied to THIS
+      // project makes the call a no-op duplicate (double click, retry after
+      // a UI state reset, reopened analysis). Checked on the ref so a
+      // repeat within the same tick is caught before any re-render. The
+      // same key under a different project is a different finalization.
+      const finalizationKey = options?.finalizationKey;
+      if (finalizationKey && isFinalizationKeyApplied(finalizationKeysRef.current, pid, finalizationKey)) {
+        lastBulkAddOutcomeRef.current = { duplicate: true, insertedCount: 0, finalizationKey };
+        return [];
+      }
 
       const newItems: RabItem[] = items.map((itemData, idx) =>
         // Phase 2 hardening: same pure factory as createRabItemDirect.
@@ -1724,6 +1862,21 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return next;
       });
 
+      // G4: record the finalization key only AFTER the insert succeeded —
+      // a call that threw above (factory error, missing project) never
+      // burns the key, so a genuine retry stays possible. The ref is
+      // updated synchronously so an immediate retry is seen as duplicate
+      // before React re-renders; state follows for persistence.
+      if (finalizationKey) {
+        finalizationKeysRef.current = applyFinalizationKey(finalizationKeysRef.current, pid, finalizationKey);
+        setFinalizationKeys(finalizationKeysRef.current);
+      }
+      lastBulkAddOutcomeRef.current = {
+        duplicate: false,
+        insertedCount: insertedItems.length,
+        finalizationKey,
+      };
+
       return insertedItems;
     },
     [currentProjectId, recalculateProjectSummary, allRabItems]
@@ -1737,12 +1890,67 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const next = prev.map((item) => {
           if (item.id === rabItemId) {
             const updated = { ...item, ...updates };
+            // G1 (Sprint 3) — edit-path closure: this update function writes
+            // onto EXISTING records without passing the factory, so the
+            // canonical-existence rule is enforced here at the update
+            // boundary. When an edit SETS a non-empty ahspCode that does
+            // not exist in the canonical catalog, mirror the factory
+            // outcome: identity UNSAFE (+reason), a VERIFIED claim drops
+            // to NEEDS_VERIFICATION, and an OFFICIAL_AHSP price claim
+            // drops to UNRESOLVED. The typed code itself is preserved as
+            // an unverified claim; price VALUE and priceStatus are not
+            // touched (price axis stays independent). Edits that do not
+            // set ahspCode never re-litigate pre-existing records.
+            let identityPatch: Partial<RabItem> = {};
+            // Keputusan B (Sprint 3.1) — cabang PENGHAPUSAN kode: bila edit
+            // secara eksplisit mengosongkan ahspCode ('' atau null), penanda
+            // kepercayaan yang bertumpu pada kode lama tidak boleh basi:
+            // status identitas & alasannya dibersihkan (record tanpa kode
+            // sah sebagai item non-AHSP — ketiadaan kode TIDAK ditandai
+            // UNSAFE), klaim OFFICIAL_AHSP turun ke UNRESOLVED (provenance
+            // resmi mensyaratkan kode kanonis terverifikasi), dan status
+            // VERIFIED yang bertumpu pada kode itu turun ke
+            // NEEDS_VERIFICATION. Edit yang tidak menyentuh ahspCode tidak
+            // memicu cabang ini.
+            if (
+              (typeof updates.ahspCode === 'string' && updates.ahspCode.trim() === '' && typeof item.ahspCode === 'string' && item.ahspCode.trim() !== '') ||
+              (updates.ahspCode === null && typeof item.ahspCode === 'string' && item.ahspCode.trim() !== '')
+            ) {
+              identityPatch = {
+                ahspIdentityStatus: undefined,
+                ahspIdentityReason: undefined,
+                ...(updated.verificationStatus === 'VERIFIED'
+                  ? { verificationStatus: 'NEEDS_VERIFICATION' as const }
+                  : {}),
+                ...(updated.priceSourceKind === 'OFFICIAL_AHSP'
+                  ? { priceSourceKind: 'UNRESOLVED' as const }
+                  : {}),
+              };
+            } else if (
+              typeof updates.ahspCode === 'string' &&
+              updates.ahspCode.trim() !== '' &&
+              !canonicalAhspCodeExists(updates.ahspCode)
+            ) {
+              identityPatch = {
+                ahspIdentityStatus: 'UNSAFE',
+                ahspIdentityReason:
+                  `Kode AHSP "${updates.ahspCode.trim()}" tidak ditemukan di katalog AHSP kanonis 2026 — ` +
+                  'identitas belum terverifikasi.',
+                ...(updated.verificationStatus === 'VERIFIED'
+                  ? { verificationStatus: 'NEEDS_VERIFICATION' as const }
+                  : {}),
+                ...(updated.priceSourceKind === 'OFFICIAL_AHSP'
+                  ? { priceSourceKind: 'UNRESOLVED' as const }
+                  : {}),
+              };
+            }
+            const merged = { ...updated, ...identityPatch };
             const vol = typeof updates.volume !== 'undefined' ? updates.volume : item.volume;
             const up = typeof updates.unitPrice !== 'undefined' ? updates.unitPrice : item.unitPrice;
             // Phase 2J P0 fix: null price → null amount (never 0).
             const amt = up == null ? null : SafeDecimalEngine.safeMultiply(vol, up, 0);
             return {
-              ...updated,
+              ...merged,
               volume: vol,
               unitPrice: up,
               amount: amt,
@@ -2633,7 +2841,11 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.removeItem('ezrab_prod_price_overrides');
     localStorage.removeItem('ezrab_prod_version_snapshots');
     localStorage.removeItem('ezrab_prod_estimate_versions');
+    localStorage.removeItem('ezrab_prod_finalization_keys');
 
+    projectsRef.current = [];
+    finalizationKeysRef.current = {};
+    setFinalizationKeys({});
     setProjects([]);
     setCurrentProjectIdState(null);
     setWorkItems([]);
@@ -2688,6 +2900,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       updateRabItemUnitPrice,
       createRabItemDirect,
       bulkAddRabItems,
+      getLastBulkAddOutcome,
       requestTemplateApplyDedupe,
       getLastTemplateApplyResult,
       updateRabItemFull,
@@ -2757,6 +2970,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       updateRabItemUnitPrice,
       createRabItemDirect,
       bulkAddRabItems,
+      getLastBulkAddOutcome,
       requestTemplateApplyDedupe,
       getLastTemplateApplyResult,
       updateRabItemFull,
