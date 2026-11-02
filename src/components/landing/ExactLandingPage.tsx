@@ -10,12 +10,7 @@ import { CinematicHero } from './cinematic/CinematicHero';
 // tautan navbar #fitur / #harga mati. Keandalan navigasi lebih penting
 // daripada code-splitting di sini — hero Three.js sudah mendominasi bundle.
 import { ExactWorkflow } from './exact/ExactWorkflow';
-import { ExactStackedShowcase } from './exact/ExactStackedShowcase';
-import { ExactRoles } from './exact/ExactRoles';
-import { DrawingsToDecisionsSection } from './exact/DrawingsToDecisionsSection';
-import { ExactPricing } from './exact/ExactPricing';
-import { ExactFinalCta } from './exact/ExactFinalCta';
-import { ExactFooter } from './exact/ExactFooter';
+import { AiShowcase } from './exact/AiShowcase';
 
 interface ExactLandingPageProps {
   onOpenWorkspace: () => void;
@@ -62,27 +57,13 @@ export const ExactLandingPage: React.FC<ExactLandingPageProps> = ({
         {/* 3. Satu Workflow (2-row connected nodes) */}
         <ExactWorkflow />
 
-        {/* 5-10. Stacked Scrolling Product Story (6-Workspace Physical Stack) */}
-        <ExactStackedShowcase onOpenWorkspace={onOpenWorkspace} />
-
-        {/* 11. Untuk Profesional di Bidang Konstruksi (Deep Navy 4-cards) */}
-        <ExactRoles />
-
-        {/* 11.5 Flagship Architectural Transition: FROM DRAWINGS TO DECISIONS */}
-        <DrawingsToDecisionsSection />
-
-        {/* 12. Harga / Pricing (Free, Pro, Enterprise) */}
-        <ExactPricing onSelectPlan={() => onOpenAuth('daftar')} />
-
-        {/* 13. Final CTA Banner (Dusk skyline with cranes) */}
-        <ExactFinalCta
-          onStartFree={() => onOpenAuth('daftar')}
-          onOpenDemo={onOpenDemo}
-        />
+        {/* 5-13. AI-first showcase (pengganti stacked showcase s.d. footer):
+            pembuka AI, DED Estimate AI, Ezrab Chat AI, AI Document,
+            Ezrab AI Assistant, strip pendukung, kejujuran AI, harga
+            (id="harga"), FAQ, CTA, dan footer ramping — port dari mockup
+            v8 yang di-ACC owner 2026-11-02. */}
+        <AiShowcase onOpenAuth={onOpenAuth} onOpenDemo={onOpenDemo} />
       </main>
-
-      {/* 14. Clean Modern Footer */}
-      <ExactFooter />
     </div>
   );
 };
