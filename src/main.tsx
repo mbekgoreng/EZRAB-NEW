@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { Analytics } from '@vercel/analytics/react';
 import App from './App';
 import { ThemeProvider } from './context/ThemeContext';
 import { CurrencyProvider } from './context/CurrencyContext';
@@ -28,6 +29,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       </I18nProvider>
       </CurrencyProvider>
     </ThemeProvider>
+    {/* Vercel Web Analytics: cookieless visitor/pageview counting.
+        Inert until Web Analytics is enabled on the Vercel project and
+        this build is deployed; sends nothing in development. */}
+    <Analytics />
   </React.StrictMode>
 );
 
