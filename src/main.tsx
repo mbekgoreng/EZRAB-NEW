@@ -30,3 +30,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </ThemeProvider>
   </React.StrictMode>
 );
+
+// Daftarkan service worker sejak awal (produksi saja) supaya EZRAB bisa
+// dipasang sebagai app/shortcut di layar utama HP tanpa menunggu fitur
+// notifikasi dibuka. Modul notifikasi mendaftarkan SW yang sama —
+// pendaftaran ganda pada script yang sama tidak berpengaruh.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      /* gagal daftar tidak boleh mengganggu aplikasi */
+    });
+  });
+}

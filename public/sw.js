@@ -25,6 +25,12 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// Syarat pasang sebagai app/shortcut di layar utama HP (Chrome/Android):
+// service worker harus menangani fetch. Sengaja TANPA cache dan TANPA
+// respondWith — semua permintaan diteruskan ke jaringan seperti biasa,
+// supaya tidak ada risiko konten basi. Fungsi file ini tetap notifikasi.
+self.addEventListener('fetch', () => {});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const data = event.notification.data || {};
