@@ -281,7 +281,7 @@
 .ezai-scope .acard {margin-top:8px;border:1px solid #BBF7D0;background:#F0FDF4;border-radius:10px;padding:8px 11px;font-size:12.5px;color:#166534;display:flex;gap:8px;align-items:center}
 .ezai-scope .bigamt {font-size:21px;font-weight:800;color:#0A2540}
 .ezai-scope .mascot-hero {position:absolute;right:-32px;top:-86px;width:124px;z-index:5;filter:drop-shadow(0 14px 20px rgba(13,40,80,.25))}
-.ezai-scope .mascot-cta {position:absolute;right:38px;top:-124px;width:118px;z-index:5;filter:drop-shadow(0 12px 18px rgba(2,20,60,.35))}
+.ezai-scope .mascot-cta {position:absolute;right:38px;top:-110px;width:126px;z-index:5;filter:drop-shadow(0 12px 18px rgba(2,20,60,.35))}
 @keyframes curAsst{0%{left:76%;top:88%;opacity:0}5%{opacity:1}56%{left:76%;top:88%}66%{left:33%;top:74%}70%{transform:scale(1)}72%{transform:scale(.78)}74%{transform:scale(1)}90%{opacity:1}96%,100%{left:33%;top:74%;opacity:0}}
 .ezai-scope .curAsst {animation:curAsst 12s ease-in-out infinite}
 .ezai-scope .ringAsst {left:calc(33% - 3px);top:calc(74% - 4px);animation:ringAsstA 12s ease-in-out infinite}
@@ -299,7 +299,7 @@
 .ezai-scope .plan .tag {white-space:nowrap}
 }
 @media(max-width:640px) {
-.ezai-scope .mascot-cta {width:88px;top:-90px;right:16px}
+.ezai-scope .mascot-cta {width:94px;top:-82px;right:16px}
 }
 /* Animasi transisi teks & gambar: elemen muncul berjenjang (fade + naik) saat masuk viewport; kelas .rv/.rv-on dipasang AiShowcase via IntersectionObserver (nama .rv-on dipilih agar tidak bertabrakan dengan kelas .on status online) */
 .ezai-scope .rv {opacity:0;transform:translateY(26px);transition:opacity .65s ease,transform .65s cubic-bezier(.21,.8,.28,1)}
